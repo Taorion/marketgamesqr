@@ -3430,3 +3430,142 @@ textarea {
   }
 }
 
+/* Account profile: keep the portal identity dark, but with calmer contrast. */
+.view-section[data-view="account"] {
+  color: #eef7ff;
+}
+
+.view-section[data-view="account"] .view-head {
+  margin-bottom: 18px;
+  padding: 22px;
+  border: 1px solid rgba(84, 240, 255, 0.2);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(0, 229, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(255, 45, 247, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(5, 16, 36, 0.98), rgba(2, 6, 23, 0.96));
+  box-shadow: 0 18px 46px rgba(2, 8, 23, 0.22), 0 0 0 1px rgba(84, 240, 255, 0.08);
+}
+
+.view-section[data-view="account"] .view-head h2 {
+  color: #f8fdff;
+  text-shadow: 0 0 18px rgba(0, 229, 255, 0.28) !important;
+}
+
+.view-section[data-view="account"] .view-head p {
+  color: #b9d7e8;
+}
+
+.view-section[data-view="account"] .account-profile-card,
+.view-section[data-view="account"] .account-settings-card {
+  background:
+    linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(3, 7, 18, 0.96)) !important;
+  border-color: rgba(84, 240, 255, 0.18) !important;
+  box-shadow: 0 16px 42px rgba(2, 8, 23, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.view-section[data-view="account"] .account-profile-card::before,
+.view-section[data-view="account"] .account-settings-card::before {
+  background: linear-gradient(120deg, rgba(0, 229, 255, 0.16), transparent 40%, rgba(111, 251, 190, 0.1));
+  opacity: 0.7;
+}
+
+.view-section[data-view="account"] .account-profile-card:nth-child(2) {
+  border-color: rgba(111, 251, 190, 0.22) !important;
+}
+
+.view-section[data-view="account"] .account-profile-card:nth-child(3),
+.view-section[data-view="account"] .account-billing-card {
+  border-color: rgba(255, 242, 138, 0.24) !important;
+}
+
+.view-section[data-view="account"] .mono-label,
+.view-section[data-view="account"] .table-card-head .mono-label {
+  color: #7cfbff;
+}
+
+.view-section[data-view="account"] .account-profile-card h3,
+.view-section[data-view="account"] .account-settings-card h3,
+.view-section[data-view="account"] .table-card-head h3 {
+  color: #f8fdff;
+}
+
+.view-section[data-view="account"] .account-meta-grid div,
+.view-section[data-view="account"] .account-billing-panel {
+  background: rgba(2, 8, 23, 0.62);
+  border-color: rgba(148, 232, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.view-section[data-view="account"] .account-meta-grid span,
+.view-section[data-view="account"] .account-billing-panel label,
+.view-section[data-view="account"] .table-secondary,
+.view-section[data-view="account"] .business-logo-profile-slot p {
+  color: #a8c6d9;
+}
+
+.view-section[data-view="account"] .account-meta-grid strong,
+.view-section[data-view="account"] .account-billing-panel strong,
+.view-section[data-view="account"] .business-logo-profile-slot strong {
+  color: #f8fdff;
+}
+
+.view-section[data-view="account"] .modal-form label {
+  color: #d8ecf8;
+}
+
+.view-section[data-view="account"] .modal-form input,
+.view-section[data-view="account"] .modal-form select,
+.view-section[data-view="account"] .modal-form textarea {
+  background: rgba(2, 8, 23, 0.72);
+  color: #f8fdff;
+  border-color: rgba(84, 240, 255, 0.2);
+}
+
+.view-section[data-view="account"] .modal-form input:focus,
+.view-section[data-view="account"] .modal-form select:focus,
+.view-section[data-view="account"] .modal-form textarea:focus {
+  border-color: rgba(124, 251, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+}
+
+.view-section[data-view="account"] .modal-form input:disabled {
+  color: #8aa3b5;
+  background: rgba(15, 23, 42, 0.78);
+  border-style: dashed;
+}
+
+.view-section[data-view="account"] .business-logo-preview {
+  background: rgba(2, 8, 23, 0.72);
+  border-color: rgba(84, 240, 255, 0.22);
+}
+
+.view-section[data-view="account"] .status-chip.pending {
+  background: rgba(255, 242, 138, 0.16);
+  color: #fff28a;
+}
+
+.view-section[data-view="account"] .status-chip.ok {
+  background: rgba(111, 251, 190, 0.16);
+  color: #7cfbff;
+}
+
+.view-section[data-view="account"] .error-line[data-kind="info"] {
+  color: #9bdcff;
+}
+
+.view-section[data-view="account"] .error-line[data-kind="success"] {
+  color: #7cfbff;
+}
+
+.view-section[data-view="account"] .solid-button {
+  background: linear-gradient(135deg, #00a87a, #0078b8);
+  box-shadow: 0 12px 28px rgba(0, 168, 122, 0.18);
+}
+
+@media (max-width: 760px) {
+  .view-section[data-view="account"] .view-head {
+    padding: 18px;
+  }
+}
+
