@@ -20,7 +20,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: PUBLIC_APP_URL
         sync: false
       - key: PUBLIC_VALIDATOR_URL

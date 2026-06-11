@@ -41,6 +41,10 @@ MERCADO_PAGO_WEBHOOK_SECRET=secreto-webhook
 MERCADO_PAGO_WEBHOOK_URL=https://TU-DOMINIO/api/payments/mercadopago/webhook
 ```
 
+Para el primer despliegue en Render, `JWT_SECRET` lo genera el blueprint automaticamente.
+Si todavia no tienes Mercado Pago, puedes dejar vacias sus variables y configurarlas despues.
+El sitio publico levantara sin `DATABASE_URL`, pero login, registro y portal responderan 503 hasta conectar una base real.
+
 ## 3. Render
 
 Este repo incluye `render.yaml`.

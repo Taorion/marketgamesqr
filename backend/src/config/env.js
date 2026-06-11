@@ -35,15 +35,10 @@ const env = {
   productCampaignId: process.env.PRODUCT_CAMPAIGN_ID || null,
 };
 
-if (!env.databaseUrl) {
-  throw new Error("DATABASE_URL is required.");
-}
-
-if (/PROJECT_REF|YOUR_PASSWORD/.test(env.databaseUrl)) {
-  const message = "DATABASE_URL still contains placeholder values. Configure a real PostgreSQL/Supabase URL.";
-  if (env.isProduction) {
-    throw new Error(message);
-  }
+if (!env.databaseUrl || /PROJECT_REF|YOUR_PASSWORD/.test(env.databaseUrl)) {
+  const message = env.databaseUrl
+    ? "DATABASE_URL still contains placeholder values. Configure a real PostgreSQL/Supabase URL."
+    : "DATABASE_URL is not configured. Static pages can run, but API routes that need the database will return 503.";
   console.warn(message);
 }
 
