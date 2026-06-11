@@ -3709,3 +3709,225 @@ textarea {
   color: #dff8ff;
 }
 
+/* Affiliates: remove light boxes while keeping the flow lightweight. */
+.view-section[data-view="affiliates"] {
+  padding: 18px;
+  border: 1px solid rgba(124, 251, 255, 0.12);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 10% 4%, rgba(0, 229, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 90% 10%, rgba(255, 45, 247, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(3, 10, 26, 0.98));
+}
+
+.view-section[data-view="affiliates"] .view-head,
+.view-section[data-view="affiliates"] .affiliate-logo-panel,
+.view-section[data-view="affiliates"] .affiliate-panel,
+.view-section[data-view="affiliates"] .data-table-card {
+  background:
+    linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(2, 6, 23, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24) !important;
+}
+
+.view-section[data-view="affiliates"] .view-head {
+  padding: 20px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 16px;
+}
+
+.view-section[data-view="affiliates"] .view-head h2,
+.view-section[data-view="affiliates"] .table-card-head strong,
+.view-section[data-view="affiliates"] .affiliate-stat-card strong,
+.view-section[data-view="affiliates"] .affiliate-step strong,
+.view-section[data-view="affiliates"] .affiliate-photo-placeholder strong {
+  color: #f8fdff;
+}
+
+.view-section[data-view="affiliates"] .view-head p,
+.view-section[data-view="affiliates"] .affiliate-stat-card p,
+.view-section[data-view="affiliates"] .affiliate-form label span,
+.view-section[data-view="affiliates"] .affiliate-card-note,
+.view-section[data-view="affiliates"] .affiliate-card-meta,
+.view-section[data-view="affiliates"] .affiliate-card-actions label span,
+.view-section[data-view="affiliates"] .affiliate-step p,
+.view-section[data-view="affiliates"] .affiliate-photo-placeholder,
+.view-section[data-view="affiliates"] .table-secondary,
+.view-section[data-view="affiliates"] p {
+  color: #a8c6d9;
+}
+
+.view-section[data-view="affiliates"] .affiliate-stat-card,
+.view-section[data-view="affiliates"] .affiliate-card-preview-wrap,
+.view-section[data-view="affiliates"] .affiliate-photo-capture,
+.view-section[data-view="affiliates"] .affiliate-step,
+.view-section[data-view="affiliates"] .modal-actions,
+.view-section[data-view="affiliates"] .business-logo-preview {
+  background:
+    linear-gradient(145deg, rgba(5, 15, 31, 0.9), rgba(2, 8, 23, 0.76)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.view-section[data-view="affiliates"] .affiliate-card-preview-wrap.is-empty::before,
+.view-section[data-view="affiliates"] .affiliate-card-preview-wrap.is-loading::before {
+  border-color: rgba(124, 251, 255, 0.28);
+  background: rgba(2, 8, 23, 0.72);
+  color: #a8c6d9;
+}
+
+.view-section[data-view="affiliates"] .affiliate-photo-placeholder .material-symbols-outlined,
+.view-section[data-view="affiliates"] .affiliate-step-number {
+  background: linear-gradient(135deg, #00e5ff, #00d8a0);
+  color: #020617;
+}
+
+.view-section[data-view="affiliates"] .affiliate-step.is-active,
+.view-section[data-view="affiliates"] .affiliate-step.is-complete {
+  background: rgba(0, 229, 255, 0.08) !important;
+  border-color: rgba(124, 251, 255, 0.3) !important;
+}
+
+.view-section[data-view="affiliates"] .affiliate-photo-actions .ghost-button,
+.view-section[data-view="affiliates"] .affiliate-logo-actions .ghost-button,
+.view-section[data-view="affiliates"] .affiliate-card-actions .ghost-button {
+  background: rgba(2, 8, 23, 0.48);
+  border-color: rgba(124, 251, 255, 0.2);
+  color: #dff8ff;
+}
+
+.view-section[data-view="affiliates"] .affiliate-photo-actions .ghost-button:first-child,
+.view-section[data-view="affiliates"] .affiliate-photo-actions .ghost-button.is-primary-action {
+  background: rgba(0, 216, 160, 0.16);
+  border-color: rgba(0, 216, 160, 0.3);
+  color: #dff8ff;
+}
+
+.view-section[data-view="affiliates"] input,
+.view-section[data-view="affiliates"] textarea,
+.view-section[data-view="affiliates"] select {
+  background: rgba(2, 8, 23, 0.72) !important;
+  color: #f8fdff !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+}
+
+.view-section[data-view="affiliates"] input::placeholder,
+.view-section[data-view="affiliates"] textarea::placeholder {
+  color: #7893a6;
+}
+
+.view-section[data-view="affiliates"] table,
+.view-section[data-view="affiliates"] th,
+.view-section[data-view="affiliates"] td {
+  background: transparent;
+  color: #d8ecf8;
+  border-color: rgba(124, 251, 255, 0.12);
+}
+
+.view-section[data-view="affiliates"] th {
+  color: #7cfbff;
+}
+
+/* Strategic QR generator: keep generator panels aligned with the dark portal. */
+.view-section[data-view="strategic-qr"] {
+  padding: 18px;
+  border: 1px solid rgba(124, 251, 255, 0.12);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 10% 4%, rgba(0, 229, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 92% 12%, rgba(255, 45, 247, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(3, 10, 26, 0.98));
+}
+
+.view-section[data-view="strategic-qr"] .view-head,
+.view-section[data-view="strategic-qr"] .surface-card,
+.view-section[data-view="strategic-qr"] .data-table-card,
+.view-section[data-view="strategic-qr"] .portal-pricing-card,
+.view-section[data-view="strategic-qr"] .qr-credit-shop-card,
+.view-section[data-view="strategic-qr"] #postSaleQrResult,
+.view-section[data-view="strategic-qr"] #qrBatchResult,
+.view-section[data-view="strategic-qr"] .qr-batch-progress-card,
+.view-section[data-view="strategic-qr"] .qr-batch-result-card {
+  background:
+    linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(2, 6, 23, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24) !important;
+}
+
+.view-section[data-view="strategic-qr"] .view-head {
+  padding: 20px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 16px;
+}
+
+.view-section[data-view="strategic-qr"] .view-head h2,
+.view-section[data-view="strategic-qr"] h3,
+.view-section[data-view="strategic-qr"] h4,
+.view-section[data-view="strategic-qr"] .table-card-head strong,
+.view-section[data-view="strategic-qr"] .qr-batch-stat strong {
+  color: #f8fdff;
+}
+
+.view-section[data-view="strategic-qr"] .view-head p,
+.view-section[data-view="strategic-qr"] .pricing-intro,
+.view-section[data-view="strategic-qr"] .table-secondary,
+.view-section[data-view="strategic-qr"] .qr-batch-progress-copy,
+.view-section[data-view="strategic-qr"] p,
+.view-section[data-view="strategic-qr"] label,
+.view-section[data-view="strategic-qr"] .qr-credit-shop-form label {
+  color: #a8c6d9;
+}
+
+.view-section[data-view="strategic-qr"] input,
+.view-section[data-view="strategic-qr"] select,
+.view-section[data-view="strategic-qr"] textarea,
+.view-section[data-view="strategic-qr"] .qr-credit-shop-form select {
+  background: rgba(2, 8, 23, 0.72) !important;
+  color: #f8fdff !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+}
+
+.view-section[data-view="strategic-qr"] input::placeholder,
+.view-section[data-view="strategic-qr"] textarea::placeholder {
+  color: #7893a6;
+}
+
+.view-section[data-view="strategic-qr"] .modal-actions,
+.view-section[data-view="strategic-qr"] .qr-batch-stat,
+.view-section[data-view="strategic-qr"] .portal-plan-card,
+.view-section[data-view="strategic-qr"] .kpi-card {
+  background:
+    linear-gradient(145deg, rgba(5, 15, 31, 0.9), rgba(2, 8, 23, 0.76)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff;
+}
+
+.view-section[data-view="strategic-qr"] .qr-batch-progress-bar {
+  background: rgba(124, 251, 255, 0.12);
+}
+
+.view-section[data-view="strategic-qr"] .qr-batch-progress-fill {
+  background: linear-gradient(90deg, #00e5ff, #00d8a0);
+}
+
+.view-section[data-view="strategic-qr"] table,
+.view-section[data-view="strategic-qr"] th,
+.view-section[data-view="strategic-qr"] td {
+  background: transparent;
+  color: #d8ecf8;
+  border-color: rgba(124, 251, 255, 0.12);
+}
+
+.view-section[data-view="strategic-qr"] th {
+  color: #7cfbff;
+}
+
+.view-section[data-view="strategic-qr"] .ghost-button {
+  background: rgba(2, 8, 23, 0.48);
+  border-color: rgba(124, 251, 255, 0.2);
+  color: #dff8ff;
+}
+
