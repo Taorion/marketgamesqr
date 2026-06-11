@@ -54,8 +54,4 @@ if (env.jwtSecret === "dev-only-change-me") {
   console.warn("JWT_SECRET is using the development fallback. Set a strong value in .env.");
 }
 
-if (env.isProduction && !env.mercadoPagoWebhookSecret) {
-  throw new Error("MERCADO_PAGO_WEBHOOK_SECRET is required in production.");
-}
-
 module.exports = { env };

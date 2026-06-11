@@ -38,7 +38,7 @@ CORS_ORIGINS=https://TU-DOMINIO
 ENABLE_DEMO_TOOLS=false
 MERCADO_PAGO_ACCESS_TOKEN=APP_USR_xxx
 MERCADO_PAGO_WEBHOOK_SECRET=secreto-webhook
-MERCADO_PAGO_WEBHOOK_URL=https://TU-DOMINIO/api/payments/mercado-pago/webhook
+MERCADO_PAGO_WEBHOOK_URL=https://TU-DOMINIO/api/payments/mercadopago/webhook
 ```
 
 ## 3. Render
@@ -116,7 +116,7 @@ https://TU-DOMINIO/validador/
 Configura el webhook en Mercado Pago:
 
 ```text
-https://TU-DOMINIO/api/payments/mercado-pago/webhook
+https://TU-DOMINIO/api/payments/mercadopago/webhook
 ```
 
 El registro de empresas queda activo solo cuando el pago se aprueba y llega la confirmacion.

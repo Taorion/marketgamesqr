@@ -14,6 +14,9 @@ function requireMercadoPagoConfig() {
   if (!env.mercadoPagoAccessToken) {
     throw badRequest("Mercado Pago no esta configurado. Define MERCADO_PAGO_ACCESS_TOKEN.");
   }
+  if (!env.mercadoPagoWebhookSecret) {
+    throw badRequest("Mercado Pago no esta configurado. Define MERCADO_PAGO_WEBHOOK_SECRET.");
+  }
 }
 
 function appUrl(path = "") {
@@ -48,7 +51,7 @@ async function mpRequest(path, options = {}) {
 
 function verifyWebhookSignature(req) {
   if (!env.mercadoPagoWebhookSecret) {
-    return;
+    throw forbidden("Webhook Mercado Pago no configurado.");
   }
 
   const signature = req.headers["x-signature"];
