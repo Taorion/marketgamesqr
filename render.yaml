@@ -2,7 +2,7 @@ services:
   - type: web
     name: market-games-portal
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
