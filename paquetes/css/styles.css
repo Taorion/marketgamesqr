@@ -801,3 +801,155 @@ body::after {
     scroll-behavior: auto !important;
   }
 }
+
+/* Fluid mode: static neon, stronger contrast, lower GPU cost. */
+:root {
+  --bg: #050816;
+  --surface: #0b1426;
+  --surface-2: #111d33;
+  --text: #f4f8ff;
+  --muted: #c7d2e6;
+  --border: rgba(112, 224, 255, 0.22);
+  --primary: #55e7ff;
+  --primary-strong: #7cfbff;
+  --accent: #f8e85a;
+  --shadow: rgba(0, 0, 0, 0.26);
+  --glow-cyan: none;
+  --glow-pink: none;
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0, 229, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, #040712 0%, #071324 52%, #050816 100%);
+}
+
+body::before {
+  opacity: 0.1;
+  background-size: 64px 64px;
+}
+
+body::after {
+  display: none;
+}
+
+.topbar,
+.hero,
+.benefit-grid article,
+.steps-strip,
+.selling-section,
+.use-cases,
+.form-section,
+.package-card,
+.plan-access-card,
+.selected-box,
+.mode-tabs {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(9, 16, 32, 0.95);
+  border-color: var(--border);
+  box-shadow: 0 12px 30px var(--shadow);
+  backdrop-filter: none;
+  animation: none !important;
+}
+
+.hero::before,
+.selling-section::before,
+.form-section::before,
+.use-cases::before,
+.package-card::before,
+.plan-access-card::before,
+.benefit-grid article::before,
+.selected-box::before,
+.package-card::after,
+.plan-access-card::after,
+.benefit-grid article::after,
+.primary-button::after,
+.secondary-button::after,
+.admin-link::after,
+.package-card button::after {
+  animation: none !important;
+}
+
+.hero::before,
+.selling-section::before,
+.form-section::before,
+.use-cases::before,
+.package-card::after,
+.plan-access-card::after,
+.benefit-grid article::after,
+.primary-button::after,
+.secondary-button::after,
+.admin-link::after,
+.package-card button::after {
+  display: none;
+}
+
+.package-card::before,
+.plan-access-card::before,
+.benefit-grid article::before,
+.selected-box::before {
+  opacity: 0.22;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.58), rgba(248, 232, 90, 0.28));
+}
+
+.price,
+.selected-box strong,
+.hero h2 {
+  animation: none !important;
+  text-shadow: none;
+}
+
+.primary-button,
+.secondary-button,
+.admin-link,
+.payment-button,
+.package-card button {
+  box-shadow: none;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.admin-link:hover,
+.payment-button:hover,
+.package-card button:hover {
+  transform: translateY(-1px);
+}
+
+p,
+.use-cases li,
+.plan-access-list li,
+.selected-box span,
+.steps-strip p,
+.selling-section p,
+.form-section p {
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  background: #f8fbff;
+  color: #102033;
+  border-color: rgba(112, 224, 255, 0.36);
+}
+
+@media (max-width: 720px) {
+  .packages-shell {
+    padding: 12px;
+  }
+
+  .topbar,
+  .hero,
+  .benefit-grid article,
+  .steps-strip,
+  .selling-section,
+  .use-cases,
+  .form-section,
+  .package-card,
+  .plan-access-card,
+  .selected-box,
+  .mode-tabs {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  }
+}

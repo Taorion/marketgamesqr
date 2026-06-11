@@ -2006,3 +2006,158 @@ main {
     opacity: 0.2;
   }
 }
+
+/* Performance and contrast pass: keep the tech look, remove expensive motion. */
+:root {
+  --panel: rgba(10, 16, 34, 0.9);
+  --panel-strong: rgba(12, 19, 40, 0.98);
+  --line: rgba(116, 204, 232, 0.22);
+  --line-strong: rgba(96, 220, 255, 0.44);
+  --text: #f4f7ff;
+  --muted: #c4cce4;
+  --shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(77, 227, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(123, 97, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, #040712 0%, #07101e 48%, #050816 100%);
+}
+
+body::before {
+  opacity: 0.1;
+  background-size: 64px 64px;
+}
+
+.site-header {
+  backdrop-filter: none;
+  background: rgba(5, 9, 20, 0.96);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+
+.glass-card,
+.hero-showcase,
+.metric-card,
+.client-access-item,
+.problem-card,
+.solution-panel,
+.solution-step,
+.service-card,
+.flow-node,
+.access-card,
+.result-card,
+.results-visual-card,
+.contact-card,
+.form-card,
+.cta-panel,
+.web-portfolio-intro,
+.web-sample-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(9, 15, 31, 0.94);
+  border-color: rgba(111, 226, 255, 0.18);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+}
+
+.glass-card::before,
+.hero-section::after,
+.client-access-item::before,
+.service-card::before,
+.access-card::before,
+.result-card::before,
+.cta-panel::before {
+  animation: none !important;
+  opacity: 0.16;
+}
+
+.floating-card,
+.floating-whatsapp,
+.reveal,
+.is-visible,
+.brand-mark,
+.button-primary,
+.button-secondary,
+.header-access-link {
+  animation: none !important;
+  text-shadow: none !important;
+  filter: none;
+}
+
+.floating-card {
+  transform: none !important;
+  background: rgba(6, 12, 28, 0.92);
+  border-color: rgba(111, 226, 255, 0.26);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+}
+
+.button-primary,
+.button-secondary,
+.header-access-link,
+.web-sample-link {
+  box-shadow: none;
+}
+
+.button-primary:hover,
+.button-secondary:hover,
+.header-access-link:hover,
+.web-sample-link:hover {
+  transform: translateY(-1px);
+}
+
+.hero-text,
+.section-heading p,
+.glass-card p,
+.service-list,
+.footer-list a,
+.brand-copy span,
+.metric-card span,
+.floating-card span,
+.web-sample-copy span {
+  color: var(--muted);
+}
+
+.showcase-image,
+.section-inline-image,
+.results-image {
+  filter: none;
+  box-shadow: none;
+}
+
+.hero-section::before,
+#services::before,
+#results::before,
+#contact::before,
+.access-section::before,
+.cta-section::before {
+  opacity: 0.22;
+}
+
+.reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+@media (max-width: 719px) {
+  .floating-card {
+    position: static;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .hero-showcase {
+    display: grid;
+    gap: 8px;
+  }
+
+  .hero-section::before,
+  #services::before,
+  #results::before,
+  #contact::before,
+  .access-section::before,
+  .cta-section::before {
+    opacity: 0.14;
+  }
+}

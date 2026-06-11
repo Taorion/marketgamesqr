@@ -15,21 +15,21 @@ const unlimited = null;
 const PLAN_PRICING_NOTES = {
   STARTER: {
     comparable_prepaid_package: "QR500",
-    prepaid_reference_cop: 119000,
+    prepaid_reference_cop: 59900,
     portal_access_fee_cop: 89000,
-    pricing_note: "Precio de entrada competitivo: cuesta menos que comprar QR500 prepago y suma dashboard, campanas, leads y reportes basicos.",
+    pricing_note: "El QR500 prepago es mas barato para validar codigos. Starter cuesta mas porque suma dashboard, campanas, leads, reportes y gestion de ROI.",
   },
   GROWTH: {
     comparable_prepaid_package: "QR2000",
-    prepaid_reference_cop: 349000,
+    prepaid_reference_cop: 139900,
     portal_access_fee_cop: 179000,
-    pricing_note: "Plan comercial principal: mas economico que comprar QR2000 prepago y con analitica, afiliados, sedes y exportaciones.",
+    pricing_note: "QR2000 prepago mantiene bajo costo para validacion. Growth agrega analitica, afiliados, sedes, automatizaciones y exportaciones.",
   },
   PRO: {
     comparable_prepaid_package: "QR5000",
-    prepaid_reference_cop: 749000,
+    prepaid_reference_cop: 249900,
     portal_access_fee_cop: 349000,
-    pricing_note: "Plan full para competir contra plataformas internacionales: incluye 6.000 QR, API, marca blanca, usuarios y sedes avanzadas.",
+    pricing_note: "QR5000 prepago es la opcion economica por volumen. Pro cobra el portal full: 6.000 QR, API, marca blanca, usuarios y sedes avanzadas.",
   },
 };
 

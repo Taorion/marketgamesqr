@@ -129,7 +129,7 @@ function syncMode() {
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Compra minima para activar";
     offerTitle.textContent = "Escoge tus creditos QR";
-    offerCopy.textContent = "El paquete mas basico cuesta $39.000 y ya te permite crear cuenta, pagar y empezar a validar beneficios.";
+    offerCopy.textContent = "El paquete mas basico cuesta $19.900 y ya te permite crear cuenta, pagar y empezar a validar beneficios.";
     formEyebrow.textContent = "Datos para activar prepago";
     formTitle.textContent = "Registro y pago minimo";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";

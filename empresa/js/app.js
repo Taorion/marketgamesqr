@@ -897,7 +897,7 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Los planes mensuales son mas convenientes que comprar volumen prepago porque incluyen QR recurrentes, portal, dashboard, permisos, exportaciones y medicion comercial.";
+    subscriptionPricingNote.textContent = "El QR prepago es mas barato para validar codigos. Los planes mensuales cuestan mas porque incluyen portal, dashboard, permisos, exportaciones, leads y medicion comercial.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const qrIncluded = formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);

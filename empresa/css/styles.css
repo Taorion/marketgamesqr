@@ -3158,3 +3158,175 @@ body::after {
   }
 }
 
+/* Portal comfort mode: stable cards, readable contrast, reduced motion. */
+:root {
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-soft: #eef4f8;
+  --surface-muted: #e8eef5;
+  --surface-border: #cbd7e3;
+  --text: #111827;
+  --text-muted: #425466;
+  --text-soft: #607084;
+  --primary: #073b4c;
+  --secondary: #087f8c;
+  --secondary-soft: #7cfbff;
+  --secondary-pale: #e1fbff;
+  --green-panel: #073b4c;
+  --shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+  --radius: 10px;
+}
+
+body {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(8, 127, 140, 0.08), transparent 25%),
+    linear-gradient(180deg, #f7fafc 0%, #eef3f7 100%);
+}
+
+body::after,
+.content-shell::before,
+.sidebar::after {
+  display: none;
+}
+
+.login-screen {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(8, 127, 140, 0.1), transparent 28%),
+    linear-gradient(180deg, #f7fafc 0%, #edf3f7 100%);
+}
+
+.topbar,
+.sidebar,
+.login-card,
+.subscription-banner,
+.surface-card,
+.kpi-card,
+.dark-hero-card,
+.dark-insight-card,
+.geo-branch-card,
+.modal-card,
+.busy-card,
+.chart-tooltip,
+.chart-card,
+.data-table-card {
+  animation: none !important;
+  background: var(--surface);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+  overflow: hidden;
+}
+
+.dark-hero-card,
+.dark-insight-card,
+.subscription-banner {
+  background:
+    linear-gradient(135deg, rgba(7, 59, 76, 0.96), rgba(9, 31, 52, 0.96));
+  color: #f8fbff;
+  border-color: rgba(124, 251, 255, 0.18);
+}
+
+.login-card::after,
+.subscription-banner::after,
+.surface-card::after,
+.kpi-card::after,
+.dark-hero-card::after,
+.dark-insight-card::after,
+.geo-branch-card::after,
+.modal-card::after,
+.chart-card::before,
+.data-table-card::before,
+.subscription-banner::before,
+.solid-button::after,
+.ghost-button::after,
+.request-button::after,
+.icon-button::after,
+.nav-item::after,
+.link-button::after {
+  animation: none !important;
+  display: none;
+}
+
+.chart-card canvas,
+.kpi-card strong,
+.dark-hero-card strong,
+.dark-insight-card h3,
+.subscription-banner h3,
+.view-head h2 {
+  animation: none !important;
+  text-shadow: none;
+}
+
+.solid-button,
+.ghost-button,
+.request-button,
+.icon-button,
+.nav-item,
+.link-button {
+  box-shadow: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.solid-button:hover,
+.ghost-button:hover,
+.request-button:hover,
+.icon-button:hover,
+.nav-item:hover,
+.link-button:hover {
+  transform: translateY(-1px);
+}
+
+.topbar *,
+.sidebar *,
+.surface-card *,
+.kpi-card *,
+.modal-card *,
+.chart-card *,
+.data-table-card * {
+  text-shadow: none !important;
+}
+
+.surface-card p,
+.kpi-card p,
+.view-head p,
+.placeholder-card p,
+.map-card p,
+.profile-detail span,
+.setting-card p,
+.table-muted,
+.muted,
+td {
+  color: var(--text-muted);
+}
+
+.dark-hero-card p,
+.dark-insight-card p,
+.subscription-banner p {
+  color: #dbeafe;
+}
+
+input,
+select,
+textarea {
+  background: #fbfdff;
+  color: var(--text);
+  border-color: var(--surface-border);
+}
+
+@media (max-width: 760px) {
+  .topbar,
+  .login-card,
+  .subscription-banner,
+  .surface-card,
+  .kpi-card,
+  .dark-hero-card,
+  .dark-insight-card,
+  .geo-branch-card,
+  .modal-card,
+  .busy-card,
+  .chart-card,
+  .data-table-card {
+    box-shadow: 0 8px 18px rgba(17, 24, 39, 0.07);
+  }
+}
+
