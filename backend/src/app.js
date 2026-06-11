@@ -24,11 +24,35 @@ const app = express();
 const projectRoot = path.join(__dirname, "../..");
 const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
 
+function addOriginVariant(origins, value) {
+  if (!value) return;
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    return;
+  }
+  origins.add(url.origin);
+  const host = url.hostname;
+  const variantHost = host.startsWith("www.") ? host.slice(4) : `www.${host}`;
+  url.hostname = variantHost;
+  origins.add(url.origin);
+}
+
+function allowedCorsOrigins() {
+  const origins = new Set(env.corsOrigins);
+  addOriginVariant(origins, env.publicAppUrl);
+  addOriginVariant(origins, env.publicValidatorUrl);
+  addOriginVariant(origins, "https://marketgamesqr.com");
+  addOriginVariant(origins, "https://market-games-portal.onrender.com");
+  return origins;
+}
+
 function corsOrigin(origin, callback) {
   if (!origin) {
     return callback(null, true);
   }
-  if (env.corsOrigins.includes(origin)) {
+  if (allowedCorsOrigins().has(origin)) {
     return callback(null, true);
   }
   const error = new Error("CORS origin not allowed.");

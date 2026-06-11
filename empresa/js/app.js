@@ -779,6 +779,16 @@ function hasPlanFeature(feature) {
   return Boolean(planFeatures()[feature]);
 }
 
+function currentPlan() {
+  return state.subscription?.plan || session?.user?.subscription?.plan || {};
+}
+
+function isPrepaidValidatorOnly() {
+  const plan = currentPlan();
+  const features = plan.features || {};
+  return plan.category === "prepaid" && features.qr_validator && !features.portal_access;
+}
+
 function formatLimitValue(value) {
   return value === null || value === undefined ? "Ilimitado" : Number(value).toLocaleString("es-CO");
 }
@@ -937,6 +947,7 @@ function applyPlanNavigation() {
       button.removeAttribute("title");
     }
   });
+  requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
 }
 
 function setView(view) {
@@ -1088,6 +1099,12 @@ function initPasswordResetFromUrl() {
 }
 
 async function loadWorkspace() {
+  state.subscription = session.user?.subscription || state.subscription;
+  if (isPrepaidValidatorOnly()) {
+    await loadPrepaidValidatorWorkspace();
+    return;
+  }
+
   showFeedback("Actualizando dashboard, creditos QR, campanas e historial.", "loading", { title: "Sincronizando portal", timeout: 0 });
   showBusyOverlay("Sincronizando portal", "Cargando metricas, cartera QR y ultimos movimientos.");
   refreshButton.disabled = true;
@@ -1191,6 +1208,55 @@ async function loadWorkspace() {
     showFeedback("Datos actualizados. Ya puedes revisar saldos, QR y ventas.", "success", { title: "Portal actualizado" });
   } catch (error) {
     showFeedback(error.message, "error");
+  } finally {
+    refreshButton.disabled = false;
+    hideBusyOverlay();
+  }
+}
+
+async function loadPrepaidValidatorWorkspace() {
+  showFeedback("Cargando validador QR prepago.", "loading", { title: "Acceso prepago", timeout: 0 });
+  showBusyOverlay("Validador QR", "Preparando saldo prepago, paquetes e historial operativo.");
+  refreshButton.disabled = true;
+
+  state.dashboard = null;
+  state.summary = null;
+  state.campaigns = [];
+  state.campaignGroups = null;
+  state.affiliates = [];
+  state.strategicQrMetrics = null;
+  state.strategicQrBatches = [];
+  state.strategicQrHistory = [];
+  state.adminCampaigns = [];
+  state.businessProfile = {
+    id: session.user.business_id,
+    name: state.subscription?.business_name || session.user.business_id,
+    current_user: session.user,
+  };
+
+  try {
+    const [creditData, packageData, subscriptionPlansData, creditOrdersData] = await Promise.all([
+      apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
+      apiSafe("/api/public/packages", {}, { packages: [] }),
+      apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
+      apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
+    ]);
+
+    state.qrCreditAccount = creditData.credit_account || null;
+    state.qrPackageOffers = packageData.packages || [];
+    state.subscriptionPlans = subscriptionPlansData.plans || [];
+    state.prepaidReference = subscriptionPlansData.prepaid_reference || packageData.packages || [];
+    state.qrCreditOrders = creditOrdersData.orders || [];
+
+    renderSubscriptionBanner();
+    applyPlanNavigation();
+    renderAccountView();
+    renderStrategicQrView();
+    renderValidatorHistory([]);
+    setView("validator");
+    showFeedback("Plan prepago activo. Este acceso queda limitado al validador QR y compra de creditos.", "success", { title: "Validador listo" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
   } finally {
     refreshButton.disabled = false;
     hideBusyOverlay();
