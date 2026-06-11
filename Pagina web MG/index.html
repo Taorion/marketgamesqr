@@ -107,7 +107,7 @@
 
           <div class="hero-visual reveal">
             <article class="hero-showcase glass-card">
-              <img class="showcase-image" src="img/mainimg/dashboard.png" alt="Dashboard visual de Market Games">
+              <img class="showcase-image" src="img/mainimg/dashboard.png" alt="Dashboard visual de Market Games" fetchpriority="high" decoding="async">
               <div class="floating-card card-a">
                 <span>Embudo interactivo</span>
                 <strong>+340 leads</strong>
@@ -174,7 +174,10 @@
               <strong>MG Coffee Shop</strong>
               <span>Landing visual para negocio gastronomico.</span>
             </div>
-            <iframe class="web-sample-frame" src="https://mgcoffeeshop.netlify.app" title="Muestra web MG Coffee Shop" loading="lazy"></iframe>
+            <div class="web-sample-preview" aria-hidden="true">
+              <span>Food landing</span>
+              <strong>Menu, reserva y conversion</strong>
+            </div>
             <a class="web-sample-link" href="https://mgcoffeeshop.netlify.app" target="_blank" rel="noopener noreferrer">
               Ver demo completa
             </a>
@@ -185,7 +188,10 @@
               <strong>MG Auto Parts</strong>
               <span>Sitio de muestra para sector automotriz.</span>
             </div>
-            <iframe class="web-sample-frame" src="https://mgautoparts.netlify.app" title="Muestra web MG Auto Parts" loading="lazy"></iframe>
+            <div class="web-sample-preview" aria-hidden="true">
+              <span>Auto parts</span>
+              <strong>Catalogo y contacto rapido</strong>
+            </div>
             <a class="web-sample-link" href="https://mgautoparts.netlify.app" target="_blank" rel="noopener noreferrer">
               Ver demo completa
             </a>
@@ -196,7 +202,10 @@
               <strong>Luxy and Pets</strong>
               <span>Ecommerce visual y orientado a experiencia.</span>
             </div>
-            <iframe class="web-sample-frame" src="https://luxyandpets.com/" title="Muestra web Luxy and Pets" loading="lazy"></iframe>
+            <div class="web-sample-preview" aria-hidden="true">
+              <span>Ecommerce</span>
+              <strong>Producto, marca y compra</strong>
+            </div>
             <a class="web-sample-link" href="https://luxyandpets.com/" target="_blank" rel="noopener noreferrer">
               Ver demo completa
             </a>
@@ -207,7 +216,10 @@
               <strong>Atelier de Coleccion</strong>
               <span>Web elegante con identidad de marca mas editorial.</span>
             </div>
-            <iframe class="web-sample-frame" src="https://atelierdecoleccion.com/DeColeccion/index.html" title="Muestra web Atelier de Coleccion" loading="lazy"></iframe>
+            <div class="web-sample-preview" aria-hidden="true">
+              <span>Editorial shop</span>
+              <strong>Historia, coleccion y venta</strong>
+            </div>
             <a class="web-sample-link" href="https://atelierdecoleccion.com/DeColeccion/index.html" target="_blank" rel="noopener noreferrer">
               Ver demo completa
             </a>
@@ -290,18 +302,13 @@
                 Juega el demo y activa la pantalla que aparece dentro del juego para vivir la experiencia completa.
               </p>
             </div>
-            <button class="iframe-fullscreen-btn" type="button" data-fullscreen-target="interactive-demo">
-              Pantalla completa
-            </button>
           </div>
 
-          <div id="interactive-demo" class="interactive-frame-wrap">
-            <iframe
-              class="interactive-frame"
-              src="VideosMG/index.html"
-              title="Demo interactiva de Market Games"
-              loading="lazy"
-            ></iframe>
+          <div id="interactive-demo" class="interactive-frame-wrap interactive-demo-link">
+            <a class="button-primary" href="VideosMG/index.html" target="_blank" rel="noopener noreferrer">
+              Abrir demo interactiva
+            </a>
+            <p>La demo se abre aparte para que la pagina principal cargue mas rapido.</p>
           </div>
         </article>
 
@@ -312,7 +319,7 @@
               Un sistema donde cada pieza cumple una funcion: atraer, activar,
               captar datos, segmentar y acercar al usuario a la venta.
             </p>
-            <img class="section-inline-image" src="img/mainimg/board2.png" alt="Sistema visual y estrategico de Market Games">
+            <img class="section-inline-image" src="img/mainimg/board2.png" alt="Sistema visual y estrategico de Market Games" loading="lazy" decoding="async">
           </article>
 
           <div class="solution-steps">
@@ -535,7 +542,7 @@
               en la que cada pieza esta conectada con un resultado.
             </p>
           </div>
-          <img class="results-image" src="img/mainimg/dashboard.png" alt="Panel de resultados y visualizacion de datos de Market Games">
+          <img class="results-image" src="img/mainimg/dashboard.png" alt="Panel de resultados y visualizacion de datos de Market Games" loading="lazy" decoding="async">
         </article>
       </section>
 
@@ -565,28 +572,28 @@
             <div class="slider-window">
               <div id="portfolio-track" class="slider-track">
                 <article class="portfolio-card">
-                  <img src="img/mainimg/post.jpg" alt="Ejemplo visual de contenido promocional">
+                  <img src="img/mainimg/post.jpg" alt="Ejemplo visual de contenido promocional" loading="lazy" decoding="async">
                   <div class="portfolio-card-copy">
                     <strong>Contenido promocional</strong>
                     <span>Piezas visuales para captar atencion con mas fuerza comercial.</span>
                   </div>
                 </article>
                 <article class="portfolio-card">
-                  <img src="img/mainimg/gameteacher.jpg" alt="Ejemplo de experiencia gamificada">
+                  <img src="img/mainimg/gameteacher.jpg" alt="Ejemplo de experiencia gamificada" loading="lazy" decoding="async">
                   <div class="portfolio-card-copy">
                     <strong>Experiencias interactivas</strong>
                     <span>Dinamicas que convierten curiosidad en participacion real.</span>
                   </div>
                 </article>
                 <article class="portfolio-card">
-                  <img src="img/GamificacionInteractiva.png" alt="Visual de gamificacion para marca">
+                  <img src="img/GamificacionInteractiva.png" alt="Visual de gamificacion para marca" loading="lazy" decoding="async">
                   <div class="portfolio-card-copy">
                     <strong>Gamificacion de marca</strong>
                     <span>Activaciones que mezclan entretenimiento, datos y conversion.</span>
                   </div>
                 </article>
                 <article class="portfolio-card">
-                  <img src="img/diseño visual.png" alt="Ejemplo de diseno visual para campanas">
+                  <img src="img/diseño visual.png" alt="Ejemplo de diseno visual para campanas" loading="lazy" decoding="async">
                   <div class="portfolio-card-copy">
                     <strong>Diseno visual</strong>
                     <span>Presentaciones mas fuertes para productos, servicios y ofertas.</span>
@@ -777,6 +784,6 @@
     <p class="access-feedback-toast" id="accessFeedbackToast" role="status" aria-live="polite"></p>
   </div>
 
-  <script src="js/main.js"></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>

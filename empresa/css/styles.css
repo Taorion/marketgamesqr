@@ -87,6 +87,17 @@ textarea {
   background: rgba(111, 251, 190, 0.18);
 }
 
+.brand-logo {
+  object-fit: contain;
+  padding: 3px;
+}
+
+.nav-link-button {
+  min-height: 38px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .login-brand h1,
 .sidebar-brand h1 {
   margin: 0;

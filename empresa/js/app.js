@@ -359,6 +359,8 @@ let state = {
   qrCreditOrders: [],
   strategicQrBatches: [],
   strategicQrHistory: [],
+  affiliatesLoaded: false,
+  strategicQrLoaded: false,
   strategicQrRecentBatchId: null,
   qrBatchProgressTimer: null,
   feedbackTimer: 0,
@@ -584,6 +586,41 @@ async function apiSafe(path, options = {}, fallback = null) {
   } catch (error) {
     return fallback;
   }
+}
+
+async function loadAffiliatesData() {
+  if (!session?.user?.business_id || !hasPlanFeature("affiliates")) {
+    state.affiliatesLoaded = true;
+    state.affiliates = [];
+    return;
+  }
+  showFeedback("Cargando afiliados.", "loading", { title: "Sincronizando", timeout: 0 });
+  const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
+  state.affiliates = data.affiliates || [];
+  state.affiliatesLoaded = true;
+  hideFeedback();
+}
+
+async function loadStrategicQrData() {
+  if (!session?.user?.business_id) {
+    state.strategicQrLoaded = true;
+    return;
+  }
+  showFeedback("Cargando paquetes, saldos e historial QR.", "loading", { title: "Sincronizando QR", timeout: 0 });
+  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory] = await Promise.all([
+    apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] }),
+    apiSafe("/api/public/packages", {}, { packages: [] }),
+    apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
+    apiSafe("/api/business/qr/batches", { headers: authHeaders() }, { batches: [] }),
+    apiSafe("/api/business/qr/history", { headers: authHeaders() }, { history: [] }),
+  ]);
+  state.strategicQrMetrics = strategicMetrics || null;
+  state.qrPackageOffers = packageData.packages || [];
+  state.qrCreditOrders = creditOrdersData.orders || [];
+  state.strategicQrBatches = strategicBatches.batches || [];
+  state.strategicQrHistory = strategicHistory.history || [];
+  state.strategicQrLoaded = true;
+  hideFeedback();
 }
 
 function authHeaders() {
@@ -990,10 +1027,22 @@ function setView(view) {
   if (view === "account") renderAccountView();
   if (view === "campaigns" && state.selectedCampaign) renderCampaignView();
   if (view === "leads") renderLeadsView();
-  if (view === "affiliates") renderAffiliatesView();
+  if (view === "affiliates") {
+    if (!state.affiliatesLoaded) {
+      loadAffiliatesData().then(renderAffiliatesView);
+    } else {
+      renderAffiliatesView();
+    }
+  }
   if (view === "redemptions") renderRedemptionsView();
   if (view === "sales") renderSalesView();
-  if (view === "strategic-qr") renderStrategicQrView();
+  if (view === "strategic-qr") {
+    if (!state.strategicQrLoaded) {
+      loadStrategicQrData().then(renderStrategicQrView);
+    } else {
+      renderStrategicQrView();
+    }
+  }
   if (view === "validator") renderValidatorView();
   if (view === "branches") renderBranchesView();
   if (view === "admin") renderAdminView();
@@ -1182,14 +1231,8 @@ async function loadWorkspace() {
     api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
     api("/api/business/campaigns", { headers: authHeaders() }),
     apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null }),
-    apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
-    apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
-    apiSafe("/api/public/packages", {}, { packages: [] }),
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
-    apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
-    apiSafe("/api/business/qr/batches", { headers: authHeaders() }, { batches: [] }),
-    apiSafe("/api/business/qr/history", { headers: authHeaders() }, { history: [] }),
   ];
 
   if (isAdmin()) {
@@ -1197,22 +1240,24 @@ async function loadWorkspace() {
   }
 
   try {
-    const [dashboardData, campaignData, businessProfileData, affiliatesData, strategicMetrics, creditData, packageData, subscriptionPlansData, creditOrdersData, strategicBatches, strategicHistory, adminCampaignData] = await Promise.all(requests);
+    const [dashboardData, campaignData, businessProfileData, creditData, subscriptionPlansData, adminCampaignData] = await Promise.all(requests);
     state.dashboard = dashboardData;
     state.summary = campaignData.summary || null;
     state.businessProfile = businessProfileData.business || null;
     state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
     state.campaignGroups = campaignData.groups || null;
     state.campaigns = campaignData.campaigns || [];
-    state.affiliates = affiliatesData.affiliates || [];
-    state.strategicQrMetrics = strategicMetrics || null;
     state.qrCreditAccount = creditData.credit_account || businessProfileData.credit_account || null;
-    state.qrPackageOffers = packageData.packages || [];
     state.subscriptionPlans = subscriptionPlansData.plans || [];
-    state.prepaidReference = subscriptionPlansData.prepaid_reference || packageData.packages || [];
-    state.qrCreditOrders = creditOrdersData.orders || [];
-    state.strategicQrBatches = strategicBatches.batches || [];
-    state.strategicQrHistory = strategicHistory.history || [];
+    state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
+    state.affiliates = [];
+    state.strategicQrMetrics = null;
+    state.qrPackageOffers = [];
+    state.qrCreditOrders = [];
+    state.strategicQrBatches = [];
+    state.strategicQrHistory = [];
+    state.affiliatesLoaded = false;
+    state.strategicQrLoaded = false;
     state.adminCampaigns = adminCampaignData?.campaigns || [];
     renderSubscriptionBanner();
     applyPlanNavigation();
@@ -1220,10 +1265,8 @@ async function loadWorkspace() {
     renderAccountView();
     renderDashboard();
     renderBusinessLogoPanel();
-    renderStrategicQrView();
     renderCampaignStateGrid();
     renderCampaignList();
-    renderAffiliatesView();
     renderAdminView();
 
     const selectedCampaignId = state.campaigns.some((item) => item.id === state.selectedCampaignId)
@@ -5106,12 +5149,12 @@ searchInput.addEventListener("input", (event) => {
   renderLeadsView();
   renderRedemptionsView();
   renderSalesView();
-  renderStrategicQrView();
+  if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
   if (state.currentView === "validator") {
     loadValidatorHistory();
   }
   renderBranchesView();
-  renderAdminView();
+  if (isAdmin()) renderAdminView();
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
 navButtons.forEach((button) => {
@@ -5192,7 +5235,7 @@ snapshotModal.addEventListener("click", (event) => {
 window.addEventListener("resize", () => {
   if (state.dashboard) renderDashboard();
   if (state.selectedCampaign) renderCampaignView();
-  renderStrategicQrView();
+  if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
 });
 window.addEventListener("beforeunload", stopValidatorScanner);
 affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);

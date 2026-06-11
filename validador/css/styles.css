@@ -185,6 +185,32 @@ body.is-busy {
   letter-spacing: 0;
 }
 
+.brand-logo {
+  object-fit: contain;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.validator-access-nav,
+.validator-top-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.validator-access-nav a,
+.validator-top-nav a {
+  min-height: 38px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--surface-2);
+}
+
 .eyebrow,
 .label {
   margin: 0 0 4px;

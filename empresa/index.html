@@ -15,7 +15,7 @@
     <section class="login-screen" id="loginPanel">
       <div class="login-card">
         <div class="login-brand">
-          <span class="brand-icon material-symbols-outlined">monitoring</span>
+          <img class="brand-icon brand-logo" src="/img/logo.png" alt="Market Games">
           <div>
             <h1>Market Games</h1>
             <p>Business Intelligence</p>
@@ -62,7 +62,7 @@
     <section class="app-shell hidden" id="workspace">
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <span class="brand-icon material-symbols-outlined">monitoring</span>
+          <img class="brand-icon brand-logo" src="/img/logo.png" alt="Market Games">
           <div>
             <h1>Market Games</h1>
             <p>Business Intelligence</p>
@@ -129,6 +129,9 @@
             <input id="searchInput" type="text" placeholder="Search analytics...">
           </div>
           <div class="topbar-actions">
+            <a class="ghost-button nav-link-button" href="/">Home</a>
+            <a class="ghost-button nav-link-button" href="/paquetes/">Planes</a>
+            <a class="ghost-button nav-link-button" href="/qr-validador/">QR Validador</a>
             <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
               <span class="material-symbols-outlined">refresh</span>
             </button>
@@ -1750,8 +1753,8 @@
       </form>
     </div>
   </div>
-  <script src="/vendor/jsqr/jsQR.js"></script>
-  <script src="js/app.js"></script>
+  <script src="/vendor/jsqr/jsQR.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 </html>
 
