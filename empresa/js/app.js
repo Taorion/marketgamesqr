@@ -3136,11 +3136,25 @@ const NEON_CHART = {
   magenta: "#ff2df7",
   yellow: "#f8e85a",
   green: "#00f5aa",
-  axis: "rgba(124, 251, 255, 0.34)",
-  label: "#9eb4c8",
+  axis: "rgba(124, 251, 255, 0.2)",
+  grid: "rgba(124, 251, 255, 0.08)",
+  label: "#a8c6d9",
   text: "#e9fbff",
-  track: "rgba(124, 251, 255, 0.09)",
+  track: "rgba(124, 251, 255, 0.1)",
+  panel: "#050f1f",
+  panelAlt: "#07172b",
 };
+
+function paintChartSurface(ctx, width, height) {
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, NEON_CHART.panelAlt);
+  gradient.addColorStop(1, NEON_CHART.panel);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = "rgba(124, 251, 255, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+}
 
 function drawAxes(ctx, left, top, width, height) {
   ctx.strokeStyle = NEON_CHART.axis;
@@ -3151,7 +3165,8 @@ function drawAxes(ctx, left, top, width, height) {
   ctx.lineTo(left + width, top + height);
   ctx.stroke();
   ctx.save();
-  ctx.globalAlpha = 0.52;
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = NEON_CHART.grid;
   ctx.setLineDash([4, 10]);
   for (let index = 1; index <= 4; index += 1) {
     const y = top + (height / 5) * index;
@@ -3239,6 +3254,7 @@ function attachChartHover(canvas, items, formatter) {
 function drawDualLineChart(canvas, leftRows, rightRows, valueKey, labels, colors) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const margin = { top: 20, right: 16, bottom: 36, left: 40 };
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
@@ -3297,6 +3313,7 @@ function drawDualLineChart(canvas, leftRows, rightRows, valueKey, labels, colors
 function drawTripleLineChart(canvas, firstRows, secondRows, thirdRows, valueKey, labels, colors, labelFormatter = (row) => row.date) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const margin = { top: 20, right: 16, bottom: 36, left: 40 };
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
@@ -3358,6 +3375,7 @@ function drawTripleLineChart(canvas, firstRows, secondRows, thirdRows, valueKey,
 function drawSimpleLineChart(canvas, rows, color, legend) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const margin = { top: 20, right: 16, bottom: 40, left: 40 };
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
@@ -3412,6 +3430,7 @@ function drawSimpleLineChart(canvas, rows, color, legend) {
 function drawHorizontalBars(canvas, rows, color) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const margin = { top: 18, right: 18, bottom: 18, left: 156 };
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
@@ -3453,6 +3472,7 @@ function drawHorizontalBars(canvas, rows, color) {
 function drawDonutChart(canvas, rows, colors) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const visibleRows = rows.filter((row) => row.value > 0);
   const hoverItems = [];
 
@@ -3514,6 +3534,7 @@ function drawDonutChart(canvas, rows, colors) {
 function drawGroupedBars(canvas, rows, series) {
   const { ctx, width, height } = setupCanvas(canvas);
   ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
   const margin = { top: 18, right: 18, bottom: 44, left: 40 };
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
