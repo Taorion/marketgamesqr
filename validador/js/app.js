@@ -1,5 +1,6 @@
 const API_BASE = window.location.origin;
 const SESSION_KEY = "universal_qr_validator_session_v1";
+const PORTAL_SESSION_KEY = "qr_business_portal_session_v1";
 
 const feedbackToast = document.getElementById("feedbackToast");
 const feedbackIcon = document.getElementById("feedbackIcon");
@@ -124,9 +125,23 @@ function saveSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+function savePortalSession(session) {
+  localStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify(session));
+}
+
 function clearSession() {
   state.session = null;
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(PORTAL_SESSION_KEY);
+}
+
+function loginRedirectForSession(session) {
+  const plan = session?.user?.subscription?.plan || {};
+  const features = plan.features || {};
+  if (features.portal_access && plan.category === "subscription") {
+    return "/empresa/";
+  }
+  return "";
 }
 
 function authHeaders() {
@@ -364,6 +379,14 @@ async function login(event) {
       }),
     });
     saveSession(data);
+    const redirectTo = loginRedirectForSession(data);
+    if (redirectTo) {
+      savePortalSession(data);
+      loginStatus.textContent = "Plan mensual detectado. Abriendo portal dashboard...";
+      showToast("ok", "Abriendo portal", "Tu plan incluye dashboard; te llevamos al portal empresarial.", 0);
+      window.location.assign(redirectTo);
+      return;
+    }
     loginStatus.textContent = "";
     showToast("ok", "Sesion activa", "Listo para escanear o pegar un QR.");
     renderSession();
@@ -381,6 +404,13 @@ function renderSession() {
   workspace.classList.toggle("hidden", !hasSession);
 
   if (!hasSession) {
+    return;
+  }
+
+  const redirectTo = loginRedirectForSession(state.session);
+  if (redirectTo) {
+    savePortalSession(state.session);
+    window.location.assign(redirectTo);
     return;
   }
 

@@ -690,6 +690,17 @@ main {
   margin-top: auto;
 }
 
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.access-actions .access-button {
+  margin-top: 0;
+}
+
 .web-portfolio-grid {
   position: relative;
   z-index: 1;

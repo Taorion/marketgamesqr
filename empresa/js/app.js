@@ -1,6 +1,6 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
-
 const loginPanel = document.getElementById("loginPanel");
+const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -393,9 +393,14 @@ function saveSession(value) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(value));
 }
 
+function saveValidatorSession(value) {
+  localStorage.setItem(VALIDATOR_SESSION_KEY, JSON.stringify(value));
+}
+
 function clearSession() {
   session = null;
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(VALIDATOR_SESSION_KEY);
 }
 
 function isAdmin() {
@@ -789,6 +794,15 @@ function isPrepaidValidatorOnly() {
   return plan.category === "prepaid" && features.qr_validator && !features.portal_access;
 }
 
+function loginRedirectForSession(value) {
+  const plan = value?.user?.subscription?.plan || {};
+  const features = plan.features || {};
+  if (plan.category === "prepaid" && features.qr_validator && !features.portal_access) {
+    return "/qr-validador/";
+  }
+  return "";
+}
+
 function formatLimitValue(value) {
   return value === null || value === undefined ? "Ilimitado" : Number(value).toLocaleString("es-CO");
 }
@@ -1000,6 +1014,13 @@ function renderShell() {
   workspace.classList.toggle("hidden", !logged);
   if (!logged) return;
 
+  const redirectTo = loginRedirectForSession(session);
+  if (redirectTo) {
+    saveValidatorSession(session);
+    window.location.assign(redirectTo);
+    return;
+  }
+
   profileName.textContent = session.user.full_name || session.user.email || "Business User";
   profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
   requestCampaignButton.textContent = isAdmin()
@@ -1031,6 +1052,14 @@ async function login(event) {
       }),
     });
     saveSession(data);
+    const redirectTo = loginRedirectForSession(data);
+    if (redirectTo) {
+      saveValidatorSession(data);
+      setInlineMessage(loginError, "Acceso prepago detectado. Abriendo QR Validador...", "success");
+      showFeedback("Tu plan prepago usa el QR Validador simple. Te estamos llevando alli.", "success", { title: "Acceso prepago", timeout: 0 });
+      window.location.assign(redirectTo);
+      return;
+    }
     setInlineMessage(loginError, "Credenciales correctas. Cargando portal...", "success");
     showFeedback("Sesion validada. Cargando informacion del negocio.", "loading", { title: "Acceso concedido", timeout: 0 });
     renderShell();
@@ -1101,7 +1130,8 @@ function initPasswordResetFromUrl() {
 async function loadWorkspace() {
   state.subscription = session.user?.subscription || state.subscription;
   if (isPrepaidValidatorOnly()) {
-    await loadPrepaidValidatorWorkspace();
+    saveValidatorSession(session);
+    window.location.assign("/qr-validador/");
     return;
   }
 

@@ -261,8 +261,8 @@ function renderPaymentStatus() {
     paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmacion";
     paymentStatusActionCopy.textContent = mode === "portal"
       ? "Entra al portal con el email y password que registraste."
-      : "Entra al portal y abre el validador QR con el email y password que registraste.";
-    paymentStatusPrimaryLink.href = "/empresa/";
+      : "Entra al QR Validador simple con el email y password que registraste.";
+    paymentStatusPrimaryLink.href = mode === "portal" ? "/empresa/" : "/qr-validador/";
     paymentStatusPrimaryLink.textContent = mode === "portal" ? "Ingresar al portal" : "Ingresar al QR Validator";
     return;
   }
