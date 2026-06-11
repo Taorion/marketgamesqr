@@ -1,0 +1,25 @@
+.env
+node_modules/
+.agents/
+
+# Generated QR/payment artifacts
+qr-batch-*.zip
+qr-batch-*.pdf
+post-sale-*.png
+carnet-afiliado-*.png
+
+# Generated presentation/design artifacts
+/*.png
+*.zip
+/*.pdf
+/*.pptx
+/*.xlsx
+Presentacion/
+stitch_market_games_analytics_dashboard/
+UNIVERSAL QR/
+skills-lock.json
+
+# Local/runtime noise
+.DS_Store
+Thumbs.db
+npm-debug.log*

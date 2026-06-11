@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Validador Universal QR</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="feedback-toast hidden" id="feedbackToast" role="status" aria-live="polite">
+    <span class="feedback-icon" id="feedbackIcon">i</span>
+    <div>
+      <strong id="feedbackTitle">Estado</strong>
+      <p id="feedbackMessage">Operacion en curso.</p>
+    </div>
+  </div>
+
+  <div class="screen-feedback hidden" id="screenFeedback" aria-hidden="true">
+    <div class="screen-feedback-card">
+      <span class="screen-feedback-icon" id="screenFeedbackIcon">...</span>
+      <strong id="screenFeedbackTitle">Procesando</strong>
+      <p id="screenFeedbackMessage">Consultando informacion.</p>
+    </div>
+  </div>
+
+  <main class="app">
+    <section class="login-panel" id="loginPanel">
+      <div class="brand-block">
+        <span class="brand-mark">QR</span>
+        <div>
+          <p class="eyebrow">Validador universal</p>
+          <h1>Redenciones multiempresa</h1>
+        </div>
+      </div>
+
+      <form class="login-form" id="loginForm">
+        <label class="field">
+          <span>Email</span>
+          <input id="emailInput" type="email" autocomplete="email" required>
+        </label>
+        <label class="field">
+          <span>Contrasena</span>
+          <input id="passwordInput" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary-button" type="submit">Entrar</button>
+      </form>
+      <p class="status-line" id="loginStatus"></p>
+    </section>
+
+    <section class="workspace hidden" id="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sesion activa</p>
+          <h1 id="userTitle">Validador</h1>
+          <p class="muted" id="userScope">Negocio asignado</p>
+        </div>
+        <button class="icon-button" id="logoutButton" type="button" aria-label="Cerrar sesion" title="Cerrar sesion">Salir</button>
+      </header>
+
+      <section class="traffic-card" id="trafficCard">
+        <div>
+          <span class="label">Trafico disponible</span>
+          <strong id="trafficBalanceValue">-</strong>
+          <p id="trafficBalanceCopy">Cargando saldo operativo.</p>
+        </div>
+        <span class="traffic-status" id="trafficStatusValue">Saldo</span>
+      </section>
+
+      <section class="panel post-sale-generator hidden" id="postSaleGeneratorPanel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Postventa</span>
+            <strong>Generar QR desde una venta</strong>
+          </div>
+          <span class="result-chip neutral" id="postSaleCreditChip">Credito requerido</span>
+        </div>
+        <form class="post-sale-form" id="postSaleGeneratorForm">
+          <label class="field">
+            <span>Valor de venta</span>
+            <input id="postSaleAmountInput" type="number" min="0" step="1000" placeholder="Ej: 85000" required>
+          </label>
+          <label class="field">
+            <span>Producto o servicio</span>
+            <input id="postSaleProductInput" type="text" placeholder="Compra asociada">
+          </label>
+          <label class="field">
+            <span>Cliente</span>
+            <input id="postSaleCustomerInput" type="text" placeholder="Nombre del cliente">
+          </label>
+          <label class="field">
+            <span>Cedula</span>
+            <input id="postSaleDocumentInput" type="text" placeholder="Opcional">
+          </label>
+          <label class="field">
+            <span>Telefono</span>
+            <input id="postSalePhoneInput" type="text" placeholder="Celular">
+          </label>
+          <label class="field">
+            <span>Correo</span>
+            <input id="postSaleEmailInput" type="email" placeholder="correo@cliente.com">
+          </label>
+          <label class="field">
+            <span>Beneficio</span>
+            <input id="postSaleBenefitLabelInput" type="text" value="Beneficio postventa" required>
+          </label>
+          <label class="field">
+            <span>Tipo de beneficio</span>
+            <select id="postSaleBenefitTypeInput">
+              <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
+              <option value="FIXED_AMOUNT_DISCOUNT">Descuento fijo</option>
+              <option value="FREE_GIFT">Regalo</option>
+              <option value="FREE_SAMPLE">Muestra gratis</option>
+              <option value="UPGRADE">Upgrade</option>
+              <option value="VIP_ACCESS">Acceso VIP</option>
+              <option value="RAFFLE_ENTRY">Entrada a sorteo</option>
+              <option value="BUY_X_GET_Y">Compra X lleva Y</option>
+              <option value="CUSTOM">Personalizado</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Vencimiento</span>
+            <select id="postSaleExpiresModeInput">
+              <option value="NONE">Sin vencimiento</option>
+              <option value="7_DAYS">7 dias</option>
+              <option value="15_DAYS">15 dias</option>
+              <option value="30_DAYS">30 dias</option>
+            </select>
+          </label>
+          <label class="field full">
+            <span>Observacion</span>
+            <input id="postSaleNotesInput" type="text" placeholder="Nota interna opcional">
+          </label>
+          <button class="primary-button full" id="postSaleGenerateButton" type="submit">Generar QR postventa</button>
+        </form>
+        <div class="post-sale-result hidden" id="postSaleQrResult"></div>
+        <p class="status-line" id="postSaleQrStatus"></p>
+      </section>
+
+      <section class="panel scanner-panel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Camara</span>
+            <strong id="cameraStatus">Lista</strong>
+          </div>
+          <div class="actions-inline">
+            <button class="primary-button compact" id="startScannerButton" type="button">Activar camara</button>
+            <button class="secondary-button compact" id="stopScannerButton" type="button">Detener</button>
+          </div>
+        </div>
+
+        <div class="scanner-shell">
+          <video id="scannerVideo" autoplay playsinline muted></video>
+          <div class="scanner-overlay">
+            <div class="scan-frame"></div>
+          </div>
+        </div>
+        <p class="muted" id="scannerHint">Apunta al QR. Si el navegador no permite lectura por camara, usa el campo manual.</p>
+      </section>
+
+      <section class="panel manual-panel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Ingreso manual</span>
+            <strong>Token o URL del QR</strong>
+          </div>
+        </div>
+        <div class="manual-grid">
+          <input id="qrTokenInput" type="text" placeholder="Pega aqui el token o la URL del QR">
+          <button class="primary-button" id="validateManualButton" type="button">Validar</button>
+        </div>
+      </section>
+
+      <section class="panel result-panel result-panel-neutral" id="resultPanel" tabindex="-1" aria-live="polite">
+        <div class="result-hero">
+          <span class="result-hero-icon" id="resultHeroIcon">?</span>
+          <div>
+            <p class="eyebrow">Estado del QR</p>
+            <h2 id="resultHeroTitle">Pendiente</h2>
+            <p id="resultHeroCopy">Escanea o pega un QR para ver el dictamen operativo.</p>
+          </div>
+        </div>
+
+        <div class="panel-head">
+          <div>
+            <span class="label">Resultado</span>
+            <strong id="resultTitle">Sin validacion</strong>
+          </div>
+          <span class="result-chip neutral" id="resultChip">Pendiente</span>
+        </div>
+
+        <p class="result-copy" id="resultMessage">Escanea o pega un QR para consultar la base de datos.</p>
+
+        <dl class="result-grid">
+          <div class="result-item">
+            <dt>Negocio</dt>
+            <dd id="businessValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Juego</dt>
+            <dd id="gameValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Tipo QR</dt>
+            <dd id="originTypeValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Campana</dt>
+            <dd id="campaignValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Beneficio</dt>
+            <dd id="rewardValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Jugador</dt>
+            <dd id="playerValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Cedula</dt>
+            <dd id="documentValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Contacto</dt>
+            <dd id="contactValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Vence</dt>
+            <dd id="expiresValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Venta original</dt>
+            <dd id="saleValue">-</dd>
+          </div>
+          <div class="result-item">
+            <dt>Paquete origen</dt>
+            <dd id="batchValue">-</dd>
+          </div>
+        </dl>
+
+        <button class="redeem-button" id="redeemButton" type="button" disabled>Redimir beneficio</button>
+      </section>
+
+      <section class="panel sale-panel hidden" id="salePanel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Venta atribuida</span>
+            <strong>Registrar resultado comercial</strong>
+          </div>
+        </div>
+        <form class="sale-form" id="saleForm">
+          <label class="field checkbox-field">
+            <input id="hadSaleInput" type="checkbox" checked>
+            <span>Hubo venta</span>
+          </label>
+          <label class="field">
+            <span>Valor pagado</span>
+            <input id="saleAmountInput" type="number" min="0" step="1000" placeholder="Ej: 45000" required>
+          </label>
+          <label class="field">
+            <span>Metodo de pago</span>
+            <input id="paymentMethodInput" type="text" placeholder="Efectivo, tarjeta, transferencia">
+          </label>
+          <label class="field">
+            <span>Producto o servicio</span>
+            <input id="productServiceInput" type="text" placeholder="Producto comprado">
+          </label>
+          <label class="field">
+            <span>Observacion</span>
+            <input id="saleNotesInput" type="text" placeholder="Nota opcional">
+          </label>
+          <button class="primary-button" id="saveSaleButton" type="submit">Guardar venta</button>
+        </form>
+        <p class="status-line" id="saleStatus"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Hoy</span>
+            <strong>Redenciones recientes</strong>
+          </div>
+          <button class="secondary-button compact" id="refreshHistoryButton" type="button">Actualizar</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <p class="empty-state">No hay redenciones cargadas.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/vendor/jsqr/jsQR.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

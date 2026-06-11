@@ -1,0 +1,1758 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Games | Business Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="portal-shell">
+    <section class="login-screen" id="loginPanel">
+      <div class="login-card">
+        <div class="login-brand">
+          <span class="brand-icon material-symbols-outlined">monitoring</span>
+          <div>
+            <h1>Market Games</h1>
+            <p>Business Intelligence</p>
+          </div>
+        </div>
+        <div class="login-copy">
+          <h2>Portal empresa</h2>
+          <p>Analitica de campanas, redenciones y ventas atribuidas.</p>
+        </div>
+        <form class="login-form" id="loginForm">
+          <label>
+            <span>Email</span>
+            <input id="emailInput" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            <span>Password</span>
+            <input id="passwordInput" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="solid-button" type="submit">Entrar</button>
+        </form>
+        <p class="error-line" id="loginError"></p>
+        <form class="login-form" id="passwordResetRequestForm">
+          <label>
+            <span>Recuperar acceso</span>
+            <input id="passwordResetEmailInput" type="email" autocomplete="email" placeholder="correo@empresa.com">
+          </label>
+          <button class="ghost-button" type="submit">Enviar recuperacion</button>
+        </form>
+        <form class="login-form hidden" id="passwordResetForm">
+          <label>
+            <span>Nuevo password</span>
+            <input id="passwordResetNewInput" type="password" minlength="8" autocomplete="new-password">
+          </label>
+          <label>
+            <span>Confirmar password</span>
+            <input id="passwordResetConfirmInput" type="password" minlength="8" autocomplete="new-password">
+          </label>
+          <button class="solid-button" type="submit">Actualizar password</button>
+        </form>
+        <p class="error-line" id="passwordResetMessage"></p>
+      </div>
+    </section>
+
+    <section class="app-shell hidden" id="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span class="brand-icon material-symbols-outlined">monitoring</span>
+          <div>
+            <h1>Market Games</h1>
+            <p>Business Intelligence</p>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="dashboard" type="button">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="account" type="button">
+            <span class="material-symbols-outlined">manage_accounts</span>
+            <span>Cuenta</span>
+          </button>
+          <button class="nav-item" data-view="campaigns" type="button">
+            <span class="material-symbols-outlined">campaign</span>
+            <span>Campaigns</span>
+          </button>
+          <button class="nav-item" data-view="leads" type="button">
+            <span class="material-symbols-outlined">group</span>
+            <span>Leads</span>
+          </button>
+          <button class="nav-item" data-view="affiliates" type="button">
+            <span class="material-symbols-outlined">card_membership</span>
+            <span>Afiliados</span>
+          </button>
+          <button class="nav-item" data-view="redemptions" type="button">
+            <span class="material-symbols-outlined">redeem</span>
+            <span>Redemptions</span>
+          </button>
+          <button class="nav-item" data-view="sales" type="button">
+            <span class="material-symbols-outlined">payments</span>
+            <span>Sales</span>
+          </button>
+          <button class="nav-item" data-view="strategic-qr" type="button">
+            <span class="material-symbols-outlined">qr_code_2</span>
+            <span>Generar QR</span>
+          </button>
+          <button class="nav-item" data-view="validator" type="button">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            <span>Validator</span>
+          </button>
+          <button class="nav-item" data-view="branches" type="button">
+            <span class="material-symbols-outlined">storefront</span>
+            <span>Branches</span>
+          </button>
+          <button class="nav-item" data-view="admin" type="button">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <span>Admin</span>
+          </button>
+        </nav>
+
+        <button class="request-button" id="requestCampaignButton" type="button">Request New Campaign</button>
+      </aside>
+
+      <div class="app-main">
+        <header class="topbar">
+          <button class="icon-button menu-toggle-button" id="menuToggleButton" type="button" title="Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="search-shell">
+            <span class="material-symbols-outlined">search</span>
+            <input id="searchInput" type="text" placeholder="Search analytics...">
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
+              <span class="material-symbols-outlined">refresh</span>
+            </button>
+            <button class="icon-button" id="notificationsButton" type="button" title="Alertas">
+              <span class="material-symbols-outlined">notifications</span>
+            </button>
+            <button class="icon-button" id="settingsButton" type="button" title="Configuracion">
+              <span class="material-symbols-outlined">settings</span>
+            </button>
+            <div class="profile-block">
+              <span class="profile-avatar" id="profileAvatar">MG</span>
+              <span id="profileName">Business User</span>
+            </div>
+            <button class="ghost-button" id="logoutButton" type="button">Salir</button>
+          </div>
+        </header>
+
+        <div class="content-shell">
+          <div class="action-feedback hidden" id="actionFeedback" role="status" aria-live="polite"></div>
+          <section class="subscription-banner" id="subscriptionBanner">
+            <div>
+              <span class="mono-label">Plan actual</span>
+              <h3 id="subscriptionPlanName">Sin plan cargado</h3>
+              <p id="subscriptionPlanSummary">Los permisos del portal se cargan al iniciar sesion.</p>
+            </div>
+            <div class="subscription-limits" id="subscriptionLimits"></div>
+          </section>
+          <div class="busy-overlay hidden" id="busyOverlay" aria-hidden="true">
+            <div class="busy-card">
+              <span class="busy-spinner" aria-hidden="true"></span>
+              <div>
+                <strong id="busyOverlayTitle">Procesando</strong>
+                <p id="busyOverlayMessage">Estamos sincronizando la informacion.</p>
+              </div>
+            </div>
+          </div>
+
+          <section class="view-section active" data-view="dashboard">
+            <div class="view-head">
+              <div>
+                <h2>Dashboard Analitico</h2>
+                <p>Resumen ejecutivo del embudo completo: captacion, redencion, adquisicion y ventas atribuidas.</p>
+              </div>
+            </div>
+
+            <section class="kpi-grid business-kpis" id="businessKpiGrid"></section>
+
+            <section class="explain-grid">
+              <article class="surface-card explain-card">
+                <span class="mono-label">Que esta pasando</span>
+                <h3 id="dashboardNarrativeTitle">Esperando datos del negocio.</h3>
+                <p id="dashboardNarrativeText">Cuando haya actividad, aqui veras el principal movimiento del periodo sin tener que interpretar todas las tablas.</p>
+              </article>
+              <article class="surface-card explain-card">
+                <span class="mono-label">Como leer el embudo</span>
+                <p id="dashboardFunnelHelp">Leads muestran interes. QR emitidos muestran activacion. Redenciones muestran visita real. Clientes adquiridos muestran conversion comercial.</p>
+              </article>
+              <article class="surface-card explain-card">
+                <span class="mono-label">Salud comercial</span>
+                <p id="dashboardHealthText">ROI, CPL y CAC se comparan contra ventas atribuidas para saber si la campana esta comprando clientes a un costo sano.</p>
+              </article>
+            </section>
+
+            <section class="charts-grid dashboard-charts">
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Embudo por dia</span>
+                    <h3 class="subhead">Leads capturados vs. redenciones efectivas</h3>
+                    <p class="chart-explainer">Compara el interes diario con las visitas que realmente llegaron a tienda y usaron el beneficio.</p>
+                  </div>
+                  <span class="pill muted">Ultimos 14 dias</span>
+                </div>
+                <canvas id="businessTrendChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Costo de captacion</span>
+                    <h3 class="subhead">CAC por campana activa o reciente</h3>
+                    <p class="chart-explainer">Mide cuanto cuesta convertir un cliente con compra atribuida. Debe leerse junto al ticket promedio y al ROI.</p>
+                  </div>
+                  <span class="chart-note" id="cacTrendNote">Costo por lead por campana</span>
+                </div>
+                <canvas id="cacTrendChart" width="900" height="320"></canvas>
+              </article>
+            </section>
+
+            <section class="charts-grid dashboard-charts dashboard-deep-grid">
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Pulso horario</span>
+                    <h3 class="subhead">QR, validaciones y redenciones por hora</h3>
+                    <p class="chart-explainer">Sirve para detectar en que franjas la pauta genera mas respuesta y en que horas la tienda convierte mejor.</p>
+                  </div>
+                </div>
+                <canvas id="hourlyOperationsChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Dias mas fuertes</span>
+                    <h3 class="subhead">QR y redenciones por dia de semana</h3>
+                    <p class="chart-explainer">Ayuda a decidir cuando subir pauta, lanzar historias o reforzar personal en punto de venta.</p>
+                  </div>
+                </div>
+                <canvas id="weekdayPerformanceChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Estado del inventario QR</span>
+                    <h3 class="subhead">Mix de QR activos, redimidos y vencidos</h3>
+                    <p class="chart-explainer">Muestra si la base sigue viva, si la gente usa el incentivo y cuanto beneficio ya se consumio.</p>
+                  </div>
+                </div>
+                <canvas id="qrStatusChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Campanas activas</span>
+                    <h3 class="subhead">Campanas con mayor volumen de QR</h3>
+                    <p class="chart-explainer">Volumen no siempre es calidad: comparalo con redenciones y CAC para decidir que escalar.</p>
+                  </div>
+                </div>
+                <canvas id="campaignPerformanceChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Beneficios</span>
+                    <h3 class="subhead">Premios con mayor traccion</h3>
+                    <p class="chart-explainer">Permite ver que incentivo mueve mas gente a tienda y cual solo genera curiosidad.</p>
+                  </div>
+                </div>
+                <canvas id="rewardMixChart" width="900" height="320"></canvas>
+              </article>
+
+              <article class="surface-card chart-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Metodos de pago</span>
+                    <h3 class="subhead">Revenue y transacciones por medio</h3>
+                    <p class="chart-explainer">Sirve para entender si la venta atribuida termina mas en efectivo, tarjeta o transferencia.</p>
+                  </div>
+                </div>
+                <canvas id="paymentMethodChart" width="900" height="320"></canvas>
+              </article>
+            </section>
+
+            <section class="insight-grid">
+              <article class="map-card surface-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Geografia operativa</span>
+                    <h3 class="subhead">Sucursales con mayor presion comercial</h3>
+                  </div>
+                </div>
+                <div class="geo-branch-board" id="geoBranchBoard"></div>
+              </article>
+
+              <article class="dark-insight-card">
+                <span class="mono-label">Insight ejecutivo</span>
+                <h3 id="dashboardInsightTitle">Esperando datos del negocio.</h3>
+                <button class="link-button" id="dashboardInsightButton" type="button">Ir a campanas</button>
+              </article>
+            </section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Sucursales y revenue atribuido</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Sucursal</th>
+                      <th>Direccion</th>
+                      <th>Redenciones</th>
+                      <th>Ventas</th>
+                      <th>Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody id="branchPerformanceTable"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <section class="tables-grid">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Ultimas redenciones</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Beneficio</th>
+                        <th>Fecha</th>
+                        <th>Validador</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentRedemptionsTable"></tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Ultimos leads</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Telefono</th>
+                        <th>Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentLeadsTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="account">
+            <div class="view-head">
+              <div>
+                <h2>Usuario y configuracion</h2>
+                <p>Datos de la empresa, usuario activo, plan contratado y creditos QR disponibles.</p>
+              </div>
+            </div>
+
+            <section class="account-summary-grid">
+              <article class="surface-card account-profile-card">
+                <span class="mono-label">Empresa en sesion</span>
+                <h3 id="accountBusinessName">Empresa</h3>
+                <div class="account-meta-grid">
+                  <div>
+                    <span>NIT</span>
+                    <strong id="accountBusinessNit">-</strong>
+                  </div>
+                  <div>
+                    <span>Slug</span>
+                    <strong id="accountBusinessSlug">-</strong>
+                  </div>
+                  <div>
+                    <span>Contacto</span>
+                    <strong id="accountBusinessContact">-</strong>
+                  </div>
+                  <div>
+                    <span>Telefono</span>
+                    <strong id="accountBusinessPhone">-</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="surface-card account-profile-card">
+                <span class="mono-label">Usuario activo</span>
+                <h3 id="accountUserName">Usuario</h3>
+                <div class="account-meta-grid">
+                  <div>
+                    <span>Email</span>
+                    <strong id="accountUserEmail">-</strong>
+                  </div>
+                  <div>
+                    <span>Rol</span>
+                    <strong id="accountUserRole">-</strong>
+                  </div>
+                  <div>
+                    <span>Empresa asignada</span>
+                    <strong id="accountUserBusiness">-</strong>
+                  </div>
+                  <div>
+                    <span>ID usuario</span>
+                    <strong id="accountUserId">-</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="surface-card account-profile-card">
+                <span class="mono-label">Cuenta y QR</span>
+                <h3 id="accountPlanName">Plan</h3>
+                <div class="account-meta-grid">
+                  <div>
+                    <span>Tipo de cuenta</span>
+                    <strong id="accountType">-</strong>
+                  </div>
+                  <div>
+                    <span>Estado</span>
+                    <strong id="accountPlanStatus">-</strong>
+                  </div>
+                  <div>
+                    <span>QR disponibles</span>
+                    <strong id="accountQrAvailable">0</strong>
+                  </div>
+                  <div>
+                    <span>QR usados</span>
+                    <strong id="accountQrUsed">0</strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <section class="account-settings-grid">
+              <article class="surface-card account-settings-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Datos basicos</span>
+                    <h3>Editar informacion de empresa</h3>
+                  </div>
+                  <span class="status-chip pending">NIT bloqueado</span>
+                </div>
+                <form class="modal-form account-profile-form" id="accountProfileForm">
+                  <label><span>Nombre empresa</span><input id="accountNameInput" type="text" maxlength="160" required></label>
+                  <label><span>NIT</span><input id="accountNitInput" type="text" disabled></label>
+                  <label><span>Contacto principal</span><input id="accountContactInput" type="text" maxlength="160"></label>
+                  <label><span>Email contacto</span><input id="accountEmailInput" type="email" maxlength="220"></label>
+                  <label><span>Telefono</span><input id="accountPhoneInput" type="text" maxlength="40"></label>
+                  <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
+                  <label><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
+                  <label><span>Direccion</span><input id="accountAddressInput" type="text" maxlength="220"></label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="accountProfileMessage"></p>
+                    <button class="solid-button" id="accountProfileSaveButton" type="submit">Guardar cambios</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card account-settings-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Configuracion visible</span>
+                    <h3>Logo del negocio</h3>
+                  </div>
+                </div>
+                <p class="table-secondary">El logo se usa en carnets, paquetes QR y piezas de marca del portal.</p>
+                <div class="business-logo-profile-slot">
+                  <div class="business-logo-preview compact" id="accountLogoPreview">
+                    <span class="material-symbols-outlined">storefront</span>
+                  </div>
+                  <div>
+                    <strong id="accountLogoTitle">Sin logo cargado</strong>
+                    <p class="table-secondary">Carga el logo desde Afiliados o usa los controles existentes de logo en esa seccion.</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="surface-card account-settings-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Seguridad</span>
+                    <h3>Cambiar password</h3>
+                  </div>
+                </div>
+                <form class="modal-form account-profile-form" id="accountPasswordForm">
+                  <label><span>Password actual</span><input id="accountCurrentPasswordInput" type="password" autocomplete="current-password" required></label>
+                  <label><span>Nuevo password</span><input id="accountNewPasswordInput" type="password" minlength="8" autocomplete="new-password" required></label>
+                  <label><span>Confirmar nuevo password</span><input id="accountNewPasswordConfirmInput" type="password" minlength="8" autocomplete="new-password" required></label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="accountPasswordMessage"></p>
+                    <button class="solid-button" id="accountPasswordSaveButton" type="submit">Cambiar password</button>
+                  </div>
+                </form>
+              </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="strategic-qr">
+            <div class="view-head">
+              <div>
+                <h2>Motor de QR estrategicos</h2>
+                <p>Crea QR postventa y paquetes de QR unicos para recompra, fidelizacion y beneficios controlados.</p>
+              </div>
+            </div>
+
+            <section class="kpi-grid" id="strategicQrKpiGrid"></section>
+
+            <article class="surface-card data-table-card qr-credit-shop-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Recarga automatica</span>
+                  <h3>Comprar mas QR</h3>
+                </div>
+                <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
+              </div>
+              <form class="qr-credit-shop-form" id="qrCreditCheckoutForm">
+                <label>
+                  <span>Paquete</span>
+                  <select id="qrCreditPackageSelect" required></select>
+                </label>
+                <div class="qr-credit-shop-actions">
+                  <button class="solid-button" id="qrCreditCheckoutButton" type="submit">Ir a pagar</button>
+                  <button class="ghost-button" id="qrCreditDemoButton" type="button">Simular pago aprobado</button>
+                </div>
+              </form>
+              <p class="error-line" id="qrCreditCheckoutMessage"></p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Paquete</th>
+                      <th>Valor</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="qrCreditOrdersTable"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="surface-card portal-pricing-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Planes del portal</span>
+                  <h3>Suscripcion mensual con QR incluidos</h3>
+                </div>
+                <span class="status-chip ok">Precios coherentes con prepago</span>
+              </div>
+              <p class="pricing-intro" id="subscriptionPricingNote">
+                Cada plan toma como piso el paquete prepago comparable y suma el valor del portal: dashboard, permisos, exportaciones, afiliados y operacion por equipo.
+              </p>
+              <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
+            </article>
+
+            <section class="charts-grid dashboard-charts">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">QR postventa</span>
+                  <h3>Generar QR unico</h3>
+                </div>
+                <form class="modal-form" id="postSaleQrForm">
+                  <label><span>Valor de venta</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" required></label>
+                  <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
+                  <label><span>Producto / servicio</span><input id="postSaleProductInput" type="text"></label>
+                  <label><span>Cliente</span><input id="postSaleCustomerInput" type="text"></label>
+                  <label><span>Cedula</span><input id="postSaleDocumentInput" type="text" placeholder="Opcional"></label>
+                  <label><span>Telefono</span><input id="postSalePhoneInput" type="text"></label>
+                  <label><span>Correo</span><input id="postSaleEmailInput" type="email"></label>
+                  <label><span>Beneficio</span><input id="postSaleBenefitLabelInput" type="text" placeholder="10% en la proxima compra" required></label>
+                  <label><span>Tipo de beneficio</span>
+                    <select id="postSaleBenefitTypeInput">
+                      <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
+                      <option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option>
+                      <option value="FREE_GIFT">Regalo</option>
+                      <option value="FREE_SAMPLE">Muestra gratis</option>
+                      <option value="UPGRADE">Upgrade</option>
+                      <option value="VIP_ACCESS">Acceso VIP</option>
+                      <option value="RAFFLE_ENTRY">Participacion en sorteo</option>
+                      <option value="BUY_X_GET_Y">Compra X lleva Y</option>
+                      <option value="CUSTOM">Personalizado</option>
+                    </select>
+                  </label>
+                  <label><span>Valor del beneficio</span><input id="postSaleBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
+                  <label><span>Expiracion</span>
+                    <select id="postSaleExpiresModeInput">
+                      <option value="NONE">Sin expiracion</option>
+                      <option value="7_DAYS">7 dias</option>
+                      <option value="15_DAYS">15 dias</option>
+                      <option value="30_DAYS">30 dias</option>
+                      <option value="CUSTOM_DATE">Fecha personalizada</option>
+                    </select>
+                  </label>
+                  <label><span>Fecha personalizada</span><input id="postSaleExpiresAtInput" type="datetime-local"></label>
+                  <label><span>Observaciones</span><textarea id="postSaleNotesInput" rows="3"></textarea></label>
+                  <button class="solid-button" type="submit">Generar QR</button>
+                  <p class="error-line" id="postSaleQrMessage"></p>
+                </form>
+                <div class="surface-card hidden" id="postSaleQrResult"></div>
+              </article>
+
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Paquetes de QR</span>
+                  <h3>Crear paquete descargable</h3>
+                </div>
+                <form class="modal-form" id="qrBatchForm">
+                  <label><span>Nombre del paquete</span><input id="qrBatchNameInput" type="text" required></label>
+                  <label><span>Cantidad de QR</span><input id="qrBatchQuantityInput" type="number" min="1" max="5000" value="50" required></label>
+                  <label><span>Uso del paquete</span>
+                    <select id="qrBatchChannelInput">
+                      <option value="etiqueta">Etiquetas de producto</option>
+                      <option value="empaque">Empaque</option>
+                      <option value="volante">Volante</option>
+                      <option value="evento">Evento</option>
+                      <option value="producto">Producto</option>
+                      <option value="mostrador">Mostrador</option>
+                      <option value="campana-interna">Campana interna</option>
+                      <option value="punto-de-venta">Punto de venta</option>
+                    </select>
+                  </label>
+                  <label><span>Tipo de QR</span>
+                    <select id="qrBatchOriginTypeInput">
+                      <option value="PRODUCT_LABEL">Product label</option>
+                      <option value="BULK_PACKAGE">Bulk package</option>
+                      <option value="MANUAL_BENEFIT">Manual benefit</option>
+                      <option value="LOYALTY">Loyalty</option>
+                      <option value="SURPRISE_REWARD">Surprise reward</option>
+                    </select>
+                  </label>
+                  <label><span>Beneficio</span><input id="qrBatchBenefitLabelInput" type="text" required></label>
+                  <label><span>Tipo de beneficio</span>
+                    <select id="qrBatchBenefitTypeInput">
+                      <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
+                      <option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option>
+                      <option value="FREE_GIFT">Regalo</option>
+                      <option value="FREE_SAMPLE">Muestra gratis</option>
+                      <option value="UPGRADE">Upgrade</option>
+                      <option value="VIP_ACCESS">Acceso VIP</option>
+                      <option value="RAFFLE_ENTRY">Participacion en sorteo</option>
+                      <option value="BUY_X_GET_Y">Compra X lleva Y</option>
+                      <option value="CUSTOM">Personalizado</option>
+                    </select>
+                  </label>
+                  <label><span>Valor del beneficio</span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
+                  <label><span>Requiere captura de datos</span>
+                    <select id="qrBatchClaimRequiredInput">
+                      <option value="true">Si</option>
+                      <option value="false">No</option>
+                    </select>
+                  </label>
+                  <label><span>Expiracion</span>
+                    <select id="qrBatchExpiresModeInput">
+                      <option value="NONE">Sin expiracion</option>
+                      <option value="7_DAYS">7 dias</option>
+                      <option value="15_DAYS">15 dias</option>
+                      <option value="30_DAYS">30 dias</option>
+                      <option value="CUSTOM_DATE">Fecha personalizada</option>
+                    </select>
+                  </label>
+                  <label><span>Fecha personalizada</span><input id="qrBatchExpiresAtInput" type="datetime-local"></label>
+                  <label><span>Notas</span><textarea id="qrBatchNotesInput" rows="3"></textarea></label>
+                  <button class="solid-button" type="submit">Generar paquete</button>
+                  <p class="error-line" id="qrBatchMessage"></p>
+                </form>
+                <div class="surface-card hidden qr-batch-progress-card" id="qrBatchProgress">
+                  <div class="qr-batch-progress-head">
+                    <div>
+                      <span class="mono-label" id="qrBatchProgressEyebrow">Motor QR</span>
+                      <h4 id="qrBatchProgressTitle">Preparando paquete</h4>
+                    </div>
+                    <strong id="qrBatchProgressPercent">0%</strong>
+                  </div>
+                  <div class="qr-batch-progress-bar" aria-hidden="true">
+                    <div class="qr-batch-progress-fill" id="qrBatchProgressFill"></div>
+                  </div>
+                  <p class="qr-batch-progress-copy" id="qrBatchProgressMessage">Configura el lote y empieza la generacion.</p>
+                </div>
+                <div class="surface-card hidden" id="qrBatchResult"></div>
+              </article>
+            </section>
+
+            <section class="charts-grid dashboard-charts">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Paquetes generados</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Paquete</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Estado</th>
+                        <th>Descarga</th>
+                      </tr>
+                    </thead>
+                    <tbody id="qrBatchTable"></tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Historial QR</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Beneficio</th>
+                        <th>Estado</th>
+                        <th>Cliente</th>
+                        <th>Creado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="strategicQrHistoryTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="campaigns">
+            <div class="view-head campaign-head">
+              <div>
+                <nav class="breadcrumb">
+                  <span>Campanas</span>
+                  <span class="material-symbols-outlined">chevron_right</span>
+                  <span id="campaignBreadcrumb">Sin campana</span>
+                </nav>
+                <h2 id="campaignHeroTitle">Campana</h2>
+                <p id="campaignHeroSubtitle">Analisis de rendimiento multicanal y tasa de conversion.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="exportCampaignReportButton" type="button">Exportar Reporte</button>
+                <button class="ghost-button hidden" id="markReadyCampaignButton" type="button">Marcar lista</button>
+                <button class="solid-button" id="editCampaignButton" type="button">Editar Campana</button>
+              </div>
+            </div>
+
+            <section class="kpi-grid sales-kpis" id="campaignStateGrid"></section>
+
+            <section class="campaign-layout">
+              <aside class="campaign-rail surface-card">
+                <div class="rail-head">
+                  <span class="mono-label">Campaigns</span>
+                </div>
+                <label>
+                  <span class="mono-label">Estado</span>
+                  <select id="campaignStatusFilter">
+                    <option value="ALL">Todas</option>
+                    <option value="READY_FOR_CLIENT_SETUP">Listas para lanzamiento</option>
+                    <option value="SCHEDULED">Programadas</option>
+                    <option value="ACTIVE">Activas</option>
+                    <option value="PAUSED">Pausadas</option>
+                    <option value="FINISHED">Finalizadas</option>
+                    <option value="ARCHIVED">Archivadas</option>
+                  </select>
+                </label>
+                <div class="campaign-list" id="campaignList"></div>
+              </aside>
+
+              <div class="campaign-content">
+                <section class="campaign-overview-grid">
+                  <article class="surface-card insight-card">
+                    <div class="insight-badge">
+                      <span class="material-symbols-outlined">auto_awesome</span>
+                      <span>Market Games Insights</span>
+                    </div>
+                    <h3>Resumen Estrategico</h3>
+                    <p id="campaignInsightText">Selecciona una campana para ver su contexto comercial.</p>
+                    <div class="campaign-meta-grid">
+                      <div>
+                        <span class="mono-label">Objetivo</span>
+                        <strong id="campaignObjectiveValue">-</strong>
+                      </div>
+                      <div>
+                        <span class="mono-label">Duracion</span>
+                        <strong id="campaignDurationValue">-</strong>
+                      </div>
+                      <div>
+                        <span class="mono-label">Estado</span>
+                        <strong id="campaignStatusValue">-</strong>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="dark-hero-card">
+                    <span class="mono-label">Ingresos atribuidos</span>
+                    <strong id="campaignBudgetValue">$0</strong>
+                    <p id="campaignBudgetMeta">de $0 totales</p>
+                    <div class="progress-bar">
+                      <span id="campaignBudgetBar"></span>
+                    </div>
+                    <div class="roi-block">
+                      <span class="mono-label">ROI actual</span>
+                      <div class="roi-row">
+                        <strong id="campaignRoiValue">-</strong>
+                        <span id="campaignRoiDelta">-</span>
+                      </div>
+                    </div>
+                  </article>
+                </section>
+
+                <section class="kpi-grid campaign-kpis" id="campaignKpiGrid"></section>
+
+                <section class="campaign-overview-grid">
+                  <article class="surface-card">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Preparar lanzamiento</span>
+                        <h3 class="subhead" id="launchSetupTitle">Configuracion del cliente</h3>
+                      </div>
+                      <span class="pill muted" id="launchSetupStatus">Bloqueado</span>
+                    </div>
+                    <p class="chart-note" id="launchSetupCopy">Esta campana aun no esta lista para configuracion por parte del cliente.</p>
+                    <form class="modal-form" id="launchSetupForm">
+                      <label>
+                        <span>Inversion total</span>
+                        <input id="launchBudgetInput" type="number" min="0" step="1000">
+                      </label>
+                      <label>
+                        <span>Presupuesto adicional</span>
+                        <input id="launchAdditionalBudgetInput" type="number" min="0" step="1000">
+                      </label>
+                      <label>
+                        <span>Fecha de inicio</span>
+                        <input id="launchStartsAtInput" type="datetime-local">
+                      </label>
+                      <label>
+                        <span>Fecha de cierre</span>
+                        <input id="launchEndsAtInput" type="datetime-local">
+                      </label>
+                      <label class="span-2">
+                        <span>Objetivo de campana</span>
+                        <input id="launchObjectiveInput" type="text">
+                      </label>
+                      <label class="span-2">
+                        <span>Canales de distribucion</span>
+                        <div class="channel-grid" id="launchChannelGrid">
+                          <label class="channel-option"><input type="checkbox" value="Instagram"> <span>Instagram</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Facebook"> <span>Facebook</span></label>
+                          <label class="channel-option"><input type="checkbox" value="TikTok"> <span>TikTok</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Volantes"> <span>Volantes</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Influencer"> <span>Influencer</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Evento fisico"> <span>Evento fisico</span></label>
+                          <label class="channel-option"><input type="checkbox" value="WhatsApp"> <span>WhatsApp</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Punto de venta"> <span>Punto de venta</span></label>
+                          <label class="channel-option"><input type="checkbox" value="Otro"> <span>Otro</span></label>
+                        </div>
+                      </label>
+                      <label>
+                        <span>Meta de leads</span>
+                        <input id="launchLeadsGoalInput" type="number" min="0" step="1">
+                      </label>
+                      <label>
+                        <span>Meta de redenciones</span>
+                        <input id="launchRedemptionsGoalInput" type="number" min="0" step="1">
+                      </label>
+                      <label>
+                        <span>Meta de ventas</span>
+                        <input id="launchSalesGoalInput" type="number" min="0" step="1000">
+                      </label>
+                      <label class="span-2">
+                        <span>Observaciones del cliente</span>
+                        <textarea id="launchClientNotesInput" rows="4"></textarea>
+                      </label>
+                      <div class="modal-actions span-2">
+                        <p class="error-line" id="launchSetupMessage"></p>
+                        <div class="modal-button-row">
+                          <button class="ghost-button" id="saveLaunchSetupButton" type="submit">Guardar preparacion</button>
+                          <button class="solid-button" id="confirmLaunchButton" type="button">Confirmar lanzamiento</button>
+                        </div>
+                      </div>
+                    </form>
+                  </article>
+
+                  <article class="surface-card">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Material entregado</span>
+                        <h3 class="subhead">Assets y enlaces de campana</h3>
+                      </div>
+                    </div>
+                    <div class="asset-grid" id="campaignAssetsGrid"></div>
+                  </article>
+                </section>
+
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head">
+                    <span class="mono-label">Comparacion antes / durante / despues</span>
+                    <button class="ghost-button" id="saveSnapshotButton" type="button">Registrar snapshot</button>
+                  </div>
+                  <canvas id="campaignSnapshotChart" width="900" height="280"></canvas>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Periodo</th>
+                          <th>Inicio</th>
+                          <th>Fin</th>
+                          <th>Ventas</th>
+                          <th>Ordenes</th>
+                          <th>Notas</th>
+                          <th>Accion</th>
+                        </tr>
+                      </thead>
+                      <tbody id="campaignSnapshotsTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+
+                <section class="charts-grid campaign-charts">
+                  <article class="surface-card chart-card">
+                    <div class="card-head">
+                      <div>
+                        <h3>Embudo de Conversion</h3>
+                        <span class="mono-label">Flujo de participacion</span>
+                        <p class="chart-explainer">Cada etapa reduce volumen. La lectura correcta consiste en detectar donde se cae la gente y por que.</p>
+                      </div>
+                    </div>
+                    <div class="funnel-stack" id="funnelStack"></div>
+                  </article>
+
+                  <article class="surface-card chart-card">
+                    <div class="card-head">
+                      <div>
+                        <h3>Evolucion Temporal</h3>
+                        <span class="mono-label">Datos acumulados por campana</span>
+                        <p class="chart-explainer">Muestra si el interes captado por la landing se esta transformando en caja durante el mismo periodo.</p>
+                      </div>
+                      <div class="legend-group">
+                        <span class="legend-dot dark"></span><span>Leads</span>
+                        <span class="legend-dot light"></span><span>Ventas</span>
+                      </div>
+                    </div>
+                    <canvas id="campaignTimelineChart" width="900" height="360"></canvas>
+                  </article>
+                </section>
+
+                <section class="explain-grid campaign-explain-grid">
+                  <article class="surface-card explain-card">
+                    <span class="mono-label">Diagnostico</span>
+                    <h3 id="campaignAnalysisTitle">Selecciona una campana.</h3>
+                    <p id="campaignAnalysisText">Aqui se resumira la lectura del rendimiento para que el equipo comercial entienda rapido si la campana esta sana.</p>
+                  </article>
+                  <article class="surface-card explain-card">
+                    <span class="mono-label">Como leer ROI y CAC</span>
+                    <p id="campaignEconomicsText">ROI relaciona ventas atribuidas frente a inversion. CAC muestra cuanto costo cada cliente con compra. Deben leerse juntos.</p>
+                  </article>
+                  <article class="surface-card explain-card">
+                    <span class="mono-label">Siguiente accion</span>
+                    <p id="campaignActionText">Aqui veras si conviene escalar pauta, optimizar la landing o reforzar el cierre en tienda.</p>
+                  </article>
+                </section>
+              </div>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="leads">
+            <div class="view-head">
+              <div>
+                <h2>Base de Leads</h2>
+                <p>Participantes capturados en la campana seleccionada, con origen, intereses e intencion comercial para orientar seguimiento.</p>
+              </div>
+              <button class="ghost-button" id="exportLeadsButton" type="button">Exportar Datos</button>
+            </div>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Leads de la campana</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Origen</th>
+                      <th>Intereses</th>
+                      <th>Siguiente accion</th>
+                      <th>Cedula</th>
+                      <th>Telefono</th>
+                      <th>QR</th>
+                      <th>Premio / contacto</th>
+                      <th>Accion</th>
+                    </tr>
+                  </thead>
+                  <tbody id="campaignLeadsTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="redemptions">
+            <div class="view-head">
+              <div>
+                <h2>Atribucion y Exito</h2>
+                <p>Seguimiento detallado de redenciones y ventas atribuidas a campanas.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="exportRedemptionsButton" type="button">Exportar Datos</button>
+                <button class="solid-button" id="rangeButton" type="button">Ultimos 30 dias</button>
+              </div>
+            </div>
+
+            <div class="segment-tabs">
+              <button class="segment-tab active" type="button">Redenciones</button>
+              <button class="segment-tab" type="button">Ventas atribuidas</button>
+            </div>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Listado de redenciones recientes</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Beneficio</th>
+                      <th>Fecha</th>
+                      <th>Sucursal</th>
+                      <th>Vendedor</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="campaignRedemptionsTable"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <section class="insight-grid">
+              <article class="map-card surface-card">
+                <div>
+                  <span class="mono-label">Rendimiento geografico</span>
+                  <p>Distribucion de redenciones y ventas por zona operativa.</p>
+                </div>
+                <div class="map-placeholder">
+                  <div class="map-glow glow-a"></div>
+                  <div class="map-glow glow-b"></div>
+                  <div class="map-glow glow-c"></div>
+                </div>
+              </article>
+
+              <article class="dark-insight-card">
+                <span class="mono-label">Insight de hoy</span>
+                <h3 id="redemptionInsightTitle">Sin datos suficientes</h3>
+                <button class="link-button" id="redemptionInsightButton" type="button">Ver detalles</button>
+              </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="sales">
+            <div class="view-head">
+              <div>
+                <h2>Ventas Atribuidas</h2>
+                <p>Resultado comercial registrado despues de redimir el QR.</p>
+              </div>
+              <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
+            </div>
+
+            <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Ventas de la campana</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Cedula</th>
+                      <th>Telefono</th>
+                      <th>Valor</th>
+                      <th>Pago</th>
+                      <th>Producto o servicio</th>
+                      <th>Sucursal</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="campaignSalesTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="validator">
+            <div class="view-head">
+              <div>
+                <h2>Validator</h2>
+                <p>Validacion operativa de QR, redenciones y venta atribuida en la misma interfaz del portal.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="refreshValidatorHistoryButton" type="button">Actualizar historial</button>
+              </div>
+            </div>
+
+            <section class="validator-grid">
+              <article class="surface-card validator-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Camara</span>
+                    <h3 class="subhead">Escaneo QR</h3>
+                  </div>
+                  <span class="pill muted" id="validatorCameraStatus">Lista</span>
+                </div>
+                <div class="validator-scanner-shell">
+                  <video id="validatorScannerVideo" autoplay playsinline muted></video>
+                  <div class="validator-scanner-overlay">
+                    <div class="validator-scan-frame"></div>
+                  </div>
+                </div>
+                <p class="validator-hint" id="validatorScannerHint">Apunta al QR o usa ingreso manual si el navegador no permite camara.</p>
+                <div class="head-actions">
+                  <button class="solid-button" id="startValidatorScannerButton" type="button">Activar camara</button>
+                  <button class="ghost-button" id="stopValidatorScannerButton" type="button">Detener</button>
+                </div>
+              </article>
+
+              <article class="surface-card validator-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Ingreso manual</span>
+                    <h3 class="subhead">Token o URL del QR</h3>
+                  </div>
+                </div>
+                <div class="validator-manual-grid">
+                  <input id="validatorQrTokenInput" type="text" placeholder="Pega aqui el token o la URL del QR">
+                  <button class="solid-button" id="validateValidatorManualButton" type="button">Validar</button>
+                </div>
+                <p class="validator-inline-message" id="validatorManualStatus"></p>
+              </article>
+            </section>
+
+            <section class="validator-result-grid">
+              <article class="surface-card validator-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Resultado</span>
+                    <h3 class="subhead" id="validatorResultTitle">Sin validacion</h3>
+                  </div>
+                  <span class="result-chip neutral" id="validatorResultChip">Pendiente</span>
+                </div>
+                <p class="validator-result-copy" id="validatorResultMessage">Escanea o pega un QR para consultar la base de datos.</p>
+
+                <div class="validator-result-grid-inner">
+                  <div class="validator-result-item">
+                    <span class="mono-label">Negocio</span>
+                    <strong id="validatorBusinessValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Campana</span>
+                    <strong id="validatorCampaignValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Juego</span>
+                    <strong id="validatorGameValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Beneficio</span>
+                    <strong id="validatorRewardValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Jugador</span>
+                    <strong id="validatorPlayerValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Cedula</span>
+                    <strong id="validatorDocumentValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Contacto</span>
+                    <strong id="validatorContactValue">-</strong>
+                  </div>
+                  <div class="validator-result-item">
+                    <span class="mono-label">Vence</span>
+                    <strong id="validatorExpiresValue">-</strong>
+                  </div>
+                </div>
+
+                <div class="head-actions">
+                  <button class="solid-button" id="validatorRedeemButton" type="button" disabled>Redimir beneficio</button>
+                </div>
+              </article>
+
+              <article class="surface-card validator-panel validator-sale-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Venta atribuida</span>
+                    <h3 class="subhead">Registrar resultado comercial</h3>
+                  </div>
+                </div>
+                <form class="validator-sale-form" id="validatorSaleForm">
+                  <label class="validator-checkline">
+                    <input id="validatorHadSaleInput" type="checkbox" checked>
+                    <span>Hubo venta</span>
+                  </label>
+                  <label>
+                    <span>Valor pagado</span>
+                    <input id="validatorSaleAmountInput" type="number" min="0" step="1000" placeholder="Ej: 45000">
+                  </label>
+                  <label>
+                    <span>Metodo de pago</span>
+                    <input id="validatorPaymentMethodInput" type="text" placeholder="Efectivo, tarjeta, transferencia">
+                  </label>
+                  <label>
+                    <span>Producto o servicio</span>
+                    <input id="validatorProductServiceInput" type="text" placeholder="Producto comprado">
+                  </label>
+                  <label class="span-2">
+                    <span>Observacion</span>
+                    <input id="validatorSaleNotesInput" type="text" placeholder="Nota opcional">
+                  </label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="validatorSaleStatus"></p>
+                    <div class="modal-button-row">
+                      <button class="solid-button" id="saveValidatorSaleButton" type="submit">Guardar venta</button>
+                    </div>
+                  </div>
+                </form>
+              </article>
+            </section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Historial reciente del validador</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Beneficio</th>
+                      <th>Jugador</th>
+                      <th>Telefono</th>
+                      <th>Fecha</th>
+                      <th>Usuario</th>
+                    </tr>
+                  </thead>
+                  <tbody id="validatorHistoryTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="branches">
+            <div class="view-head">
+              <div>
+                <h2>Branches</h2>
+                <p>Vista reservada para sucursales y rendimiento por punto de venta.</p>
+              </div>
+            </div>
+            <section class="kpi-grid sales-kpis" id="branchKpiGrid"></section>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Rendimiento por sucursal</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Sucursal</th>
+                      <th>Redenciones</th>
+                      <th>Ventas</th>
+                      <th>Ingresos</th>
+                    </tr>
+                  </thead>
+                  <tbody id="branchTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="admin">
+            <div class="view-head">
+              <div>
+                <h2>Admin</h2>
+                <p>Workspace interno de Market Games para preparar campanas, assets entregados y estado hacia cliente.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="refreshAdminWorkspaceButton" type="button">Actualizar</button>
+                <button class="solid-button" id="newAdminCampaignButton" type="button">Nueva campana</button>
+              </div>
+            </div>
+            <section class="kpi-grid sales-kpis" id="adminKpiGrid"></section>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Campanas disponibles para admin</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campana</th>
+                      <th>Empresa</th>
+                      <th>Estado</th>
+                      <th>Tipo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminCampaignTable"></tbody>
+                </table>
+              </div>
+            </article>
+            <section class="campaign-overview-grid">
+              <article class="surface-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Campaign editor</span>
+                    <h3 class="subhead" id="adminEditorTitle">Campana interna</h3>
+                  </div>
+                  <span class="pill muted" id="adminEditorStatus">Sin seleccion</span>
+                </div>
+                <form class="modal-form" id="adminCampaignForm">
+                  <label>
+                    <span>Nombre</span>
+                    <input id="adminCampaignNameInput" type="text" required>
+                  </label>
+                  <label>
+                    <span>Slug</span>
+                    <input id="adminCampaignSlugInput" type="text" pattern="[a-z0-9-]+" required>
+                  </label>
+                  <label>
+                    <span>Tipo</span>
+                    <select id="adminCampaignTypeInput">
+                      <option value="GAME">GAME</option>
+                      <option value="FORM">FORM</option>
+                      <option value="LANDING">LANDING</option>
+                      <option value="INFLUENCER">INFLUENCER</option>
+                      <option value="EVENT">EVENT</option>
+                      <option value="FLYER">FLYER</option>
+                      <option value="SOCIAL">SOCIAL</option>
+                      <option value="MIXED">MIXED</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Estado</span>
+                    <select id="adminCampaignStatusInput">
+                      <option value="DRAFT">DRAFT</option>
+                      <option value="READY_FOR_CLIENT_SETUP">READY_FOR_CLIENT_SETUP</option>
+                      <option value="SCHEDULED">SCHEDULED</option>
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="PAUSED">PAUSED</option>
+                      <option value="FINISHED">FINISHED</option>
+                      <option value="ARCHIVED">ARCHIVED</option>
+                    </select>
+                  </label>
+                  <label class="span-2">
+                    <span>Objetivo</span>
+                    <input id="adminCampaignObjectiveInput" type="text">
+                  </label>
+                  <label class="span-2">
+                    <span>Resumen estrategico</span>
+                    <textarea id="adminCampaignStrategyInput" rows="4"></textarea>
+                  </label>
+                  <label>
+                    <span>Presupuesto</span>
+                    <input id="adminCampaignBudgetInput" type="number" min="0" step="1000">
+                  </label>
+                  <label>
+                    <span>Meta comercial</span>
+                    <input id="adminCampaignSalesGoalInput" type="number" min="0" step="1000">
+                  </label>
+                  <label class="span-2">
+                    <span>Landing URL</span>
+                    <input id="adminCampaignLandingUrlInput" type="url">
+                  </label>
+                  <label class="span-2">
+                    <span>Validator URL</span>
+                    <input id="adminCampaignValidatorUrlInput" type="url">
+                  </label>
+                  <label class="span-2">
+                    <span>Juego/Form URL</span>
+                    <input id="adminCampaignGameUrlInput" type="url">
+                  </label>
+                  <label class="span-2">
+                    <span>Link principal</span>
+                    <input id="adminCampaignPrimaryLinkInput" type="url">
+                  </label>
+                  <label class="span-2">
+                    <span>QR/Landing asociada</span>
+                    <input id="adminCampaignQrLandingUrlInput" type="url">
+                  </label>
+                  <label class="span-2">
+                    <span>Notas de entrega</span>
+                    <textarea id="adminCampaignAssetNotesInput" rows="3"></textarea>
+                  </label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="adminCampaignMessage"></p>
+                    <div class="modal-button-row">
+                      <button class="ghost-button" id="adminMarkReadyButton" type="button">Mark ready</button>
+                      <button class="solid-button" type="submit">Guardar campana</button>
+                    </div>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Client report</span>
+                    <h3 class="subhead">Reporte consolidado por cliente</h3>
+                  </div>
+                </div>
+                <section class="kpi-grid sales-kpis" id="adminReportKpiGrid"></section>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Campana</th>
+                        <th>Estado</th>
+                        <th>Leads</th>
+                        <th>QR</th>
+                        <th>Redenciones</th>
+                        <th>Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adminReportCampaignTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+            <article class="surface-card placeholder-card" id="adminPanelCard">
+              <span class="mono-label">Acceso interno</span>
+              <p id="adminPanelMessage">Usa el panel `/admin` para la operacion interna de Market Games.</p>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="affiliates">
+            <div class="view-head">
+              <div>
+                <span class="mono-label">Sistema de afiliados</span>
+                <h2>Crear afiliado</h2>
+                <p>Genera un carnet con el logo de la empresa, QR propio y puntos acumulables: 1 punto por cada 1000 pesos.</p>
+              </div>
+              <div class="view-head-actions">
+                <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
+              </div>
+            </div>
+
+            <section class="affiliate-dashboard-grid" id="affiliateDashboardGrid">
+              <article class="affiliate-stat-card">
+                <span class="mono-label">Afiliados</span>
+                <strong id="affiliateStatTotal">0</strong>
+                <p id="affiliateStatActive">0 activos</p>
+              </article>
+              <article class="affiliate-stat-card">
+                <span class="mono-label">Puntos</span>
+                <strong id="affiliateStatPoints">0</strong>
+                <p id="affiliateStatEvents">0 compras registradas</p>
+              </article>
+              <article class="affiliate-stat-card">
+                <span class="mono-label">Compras</span>
+                <strong id="affiliateStatPurchaseTotal">$0</strong>
+                <p id="affiliateStatAveragePurchase">Ticket promedio $0</p>
+              </article>
+              <article class="affiliate-stat-card">
+                <span class="mono-label">Ultima compra</span>
+                <strong id="affiliateStatLastPurchase">-</strong>
+                <p id="affiliateStatTopAffiliate">Sin compras aun</p>
+              </article>
+            </section>
+
+            <article class="surface-card affiliate-logo-panel">
+              <div class="table-card-head">
+                <span class="mono-label">Logo del negocio</span>
+                <strong id="businessLogoTitle">Sin logo cargado</strong>
+              </div>
+              <div class="affiliate-logo-grid">
+                <div class="business-logo-preview" id="businessLogoPreview">
+                  <span class="material-symbols-outlined">storefront</span>
+                </div>
+                <div class="business-logo-copy">
+                  <p>Este logo aparece en todos los carnets de afiliado de la empresa activa. Si inicias sesion como empresa A veras el logo A; empresa B vera su propio logo.</p>
+                  <input class="affiliate-file-input" id="businessLogoInput" type="file" accept="image/*">
+                  <div class="affiliate-logo-actions">
+                    <button class="ghost-button" id="businessLogoUploadButton" type="button">Subir logo</button>
+                    <button class="ghost-button" id="businessLogoRemoveButton" type="button">Quitar logo</button>
+                  </div>
+                  <p class="error-line" id="businessLogoMessage"></p>
+                </div>
+              </div>
+            </article>
+
+            <section class="affiliate-layout">
+              <article class="surface-card affiliate-panel">
+                <div class="table-card-head">
+                  <span class="mono-label">Nuevo afiliado</span>
+                  <strong>Registrar carnet</strong>
+                </div>
+                <form class="modal-form affiliate-form" id="affiliateCreateForm">
+                  <label>
+                    <span>Nombre completo</span>
+                    <input id="affiliateFullNameInput" type="text" required>
+                  </label>
+                  <label>
+                    <span>Documento</span>
+                    <input id="affiliateDocumentInput" type="text">
+                  </label>
+                  <label>
+                    <span>Telefono</span>
+                    <input id="affiliatePhoneInput" type="tel">
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input id="affiliateEmailInput" type="email">
+                  </label>
+                  <label class="span-2">
+                    <span>Intereses y notas</span>
+                    <textarea id="affiliateNotesInput" rows="3" placeholder="Ej: cafe, motos, descuentos, cumpleanos, preferencias de compra"></textarea>
+                  </label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="affiliateCreateMessage"></p>
+                    <div class="modal-button-row">
+                      <button class="solid-button" type="submit">Crear afiliado y QR</button>
+                      <button class="ghost-button" type="button" id="resetAffiliateFormButton">Limpiar</button>
+                    </div>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card affiliate-panel">
+                <div class="table-card-head">
+                  <span class="mono-label">Carnet afiliado</span>
+                  <strong id="affiliateCardTitle">Sin afiliado seleccionado</strong>
+                </div>
+                <div class="affiliate-card-preview-wrap is-empty" id="affiliateCardPreviewWrap">
+                  <img id="affiliateCardPreview" alt="Carnet afiliado">
+                </div>
+                <p class="affiliate-card-note" id="affiliateCardMeta">Selecciona o crea un afiliado para generar el PNG.</p>
+                <div class="affiliate-card-actions">
+                  <label>
+                    <span>Monto de compra</span>
+                    <input id="affiliatePurchaseAmountInput" type="number" min="0" step="1000" placeholder="Ej: 25000">
+                  </label>
+                  <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Sumar puntos</button>
+                  <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Descargar PNG</button>
+                </div>
+              </article>
+
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Afiliados del negocio</span>
+                  <strong>Listado y puntos</strong>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Documento</th>
+                        <th>Puntos</th>
+                        <th>Compras</th>
+                        <th>Ultima compra</th>
+                        <th>Intereses</th>
+                        <th>QR</th>
+                        <th>Creado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="affiliateTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Historial de puntos</span>
+                <strong id="affiliateLedgerTitle">Movimientos del afiliado</strong>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Monto</th>
+                      <th>Puntos</th>
+                      <th>Motivo</th>
+                      <th>Fecha</th>
+                      <th>Creado por</th>
+                    </tr>
+                  </thead>
+                  <tbody id="affiliateLedgerTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-shell hidden" id="campaignModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label" id="campaignModalMode">Campaign</span>
+          <h3 id="campaignModalTitle">Editar campana</h3>
+        </div>
+        <button class="icon-button" id="closeCampaignModalButton" type="button">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="modal-form" id="campaignModalForm">
+        <label>
+          <span>Nombre</span>
+          <input id="campaignFormName" type="text" required>
+        </label>
+        <label>
+          <span>Slug</span>
+          <input id="campaignFormSlug" type="text" pattern="[a-z0-9-]+" required>
+        </label>
+        <label>
+          <span>Tipo</span>
+          <select id="campaignFormType">
+            <option value="GAME">GAME</option>
+            <option value="FORM">FORM</option>
+            <option value="LANDING">LANDING</option>
+            <option value="INFLUENCER">INFLUENCER</option>
+            <option value="EVENT">EVENT</option>
+            <option value="FLYER">FLYER</option>
+            <option value="SOCIAL">SOCIAL</option>
+            <option value="MIXED">MIXED</option>
+          </select>
+        </label>
+        <label>
+          <span>Estado</span>
+          <select id="campaignFormStatus">
+            <option value="DRAFT">DRAFT</option>
+            <option value="READY_FOR_CLIENT_SETUP">READY_FOR_CLIENT_SETUP</option>
+            <option value="SCHEDULED">SCHEDULED</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="PAUSED">PAUSED</option>
+            <option value="FINISHED">FINISHED</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+        </label>
+        <label class="span-2">
+          <span>Objetivo</span>
+          <input id="campaignFormObjective" type="text">
+        </label>
+        <label class="span-2">
+          <span>Estrategia</span>
+          <textarea id="campaignFormStrategy" rows="4"></textarea>
+        </label>
+        <label>
+          <span>Presupuesto</span>
+          <input id="campaignFormBudget" type="number" min="0" step="1000">
+        </label>
+        <label>
+          <span>Meta comercial</span>
+          <input id="campaignFormGoal" type="number" min="0" step="1000">
+        </label>
+        <label class="span-2">
+          <span>Landing URL</span>
+          <input id="campaignFormLandingUrl" type="url">
+        </label>
+        <label class="span-2">
+          <span>Validator URL</span>
+          <input id="campaignFormValidatorUrl" type="url">
+        </label>
+        <label class="span-2">
+          <span>Juego/Form URL</span>
+          <input id="campaignFormGameUrl" type="url">
+        </label>
+        <label class="span-2">
+          <span>Link principal</span>
+          <input id="campaignFormPrimaryLink" type="url">
+        </label>
+        <label class="span-2">
+          <span>QR/Landing asociada</span>
+          <input id="campaignFormQrLandingUrl" type="url">
+        </label>
+        <label class="span-2">
+          <span>Notas de entrega</span>
+          <textarea id="campaignFormAssetNotes" rows="3"></textarea>
+        </label>
+        <div class="modal-actions span-2">
+          <p class="error-line" id="campaignModalMessage"></p>
+          <div class="modal-button-row">
+            <button class="ghost-button" id="cancelCampaignModalButton" type="button">Cancelar</button>
+            <button class="solid-button" id="saveCampaignModalButton" type="submit">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-shell hidden" id="snapshotModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label">Campaign Snapshot</span>
+          <h3>Registrar ventas del periodo</h3>
+        </div>
+        <button class="icon-button" id="closeSnapshotModalButton" type="button">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="modal-form" id="snapshotModalForm">
+        <label>
+          <span>Periodo</span>
+          <select id="snapshotPeriodTypeInput">
+            <option value="BEFORE">BEFORE</option>
+            <option value="DURING">DURING</option>
+            <option value="AFTER">AFTER</option>
+          </select>
+        </label>
+        <label>
+          <span>Ventas totales</span>
+          <input id="snapshotSalesAmountInput" type="number" min="0" step="1000" required>
+        </label>
+        <label>
+          <span>Fecha inicio</span>
+          <input id="snapshotStartDateInput" type="date" required>
+        </label>
+        <label>
+          <span>Fecha fin</span>
+          <input id="snapshotEndDateInput" type="date" required>
+        </label>
+        <label>
+          <span>Total ordenes</span>
+          <input id="snapshotOrdersInput" type="number" min="0" step="1">
+        </label>
+        <label class="span-2">
+          <span>Notas</span>
+          <textarea id="snapshotNotesInput" rows="4"></textarea>
+        </label>
+        <div class="modal-actions span-2">
+          <p class="error-line" id="snapshotModalMessage"></p>
+          <div class="modal-button-row">
+            <button class="ghost-button" id="cancelSnapshotModalButton" type="button">Cancelar</button>
+            <button class="solid-button" type="submit">Guardar snapshot</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="/vendor/jsqr/jsQR.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
+

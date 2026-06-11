@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activar beneficio | Market Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="claim-shell">
+    <section class="claim-card">
+      <span class="eyebrow">Market Games</span>
+      <h1>Activa tu beneficio</h1>
+      <p class="intro" id="claimMessage">Validando QR...</p>
+
+      <div class="status-panel" id="statusPanel">
+        <div><strong>Negocio:</strong> <span id="businessName">-</span></div>
+        <div><strong>Tipo:</strong> <span id="qrType">-</span></div>
+        <div><strong>Beneficio:</strong> <span id="benefitSummary">-</span></div>
+        <div><strong>Expira:</strong> <span id="expiresAt">-</span></div>
+      </div>
+
+      <form class="claim-form hidden" id="claimForm">
+        <label>
+          <span>Nombre</span>
+          <input id="nameInput" type="text" required>
+        </label>
+        <label>
+          <span>Telefono</span>
+          <input id="phoneInput" type="tel">
+        </label>
+        <label>
+          <span>Correo</span>
+          <input id="emailInput" type="email">
+        </label>
+        <label>
+          <span>Documento</span>
+          <input id="documentInput" type="text">
+        </label>
+        <button type="submit">Activar beneficio</button>
+      </form>
+
+      <div class="result-block hidden" id="resultBlock"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Games | Ecosistema de servicios</title>
+  <meta
+    name="description"
+    content="Explora el ecosistema de servicios de Market Games mediante una experiencia inmersiva de nodos flotantes y subservicios conectados."
+  >
+  <meta name="theme-color" content="#07111c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="icon" type="image/png" href="img/MGLogo-01.png">
+  <link rel="stylesheet" href="servicios.css">
+</head>
+<body class="services-page">
+  <div class="services-backdrop" aria-hidden="true"></div>
+
+  <header class="services-header">
+    <div class="services-nav-shell">
+      <a class="brand" href="index.html#inicio" aria-label="Volver al inicio">
+        <img class="brand-logo" src="img/MGLogo-01.png" alt="Logo de Market Games">
+        <span class="brand-copy">
+          <strong>Market Games</strong>
+          <span>Ecosistema de soluciones integradas</span>
+        </span>
+      </a>
+
+      <nav class="services-nav" aria-label="Navegacion secundaria">
+        <a href="#top">Vista general</a>
+        <a href="#experiencia">Explorar</a>
+        <a href="#cta">Contacto</a>
+      </nav>
+
+      <a class="button button-secondary" href="index.html#contacto">Solicitar propuesta</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="services-hero">
+      <div class="services-hero-copy reveal">
+        <span class="eyebrow">Ecosistema de soluciones integradas</span>
+        <h1>Estas entrando al cerebro del portafolio.</h1>
+        <p>
+          Cada nodo representa una capa mayor de valor. Al abrirlo, el sistema despliega
+          sus capacidades conectadas como una red viva de estrategia, ejecucion y tecnologia.
+        </p>
+
+        <div class="hero-actions">
+          <a class="button button-primary" href="#experiencia">Explorar nodos</a>
+          <a class="button button-secondary" href="index.html#contacto">Hablemos</a>
+        </div>
+      </div>
+
+      <div class="services-hero-note glass-panel reveal">
+        <span class="note-kicker">Modo exploracion</span>
+        <p>
+          Haz clic sobre una sigla flotante. El servicio se abre como nucleo central y sus
+          subservicios aparecen alrededor conectados por lineas suaves, como una sinapsis premium.
+        </p>
+      </div>
+    </section>
+
+    <section id="experiencia" class="services-layout reveal">
+      <aside class="service-panel glass-panel">
+        <span id="panel-kicker" class="panel-kicker">Modo flotante general</span>
+        <h2 id="panel-title">Explora un mapa vivo de capacidades conectadas.</h2>
+        <p id="panel-description">
+          Este espacio reune estrategia, operacion, contenido, experiencia, data,
+          automatizacion, IA, publicidad y desarrollo dentro de un mismo sistema.
+        </p>
+
+        <div class="panel-metrics">
+          <article>
+            <strong id="panel-metric-primary">16</strong>
+            <span id="panel-metric-primary-label">nodos principales</span>
+          </article>
+          <article>
+            <strong id="panel-metric-secondary">+100</strong>
+            <span id="panel-metric-secondary-label">subservicios articulados</span>
+          </article>
+        </div>
+
+        <ul id="panel-list" class="panel-list">
+          <li>Haz clic sobre cualquier sigla para abrir su ecosistema.</li>
+          <li>El nodo activo se convierte en el nucleo del sistema.</li>
+          <li>Vuelve a pulsarlo para cerrar y regresar al modo flotante.</li>
+        </ul>
+      </aside>
+
+      <div class="experience-stage glass-stage">
+        <div class="stage-copy">
+          <span class="eyebrow">Mapa vivo de servicios</span>
+          <p>Un sistema dinamico, elegante y expandible para presentar la amplitud del portafolio.</p>
+        </div>
+
+        <button id="stage-reset" class="stage-reset" type="button" hidden>
+          Volver al modo flotante
+        </button>
+
+        <div
+          id="network-stage"
+          class="network-stage"
+          aria-label="Ecosistema interactivo de servicios"
+        >
+          <div class="stage-glow stage-glow-a" aria-hidden="true"></div>
+          <div class="stage-glow stage-glow-b" aria-hidden="true"></div>
+          <div class="stage-grid" aria-hidden="true"></div>
+
+          <svg
+            id="network-lines"
+            class="network-lines"
+            aria-hidden="true"
+            preserveAspectRatio="none"
+          ></svg>
+
+          <div id="nodes-layer" class="nodes-layer"></div>
+          <div id="subnodes-layer" class="subnodes-layer"></div>
+
+          <p id="stage-hint" class="stage-hint">
+            Selecciona una sigla para desplegar su red de subservicios.
+          </p>
+          <p id="network-status" class="sr-only" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <div id="subservice-modal" class="subservice-modal" aria-hidden="true">
+      <div id="subservice-backdrop" class="subservice-modal__backdrop"></div>
+      <article
+        class="subservice-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="subservice-modal-title"
+        aria-describedby="subservice-modal-description"
+      >
+        <button id="subservice-close" class="subservice-modal__close" type="button" aria-label="Cerrar detalle">
+          Cerrar
+        </button>
+
+        <div class="subservice-modal__visual" aria-hidden="true">
+          <div class="holo-grid"></div>
+          <div class="holo-noise"></div>
+          <div class="holo-header">
+            <span id="holo-system-label">Sistema</span>
+            <strong id="holo-focus-label">Lectura</strong>
+          </div>
+          <div class="holo-ring holo-ring-a"></div>
+          <div class="holo-ring holo-ring-b"></div>
+          <div class="holo-orbit-label holo-orbit-label-a" id="holo-orbit-a">Estrategia</div>
+          <div class="holo-orbit-label holo-orbit-label-b" id="holo-orbit-b">Conversion</div>
+          <div class="holo-orbit-label holo-orbit-label-c" id="holo-orbit-c">Dato</div>
+          <div class="holo-core"></div>
+          <div class="holo-core-label">
+            <strong id="holo-core-code">ME</strong>
+            <span id="holo-core-subtitle">Subservicio activo</span>
+          </div>
+          <div class="holo-pulse"></div>
+          <div class="holo-bars">
+            <span id="holo-bar-a"></span>
+            <span id="holo-bar-b"></span>
+            <span id="holo-bar-c"></span>
+            <span id="holo-bar-d"></span>
+          </div>
+          <div class="holo-axis">
+            <span id="holo-axis-a">Claridad</span>
+            <span id="holo-axis-b">Impacto</span>
+          </div>
+          <div class="holo-scan"></div>
+        </div>
+
+        <div class="subservice-modal__content">
+          <span id="subservice-modal-kicker" class="subservice-modal__kicker">Subservicio</span>
+          <h3 id="subservice-modal-title">Detalle del subservicio</h3>
+          <p id="subservice-modal-description">
+            Aqui aparecera una explicacion breve del subservicio seleccionado.
+          </p>
+
+          <div class="subservice-modal__signals">
+            <article>
+              <strong id="subservice-signal-role">Rol</strong>
+              <span id="subservice-signal-role-text">Funcion estrategica</span>
+            </article>
+            <article>
+              <strong id="subservice-signal-value">Valor</strong>
+              <span id="subservice-signal-value-text">Impacto esperado</span>
+            </article>
+            <article>
+              <strong id="subservice-signal-application">Aplicacion</strong>
+              <span id="subservice-signal-application-text">Uso recomendado</span>
+            </article>
+          </div>
+
+          <div id="subservice-glossary" class="subservice-modal__glossary" hidden>
+            <strong class="subservice-modal__glossary-title">Conceptos clave</strong>
+            <ul id="subservice-glossary-list" class="subservice-modal__glossary-list"></ul>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <section id="cta" class="services-cta reveal">
+      <div class="cta-shell glass-panel">
+        <div class="cta-copy">
+          <span class="eyebrow">Proxima conversacion</span>
+          <h2>Si tu marca necesita una arquitectura comercial mas inteligente, podemos disenarla.</h2>
+          <p>
+            Esta pagina es solo la interfaz del sistema. El siguiente paso es traducirlo a una
+            propuesta adaptada a tus objetivos, canales y ritmo de crecimiento.
+          </p>
+        </div>
+
+        <div class="cta-actions">
+          <a class="button button-primary" href="index.html#contacto">Solicitar propuesta</a>
+          <a class="button button-secondary" href="index.html#inicio">Volver al inicio</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="servicios.js"></script>
+</body>
+</html>

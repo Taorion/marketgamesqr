@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Market Games</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <section class="panel login-panel" id="loginPanel">
+      <p class="eyebrow">Market Games</p>
+      <h1>Admin interno</h1>
+      <form id="loginForm" class="grid-form">
+        <label><span>Email</span><input id="emailInput" type="email" autocomplete="email" required></label>
+        <label><span>Password</span><input id="passwordInput" type="password" autocomplete="current-password" required></label>
+        <button class="primary-button" type="submit">Entrar</button>
+      </form>
+      <p class="message" id="loginMessage"></p>
+    </section>
+
+    <section class="workspace hidden" id="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Admin estrategico</p>
+          <h1>Campanas y clientes</h1>
+          <p>Gestion interna de entregables, activacion y reportes por cliente.</p>
+        </div>
+        <div class="toolbar">
+          <button class="secondary-button" id="refreshButton" type="button">Actualizar</button>
+          <button class="secondary-button" id="logoutButton" type="button">Salir</button>
+        </div>
+      </header>
+
+      <section class="kpi-grid admin-stats" id="adminStatsGrid"></section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Ventas de paquetes</p>
+            <h2>Solicitudes desde landing</h2>
+          </div>
+          <a class="secondary-button link-button" href="/paquetes/" target="_blank" rel="noopener">Abrir landing</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Paquete</th>
+                <th>Contacto</th>
+                <th>Pago</th>
+                <th>Servicio</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="packageRequestsTable"></tbody>
+          </table>
+        </div>
+        <p class="message" id="packageRequestMessage"></p>
+      </section>
+
+      <section class="split split-top">
+        <article class="panel">
+          <p class="eyebrow">Nuevo negocio</p>
+          <h2>Crear empresa cliente</h2>
+          <form id="businessForm" class="grid-form">
+            <label><span>Nombre</span><input id="businessName" type="text" required></label>
+            <label><span>Slug</span><input id="businessSlug" type="text" pattern="[a-z0-9-]+" required></label>
+            <label><span>Email owner</span><input id="ownerEmail" type="email"></label>
+            <label><span>Password owner</span><input id="ownerPassword" type="text"></label>
+            <label><span>Paquete inicial</span>
+              <select id="initialPackageSize">
+                <option value="">Sin paquete</option>
+                <option value="100">100 QR</option>
+                <option value="300">300 QR</option>
+                <option value="500">500 QR</option>
+                <option value="800">800 QR</option>
+                <option value="1000">1000 QR</option>
+                <option value="1500">1500 QR</option>
+                <option value="2000">2000 QR</option>
+                <option value="5000">5000 QR</option>
+                <option value="10000">10000 QR</option>
+              </select>
+            </label>
+            <label><span>Etiqueta visible</span><input id="initialPublicLabel" type="text" placeholder="Ej: Trafico inicial"></label>
+            <label class="full"><span>Nota interna del paquete</span><input id="initialPackageNotes" type="text" placeholder="Pago anticipado, factura o responsable"></label>
+            <button class="primary-button" type="submit">Crear negocio</button>
+          </form>
+          <p class="message" id="businessMessage"></p>
+        </article>
+
+        <article class="panel">
+          <p class="eyebrow">Nueva campana</p>
+          <h2>Crear campana estrategica</h2>
+          <form id="campaignForm" class="grid-form">
+            <label class="full"><span>Cliente</span><select id="campaignBusinessId" required></select></label>
+            <label><span>Nombre</span><input id="campaignName" type="text" required></label>
+            <label><span>Slug</span><input id="campaignSlug" type="text" pattern="[a-z0-9-]+" required></label>
+            <label><span>Tipo</span>
+              <select id="campaignType">
+                <option value="GAME">GAME</option>
+                <option value="FORM">FORM</option>
+                <option value="INFLUENCER">INFLUENCER</option>
+                <option value="EVENT">EVENT</option>
+                <option value="SOCIAL">SOCIAL</option>
+                <option value="LANDING">LANDING</option>
+              </select>
+            </label>
+            <label><span>Estado</span>
+              <select id="campaignStatus">
+                <option value="DRAFT">DRAFT</option>
+                <option value="READY_FOR_CLIENT_SETUP">READY_FOR_CLIENT_SETUP</option>
+                <option value="SCHEDULED">SCHEDULED</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="PAUSED">PAUSED</option>
+                <option value="FINISHED">FINISHED</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </select>
+            </label>
+            <label><span>Presupuesto</span><input id="campaignBudget" type="number" min="0" value="500000"></label>
+            <label><span>Meta ventas</span><input id="campaignGoal" type="number" min="0" value="1600000"></label>
+            <label class="full"><span>Objetivo</span><input id="campaignObjective" type="text"></label>
+            <label class="full"><span>Estrategia</span><textarea id="campaignStrategy"></textarea></label>
+            <button class="primary-button" type="submit">Crear campana</button>
+          </form>
+          <p class="message" id="campaignMessage"></p>
+        </article>
+      </section>
+
+      <section class="split">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Equipo y accesos</p>
+              <h2>Crear empleado o usuario de cliente</h2>
+            </div>
+          </div>
+          <form id="userForm" class="grid-form">
+            <label><span>Nombre</span><input id="userFullName" type="text" required></label>
+            <label><span>Email</span><input id="userEmail" type="email" required></label>
+            <label><span>Password temporal</span><input id="userPassword" type="text" minlength="8" required></label>
+            <label><span>Rol</span>
+              <select id="userRole" required>
+                <option value="ADMIN_MARKET_GAMES">Empleado interno</option>
+                <option value="BUSINESS_OWNER">Owner cliente</option>
+                <option value="VALIDATOR">Validador cliente</option>
+              </select>
+            </label>
+            <label class="full" id="userBusinessField"><span>Cliente asignado</span><select id="userBusinessId"></select></label>
+            <label class="checkbox-row full"><input id="userCrossBusiness" type="checkbox"><span>Puede validar QR de cualquier cliente</span></label>
+            <button class="primary-button" type="submit">Crear usuario</button>
+          </form>
+          <p class="message" id="userMessage"></p>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Cliente</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Cartera QR</p>
+              <h2>Clientes y saldo operativo</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Paquete</th>
+                  <th>Saldo</th>
+                  <th>Uso</th>
+                  <th>Valor interno restante</th>
+                  <th>Validadores</th>
+                </tr>
+              </thead>
+              <tbody id="clientsTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Cliente</p>
+            <h2>Reportes por cliente</h2>
+          </div>
+          <div class="inline-actions">
+            <label class="compact-field">
+              <span>Cliente</span>
+              <select id="businessFilter"></select>
+            </label>
+          </div>
+        </div>
+        <div class="kpi-grid" id="summaryGrid"></div>
+        <div class="credit-strip" id="creditStrip"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Campana</th>
+                <th>Estado</th>
+                <th>Leads</th>
+                <th>QR redimidos</th>
+                <th>Ingreso atribuido</th>
+                <th>ROI</th>
+              </tr>
+            </thead>
+            <tbody id="businessCampaignsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="split">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Trafico prepago</p>
+              <h2>Saldo del cliente</h2>
+            </div>
+          </div>
+          <div class="credit-dashboard" id="creditDashboard"></div>
+          <form id="creditForm" class="grid-form">
+            <label><span>Paquete</span>
+              <select id="creditPackageSize" required>
+                <option value="100">100 QR</option>
+                <option value="300">300 QR</option>
+                <option value="500">500 QR</option>
+                <option value="800">800 QR</option>
+                <option value="1000">1000 QR</option>
+                <option value="1500">1500 QR</option>
+                <option value="2000">2000 QR</option>
+                <option value="5000">5000 QR</option>
+                <option value="10000">10000 QR</option>
+              </select>
+            </label>
+            <label><span>Etiqueta visible</span><input id="creditPublicLabel" type="text" placeholder="Ej: Recarga de trafico"></label>
+            <label class="full"><span>Nota interna</span><input id="creditNotes" type="text" placeholder="Pago recibido, referencia, responsable"></label>
+            <button class="primary-button" type="submit">Asignar paquete</button>
+          </form>
+          <p class="message" id="creditMessage"></p>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Ledger interno</p>
+              <h2>Movimientos de trafico</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Movimiento</th>
+                  <th>Delta</th>
+                  <th>Saldo</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="creditLedgerTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="split">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Entrega</p>
+              <h2>Preparar para cliente</h2>
+            </div>
+            <button class="secondary-button" id="markReadyButton" type="button">Marcar lista</button>
+          </div>
+          <p class="helper-text" id="selectedCampaignLabel">Selecciona una campana global para editar assets y checklist.</p>
+          <form id="deliveryForm" class="grid-form">
+            <label><span>Landing URL</span><input id="assetLandingUrl" type="url"></label>
+            <label><span>Validator URL</span><input id="assetValidatorUrl" type="url"></label>
+            <label><span>Game URL</span><input id="assetGameUrl" type="url"></label>
+            <label><span>Primary link</span><input id="assetPrimaryLink" type="url"></label>
+            <label><span>QR landing URL</span><input id="assetQrLandingUrl" type="url"></label>
+            <label class="full"><span>Notas de assets</span><textarea id="assetNotes"></textarea></label>
+            <fieldset class="full checklist-group">
+              <legend>Checklist interno</legend>
+              <label class="checkbox-row"><input id="checkBrief" type="checkbox"><span>Brief aprobado</span></label>
+              <label class="checkbox-row"><input id="checkCopies" type="checkbox"><span>Copies cargados</span></label>
+              <label class="checkbox-row"><input id="checkCreatives" type="checkbox"><span>Creatividades cargadas</span></label>
+              <label class="checkbox-row"><input id="checkLinks" type="checkbox"><span>Links verificados</span></label>
+              <label class="checkbox-row"><input id="checkQa" type="checkbox"><span>QA completado</span></label>
+              <label class="checkbox-row"><input id="checkShared" type="checkbox"><span>Compartido al cliente</span></label>
+            </fieldset>
+            <button class="primary-button" type="submit">Guardar assets</button>
+          </form>
+          <p class="message" id="deliveryMessage"></p>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Detalle</p>
+              <h2>Reporte de campana</h2>
+            </div>
+          </div>
+          <div class="kpi-grid compact" id="campaignReportGrid"></div>
+          <div class="report-block">
+            <h3>Actividad diaria</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Redenciones</th>
+                    <th>Ventas</th>
+                    <th>Ingreso</th>
+                  </tr>
+                </thead>
+                <tbody id="campaignTimelineTable"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="report-block">
+            <h3>Snapshots comerciales</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Periodo</th>
+                    <th>Fechas</th>
+                    <th>Ventas</th>
+                    <th>Ordenes</th>
+                  </tr>
+                </thead>
+                <tbody id="campaignSnapshotsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Global</p>
+            <h2>Campanas de todos los negocios</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Negocio</th>
+                <th>Saldo trafico</th>
+                <th>Campana</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Presupuesto</th>
+                <th>Objetivo</th>
+              </tr>
+            </thead>
+            <tbody id="campaignsTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>

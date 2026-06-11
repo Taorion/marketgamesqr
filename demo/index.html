@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Kit - Campanas QR</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="demo-app">
+    <header class="demo-hero">
+      <div>
+        <p class="eyebrow">Demo kit</p>
+        <h1>Sistema de campanas QR</h1>
+        <p>Usa estas escenas para demostrar que el mismo validador sirve para juegos, formularios, TikTok, eventos y premios instantaneos.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="primary-link" href="/" target="_blank" rel="noopener">Abrir juego Moto</a>
+        <a class="secondary-link" href="/campana-productos" target="_blank" rel="noopener">Campana simple</a>
+        <a class="secondary-link" href="/empresa" target="_blank" rel="noopener">Portal empresa</a>
+        <a class="secondary-link" href="/validador" target="_blank" rel="noopener">Abrir validador</a>
+      </div>
+    </header>
+
+    <section class="demo-grid">
+      <article class="scenario-card">
+        <span class="scenario-tag">Demo 1</span>
+        <h2>Juego gana y recibe QR</h2>
+        <p>El usuario gana MotoPescuezo, llena datos y el sistema crea un QR asociado a cedula y telefono.</p>
+        <a class="secondary-link full" href="/" target="_blank" rel="noopener">Probar juego</a>
+      </article>
+
+      <article class="scenario-card">
+        <span class="scenario-tag">Demo 2</span>
+        <h2>Formulario directo</h2>
+        <p>Sin juego. Ideal para un negocio que solo quiere captar datos y entregar cupones limitados.</p>
+        <button class="primary-link full" data-demo-type="form-qr" type="button">Generar QR demo</button>
+      </article>
+
+      <article class="scenario-card">
+        <span class="scenario-tag">Demo 3</span>
+        <h2>TikTok / Reels</h2>
+        <p>Un video manda al usuario a un link. El usuario deja datos y recibe QR para redimir en tienda.</p>
+        <button class="primary-link full" data-demo-type="tiktok-drop" type="button">Generar QR demo</button>
+      </article>
+
+      <article class="scenario-card">
+        <span class="scenario-tag">Demo 4</span>
+        <h2>Premio instantaneo</h2>
+        <p>El usuario deja datos y recibe un premio o descuento controlado por el backend.</p>
+        <button class="primary-link full" data-demo-type="instant-win" type="button">Generar QR demo</button>
+      </article>
+
+      <article class="scenario-card">
+        <span class="scenario-tag">Demo 5</span>
+        <h2>Evento fisico</h2>
+        <p>Activacion en feria, stand, restaurante o discoteca. Cada QR queda medido y auditable.</p>
+        <button class="primary-link full" data-demo-type="event" type="button">Generar QR demo</button>
+      </article>
+
+      <article class="scenario-card">
+        <span class="scenario-tag">Dashboard</span>
+        <h2>Portal empresa</h2>
+        <p>Metricas de QR, redenciones, leads y respuestas sobre preferencias de productos.</p>
+        <a class="secondary-link full" href="/empresa" target="_blank" rel="noopener">Ver portal</a>
+      </article>
+    </section>
+
+    <section class="generator-panel" id="generatorPanel">
+      <div>
+        <p class="eyebrow">Datos de prueba</p>
+        <h2 id="generatorTitle">Selecciona una demo</h2>
+      </div>
+
+      <form class="lead-form" id="leadForm">
+        <input id="demoTypeInput" type="hidden">
+        <label>
+          <span>Nombre</span>
+          <input id="firstNameInput" type="text" value="Laura" required>
+        </label>
+        <label>
+          <span>Apellidos</span>
+          <input id="lastNameInput" type="text" value="Gomez" required>
+        </label>
+        <label>
+          <span>Cedula</span>
+          <input id="documentInput" type="text" inputmode="numeric" value="1020304050" pattern="[0-9]{6,12}" required>
+        </label>
+        <label>
+          <span>Telefono</span>
+          <input id="phoneInput" type="tel" inputmode="numeric" value="3007778899" pattern="[0-9]{7,15}" required>
+        </label>
+        <label>
+          <span>Email</span>
+          <input id="emailInput" type="email" value="laura.demo@example.com" required>
+        </label>
+        <label>
+          <span>Etiqueta de campana</span>
+          <input id="campaignInput" type="text" value="Demo comercial QR" required>
+        </label>
+        <button class="primary-link full" type="submit">Crear QR</button>
+      </form>
+
+      <div class="qr-output hidden" id="qrOutput">
+        <img id="qrImage" alt="QR generado">
+        <div>
+          <p class="eyebrow">QR generado</p>
+          <h3 id="qrStatus">Listo para validar</h3>
+          <p id="qrUrl"></p>
+          <div class="output-actions">
+            <a class="secondary-link" id="openValidatorLink" href="/validador" target="_blank" rel="noopener">Abrir en validador</a>
+            <button class="secondary-link" id="copyQrButton" type="button">Copiar URL</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="talk-track">
+      <p class="eyebrow">Guion comercial</p>
+      <ol>
+        <li>Mostrar que la campana puede iniciar en juego, TikTok, evento o formulario.</li>
+        <li>Generar un QR y explicar que el token no contiene datos faciles de falsificar.</li>
+        <li>Abrir el validador, iniciar sesion y pegar el QR.</li>
+        <li>Mostrar cedula y telefono para comparar con el cliente.</li>
+        <li>Redimir y volver a validar el mismo QR para mostrar bloqueo de doble uso.</li>
+      </ol>
+    </section>
+  </main>
+
+  <script src="js/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MotoPescuezo - Touch Jump</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div class="hero-brand">
+        <img class="brand-logo" src="img/logo.png" alt="Logo Pescuezo">
+        <div>
+          <p class="eyebrow">Arcade movil</p>
+          <h1>MotoPescuezo</h1>
+          <p class="subtitle">Toca en el momento correcto. El porcentaje de la barra define todo el salto.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="game-card">
+      <div class="hud">
+        <div class="power-card">
+          <div class="power-head">
+            <span class="label">Barra de impulso</span>
+            <strong class="power-number" id="powerValue">50%</strong>
+          </div>
+
+          <div class="power-bar" aria-hidden="true">
+            <div class="power-track">
+              <span class="zone zone-low"></span>
+              <span class="zone zone-mid"></span>
+              <span class="zone zone-high"></span>
+            </div>
+            <div class="power-indicator" id="powerIndicator"></div>
+          </div>
+        </div>
+
+        <div class="status-card">
+          <span class="label">Estado</span>
+          <strong id="statusText">Pulsa jugar y luego toca cuando quieras fijar la fuerza.</strong>
+        </div>
+      </div>
+
+      <div class="canvas-shell">
+        <canvas id="gameCanvas" width="1280" height="720" aria-label="Juego de moto y salto"></canvas>
+
+        <div class="overlay" id="startOverlay">
+          <div class="overlay-panel">
+            <img class="overlay-logo" src="img/logo.png" alt="Logo Pescuezo">
+            <p class="overlay-kicker">Salta sobre el mar</p>
+            <h2>Un toque, una potencia, un intento</h2>
+            <p>La moto recorre la pista sola. Solo debes tocar en el instante exacto para fijar el porcentaje.</p>
+            <button class="big-button" id="playButton" type="button">Jugar</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="action-row">
+        <button class="tap-button" id="tapButton" type="button">Tocar ahora</button>
+        <p class="helper-text">Solo touch: toca el boton o el canvas desde pantalla tactil.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay global-result-overlay hidden" id="resultOverlay">
+    <div class="overlay-panel result-modal">
+      <img class="overlay-logo" src="img/logo.png" alt="Logo Pescuezo">
+      <p class="overlay-kicker" id="resultKicker">Resultado</p>
+      <h2 id="resultTitle">Ganaste</h2>
+      <p id="resultText">La moto aterrizo sobre la plataforma.</p>
+
+      <div class="reward-flow hidden" id="rewardFlow">
+        <form class="reward-form" id="rewardForm">
+          <label class="field">
+            <span>Nombre</span>
+            <input id="customerName" name="customerName" type="text" inputmode="text" autocomplete="given-name" placeholder="Tu nombre" minlength="2" required>
+          </label>
+
+          <label class="field">
+            <span>Apellidos</span>
+            <input id="customerLastName" name="customerLastName" type="text" inputmode="text" autocomplete="family-name" placeholder="Tus apellidos" minlength="2" required>
+          </label>
+
+          <label class="field">
+            <span>Cedula</span>
+            <input id="customerId" name="customerId" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo numeros" pattern="[0-9]{6,12}" maxlength="12" required>
+          </label>
+
+          <label class="field">
+            <span>Correo electronico</span>
+            <input id="customerEmail" name="customerEmail" type="email" inputmode="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
+          </label>
+
+          <label class="field">
+            <span>Telefono</span>
+            <input id="customerPhone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="3001234567" pattern="[0-9]{7,15}" maxlength="15" required>
+          </label>
+
+          <p class="form-note">Completa tus datos para desbloquear el QR con 15% de descuento.</p>
+          <p class="form-error hidden" id="formError">Revisa el formato de nombre, apellidos, cedula, correo y telefono.</p>
+          <button class="big-button reward-submit" id="rewardSubmit" type="submit">Recibir QR 15%</button>
+        </form>
+
+        <div class="qr-result hidden" id="qrResult">
+          <p class="promo-badge">Promocion desbloqueada</p>
+          <div class="qr-frame">
+            <img id="qrImage" alt="QR de promocion del 15%">
+          </div>
+          <p class="promo-copy" id="promoCodeText">Codigo: MOTO15</p>
+          <p class="form-note">Presenta este QR al comprar para recibir 15% de descuento.</p>
+          <button class="big-button download-button hidden" id="downloadPromoButton" type="button">Descargar promo</button>
+          <p class="download-feedback hidden" id="downloadFeedback">Imagen lista para guardar.</p>
+        </div>
+      </div>
+
+      <button class="big-button" id="restartButton" type="button">Reintentar</button>
+    </div>
+  </div>
+
+  <canvas id="promoCanvas" width="1080" height="1600" class="hidden" aria-hidden="true"></canvas>
+  <script src="js/game.js"></script>
+</body>
+</html>

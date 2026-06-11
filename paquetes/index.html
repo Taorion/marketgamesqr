@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro Market Games | QR Validator y Portal</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="packages-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/img/logo.png" alt="Market Games">
+        <div>
+          <p class="eyebrow">Market Games</p>
+          <h1>Registro de clientes</h1>
+        </div>
+      </div>
+      <a class="admin-link" href="/empresa/" rel="noopener">Ingresar al portal</a>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">QR Validator para negocios</p>
+        <h2>Vende con beneficios QR y valida cada canje sin enredos.</h2>
+        <p>Crea tu cuenta, compra un paquete minimo de QR y empieza a validar beneficios desde el celular. Si necesitas dashboard, campanas, afiliados y reportes, elige un plan mensual del portal.</p>
+        <div class="hero-actions">
+          <button class="primary-button" id="startPrepaidButton" type="button">Comprar QR prepago</button>
+          <button class="secondary-button" id="startPortalButton" type="button">Ver planes del portal</button>
+        </div>
+      </div>
+      <div class="selected-box" id="selectedBox">
+        <span>Ruta rapida</span>
+        <strong>1. Elige</strong>
+        <p>Selecciona paquete o plan, crea usuario y password, paga y entra a usar cuando el pago este confirmado.</p>
+      </div>
+    </section>
+
+    <section class="selling-section hidden" id="paymentStatusSection">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" id="paymentStatusEyebrow">Estado de pago</p>
+          <h2 id="paymentStatusTitle">Validando confirmacion</h2>
+          <p id="paymentStatusCopy">Te mostraremos el siguiente paso segun la respuesta de Mercado Pago.</p>
+        </div>
+      </div>
+      <div class="selected-box">
+        <strong id="paymentStatusActionTitle">Siguiente paso</strong>
+        <p id="paymentStatusActionCopy">Espera la confirmacion del pago para activar la cuenta.</p>
+        <div class="hero-actions">
+          <a class="primary-button" id="paymentStatusPrimaryLink" href="/empresa/">Ingresar al portal</a>
+          <a class="secondary-button" href="/paquetes/">Volver a paquetes</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="benefit-grid">
+      <article>
+        <span class="benefit-icon">1</span>
+        <h3>Beneficios listos para vender</h3>
+        <p>Entrega descuentos, regalos, muestras, rifas o beneficios personalizados con QR unicos.</p>
+      </article>
+      <article>
+        <span class="benefit-icon">2</span>
+        <h3>Validacion en tienda</h3>
+        <p>Tu equipo escanea el QR, confirma estado y evita dobles canjes o beneficios vencidos.</p>
+      </article>
+      <article>
+        <span class="benefit-icon">3</span>
+        <h3>Acceso despues del pago</h3>
+        <p>En prepago, el validador se habilita solo cuando Mercado Pago confirma la compra.</p>
+      </article>
+      <article>
+        <span class="benefit-icon">4</span>
+        <h3>Portal si quieres crecer</h3>
+        <p>Con plan mensual tienes dashboard, campanas, leads, afiliados, sedes y reportes.</p>
+      </article>
+    </section>
+
+    <section class="steps-strip">
+      <div><strong>Elige</strong><span>Paquete QR o plan mensual</span></div>
+      <div><strong>Registra</strong><span>Empresa, NIT o cedula, usuario y password</span></div>
+      <div><strong>Paga</strong><span>Mercado Pago confirma la activacion</span></div>
+      <div><strong>Usa</strong><span>Entra al QR Validator o al portal</span></div>
+    </section>
+
+    <section class="mode-tabs" aria-label="Tipo de registro">
+      <button class="active" data-mode="prepaid" type="button">QR Validator prepago</button>
+      <button data-mode="portal" type="button">Portal mensual</button>
+    </section>
+
+    <section class="selling-section" id="offerSection">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" id="offerEyebrow">Compra minima para activar</p>
+          <h2 id="offerTitle">Escoge tus creditos QR</h2>
+          <p id="offerCopy">El paquete mas basico ya te permite crear cuenta, pagar y empezar a validar beneficios.</p>
+        </div>
+      </div>
+      <section class="package-grid" id="packageGrid"></section>
+      <section class="package-grid hidden" id="planGrid"></section>
+    </section>
+
+    <section class="use-cases">
+      <div>
+        <p class="eyebrow">Que puedes vender con QR</p>
+        <h2>Beneficios que el cliente entiende y usa.</h2>
+      </div>
+      <ul>
+        <li>Descuento en la proxima compra.</li>
+        <li>Regalo o muestra por visitar tienda.</li>
+        <li>Rifa por compra registrada.</li>
+        <li>Beneficio VIP para clientes frecuentes.</li>
+      </ul>
+    </section>
+
+    <section class="selling-section plan-access-section" id="planAccessSection">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Acceso por plan</p>
+          <h2>Que obtiene cada empresa al elegir su nivel.</h2>
+          <p>Prepago activa solo el QR Validator. Los planes mensuales desbloquean el portal, datos, campanas y herramientas comerciales segun el nivel contratado.</p>
+        </div>
+      </div>
+      <div class="plan-comparison-grid" id="planComparisonGrid"></div>
+    </section>
+
+    <section class="form-section" id="signupSection">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" id="formEyebrow">Datos para activar prepago</p>
+          <h2 id="formTitle">Registro y pago minimo</h2>
+          <p id="formCopy">Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.</p>
+        </div>
+      </div>
+
+      <form id="signupForm" class="request-form">
+        <label><span>Empresa o nombre comercial</span><input id="companyName" type="text" placeholder="Opcional si eres persona natural"></label>
+        <label><span>Nombre del usuario</span><input id="contactName" type="text" required></label>
+        <label><span>NIT o cedula</span><input id="nit" type="text" required></label>
+        <label><span>Telefono</span><input id="phone" type="tel" required></label>
+        <label><span>Email de acceso</span><input id="email" type="email" required></label>
+        <label><span>Password</span><input id="password" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label><span>Confirmar password</span><input id="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label><span>Web o Instagram</span><input id="website" type="text" placeholder="Opcional"></label>
+        <label><span>Ciudad</span><input id="city" type="text" placeholder="Opcional"></label>
+        <label><span>Direccion</span><input id="address" type="text" placeholder="Opcional"></label>
+        <button class="primary-button full" id="submitButton" type="submit">Crear cuenta y pagar activacion</button>
+      </form>
+      <p class="message" id="requestMessage"></p>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

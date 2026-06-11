@@ -1,0 +1,26 @@
+{
+  "business_id": "REPLACE_WITH_BUSINESS_UUID",
+  "game_id": "REPLACE_WITH_GAME_UUID",
+  "reward_id": "REPLACE_WITH_REWARD_UUID",
+  "player": {
+    "external_id": "game-session-001",
+    "name": "Ana Perez",
+    "email": "ana@example.com",
+    "phone": "+573001112233",
+    "document_id": "1234567890",
+    "metadata": {
+      "score": 9250,
+      "level": "final"
+    }
+  },
+  "questionnaire": {
+    "birthdate": "1995-08-12",
+    "favorite_product": "Combo especial",
+    "accepts_marketing": true
+  },
+  "metadata": {
+    "campaign": "summer-2026",
+    "source": "moto-pescuezo"
+  },
+  "expires_at": "2026-12-31T23:59:59.000Z"
+}
