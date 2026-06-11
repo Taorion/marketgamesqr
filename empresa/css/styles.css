@@ -3433,6 +3433,13 @@ textarea {
 /* Account profile: keep the portal identity dark, but with calmer contrast. */
 .view-section[data-view="account"] {
   color: #eef7ff;
+  padding: 18px;
+  border: 1px solid rgba(84, 240, 255, 0.12);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 3%, rgba(0, 229, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 92% 8%, rgba(255, 45, 247, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(3, 10, 26, 0.98));
 }
 
 .view-section[data-view="account"] .view-head {
@@ -3456,16 +3463,28 @@ textarea {
   color: #b9d7e8;
 }
 
+.view-section[data-view="account"] .surface-card,
 .view-section[data-view="account"] .account-profile-card,
-.view-section[data-view="account"] .account-settings-card {
+.view-section[data-view="account"] .account-settings-card,
+.view-section[data-view="account"] .account-billing-card {
   background:
     linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(3, 7, 18, 0.96)) !important;
   border-color: rgba(84, 240, 255, 0.18) !important;
+  color: #eef7ff !important;
   box-shadow: 0 16px 42px rgba(2, 8, 23, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
+.view-section[data-view="account"] .surface-card {
+  backdrop-filter: blur(12px);
+}
+
+.view-section[data-view="account"] .surface-card * {
+  text-shadow: none !important;
+}
+
 .view-section[data-view="account"] .account-profile-card::before,
-.view-section[data-view="account"] .account-settings-card::before {
+.view-section[data-view="account"] .account-settings-card::before,
+.view-section[data-view="account"] .surface-card::before {
   background: linear-gradient(120deg, rgba(0, 229, 255, 0.16), transparent 40%, rgba(111, 251, 190, 0.1));
   opacity: 0.7;
 }
@@ -3491,17 +3510,30 @@ textarea {
 }
 
 .view-section[data-view="account"] .account-meta-grid div,
-.view-section[data-view="account"] .account-billing-panel {
+.view-section[data-view="account"] .account-billing-panel,
+.view-section[data-view="account"] .modal-actions {
   background: rgba(2, 8, 23, 0.62);
   border-color: rgba(148, 232, 255, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.view-section[data-view="account"] .modal-actions {
+  padding: 12px;
+  border: 1px solid rgba(148, 232, 255, 0.14);
+  border-radius: 12px;
+}
+
 .view-section[data-view="account"] .account-meta-grid span,
 .view-section[data-view="account"] .account-billing-panel label,
 .view-section[data-view="account"] .table-secondary,
-.view-section[data-view="account"] .business-logo-profile-slot p {
+.view-section[data-view="account"] .business-logo-profile-slot p,
+.view-section[data-view="account"] p {
   color: #a8c6d9;
+}
+
+.view-section[data-view="account"] .table-card-head {
+  border-bottom: 1px solid rgba(148, 232, 255, 0.12);
+  padding-bottom: 12px;
 }
 
 .view-section[data-view="account"] .account-meta-grid strong,
@@ -3516,7 +3548,10 @@ textarea {
 
 .view-section[data-view="account"] .modal-form input,
 .view-section[data-view="account"] .modal-form select,
-.view-section[data-view="account"] .modal-form textarea {
+.view-section[data-view="account"] .modal-form textarea,
+.view-section[data-view="account"] select,
+.view-section[data-view="account"] input,
+.view-section[data-view="account"] textarea {
   background: rgba(2, 8, 23, 0.72);
   color: #f8fdff;
   border-color: rgba(84, 240, 255, 0.2);
@@ -3533,6 +3568,11 @@ textarea {
   color: #8aa3b5;
   background: rgba(15, 23, 42, 0.78);
   border-style: dashed;
+}
+
+.view-section[data-view="account"] input::placeholder,
+.view-section[data-view="account"] textarea::placeholder {
+  color: #7893a6;
 }
 
 .view-section[data-view="account"] .business-logo-preview {
