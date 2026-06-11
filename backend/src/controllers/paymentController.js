@@ -4,12 +4,17 @@ const { validate } = require("../utils/validators");
 const {
   createCreditCheckout,
   createDemoCreditPurchase,
+  createSubscriptionRenewalCheckout,
   listCreditOrders,
   processMercadoPagoWebhook,
 } = require("../services/mercadoPagoService");
 
 const creditCheckoutSchema = z.object({
   package_code: z.string().trim().min(2).max(40),
+});
+
+const subscriptionRenewalSchema = z.object({
+  plan_code: z.string().trim().min(2).max(40),
 });
 
 function demoModeEnabled() {
@@ -20,6 +25,16 @@ async function createQrCreditCheckout(req, res, next) {
   try {
     const body = validate(creditCheckoutSchema, req.body);
     const order = await createCreditCheckout(req.user, body);
+    res.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createSubscriptionCheckout(req, res, next) {
+  try {
+    const body = validate(subscriptionRenewalSchema, req.body);
+    const order = await createSubscriptionRenewalCheckout(req.user, body);
     res.status(201).json({ order });
   } catch (error) {
     next(error);
@@ -61,6 +76,7 @@ async function mercadoPagoWebhook(req, res, next) {
 module.exports = {
   createQrCreditCheckout,
   createQrCreditDemoPurchase,
+  createSubscriptionCheckout,
   listQrCreditOrders,
   mercadoPagoWebhook,
 };

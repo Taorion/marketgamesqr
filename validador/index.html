@@ -84,6 +84,24 @@
         <span class="traffic-status" id="trafficStatusValue">Saldo</span>
       </section>
 
+      <section class="panel qr-recharge-panel" id="qrRechargePanel">
+        <div class="panel-head">
+          <div>
+            <span class="label">Recarga QR</span>
+            <strong>Comprar paquete de creditos</strong>
+          </div>
+          <span class="result-chip neutral" id="validatorQrRechargeStatus">Mercado Pago</span>
+        </div>
+        <form class="qr-recharge-form" id="validatorQrRechargeForm">
+          <label class="field">
+            <span>Paquete disponible</span>
+            <select id="validatorQrPackageSelect" required></select>
+          </label>
+          <button class="primary-button" id="validatorQrRechargeButton" type="submit">Recargar QR</button>
+        </form>
+        <p class="status-line" id="validatorQrRechargeMessage">El pago confirmado suma creditos al saldo de este negocio.</p>
+      </section>
+
       <section class="panel post-sale-generator hidden" id="postSaleGeneratorPanel">
         <div class="panel-head">
           <div>

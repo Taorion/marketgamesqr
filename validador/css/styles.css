@@ -292,12 +292,28 @@ h1 {
   white-space: nowrap;
 }
 
-.post-sale-generator {
+.qr-recharge-panel {
   order: 2;
+  border-left: 6px solid var(--ok);
+}
+
+.qr-recharge-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.qr-recharge-form .primary-button {
+  min-width: 156px;
+}
+
+.post-sale-generator {
+  order: 3;
 }
 
 .manual-panel {
-  order: 3;
+  order: 4;
 }
 
 .panel {
@@ -307,21 +323,21 @@ h1 {
 }
 
 .result-panel {
-  order: 4;
+  order: 5;
   scroll-margin-top: 16px;
   border-width: 2px;
 }
 
 .scanner-panel {
-  order: 5;
-}
-
-.sale-panel {
   order: 6;
 }
 
-.workspace > .panel:not(.manual-panel):not(.result-panel):not(.scanner-panel):not(.sale-panel):not(.post-sale-generator) {
+.sale-panel {
   order: 7;
+}
+
+.workspace > .panel:not(.manual-panel):not(.result-panel):not(.scanner-panel):not(.sale-panel):not(.post-sale-generator):not(.qr-recharge-panel) {
+  order: 8;
 }
 
 .result-panel:focus {
@@ -685,6 +701,7 @@ select:focus {
   }
 
   .manual-grid,
+  .qr-recharge-form,
   .result-grid,
   .sale-form,
   .post-sale-form,

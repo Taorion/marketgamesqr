@@ -456,6 +456,33 @@
             </section>
 
             <section class="account-settings-grid">
+              <article class="surface-card account-settings-card account-billing-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Pagos y renovaciones</span>
+                    <h3>Recargar QR o renovar mensualidad</h3>
+                  </div>
+                  <span class="status-chip pending" id="accountBillingStatus">Mercado Pago</span>
+                </div>
+                <p class="table-secondary">Compra paquetes QR cuando necesites mas creditos. Si tienes portal mensual, renueva tu plan para extender el periodo activo.</p>
+                <div class="account-billing-grid">
+                  <div class="account-billing-panel">
+                    <strong>Recarga de QR</strong>
+                    <p class="table-secondary">Elige el paquete en la seccion de QR estrategicos y paga por Mercado Pago.</p>
+                    <button class="solid-button" id="accountOpenQrShopButton" type="button">Comprar paquetes QR</button>
+                  </div>
+                  <form class="account-billing-panel" id="subscriptionRenewalForm">
+                    <strong>Renovar portal mensual</strong>
+                    <label>
+                      <span>Plan a renovar</span>
+                      <select id="subscriptionRenewalPlanSelect" required></select>
+                    </label>
+                    <button class="solid-button" id="subscriptionRenewalButton" type="submit">Renovar mensualidad</button>
+                  </form>
+                </div>
+                <p class="error-line" id="subscriptionRenewalMessage"></p>
+              </article>
+
               <article class="surface-card account-settings-card">
                 <div class="table-card-head">
                   <div>

@@ -167,6 +167,115 @@ async function createCreditCheckout(user, body) {
   return mapPurchaseOrder(updated.rows[0]);
 }
 
+async function createSubscriptionRenewalCheckout(user, body) {
+  if (!user.business_id) {
+    throw badRequest("Este usuario no tiene negocio asignado.");
+  }
+  if (!canAccessBusiness(user, user.business_id)) {
+    throw forbidden("No puedes renovar la suscripcion de este negocio.");
+  }
+
+  const plan = listPlans().find((item) => item.code === body.plan_code && item.category === "subscription");
+  if (!plan || !plan.monthly_price_cop) {
+    throw badRequest("Plan mensual no disponible para renovacion automatica.");
+  }
+
+  const currentBusiness = await query(
+    `select plan_code
+     from businesses
+     where id = $1`,
+    [user.business_id]
+  );
+  const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
+  if (currentPlan?.category !== "subscription") {
+    throw badRequest("Este negocio no tiene una mensualidad activa para renovar.");
+  }
+
+  const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
+  const order = await query(
+    `insert into qr_credit_purchase_orders
+      (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
+     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text, $7)
+     returning *`,
+    [
+      user.business_id,
+      user.id,
+      plan.code,
+      monthlyQrIncluded,
+      `${plan.name} - renovacion mensual`,
+      plan.monthly_price_cop,
+      {
+        source: "business_portal_subscription_renewal",
+        requested_by_email: user.email,
+        signup: {
+          type: "portal_monthly_subscription",
+          business_id: user.business_id,
+          user_id: user.id,
+          email: user.email,
+          plan_code: plan.code,
+          renewal: true,
+        },
+      },
+    ]
+  );
+  const purchaseOrder = order.rows[0];
+
+  const preference = await mpRequest("/checkout/preferences", {
+    method: "POST",
+    body: JSON.stringify({
+      items: [
+        {
+          id: plan.code,
+          title: `${plan.name} - renovacion mensual Market Games`,
+          quantity: 1,
+          unit_price: Number(plan.monthly_price_cop),
+          currency_id: "COP",
+        },
+      ],
+      payer: {
+        email: user.email,
+        name: user.full_name || undefined,
+      },
+      external_reference: purchaseOrder.external_reference,
+      notification_url: webhookUrl(),
+      back_urls: {
+        success: appUrl("/empresa/?payment=success&renewal=success"),
+        failure: appUrl("/empresa/?payment=failure&renewal=failure"),
+        pending: appUrl("/empresa/?payment=pending&renewal=pending"),
+      },
+      metadata: {
+        order_id: purchaseOrder.id,
+        business_id: user.business_id,
+        user_id: user.id,
+        plan_code: plan.code,
+        signup_type: "portal_monthly_subscription",
+        renewal: true,
+      },
+      ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
+    }),
+  });
+
+  const updated = await query(
+    `update qr_credit_purchase_orders
+     set mercado_pago_preference_id = $2,
+         checkout_url = $3,
+         sandbox_checkout_url = $4,
+         payment_payload = $5,
+         updated_at = now()
+     where id = $1
+     returning *`,
+    [
+      purchaseOrder.id,
+      preference.id || null,
+      preference.init_point || null,
+      preference.sandbox_init_point || null,
+      preference,
+    ]
+  );
+
+  return mapPurchaseOrder(updated.rows[0]);
+}
+
 async function createPrepaidSignupCheckout(client, payload) {
   const offer = findPackageOffer(payload.package_code);
   if (!offer) {
@@ -533,7 +642,18 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
 
 async function finalizeApprovedPortalSubscription(client, order, payment, signup) {
   const planCode = signup.plan_code || order.package_code;
-  const periodEnd = new Date();
+  const currentPeriod = await client.query(
+    `select subscription_current_period_ends_at
+     from businesses
+     where id = $1
+     for update`,
+    [order.business_id]
+  );
+  const currentEnd = currentPeriod.rows[0]?.subscription_current_period_ends_at
+    ? new Date(currentPeriod.rows[0].subscription_current_period_ends_at)
+    : null;
+  const now = new Date();
+  const periodEnd = currentEnd && currentEnd > now ? currentEnd : now;
   periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
 
   await ensureCreditAccount(client, order.business_id);
@@ -613,6 +733,7 @@ module.exports = {
   createDemoCreditPurchase,
   createPrepaidSignupCheckout,
   createPortalSignupCheckout,
+  createSubscriptionRenewalCheckout,
   listCreditOrders,
   processMercadoPagoWebhook,
 };

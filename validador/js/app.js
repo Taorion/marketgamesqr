@@ -75,6 +75,12 @@ const saleNotesInput = document.getElementById("saleNotesInput");
 const saleStatus = document.getElementById("saleStatus");
 const refreshHistoryButton = document.getElementById("refreshHistoryButton");
 const historyList = document.getElementById("historyList");
+const qrRechargePanel = document.getElementById("qrRechargePanel");
+const validatorQrRechargeForm = document.getElementById("validatorQrRechargeForm");
+const validatorQrRechargeStatus = document.getElementById("validatorQrRechargeStatus");
+const validatorQrPackageSelect = document.getElementById("validatorQrPackageSelect");
+const validatorQrRechargeButton = document.getElementById("validatorQrRechargeButton");
+const validatorQrRechargeMessage = document.getElementById("validatorQrRechargeMessage");
 
 let toastTimer = 0;
 
@@ -101,6 +107,8 @@ const state = {
   lastScanAt: 0,
   creditAccount: null,
   lastGeneratedPostSaleQr: null,
+  qrPackageOffers: [],
+  qrCreditOrders: [],
 };
 
 function escapeHtml(value) {
@@ -156,6 +164,7 @@ function setBusy(isBusy) {
   validateManualButton.disabled = isBusy;
   startScannerButton.disabled = isBusy;
   postSaleGenerateButton.disabled = isBusy;
+  validatorQrRechargeButton.disabled = isBusy;
   redeemButton.disabled = isBusy || !state.lastValidation?.allowed;
 }
 
@@ -237,6 +246,14 @@ function formatNumber(value) {
   return Number(value || 0).toLocaleString("es-CO");
 }
 
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  });
+}
+
 function renderTrafficBalance(account) {
   state.creditAccount = account;
   trafficCard.classList.remove("warning", "danger");
@@ -245,6 +262,7 @@ function renderTrafficBalance(account) {
     trafficBalanceCopy.textContent = "Operacion legacy. Consulta con el administrador si necesitas control de trafico.";
     trafficStatusValue.textContent = "Legacy";
     renderPostSaleCreditChip();
+    renderQrRechargeShop();
     return;
   }
 
@@ -257,6 +275,7 @@ function renderTrafficBalance(account) {
     trafficCard.classList.add("warning");
   }
   renderPostSaleCreditChip();
+  renderQrRechargeShop();
 }
 
 function canGeneratePostSaleQr() {
@@ -292,6 +311,63 @@ function renderPostSaleCreditChip() {
   postSaleCreditChip.textContent = `${formatNumber(account.qr_balance)} creditos`;
 }
 
+function renderQrRechargeShop() {
+  const packages = state.qrPackageOffers || [];
+  validatorQrPackageSelect.innerHTML = packages.map((offer) => `
+    <option value="${escapeHtml(offer.code)}">
+      ${escapeHtml(offer.title)} - ${formatNumber(offer.package_size)} QR - ${formatCurrency(offer.price_cop)}
+    </option>
+  `).join("");
+
+  const account = state.creditAccount;
+  validatorQrRechargeStatus.className = "result-chip neutral";
+  validatorQrRechargeStatus.textContent = "Mercado Pago";
+
+  if (!packages.length) {
+    validatorQrRechargeButton.disabled = true;
+    validatorQrRechargeMessage.textContent = "No hay paquetes cargados. Actualiza la pagina o intenta mas tarde.";
+    return;
+  }
+
+  validatorQrRechargeButton.disabled = false;
+  if (account) {
+    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} creditos. La recarga se activa cuando Mercado Pago confirme el pago.`;
+  } else {
+    validatorQrRechargeMessage.textContent = "El pago confirmado crea o incrementa la cartera QR de este negocio.";
+  }
+
+  const latestOrder = state.qrCreditOrders[0];
+  if (latestOrder?.status === "approved") {
+    validatorQrRechargeStatus.className = "result-chip ok";
+    validatorQrRechargeStatus.textContent = "Ultimo pago aprobado";
+  } else if (latestOrder?.status === "pending") {
+    validatorQrRechargeStatus.className = "result-chip loading";
+    validatorQrRechargeStatus.textContent = "Pago pendiente";
+  }
+}
+
+async function loadQrRechargeData() {
+  if (!state.session?.token) {
+    return;
+  }
+  try {
+    const [packageData, orderData] = await Promise.all([
+      api("/api/public/packages", { method: "GET" }),
+      api("/api/payments/qr-credits/orders", {
+        method: "GET",
+        headers: authHeaders(),
+      }),
+    ]);
+    state.qrPackageOffers = packageData.packages || [];
+    state.qrCreditOrders = orderData.orders || [];
+    renderQrRechargeShop();
+  } catch (error) {
+    validatorQrRechargeStatus.className = "result-chip danger";
+    validatorQrRechargeStatus.textContent = "Error";
+    validatorQrRechargeMessage.textContent = error.message;
+  }
+}
+
 async function loadTrafficBalance() {
   if (!state.session?.token) {
     renderTrafficBalance(null);
@@ -308,6 +384,39 @@ async function loadTrafficBalance() {
     trafficBalanceCopy.textContent = error.message;
     trafficStatusValue.textContent = "Error";
     trafficCard.classList.add("danger");
+  }
+}
+
+async function submitQrRecharge(event) {
+  event.preventDefault();
+  const packageCode = validatorQrPackageSelect.value;
+  if (!packageCode) {
+    validatorQrRechargeMessage.textContent = "Selecciona un paquete QR para continuar.";
+    showToast("danger", "Paquete requerido", "Selecciona un paquete antes de pagar.");
+    return;
+  }
+
+  setBusy(true);
+  validatorQrRechargeMessage.textContent = "Creando checkout seguro en Mercado Pago...";
+  showToast("loading", "Preparando pago", "Creando checkout seguro de recarga QR.", 0);
+  showScreenFeedback("loading", "Preparando pago", "Te enviaremos a Mercado Pago para finalizar la compra.");
+  try {
+    const data = await api("/api/payments/qr-credits/checkout", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ package_code: packageCode }),
+    });
+    state.qrCreditOrders = [data.order, ...state.qrCreditOrders.filter((order) => order.id !== data.order.id)];
+    renderQrRechargeShop();
+    validatorQrRechargeMessage.textContent = "Checkout creado. Redirigiendo a Mercado Pago...";
+    showToast("ok", "Checkout creado", "Abriendo Mercado Pago para completar la recarga.", 0);
+    window.location.assign(data.order.checkout_url);
+  } catch (error) {
+    validatorQrRechargeMessage.textContent = error.message;
+    showToast("danger", "No se pudo crear pago", error.message);
+  } finally {
+    setBusy(false);
+    hideScreenFeedback();
   }
 }
 
@@ -420,7 +529,9 @@ function renderSession() {
     : `Rol: ${state.session.user.role}`;
   renderPostSaleAccess();
   setResult("neutral", "Sin validacion", "Escanea o pega un QR para consultar la base de datos.");
+  renderQrRechargeShop();
   loadTrafficBalance();
+  loadQrRechargeData();
   loadHistory();
 }
 
@@ -907,6 +1018,7 @@ async function startScanner() {
 
 loginForm.addEventListener("submit", login);
 postSaleGeneratorForm.addEventListener("submit", submitPostSaleQr);
+validatorQrRechargeForm.addEventListener("submit", submitQrRecharge);
 postSaleQrResult.addEventListener("click", (event) => {
   const shareButton = event.target.closest("[data-share-generated-qr]");
   if (shareButton) {

@@ -522,6 +522,41 @@ textarea {
   margin-top: 18px;
 }
 
+.account-billing-card {
+  grid-column: 1 / -1;
+}
+
+.account-billing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.account-billing-panel {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.account-billing-panel strong,
+.account-billing-panel p {
+  margin: 0;
+}
+
+.account-billing-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .business-logo-preview.compact {
   width: 92px;
   height: 92px;
@@ -3314,6 +3349,10 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .account-billing-grid {
+    grid-template-columns: 1fr;
+  }
+
   .topbar,
   .login-card,
   .subscription-banner,

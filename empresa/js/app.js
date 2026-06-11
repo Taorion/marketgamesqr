@@ -256,6 +256,12 @@ const qrCreditCheckoutMessage = document.getElementById("qrCreditCheckoutMessage
 const qrCreditOrdersTable = document.getElementById("qrCreditOrdersTable");
 const subscriptionPricingNote = document.getElementById("subscriptionPricingNote");
 const subscriptionPlansGrid = document.getElementById("subscriptionPlansGrid");
+const accountBillingStatus = document.getElementById("accountBillingStatus");
+const accountOpenQrShopButton = document.getElementById("accountOpenQrShopButton");
+const subscriptionRenewalForm = document.getElementById("subscriptionRenewalForm");
+const subscriptionRenewalPlanSelect = document.getElementById("subscriptionRenewalPlanSelect");
+const subscriptionRenewalButton = document.getElementById("subscriptionRenewalButton");
+const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalMessage");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll(".segment-tab"));
@@ -930,6 +936,35 @@ function renderSubscriptionPricing() {
       </article>
     `;
   }).join("");
+  renderSubscriptionRenewal();
+}
+
+function renderSubscriptionRenewal() {
+  if (!subscriptionRenewalPlanSelect || !subscriptionRenewalButton) return;
+  const plan = state.subscription?.plan || {};
+  const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop);
+  const hasMonthlyPlan = plan.category === "subscription";
+
+  subscriptionRenewalPlanSelect.innerHTML = plans.length
+    ? plans.map((item) => `
+      <option value="${escapeHtml(item.code)}" ${item.code === plan.code ? "selected" : ""}>
+        ${escapeHtml(item.name)} · ${money(item.monthly_price_cop)} · ${Number(item.limits?.monthly_qr_included || item.qr_monthly_included || 0).toLocaleString("es-CO")} QR/mes
+      </option>
+    `).join("")
+    : '<option value="">No hay planes disponibles</option>';
+
+  subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
+  if (accountBillingStatus) {
+    accountBillingStatus.textContent = hasMonthlyPlan ? "Mensualidad activa" : "Solo prepago";
+    accountBillingStatus.className = `status-chip ${hasMonthlyPlan ? "ok" : "pending"}`;
+  }
+  if (subscriptionRenewalMessage) {
+    if (hasMonthlyPlan) {
+      setInlineMessage(subscriptionRenewalMessage, "Renueva el plan actual o cambia de nivel pagando una nueva mensualidad.", "info");
+    } else {
+      setInlineMessage(subscriptionRenewalMessage, "Tu cuenta prepago no tiene mensualidad para renovar. Puedes comprar paquetes QR.", "info");
+    }
+  }
 }
 
 function accountValue(value, fallback = "-") {
@@ -965,6 +1000,7 @@ function renderAccountView() {
   setAccountText(accountPlanStatus, plan.status);
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
+  renderSubscriptionRenewal();
 
   if (accountNameInput) accountNameInput.value = business.name || "";
   if (accountNitInput) accountNitInput.value = business.nit || "";
@@ -2425,6 +2461,44 @@ async function submitQrCreditCheckout(event) {
     setInlineMessage(qrCreditCheckoutMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo abrir el checkout" });
     setButtonLoading(qrCreditCheckoutButton, false);
+  }
+}
+
+function openQrCreditShopFromAccount() {
+  setView("strategic-qr");
+  window.setTimeout(() => {
+    document.querySelector(".qr-credit-shop-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 80);
+}
+
+async function submitSubscriptionRenewal(event) {
+  event.preventDefault();
+  const planCode = subscriptionRenewalPlanSelect?.value;
+  if (!planCode) {
+    setInlineMessage(subscriptionRenewalMessage, "Selecciona un plan mensual para renovar.", "error");
+    return;
+  }
+
+  setButtonLoading(subscriptionRenewalButton, true, "Abriendo pago...");
+  setInlineMessage(subscriptionRenewalMessage, "Creando checkout seguro de mensualidad...", "info");
+  showFeedback("Preparando pago de renovacion mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
+  try {
+    const data = await api("/api/payments/subscriptions/checkout", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ plan_code: planCode }),
+    });
+    const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
+    if (!checkoutUrl) {
+      throw new Error("Mercado Pago no devolvio un link de checkout.");
+    }
+    setInlineMessage(subscriptionRenewalMessage, "Checkout creado. Redirigiendo a Mercado Pago...", "success");
+    showFeedback("Al aprobarse el pago, la mensualidad se renovara automaticamente.", "success", { title: "Pago listo" });
+    window.location.href = checkoutUrl;
+  } catch (error) {
+    setInlineMessage(subscriptionRenewalMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo renovar" });
+    setButtonLoading(subscriptionRenewalButton, false);
   }
 }
 
@@ -5179,6 +5253,8 @@ snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
+accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
+subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 refreshAdminWorkspaceButton.addEventListener("click", loadWorkspace);
 newAdminCampaignButton.addEventListener("click", startNewAdminCampaign);
 adminCampaignForm.addEventListener("submit", saveAdminCampaign);
