@@ -467,6 +467,34 @@ main {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.hero-brand-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+  margin-top: 18px;
+  padding: 10px 14px;
+  border: 1px solid rgba(77, 227, 255, 0.28);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 18px rgba(77, 227, 255, 0.08);
+}
+
+.hero-brand-proof img {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  object-fit: cover;
+  box-shadow: 0 0 18px rgba(77, 227, 255, 0.22);
+}
+
+.hero-brand-proof span {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
 .hero-metrics {
   display: grid;
   gap: 14px;

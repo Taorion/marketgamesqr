@@ -26,6 +26,8 @@ const planComparisonGrid = document.getElementById("planComparisonGrid");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialMode = urlParams.get("mode");
+const initialPackageCode = String(urlParams.get("package") || "").toUpperCase();
+const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
 let mode = initialMode === "portal" ? "portal" : "prepaid";
 let packages = [];
 let plans = [];
@@ -127,7 +129,7 @@ function syncMode() {
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Compra minima para activar";
     offerTitle.textContent = "Escoge tus creditos QR";
-    offerCopy.textContent = "El paquete mas basico ya te permite crear cuenta, pagar y empezar a validar beneficios.";
+    offerCopy.textContent = "El paquete mas basico cuesta $39.000 y ya te permite crear cuenta, pagar y empezar a validar beneficios.";
     formEyebrow.textContent = "Datos para activar prepago";
     formTitle.textContent = "Registro y pago minimo";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
@@ -138,7 +140,7 @@ function syncMode() {
 
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge el portal para operar campanas";
-  offerCopy.textContent = "Registra tus datos, paga la mensualidad y entra al portal cuando Mercado Pago confirme.";
+  offerCopy.textContent = "Registra tus datos, paga desde $89.000 al mes y entra al portal cuando Mercado Pago confirme.";
   formEyebrow.textContent = "Datos para portal mensual";
   formTitle.textContent = "Registro y pago mensual";
   formCopy.textContent = "Elige el plan mensual. El usuario y la empresa quedan activos solo cuando el pago sea aprobado.";
@@ -298,8 +300,8 @@ async function init() {
     packages = packageData.packages || [];
     prepaidPlan = planData.prepaid_plan || null;
     plans = planData.plans || [];
-    selectedPackage = packages[0] || null;
-    selectedPlan = plans[0] || null;
+    selectedPackage = packages.find((item) => item.code === initialPackageCode) || packages[0] || null;
+    selectedPlan = plans.find((item) => item.code === initialPlanCode) || plans[0] || null;
     renderPackages();
     renderPlans();
     renderPlanComparison();

@@ -897,7 +897,7 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Los planes mensuales valen un poco mas que el paquete prepago comparable porque incluyen QR recurrentes, acceso al portal, dashboard, permisos, exportaciones y beneficios operativos.";
+    subscriptionPricingNote.textContent = "Los planes mensuales son mas convenientes que comprar volumen prepago porque incluyen QR recurrentes, portal, dashboard, permisos, exportaciones y medicion comercial.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const qrIncluded = formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);
