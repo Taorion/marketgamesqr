@@ -3931,3 +3931,181 @@ textarea {
   color: #dff8ff;
 }
 
+/* Final portal dark pass: prevent white panels in campaigns and other work areas. */
+.app-shell,
+.app-main,
+.content-shell,
+.view-section {
+  background: transparent !important;
+  color: #eef7ff;
+}
+
+.view-section:not([data-view="account"]):not([data-view="affiliates"]):not([data-view="strategic-qr"]) {
+  padding: 18px;
+  border: 1px solid rgba(124, 251, 255, 0.1);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 10% 4%, rgba(0, 229, 255, 0.09), transparent 28%),
+    radial-gradient(circle at 92% 10%, rgba(255, 45, 247, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.94), rgba(3, 10, 26, 0.97));
+}
+
+.view-section .view-head,
+.view-section .surface-card,
+.view-section .data-table-card,
+.view-section .chart-card,
+.view-section .map-card,
+.view-section .placeholder-card,
+.view-section .campaign-rail,
+.view-section .insight-card,
+.view-section .explain-card,
+.view-section .asset-card,
+.view-section .setting-card,
+.view-section .validator-panel,
+.view-section .affiliate-panel,
+.view-section .affiliate-logo-panel,
+.view-section .geo-branch-card,
+.view-section .modal-card,
+.view-section .table-card,
+.view-section .busy-card {
+  background:
+    linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(2, 6, 23, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24) !important;
+}
+
+.view-section .kpi-card,
+.view-section .affiliate-stat-card,
+.view-section .metric-card,
+.view-section .profile-detail,
+.view-section .campaign-meta-card,
+.view-section .channel-card,
+.view-section .asset-card,
+.view-section .funnel-row,
+.view-section .qr-batch-stat,
+.view-section .account-meta-grid div,
+.view-section .modal-actions,
+.view-section .inline-selects,
+.view-section .validator-result-item,
+.view-section .result-item,
+.view-section .sale-summary-card {
+  background:
+    linear-gradient(145deg, rgba(5, 15, 31, 0.9), rgba(2, 8, 23, 0.76)) !important;
+  border-color: rgba(124, 251, 255, 0.16) !important;
+  color: #eef7ff !important;
+}
+
+.view-section h2,
+.view-section h3,
+.view-section h4,
+.view-section strong,
+.view-section .table-card-head strong,
+.view-section .kpi-card strong,
+.view-section .kpi-value,
+.view-section .campaign-title,
+.view-section .asset-card strong,
+.view-section .metric-card strong {
+  color: #f8fdff !important;
+}
+
+.view-section p,
+.view-section span,
+.view-section label,
+.view-section td,
+.view-section .table-secondary,
+.view-section .table-muted,
+.view-section .muted,
+.view-section .chart-explainer,
+.view-section .chart-note,
+.view-section .profile-detail span,
+.view-section .setting-card p,
+.view-section .asset-card p,
+.view-section .placeholder-card p,
+.view-section .map-card p,
+.view-section .kpi-card p {
+  color: #a8c6d9;
+}
+
+.view-section .mono-label,
+.view-section th,
+.view-section .kpi-meta {
+  color: #7cfbff !important;
+}
+
+.view-section input,
+.view-section select,
+.view-section textarea,
+.view-section .search-shell,
+.view-section .inline-selects select,
+.view-section .modal-form input,
+.view-section .modal-form select,
+.view-section .modal-form textarea {
+  background: rgba(2, 8, 23, 0.72) !important;
+  color: #f8fdff !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+}
+
+.view-section input::placeholder,
+.view-section textarea::placeholder {
+  color: #7893a6 !important;
+}
+
+.view-section input:focus,
+.view-section select:focus,
+.view-section textarea:focus {
+  border-color: rgba(124, 251, 255, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12) !important;
+}
+
+.view-section table,
+.view-section thead,
+.view-section tbody,
+.view-section tr,
+.view-section th,
+.view-section td {
+  background: transparent !important;
+  border-color: rgba(124, 251, 255, 0.12) !important;
+}
+
+.view-section .ghost-button,
+.view-section .icon-button,
+.view-section .link-button {
+  background: rgba(2, 8, 23, 0.48) !important;
+  border-color: rgba(124, 251, 255, 0.2) !important;
+  color: #dff8ff !important;
+}
+
+.view-section .solid-button,
+.view-section .request-button {
+  background: linear-gradient(135deg, #00a87a, #0078b8) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(0, 168, 122, 0.16) !important;
+}
+
+.view-section .danger-button {
+  color: #ff8db7 !important;
+  border-color: rgba(255, 77, 141, 0.28) !important;
+}
+
+.view-section .status-chip.pending,
+.view-section .nav-item.plan-locked::after {
+  background: rgba(255, 242, 138, 0.16) !important;
+  color: #fff28a !important;
+}
+
+.view-section .status-chip.ok {
+  background: rgba(111, 251, 190, 0.16) !important;
+  color: #7cfbff !important;
+}
+
+.view-section .status-chip.danger,
+.view-section .error-line[data-kind="error"] {
+  background: rgba(255, 77, 141, 0.12);
+  color: #ff8db7 !important;
+}
+
+.view-section canvas {
+  background: #050f1f !important;
+}
+

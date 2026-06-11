@@ -872,3 +872,157 @@ textarea {
     box-shadow: 0 6px 16px rgba(17, 24, 39, 0.07);
   }
 }
+
+/* QR Validator dark flow: remove aggressive light panels. */
+:root {
+  --bg: #020617;
+  --surface: #071426;
+  --surface-2: #0b1d33;
+  --border: rgba(124, 251, 255, 0.2);
+  --text: #eef7ff;
+  --muted: #a8c6d9;
+  --primary: #00a4c7;
+  --primary-dark: #0078a3;
+  --ok: #00d8a0;
+  --ok-bg: rgba(0, 216, 160, 0.14);
+  --danger: #ff6b8f;
+  --danger-bg: rgba(255, 107, 143, 0.14);
+  --warning: #fff28a;
+  --warning-bg: rgba(255, 242, 138, 0.14);
+  --shadow: rgba(0, 0, 0, 0.24);
+  --focus-ring: rgba(0, 229, 255, 0.22);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(0, 229, 255, 0.13), transparent 28%),
+    radial-gradient(circle at 88% 5%, rgba(255, 45, 247, 0.1), transparent 26%),
+    linear-gradient(180deg, #020617 0%, #071225 52%, #020617 100%) !important;
+}
+
+.login-panel,
+.panel,
+.topbar,
+.traffic-card,
+.screen-feedback-card,
+.feedback-toast,
+.result-item,
+.history-entry,
+.post-sale-result {
+  background:
+    linear-gradient(145deg, rgba(9, 22, 48, 0.98), rgba(2, 6, 23, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #eef7ff !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24) !important;
+}
+
+.traffic-card.warning,
+.traffic-card.danger,
+.result-hero,
+.scanner-overlay,
+.qr-recharge-panel {
+  background:
+    linear-gradient(145deg, rgba(5, 15, 31, 0.92), rgba(2, 8, 23, 0.78)) !important;
+}
+
+.brand-mark.brand-logo {
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+h1,
+h2,
+strong,
+.result-hero h2,
+.panel-head strong,
+.traffic-card strong,
+.history-entry strong {
+  color: #f8fdff !important;
+}
+
+p,
+.muted,
+.status-line,
+.empty-state,
+.eyebrow,
+.label,
+.feedback-toast p,
+.screen-feedback-card p,
+.result-item dt,
+.history-entry span,
+.generated-qr p,
+.share-target {
+  color: #a8c6d9 !important;
+}
+
+input,
+select,
+textarea,
+.manual-grid input,
+.post-sale-form input,
+.post-sale-form select,
+.sale-form input {
+  background: rgba(2, 8, 23, 0.72) !important;
+  color: #f8fdff !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #7893a6 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(124, 251, 255, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12) !important;
+}
+
+.validator-access-nav a,
+.validator-top-nav a,
+.secondary-button,
+.icon-button,
+.traffic-status,
+.result-chip.neutral {
+  background: rgba(2, 8, 23, 0.48) !important;
+  border-color: rgba(124, 251, 255, 0.2) !important;
+  color: #dff8ff !important;
+}
+
+.primary-button,
+.redeem-button {
+  background: linear-gradient(135deg, #00a87a, #0078b8) !important;
+  color: #fff !important;
+}
+
+.result-chip.ok {
+  background: rgba(0, 216, 160, 0.16) !important;
+  color: #7cfbff !important;
+}
+
+.result-chip.danger {
+  background: rgba(255, 107, 143, 0.14) !important;
+  color: #ff9fba !important;
+}
+
+.result-chip.loading {
+  background: rgba(255, 242, 138, 0.16) !important;
+  color: #fff28a !important;
+}
+
+.scanner-shell,
+.result-panel-neutral,
+.result-panel-loading,
+.result-panel-ok,
+.result-panel-danger {
+  background: rgba(2, 8, 23, 0.52) !important;
+}
+
+@media (max-width: 680px) {
+  .login-panel,
+  .panel,
+  .topbar,
+  .traffic-card {
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24) !important;
+  }
+}
