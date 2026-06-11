@@ -1,0 +1,25 @@
+{
+  "name": "Market Games QR",
+  "short_name": "Market Games",
+  "description": "Portal Universal QR para medir ROI real de publicidad, campanas, redenciones, leads y ventas atribuidas.",
+  "lang": "es-CO",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050816",
+  "theme_color": "#060816",
+  "icons": [
+    {
+      "src": "/img/MGLogo-01.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/MGLogo-01.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

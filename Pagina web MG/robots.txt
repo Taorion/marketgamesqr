@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /empresa/
+Disallow: /admin/
+Disallow: /validador/
+Disallow: /qr-validador/
+Disallow: /api/
+
+Sitemap: https://www.marketgamesqr.com/sitemap.xml

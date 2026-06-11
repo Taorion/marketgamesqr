@@ -3330,3 +3330,64 @@ textarea {
   }
 }
 
+/* Mobile drawer fix: keep the portal menu fully reachable on phones. */
+@media (max-width: 960px) {
+  .app-shell.sidebar-open {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    z-index: 42;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+
+  .sidebar-brand {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding-bottom: 12px;
+    background: inherit;
+  }
+
+  .sidebar-nav {
+    display: grid;
+    gap: 8px;
+    padding-bottom: 32px;
+  }
+
+  .nav-item {
+    width: 100%;
+    min-height: 46px;
+    justify-content: start;
+    flex-shrink: 0;
+  }
+
+  .app-shell.sidebar-open::after {
+    z-index: 32;
+  }
+}
+
+@media (max-width: 420px) {
+  .sidebar {
+    width: min(90vw, 336px);
+  }
+
+  .sidebar-brand {
+    gap: 10px;
+  }
+
+  .nav-item {
+    min-height: 48px;
+    padding-inline: 12px;
+  }
+}
+

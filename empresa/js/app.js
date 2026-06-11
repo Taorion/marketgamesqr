@@ -1057,6 +1057,10 @@ function togglePortalMenu() {
   workspace.classList.toggle("sidebar-collapsed");
 }
 
+function closePortalMenu() {
+  workspace?.classList.remove("sidebar-open");
+}
+
 function renderShell() {
   const logged = Boolean(session?.token);
   loginPanel.classList.toggle("hidden", logged);
@@ -5218,7 +5222,10 @@ document.addEventListener("click", (event) => {
   if (!workspace?.classList.contains("sidebar-open")) return;
   const target = event.target;
   if (sidebar?.contains(target) || menuToggleButton?.contains(target)) return;
-  workspace.classList.remove("sidebar-open");
+  closePortalMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closePortalMenu();
 });
 rangeButton.addEventListener("click", handleRangeToggle);
 closeCampaignModalButton.addEventListener("click", closeCampaignModal);
@@ -5233,6 +5240,7 @@ snapshotModal.addEventListener("click", (event) => {
   if (event.target === snapshotModal) closeSnapshotModal();
 });
 window.addEventListener("resize", () => {
+  if (!window.matchMedia("(max-width: 960px)").matches) closePortalMenu();
   if (state.dashboard) renderDashboard();
   if (state.selectedCampaign) renderCampaignView();
   if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
