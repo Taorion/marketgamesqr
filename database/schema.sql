@@ -364,11 +364,16 @@ create table if not exists business_sales (
   customer_name text,
   customer_phone text,
   customer_email text,
+  customer_document_id text,
   product_name text,
   sale_amount numeric(14, 2) not null default 0,
   currency text not null default 'COP',
   seller_user_id uuid references app_users(id) on delete set null,
   branch_id uuid,
+  acquisition_source text,
+  acquisition_channel text,
+  referred_affiliate_id uuid references affiliates(id) on delete set null,
+  referral_points_awarded integer not null default 0,
   notes text,
   created_at timestamptz not null default now(),
   metadata jsonb not null default '{}'::jsonb
@@ -473,6 +478,11 @@ alter table qr_codes add column if not exists claimed_at timestamptz;
 alter table qr_codes add column if not exists claimed_by_player_id uuid references players(id) on delete set null;
 alter table business_sales add column if not exists qr_code_id uuid references qr_codes(id) on delete set null;
 alter table business_sales add column if not exists metadata jsonb not null default '{}'::jsonb;
+alter table business_sales add column if not exists customer_document_id text;
+alter table business_sales add column if not exists acquisition_source text;
+alter table business_sales add column if not exists acquisition_channel text;
+alter table business_sales add column if not exists referred_affiliate_id uuid references affiliates(id) on delete set null;
+alter table business_sales add column if not exists referral_points_awarded integer not null default 0;
 
 create table if not exists campaign_sales_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -520,6 +530,8 @@ create index if not exists idx_campaign_sales_snapshots_campaign_period on campa
 create index if not exists idx_qr_batches_business_created on qr_batches(business_id, created_at desc);
 create index if not exists idx_qr_claims_business_claimed on qr_claims(business_id, claimed_at desc);
 create index if not exists idx_business_sales_business_created on business_sales(business_id, created_at desc);
+create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
+create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
 create index if not exists idx_qr_event_logs_business_created on qr_event_logs(business_id, created_at desc);
 
 create or replace function set_updated_at()

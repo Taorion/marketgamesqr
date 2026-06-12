@@ -107,6 +107,7 @@ const accountQrAvailable = document.getElementById("accountQrAvailable");
 const accountQrUsed = document.getElementById("accountQrUsed");
 const accountProfileForm = document.getElementById("accountProfileForm");
 const accountNameInput = document.getElementById("accountNameInput");
+const accountSloganInput = document.getElementById("accountSloganInput");
 const accountNitInput = document.getElementById("accountNitInput");
 const accountContactInput = document.getElementById("accountContactInput");
 const accountEmailInput = document.getElementById("accountEmailInput");
@@ -226,6 +227,19 @@ const postSaleExpiresAtInput = document.getElementById("postSaleExpiresAtInput")
 const postSaleNotesInput = document.getElementById("postSaleNotesInput");
 const postSaleQrMessage = document.getElementById("postSaleQrMessage");
 const postSaleQrResult = document.getElementById("postSaleQrResult");
+const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
+const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
+const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
+const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
+const customerAcquisitionNameInput = document.getElementById("customerAcquisitionNameInput");
+const customerAcquisitionDocumentInput = document.getElementById("customerAcquisitionDocumentInput");
+const customerAcquisitionPhoneInput = document.getElementById("customerAcquisitionPhoneInput");
+const customerAcquisitionEmailInput = document.getElementById("customerAcquisitionEmailInput");
+const customerAcquisitionSourceInput = document.getElementById("customerAcquisitionSourceInput");
+const customerAcquisitionChannelInput = document.getElementById("customerAcquisitionChannelInput");
+const customerAcquisitionAffiliateInput = document.getElementById("customerAcquisitionAffiliateInput");
+const customerAcquisitionNotesInput = document.getElementById("customerAcquisitionNotesInput");
+const customerAcquisitionMessage = document.getElementById("customerAcquisitionMessage");
 const qrBatchForm = document.getElementById("qrBatchForm");
 const qrBatchNameInput = document.getElementById("qrBatchNameInput");
 const qrBatchQuantityInput = document.getElementById("qrBatchQuantityInput");
@@ -378,6 +392,17 @@ chartTooltip.className = "chart-tooltip hidden";
 document.body.appendChild(chartTooltip);
 
 const chartHoverRegistry = new WeakMap();
+
+const ACQUISITION_SOURCE_LABELS = {
+  STORE_WALK_IN: "Vio el almacen",
+  FRIEND_REFERRAL: "Recomendacion",
+  FAIR_EVENT: "Feria o evento",
+  INTERNET_SEARCH: "Internet / buscador",
+  SOCIAL_MEDIA: "Redes sociales",
+  PAID_ADS: "Pauta digital",
+  QR_SCAN: "QR / pieza impresa",
+  OTHER: "Otro",
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -613,18 +638,23 @@ async function loadStrategicQrData() {
     return;
   }
   showFeedback("Cargando paquetes, saldos e historial QR.", "loading", { title: "Sincronizando QR", timeout: 0 });
-  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory] = await Promise.all([
+  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory, affiliatesData] = await Promise.all([
     apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] }),
     apiSafe("/api/public/packages", {}, { packages: [] }),
     apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
     apiSafe("/api/business/qr/batches", { headers: authHeaders() }, { batches: [] }),
     apiSafe("/api/business/qr/history", { headers: authHeaders() }, { history: [] }),
+    hasPlanFeature("affiliates")
+      ? apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] })
+      : Promise.resolve({ affiliates: [] }),
   ]);
   state.strategicQrMetrics = strategicMetrics || null;
   state.qrPackageOffers = packageData.packages || [];
   state.qrCreditOrders = creditOrdersData.orders || [];
   state.strategicQrBatches = strategicBatches.batches || [];
   state.strategicQrHistory = strategicHistory.history || [];
+  state.affiliates = affiliatesData.affiliates || [];
+  state.affiliatesLoaded = true;
   state.strategicQrLoaded = true;
   hideFeedback();
 }
@@ -637,6 +667,10 @@ function authHeaders() {
 
 function toNumber(value) {
   return Number(value || 0);
+}
+
+function acquisitionSourceLabel(value) {
+  return ACQUISITION_SOURCE_LABELS[value] || value || "Sin medio";
 }
 
 function money(value) {
@@ -1003,6 +1037,7 @@ function renderAccountView() {
   renderSubscriptionRenewal();
 
   if (accountNameInput) accountNameInput.value = business.name || "";
+  if (accountSloganInput) accountSloganInput.value = business.slogan || business.settings?.slogan || business.settings?.tagline || "";
   if (accountNitInput) accountNitInput.value = business.nit || "";
   if (accountContactInput) accountContactInput.value = business.contact_name || "";
   if (accountEmailInput) accountEmailInput.value = business.contact_email || "";
@@ -1391,14 +1426,18 @@ function renderDashboard() {
   );
   const branchPerformance = filterRows(dashboard.branch_performance || [], ["branch_name", "address"]);
   const paymentMethods = filterRows(dashboard.payment_methods || [], ["payment_method"]);
+  const acquisitionSources = filterRows(dashboard.acquisition_sources || [], ["acquisition_source", "acquisition_channel"]);
   const campaignPerformance = filterRows(dashboard.campaign_performance || [], ["campaign_name"]);
   const originPerformance = filterRows(dashboard.origin_performance || [], ["origin_type"]);
   const rewardPerformance = filterRows(dashboard.rewards || [], ["name"]);
   const qrStatus = dashboard.qr_status || [];
   const topHour = [...(dashboard.time_stats?.redemptions_by_hour || [])].sort((a, b) => toNumber(b.count) - toNumber(a.count))[0];
   const topBranch = [...branchPerformance].sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))[0];
-  const avgTicket = summary.direct_sales_count ? toNumber(summary.attributed_revenue) / toNumber(summary.direct_sales_count) : 0;
-  const roiLabel = ratioLabel(summary.estimated_roi);
+  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const avgTicket = observedSalesCount ? observedRevenue / observedSalesCount : 0;
+  const topAcquisitionSource = [...acquisitionSources].sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))[0];
+  const roiLabel = ratioLabel(summary.observed_roi ?? summary.estimated_roi);
   const strategicClaimRate = dashboard.derived?.strategic_claim_rate || summary.strategic_claim_rate || 0;
   const strategicRedemptionRate = dashboard.derived?.strategic_redemption_rate || summary.strategic_redemption_rate || 0;
   const postSaleRedemptionRate = dashboard.derived?.post_sale_redemption_rate || summary.post_sale_redemption_rate || 0;
@@ -1412,12 +1451,13 @@ function renderDashboard() {
     ["Paquetes QR", summary.strategic_batches || 0, `${summary.strategic_generated || 0} codigos estrategicos`, "", "Lotes de QR precreados para etiquetas, empaques, volantes o fidelizacion."],
     ["QR estrategicos", summary.strategic_generated || 0, `${strategicClaimRate}% activado`, "", "QR no nacidos de juego o formulario publico, sino de estrategias internas del negocio."],
     ["Claims estrategicos", summary.strategic_claimed_or_active || 0, `${strategicRedemptionRate}% redimido`, "", "Clientes que escanearon un QR precreado, dejaron datos y activaron el beneficio."],
-    ["Clientes adquiridos", summary.direct_sales_count, `${money(summary.attributed_revenue)} en ventas`, "", "Compras atribuidas directamente a una redencion valida."],
-    ["Ingresos atribuidos", money(summary.attributed_revenue), `${money(avgTicket)} ticket promedio`, "", "Ventas que quedaron registradas en caja o por el validador como resultado de la campana."],
+    ["Ventas reales", observedSalesCount, `${money(observedRevenue)} registrado`, "", "Compras reales registradas por caja, QR postventa o captura manual del medio de llegada."],
+    ["Revenue observado", money(observedRevenue), `${money(avgTicket)} ticket promedio`, "", "Dinero real asociado a clientes capturados por los distintos medios de llegada."],
+    ["Referidos afiliados", summary.referral_sales_count || 0, `${summary.referral_points_awarded || 0} puntos entregados`, "", "Ventas en las que un afiliado recomendo al cliente y recibio puntos."],
     ["Inversion total", money(summary.total_investment), `${money(summary.cost_per_lead)} por lead`, "", "Suma total invertida en pauta, creativos y activacion para este periodo de analisis."],
-    ["Costo por lead", money(summary.cost_per_lead), `${money(summary.cost_per_acquired_customer)} por cliente`, "", "Cuanto costo captar cada lead, antes de saber si compro o no."],
-    ["Costo por cliente", money(summary.cost_per_acquired_customer), `vs. ticket medio ${money(avgTicket)}`, "", "Cuanto costo adquirir un cliente con compra atribuida. Debe compararse contra ticket promedio y margen."],
-    ["ROI estimado", roiLabel, "Retorno sobre ventas atribuidas", "highlight", "Relacion entre ventas atribuidas e inversion. Un valor mayor a 1x ya recupera la inversion; por encima de eso empieza a devolver ganancia comercial."],
+    ["Costo por lead", money(summary.cost_per_lead), `${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} por venta`, "", "Cuanto costo captar cada lead, antes de saber si compro o no."],
+    ["Costo por venta", money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer), `vs. ticket medio ${money(avgTicket)}`, "", "Cuanto costo traer una venta real observada. Debe compararse contra ticket promedio y margen."],
+    ["ROI estimado", roiLabel, "Retorno sobre ventas reales", "highlight", "Relacion entre ventas observadas e inversion. Un valor mayor a 1x ya recupera la inversion; por encima de eso empieza a devolver ganancia comercial."],
   ];
 
   businessKpiGrid.innerHTML = items.map(([label, value, meta, tone, help]) => `
@@ -1428,16 +1468,20 @@ function renderDashboard() {
     </article>
   `).join("");
 
-  dashboardNarrativeTitle.textContent = topBranch?.branch_name
-    ? `${topBranch.branch_name} lidera la operacion del periodo.`
+  dashboardNarrativeTitle.textContent = topAcquisitionSource
+    ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera la llegada comercial.`
+    : topBranch?.branch_name
+      ? `${topBranch.branch_name} lidera la operacion del periodo.`
     : "Esperando datos del negocio.";
-  dashboardNarrativeText.textContent = topBranch?.branch_name
-    ? `La sucursal ${topBranch.branch_name} concentra ${money(topBranch.revenue)} en revenue atribuido y ${topBranch.redemptions} redenciones. Ademas, el negocio ya suma ${summary.post_sale_generated || 0} QR postventa y ${summary.strategic_generated || 0} QR estrategicos fuera del flujo publico.`
+  dashboardNarrativeText.textContent = topAcquisitionSource
+    ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)}${topAcquisitionSource.acquisition_channel ? ` / ${topAcquisitionSource.acquisition_channel}` : ""} trae ${toNumber(topAcquisitionSource.count)} ventas reales y ${money(topAcquisitionSource.revenue)}. El portal combina esta captura con QR para medir ventas, no solo likes o comentarios.`
+    : topBranch?.branch_name
+      ? `La sucursal ${topBranch.branch_name} concentra ${money(topBranch.revenue)} en revenue atribuido y ${topBranch.redemptions} redenciones. Ademas, el negocio ya suma ${summary.post_sale_generated || 0} QR postventa y ${summary.strategic_generated || 0} QR estrategicos fuera del flujo publico.`
     : "Cuando haya actividad, aqui veras el principal movimiento del periodo sin tener que interpretar todas las tablas.";
-  dashboardFunnelHelp.textContent = `Hoy el embudo combina ${summary.total_leads || 0} leads publicos con ${summary.strategic_claimed_or_active || 0} activaciones estrategicas; de ahi salen ${summary.total_qr_generated || 0} QR emitidos y ${summary.direct_sales_count || 0} clientes con compra atribuida.`;
+  dashboardFunnelHelp.textContent = `Hoy el embudo combina ${summary.total_leads || 0} leads publicos con ${summary.strategic_claimed_or_active || 0} activaciones estrategicas; de ahi salen ${summary.total_qr_generated || 0} QR emitidos y ${observedSalesCount} ventas reales observadas.`;
   dashboardHealthText.textContent = roiLabel === "-"
     ? "Aun no hay ventas suficientes para evaluar ROI, CPL y CAC con criterio comercial."
-    : `El ROI actual es ${roiLabel}, el CAC esta en ${money(summary.cost_per_acquired_customer)} y el ticket promedio ronda ${money(avgTicket)}. En QR estrategicos, postventa redime ${postSaleRedemptionRate}% y los claims convierten ${strategicRedemptionRate}% a redencion.`;
+    : `El ROI actual es ${roiLabel}, el costo por venta esta en ${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} y el ticket promedio ronda ${money(avgTicket)}. En QR estrategicos, postventa redime ${postSaleRedemptionRate}% y los claims convierten ${strategicRedemptionRate}% a redencion.`;
   cacTrendNote.textContent = avgTicket
     ? `Benchmark visual: CAC sano cuando queda claramente por debajo del ticket promedio de ${money(avgTicket)}.`
     : "Benchmark visual: compara el CAC contra el ticket promedio y el ROI de cada campana.";
@@ -1539,11 +1583,13 @@ function renderDashboard() {
 
   drawHorizontalBars(
     paymentMethodChart,
-    paymentMethods.map((row) => ({
-      label: row.payment_method,
+    (acquisitionSources.length ? acquisitionSources : paymentMethods).map((row) => ({
+      label: acquisitionSources.length
+        ? `${acquisitionSourceLabel(row.acquisition_source)}${row.acquisition_channel && row.acquisition_channel !== "Sin canal especifico" ? ` / ${row.acquisition_channel}` : ""}`
+        : row.payment_method,
       value: toNumber(row.revenue),
       valueLabel: money(row.revenue),
-      meta: `${toNumber(row.count)} ventas`,
+      meta: `${toNumber(row.count)} ventas${toNumber(row.referral_points_awarded) ? ` | ${toNumber(row.referral_points_awarded)} pts referidos` : ""}`,
     })),
     NEON_CHART.magenta
   );
@@ -1570,7 +1616,7 @@ function renderDashboard() {
   `).join("") || '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
 
   dashboardInsightTitle.textContent = topHour?.count
-    ? `El pico de redenciones ocurre a las ${String(topHour.hour).padStart(2, "0")}:00 y ${topBranch?.branch_name || "la sucursal principal"} lidera el revenue del periodo. Los QR estrategicos ya aportan ${summary.strategic_claimed_or_active || 0} activaciones al embudo.`
+    ? `El pico de redenciones ocurre a las ${String(topHour.hour).padStart(2, "0")}:00. ${topAcquisitionSource ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera ventas reales con ${money(topAcquisitionSource.revenue)}.` : `${topBranch?.branch_name || "La sucursal principal"} lidera el revenue del periodo.`} Los QR estrategicos ya aportan ${summary.strategic_claimed_or_active || 0} activaciones al embudo.`
     : "Aun no hay suficiente actividad para construir un insight horario.";
 }
 
@@ -2289,6 +2335,17 @@ function renderQrBatchResultCard(batch, options = {}) {
   });
 }
 
+function renderCustomerAcquisitionAffiliateOptions() {
+  if (!customerAcquisitionAffiliateInput) return;
+  const affiliates = (state.affiliates || []).filter((affiliate) => affiliate.status !== "INACTIVE");
+  customerAcquisitionAffiliateInput.innerHTML = [
+    '<option value="">Sin afiliado referido</option>',
+    ...affiliates.map((affiliate) => `
+      <option value="${escapeHtml(affiliate.id)}">${escapeHtml(affiliate.full_name || "Afiliado")} (${escapeHtml(affiliate.document_id || affiliate.phone || "sin documento")})</option>
+    `),
+  ].join("");
+}
+
 function renderStrategicQrView() {
   const metrics = state.strategicQrMetrics?.totals || {};
   const credits = state.qrCreditAccount || null;
@@ -2319,6 +2376,7 @@ function renderStrategicQrView() {
   }
   renderQrCreditShop();
   renderSubscriptionPricing();
+  renderCustomerAcquisitionAffiliateOptions();
 
   qrBatchTable.innerHTML = (state.strategicQrBatches || []).length
     ? state.strategicQrBatches.map((item) => `
@@ -2499,6 +2557,49 @@ async function submitSubscriptionRenewal(event) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo renovar" });
     setButtonLoading(subscriptionRenewalButton, false);
+  }
+}
+
+async function submitCustomerAcquisitionSale(event) {
+  event.preventDefault();
+  const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
+  setButtonLoading(submitButton, true, "Registrando...");
+  setInlineMessage(customerAcquisitionMessage, "Registrando venta real y medio de llegada...", "info");
+  try {
+    const data = await api("/api/business/customer-acquisition-sales", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        sale_amount: Number(customerAcquisitionAmountInput.value || 0),
+        currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
+        product_name: customerAcquisitionProductInput.value.trim() || null,
+        customer_name: customerAcquisitionNameInput.value.trim() || null,
+        customer_document_id: customerAcquisitionDocumentInput.value.trim() || null,
+        customer_phone: customerAcquisitionPhoneInput.value.trim() || null,
+        customer_email: customerAcquisitionEmailInput.value.trim() || null,
+        acquisition_source: customerAcquisitionSourceInput.value,
+        acquisition_channel: customerAcquisitionChannelInput.value.trim() || null,
+        referred_affiliate_id: customerAcquisitionAffiliateInput.value || null,
+        notes: customerAcquisitionNotesInput.value.trim() || null,
+      }),
+    });
+    const awarded = Number(data.referral?.points_awarded || 0);
+    const message = awarded
+      ? `Venta registrada. ${data.referral.affiliate_name} recibio ${awarded} puntos por recomendacion.`
+      : "Venta registrada con su medio de llegada.";
+    setInlineMessage(customerAcquisitionMessage, message, "success");
+    customerAcquisitionForm.reset();
+    customerAcquisitionCurrencyInput.value = "COP";
+    state.strategicQrLoaded = false;
+    await loadWorkspace();
+    await loadStrategicQrData();
+    setView("strategic-qr");
+    showFeedback(message, "success", { title: "Venta registrada" });
+  } catch (error) {
+    setInlineMessage(customerAcquisitionMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo registrar" });
+  } finally {
+    setButtonLoading(submitButton, false);
   }
 }
 
@@ -3653,6 +3754,29 @@ function businessProfileLogoSource() {
     || "";
 }
 
+function firstTextValue(...values) {
+  const match = values.find((value) => String(value || "").trim());
+  return match ? String(match).trim() : "";
+}
+
+function businessCardProfile(affiliate = {}) {
+  const business = state.businessProfile || session?.user?.business || {};
+  const settings = {
+    ...(affiliate?.business_settings || {}),
+    ...(business?.settings || {}),
+  };
+  return {
+    name: firstTextValue(business.name, affiliate.business_name, settings.name, "UNIVERSAL QR"),
+    slogan: firstTextValue(business.slogan, settings.slogan, settings.tagline, affiliate.business_slogan),
+    contactName: firstTextValue(business.contact_name, settings.contact_name),
+    contactEmail: firstTextValue(business.contact_email, settings.contact_email, settings.email),
+    phone: firstTextValue(business.phone, settings.phone),
+    website: firstTextValue(business.website, settings.website),
+    city: firstTextValue(business.city, settings.city),
+    address: firstTextValue(business.address, settings.address),
+  };
+}
+
 function affiliateQrSource(affiliate) {
   return affiliate?.qr_data_url
     || affiliate?.qrDataUrl
@@ -3886,17 +4010,21 @@ async function buildAffiliateCardDataUrl(affiliate) {
   };
 
   const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
-  const businessName = affiliate.business_name || "UNIVERSAL QR";
+  const businessProfile = businessCardProfile(affiliate);
+  const businessName = businessProfile.name;
+  const businessSlogan = businessProfile.slogan;
+  const businessContactLines = [
+    businessProfile.contactName ? `Contacto: ${businessProfile.contactName}` : "",
+    businessProfile.phone ? `Tel: ${businessProfile.phone}` : "",
+    businessProfile.contactEmail ? `Email: ${businessProfile.contactEmail}` : "",
+    businessProfile.website ? `Web: ${businessProfile.website}` : "",
+    firstTextValue(businessProfile.address, businessProfile.city),
+  ].filter(Boolean).slice(0, 3);
   const tokenPreview = String(affiliate.qr_token || "").slice(0, 16).toUpperCase();
   const photoSource = affiliatePhotoSource(affiliate);
-  const logoSource = businessLogoSource(affiliate);
   const qrSource = affiliateQrSource(affiliate);
   const photo = await loadImageDataUrl(photoSource);
   const platformLogo = await loadImageDataUrl("/img/MGLogo-01.png");
-  const uploadedLogo = await loadImageDataUrl(logoSource);
-  const businessLogo = uploadedLogo || null;
-  const logo = businessLogo || platformLogo;
-  const isCompanyProfileLogo = Boolean(businessLogo);
   const qrImg = await loadImageDataUrl(qrSource);
 
   const bgGradient = ctx.createLinearGradient(0, 0, width, height);
@@ -3942,52 +4070,56 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.roundRect(58, 58, 1084, 128, 30);
   ctx.fill();
 
-  const logoX = 76;
-  const logoY = 68;
-  const logoW = 430;
-  const logoH = 112;
+  const brandBadgeX = 82;
+  const brandBadgeY = 76;
+  const brandBadgeSize = 86;
   ctx.fillStyle = "rgba(2, 8, 23, 0.88)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.42)";
   ctx.lineWidth = 2;
-  ctx.roundRect(logoX, logoY, logoW, logoH, 22);
+  ctx.roundRect(brandBadgeX, brandBadgeY, brandBadgeSize, brandBadgeSize, 24);
   ctx.fill();
   ctx.stroke();
-  if (logo) {
-    ctx.save();
-    ctx.shadowColor = "rgba(124, 251, 255, 0.22)";
-    ctx.shadowBlur = 12;
-    drawContainedImage(logo, logoX + 16, logoY + 12, logoW - 32, logoH - 24, 16, "rgba(255, 255, 255, 0.02)", {
-      trimWhite: !isCompanyProfileLogo,
-      removeWhiteBackground: false,
-    });
-    ctx.restore();
-  } else {
-    drawInitials(businessName, logoX + 16, logoY + 12, logoW - 32, logoH - 24, {
-      background: "#071225",
-      color: "#7cfbff",
-      radius: 14,
-      font: "900 34px Inter, Arial, sans-serif",
-    });
-  }
+  drawInitials(businessName, brandBadgeX + 10, brandBadgeY + 10, brandBadgeSize - 20, brandBadgeSize - 20, {
+    background: "rgba(124, 251, 255, 0.11)",
+    color: "#7cfbff",
+    radius: 18,
+    font: "900 34px Inter, Arial, sans-serif",
+  });
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#f8fdff";
-  ctx.font = "900 31px Inter, Arial, sans-serif";
-  fitTextLines(businessName, 348, 1).forEach((line, index) => {
-    ctx.fillText(line, 536, 108 + index * 34);
+  ctx.font = "900 34px Inter, Arial, sans-serif";
+  const businessNameLines = fitTextLines(businessName, 568, 2);
+  businessNameLines.forEach((line, index) => {
+    ctx.fillText(line, 196, 101 + index * 36);
   });
-  ctx.fillStyle = "#a8c6d9";
-  ctx.font = "800 15px Inter, Arial, sans-serif";
-  ctx.fillText("EMPRESA EMISORA DEL CARNET", 538, 148);
 
-  ctx.fillStyle = "rgba(124, 251, 255, 0.16)";
-  ctx.strokeStyle = "rgba(124, 251, 255, 0.34)";
-  ctx.roundRect(916, 86, 190, 48, 24);
+  const brandMetaY = businessNameLines.length > 1 ? 166 : 134;
+  ctx.fillStyle = businessSlogan ? "#b8d3df" : "#7cfbff";
+  ctx.font = businessSlogan ? "800 17px Inter, Arial, sans-serif" : "900 15px Inter, Arial, sans-serif";
+  fitTextLines(businessSlogan || "EMPRESA EMISORA DEL CARNET", 568, 1).forEach((line) => {
+    ctx.fillText(line, 196, brandMetaY);
+  });
+
+  const contactX = 790;
+  const contactY = 78;
+  const contactW = 326;
+  const contactH = 88;
+  ctx.fillStyle = "rgba(2, 8, 23, 0.58)";
+  ctx.strokeStyle = "rgba(124, 251, 255, 0.26)";
+  ctx.roundRect(contactX, contactY, contactW, contactH, 22);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#dff8ff";
-  ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("QR PERMANENTE", 946, 116);
+  ctx.fillStyle = "#7cfbff";
+  ctx.font = "900 12px Inter, Arial, sans-serif";
+  ctx.fillText("CONTACTO EMPRESA", contactX + 20, contactY + 25);
+  ctx.fillStyle = "#f8fdff";
+  ctx.font = "800 14px Inter, Arial, sans-serif";
+  (businessContactLines.length ? businessContactLines : ["Contacto no registrado"]).forEach((line, index) => {
+    fitTextLines(line, contactW - 40, 1).forEach((text) => {
+      ctx.fillText(text, contactX + 20, contactY + 49 + index * 19);
+    });
+  });
 
   const photoX = 78;
   const photoY = 226;
@@ -4253,6 +4385,7 @@ async function submitAccountProfile(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         name: accountNameInput.value.trim(),
+        slogan: optionalInputValue(accountSloganInput),
         contact_name: optionalInputValue(accountContactInput),
         contact_email: optionalInputValue(accountEmailInput),
         phone: optionalInputValue(accountPhoneInput),
@@ -4323,7 +4456,7 @@ async function handleBusinessLogoFile(file) {
 }
 
 async function ensureBusinessProfileForCard() {
-  if (!session?.user?.business_id || businessProfileLogoSource()) return;
+  if (!session?.user?.business_id || state.businessProfile) return;
   const data = await apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null });
   if (data.business) {
     state.businessProfile = data.business;
@@ -5445,6 +5578,7 @@ launchSetupForm.addEventListener("submit", saveClientLaunchSetup);
 confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
+customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);

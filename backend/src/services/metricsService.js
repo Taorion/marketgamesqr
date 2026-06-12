@@ -188,6 +188,22 @@ async function getBusinessSummary(businessId) {
   totals.strategic_redeemed = Number(strategic.strategic_redeemed || 0);
   totals.strategic_batches = Number(strategic.strategic_batches || 0);
 
+  const observedSalesResult = await query(
+    `select
+       count(*)::int as observed_sales_count,
+       coalesce(sum(sale_amount), 0)::numeric(14, 2) as observed_revenue,
+       count(*) filter (where referred_affiliate_id is not null)::int as referral_sales_count,
+       coalesce(sum(referral_points_awarded), 0)::int as referral_points_awarded
+     from business_sales
+     where business_id = $1`,
+    [businessId]
+  );
+  const observed = observedSalesResult.rows[0] || {};
+  totals.observed_sales_count = Number(observed.observed_sales_count || 0);
+  totals.observed_revenue = Number(observed.observed_revenue || 0);
+  totals.referral_sales_count = Number(observed.referral_sales_count || 0);
+  totals.referral_points_awarded = Number(observed.referral_points_awarded || 0);
+
   const salesUplift = Number((totals.campaign_period_sales - totals.baseline_sales).toFixed(2));
 
   return {
@@ -196,7 +212,10 @@ async function getBusinessSummary(businessId) {
     cost_per_lead: safeDivide(totals.total_investment, totals.total_leads),
     cost_per_redeemed_qr: safeDivide(totals.total_investment, totals.total_qr_redeemed),
     cost_per_acquired_customer: safeDivide(totals.total_investment, totals.direct_sales_count),
+    cost_per_observed_customer: safeDivide(totals.total_investment, totals.observed_sales_count),
     estimated_roi: safeRoi(totals.attributed_revenue, totals.total_investment),
+    observed_roi: safeRoi(totals.observed_revenue, totals.total_investment),
+    observed_avg_ticket: safeDivide(totals.observed_revenue, totals.observed_sales_count),
     sales_uplift: salesUplift,
     estimated_uplift_roi: safeRoi(salesUplift, totals.total_investment),
     post_sale_redemption_rate: safeRate(totals.post_sale_redeemed, totals.post_sale_generated),

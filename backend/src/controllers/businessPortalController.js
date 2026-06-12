@@ -1,6 +1,6 @@
 const QRCode = require("qrcode");
 const { z } = require("zod");
-const { query } = require("../config/db");
+const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { forbidden, notFound, badRequest } = require("../utils/http");
 const { validate } = require("../utils/validators");
@@ -54,6 +54,7 @@ const salesSnapshotSchema = z.object({
 
 const businessProfileSchema = z.object({
   name: z.string().trim().min(2).max(160).optional(),
+  slogan: z.string().trim().max(180).optional().nullable(),
   contact_name: z.string().trim().max(160).optional().nullable(),
   contact_email: z.string().trim().email().optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
@@ -63,11 +64,45 @@ const businessProfileSchema = z.object({
   logo_data_url: z.string().trim().max(9_000_000).optional().nullable(),
 });
 
+const acquisitionSourceOptions = [
+  "STORE_WALK_IN",
+  "FRIEND_REFERRAL",
+  "FAIR_EVENT",
+  "INTERNET_SEARCH",
+  "SOCIAL_MEDIA",
+  "PAID_ADS",
+  "QR_SCAN",
+  "OTHER",
+];
+
+const customerAcquisitionSaleSchema = z.object({
+  customer_name: z.string().trim().max(160).optional().nullable(),
+  customer_phone: z.string().trim().max(40).optional().nullable(),
+  customer_email: z.string().trim().email().optional().nullable(),
+  customer_document_id: z.string().trim().max(80).optional().nullable(),
+  product_name: z.string().trim().max(180).optional().nullable(),
+  sale_amount: z.number().positive(),
+  currency: z.string().trim().max(12).default("COP"),
+  acquisition_source: z.enum(acquisitionSourceOptions),
+  acquisition_channel: z.string().trim().max(180).optional().nullable(),
+  referred_affiliate_id: z.string().uuid().optional().nullable(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const AFFILIATE_POINTS_PER_PESO = 1000;
+const REFERRAL_POINTS_RATE = 0.2;
+
 function businessIdFor(req) {
   if (!req.user.business_id) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+function referralPointsForSaleAmount(amount) {
+  const basePoints = Number(amount || 0) / AFFILIATE_POINTS_PER_PESO;
+  return Math.max(0, Math.ceil(basePoints * REFERRAL_POINTS_RATE));
 }
 
 async function requireCampaignForBusiness(campaignId, businessId) {
@@ -186,6 +221,7 @@ function businessProfileFromRow(row, user = null) {
     name: row.name,
     slug: row.slug,
     nit: settings.nit || "",
+    slogan: settings.slogan || settings.tagline || "",
     contact_name: settings.contact_name || "",
     contact_email: settings.contact_email || settings.email || "",
     phone: settings.phone || "",
@@ -248,6 +284,7 @@ async function updateBusinessProfile(req, res, next) {
     const nextSettings = { ...currentSettings };
     [
       "contact_name",
+      "slogan",
       "contact_email",
       "phone",
       "website",
@@ -271,6 +308,112 @@ async function updateBusinessProfile(req, res, next) {
     );
     const business = result.rows[0];
     res.json({ business: businessProfileFromRow(business, req.user) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCustomerAcquisitionSale(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(customerAcquisitionSaleSchema, req.body);
+    const referralPoints = body.referred_affiliate_id
+      ? referralPointsForSaleAmount(body.sale_amount)
+      : 0;
+
+    const result = await withTransaction(async (client) => {
+      let referredAffiliate = null;
+      if (body.referred_affiliate_id) {
+        const affiliateResult = await client.query(
+          `select id, full_name, points_total
+           from affiliates
+           where id = $1 and business_id = $2 and status = 'ACTIVE'
+           for update`,
+          [body.referred_affiliate_id, businessId]
+        );
+        referredAffiliate = affiliateResult.rows[0];
+        if (!referredAffiliate) {
+          throw badRequest("El afiliado referido no existe o no esta activo para este negocio.");
+        }
+      }
+
+      const saleResult = await client.query(
+        `insert into business_sales
+          (business_id, customer_name, customer_phone, customer_email, customer_document_id,
+           product_name, sale_amount, currency, seller_user_id, branch_id, acquisition_source,
+           acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+         returning *`,
+        [
+          businessId,
+          body.customer_name || null,
+          body.customer_phone || null,
+          body.customer_email || null,
+          body.customer_document_id || null,
+          body.product_name || null,
+          body.sale_amount,
+          body.currency || "COP",
+          req.user.id,
+          req.user.branch_id || null,
+          body.acquisition_source,
+          body.acquisition_channel || null,
+          body.referred_affiliate_id || null,
+          referralPoints,
+          body.notes || null,
+          {
+            ...body.metadata,
+            capture_source: "customer_acquisition",
+            referral_points_rate: body.referred_affiliate_id ? REFERRAL_POINTS_RATE : 0,
+            points_base_amount: AFFILIATE_POINTS_PER_PESO,
+          },
+        ]
+      );
+
+      if (referredAffiliate && referralPoints > 0) {
+        await client.query(
+          `insert into affiliate_point_ledger
+            (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+           values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE', $6)`,
+          [
+            businessId,
+            referredAffiliate.id,
+            req.user.id,
+            body.sale_amount,
+            referralPoints,
+            {
+              sale_id: saleResult.rows[0].id,
+              acquisition_source: body.acquisition_source,
+              acquisition_channel: body.acquisition_channel || null,
+              referred_customer: body.customer_name || null,
+            },
+          ]
+        );
+
+        const updatedAffiliate = await client.query(
+          `update affiliates
+           set points_total = points_total + $3,
+               updated_at = now()
+           where id = $1 and business_id = $2
+           returning id, full_name, points_total`,
+          [referredAffiliate.id, businessId, referralPoints]
+        );
+        referredAffiliate = updatedAffiliate.rows[0];
+      }
+
+      return {
+        sale: saleResult.rows[0],
+        referral: referredAffiliate
+          ? {
+              affiliate_id: referredAffiliate.id,
+              affiliate_name: referredAffiliate.full_name,
+              points_awarded: referralPoints,
+              points_total: referredAffiliate.points_total,
+            }
+          : null,
+      };
+    });
+
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -680,6 +823,7 @@ async function updateSalesSnapshot(req, res, next) {
 module.exports = {
   getBusinessProfile,
   updateBusinessProfile,
+  createCustomerAcquisitionSale,
   listCampaigns,
   getCampaign,
   patchClientSetup,

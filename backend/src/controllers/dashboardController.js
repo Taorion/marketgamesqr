@@ -66,6 +66,9 @@ async function businessDashboard(req, res, next) {
       originPerformance,
       branchPerformance,
       paymentMethods,
+      acquisitionSourcePerformance,
+      recentAcquisitionSales,
+      businessSalesByDay,
       validationByHour,
       claimsByDay,
       claimsByHour,
@@ -269,6 +272,51 @@ async function businessDashboard(req, res, next) {
         [businessId]
       ),
       query(
+        `select
+           coalesce(acquisition_source, 'OTHER') as acquisition_source,
+           coalesce(nullif(acquisition_channel, ''), 'Sin canal especifico') as acquisition_channel,
+           count(*)::int as count,
+           coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+           coalesce(sum(referral_points_awarded), 0)::int as referral_points_awarded
+         from business_sales
+         where business_id = $1 and acquisition_source is not null
+         group by coalesce(acquisition_source, 'OTHER'), coalesce(nullif(acquisition_channel, ''), 'Sin canal especifico')
+         order by revenue desc, count desc`,
+        [businessId]
+      ),
+      query(
+        `select
+           bs.id,
+           bs.customer_name,
+           bs.customer_phone,
+           bs.customer_email,
+           bs.product_name,
+           bs.sale_amount,
+           bs.currency,
+           bs.acquisition_source,
+           bs.acquisition_channel,
+           bs.referral_points_awarded,
+           bs.notes,
+           bs.created_at,
+           a.full_name as referred_affiliate_name
+         from business_sales bs
+         left join affiliates a on a.id = bs.referred_affiliate_id
+         where bs.business_id = $1
+         order by bs.created_at desc
+         limit 25`,
+        [businessId]
+      ),
+      query(
+        `select to_char(created_at::date, 'YYYY-MM-DD') as date,
+                count(*)::int as sales,
+                coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
+         from business_sales
+         where business_id = $1 and created_at >= now() - interval '14 days'
+         group by created_at::date
+         order by created_at::date`,
+        [businessId]
+      ),
+      query(
         `select extract(hour from created_at)::int as hour, count(*)::int as count
          from validation_logs
          where business_id = $1
@@ -345,6 +393,13 @@ async function businessDashboard(req, res, next) {
         bucket.revenue = Number(row.revenue || 0);
       }
     });
+    businessSalesByDay.rows.forEach((row) => {
+      const bucket = salesDayBuckets.find((item) => item.date === row.date);
+      if (bucket) {
+        bucket.count = row.sales;
+        bucket.revenue = Number(row.revenue || 0);
+      }
+    });
     const claimsDayBuckets = initLastDays();
     claimsByDay.rows.forEach((row) => {
       const bucket = claimsDayBuckets.find((item) => item.date === row.date);
@@ -415,6 +470,8 @@ async function businessDashboard(req, res, next) {
       origin_performance: originPerformance.rows,
       branch_performance: branchPerformance.rows,
       payment_methods: paymentMethods.rows,
+      acquisition_sources: acquisitionSourcePerformance.rows,
+      recent_acquisition_sales: recentAcquisitionSales.rows,
       answer_stats: {
         favorite_product: countBy(answerRows, "favorite_product"),
         purchase_frequency: countBy(answerRows, "purchase_frequency"),

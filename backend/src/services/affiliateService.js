@@ -13,7 +13,7 @@ function ensureBusinessAccess(user, businessId) {
 }
 
 async function businessNameFor(businessId) {
-  const result = await query("select id, name from businesses where id = $1", [businessId]);
+  const result = await query("select id, name, settings from businesses where id = $1", [businessId]);
   return result.rows[0] || null;
 }
 
@@ -34,6 +34,7 @@ async function listAffiliates(businessId, user) {
     `select
        a.*,
        b.name as business_name,
+       b.settings as business_settings,
        u.full_name as created_by_name,
        coalesce((select sum(l.points_awarded)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as ledger_points,
        coalesce((select count(*)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as point_events,
@@ -82,6 +83,7 @@ async function createAffiliate(businessId, user, body) {
   const affiliate = await attachQrDataUrl({
     ...result.rows[0],
     business_name: business.name,
+    business_settings: business.settings || {},
     created_by_name: user.full_name || user.email || null,
     ledger_points: 0,
     point_events: 0,
@@ -96,6 +98,7 @@ async function getAffiliate(businessId, affiliateId, user) {
     `select
        a.*,
        b.name as business_name,
+       b.settings as business_settings,
        u.full_name as created_by_name,
        coalesce((select sum(l.points_awarded)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as ledger_points,
        coalesce((select count(*)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as point_events,

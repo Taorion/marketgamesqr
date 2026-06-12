@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=issuer-logo-exact-card-20260612">
+  <link rel="stylesheet" href="css/styles.css?v=issuer-text-card-20260612">
 </head>
 <body>
   <main class="portal-shell">
@@ -288,9 +288,9 @@
               <article class="surface-card chart-card">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Metodos de pago</span>
-                    <h3 class="subhead">Revenue y transacciones por medio</h3>
-                    <p class="chart-explainer">Sirve para entender si la venta atribuida termina mas en efectivo, tarjeta o transferencia.</p>
+                    <span class="mono-label">Canales de llegada</span>
+                    <h3 class="subhead">Ventas reales por medio</h3>
+                    <p class="chart-explainer">Mide clientes y revenue por el medio que trajo la venta: vitrina, recomendacion, feria, internet, redes, pauta o QR.</p>
                   </div>
                 </div>
                 <canvas id="paymentMethodChart" width="900" height="320"></canvas>
@@ -493,6 +493,7 @@
                 </div>
                 <form class="modal-form account-profile-form" id="accountProfileForm">
                   <label><span>Nombre empresa</span><input id="accountNameInput" type="text" maxlength="160" required></label>
+                  <label><span>Slogan</span><input id="accountSloganInput" type="text" maxlength="180" placeholder="Ej: Experiencias que vuelven clientes"></label>
                   <label><span>NIT</span><input id="accountNitInput" type="text" disabled></label>
                   <label><span>Contacto principal</span><input id="accountContactInput" type="text" maxlength="160"></label>
                   <label><span>Email contacto</span><input id="accountEmailInput" type="email" maxlength="220"></label>
@@ -605,6 +606,43 @@
             </article>
 
             <section class="charts-grid dashboard-charts">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Medicion comercial</span>
+                    <h3>Registrar llegada y venta</h3>
+                  </div>
+                  <span class="status-chip ok">Ventas reales</span>
+                </div>
+                <p class="chart-explainer">Registra como llego el cliente y deja lo especifico en observaciones: volante, gamificacion, feria concreta o pieza puntual.</p>
+                <form class="modal-form" id="customerAcquisitionForm">
+                  <label><span>Valor de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" required></label>
+                  <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
+                  <label><span>Producto / servicio</span><input id="customerAcquisitionProductInput" type="text"></label>
+                  <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
+                  <label><span>Cedula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
+                  <label><span>Telefono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
+                  <label><span>Correo</span><input id="customerAcquisitionEmailInput" type="email"></label>
+                  <label><span>Medio de llegada</span>
+                    <select id="customerAcquisitionSourceInput" required>
+                      <option value="STORE_WALK_IN">Vio el almacen</option>
+                      <option value="FRIEND_REFERRAL">Recomendacion de un amigo</option>
+                      <option value="FAIR_EVENT">Feria o evento</option>
+                      <option value="INTERNET_SEARCH">Internet / buscador</option>
+                      <option value="SOCIAL_MEDIA">Redes sociales</option>
+                      <option value="PAID_ADS">Pauta digital</option>
+                      <option value="QR_SCAN">QR / pieza impresa</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </label>
+                  <label><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
+                  <label><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
+                  <label><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
+                  <button class="solid-button" type="submit">Registrar venta</button>
+                  <p class="error-line" id="customerAcquisitionMessage"></p>
+                </form>
+              </article>
+
               <article class="surface-card data-table-card">
                 <div class="table-card-head">
                   <span class="mono-label">QR postventa</span>
@@ -1483,7 +1521,7 @@
               <div>
                 <span class="mono-label">Sistema de afiliados</span>
                 <h2>Crear afiliado</h2>
-                <p>Genera un carnet con el logo de la empresa, QR propio y puntos acumulables: 1 punto por cada 1000 pesos.</p>
+                <p>Genera un carnet con nombre de empresa, slogan opcional, contacto, QR propio y puntos acumulables: 1 punto por cada 1000 pesos.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
@@ -1523,7 +1561,7 @@
                   <span class="material-symbols-outlined">storefront</span>
                 </div>
                 <div class="business-logo-copy">
-                  <p>Este logo aparece en todos los carnets de afiliado de la empresa activa. Si inicias sesion como empresa A veras el logo A; empresa B vera su propio logo.</p>
+                  <p>El carnet ahora prioriza nombre, slogan y datos de contacto. El logo queda disponible para otras piezas del portal y materiales QR.</p>
                   <input class="affiliate-file-input" id="businessLogoInput" type="file" accept="image/*">
                   <div class="affiliate-logo-actions">
                     <button class="ghost-button" id="businessLogoUploadButton" type="button">Subir logo</button>
@@ -1789,7 +1827,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=issuer-logo-exact-card-20260612" defer></script>
+  <script src="js/app.js?v=issuer-text-card-20260612" defer></script>
 </body>
 </html>
 

@@ -4,6 +4,7 @@ const { requirePortalAccess } = require("../middleware/subscription");
 const {
   getBusinessProfile,
   updateBusinessProfile,
+  createCustomerAcquisitionSale,
   listCampaigns,
   getCampaign,
   patchClientSetup,
@@ -24,6 +25,7 @@ router.use(authRequired);
 router.use(requirePortalAccess);
 router.get("/profile", getBusinessProfile);
 router.patch("/profile", updateBusinessProfile);
+router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/campaigns", listCampaigns);
 router.get("/campaigns/:id", getCampaign);
 router.patch("/campaigns/:id/client-setup", patchClientSetup);
