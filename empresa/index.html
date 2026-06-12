@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliate-referral-qr-20260612">
+  <link rel="stylesheet" href="css/styles.css?v=affiliate-referral-fix-20260612">
 </head>
 <body>
   <main class="portal-shell">
@@ -1626,23 +1626,32 @@
                   <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Sumar puntos</button>
                   <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Descargar PNG</button>
                 </div>
+              </article>
+
+              <article class="surface-card affiliate-panel affiliate-referral-panel">
+                <div class="table-card-head">
+                  <span class="mono-label">Recomendaciones</span>
+                  <strong>QR de recomendacion</strong>
+                </div>
+                <p class="affiliate-card-note" id="affiliateReferralQrSelectedMeta">Selecciona un afiliado del listado para generar sus QR de recomendacion.</p>
+                <p class="affiliate-card-note">Crea QR unicos de un solo uso para que el afiliado los entregue a sus referidos. Cada QR consume un credito disponible y, cuando el referido compra, suma puntos al afiliado que recomendo.</p>
                 <div class="affiliate-card-actions">
                   <label>
-                    <span>QR de recomendacion</span>
+                    <span>Cantidad de QR</span>
                     <input id="affiliateReferralQrQuantityInput" type="number" min="1" max="100" step="1" value="5">
                   </label>
                   <label>
                     <span>Texto del beneficio</span>
                     <input id="affiliateReferralQrBenefitInput" type="text" value="Recomendacion de afiliado" maxlength="120">
                   </label>
-                  <button class="solid-button" id="affiliateGenerateReferralQrButton" type="button" disabled>Generar QR</button>
+                  <button class="solid-button" id="affiliateGenerateReferralQrButton" type="button" disabled>Generar QR de referidos</button>
                 </div>
                 <label class="stacked-field">
                   <span>Observaciones</span>
                   <textarea id="affiliateReferralQrNotesInput" rows="2" placeholder="Ej: paquete entregado al afiliado para referidos de junio"></textarea>
                 </label>
                 <p class="affiliate-card-note" id="affiliateReferralQrMessage"></p>
-                <div class="qr-result" id="affiliateReferralQrResult"></div>
+                <div class="qr-result hidden" id="affiliateReferralQrResult"></div>
               </article>
 
               <article class="surface-card data-table-card">
@@ -1844,7 +1853,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-referral-qr-20260612" defer></script>
+  <script src="js/app.js?v=affiliate-referral-fix-20260612" defer></script>
 </body>
 </html>
 

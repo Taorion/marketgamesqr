@@ -139,6 +139,7 @@ const affiliateReferralQrNotesInput = document.getElementById("affiliateReferral
 const affiliateGenerateReferralQrButton = document.getElementById("affiliateGenerateReferralQrButton");
 const affiliateReferralQrMessage = document.getElementById("affiliateReferralQrMessage");
 const affiliateReferralQrResult = document.getElementById("affiliateReferralQrResult");
+const affiliateReferralQrSelectedMeta = document.getElementById("affiliateReferralQrSelectedMeta");
 const refreshAffiliatesButton = document.getElementById("refreshAffiliatesButton");
 const affiliateTable = document.getElementById("affiliateTable");
 const affiliateLedgerTable = document.getElementById("affiliateLedgerTable");
@@ -3782,15 +3783,23 @@ function businessCardProfile(affiliate = {}) {
     ...(business?.settings || {}),
   };
   return {
-    name: firstTextValue(business.name, affiliate.business_name, settings.name, "UNIVERSAL QR"),
-    slogan: firstTextValue(business.slogan, settings.slogan, settings.tagline, affiliate.business_slogan),
-    contactName: firstTextValue(business.contact_name, settings.contact_name),
-    contactEmail: firstTextValue(business.contact_email, settings.contact_email, settings.email),
-    phone: firstTextValue(business.phone, settings.phone),
-    website: firstTextValue(business.website, settings.website),
-    city: firstTextValue(business.city, settings.city),
-    address: firstTextValue(business.address, settings.address),
+    name: firstTextValue(affiliate.business_name, business.name, settings.name, session?.user?.business_name, "NEGOCIO"),
+    slogan: firstTextValue(business.slogan, settings.slogan, settings.tagline, settings.business_slogan, affiliate.business_slogan),
+    contactName: firstTextValue(business.contact_name, settings.contact_name, settings.contact),
+    contactEmail: firstTextValue(business.contact_email, settings.contact_email, settings.email, affiliate.business_email),
+    phone: firstTextValue(business.phone, settings.phone, settings.contact_phone, affiliate.business_phone),
+    website: firstTextValue(business.website, settings.website, settings.site),
+    city: firstTextValue(business.city, settings.city, settings.location),
+    address: firstTextValue(business.address, settings.address, settings.business_address),
   };
+}
+
+function affiliateCardMetaText(affiliate = {}) {
+  const businessProfile = businessCardProfile(affiliate);
+  const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
+  const documentId = firstTextValue(affiliate.document_id, affiliate.document, "Sin documento");
+  const qrToken = String(affiliate.qr_token || "").slice(0, 12);
+  return `Negocio: ${businessProfile.name || "-"} | Documento: ${documentId} | Puntos: ${points} | QR: ${qrToken ? `${qrToken}...` : "sin QR"}`;
 }
 
 function affiliateQrSource(affiliate) {
@@ -4497,6 +4506,7 @@ async function renderAffiliateCardPreview(affiliate) {
     }
     const dataUrl = await buildAffiliateCardDataUrl(renderAffiliate);
     affiliateCardPreview.src = dataUrl;
+    affiliateCardMeta.textContent = affiliateCardMetaText(renderAffiliate);
     affiliateCardPreviewWrap?.classList.remove("is-empty");
     return dataUrl;
   } catch (error) {
@@ -4730,12 +4740,14 @@ async function submitAffiliateForm(event) {
   affiliateCreateMessage.textContent = "Creando afiliado...";
 
   try {
+    const uploadedPhotoDataUrl = affiliateCapturedPhotoDataUrl
+      || (affiliatePhotoInput?.files?.[0] ? await readAffiliatePhotoFile(affiliatePhotoInput.files[0]) : "");
     const payload = {
       full_name: affiliateFullNameInput.value.trim(),
       document_id: affiliateDocumentInput.value.trim() || null,
       phone: affiliatePhoneInput.value.trim() || null,
       email: affiliateEmailInput.value.trim() || null,
-      photo_data_url: null,
+      photo_data_url: uploadedPhotoDataUrl || null,
       notes: affiliateNotesInput.value.trim() || null,
       card_metadata: {
         source: "portal",
@@ -5428,6 +5440,7 @@ async function renderAffiliatesView() {
     affiliateAddPointsButton.disabled = true;
     downloadAffiliateCardButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
+    if (affiliateReferralQrSelectedMeta) affiliateReferralQrSelectedMeta.textContent = "Selecciona un afiliado del listado para generar sus QR de recomendacion.";
     setInlineMessage(affiliateReferralQrMessage, "", "info");
     renderAffiliateReferralQrResult(null);
     affiliateLedgerTitle.textContent = "Movimientos del afiliado";
@@ -5436,11 +5449,14 @@ async function renderAffiliatesView() {
   }
 
   affiliateCardTitle.textContent = selected.full_name || "Afiliado";
-  affiliateCardMeta.textContent = `Negocio: ${selected.business_name || "-"} | Puntos: ${toNumber(selected.points_total || selected.ledger_points || 0)} | QR: ${String(selected.qr_token || "").slice(0, 12)}...`;
+  affiliateCardMeta.textContent = affiliateCardMetaText(selected);
   affiliateCardPreviewWrap?.classList.remove("is-empty");
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
   if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = false;
+  if (affiliateReferralQrSelectedMeta) {
+    affiliateReferralQrSelectedMeta.textContent = `Generando QR para ${selected.full_name || "el afiliado seleccionado"}. Se descontaran de los creditos QR disponibles.`;
+  }
   affiliateLedgerTitle.textContent = `Movimientos de ${selected.full_name || "afiliado"}`;
 
   try {

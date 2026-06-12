@@ -759,6 +759,15 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.affiliate-referral-panel {
+  grid-column: 1 / -1;
+}
+
+.affiliate-referral-panel .affiliate-card-actions {
+  grid-template-columns: minmax(140px, 0.35fr) minmax(220px, 1fr) auto;
+  align-items: end;
+}
+
 .affiliate-dashboard-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
