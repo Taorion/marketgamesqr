@@ -4090,156 +4090,177 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const platformLogo = await loadImageDataUrl("/img/MGLogo-01.png");
   const qrImg = await loadImageDataUrl(qrSource);
 
-  ctx.fillStyle = "#061a14";
+  {
+  const palette = {
+    bg: "#081512",
+    card: "#10251f",
+    panel: "#17372d",
+    panelSoft: "#1f4639",
+    ink: "#f4fff9",
+    muted: "#b9d2c8",
+    accent: "#7cffc9",
+    gold: "#f3c95b",
+    qrPaper: "#fffaf0",
+  };
+
+  ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "#0b2a22";
-  ctx.roundRect(30, 30, width - 60, height - 60, 34);
+
+  ctx.fillStyle = palette.card;
+  ctx.roundRect(34, 34, width - 68, height - 68, 38);
   ctx.fill();
-  ctx.strokeStyle = "#6ffbbe";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(124, 255, 201, 0.5)";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "#12382d";
-  ctx.roundRect(58, 58, width - 116, 132, 26);
+  ctx.fillStyle = "rgba(124, 255, 201, 0.06)";
+  ctx.beginPath();
+  ctx.arc(1040, 72, 230, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "rgba(111, 251, 190, 0.34)";
-  ctx.lineWidth = 2;
+  ctx.fillStyle = "rgba(243, 201, 91, 0.06)";
+  ctx.beginPath();
+  ctx.arc(90, 690, 260, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = palette.panel;
+  ctx.roundRect(64, 58, width - 128, 118, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#6ffbbe";
-  ctx.font = "900 17px Inter, Arial, sans-serif";
-  ctx.fillText("EMPRESA EMISORA", 82, 98);
-  ctx.fillStyle = "#f8fdff";
-  ctx.font = "900 42px Inter, Arial, sans-serif";
-  fitTextLines(businessName, 650, 1).forEach((line) => ctx.fillText(line, 82, 144));
-  ctx.fillStyle = "#b8d3df";
-  ctx.font = "800 18px Inter, Arial, sans-serif";
-  fitTextLines(businessSlogan || "Programa de afiliados y recomendaciones", 650, 1).forEach((line) => ctx.fillText(line, 82, 172));
+  ctx.fillStyle = palette.gold;
+  ctx.font = "900 15px Inter, Arial, sans-serif";
+  ctx.fillText("EMPRESA", 92, 98);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 38px Inter, Arial, sans-serif";
+  fitTextLines(businessName, 660, 1).forEach((line) => ctx.fillText(line, 92, 142));
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 17px Inter, Arial, sans-serif";
+  fitTextLines(businessSlogan || "Programa de afiliados", 660, 1).forEach((line) => ctx.fillText(line, 92, 166));
 
   ctx.textAlign = "right";
-  ctx.fillStyle = "#d9fff0";
-  ctx.font = "900 22px Inter, Arial, sans-serif";
-  ctx.fillText("CARNET AFILIADO", width - 82, 118);
-  ctx.fillStyle = "#a8c6d9";
-  ctx.font = "800 15px Inter, Arial, sans-serif";
-  ctx.fillText("Identificacion y puntos", width - 82, 150);
+  ctx.fillStyle = palette.accent;
+  ctx.font = "900 24px Inter, Arial, sans-serif";
+  ctx.fillText("CARNET DE AFILIADO", width - 92, 118);
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 14px Inter, Arial, sans-serif";
+  ctx.fillText("Identificacion | Puntos | QR", width - 92, 146);
 
-  const photoPanelX = 72;
-  const photoPanelY = 232;
-  const photoPanelW = 276;
-  const photoPanelH = 382;
-  ctx.fillStyle = "#0f3028";
-  ctx.roundRect(photoPanelX, photoPanelY, photoPanelW, photoPanelH, 28);
+  const photoX = 76;
+  const photoY = 216;
+  const photoW = 236;
+  const photoH = 292;
+  ctx.fillStyle = palette.panelSoft;
+  ctx.roundRect(photoX - 14, photoY - 14, photoW + 28, photoH + 118, 28);
   ctx.fill();
-  ctx.strokeStyle = "rgba(111, 251, 190, 0.3)";
+  ctx.strokeStyle = "rgba(124, 255, 201, 0.22)";
   ctx.stroke();
-
   if (photo) {
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268, 22);
+    ctx.roundRect(photoX, photoY, photoW, photoH, 22);
     ctx.clip();
-    drawCoverImage(photo, photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268);
+    drawCoverImage(photo, photoX, photoY, photoW, photoH);
     ctx.restore();
   } else {
-    drawInitials(affiliateName, photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268, {
-      background: "#12382d",
-      color: "#6ffbbe",
+    drawInitials(affiliateName, photoX, photoY, photoW, photoH, {
+      background: "#10251f",
+      color: palette.accent,
       radius: 22,
       font: "900 72px Inter, Arial, sans-serif",
     });
   }
   ctx.textAlign = "center";
-  ctx.fillStyle = "#6ffbbe";
-  ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("AFILIADO ACTIVO", photoPanelX + photoPanelW / 2, photoPanelY + 328);
-  ctx.fillStyle = "#f8fdff";
-  ctx.font = "900 30px Inter, Arial, sans-serif";
-  ctx.fillText(String(points), photoPanelX + photoPanelW / 2, photoPanelY + 366);
-  ctx.fillStyle = "#a8c6d9";
-  ctx.font = "800 13px Inter, Arial, sans-serif";
-  ctx.fillText("PUNTOS ACUMULADOS", photoPanelX + photoPanelW / 2, photoPanelY + 388);
+  ctx.fillStyle = palette.gold;
+  ctx.font = "900 15px Inter, Arial, sans-serif";
+  ctx.fillText("PUNTOS", photoX + photoW / 2, photoY + photoH + 42);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 44px Inter, Arial, sans-serif";
+  ctx.fillText(String(points), photoX + photoW / 2, photoY + photoH + 88);
 
-  const infoPanelX = 382;
-  const infoPanelY = 226;
-  const infoPanelW = 420;
-  const infoPanelH = 396;
-  ctx.fillStyle = "#09241e";
-  ctx.roundRect(infoPanelX, infoPanelY, infoPanelW, infoPanelH, 28);
+  const dataX = 354;
+  const dataY = 216;
+  const dataW = 462;
+  const dataH = 410;
+  ctx.fillStyle = "rgba(8, 21, 18, 0.56)";
+  ctx.roundRect(dataX, dataY, dataW, dataH, 28);
   ctx.fill();
-  ctx.strokeStyle = "rgba(111, 251, 190, 0.28)";
+  ctx.strokeStyle = "rgba(124, 255, 201, 0.18)";
   ctx.stroke();
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#f8fdff";
+  ctx.fillStyle = palette.accent;
+  ctx.font = "900 14px Inter, Arial, sans-serif";
+  ctx.fillText("AFILIADO ACTIVO", dataX + 28, dataY + 42);
+  ctx.fillStyle = palette.ink;
   ctx.font = "900 48px Inter, Arial, sans-serif";
-  fitTextLines(affiliateName, infoPanelW - 48, 2).forEach((line, index) => {
-    ctx.fillText(line, infoPanelX + 24, infoPanelY + 64 + index * 52);
+  fitTextLines(affiliateName, dataW - 56, 2).forEach((line, index) => {
+    ctx.fillText(line, dataX + 28, dataY + 98 + index * 52);
   });
 
-  const dataRows = [
+  const detailRows = [
     ["Documento", affiliateDocument],
     ["Telefono", affiliatePhone],
     ["Email", affiliateEmail],
-    ["QR afiliado", tokenPreview ? `${tokenPreview}...` : "Sin token"],
+    ["Codigo", tokenPreview || "SIN TOKEN"],
   ];
-  dataRows.forEach(([label, value], index) => {
-    const y = infoPanelY + 170 + index * 54;
-    ctx.fillStyle = "#6ffbbe";
-    ctx.font = "900 13px Inter, Arial, sans-serif";
-    ctx.fillText(label.toUpperCase(), infoPanelX + 24, y);
-    ctx.fillStyle = "#f8fdff";
-    ctx.font = "800 22px Inter, Arial, sans-serif";
-    fitTextLines(value, infoPanelW - 48, 1).forEach((line) => ctx.fillText(line, infoPanelX + 24, y + 27));
+  detailRows.forEach(([label, value], index) => {
+    const y = dataY + 204 + index * 49;
+    ctx.fillStyle = palette.gold;
+    ctx.font = "900 12px Inter, Arial, sans-serif";
+    ctx.fillText(label.toUpperCase(), dataX + 28, y);
+    ctx.fillStyle = palette.ink;
+    ctx.font = "800 21px Inter, Arial, sans-serif";
+    fitTextLines(value, dataW - 56, 1).forEach((line) => ctx.fillText(line, dataX + 28, y + 25));
   });
 
-  const qrPanelX = 838;
-  const qrPanelY = 226;
-  const qrPanelW = 290;
-  const qrPanelH = 396;
-  ctx.fillStyle = "#f5fbf7";
-  ctx.roundRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 28);
+  const qrX = 852;
+  const qrY = 216;
+  const qrW = 272;
+  const qrH = 410;
+  ctx.fillStyle = palette.panelSoft;
+  ctx.roundRect(qrX, qrY, qrW, qrH, 28);
   ctx.fill();
-  ctx.strokeStyle = "#6ffbbe";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(124, 255, 201, 0.24)";
   ctx.stroke();
+  const qrPaperSize = 218;
+  const qrPaperX = qrX + (qrW - qrPaperSize) / 2;
+  const qrPaperY = qrY + 32;
+  ctx.fillStyle = palette.qrPaper;
+  ctx.roundRect(qrPaperX, qrPaperY, qrPaperSize, qrPaperSize, 18);
+  ctx.fill();
   if (qrImg) {
-    drawContainedImage(qrImg, qrPanelX + 24, qrPanelY + 26, qrPanelW - 48, qrPanelW - 48, 12, "#ffffff");
+    drawContainedImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, qrPaperSize - 28, 10, palette.qrPaper);
   } else {
-    ctx.fillStyle = "#d9fff0";
-    ctx.roundRect(qrPanelX + 24, qrPanelY + 26, qrPanelW - 48, qrPanelW - 48, 12);
-    ctx.fill();
-    ctx.fillStyle = "#003527";
+    ctx.fillStyle = "#0b2a22";
     ctx.textAlign = "center";
-    ctx.font = "900 30px Inter, Arial, sans-serif";
-    ctx.fillText("SIN QR", qrPanelX + qrPanelW / 2, qrPanelY + 154);
+    ctx.font = "900 28px Inter, Arial, sans-serif";
+    ctx.fillText("SIN QR", qrX + qrW / 2, qrPaperY + 116);
   }
   ctx.textAlign = "center";
-  ctx.fillStyle = "#003527";
-  ctx.font = "900 17px Inter, Arial, sans-serif";
-  ctx.fillText("QR PERMANENTE", qrPanelX + qrPanelW / 2, qrPanelY + 326);
-  ctx.fillStyle = "#41554e";
-  ctx.font = "800 13px JetBrains Mono, monospace";
-  fitTextLines(tokenPreview || "SIN TOKEN", qrPanelW - 44, 1).forEach((line) => {
-    ctx.fillText(line, qrPanelX + qrPanelW / 2, qrPanelY + 354);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 18px Inter, Arial, sans-serif";
+  ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 294);
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 13px Inter, Arial, sans-serif";
+  fitTextLines("Uso interno para identificar afiliado y registrar puntos.", qrW - 42, 2).forEach((line, index) => {
+    ctx.fillText(line, qrX + qrW / 2, qrY + 326 + index * 19);
   });
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#a8c6d9";
-  ctx.font = "800 16px Inter, Arial, sans-serif";
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 15px Inter, Arial, sans-serif";
   const footerText = businessContactLines.length ? businessContactLines.join(" | ") : "Contacto del negocio no registrado";
-  fitTextLines(footerText, 920, 1).forEach((line) => ctx.fillText(line, 82, 690));
-  if (platformLogo) {
-    drawContainedImage(platformLogo, width - 188, 670, 112, 34, 6, "transparent", { trimWhite: true, removeWhiteBackground: true });
-  } else {
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#6ffbbe";
-    ctx.font = "900 14px Inter, Arial, sans-serif";
-    ctx.fillText("MARKET GAMES QR", width - 82, 692);
-  }
+  fitTextLines(footerText, 880, 1).forEach((line) => ctx.fillText(line, 78, 692));
+  ctx.textAlign = "right";
+  ctx.fillStyle = palette.accent;
+  ctx.font = "900 14px Inter, Arial, sans-serif";
+  ctx.fillText("MARKET GAMES QR", width - 78, 692);
 
   return canvas.toDataURL("image/png");
+  }
 
   const bgGradient = ctx.createLinearGradient(0, 0, width, height);
   bgGradient.addColorStop(0, "#020617");
