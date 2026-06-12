@@ -21,9 +21,9 @@ async function attachQrDataUrl(affiliate) {
   return {
     ...affiliate,
     qr_data_url: await QRCode.toDataURL(String(affiliate.qr_token || ""), {
-      margin: 1,
-      width: 420,
-      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 720,
+      errorCorrectionLevel: "Q",
     }),
   };
 }
