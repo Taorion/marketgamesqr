@@ -4715,3 +4715,325 @@ textarea {
   background: #f2f7f5 !important;
 }
 
+/* Final light profile UX pass: keep the profile bright, crisp and free of gray blocks. */
+:root[data-theme="light"] {
+  --bg: #fbfdfc;
+  --surface: #ffffff;
+  --surface-soft: #ffffff;
+  --surface-muted: #f5fff9;
+  --surface-border: #d9e9e3;
+  --text: #10201c;
+  --text-muted: #475d55;
+  --text-soft: #63756e;
+  --primary: #06372e;
+  --secondary: #087a5e;
+  --secondary-pale: #e8fbf4;
+  --shadow: 0 16px 34px rgba(15, 35, 29, 0.07);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(8, 122, 94, 0.08), transparent 28%),
+    radial-gradient(circle at 88% 2%, rgba(7, 89, 133, 0.08), transparent 26%),
+    linear-gradient(180deg, #fbfdfc 0%, #f5fbf8 100%) !important;
+}
+
+:root[data-theme="light"] .app-shell,
+:root[data-theme="light"] .app-main,
+:root[data-theme="light"] .content-shell {
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="light"] .topbar,
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .login-card,
+:root[data-theme="light"] .subscription-banner {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: var(--surface-border) !important;
+  box-shadow: 0 12px 28px rgba(15, 35, 29, 0.08) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="light"] .view-section,
+:root[data-theme="light"] .view-section[data-view="account"],
+:root[data-theme="light"] .view-section[data-view="affiliates"],
+:root[data-theme="light"] .view-section[data-view="strategic-qr"],
+:root[data-theme="light"] .view-section:not([data-view="account"]):not([data-view="affiliates"]):not([data-view="strategic-qr"]) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 253, 251, 0.98)) !important;
+  border: 1px solid rgba(8, 122, 94, 0.12) !important;
+  border-radius: 18px;
+  color: var(--text) !important;
+  box-shadow: 0 16px 38px rgba(15, 35, 29, 0.05) !important;
+}
+
+:root[data-theme="light"] .view-section .view-head,
+:root[data-theme="light"] .view-section .surface-card,
+:root[data-theme="light"] .view-section .data-table-card,
+:root[data-theme="light"] .view-section .chart-card,
+:root[data-theme="light"] .view-section .map-card,
+:root[data-theme="light"] .view-section .placeholder-card,
+:root[data-theme="light"] .view-section .campaign-rail,
+:root[data-theme="light"] .view-section .insight-card,
+:root[data-theme="light"] .view-section .explain-card,
+:root[data-theme="light"] .view-section .asset-card,
+:root[data-theme="light"] .view-section .setting-card,
+:root[data-theme="light"] .view-section .validator-panel,
+:root[data-theme="light"] .view-section .affiliate-panel,
+:root[data-theme="light"] .view-section .affiliate-logo-panel,
+:root[data-theme="light"] .view-section .geo-branch-card,
+:root[data-theme="light"] .view-section .modal-card,
+:root[data-theme="light"] .view-section .table-card,
+:root[data-theme="light"] .view-section .busy-card,
+:root[data-theme="light"] .view-section[data-view="account"] .account-profile-card,
+:root[data-theme="light"] .view-section[data-view="account"] .account-settings-card,
+:root[data-theme="light"] .view-section[data-view="account"] .account-billing-card,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .portal-pricing-card,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .qr-credit-shop-card,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] #postSaleQrResult,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] #qrBatchResult,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .qr-batch-progress-card,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .qr-batch-result-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-rail,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-content > .surface-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-content .surface-card {
+  background: #ffffff !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+:root[data-theme="light"] .view-section .kpi-card,
+:root[data-theme="light"] .view-section .affiliate-stat-card,
+:root[data-theme="light"] .view-section .metric-card,
+:root[data-theme="light"] .view-section .profile-detail,
+:root[data-theme="light"] .view-section .campaign-meta-card,
+:root[data-theme="light"] .view-section .channel-card,
+:root[data-theme="light"] .view-section .funnel-row,
+:root[data-theme="light"] .view-section .qr-batch-stat,
+:root[data-theme="light"] .view-section .account-meta-grid div,
+:root[data-theme="light"] .view-section .account-billing-panel,
+:root[data-theme="light"] .view-section .modal-actions,
+:root[data-theme="light"] .view-section .inline-selects,
+:root[data-theme="light"] .view-section .validator-result-item,
+:root[data-theme="light"] .view-section .result-item,
+:root[data-theme="light"] .view-section .sale-summary-card,
+:root[data-theme="light"] .view-section .affiliate-selected-summary,
+:root[data-theme="light"] .view-section .affiliate-referral-flow,
+:root[data-theme="light"] .view-section .affiliate-step,
+:root[data-theme="light"] .view-section .affiliate-photo-capture,
+:root[data-theme="light"] .view-section .business-logo-preview,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .channel-option,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-meta-grid > div,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .portal-plan-card {
+  background: #ffffff !important;
+  border: 1px solid var(--surface-border) !important;
+  color: var(--text) !important;
+  box-shadow: 0 8px 20px rgba(15, 35, 29, 0.045) !important;
+}
+
+:root[data-theme="light"] .view-section .view-head {
+  background:
+    linear-gradient(135deg, rgba(232, 251, 244, 0.94), rgba(255, 255, 255, 0.98)) !important;
+}
+
+:root[data-theme="light"] .view-section .kpi-card.highlight,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item:hover,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item.active,
+:root[data-theme="light"] .view-section[data-view="affiliates"] .affiliate-step.is-active,
+:root[data-theme="light"] .view-section[data-view="affiliates"] .affiliate-step.is-complete {
+  background: linear-gradient(180deg, #ffffff 0%, #f2fff9 100%) !important;
+  border-color: rgba(8, 122, 94, 0.35) !important;
+  box-shadow: 0 12px 28px rgba(8, 122, 94, 0.1) !important;
+}
+
+:root[data-theme="light"] .dark-hero-card,
+:root[data-theme="light"] .dark-insight-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .dark-hero-card {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(244, 200, 79, 0.18), transparent 34%),
+    linear-gradient(135deg, #087a5e, #075985) !important;
+  border-color: rgba(8, 122, 94, 0.32) !important;
+  color: #ffffff !important;
+  box-shadow: 0 18px 38px rgba(7, 89, 133, 0.18) !important;
+}
+
+:root[data-theme="light"] .view-section h2,
+:root[data-theme="light"] .view-section h3,
+:root[data-theme="light"] .view-section h4,
+:root[data-theme="light"] .view-section strong,
+:root[data-theme="light"] .view-section .table-card-head strong,
+:root[data-theme="light"] .view-section .kpi-card strong,
+:root[data-theme="light"] .view-section .kpi-value,
+:root[data-theme="light"] .view-section .campaign-title,
+:root[data-theme="light"] .view-section .asset-card strong,
+:root[data-theme="light"] .view-section .metric-card strong {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section p,
+:root[data-theme="light"] .view-section span,
+:root[data-theme="light"] .view-section label,
+:root[data-theme="light"] .view-section td,
+:root[data-theme="light"] .view-section .table-secondary,
+:root[data-theme="light"] .view-section .table-muted,
+:root[data-theme="light"] .view-section .muted,
+:root[data-theme="light"] .view-section .chart-explainer,
+:root[data-theme="light"] .view-section .chart-note,
+:root[data-theme="light"] .view-section .profile-detail span,
+:root[data-theme="light"] .view-section .setting-card p,
+:root[data-theme="light"] .view-section .asset-card p,
+:root[data-theme="light"] .view-section .placeholder-card p,
+:root[data-theme="light"] .view-section .map-card p,
+:root[data-theme="light"] .view-section .kpi-card p,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item p,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item-row,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card span,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card a {
+  color: var(--text-muted) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section .mono-label,
+:root[data-theme="light"] .view-section th,
+:root[data-theme="light"] .view-section .kpi-meta,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] th {
+  color: #087a5e !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section input,
+:root[data-theme="light"] .view-section select,
+:root[data-theme="light"] .view-section textarea,
+:root[data-theme="light"] .view-section .search-shell,
+:root[data-theme="light"] .view-section .inline-selects select,
+:root[data-theme="light"] .view-section .modal-form input,
+:root[data-theme="light"] .view-section .modal-form select,
+:root[data-theme="light"] .view-section .modal-form textarea {
+  background: #ffffff !important;
+  border-color: #d9e9e3 !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 1px 0 rgba(15, 35, 29, 0.02) !important;
+}
+
+:root[data-theme="light"] .view-section input:focus,
+:root[data-theme="light"] .view-section select:focus,
+:root[data-theme="light"] .view-section textarea:focus {
+  border-color: rgba(8, 122, 94, 0.62) !important;
+  box-shadow: 0 0 0 3px rgba(8, 122, 94, 0.12) !important;
+}
+
+:root[data-theme="light"] .view-section .table-wrap,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .table-wrap {
+  background: #ffffff !important;
+  border: 1px solid var(--surface-border) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section table,
+:root[data-theme="light"] .view-section thead,
+:root[data-theme="light"] .view-section tbody,
+:root[data-theme="light"] .view-section tr,
+:root[data-theme="light"] .view-section th,
+:root[data-theme="light"] .view-section td {
+  background: transparent !important;
+  border-color: #e0eee8 !important;
+}
+
+:root[data-theme="light"] .view-section th {
+  background: #f7fffb !important;
+}
+
+:root[data-theme="light"] .chart-card canvas,
+:root[data-theme="light"] .view-section canvas,
+:root[data-theme="light"] .view-section[data-view="campaigns"] canvas {
+  background: #ffffff !important;
+  border-color: #e0eee8 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .pill,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .pill.muted,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .legend-group,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .progress-bar,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .qr-batch-progress-bar {
+  background: #f7fffb !important;
+  border: 1px solid #d9e9e3 !important;
+  color: #087a5e !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-row {
+  background: #ffffff !important;
+  border-color: #d9e9e3 !important;
+  box-shadow: 0 8px 20px rgba(15, 35, 29, 0.045) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-bar {
+  border: 0 !important;
+  box-shadow: 0 8px 18px rgba(7, 89, 133, 0.12) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-bar span,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-bar strong {
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(6, 55, 46, 0.38) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-rate {
+  background: #fff8d7 !important;
+  border-color: #eed374 !important;
+  color: #745500 !important;
+}
+
+:root[data-theme="light"] .view-section .ghost-button,
+:root[data-theme="light"] .view-section .icon-button,
+:root[data-theme="light"] .view-section .link-button {
+  background: #ffffff !important;
+  border-color: #d9e9e3 !important;
+  color: #06372e !important;
+  box-shadow: 0 6px 14px rgba(15, 35, 29, 0.04) !important;
+}
+
+:root[data-theme="light"] .view-section .ghost-button:hover,
+:root[data-theme="light"] .view-section .icon-button:hover,
+:root[data-theme="light"] .view-section .link-button:hover {
+  background: #f2fff9 !important;
+  border-color: rgba(8, 122, 94, 0.35) !important;
+}
+
+:root[data-theme="light"] .view-section .solid-button,
+:root[data-theme="light"] .view-section .request-button {
+  background: linear-gradient(135deg, #087a5e, #075985) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(8, 122, 94, 0.16) !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.pending,
+:root[data-theme="light"] .view-section .nav-item.plan-locked::after {
+  background: #fff8d7 !important;
+  color: #745500 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.ok {
+  background: #e6fbef !important;
+  color: #065f46 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.danger,
+:root[data-theme="light"] .view-section .error-line[data-kind="error"] {
+  background: #fff0f0 !important;
+  color: #991b1b !important;
+}
+
+:root[data-theme="light"] .dark-hero-card p,
+:root[data-theme="light"] .dark-hero-card span,
+:root[data-theme="light"] .dark-insight-card p,
+:root[data-theme="light"] .dark-insight-card span,
+:root[data-theme="light"] .subscription-banner p,
+:root[data-theme="light"] .subscription-banner span {
+  color: #eafff8 !important;
+}
+
