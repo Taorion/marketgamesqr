@@ -934,6 +934,226 @@ textarea {
   border-color: rgba(112, 224, 255, 0.36);
 }
 
+.theme-switch {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+}
+
+.theme-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-switch-track {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(2, 8, 23, 0.78);
+  border: 1px solid rgba(112, 224, 255, 0.24);
+}
+
+.theme-switch-track::before,
+.theme-switch-track::after {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.theme-switch-track::before {
+  content: "D";
+  left: 9px;
+  color: #7cfbff;
+}
+
+.theme-switch-track::after {
+  content: "C";
+  right: 9px;
+  color: #f8e85a;
+}
+
+.theme-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #55e7ff, #7cfbff);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.22);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.theme-switch input:checked + .theme-switch-track .theme-switch-thumb {
+  transform: translateX(22px);
+  background: linear-gradient(135deg, #f8e85a, #fff6a5);
+}
+
+.theme-switch-label {
+  min-width: 42px;
+  font-size: 0.78rem;
+}
+
+:root[data-theme="light"] {
+  --bg: #fbfdfc;
+  --surface: #ffffff;
+  --surface-2: #f6fffb;
+  --text: #13221e;
+  --muted: #52665f;
+  --border: #d9e9e3;
+  --primary: #087a5e;
+  --primary-strong: #06372e;
+  --accent: #d78606;
+  --shadow: rgba(15, 35, 29, 0.08);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(8, 122, 94, 0.08), transparent 28%),
+    radial-gradient(circle at 88% 2%, rgba(7, 89, 133, 0.08), transparent 26%),
+    linear-gradient(180deg, #fbfdfc 0%, #f5fbf8 100%) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="light"] body::before,
+:root[data-theme="light"] body::after {
+  display: none !important;
+}
+
+:root[data-theme="light"] .topbar,
+:root[data-theme="light"] .hero,
+:root[data-theme="light"] .benefit-grid article,
+:root[data-theme="light"] .steps-strip,
+:root[data-theme="light"] .selling-section,
+:root[data-theme="light"] .use-cases,
+:root[data-theme="light"] .form-section,
+:root[data-theme="light"] .package-card,
+:root[data-theme="light"] .plan-access-card,
+:root[data-theme="light"] .selected-box,
+:root[data-theme="light"] .mode-tabs {
+  background: #ffffff !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 14px 34px rgba(15, 35, 29, 0.07) !important;
+  color: var(--text) !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-theme="light"] .selected-box,
+:root[data-theme="light"] .use-cases li,
+:root[data-theme="light"] .steps-strip div,
+:root[data-theme="light"] .plan-access-list li {
+  background: #f8fffb !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="light"] .package-card.selected,
+:root[data-theme="light"] .plan-access-card.featured,
+:root[data-theme="light"] .mode-tabs button.active {
+  background: linear-gradient(180deg, #ffffff 0%, #f1fff8 100%) !important;
+  border-color: rgba(8, 122, 94, 0.42) !important;
+  color: var(--text) !important;
+  box-shadow: 0 14px 30px rgba(8, 122, 94, 0.12) !important;
+}
+
+:root[data-theme="light"] .mode-tabs button.active {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] .price,
+:root[data-theme="light"] .selected-box strong,
+:root[data-theme="light"] .steps-strip strong {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] p,
+:root[data-theme="light"] .use-cases li,
+:root[data-theme="light"] .plan-access-list li,
+:root[data-theme="light"] .selected-box span,
+:root[data-theme="light"] .steps-strip span,
+:root[data-theme="light"] .selling-section p,
+:root[data-theme="light"] .form-section p,
+:root[data-theme="light"] label span {
+  color: var(--muted) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .eyebrow,
+:root[data-theme="light"] .package-code {
+  color: var(--primary) !important;
+}
+
+:root[data-theme="light"] .admin-link,
+:root[data-theme="light"] .secondary-button,
+:root[data-theme="light"] .theme-switch {
+  background: #ffffff !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+  box-shadow: 0 6px 14px rgba(15, 35, 29, 0.04) !important;
+}
+
+:root[data-theme="light"] .admin-link:hover,
+:root[data-theme="light"] .secondary-button:hover,
+:root[data-theme="light"] .theme-switch:hover {
+  background: #f1fff8 !important;
+  border-color: rgba(8, 122, 94, 0.36) !important;
+}
+
+:root[data-theme="light"] .primary-button,
+:root[data-theme="light"] .payment-button:not(.disabled),
+:root[data-theme="light"] .package-card button {
+  background: linear-gradient(135deg, #087a5e, #075985) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 26px rgba(8, 122, 94, 0.16) !important;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  background: #ffffff !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  box-shadow: inset 0 1px 0 rgba(15, 35, 29, 0.02) !important;
+}
+
+:root[data-theme="light"] .theme-switch-track {
+  background: #f1fff8 !important;
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="light"] .hero::before,
+:root[data-theme="light"] .selling-section::before,
+:root[data-theme="light"] .form-section::before,
+:root[data-theme="light"] .use-cases::before,
+:root[data-theme="light"] .package-card::before,
+:root[data-theme="light"] .plan-access-card::before,
+:root[data-theme="light"] .benefit-grid article::before,
+:root[data-theme="light"] .selected-box::before,
+:root[data-theme="light"] .package-card::after,
+:root[data-theme="light"] .plan-access-card::after,
+:root[data-theme="light"] .benefit-grid article::after {
+  display: none !important;
+}
+
 @media (max-width: 720px) {
   .packages-shell {
     padding: 12px;

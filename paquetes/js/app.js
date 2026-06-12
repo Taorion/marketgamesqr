@@ -23,17 +23,46 @@ const paymentStatusActionTitle = document.getElementById("paymentStatusActionTit
 const paymentStatusActionCopy = document.getElementById("paymentStatusActionCopy");
 const paymentStatusPrimaryLink = document.getElementById("paymentStatusPrimaryLink");
 const planComparisonGrid = document.getElementById("planComparisonGrid");
+const themeSwitch = document.getElementById("themeSwitch");
+const themeSwitchLabel = document.getElementById("themeSwitchLabel");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialMode = urlParams.get("mode");
 const initialPackageCode = String(urlParams.get("package") || "").toUpperCase();
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
+const THEME_KEY = "marketgames_portal_theme";
 let mode = initialMode === "portal" ? "portal" : "prepaid";
 let packages = [];
 let plans = [];
 let prepaidPlan = null;
 let selectedPackage = null;
 let selectedPlan = null;
+
+function readPreferredTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function applyPackagesTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = nextTheme;
+  if (themeSwitch) themeSwitch.checked = nextTheme === "light";
+  if (themeSwitchLabel) themeSwitchLabel.textContent = nextTheme === "light" ? "Claro" : "Oscuro";
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute("content", nextTheme === "light" ? "#fbfdfc" : "#050816");
+  try {
+    localStorage.setItem(THEME_KEY, nextTheme);
+  } catch {
+    // Theme persistence is optional; the switch still works for the current page.
+  }
+}
+
+function togglePackagesTheme() {
+  applyPackagesTheme(themeSwitch?.checked ? "light" : "dark");
+}
 
 function money(value) {
   return `$ ${Number(value || 0).toLocaleString("es-CO")}`;
@@ -319,4 +348,6 @@ modeButtons.forEach((button) => {
 startPrepaidButton.addEventListener("click", () => switchMode("prepaid"));
 startPortalButton.addEventListener("click", () => switchMode("portal"));
 signupForm.addEventListener("submit", submitSignup);
+themeSwitch?.addEventListener("change", togglePackagesTheme);
+applyPackagesTheme(readPreferredTheme());
 init();
