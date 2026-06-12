@@ -44,6 +44,7 @@ async function getSubscriptionQuota(client, businessId) {
     STARTER: 500,
     GROWTH: 2000,
     PRO: 6000,
+    GLOBAL: null,
     ENTERPRISE: null,
   };
   if (status !== "ACTIVE" || !Object.prototype.hasOwnProperty.call(quotas, code)) {

@@ -950,7 +950,7 @@ function planBenefitList(plan) {
   const limits = plan.limits || {};
   const features = plan.features || {};
   const benefits = [
-    `${formatLimitValue(limits.monthly_qr_included)} QR incluidos cada mes`,
+    plan.code === "GLOBAL" ? "10.000+ QR mensuales segun cotizacion" : `${formatLimitValue(limits.monthly_qr_included)} QR incluidos cada mes`,
     `${formatLimitValue(limits.users)} usuarios y ${formatLimitValue(limits.branches)} sede(s)`,
     `${formatLimitValue(limits.active_campaigns)} campanas activas`,
   ];
@@ -963,12 +963,18 @@ function planBenefitList(plan) {
   if (features.api_access) {
     benefits.push("API para integraciones y operacion avanzada");
   }
-  return benefits.slice(0, 6);
+  if (features.branded_portal) {
+    benefits.push("Portal brandeable y dominio/subdominio a medida");
+  }
+  if (features.dedicated_support) {
+    benefits.push("Soporte prioritario y acompanamiento estrategico");
+  }
+  return benefits.slice(0, plan.code === "GLOBAL" ? 8 : 6);
 }
 
 function renderSubscriptionPricing() {
   if (!subscriptionPlansGrid) return;
-  const plans = (state.subscriptionPlans || []).filter((plan) => plan.code !== "ENTERPRISE");
+  const plans = (state.subscriptionPlans || []).filter((plan) => plan.category === "subscription");
   const currentCode = state.subscription?.plan?.code;
   if (!plans.length) {
     subscriptionPlansGrid.innerHTML = '<p class="table-secondary">No se pudieron cargar los planes del portal.</p>';
@@ -978,7 +984,9 @@ function renderSubscriptionPricing() {
     subscriptionPricingNote.textContent = "El QR prepago es mas barato para validar codigos. Los planes mensuales cuestan mas porque incluyen portal, dashboard, permisos, exportaciones, leads y medicion comercial.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
-    const qrIncluded = formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);
+    const qrIncluded = plan.code === "GLOBAL"
+      ? "10.000+"
+      : formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);
     const prepaidReference = plan.prepaid_reference_cop ? money(plan.prepaid_reference_cop) : "Referencia comercial";
     const portalValue = plan.portal_value_cop ? money(plan.portal_value_cop) : "Incluido";
     const monthlyPrice = plan.monthly_price_cop ? money(plan.monthly_price_cop) : (plan.price_label || "Cotizacion");
@@ -994,7 +1002,7 @@ function renderSubscriptionPricing() {
         </div>
         <div class="portal-plan-price">
           <strong>${escapeHtml(monthlyPrice)}</strong>
-          <span>${escapeHtml(qrIncluded)} QR mensuales incluidos</span>
+          <span>${escapeHtml(qrIncluded)} QR mensuales ${plan.code === "GLOBAL" ? "por cotizacion" : "incluidos"}</span>
         </div>
         <div class="portal-plan-economics">
           Piso prepago comparable: ${escapeHtml(prepaidReference)}. Valor portal y beneficios: ${escapeHtml(portalValue)}.

@@ -7,7 +7,7 @@ const PLAN_CODES = {
   STARTER: "STARTER",
   GROWTH: "GROWTH",
   PRO: "PRO",
-  ENTERPRISE: "ENTERPRISE",
+  GLOBAL: "GLOBAL",
 };
 
 const unlimited = null;
@@ -23,13 +23,13 @@ const PLAN_PRICING_NOTES = {
     comparable_prepaid_package: "QR2000",
     prepaid_reference_cop: 139900,
     portal_access_fee_cop: 179000,
-    pricing_note: "QR2000 prepago mantiene bajo costo para validacion. Growth agrega analitica, hasta 20 clientes afiliados, sedes, automatizaciones y exportaciones.",
+    pricing_note: "QR2000 prepago mantiene bajo costo para validacion. Growth agrega RMS completo, hasta 100 afiliados, sedes, automatizaciones, ventas atribuidas y exportaciones.",
   },
   PRO: {
     comparable_prepaid_package: "QR5000",
     prepaid_reference_cop: 249900,
     portal_access_fee_cop: 349000,
-    pricing_note: "QR5000 prepago es la opcion economica por volumen. Pro cobra el portal full: 6.000 QR, 1.000 afiliados, API, marca blanca, usuarios y sedes avanzadas.",
+    pricing_note: "QR5000 prepago es la opcion economica por volumen. Pro escala el RMS: 6.000 QR, 1.000 afiliados, API, automatizaciones, mas sedes, mas usuarios y reportes avanzados.",
   },
 };
 
@@ -154,13 +154,15 @@ const PLAN_CATALOG = {
     portal_value_cop: PLAN_PRICING_NOTES.GROWTH.portal_access_fee_cop,
     comparable_prepaid_package: PLAN_PRICING_NOTES.GROWTH.comparable_prepaid_package,
     prepaid_reference_cop: PLAN_PRICING_NOTES.GROWTH.prepaid_reference_cop,
-    best_for: "Negocios con campanas recurrentes, fidelizacion y equipo comercial.",
-    access_summary: "Portal completo para operar campanas, sedes, hasta 20 clientes afiliados, reportes y 2.000 QR al mes.",
+    best_for: "Negocios con campanas recurrentes, fidelizacion, referidos y equipo comercial.",
+    access_summary: "Portal RMS completo para operar campanas, ventas, sedes, hasta 100 afiliados, reportes y 2.000 QR al mes.",
     pricing_note: PLAN_PRICING_NOTES.GROWTH.pricing_note,
     included: [
       "Dashboard completo y reportes de campana",
       "2.000 QR incluidos cada mes",
-      "Hasta 20 clientes afiliados con carnet QR permanente",
+      "Hasta 100 afiliados con carnet QR permanente",
+      "QR de recomendacion de afiliados con trazabilidad",
+      "Sales tracker con medios de llegada y revenue real",
       "Hasta 2 sedes y 6 usuarios",
       "10 exportaciones de leads al mes",
       "Automatizaciones operativas",
@@ -196,7 +198,7 @@ const PLAN_CATALOG = {
       monthly_qr_included: 2000,
       lead_export_rows_month: 10000,
       lead_exports_month: 10,
-      affiliates: 20,
+      affiliates: 100,
       history_days: 365,
     },
   },
@@ -210,8 +212,8 @@ const PLAN_CATALOG = {
     portal_value_cop: PLAN_PRICING_NOTES.PRO.portal_access_fee_cop,
     comparable_prepaid_package: PLAN_PRICING_NOTES.PRO.comparable_prepaid_package,
     prepaid_reference_cop: PLAN_PRICING_NOTES.PRO.prepaid_reference_cop,
-    best_for: "Empresas que quieren todos los beneficios del portal a precio competitivo.",
-    access_summary: "Acceso full: dashboard, campanas, leads, hasta 1.000 afiliados, sedes, API y marca blanca.",
+    best_for: "Empresas que necesitan volumen, equipos grandes, integraciones y programas fuertes de referidos.",
+    access_summary: "Acceso avanzado: dashboard, campanas, leads, hasta 1.000 afiliados, sedes, API, automatizaciones y reportes extendidos.",
     pricing_note: PLAN_PRICING_NOTES.PRO.pricing_note,
     included: [
       "Todo lo incluido en Growth",
@@ -219,8 +221,10 @@ const PLAN_CATALOG = {
       "Hasta 1.000 afiliados con carnet QR permanente",
       "Hasta 20 usuarios y 10 sedes",
       "Exportaciones ilimitadas",
+      "Reportes comparativos antes/durante/despues",
+      "Segmentacion operativa por campana, canal y sucursal",
       "API para integraciones",
-      "Marca blanca operativa",
+      "Branding avanzado en piezas QR y reportes",
     ],
     not_included: [],
     qr_monthly_included: 6000,
@@ -240,7 +244,8 @@ const PLAN_CATALOG = {
       multi_branch: true,
       automations: true,
       api_access: true,
-      white_label: true,
+      white_label: false,
+      advanced_branding: true,
     },
     limits: {
       users: 20,
@@ -254,15 +259,30 @@ const PLAN_CATALOG = {
       history_days: 730,
     },
   },
-  [PLAN_CODES.ENTERPRISE]: {
-    code: PLAN_CODES.ENTERPRISE,
-    name: "Enterprise",
+  [PLAN_CODES.GLOBAL]: {
+    code: PLAN_CODES.GLOBAL,
+    name: "MarketGamesQR Global",
     category: "subscription",
     monthly_price_cop: null,
-    price_label: "Desde $690.000 / mes",
+    price_label: "Por cotizacion",
     billing_period: "custom",
     portal_value_cop: null,
-    pricing_note: "Plan a medida para volumen alto, marca blanca, API y operacion con multiples sedes o franquicias.",
+    best_for: "Marcas, franquicias, grupos empresariales y operaciones que requieren RMS brandeable, alto volumen y acompanamiento a medida.",
+    access_summary: "Plan Global por cotizacion: desde 10.000 QR mensuales, portal brandeable, afiliados por volumen, sedes, integraciones y soporte estrategico.",
+    pricing_note: "Plan superior por cotizacion. Parte de 10.000 QR mensuales y se estructura segun volumen, sedes, usuarios, afiliados, marca, integraciones, soporte y nivel de acompanamiento.",
+    included: [
+      "Todo lo incluido en Pro",
+      "10.000+ QR mensuales segun cotizacion",
+      "Afiliados por volumen superior a 1.000",
+      "Portal brandeable con identidad visual del cliente",
+      "Dominio o subdominio personalizado segun alcance",
+      "Reportes ejecutivos y tableros por marca, sede, canal y campana",
+      "API e integraciones priorizadas con CRM, POS, ecommerce o BI",
+      "Onboarding, configuracion y acompanamiento estrategico",
+      "SLA, soporte prioritario y gobierno de datos",
+      "Roadmap de funcionalidades a medida segun operacion",
+    ],
+    not_included: [],
     qr_monthly_included: unlimited,
     features: {
       qr_validator: true,
@@ -281,6 +301,10 @@ const PLAN_CATALOG = {
       automations: true,
       api_access: true,
       white_label: true,
+      branded_portal: true,
+      custom_domain: true,
+      executive_reports: true,
+      dedicated_support: true,
     },
     limits: {
       users: unlimited,
@@ -298,6 +322,7 @@ const PLAN_CATALOG = {
 
 function normalizePlanCode(value) {
   const code = String(value || "").trim().toUpperCase();
+  if (code === "ENTERPRISE") return PLAN_CODES.GLOBAL;
   return PLAN_CATALOG[code] ? code : PLAN_CODES.PREPAID_QR;
 }
 

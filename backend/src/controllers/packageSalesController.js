@@ -132,7 +132,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
     const plans = listPlans();
     res.json({
       prepaid_plan: plans.find((plan) => plan.code === "PREPAID_QR"),
-      plans: plans.filter((plan) => plan.category === "subscription" && plan.monthly_price_cop),
+      plans: plans.filter((plan) => plan.category === "subscription"),
       prepaid_reference: QR_PACKAGE_OFFERS,
     });
   } catch (error) {
