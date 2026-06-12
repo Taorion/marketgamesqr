@@ -4100,7 +4100,6 @@ async function buildAffiliateCardDataUrl(affiliate) {
     muted: "#b9d2c8",
     accent: "#7cffc9",
     gold: "#f3c95b",
-    qrPaper: "#fffaf0",
   };
 
   ctx.fillStyle = palette.bg;
@@ -4228,19 +4227,19 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const qrPaperSize = 218;
   const qrPaperX = qrX + (qrW - qrPaperSize) / 2;
   const qrPaperY = qrY + 32;
-  ctx.fillStyle = palette.qrPaper;
-  ctx.roundRect(qrPaperX, qrPaperY, qrPaperSize, qrPaperSize, 18);
-  ctx.fill();
   if (qrImg) {
-    drawContainedImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, qrPaperSize - 28, 10, palette.qrPaper);
+    drawDarkQrImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28);
   } else {
     ctx.fillStyle = "#0b2a22";
+    ctx.roundRect(qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, qrPaperSize - 28, 18);
+    ctx.fill();
+    ctx.fillStyle = palette.accent;
     ctx.textAlign = "center";
     ctx.font = "900 28px Inter, Arial, sans-serif";
     ctx.fillText("SIN QR", qrX + qrW / 2, qrPaperY + 116);
   }
   ctx.textAlign = "center";
-  ctx.fillStyle = palette.ink;
+  ctx.fillStyle = palette.accent;
   ctx.font = "900 18px Inter, Arial, sans-serif";
   ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 294);
   ctx.fillStyle = palette.muted;
