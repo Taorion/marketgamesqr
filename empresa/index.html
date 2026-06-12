@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliate-card-referral-clarity-20260612">
+  <link rel="stylesheet" href="css/styles.css?v=affiliate-selected-visible-20260612">
 </head>
 <body>
   <main class="portal-shell">
@@ -1618,6 +1618,9 @@
                   <img id="affiliateCardPreview" alt="Carnet afiliado">
                 </div>
                 <p class="affiliate-card-note" id="affiliateCardMeta">Selecciona o crea un afiliado para generar el PNG.</p>
+                <div class="affiliate-selected-summary" id="affiliateSelectedSummary">
+                  <div class="affiliate-selected-empty">Ningun afiliado seleccionado.</div>
+                </div>
                 <div class="affiliate-card-actions">
                   <label>
                     <span>Monto de compra</span>
@@ -1633,8 +1636,14 @@
                   <span class="mono-label">Recomendaciones</span>
                   <strong>QR de recomendacion</strong>
                 </div>
-                <p class="affiliate-card-note" id="affiliateReferralQrSelectedMeta">Selecciona un afiliado del listado para generar sus QR de recomendacion.</p>
-                <p class="affiliate-card-note">Crea QR unicos de un solo uso para que el afiliado los entregue a sus referidos. Cada QR consume un credito disponible y, cuando el referido compra, suma puntos al afiliado que recomendo.</p>
+                <div class="affiliate-referral-flow">
+                  <div class="affiliate-referral-status" id="affiliateReferralQrSelectedMeta">Selecciona un afiliado del listado para generar sus QR de recomendacion.</div>
+                  <div class="affiliate-referral-steps">
+                    <span><strong>1</strong> Selecciona afiliado</span>
+                    <span><strong>2</strong> Genera QR unicos</span>
+                    <span><strong>3</strong> El referido compra y suma puntos</span>
+                  </div>
+                </div>
                 <div class="affiliate-card-actions">
                   <label>
                     <span>Cantidad de QR</span>
@@ -1853,7 +1862,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-card-referral-clarity-20260612" defer></script>
+  <script src="js/app.js?v=affiliate-selected-visible-20260612" defer></script>
 </body>
 </html>
 

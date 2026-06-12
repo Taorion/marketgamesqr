@@ -768,6 +768,100 @@ textarea {
   align-items: end;
 }
 
+.affiliate-selected-summary,
+.affiliate-referral-flow {
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 14px;
+}
+
+.affiliate-selected-empty {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.affiliate-selected-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.affiliate-selected-head strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.affiliate-selected-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.affiliate-selected-grid div {
+  min-width: 0;
+}
+
+.affiliate-selected-grid dt {
+  margin: 0 0 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.affiliate-selected-grid dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.affiliate-referral-status {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+
+.affiliate-referral-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.affiliate-referral-steps span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 10px;
+}
+
+.affiliate-referral-steps strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: #fff;
+  font-size: 12px;
+}
+
 .affiliate-dashboard-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1156,6 +1250,8 @@ textarea {
 
   .affiliate-form,
   .affiliate-card-actions,
+  .affiliate-selected-grid,
+  .affiliate-referral-steps,
   .affiliate-stepper,
   .affiliate-photo-actions {
     grid-template-columns: 1fr;

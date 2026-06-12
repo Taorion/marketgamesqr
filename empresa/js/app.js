@@ -130,6 +130,7 @@ const affiliateCardTitle = document.getElementById("affiliateCardTitle");
 const affiliateCardPreviewWrap = document.getElementById("affiliateCardPreviewWrap");
 const affiliateCardPreview = document.getElementById("affiliateCardPreview");
 const affiliateCardMeta = document.getElementById("affiliateCardMeta");
+const affiliateSelectedSummary = document.getElementById("affiliateSelectedSummary");
 const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseAmountInput");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
@@ -3802,6 +3803,39 @@ function affiliateCardMetaText(affiliate = {}) {
   return `Negocio: ${businessProfile.name || "-"} | Documento: ${documentId} | Puntos: ${points} | QR: ${qrToken ? `${qrToken}...` : "sin QR"}`;
 }
 
+function renderAffiliateSelectedSummary(affiliate = null) {
+  if (!affiliateSelectedSummary) return;
+  if (!affiliate) {
+    affiliateSelectedSummary.innerHTML = '<div class="affiliate-selected-empty">Ningun afiliado seleccionado.</div>';
+    return;
+  }
+  const businessProfile = businessCardProfile(affiliate);
+  const qrToken = String(affiliate.qr_token || "");
+  const rows = [
+    ["Afiliado", firstTextValue(affiliate.full_name, affiliate.name, "-")],
+    ["Documento", firstTextValue(affiliate.document_id, affiliate.document, "-")],
+    ["Telefono", firstTextValue(affiliate.phone, "-")],
+    ["Email", firstTextValue(affiliate.email, "-")],
+    ["Puntos", toNumber(affiliate.points_total || affiliate.ledger_points || 0)],
+    ["Negocio", firstTextValue(businessProfile.name, affiliate.business_name, "-")],
+    ["QR afiliado", qrToken ? `${qrToken.slice(0, 16)}...` : "Sin token"],
+  ];
+  affiliateSelectedSummary.innerHTML = `
+    <div class="affiliate-selected-head">
+      <span class="status-chip ok">Afiliado seleccionado</span>
+      <strong>${escapeHtml(firstTextValue(affiliate.full_name, affiliate.name, "Afiliado"))}</strong>
+    </div>
+    <dl class="affiliate-selected-grid">
+      ${rows.map(([label, value]) => `
+        <div>
+          <dt>${escapeHtml(label)}</dt>
+          <dd>${escapeHtml(value)}</dd>
+        </div>
+      `).join("")}
+    </dl>
+  `;
+}
+
 function affiliateQrSource(affiliate) {
   return affiliate?.qr_data_url
     || affiliate?.qrDataUrl
@@ -4886,7 +4920,7 @@ async function generateSelectedAffiliateReferralQr() {
   setButtonLoading(affiliateGenerateReferralQrButton, true, "Generando...");
   setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} QR y descontando creditos disponibles...`, "info");
   renderAffiliateReferralQrResult(null);
-  showFeedback("Generando QR de recomendacion para afiliado.", "loading", { title: "QR de recomendacion", timeout: 0 });
+  showFeedback(`Generando QR de recomendacion para ${state.selectedAffiliate.full_name || "el afiliado"}.`, "loading", { title: "QR de recomendacion", timeout: 0 });
   const referralAffiliate = { ...state.selectedAffiliate };
 
   try {
@@ -4908,7 +4942,7 @@ async function generateSelectedAffiliateReferralQr() {
 
     setInlineMessage(
       affiliateReferralQrMessage,
-      `Se generaron ${Number(data.batch?.quantity || quantity).toLocaleString("es-CO")} QR para ${state.selectedAffiliate.full_name || "el afiliado"}.`,
+      `Lote creado y asignado a ${referralAffiliate.full_name || "el afiliado"}: ${Number(data.batch?.quantity || quantity).toLocaleString("es-CO")} QR de un solo uso.`,
       "success"
     );
     renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
@@ -4920,7 +4954,7 @@ async function generateSelectedAffiliateReferralQr() {
       await renderAffiliatesView();
       renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
     }
-    showFeedback("QR de recomendacion creados. La descarga PDF fue iniciada.", "success", { title: "QR listos" });
+    showFeedback(`QR de recomendacion creados para ${referralAffiliate.full_name || "el afiliado"}. La descarga PDF fue iniciada.`, "success", { title: "QR listos" });
   } catch (error) {
     setInlineMessage(affiliateReferralQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudieron generar los QR" });
@@ -5448,6 +5482,7 @@ async function renderAffiliatesView() {
   if (!selected) {
     affiliateCardTitle.textContent = "Sin afiliado seleccionado";
     affiliateCardMeta.textContent = "Crea o selecciona un afiliado para generar el carnet y el QR.";
+    renderAffiliateSelectedSummary(null);
     affiliateCardPreview.removeAttribute("src");
     affiliateCardPreviewWrap?.classList.add("is-empty");
     affiliateCardPreviewWrap?.classList.remove("is-loading");
@@ -5464,6 +5499,7 @@ async function renderAffiliatesView() {
 
   affiliateCardTitle.textContent = selected.full_name || "Afiliado";
   affiliateCardMeta.textContent = affiliateCardMetaText(selected);
+  renderAffiliateSelectedSummary(selected);
   affiliateCardPreviewWrap?.classList.remove("is-empty");
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
@@ -5481,6 +5517,7 @@ async function renderAffiliatesView() {
       business_logo_data_url: businessProfileLogoSource() || businessLogoSource(detail.affiliate || {}) || businessLogoSource(selected) || "",
       qr_data_url: affiliateQrSource(detail.affiliate || {}) || affiliateQrSource(selected),
     };
+    renderAffiliateSelectedSummary(state.selectedAffiliate);
     state.selectedAffiliateLedger = detail.ledger || [];
     await renderAffiliateCardPreview(state.selectedAffiliate);
     affiliateLedgerTable.innerHTML = (state.selectedAffiliateLedger || []).map((item) => `
