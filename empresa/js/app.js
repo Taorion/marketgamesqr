@@ -4147,10 +4147,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.font = "800 14px Inter, Arial, sans-serif";
   ctx.fillText("Identificacion | Puntos | QR", width - 92, 146);
 
-  const photoX = 76;
-  const photoY = 216;
-  const photoW = 236;
-  const photoH = 292;
+  const photoX = 70;
+  const photoY = 236;
+  const photoW = 198;
+  const photoH = 250;
   ctx.fillStyle = palette.panelSoft;
   ctx.roundRect(photoX - 14, photoY - 14, photoW + 28, photoH + 118, 28);
   ctx.fill();
@@ -4176,13 +4176,13 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.font = "900 15px Inter, Arial, sans-serif";
   ctx.fillText("PUNTOS", photoX + photoW / 2, photoY + photoH + 42);
   ctx.fillStyle = palette.ink;
-  ctx.font = "900 44px Inter, Arial, sans-serif";
+  ctx.font = "900 46px Inter, Arial, sans-serif";
   ctx.fillText(String(points), photoX + photoW / 2, photoY + photoH + 88);
 
-  const dataX = 354;
-  const dataY = 216;
-  const dataW = 462;
-  const dataH = 410;
+  const dataX = 304;
+  const dataY = 206;
+  const dataW = 576;
+  const dataH = 438;
   ctx.fillStyle = "rgba(8, 21, 18, 0.56)";
   ctx.roundRect(dataX, dataY, dataW, dataH, 28);
   ctx.fill();
@@ -4191,40 +4191,38 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   ctx.textAlign = "left";
   ctx.fillStyle = palette.accent;
-  ctx.font = "900 14px Inter, Arial, sans-serif";
-  ctx.fillText("AFILIADO ACTIVO", dataX + 28, dataY + 42);
+  ctx.font = "900 16px Inter, Arial, sans-serif";
+  ctx.fillText("AFILIADO ACTIVO", dataX + 34, dataY + 46);
   ctx.fillStyle = palette.ink;
-  ctx.font = "900 48px Inter, Arial, sans-serif";
-  fitTextLines(affiliateName, dataW - 56, 2).forEach((line, index) => {
-    ctx.fillText(line, dataX + 28, dataY + 98 + index * 52);
+  ctx.font = "900 60px Inter, Arial, sans-serif";
+  fitTextLines(affiliateName, dataW - 68, 2).forEach((line, index) => {
+    ctx.fillText(line, dataX + 34, dataY + 114 + index * 64);
   });
 
-  const detailRows = [
-    ["Documento", affiliateDocument],
-    ["Telefono", affiliatePhone],
-    ["Email", affiliateEmail],
-    ["Codigo", tokenPreview || "SIN TOKEN"],
-  ];
-  detailRows.forEach(([label, value], index) => {
-    const y = dataY + 204 + index * 49;
+  const drawCardField = (label, value, x, y, fieldW, valueSize = 30) => {
     ctx.fillStyle = palette.gold;
-    ctx.font = "900 12px Inter, Arial, sans-serif";
-    ctx.fillText(label.toUpperCase(), dataX + 28, y);
+    ctx.font = "900 14px Inter, Arial, sans-serif";
+    ctx.fillText(label.toUpperCase(), x, y);
     ctx.fillStyle = palette.ink;
-    ctx.font = "800 21px Inter, Arial, sans-serif";
-    fitTextLines(value, dataW - 56, 1).forEach((line) => ctx.fillText(line, dataX + 28, y + 25));
-  });
+    ctx.font = `900 ${valueSize}px Inter, Arial, sans-serif`;
+    fitTextLines(value, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + valueSize + 7));
+  };
 
-  const qrX = 852;
-  const qrY = 216;
-  const qrW = 272;
-  const qrH = 410;
+  drawCardField("Documento", affiliateDocument, dataX + 34, dataY + 234, 238, 31);
+  drawCardField("Telefono", affiliatePhone, dataX + 314, dataY + 234, 218, 31);
+  drawCardField("Email", affiliateEmail, dataX + 34, dataY + 318, dataW - 68, 28);
+  drawCardField("Codigo QR", tokenPreview || "SIN TOKEN", dataX + 34, dataY + 398, dataW - 68, 26);
+
+  const qrX = 914;
+  const qrY = 236;
+  const qrW = 216;
+  const qrH = 354;
   ctx.fillStyle = palette.panelSoft;
   ctx.roundRect(qrX, qrY, qrW, qrH, 28);
   ctx.fill();
   ctx.strokeStyle = "rgba(124, 255, 201, 0.24)";
   ctx.stroke();
-  const qrPaperSize = 218;
+  const qrPaperSize = 176;
   const qrPaperX = qrX + (qrW - qrPaperSize) / 2;
   const qrPaperY = qrY + 32;
   if (qrImg) {
@@ -4241,11 +4239,11 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "center";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 18px Inter, Arial, sans-serif";
-  ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 294);
+  ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 246);
   ctx.fillStyle = palette.muted;
   ctx.font = "800 13px Inter, Arial, sans-serif";
-  fitTextLines("Uso interno para identificar afiliado y registrar puntos.", qrW - 42, 2).forEach((line, index) => {
-    ctx.fillText(line, qrX + qrW / 2, qrY + 326 + index * 19);
+  fitTextLines("Identifica afiliado y registra puntos.", qrW - 36, 2).forEach((line, index) => {
+    ctx.fillText(line, qrX + qrW / 2, qrY + 278 + index * 19);
   });
 
   ctx.textAlign = "left";
