@@ -26,9 +26,12 @@ const searchInput = document.getElementById("searchInput");
 const refreshButton = document.getElementById("refreshButton");
 const notificationsButton = document.getElementById("notificationsButton");
 const settingsButton = document.getElementById("settingsButton");
+const themeSwitch = document.getElementById("themeSwitch");
+const themeSwitchLabel = document.getElementById("themeSwitchLabel");
 const logoutButton = document.getElementById("logoutButton");
 const profileName = document.getElementById("profileName");
 const profileAvatar = document.getElementById("profileAvatar");
+const THEME_KEY = "marketgames_portal_theme";
 const businessKpiGrid = document.getElementById("businessKpiGrid");
 const campaignKpiGrid = document.getElementById("campaignKpiGrid");
 const salesKpiGrid = document.getElementById("salesKpiGrid");
@@ -453,6 +456,33 @@ function hideFeedback() {
   actionFeedback.classList.add("hidden");
   actionFeedback.className = "action-feedback hidden";
   actionFeedback.innerHTML = "";
+}
+
+function readPreferredTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function applyPortalTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = nextTheme;
+  if (themeSwitch) themeSwitch.checked = nextTheme === "light";
+  if (themeSwitchLabel) themeSwitchLabel.textContent = nextTheme === "light" ? "Claro" : "Oscuro";
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute("content", nextTheme === "light" ? "#f7faf9" : "#073b4c");
+  try {
+    localStorage.setItem(THEME_KEY, nextTheme);
+  } catch {
+    // Preference persistence is optional; the UI can still switch for this session.
+  }
+}
+
+function togglePortalTheme() {
+  applyPortalTheme(themeSwitch?.checked ? "light" : "dark");
+  showFeedback(`Perfil ${themeSwitch?.checked ? "claro" : "oscuro"} activado.`, "info");
 }
 
 function showFeedback(message, kind = "success", options = {}) {
@@ -5991,6 +6021,7 @@ settingsButton.addEventListener("click", () => {
   setView("account");
   showFeedback("Cuenta y configuracion abiertas.", "info");
 });
+themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
 document.addEventListener("click", (event) => {
   if (!workspace?.classList.contains("sidebar-open")) return;
@@ -6033,6 +6064,7 @@ businessLogoInput?.addEventListener("change", () => handleBusinessLogoFile(busin
 businessLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo(""));
 
 rangeButton.textContent = `Ultimos ${state.rangeDays} dias`;
+applyPortalTheme(readPreferredTheme());
 setView("dashboard");
 initPasswordResetFromUrl();
 renderShell();

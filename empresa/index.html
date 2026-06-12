@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=campaign-funnel-contrast-20260612">
+  <link rel="stylesheet" href="css/styles.css?v=portal-theme-switch-20260612">
 </head>
 <body>
   <main class="portal-shell">
@@ -149,6 +149,15 @@
             <button class="icon-button" id="settingsButton" type="button" title="Configuracion">
               <span class="material-symbols-outlined">settings</span>
             </button>
+            <label class="theme-switch" for="themeSwitch" title="Cambiar perfil claro u oscuro">
+              <input id="themeSwitch" type="checkbox" aria-label="Cambiar perfil claro u oscuro">
+              <span class="theme-switch-track" aria-hidden="true">
+                <span class="material-symbols-outlined theme-switch-icon theme-switch-icon-dark">dark_mode</span>
+                <span class="material-symbols-outlined theme-switch-icon theme-switch-icon-light">light_mode</span>
+                <span class="theme-switch-thumb"></span>
+              </span>
+              <span class="theme-switch-label" id="themeSwitchLabel">Oscuro</span>
+            </label>
             <div class="profile-block">
               <span class="profile-avatar" id="profileAvatar">MG</span>
               <span id="profileName">Business User</span>
@@ -1862,7 +1871,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=campaign-funnel-contrast-20260612" defer></script>
+  <script src="js/app.js?v=portal-theme-switch-20260612" defer></script>
 </body>
 </html>
 
