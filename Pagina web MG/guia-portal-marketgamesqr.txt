@@ -1,0 +1,1654 @@
+GUIA ULTRA DETALLADA DEL PORTAL MARKETGAMESQR
+Uso comercial, uso operativo, ventajas y estrategias para sacar maximo provecho
+
+Version: 2026-06-12
+Dominio oficial: https://marketgamesqr.com
+Portal empresa: https://marketgamesqr.com/empresa/
+Validador: https://marketgamesqr.com/validador/
+Planes y registro: https://marketgamesqr.com/paquetes/
+
+
+1. IDEA CENTRAL DEL PORTAL
+
+MarketGamesQR no reemplaza al agente de mercadeo, al freelancer, al estratega, al disenador, al creador de contenido ni a la agencia. Lo que hace es elevar el nivel de exigencia del trabajo de mercadeo: toda estrategia debe quedar disenada para poder medirse con datos reales.
+
+La conversacion correcta entre el dueno del negocio y su agente de mercadeo seria:
+
+"Mira, tengo este portal. Necesito que me disenes campanas que este portal pueda medir. No quiero solo likes, comentarios, seguidores, impresiones o estadisticas sueltas. Quiero saber que tanto revenue real entra por la forma en que nos estamos mostrando, por cada canal, por cada campana, por cada QR, por cada recomendacion y por cada venta registrada."
+
+La herramienta no elimina la creatividad. La enfoca.
+
+El agente de mercadeo sigue creando:
+
+- conceptos de campana;
+- piezas graficas;
+- anuncios;
+- activaciones;
+- dinamicas de punto de venta;
+- experiencias digitales;
+- ferias;
+- alianzas;
+- contenido para redes;
+- influenciadores;
+- volantes;
+- formularios;
+- juegos;
+- embudos;
+- mensajes;
+- beneficios;
+- ofertas;
+- guiones comerciales.
+
+Pero ahora debe crear todo eso con una condicion: que la estrategia pueda conectarse al portal para medir resultados. Cada accion debe dejar una huella: lead, QR generado, QR reclamado, redencion, venta, origen de llegada, sucursal, afiliado referido, campana, canal y revenue.
+
+La promesa del portal se puede resumir asi:
+
+"No midas solo visibilidad. Mide conversion, visita, redencion y venta real."
+
+
+2. QUE PROBLEMA RESUELVE
+
+Muchos negocios hacen mercadeo sin saber realmente que funciono. Publican en redes, pagan anuncios, reparten volantes, van a ferias, ponen descuentos, contratan influenciadores o hacen activaciones, pero despues solo tienen metricas abstractas:
+
+- alcance;
+- likes;
+- seguidores;
+- comentarios;
+- clics;
+- reproducciones;
+- impresiones;
+- gente que dijo "yo vi eso";
+- percepcion del vendedor;
+- sensacion de que "se movio un poco".
+
+Esas metricas pueden servir para leer visibilidad, pero no son suficientes para saber si el mercadeo esta trayendo ventas.
+
+MarketGamesQR aterriza la medicion a datos comerciales:
+
+- quien participo;
+- que datos dejo;
+- de donde llego;
+- que QR recibio;
+- si fue a tienda;
+- si redimio;
+- que compro;
+- cuanto pago;
+- en que sucursal;
+- que canal lo trajo;
+- que afiliado lo recomendo;
+- que campana lo activo;
+- cuanto revenue produjo;
+- que costo tuvo adquirirlo;
+- que estrategia merece repetirse.
+
+La diferencia es clara:
+
+Antes:
+"La campana tuvo muchos likes."
+
+Despues:
+"Esta campana genero 340 leads, 210 QR, 86 redenciones, 52 ventas, COP 4.800.000 de revenue atribuido y un CAC estimado sano."
+
+Antes:
+"El influencer publico y hubo movimiento."
+
+Despues:
+"El link/QR del influencer genero 92 leads, 31 visitas reales, 18 compras y COP 1.250.000 en ventas."
+
+Antes:
+"Repartimos volantes."
+
+Despues:
+"El lote de QR impreso en volantes genero 500 QR disponibles, 143 reclamos, 67 redenciones y 34 ventas registradas."
+
+
+3. PRINCIPIO ESTRATEGICO: TODO DEBE SER MEDIBLE
+
+El portal permite muchisimas estrategias, pero todas deben partir de una regla:
+
+Cada accion de mercadeo debe tener un mecanismo de medicion.
+
+Ese mecanismo puede ser:
+
+- QR unico para cada lead;
+- QR de un lote impreso;
+- QR postventa;
+- QR de referido;
+- QR permanente de afiliado;
+- landing conectada;
+- formulario conectado;
+- juego conectado;
+- validador en punto de venta;
+- registro manual de venta;
+- seleccion del medio de llegada;
+- observacion del vendedor;
+- campana asociada;
+- sucursal asociada;
+- canal especifico.
+
+La medicion ideal no depende de una sola fuente. Puede combinar:
+
+- medicion automatica por QR;
+- medicion manual por ventas;
+- origen declarado por el cliente;
+- datos de vendedor;
+- historial de redenciones;
+- datos de afiliados;
+- comparativos antes/durante/despues.
+
+Por eso el portal no se limita a "generar QR". El QR es el puente entre el mundo fisico, el mundo digital y la venta real.
+
+
+4. COMO DEBE USARLO UN DUENO DE NEGOCIO CON SU AGENTE DE MERCADEO
+
+El dueno no deberia pedir solo "hazme una campana". Deberia pedir:
+
+"Disename una campana que podamos medir en el portal."
+
+Eso obliga al agente a responder preguntas concretas:
+
+1. Cual es el objetivo comercial?
+   - traer gente a tienda;
+   - recuperar clientes;
+   - vender un producto;
+   - activar una categoria;
+   - lanzar una coleccion;
+   - llenar una feria;
+   - aumentar recompra;
+   - conseguir referidos;
+   - medir interes;
+   - limpiar inventario;
+   - probar una oferta;
+   - capturar base de datos.
+
+2. Que accion del cliente se quiere provocar?
+   - escanear un QR;
+   - llenar un formulario;
+   - jugar;
+   - reclamar beneficio;
+   - ir a tienda;
+   - redimir;
+   - comprar;
+   - recomendar;
+   - volver a comprar.
+
+3. Donde se va a medir?
+   - dashboard;
+   - campanas;
+   - leads;
+   - redenciones;
+   - sales tracker;
+   - validador;
+   - QR estrategicos;
+   - afiliados;
+   - sucursales.
+
+4. Que medio de llegada se va a registrar?
+   - vio el almacen;
+   - recomendacion de un amigo;
+   - feria o evento;
+   - internet/buscador;
+   - redes sociales;
+   - pauta digital;
+   - QR o pieza impresa;
+   - otro.
+
+5. Que canal especifico se va a anotar?
+   - Instagram;
+   - Facebook;
+   - TikTok;
+   - Google;
+   - feria concreta;
+   - volante;
+   - stand;
+   - vitrina;
+   - influencer;
+   - referidor;
+   - WhatsApp;
+   - email;
+   - empaque;
+   - mostrador.
+
+6. Que indicador definira exito?
+   - leads;
+   - redenciones;
+   - ventas;
+   - revenue;
+   - ticket promedio;
+   - costo por lead;
+   - costo por cliente;
+   - ROI;
+   - recompras;
+   - referidos;
+   - clientes por sucursal;
+   - clientes por canal.
+
+La idea es que el agente piense la campana desde el diseno de medicion, no solo desde la creatividad.
+
+
+5. MODULOS PRINCIPALES DEL PORTAL
+
+El portal empresa funciona como un workspace operativo. No es solo un visor. Reune medicion, validacion, ventas, QR, afiliados y reportes.
+
+Los modulos principales son:
+
+- Dashboard general;
+- Cuenta y plan;
+- Campanas;
+- Leads;
+- Redenciones;
+- Sales tracker;
+- Motor de QR estrategicos;
+- Validador integrado;
+- Sucursales;
+- Afiliados y referidos;
+- Carnet de afiliado;
+- Exportaciones;
+- Admin interno para preparacion de campanas.
+
+
+6. DASHBOARD GENERAL
+
+El dashboard es la vista ejecutiva. Sirve para que el dueno entienda rapidamente si el mercadeo esta funcionando.
+
+Mide y resume:
+
+- leads capturados;
+- QR generados;
+- QR activos;
+- QR redimidos;
+- QR vencidos;
+- redenciones por dia;
+- QR y redenciones por hora;
+- comportamiento por dia de semana;
+- campanas activas;
+- ingresos atribuidos;
+- ventas registradas;
+- ticket promedio;
+- CAC;
+- ROI estimado;
+- canales de llegada;
+- sucursales con revenue atribuido;
+- ultimas redenciones;
+- ultimos leads.
+
+La ventaja del dashboard es que reduce la dependencia de interpretaciones sueltas. Un dueno no necesita abrir diez hojas de calculo para entender si la campana trajo gente. El dashboard ordena el embudo:
+
+Lead -> QR emitido -> QR redimido -> cliente adquirido -> venta/revenue.
+
+Como aprovecharlo:
+
+- Revisarlo todos los dias durante una campana activa.
+- Comparar leads contra redenciones, no solo leads.
+- Mirar que campana tiene volumen y cual tiene conversion.
+- Detectar si hay mucha gente interesada pero poca visita.
+- Detectar horarios de mayor redencion para reforzar vendedores.
+- Revisar si una sucursal esta capturando mas ventas que otra.
+- Comparar canales de llegada contra ventas reales.
+- Usar el dashboard en reuniones con el agente de mercadeo.
+
+Preguntas que el dashboard debe responder:
+
+- Cual campana esta trayendo mas clientes reales?
+- Cual canal esta trayendo ventas y no solo ruido?
+- En que horario se redime mas?
+- Que dia conviene activar mas pauta o vendedores?
+- Los QR se estan usando o se estan quedando activos sin redimir?
+- El costo de la campana se justifica con el revenue?
+- Cual es el ticket promedio de clientes captados por mercadeo?
+
+
+7. SECCION DE CAMPANAS
+
+La seccion de campanas organiza el trabajo de mercadeo.
+
+Una campana puede representar:
+
+- juego;
+- formulario;
+- landing;
+- evento;
+- feria;
+- influencer;
+- flyer;
+- campana social;
+- pauta digital;
+- activacion mixta;
+- premio instantaneo;
+- encuesta;
+- lanzamiento;
+- temporada comercial.
+
+Cada campana puede tener:
+
+- nombre;
+- slug;
+- tipo;
+- estado;
+- objetivo;
+- estrategia;
+- presupuesto;
+- meta comercial;
+- meta de leads;
+- meta de redenciones;
+- fecha de inicio;
+- fecha de fin;
+- landing asociada;
+- URL del juego o formulario;
+- URL del validador;
+- assets entregados;
+- notas de cliente.
+
+Ventajas:
+
+- Permite ordenar la estrategia por campana, no por intuicion.
+- Permite separar resultados por activacion.
+- Permite comparar campanas entre si.
+- Permite saber si una campana esta lista, activa, pausada o finalizada.
+- Permite registrar snapshot de ventas antes, durante y despues.
+- Permite ver redenciones y ventas atribuidas por campana.
+
+Uso recomendado para agentes:
+
+Antes de lanzar, el agente debe documentar:
+
+- objetivo;
+- hipotesis;
+- publico;
+- canales;
+- beneficio;
+- presupuesto estimado;
+- QR que se usaran;
+- como se validara;
+- como se registrara la venta;
+- que observaciones deben capturar los vendedores.
+
+Ejemplo:
+
+Campana: "Feria de Junio - Coleccion Nueva"
+Objetivo: medir cuantos visitantes de feria compran en tienda o por WhatsApp.
+Canales: stand fisico, QR impreso, Instagram stories, recomendacion de afiliados.
+Beneficio: descuento exclusivo o regalo por compra.
+Medicion: QR por feria, sales tracker con medio "Feria o evento", canal "Feria Junio", observaciones con stand, volante o vendedor.
+Exito: revenue atribuido, redenciones, ticket promedio y clientes nuevos.
+
+
+8. LEADS Y RESPUESTAS
+
+El portal captura clientes potenciales y los convierte en base accionable.
+
+Un lead puede incluir:
+
+- nombre;
+- cedula/documento;
+- telefono;
+- correo;
+- campana;
+- estado del QR;
+- fecha de registro;
+- origen;
+- preferencias;
+- respuestas de formulario;
+- producto favorito;
+- canal preferido;
+- intencion de compra;
+- presupuesto;
+- ventana de compra.
+
+Ventajas:
+
+- El negocio deja de depender de seguidores anonimos.
+- Cada participante se convierte en un contacto real.
+- Se puede hacer seguimiento posterior.
+- Se puede segmentar por interes.
+- Se puede entender que productos atraen mas.
+- Se puede saber quien no redimio y volver a contactarlo.
+
+Estrategias:
+
+- Formulario de preferencias para tienda de ropa: talla, categoria, estilo, presupuesto.
+- Encuesta de plato favorito para restaurante.
+- Juego con premio para captar telefono y cedula.
+- Registro de feria para enviar oferta posterior.
+- Landing por influencer para medir quien llego por ese influenciador.
+- Formulario post-evento para medir interes real.
+
+Como debe trabajar el agente:
+
+No debe pedir datos inutiles. Debe pedir los datos minimos que permitan:
+
+- identificar al cliente;
+- contactarlo;
+- validar beneficio;
+- segmentarlo;
+- medir venta.
+
+
+9. REDENCIONES
+
+La redencion es el momento en que el cliente llega y usa el beneficio.
+
+El portal registra:
+
+- beneficio;
+- cliente;
+- cedula;
+- telefono;
+- campana;
+- fecha;
+- hora;
+- usuario que valido;
+- sucursal;
+- estado del QR;
+- venta asociada si se registra.
+
+Ventajas:
+
+- Evita cupones duplicados.
+- Evita que un mismo QR se use varias veces.
+- Permite saber quien si llego al negocio.
+- Permite medir la distancia entre interes y visita real.
+- Permite entrenar al equipo de ventas con datos.
+
+La redencion es mas importante que el like porque demuestra accion real.
+
+Estrategias:
+
+- Beneficio de unica vez para llevar trafico a tienda.
+- QR con vencimiento para crear urgencia.
+- Beneficio por horario de baja venta.
+- Redencion en sucursal especifica para mover inventario.
+- Premio por compra minima.
+- QR de evento que solo se valida en caja.
+
+
+10. SALES TRACKER: VENTAS Y MEDIOS DE LLEGADA
+
+Esta es una de las secciones mas importantes del portal.
+
+El sales tracker permite registrar ventas reales y asociarlas al medio por el cual llego el cliente.
+
+Campos principales:
+
+- valor de venta;
+- moneda;
+- producto o servicio;
+- cliente;
+- cedula;
+- telefono;
+- correo;
+- medio de llegada;
+- canal especifico;
+- afiliado que recomendo;
+- observaciones.
+
+Medios habituales de llegada:
+
+- Vio el almacen.
+- Recomendacion de un amigo.
+- Feria o evento.
+- Internet / buscador.
+- Redes sociales.
+- Pauta digital.
+- QR / pieza impresa.
+- Otro.
+
+La idea no es medir solamente "cual campana activo al cliente" de forma perfecta, porque en la vida real un cliente puede ver varias cosas antes de comprar. La idea es medir el medio principal de llegada de una manera constante.
+
+Ejemplo:
+
+Medio: Redes sociales.
+Canal especifico: Instagram.
+Observacion: reel de lanzamiento, historia de descuento, pieza de gamificacion.
+
+Medio: Feria o evento.
+Canal especifico: Feria de emprendimiento junio.
+Observacion: volante entregado en stand, QR del mostrador.
+
+Medio: Recomendacion de un amigo.
+Canal especifico: afiliado Maria Gomez.
+Observacion: QR de referido entregado por afiliado.
+
+Ventajas:
+
+- Mide ventas reales, no solo interacciones.
+- Permite saber que medios traen clientes.
+- Permite comparar organico, digital, inorganico, voz a voz y punto fisico.
+- Permite registrar detalles sin complicar la clasificacion principal.
+- Permite alimentar el dashboard con revenue por fuente.
+- Permite acumular puntos a afiliados cuando aplica.
+
+Como sacar maximo provecho:
+
+- Registrar todas las ventas influenciadas por marketing.
+- Capacitar a vendedores para preguntar "como nos conociste?".
+- Usar siempre las mismas categorias de medio.
+- Usar observaciones para el detalle fino.
+- No inventar demasiadas categorias: eso rompe la lectura.
+- Revisar semanalmente revenue por medio.
+- Comparar "redes sociales" contra "pauta digital" y contra "recomendacion".
+- Medir cuanto vende la vitrina fisica frente a internet.
+
+
+11. MOTOR DE QR ESTRATEGICOS
+
+El portal permite generar QR que no necesariamente nacen de un juego o formulario publico.
+
+Tipos de uso:
+
+- QR postventa;
+- paquetes de QR;
+- QR para etiquetas;
+- QR para empaques;
+- QR para volantes;
+- QR para eventos;
+- QR para productos;
+- QR de mostrador;
+- QR de punto de venta;
+- QR de campana interna;
+- QR de referidos de afiliados.
+
+Cada QR consume creditos QR disponibles, segun plan o paquete.
+
+El QR estrategico sirve para conectar una accion fisica o comercial con el sistema de medicion.
+
+Ejemplos:
+
+1. QR postventa:
+   Despues de una compra, el vendedor genera un QR para recompra, garantia, beneficio, encuesta o incentivo de regreso.
+
+2. QR en empaque:
+   Cada empaque lleva un QR unico que permite reclamar beneficio, registrar producto o activar recompra.
+
+3. QR en volante:
+   Cada volante o lote de volantes se puede medir por reclamos, redenciones y ventas.
+
+4. QR en feria:
+   El stand reparte QR o tiene un QR visible para capturar interesados.
+
+5. QR en mostrador:
+   Clientes que visitan el local pueden reclamar beneficio, entrar a programa de afiliados o dejar datos.
+
+6. QR en producto:
+   Sirve para registrar garantia, activar contenido, medir postventa o incentivar recompra.
+
+Beneficios que puede representar un QR:
+
+- descuento;
+- producto gratis;
+- muestra gratis;
+- upgrade;
+- acceso VIP;
+- entrada a rifa;
+- compra X recibe Y;
+- beneficio personalizado.
+
+Opciones estrategicas:
+
+- QR con reclamo requerido;
+- QR de uso unico;
+- QR con vencimiento;
+- QR por lote;
+- QR por canal;
+- QR por campana;
+- QR por sucursal;
+- QR con beneficio especifico.
+
+Ventajas:
+
+- Lleva medicion al mundo fisico.
+- Permite imprimir materiales sin perder trazabilidad.
+- Controla beneficios.
+- Evita uso repetido.
+- Permite saber que piezas generan accion.
+- Permite descargar paquetes para impresion o manejo operativo.
+
+Formatos de descarga disponibles cuando aplica:
+
+- PNG;
+- ZIP;
+- PDF;
+- HTML imprimible;
+- CSV;
+- JSON.
+
+
+12. QR POSTVENTA
+
+El QR postventa se genera despues de una venta.
+
+Sirve para:
+
+- recompra;
+- fidelizacion;
+- encuesta;
+- garantia;
+- beneficio en proxima visita;
+- activacion de cliente frecuente;
+- incentivo para referir;
+- recuperacion de cliente;
+- promocion cruzada.
+
+Campos utiles:
+
+- valor de la venta;
+- moneda;
+- nombre del cliente;
+- telefono;
+- email;
+- documento;
+- producto comprado;
+- notas;
+- sucursal;
+- vencimiento;
+- beneficio.
+
+Estrategias:
+
+- "Gracias por tu compra, vuelve en 15 dias y reclama un detalle."
+- "Compra hoy y recibe un QR para descuento en tu proxima visita."
+- "Activa tu garantia escaneando este QR."
+- "Escanea para participar en la rifa del mes."
+- "Trae este QR en tu proxima compra y recibe upgrade."
+
+Ventaja:
+
+Convierte cada venta en una oportunidad de recompra medible.
+
+
+13. PAQUETES DE QR
+
+Los paquetes permiten generar muchos QR de una vez.
+
+Limites reales del sistema:
+
+- de 1 a 5000 QR por lote general;
+- de 1 a 100 QR por lote de referidos de afiliado.
+
+Canales de uso para lotes:
+
+- etiqueta;
+- empaque;
+- volante;
+- evento;
+- producto;
+- mostrador;
+- campana interna;
+- punto de venta.
+
+Estrategias:
+
+- 500 QR para volantes de una feria.
+- 100 QR para empaques premium.
+- 50 QR para vendedores externos.
+- 300 QR para producto nuevo.
+- 25 QR para clientes VIP.
+- 1000 QR para activacion masiva.
+
+La clave es no imprimir QR genericos sin control. Lo valioso es que el lote quede registrado y luego pueda leerse:
+
+- cuantos se generaron;
+- cuantos se reclamaron;
+- cuantos siguen activos;
+- cuantos se redimieron;
+- cuanta venta produjeron.
+
+
+14. VALIDADOR INTEGRADO Y VALIDADOR PUBLICO
+
+El validador es la herramienta del vendedor.
+
+Puede estar en:
+
+- /validador/ como app separada;
+- dentro del portal empresa como validador integrado.
+
+Funciones:
+
+- escanear QR con camara;
+- pegar token o URL;
+- consultar estado contra la base de datos;
+- mostrar negocio;
+- mostrar campana;
+- mostrar beneficio;
+- mostrar cliente;
+- mostrar cedula;
+- mostrar telefono;
+- mostrar vencimiento;
+- redimir beneficio;
+- registrar venta atribuida;
+- ver historial reciente.
+
+Ventajas:
+
+- Evita fraude.
+- Evita doble redencion.
+- Da seguridad al vendedor.
+- Permite registrar venta en el mismo flujo.
+- Conecta marketing con caja/punto de venta.
+
+Reglas importantes:
+
+- QR activo se puede redimir una sola vez.
+- QR redimido no se puede volver a usar.
+- QR vencido se rechaza.
+- QR inventado se rechaza.
+- El vendedor solo debe validar QR de su negocio o segun permisos.
+
+Entrenamiento recomendado para vendedores:
+
+1. Escanear el QR.
+2. Verificar nombre, cedula y telefono.
+3. Confirmar beneficio.
+4. Redimir solo si corresponde.
+5. Registrar venta si hubo compra.
+6. Anotar observacion si algo fue relevante.
+
+
+15. SISTEMA DE AFILIADOS
+
+El modulo de afiliados convierte clientes, aliados o promotores en recomendadores medibles.
+
+El negocio puede registrar:
+
+- nombre completo;
+- documento;
+- telefono;
+- email;
+- intereses y notas.
+
+El portal genera:
+
+- afiliado dentro del negocio;
+- QR permanente de afiliado;
+- carnet PNG;
+- historial de puntos;
+- metricas de compras;
+- QR de recomendacion de unico uso.
+
+Metricas visibles:
+
+- total de afiliados;
+- afiliados activos;
+- puntos acumulados;
+- compras registradas;
+- valor total de compras asociadas;
+- ticket promedio;
+- ultima compra;
+- afiliado destacado.
+
+Ventajas:
+
+- Formaliza el voz a voz.
+- Convierte recomendaciones en datos.
+- Permite premiar a clientes que traen clientes.
+- Permite saber quien recomienda de verdad.
+- Motiva recompra y comunidad.
+
+
+16. CARNET DE AFILIADO
+
+El carnet de afiliado es una pieza visual descargable en PNG.
+
+Debe mostrar:
+
+- nombre del cliente arriba y grande;
+- datos del afiliado en el centro;
+- documento/cedula;
+- telefono;
+- email si existe;
+- puntos;
+- QR del afiliado;
+- nombre de la empresa;
+- slogan si existe;
+- datos de contacto del negocio.
+
+La funcion del carnet no es solo verse bien. Sirve para:
+
+- identificar afiliado;
+- entregar sentido de pertenencia;
+- permitir acceso a beneficios;
+- facilitar QR permanente;
+- reforzar marca del negocio;
+- ordenar programa de fidelizacion.
+
+Estrategias:
+
+- Entregar carnet digital a clientes frecuentes.
+- Usarlo como club VIP.
+- Usarlo para puntos por compra.
+- Usarlo para promociones por temporada.
+- Usarlo en ferias para identificar aliados.
+- Usarlo para referidores.
+
+
+17. QR DE RECOMENDACION DE AFILIADOS
+
+Este punto es clave.
+
+El afiliado puede tener QR de recomendacion de unico uso. El negocio decide entregarle, por ejemplo, 5 QR. El afiliado los comparte con contactos y les dice:
+
+"Ve a este negocio porque tiene buenos productos y presenta este QR de recomendacion."
+
+Cuando el referido llega, compra y el negocio registra la venta, el portal identifica quien recomendo.
+
+Flujo recomendado:
+
+1. Seleccionar afiliado.
+2. Generar cantidad de QR de recomendacion.
+3. Entregar esos QR al afiliado.
+4. El afiliado los comparte con sus contactos.
+5. El referido llega al negocio.
+6. El vendedor valida o registra la venta.
+7. El sistema asocia la venta al afiliado.
+8. El afiliado recibe puntos.
+
+Reglas:
+
+- Los QR de recomendacion consumen creditos QR disponibles.
+- Cada QR de referido se genera asociado a un afiliado especifico.
+- El lote queda registrado como fuente affiliate_referral.
+- El beneficio puede llevar texto personalizado.
+- Se pueden agregar observaciones.
+- Se pueden generar entre 1 y 100 QR por lote de referido.
+
+Formula de puntos por referido:
+
+El sistema calcula puntos base como:
+
+valor de compra / 1000
+
+Luego asigna al afiliado el 20% de esos puntos, aproximando hacia arriba.
+
+Ejemplo:
+
+Compra del referido: COP 50.000
+Puntos base: 50
+20%: 10
+Puntos para el afiliado: 10
+
+Compra del referido: COP 23.000
+Puntos base: 23
+20%: 4.6
+Puntos para el afiliado: 5
+
+Ventajas:
+
+- El voz a voz deja de ser invisible.
+- El afiliado tiene incentivo.
+- El negocio mide quienes recomiendan.
+- La recomendacion se conecta a venta real.
+- Se evita premiar recomendaciones que no compran.
+
+Estrategias:
+
+- Dar 5 QR mensuales a afiliados activos.
+- Dar mas QR a los mejores recomendadores.
+- Hacer ranking mensual de afiliados.
+- Premiar puntos acumulados con beneficios.
+- Usar QR de referidos para lanzamientos.
+- Entregar QR de referido despues de compras grandes.
+- Usar referidos en ferias, grupos de WhatsApp y comunidades locales.
+
+
+18. CUENTA, PLANES Y CREDITOS QR
+
+El portal controla acceso por plan y creditos.
+
+En la cuenta se puede ver:
+
+- plan actual;
+- suscripcion activa;
+- QR mensuales incluidos;
+- QR disponibles;
+- QR usados;
+- usuarios permitidos;
+- sedes permitidas;
+- campanas permitidas;
+- exportaciones;
+- afiliados permitidos.
+
+Los creditos QR importan porque cada QR generado representa costo operativo y valor medible.
+
+El negocio puede:
+
+- usar QR incluidos del plan;
+- comprar paquetes QR;
+- renovar mensualidad;
+- controlar consumo;
+- evitar que una campana viral se vuelva un gasto sin control.
+
+Ventaja:
+
+El negocio sabe cuantos QR tiene y cuanto esta consumiendo.
+
+Recomendacion:
+
+El agente de mercadeo debe planear las campanas segun creditos disponibles. No es lo mismo una activacion de 50 QR VIP que una feria con 2000 QR impresos.
+
+
+18A. VERSION PREPAGO: QR VALIDATOR SIN PORTAL MENSUAL
+
+La version prepago es una entrada mas simple y economica al ecosistema MarketGamesQR.
+
+No reemplaza el portal mensual completo. Es una opcion para negocios que quieren empezar a usar QR, validar beneficios en tienda y comprar creditos por demanda, sin comprometerse todavia con una suscripcion mensual de analitica, dashboard, campanas avanzadas o afiliados.
+
+La version prepago se presenta como:
+
+QR Validator prepago.
+
+Que obtiene el negocio:
+
+- acceso al QR Validator;
+- posibilidad de escanear y redimir beneficios QR;
+- compra de paquetes QR prepago;
+- generador simple de QR;
+- paquetes descargables de QR;
+- un usuario propietario;
+- un validador;
+- una sede operativa basica;
+- uso por creditos comprados;
+- activacion por Mercado Pago cuando el pago queda aprobado.
+
+Que no incluye:
+
+- portal de dashboard y analitica completa;
+- gestion avanzada de campanas;
+- exportacion de leads;
+- sistema de afiliados;
+- QR de recomendacion de afiliados;
+- varias sedes;
+- multiples usuarios;
+- reportes avanzados;
+- API;
+- marca blanca;
+- automatizaciones;
+- analitica profunda de revenue por canales.
+
+Esto es importante comercialmente porque evita vender el prepago como si fuera el portal completo. La promesa del prepago es mas directa:
+
+"Compra creditos QR, genera beneficios y validalos en tienda."
+
+La promesa del portal mensual es mas amplia:
+
+"Mide campanas, leads, redenciones, ventas, fuentes de llegada, afiliados, sucursales y revenue real."
+
+El prepago sirve para negocios que:
+
+- apenas quieren probar la herramienta;
+- no tienen presupuesto mensual;
+- hacen pocas activaciones;
+- necesitan validar cupones de forma controlada;
+- quieren reemplazar cupones genericos por QR de uso controlado;
+- tienen un solo punto de venta;
+- tienen un equipo pequeno;
+- quieren comprar solo cuando necesitan;
+- quieren iniciar con baja friccion;
+- todavia no tienen una estrategia formal de marketing medible.
+
+Paquetes disponibles:
+
+- QR100: 100 creditos QR.
+- QR300: 300 creditos QR.
+- QR500: 500 creditos QR.
+- QR800: 800 creditos QR.
+- QR1000: 1000 creditos QR.
+- QR1500: 1500 creditos QR.
+- QR2000: 2000 creditos QR.
+- QR5000: 5000 creditos QR.
+- QRMAX: 10000 creditos QR.
+
+Precios actuales de referencia en el sistema:
+
+- QR100: COP 19.900.
+- QR300: COP 39.900.
+- QR500: COP 59.900.
+- QR800: COP 69.900.
+- QR1000: COP 84.900.
+- QR1500: COP 119.900.
+- QR2000: COP 139.900.
+- QR5000: COP 249.900.
+- QRMAX / QR10000: COP 339.900.
+
+Beneficios posibles de la version prepago:
+
+1. Entrada economica.
+   Permite empezar con una compra minima sin pagar portal mensual. Es util para negocios que quieren ensayar el sistema sin una decision grande.
+
+2. Control de gasto.
+   El negocio compra una cantidad especifica de QR. Cuando se acaban, recarga. Esto evita costos recurrentes si no hay campanas activas.
+
+3. Validacion en tienda.
+   El vendedor puede escanear QR y controlar beneficios. Esto ya mejora mucho frente a cupones impresos o codigos faciles de copiar.
+
+4. Uso unico.
+   Los QR pueden ayudar a controlar que un beneficio no se use varias veces, segun el flujo configurado.
+
+5. Ideal para promociones simples.
+   Si el negocio solo necesita entregar descuentos, muestras, rifas o regalos puntuales, prepago puede ser suficiente.
+
+6. Buen producto de prueba.
+   Permite demostrar valor antes de vender Starter, Growth o Pro.
+
+7. Util para microcampanas.
+   Una tienda puede comprar 100 o 300 QR para una activacion pequena, un fin de semana, una feria local o una promocion de baja escala.
+
+8. Util para negocios sin area de mercadeo.
+   No todos los negocios necesitan dashboard avanzado desde el primer dia. Algunos solo quieren validar beneficios y no perder control.
+
+9. Reduce fraude.
+   Aunque no tenga analitica completa, ya mejora el control sobre promociones porque el QR se valida contra el sistema.
+
+10. Facil de explicar.
+   "Compra un paquete de QR y usalos para beneficios que se validan en tienda."
+
+Casos de uso ideales para prepago:
+
+- tienda pequena que quiere entregar 100 descuentos de inauguracion;
+- restaurante que quiere dar 300 QR para bebida gratis con compra;
+- peluqueria que quiere entregar QR de descuento a clientes frecuentes;
+- feria donde se reparten 500 beneficios;
+- gimnasio que quiere dar 100 pases de clase gratis;
+- emprendimiento que quiere medir una promocion puntual sin contratar mensualidad;
+- local que quiere evitar cupones duplicados;
+- marca que quiere probar QR en empaques;
+- negocio que solo tiene un vendedor o un punto de caja.
+
+Estrategias prepago:
+
+A. Promocion de apertura
+
+Comprar QR100 o QR300.
+Crear beneficios de inauguracion.
+Validarlos en tienda.
+Medir de forma operativa cuantos QR fueron usados.
+
+B. Feria o evento pequeno
+
+Comprar QR500.
+Imprimir QR en tarjetas o volantes.
+Validar en caja cuando el cliente llegue.
+Usar observaciones internas para saber de que feria vino.
+
+C. Beneficio de recompra
+
+Despues de vender, entregar QR para proxima visita.
+El cliente vuelve y el vendedor valida.
+El negocio no necesita un portal completo para empezar a controlar este flujo.
+
+D. Campana de baja escala en redes
+
+Publicar una pieza con QR o entregar QR a quienes escriban por WhatsApp.
+El beneficio se valida en tienda.
+Si la campana funciona, el negocio puede migrar a portal mensual para medir mejor.
+
+E. Prueba antes de Growth
+
+Un agente puede vender primero un paquete prepago para que el cliente entienda el valor del QR y luego proponer el portal mensual cuando ya quiera dashboard, ventas, fuentes de llegada y afiliados.
+
+Como vender prepago sin confundir al cliente:
+
+No decir:
+"Con prepago tienes todo el portal."
+
+Si decir:
+"Con prepago tienes QR Validator y creditos QR para activar beneficios de forma controlada. Si quieres dashboard, campanas, leads, ventas, afiliados y analitica, pasamos a un plan mensual."
+
+Comparacion simple:
+
+Prepago:
+
+- compras creditos;
+- generas QR;
+- validas beneficios;
+- controlas uso;
+- no tienes analitica completa;
+- no tienes sistema de afiliados;
+- no tienes dashboard de revenue;
+- ideal para empezar.
+
+Portal mensual:
+
+- incluye acceso al portal;
+- permite dashboard;
+- permite campanas;
+- permite leads;
+- permite ventas y medios de llegada;
+- permite afiliados;
+- permite referidos;
+- permite exportaciones;
+- permite mejor seguimiento estrategico;
+- ideal para negocios que quieren medir marketing de forma recurrente.
+
+Beneficio para el agente de mercadeo:
+
+La version prepago puede ser una puerta de entrada. El agente puede decir:
+
+"Empecemos con un paquete de QR prepago para medir una activacion pequena. Si vemos traccion, pasamos al portal mensual para medir campanas, ventas y canales con mas detalle."
+
+Eso reduce la barrera de compra y permite que el negocio pruebe la logica del sistema.
+
+Beneficio para MarketGamesQR:
+
+Prepago crea adopcion. No todos los negocios van a entrar directo a Growth o Pro. Algunos necesitan una primera experiencia barata, simple y concreta.
+
+El prepago tambien permite monetizar negocios que:
+
+- no tienen campanas permanentes;
+- compran por temporada;
+- hacen eventos ocasionales;
+- solo necesitan validador;
+- no estan listos para CRM o analitica.
+
+Cuando conviene recomendar prepago:
+
+- el negocio pregunta por algo muy economico;
+- solo necesita validar un beneficio;
+- no tiene equipo para registrar ventas;
+- no tiene campanas recurrentes;
+- no necesita afiliados;
+- no necesita dashboard;
+- quiere probar antes de suscribirse;
+- solo quiere usar QR en una feria o promocion corta.
+
+Cuando NO conviene quedarse en prepago:
+
+- el negocio quiere medir canales de llegada;
+- quiere saber revenue por marketing;
+- quiere dashboard;
+- quiere comparar campanas;
+- quiere afiliados y referidos;
+- tiene varias sedes;
+- tiene varios vendedores;
+- quiere exportar leads;
+- quiere un sistema permanente;
+- quiere reportes para tomar decisiones.
+
+Mensaje comercial recomendado:
+
+"El prepago es perfecto para empezar con QR y validacion. El portal mensual es para administrar y medir marketing con datos reales. Si solo quieres controlar beneficios, empieza prepago. Si quieres saber que canal te trae ventas, necesitas portal."
+
+
+19. SUCURSALES
+
+La vista de sucursales permite leer rendimiento por punto de venta.
+
+Puede mostrar:
+
+- sucursal;
+- redenciones;
+- ventas;
+- ingresos.
+
+Ventajas:
+
+- Saber que sede convierte mejor.
+- Comparar trafico por zona.
+- Detectar equipos de venta fuertes o debiles.
+- Ajustar inventario por sucursal.
+- Medir campanas locales.
+
+Estrategias:
+
+- QR por sucursal.
+- Beneficio exclusivo por sede.
+- Comparar redenciones de tienda norte contra tienda sur.
+- Medir feria cercana a una sede.
+- Detectar donde hace falta entrenamiento de validadores.
+
+
+20. EXPORTACIONES
+
+El portal permite exportar datos para analisis externo.
+
+Puede exportar:
+
+- leads;
+- respuestas;
+- redenciones;
+- ventas;
+- reportes de campana;
+- paquetes QR;
+- archivos de QR.
+
+Formatos actuales:
+
+- CSV;
+- PNG;
+- ZIP;
+- PDF;
+- HTML imprimible;
+- JSON.
+
+Ventajas:
+
+- Permite trabajo con Excel o herramientas externas.
+- Permite enviar reporte al cliente.
+- Permite auditoria.
+- Permite respaldar campanas.
+- Permite entregar material de impresion.
+
+
+21. COMO DISENAR UNA CAMPANA PARA ESTE PORTAL
+
+Una buena campana debe tener estos bloques:
+
+1. Objetivo comercial.
+2. Publico objetivo.
+3. Medio de activacion.
+4. QR o mecanismo de medicion.
+5. Beneficio.
+6. Datos que se capturan.
+7. Flujo de validacion.
+8. Registro de venta.
+9. Indicadores de exito.
+10. Decision posterior.
+
+Ejemplo de estructura:
+
+Objetivo:
+Traer clientes nuevos a tienda durante junio.
+
+Medios:
+Instagram, feria local, recomendacion de afiliados y vitrina.
+
+Medicion:
+QR por feria, QR por volante, sales tracker para vitrina, QR de referidos para afiliados.
+
+Beneficio:
+10% de descuento o regalo por compra minima.
+
+Datos:
+Nombre, cedula, telefono, producto de interes, medio de llegada.
+
+Validacion:
+Vendedor escanea QR y registra venta si compra.
+
+Exito:
+Minimo 100 leads, 35 redenciones, 20 ventas y COP 2.000.000 de revenue atribuido.
+
+
+22. ESTRATEGIAS POR MEDIO
+
+A. Vitrina / vio el almacen
+
+Usar cuando el cliente llega por presencia fisica.
+
+Estrategias:
+
+- QR en mostrador.
+- QR en vitrina.
+- Beneficio por entrar y registrarse.
+- Encuesta rapida de interes.
+- Registro de ventas con medio "Vio el almacen".
+
+Ventaja:
+
+Mide la fuerza real del local fisico.
+
+B. Recomendacion de amigo
+
+Usar con afiliados y QR de referidos.
+
+Estrategias:
+
+- Club de recomendadores.
+- QR de unico uso para cada referido.
+- Puntos por venta real.
+- Ranking de afiliados.
+- Beneficio al referido y puntos al afiliado.
+
+Ventaja:
+
+Convierte voz a voz en canal medible.
+
+C. Feria o evento
+
+Usar con QR por lote y sales tracker.
+
+Estrategias:
+
+- QR en stand.
+- QR impreso en tarjetas.
+- QR por vendedor.
+- Beneficio con vencimiento corto.
+- Canal especifico con nombre de feria.
+
+Ventaja:
+
+Permite saber si la feria vendio o solo dio visibilidad.
+
+D. Internet / buscador
+
+Usar cuando el cliente llega por Google o busqueda.
+
+Estrategias:
+
+- Registrar venta con medio Internet / buscador.
+- Canal especifico Google, Maps, pagina web.
+- QR en pagina de aterrizaje.
+- Preguntar que busco.
+
+Ventaja:
+
+Mide descubrimiento organico.
+
+E. Redes sociales
+
+Usar para Instagram, Facebook, TikTok, Reels, historias, contenido organico.
+
+Estrategias:
+
+- Link con QR asociado.
+- Beneficio por historia.
+- QR por influencer.
+- Registro de venta con canal especifico.
+- Observacion con pieza concreta.
+
+Ventaja:
+
+No se queda en likes: mide ventas que llegaron por redes.
+
+F. Pauta digital
+
+Usar para anuncios pagos.
+
+Estrategias:
+
+- Campana separada por objetivo.
+- Landing con QR unico.
+- Registro de venta con medio Pauta digital.
+- Canal especifico Meta Ads, Google Ads, TikTok Ads.
+- Comparar costo contra revenue.
+
+Ventaja:
+
+Permite saber si la pauta compra clientes rentables.
+
+G. QR / pieza impresa
+
+Usar para volantes, empaques, etiquetas, piezas en tienda, avisos, tarjetas.
+
+Estrategias:
+
+- Lotes separados por pieza.
+- QR unico por volante o por lote.
+- Beneficio medible.
+- Vencimiento para urgencia.
+- Historial de reclamos y redenciones.
+
+Ventaja:
+
+Hace medible el material fisico.
+
+
+23. ESTRATEGIAS POR TIPO DE NEGOCIO
+
+Restaurantes:
+
+- QR en mesa para encuesta y beneficio.
+- QR postventa para volver en horario valle.
+- Campana de plato favorito.
+- Redencion en caja.
+- Medicion por hora para saber cuando llegan los clientes.
+
+Tiendas de ropa:
+
+- Formulario de preferencias.
+- QR de descuento por coleccion.
+- Afiliados VIP.
+- Referidos por clientas frecuentes.
+- Medicion de categoria, talla, estilo y ticket.
+
+Gimnasios:
+
+- QR para clase gratis.
+- Registro de objetivos.
+- Seguimiento de leads que visitan sede.
+- QR de referido para afiliados actuales.
+- Sales tracker para inscripciones.
+
+Bares y discotecas:
+
+- QR para cover, coctel o lista.
+- Redenciones por hora.
+- QR por promotor.
+- QR por evento.
+- Medicion de revenue por noche.
+
+Ferias:
+
+- QR por stand.
+- QR por vendedor.
+- Formulario rapido.
+- Beneficio con vencimiento posterior.
+- Sales tracker por feria.
+
+Marcas con influenciadores:
+
+- QR o link por influencer.
+- Campana separada.
+- Leads por influencer.
+- Redenciones reales.
+- Ventas reales.
+- ROI por creador.
+
+Servicios profesionales:
+
+- QR para consulta inicial.
+- Formulario de interes.
+- Registro de origen de llegada.
+- Seguimiento de conversion a cita pagada.
+
+Comercio local:
+
+- QR en vitrina.
+- QR en mostrador.
+- Programa de afiliados.
+- Referidos.
+- Vendedores registrando medio de llegada.
+
+
+24. QUE DEBE EXIGIR EL DUENO AL AGENTE DE MERCADEO
+
+El dueno debe pedir entregables medibles:
+
+- matriz de campana;
+- objetivo comercial;
+- canal de activacion;
+- QR o mecanismo de medicion;
+- beneficio;
+- copy;
+- pieza;
+- instrucciones para vendedores;
+- como se registran ventas;
+- como se nombran observaciones;
+- KPI esperado;
+- reporte semanal.
+
+Frases utiles para exigir claridad:
+
+"No quiero solo creatividad. Quiero creatividad medible."
+
+"Cada pieza debe tener una forma de saber si trajo clientes."
+
+"Si vamos a hacer una feria, quiero saber cuantos compradores reales salieron de esa feria."
+
+"Si vamos a usar redes, quiero saber cuanto revenue trajo ese canal."
+
+"Si vamos a usar referidos, quiero saber que afiliado trajo cada compra."
+
+"Si vamos a imprimir volantes, quiero QR que permitan medirlos."
+
+"Si vamos a invertir en pauta, quiero comparar gasto contra ventas."
+
+
+25. RUTINA OPERATIVA RECOMENDADA
+
+Antes de la campana:
+
+- crear campana;
+- definir objetivo;
+- definir beneficio;
+- definir QR o flujo;
+- preparar material;
+- capacitar vendedores;
+- definir categorias de origen;
+- probar validador;
+- probar registro de venta.
+
+Durante la campana:
+
+- revisar dashboard diario;
+- revisar leads;
+- revisar redenciones;
+- registrar ventas;
+- ajustar pauta o piezas;
+- verificar que vendedores registren bien;
+- revisar stock de QR disponibles.
+
+Despues de la campana:
+
+- exportar resultados;
+- comparar contra metas;
+- revisar ROI;
+- revisar CAC;
+- revisar ticket promedio;
+- revisar mejores canales;
+- revisar referidos;
+- decidir que repetir, ajustar o cancelar.
+
+
+26. ERRORES QUE EL PORTAL AYUDA A EVITAR
+
+- Hacer descuentos sin saber quien los uso.
+- Entregar cupones duplicables.
+- Medir exito solo por likes.
+- No saber que canal trajo la venta.
+- No diferenciar leads de compradores.
+- No registrar redenciones.
+- No premiar correctamente a referidores.
+- No saber que sucursal convierte.
+- No saber si una feria produjo ventas.
+- No saber si una pauta fue rentable.
+- No tener datos para futuras campanas.
+
+
+27. INDICADORES IMPORTANTES
+
+Leads:
+Personas interesadas que dejaron datos.
+
+QR generados:
+Cantidad de oportunidades o beneficios emitidos.
+
+QR activos:
+QR disponibles que aun pueden usarse.
+
+QR redimidos:
+Clientes que realizaron accion fisica o validada.
+
+Ventas:
+Compras registradas.
+
+Revenue atribuido:
+Dinero asociado a campanas, QR, redenciones o medios de llegada.
+
+Ticket promedio:
+Promedio de compra de clientes captados.
+
+CAC:
+Costo de adquirir un cliente comprador.
+
+ROI:
+Relaciones entre revenue e inversion.
+
+Medio de llegada:
+Categoria general que explica como llego el cliente.
+
+Canal especifico:
+Detalle concreto del medio.
+
+Observaciones:
+Contexto fino: volante, gamificacion, stand, vendedor, anuncio, influencer, pieza.
+
+
+28. PROPUESTA DE VALOR PARA EL USUARIO FINAL DEL PORTAL
+
+Este portal permite que el negocio deje de preguntarse:
+
+"Sera que esto funciono?"
+
+Y empiece a responder:
+
+"Funciono asi, por este canal, con estos clientes, en esta fecha, con este revenue."
+
+El portal sirve para medir como se esta mostrando el negocio desde todos sus medios:
+
+- organicos;
+- digitales;
+- inorganicos;
+- presenciales;
+- impresos;
+- voz a voz;
+- referidos;
+- ferias;
+- redes;
+- buscadores;
+- pauta;
+- punto de venta.
+
+Pero no lo mide con vanidad. Lo mide con ventas reales.
+
+
+29. RESUMEN PARA PRESENTAR A UN AGENTE DE MERCADEO
+
+Este negocio usa MarketGamesQR. Cualquier campana que propongas debe poder medirse en el portal.
+
+Necesito que tus propuestas incluyan:
+
+- que QR se usaran;
+- que landing, juego, formulario o pieza se conectara;
+- que datos vamos a capturar;
+- como se validara el beneficio;
+- como se registrara la venta;
+- que medio de llegada se marcara;
+- que canal especifico se anotara;
+- que observaciones deben escribir los vendedores;
+- que KPI vamos a revisar;
+- que decision tomaremos con los resultados.
+
+No se trata de limitar tu creatividad. Se trata de que cada idea deje datos utiles.
+
+
+30. CONCLUSION
+
+MarketGamesQR es una plataforma para convertir marketing en medicion comercial.
+
+El portal no solo genera QR. Permite:
+
+- captar leads;
+- validar beneficios;
+- evitar doble uso;
+- medir redenciones;
+- registrar ventas;
+- saber de donde llegan clientes;
+- medir revenue por canal;
+- usar QR postventa;
+- generar lotes de QR estrategicos;
+- operar referidos;
+- acumular puntos de afiliados;
+- descargar carnets;
+- comparar campanas;
+- exportar datos;
+- tomar decisiones con evidencia.
+
+Su mayor ventaja es que obliga al mercadeo a responder por resultados reales.
+
+El agente sigue siendo necesario para crear estrategias.
+El portal exige que esas estrategias sean medibles.
+El negocio gana claridad.
+El vendedor gana una herramienta operativa.
+El afiliado gana un programa de puntos.
+El cliente recibe beneficios controlados.
+Y el dueno puede ver, con datos, cuanto dinero esta entrando por la forma en que su negocio se muestra al mundo.
