@@ -4122,67 +4122,67 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.fill();
 
   ctx.fillStyle = palette.panel;
-  ctx.roundRect(64, 58, width - 128, 118, 28);
+  ctx.roundRect(64, 58, width - 128, 142, 28);
   ctx.fill();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.textAlign = "left";
-  ctx.fillStyle = palette.gold;
-  ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("EMPRESA", 92, 98);
-  ctx.fillStyle = palette.ink;
-  ctx.font = "900 38px Inter, Arial, sans-serif";
-  fitTextLines(businessName, 660, 1).forEach((line) => ctx.fillText(line, 92, 142));
-  ctx.fillStyle = palette.muted;
-  ctx.font = "800 17px Inter, Arial, sans-serif";
-  fitTextLines(businessSlogan || "Programa de afiliados", 660, 1).forEach((line) => ctx.fillText(line, 92, 166));
-
-  ctx.textAlign = "right";
-  ctx.fillStyle = palette.accent;
-  ctx.font = "900 24px Inter, Arial, sans-serif";
-  ctx.fillText("CARNET DE AFILIADO", width - 92, 118);
-  ctx.fillStyle = palette.muted;
-  ctx.font = "800 14px Inter, Arial, sans-serif";
-  ctx.fillText("Identificacion | Puntos | QR", width - 92, 146);
-
-  const photoX = 70;
-  const photoY = 236;
-  const photoW = 198;
-  const photoH = 250;
-  ctx.fillStyle = palette.panelSoft;
-  ctx.roundRect(photoX - 14, photoY - 14, photoW + 28, photoH + 118, 28);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(124, 255, 201, 0.22)";
-  ctx.stroke();
-  if (photo) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.roundRect(photoX, photoY, photoW, photoH, 22);
-    ctx.clip();
-    drawCoverImage(photo, photoX, photoY, photoW, photoH);
-    ctx.restore();
-  } else {
-    drawInitials(affiliateName, photoX, photoY, photoW, photoH, {
-      background: "#10251f",
-      color: palette.accent,
-      radius: 22,
-      font: "900 72px Inter, Arial, sans-serif",
-    });
-  }
   ctx.textAlign = "center";
   ctx.fillStyle = palette.gold;
   ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("PUNTOS", photoX + photoW / 2, photoY + photoH + 42);
+  ctx.fillText("CARNET DE AFILIADO", width / 2, 96);
   ctx.fillStyle = palette.ink;
-  ctx.font = "900 46px Inter, Arial, sans-serif";
-  ctx.fillText(String(points), photoX + photoW / 2, photoY + photoH + 88);
+  ctx.font = "900 58px Inter, Arial, sans-serif";
+  fitTextLines(affiliateName, 960, 1).forEach((line, index) => {
+    ctx.fillText(line, width / 2, 148 + index * 54);
+  });
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 14px Inter, Arial, sans-serif";
+  ctx.fillText("Identificacion | Datos | Puntos | QR", width / 2, 184);
 
-  const dataX = 304;
-  const dataY = 206;
-  const dataW = 576;
-  const dataH = 438;
+  const companyX = 70;
+  const companyY = 246;
+  const companyW = 248;
+  const companyH = 344;
+  ctx.fillStyle = palette.panelSoft;
+  ctx.roundRect(companyX, companyY, companyW, companyH, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(124, 255, 201, 0.22)";
+  ctx.stroke();
+
+  drawInitials(businessName, companyX + 74, companyY + 34, 100, 100, {
+    background: "#10251f",
+    color: palette.accent,
+    radius: 28,
+    font: "900 42px Inter, Arial, sans-serif",
+  });
+  ctx.textAlign = "left";
+  ctx.fillStyle = palette.gold;
+  ctx.font = "900 14px Inter, Arial, sans-serif";
+  ctx.fillText("EMPRESA", companyX + 26, companyY + 176);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 30px Inter, Arial, sans-serif";
+  fitTextLines(businessName, companyW - 52, 2).forEach((line, index) => {
+    ctx.fillText(line, companyX + 26, companyY + 216 + index * 34);
+  });
+  ctx.fillStyle = palette.muted;
+  ctx.font = "800 17px Inter, Arial, sans-serif";
+  fitTextLines(businessSlogan || "Programa de afiliados", companyW - 52, 2).forEach((line, index) => {
+    ctx.fillText(line, companyX + 26, companyY + 286 + index * 24);
+  });
+  if (businessContactLines.length) {
+    ctx.fillStyle = palette.accent;
+    ctx.font = "800 13px Inter, Arial, sans-serif";
+    fitTextLines(businessContactLines[0], companyW - 52, 1).forEach((line) => {
+      ctx.fillText(line, companyX + 26, companyY + 326);
+    });
+  }
+
+  const dataX = 352;
+  const dataY = 246;
+  const dataW = 500;
+  const dataH = 344;
   ctx.fillStyle = "rgba(8, 21, 18, 0.56)";
   ctx.roundRect(dataX, dataY, dataW, dataH, 28);
   ctx.fill();
@@ -4192,14 +4192,9 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "left";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("AFILIADO ACTIVO", dataX + 34, dataY + 46);
-  ctx.fillStyle = palette.ink;
-  ctx.font = "900 60px Inter, Arial, sans-serif";
-  fitTextLines(affiliateName, dataW - 68, 2).forEach((line, index) => {
-    ctx.fillText(line, dataX + 34, dataY + 114 + index * 64);
-  });
+  ctx.fillText("DATOS DEL AFILIADO", dataX + 34, dataY + 46);
 
-  const drawCardField = (label, value, x, y, fieldW, valueSize = 30) => {
+  const drawCardField = (label, value, x, y, fieldW, valueSize = 29) => {
     ctx.fillStyle = palette.gold;
     ctx.font = "900 14px Inter, Arial, sans-serif";
     ctx.fillText(label.toUpperCase(), x, y);
@@ -4208,14 +4203,22 @@ async function buildAffiliateCardDataUrl(affiliate) {
     fitTextLines(value, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + valueSize + 7));
   };
 
-  drawCardField("Documento", affiliateDocument, dataX + 34, dataY + 234, 238, 31);
-  drawCardField("Telefono", affiliatePhone, dataX + 314, dataY + 234, 218, 31);
-  drawCardField("Email", affiliateEmail, dataX + 34, dataY + 318, dataW - 68, 28);
-  drawCardField("Codigo QR", tokenPreview || "SIN TOKEN", dataX + 34, dataY + 398, dataW - 68, 26);
+  drawCardField("Documento", affiliateDocument, dataX + 34, dataY + 94, 202, 31);
+  drawCardField("Telefono", affiliatePhone, dataX + 272, dataY + 94, 188, 31);
+  drawCardField("Email", affiliateEmail, dataX + 34, dataY + 178, dataW - 68, 29);
+  drawCardField("Codigo QR", tokenPreview || "SIN TOKEN", dataX + 34, dataY + 258, dataW - 68, 27);
 
-  const qrX = 914;
-  const qrY = 236;
-  const qrW = 216;
+  ctx.textAlign = "right";
+  ctx.fillStyle = palette.gold;
+  ctx.font = "900 15px Inter, Arial, sans-serif";
+  ctx.fillText("PUNTOS", dataX + dataW - 34, dataY + 46);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 46px Inter, Arial, sans-serif";
+  ctx.fillText(String(points), dataX + dataW - 34, dataY + 94);
+
+  const qrX = 890;
+  const qrY = 246;
+  const qrW = 240;
   const qrH = 354;
   ctx.fillStyle = palette.panelSoft;
   ctx.roundRect(qrX, qrY, qrW, qrH, 28);
