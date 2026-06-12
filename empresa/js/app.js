@@ -3978,6 +3978,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
       .toUpperCase() || "QR";
     ctx.save();
     ctx.fillStyle = options.background || "rgba(124, 251, 255, 0.14)";
+    ctx.beginPath();
     ctx.roundRect(x, y, w, h, options.radius || 18);
     ctx.fill();
     ctx.fillStyle = options.color || "#7cfbff";
@@ -4024,6 +4025,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.lineWidth = 2;
     ctx.shadowColor = "rgba(124, 251, 255, 0.2)";
     ctx.shadowBlur = 16;
+    ctx.beginPath();
     ctx.roundRect(x - 10, y - 10, size + 20, size + 20, 18);
     ctx.fill();
     ctx.stroke();
@@ -4092,172 +4094,184 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   {
   const palette = {
-    bg: "#081512",
-    card: "#10251f",
-    panel: "#17372d",
-    panelSoft: "#1f4639",
-    ink: "#f4fff9",
-    muted: "#b9d2c8",
-    accent: "#7cffc9",
-    gold: "#f3c95b",
+    bg: "#07110f",
+    card: "#101c1a",
+    top: "#16392f",
+    panel: "#142621",
+    panelSoft: "#1c352d",
+    ink: "#f7fff9",
+    muted: "#b7ccc3",
+    accent: "#74f7bf",
+    gold: "#f4c84f",
+    line: "rgba(116, 247, 191, 0.24)",
   };
 
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, width, height);
 
+  const cardX = 38;
+  const cardY = 38;
+  const cardW = width - 76;
+  const cardH = height - 76;
   ctx.fillStyle = palette.card;
-  ctx.roundRect(34, 34, width - 68, height - 68, 38);
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 36);
   ctx.fill();
-  ctx.strokeStyle = "rgba(124, 255, 201, 0.5)";
+  ctx.strokeStyle = "rgba(116, 247, 191, 0.54)";
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(124, 255, 201, 0.06)";
+  ctx.fillStyle = palette.top;
   ctx.beginPath();
-  ctx.arc(1040, 72, 230, 0, Math.PI * 2);
+  ctx.roundRect(62, 62, width - 124, 178, 28);
   ctx.fill();
-  ctx.fillStyle = "rgba(243, 201, 91, 0.06)";
-  ctx.beginPath();
-  ctx.arc(90, 690, 260, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = palette.panel;
-  ctx.roundRect(64, 58, width - 128, 142, 28);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.fillStyle = "rgba(244, 200, 79, 0.12)";
+  ctx.fillRect(62, 218, width - 124, 22);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.fillStyle = palette.gold;
   ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("CARNET DE AFILIADO", width / 2, 96);
+  ctx.fillText("CARNET DE AFILIADO", 92, 104);
   ctx.fillStyle = palette.ink;
-  ctx.font = "900 58px Inter, Arial, sans-serif";
-  fitTextLines(affiliateName, 960, 1).forEach((line, index) => {
-    ctx.fillText(line, width / 2, 148 + index * 54);
+  ctx.font = "900 66px Inter, Arial, sans-serif";
+  fitTextLines(affiliateName, 760, 1).forEach((line, index) => {
+    ctx.fillText(line, 90, 168 + index * 58);
   });
   ctx.fillStyle = palette.muted;
-  ctx.font = "800 14px Inter, Arial, sans-serif";
-  ctx.fillText("Identificacion | Datos | Puntos | QR", width / 2, 184);
+  ctx.font = "800 18px Inter, Arial, sans-serif";
+  ctx.fillText("Identificacion comercial y acumulacion de puntos", 92, 206);
 
-  const companyX = 70;
-  const companyY = 246;
-  const companyW = 248;
-  const companyH = 344;
-  ctx.fillStyle = palette.panelSoft;
-  ctx.roundRect(companyX, companyY, companyW, companyH, 28);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(124, 255, 201, 0.22)";
-  ctx.stroke();
+  ctx.textAlign = "right";
+  ctx.fillStyle = palette.accent;
+  ctx.font = "900 16px Inter, Arial, sans-serif";
+  ctx.fillText("MARKET GAMES QR", width - 92, 104);
+  ctx.fillStyle = palette.ink;
+  ctx.font = "900 48px Inter, Arial, sans-serif";
+  ctx.fillText(String(points), width - 92, 164);
+  ctx.fillStyle = palette.gold;
+  ctx.font = "900 14px Inter, Arial, sans-serif";
+  ctx.fillText("PUNTOS", width - 92, 190);
 
-  drawInitials(businessName, companyX + 74, companyY + 34, 100, 100, {
-    background: "#10251f",
+  const drawPanel = (x, y, w, h, fill = palette.panel) => {
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 28);
+    ctx.fill();
+    ctx.strokeStyle = palette.line;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  };
+
+  const companyX = 76;
+  const companyY = 278;
+  const companyW = 284;
+  const companyH = 340;
+  drawPanel(companyX, companyY, companyW, companyH, palette.panelSoft);
+
+  drawInitials(businessName, companyX + 28, companyY + 28, 96, 96, {
+    background: "#0d1f1b",
     color: palette.accent,
-    radius: 28,
-    font: "900 42px Inter, Arial, sans-serif",
+    radius: 26,
+    font: "900 40px Inter, Arial, sans-serif",
   });
   ctx.textAlign = "left";
   ctx.fillStyle = palette.gold;
-  ctx.font = "900 14px Inter, Arial, sans-serif";
-  ctx.fillText("EMPRESA", companyX + 26, companyY + 176);
+  ctx.font = "900 13px Inter, Arial, sans-serif";
+  ctx.fillText("EMPRESA", companyX + 30, companyY + 158);
   ctx.fillStyle = palette.ink;
-  ctx.font = "900 30px Inter, Arial, sans-serif";
-  fitTextLines(businessName, companyW - 52, 2).forEach((line, index) => {
-    ctx.fillText(line, companyX + 26, companyY + 216 + index * 34);
+  ctx.font = "900 31px Inter, Arial, sans-serif";
+  fitTextLines(businessName, companyW - 60, 2).forEach((line, index) => {
+    ctx.fillText(line, companyX + 30, companyY + 198 + index * 34);
   });
   ctx.fillStyle = palette.muted;
   ctx.font = "800 17px Inter, Arial, sans-serif";
-  fitTextLines(businessSlogan || "Programa de afiliados", companyW - 52, 2).forEach((line, index) => {
-    ctx.fillText(line, companyX + 26, companyY + 286 + index * 24);
+  fitTextLines(businessSlogan || "Programa de afiliados", companyW - 60, 2).forEach((line, index) => {
+    ctx.fillText(line, companyX + 30, companyY + 270 + index * 24);
   });
   if (businessContactLines.length) {
     ctx.fillStyle = palette.accent;
     ctx.font = "800 13px Inter, Arial, sans-serif";
-    fitTextLines(businessContactLines[0], companyW - 52, 1).forEach((line) => {
-      ctx.fillText(line, companyX + 26, companyY + 326);
+    fitTextLines(businessContactLines[0], companyW - 60, 1).forEach((line) => {
+      ctx.fillText(line, companyX + 30, companyY + 318);
     });
   }
 
-  const dataX = 352;
-  const dataY = 246;
-  const dataW = 500;
-  const dataH = 344;
-  ctx.fillStyle = "rgba(8, 21, 18, 0.56)";
-  ctx.roundRect(dataX, dataY, dataW, dataH, 28);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(124, 255, 201, 0.18)";
-  ctx.stroke();
+  const dataX = 394;
+  const dataY = 278;
+  const dataW = 450;
+  const dataH = 340;
+  drawPanel(dataX, dataY, dataW, dataH, "rgba(8, 21, 18, 0.62)");
 
   ctx.textAlign = "left";
   ctx.fillStyle = palette.accent;
-  ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("DATOS DEL AFILIADO", dataX + 34, dataY + 46);
+  ctx.font = "900 15px Inter, Arial, sans-serif";
+  ctx.fillText("DATOS DEL AFILIADO", dataX + 30, dataY + 46);
 
   const drawCardField = (label, value, x, y, fieldW, valueSize = 29) => {
     ctx.fillStyle = palette.gold;
-    ctx.font = "900 14px Inter, Arial, sans-serif";
+    ctx.font = "900 13px Inter, Arial, sans-serif";
     ctx.fillText(label.toUpperCase(), x, y);
     ctx.fillStyle = palette.ink;
     ctx.font = `900 ${valueSize}px Inter, Arial, sans-serif`;
-    fitTextLines(value, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + valueSize + 7));
+    fitTextLines(value, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + valueSize + 8));
   };
 
-  drawCardField("Documento", affiliateDocument, dataX + 34, dataY + 94, 202, 31);
-  drawCardField("Telefono", affiliatePhone, dataX + 272, dataY + 94, 188, 31);
-  drawCardField("Email", affiliateEmail, dataX + 34, dataY + 178, dataW - 68, 29);
-  drawCardField("Codigo QR", tokenPreview || "SIN TOKEN", dataX + 34, dataY + 258, dataW - 68, 27);
-
-  ctx.textAlign = "right";
-  ctx.fillStyle = palette.gold;
-  ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("PUNTOS", dataX + dataW - 34, dataY + 46);
-  ctx.fillStyle = palette.ink;
-  ctx.font = "900 46px Inter, Arial, sans-serif";
-  ctx.fillText(String(points), dataX + dataW - 34, dataY + 94);
-
-  const qrX = 890;
-  const qrY = 246;
-  const qrW = 240;
-  const qrH = 354;
-  ctx.fillStyle = palette.panelSoft;
-  ctx.roundRect(qrX, qrY, qrW, qrH, 28);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(124, 255, 201, 0.24)";
+  drawCardField("Documento", affiliateDocument, dataX + 30, dataY + 94, 182, 30);
+  drawCardField("Telefono", affiliatePhone, dataX + 246, dataY + 94, 174, 30);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+  ctx.beginPath();
+  ctx.moveTo(dataX + 30, dataY + 158);
+  ctx.lineTo(dataX + dataW - 30, dataY + 158);
   ctx.stroke();
-  const qrPaperSize = 176;
+  drawCardField("Email", affiliateEmail, dataX + 30, dataY + 196, dataW - 60, 28);
+  drawCardField("Codigo de afiliado", tokenPreview || "SIN TOKEN", dataX + 30, dataY + 278, dataW - 60, 27);
+
+  const qrX = 878;
+  const qrY = 278;
+  const qrW = 246;
+  const qrH = 340;
+  drawPanel(qrX, qrY, qrW, qrH, palette.panelSoft);
+  const qrPaperSize = 188;
   const qrPaperX = qrX + (qrW - qrPaperSize) / 2;
-  const qrPaperY = qrY + 32;
+  const qrPaperY = qrY + 34;
   if (qrImg) {
     drawDarkQrImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28);
   } else {
     ctx.fillStyle = "#0b2a22";
+    ctx.beginPath();
     ctx.roundRect(qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, qrPaperSize - 28, 18);
     ctx.fill();
     ctx.fillStyle = palette.accent;
     ctx.textAlign = "center";
     ctx.font = "900 28px Inter, Arial, sans-serif";
-    ctx.fillText("SIN QR", qrX + qrW / 2, qrPaperY + 116);
+    ctx.fillText("SIN QR", qrX + qrW / 2, qrPaperY + 122);
   }
   ctx.textAlign = "center";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 18px Inter, Arial, sans-serif";
-  ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 246);
+  ctx.fillText("QR DEL AFILIADO", qrX + qrW / 2, qrY + 258);
   ctx.fillStyle = palette.muted;
   ctx.font = "800 13px Inter, Arial, sans-serif";
-  fitTextLines("Identifica afiliado y registra puntos.", qrW - 36, 2).forEach((line, index) => {
-    ctx.fillText(line, qrX + qrW / 2, qrY + 278 + index * 19);
+  fitTextLines("Escanear para identificar afiliado y registrar puntos.", qrW - 42, 2).forEach((line, index) => {
+    ctx.fillText(line, qrX + qrW / 2, qrY + 290 + index * 19);
   });
 
+  ctx.fillStyle = "rgba(116, 247, 191, 0.08)";
+  ctx.beginPath();
+  ctx.roundRect(76, 646, width - 152, 46, 18);
+  ctx.fill();
   ctx.textAlign = "left";
   ctx.fillStyle = palette.muted;
-  ctx.font = "800 15px Inter, Arial, sans-serif";
+  ctx.font = "900 15px Inter, Arial, sans-serif";
   const footerText = businessContactLines.length ? businessContactLines.join(" | ") : "Contacto del negocio no registrado";
-  fitTextLines(footerText, 880, 1).forEach((line) => ctx.fillText(line, 78, 692));
+  fitTextLines(footerText, 820, 1).forEach((line) => ctx.fillText(line, 96, 674));
   ctx.textAlign = "right";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 14px Inter, Arial, sans-serif";
-  ctx.fillText("MARKET GAMES QR", width - 78, 692);
+  ctx.fillText("VENTAS REALES, PUNTOS REALES", width - 96, 674);
 
   return canvas.toDataURL("image/png");
   }
