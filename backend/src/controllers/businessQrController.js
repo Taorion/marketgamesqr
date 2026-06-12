@@ -1,8 +1,9 @@
 const { forbidden } = require("../utils/http");
-const { validate, postSaleQrSchema, qrBatchSchema } = require("../utils/validators");
+const { validate, postSaleQrSchema, qrBatchSchema, affiliateReferralQrBatchSchema } = require("../utils/validators");
 const {
   createPostSaleQr,
   createQrBatch,
+  createAffiliateReferralQrBatch,
   listQrBatches,
   getQrBatch,
   getQrHistory,
@@ -77,6 +78,38 @@ async function createBatch(req, res, next) {
       event_type: "qr_generated",
       quantity: body.quantity,
       metadata: { source: "batch", batch_id: result.batch?.id || null },
+    });
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createAffiliateReferralBatch(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(affiliateReferralQrBatchSchema, req.body);
+    const subscription = await assertFeatureForRequest(req, businessId, "affiliates");
+    if (subscription.plan.category === "subscription") {
+      await assertMonthlyUsageLimit(
+        businessId,
+        "qr_generated",
+        subscription.plan.limits.monthly_qr_included,
+        body.quantity,
+        "QR incluidos del plan"
+      );
+    }
+    const result = await createAffiliateReferralQrBatch(businessId, req.user, body);
+    await recordUsage({
+      business_id: businessId,
+      user_id: req.user.id,
+      event_type: "qr_generated",
+      quantity: body.quantity,
+      metadata: {
+        source: "affiliate_referral",
+        affiliate_id: body.affiliate_id,
+        batch_id: result.batch?.id || null,
+      },
     });
     res.status(201).json(result);
   } catch (error) {
@@ -185,6 +218,7 @@ async function downloadBatch(req, res, next) {
 module.exports = {
   createPostSale,
   createBatch,
+  createAffiliateReferralBatch,
   listBatches,
   batchDetail,
   qrHistory,

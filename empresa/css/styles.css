@@ -955,9 +955,21 @@ textarea {
   margin: 0;
 }
 
-.affiliate-card-actions input[type="number"] {
+.affiliate-card-actions input[type="number"],
+.affiliate-card-actions input[type="text"] {
   width: 100%;
   min-height: 48px;
+}
+
+.affiliate-panel .stacked-field {
+  display: grid;
+  gap: 6px;
+}
+
+.affiliate-panel .stacked-field span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .affiliate-photo-capture {

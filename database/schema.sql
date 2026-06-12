@@ -39,8 +39,14 @@ do $$ begin
     'BULK_PACKAGE',
     'MANUAL_BENEFIT',
     'LOYALTY',
-    'SURPRISE_REWARD'
+    'SURPRISE_REWARD',
+    'AFFILIATE_REFERRAL'
   );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter type qr_origin_type add value if not exists 'AFFILIATE_REFERRAL';
 exception when duplicate_object then null;
 end $$;
 
@@ -476,6 +482,7 @@ alter table qr_codes add column if not exists sale_id uuid references business_s
 alter table qr_codes add column if not exists claim_required boolean not null default false;
 alter table qr_codes add column if not exists claimed_at timestamptz;
 alter table qr_codes add column if not exists claimed_by_player_id uuid references players(id) on delete set null;
+alter table qr_codes add column if not exists affiliate_id uuid references affiliates(id) on delete set null;
 alter table business_sales add column if not exists qr_code_id uuid references qr_codes(id) on delete set null;
 alter table business_sales add column if not exists metadata jsonb not null default '{}'::jsonb;
 alter table business_sales add column if not exists customer_document_id text;
@@ -510,6 +517,8 @@ create index if not exists idx_qr_codes_business_status on qr_codes(business_id,
 create index if not exists idx_qr_codes_campaign_status on qr_codes(campaign_id, status);
 create index if not exists idx_qr_codes_origin_status on qr_codes(origin_type, status);
 create index if not exists idx_qr_codes_batch_id on qr_codes(batch_id);
+create index if not exists idx_qr_codes_affiliate_status on qr_codes(affiliate_id, status, created_at desc);
+create unique index if not exists idx_business_sales_qr_code_unique on business_sales(qr_code_id) where qr_code_id is not null;
 create index if not exists idx_business_qr_credit_ledger_business_created on business_qr_credit_ledger(business_id, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_business_created on qr_credit_purchase_orders(business_id, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_status on qr_credit_purchase_orders(status, created_at desc);

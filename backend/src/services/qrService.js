@@ -191,7 +191,11 @@ async function getQrDetails(tokenInput, user) {
        p.name as player_name,
        p.email as player_email,
        p.phone as player_phone,
-       p.document_id as player_document_id
+       p.document_id as player_document_id,
+       a.id as affiliate_id,
+       a.full_name as affiliate_name,
+       a.document_id as affiliate_document_id,
+       a.phone as affiliate_phone
      from qr_codes q
      join businesses b on b.id = q.business_id
      left join campaigns c on c.id = q.campaign_id
@@ -200,6 +204,7 @@ async function getQrDetails(tokenInput, user) {
      left join qr_batches qb on qb.id = q.batch_id
      left join business_sales bs on bs.id = q.sale_id
      left join players p on p.id = q.player_id
+     left join affiliates a on a.id = q.affiliate_id
      where q.token = $1`,
     [token]
   );
@@ -289,6 +294,14 @@ async function getQrDetails(tokenInput, user) {
           document_id: qr.player_document_id,
         }
       : null,
+    affiliate: qr.affiliate_id
+      ? {
+          id: qr.affiliate_id,
+          name: qr.affiliate_name,
+          document_id: qr.affiliate_document_id,
+          phone: qr.affiliate_phone,
+        }
+      : null,
     sale: qr.sale_id
       ? {
           id: qr.sale_id,
@@ -316,10 +329,11 @@ async function redeemQr(tokenInput, user) {
 
   return withTransaction(async (client) => {
     const result = await client.query(
-      `select q.*, b.name as business_name, r.name as reward_name
+      `select q.*, b.name as business_name, r.name as reward_name, a.full_name as affiliate_name
        from qr_codes q
        join businesses b on b.id = q.business_id
        left join rewards r on r.id = q.reward_id
+       left join affiliates a on a.id = q.affiliate_id
        where q.token = $1
        for update of q`,
       [token]
@@ -418,6 +432,7 @@ async function redeemQr(tokenInput, user) {
       message: "QR redeemed successfully.",
       metadata: {
         origin_type: qr.origin_type,
+        affiliate_id: qr.affiliate_id || null,
       },
     });
 
@@ -427,6 +442,7 @@ async function redeemQr(tokenInput, user) {
       redemption: redemption.rows[0],
       business: { id: qr.business_id, name: qr.business_name },
       reward: { id: qr.reward_id, name: qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico" },
+      affiliate: qr.affiliate_id ? { id: qr.affiliate_id, name: qr.affiliate_name } : null,
     };
   });
 }

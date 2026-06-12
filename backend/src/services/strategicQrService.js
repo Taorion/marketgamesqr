@@ -95,6 +95,21 @@ async function assertBranch(client, businessId, branchId) {
   return branch;
 }
 
+async function assertAffiliate(client, businessId, affiliateId) {
+  if (!affiliateId) {
+    return null;
+  }
+  const result = await client.query(
+    "select id, full_name, document_id, phone from affiliates where id = $1 and business_id = $2 and status = 'ACTIVE'",
+    [affiliateId, businessId]
+  );
+  const affiliate = result.rows[0];
+  if (!affiliate) {
+    throw badRequest("El afiliado no existe o no esta activo para este negocio.");
+  }
+  return affiliate;
+}
+
 async function createOptionalPlayer(client, businessId, campaignId, customer = {}, metadata = {}) {
   if (!customer.customer_name && !customer.customer_phone && !customer.customer_email && !customer.document_id) {
     return null;
@@ -243,7 +258,7 @@ async function createPostSaleQr(businessId, user, body) {
 function buildBatchInsert(rows) {
   const values = [];
   const placeholders = rows.map((row, rowIndex) => {
-    const base = rowIndex * 14;
+    const base = rowIndex * 15;
     values.push(
       row.business_id,
       row.campaign_id,
@@ -258,16 +273,17 @@ function buildBatchInsert(rows) {
       row.benefit_value,
       row.claim_required,
       row.claimed_at,
-      row.claimed_by_player_id
+      row.claimed_by_player_id,
+      row.affiliate_id || null
     );
-    return `($${base + 1}, $${base + 2}, null, null, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, null, $${base + 12}, $${base + 13}, $${base + 14})`;
+    return `($${base + 1}, $${base + 2}, null, null, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, null, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15})`;
   });
 
   return {
     sql: `insert into qr_codes
-      (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id)
+      (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id, affiliate_id)
       values ${placeholders.join(", ")}
-      returning id, token, status, created_at, expires_at, batch_id, origin_type, benefit_type, benefit_value`,
+      returning id, token, status, created_at, expires_at, batch_id, origin_type, benefit_type, benefit_value, affiliate_id`,
     values,
   };
 }
@@ -276,6 +292,7 @@ async function createQrBatch(businessId, user, body) {
   return withTransaction(async (client) => {
     const reward = await assertReward(client, businessId, body.benefit.reward_id);
     await assertCampaign(client, businessId, body.campaign_id);
+    const affiliate = await assertAffiliate(client, businessId, body.affiliate_id);
     const expiresAt = resolveExpiration(body);
     const benefitPayload = buildBenefitPayload(body.benefit, reward);
 
@@ -301,6 +318,8 @@ async function createQrBatch(businessId, user, body) {
         {
           notes: body.notes || null,
           claim_required: body.claim_required,
+          affiliate_id: affiliate?.id || null,
+          affiliate_name: affiliate?.full_name || null,
           ...body.metadata,
         },
       ]
@@ -317,9 +336,11 @@ async function createQrBatch(businessId, user, body) {
         status: body.claim_required ? "UNCLAIMED" : "ACTIVE",
         metadata: {
           strategic_qr: true,
-          origin_label: "Paquete QR",
+          origin_label: body.qr_origin_type === "AFFILIATE_REFERRAL" ? "QR recomendacion afiliado" : "Paquete QR",
           package_name: body.name,
           channel_use: body.channel_use,
+          affiliate_id: affiliate?.id || null,
+          affiliate_name: affiliate?.full_name || null,
         },
         expires_at: expiresAt,
         batch_id: batch.id,
@@ -329,6 +350,7 @@ async function createQrBatch(businessId, user, body) {
         claim_required: body.claim_required,
         claimed_at: null,
         claimed_by_player_id: null,
+        affiliate_id: affiliate?.id || null,
       };
     });
 
@@ -356,6 +378,7 @@ async function createQrBatch(businessId, user, body) {
         quantity: body.quantity,
         origin_type: body.qr_origin_type,
         benefit_type: body.benefit.benefit_type,
+        affiliate_id: affiliate?.id || null,
       },
     });
 
@@ -368,6 +391,42 @@ async function createQrBatch(businessId, user, body) {
         claim_url: buildClaimUrl(qr.token),
       })),
     };
+  });
+}
+
+async function createAffiliateReferralQrBatch(businessId, user, body) {
+  const affiliate = await query(
+    "select id, full_name from affiliates where id = $1 and business_id = $2 and status = 'ACTIVE'",
+    [body.affiliate_id, businessId]
+  );
+  const row = affiliate.rows[0];
+  if (!row) {
+    throw badRequest("El afiliado no existe o no esta activo para este negocio.");
+  }
+  return createQrBatch(businessId, user, {
+    name: `QR recomendacion - ${row.full_name}`,
+    description: body.notes || `QR unicos de recomendacion asignados a ${row.full_name}.`,
+    quantity: body.quantity,
+    campaign_id: null,
+    qr_origin_type: "AFFILIATE_REFERRAL",
+    channel_use: "recomendacion",
+    claim_required: true,
+    expires_mode: body.expires_mode || "NONE",
+    expires_at: body.expires_at || null,
+    expiration_days: body.expiration_days || null,
+    notes: body.notes || null,
+    affiliate_id: row.id,
+    metadata: {
+      source: "affiliate_referral_generator",
+      affiliate_id: row.id,
+      affiliate_name: row.full_name,
+    },
+    benefit: {
+      reward_id: body.benefit?.reward_id || null,
+      benefit_type: body.benefit?.benefit_type || "CUSTOM",
+      benefit_label: body.benefit?.benefit_label || "Recomendacion de afiliado",
+      benefit_value: body.benefit?.benefit_value || {},
+    },
   });
 }
 
@@ -399,7 +458,7 @@ async function getQrBatch(businessId, batchId) {
       [batchId, businessId]
     ),
     query(
-      `select id, token, status, created_at, expires_at, claimed_at, redeemed_at, benefit_type, benefit_value
+      `select id, token, status, created_at, expires_at, claimed_at, redeemed_at, benefit_type, benefit_value, affiliate_id
        from qr_codes
        where batch_id = $1 and business_id = $2
        order by created_at asc
@@ -440,13 +499,18 @@ async function getQrHistory(businessId) {
        bs.product_name,
        p.name as player_name,
        p.phone as player_phone,
-       p.email as player_email
+       p.email as player_email,
+       a.id as affiliate_id,
+       a.full_name as affiliate_name,
+       a.document_id as affiliate_document_id,
+       a.phone as affiliate_phone
      from qr_codes q
      left join qr_batches qb on qb.id = q.batch_id
      left join business_sales bs on bs.id = q.sale_id
      left join players p on p.id = q.player_id
+     left join affiliates a on a.id = q.affiliate_id
      where q.business_id = $1
-       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD')
+       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL')
      order by q.created_at desc
      limit 500`,
     [businessId]
@@ -468,6 +532,10 @@ async function getQrMetrics(businessId) {
          count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as label_qr_claimed_or_active,
          count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status = 'REDEEMED')::int as label_qr_redeemed,
          count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status = 'UNCLAIMED')::int as label_qr_unclaimed,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL')::int as affiliate_referral_generated,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status in ('ACTIVE', 'REDEEMED'))::int as affiliate_referral_claimed_or_active,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'REDEEMED')::int as affiliate_referral_redeemed,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'UNCLAIMED')::int as affiliate_referral_unclaimed,
          count(*) filter (where status = 'EXPIRED')::int as expired_without_redeem
        from qr_codes
        where business_id = $1`,
@@ -477,7 +545,7 @@ async function getQrMetrics(businessId) {
       `select benefit_type, count(*)::int as total
        from qr_codes
        where business_id = $1
-         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD')
+         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL')
        group by benefit_type
        order by total desc`,
       [businessId]
@@ -506,6 +574,10 @@ async function getQrMetrics(businessId) {
       label_qr_claimed_or_active: Number(top.label_qr_claimed_or_active || 0),
       label_qr_redeemed: Number(top.label_qr_redeemed || 0),
       label_qr_unclaimed: Number(top.label_qr_unclaimed || 0),
+      affiliate_referral_generated: Number(top.affiliate_referral_generated || 0),
+      affiliate_referral_claimed_or_active: Number(top.affiliate_referral_claimed_or_active || 0),
+      affiliate_referral_redeemed: Number(top.affiliate_referral_redeemed || 0),
+      affiliate_referral_unclaimed: Number(top.affiliate_referral_unclaimed || 0),
       expired_without_redeem: Number(top.expired_without_redeem || 0),
     },
     benefits: benefitUsage.rows,
@@ -981,11 +1053,16 @@ async function getClaimDetails(tokenInput) {
        c.name as campaign_name,
        p.name as player_name,
        p.phone as player_phone,
-       p.email as player_email
+       p.email as player_email,
+       a.id as affiliate_id,
+       a.full_name as affiliate_name,
+       a.document_id as affiliate_document_id,
+       a.phone as affiliate_phone
      from qr_codes q
      join businesses b on b.id = q.business_id
      left join campaigns c on c.id = q.campaign_id
      left join players p on p.id = q.player_id
+     left join affiliates a on a.id = q.affiliate_id
      where q.token = $1`,
     [token]
   );
@@ -1029,6 +1106,14 @@ async function getClaimDetails(tokenInput) {
           email: qr.player_email,
         }
       : null,
+    affiliate: qr.affiliate_id
+      ? {
+          id: qr.affiliate_id,
+          name: qr.affiliate_name,
+          document_id: qr.affiliate_document_id,
+          phone: qr.affiliate_phone,
+        }
+      : null,
   };
 }
 
@@ -1040,10 +1125,11 @@ async function claimQr(tokenInput, body) {
 
   return withTransaction(async (client) => {
     const result = await client.query(
-      `select *
-       from qr_codes
-       where token = $1
-       for update`,
+      `select q.*, a.full_name as affiliate_name, a.document_id as affiliate_document_id, a.phone as affiliate_phone
+       from qr_codes q
+       left join affiliates a on a.id = q.affiliate_id
+       where q.token = $1
+       for update of q`,
       [token]
     );
     const qr = result.rows[0];
@@ -1085,6 +1171,8 @@ async function claimQr(tokenInput, body) {
         {
           source: body.source || "claim",
           claim: true,
+          affiliate_referral_id: qr.affiliate_id || null,
+          affiliate_referral_name: qr.affiliate_name || null,
           ...body.metadata,
         },
       ]
@@ -1094,7 +1182,17 @@ async function claimQr(tokenInput, body) {
     await client.query(
       `insert into qr_claims (business_id, qr_code_id, player_id, source, metadata)
        values ($1, $2, $3, $4, $5)`,
-      [qr.business_id, qr.id, player.id, body.source || "claim", body.metadata || {}]
+      [
+        qr.business_id,
+        qr.id,
+        player.id,
+        body.source || "claim",
+        {
+          affiliate_id: qr.affiliate_id || null,
+          affiliate_name: qr.affiliate_name || null,
+          ...(body.metadata || {}),
+        },
+      ]
     );
 
     await client.query(
@@ -1116,6 +1214,8 @@ async function claimQr(tokenInput, body) {
       message: "Pre-created QR claimed by customer.",
       metadata: {
         source: body.source || "claim",
+        affiliate_id: qr.affiliate_id || null,
+        affiliate_name: qr.affiliate_name || null,
       },
     });
 
@@ -1148,6 +1248,14 @@ async function claimQr(tokenInput, body) {
         phone: player.phone,
         email: player.email,
       },
+      affiliate: qr.affiliate_id
+        ? {
+            id: qr.affiliate_id,
+            name: qr.affiliate_name,
+            document_id: qr.affiliate_document_id,
+            phone: qr.affiliate_phone,
+          }
+        : null,
     };
   });
 }
@@ -1179,6 +1287,7 @@ module.exports = {
   buildClaimUrl,
   createPostSaleQr,
   createQrBatch,
+  createAffiliateReferralQrBatch,
   listQrBatches,
   getQrBatch,
   getQrHistory,

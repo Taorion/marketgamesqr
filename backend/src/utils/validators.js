@@ -41,6 +41,7 @@ const qrOriginTypes = [
   "MANUAL_BENEFIT",
   "LOYALTY",
   "SURPRISE_REWARD",
+  "AFFILIATE_REFERRAL",
 ];
 
 const benefitTypes = [
@@ -100,6 +101,20 @@ const qrBatchSchema = z.object({
   benefit: strategicBenefitSchema,
 });
 
+const affiliateReferralQrBatchSchema = z.object({
+  affiliate_id: z.string().uuid(),
+  quantity: z.number().int().min(1).max(100),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  expires_mode: z.enum(expirationPresets).default("NONE"),
+  expires_at: z.string().datetime().optional().nullable(),
+  expiration_days: z.number().int().min(1).max(365).optional().nullable(),
+  benefit: strategicBenefitSchema.default({
+    benefit_type: "CUSTOM",
+    benefit_label: "Recomendacion de afiliado",
+    benefit_value: {},
+  }),
+});
+
 const qrClaimSchema = z.object({
   name: z.string().trim().min(2).max(160),
   phone: z.string().trim().max(40).optional().nullable(),
@@ -117,5 +132,6 @@ module.exports = {
   benefitTypes,
   postSaleQrSchema,
   qrBatchSchema,
+  affiliateReferralQrBatchSchema,
   qrClaimSchema,
 };

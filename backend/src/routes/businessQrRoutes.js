@@ -3,6 +3,7 @@ const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   createPostSale,
   createBatch,
+  createAffiliateReferralBatch,
   listBatches,
   batchDetail,
   qrHistory,
@@ -19,6 +20,7 @@ router.use(requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"));
 
 router.post("/post-sale", createPostSale);
 router.post("/batches", createBatch);
+router.post("/affiliates/referral-batches", createAffiliateReferralBatch);
 router.get("/batches", listBatches);
 router.get("/batches/:id", batchDetail);
 router.get("/batches/:id/download.csv", downloadBatchCsv);
