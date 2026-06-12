@@ -2426,6 +2426,17 @@ body::before {
   width: fit-content;
 }
 
+.rms-why-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rms-why-actions .button-primary,
+.rms-why-actions .button-secondary {
+  width: fit-content;
+}
+
 .rms-strategy-tags {
   display: flex;
   flex-wrap: wrap;
