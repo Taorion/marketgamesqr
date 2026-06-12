@@ -3940,9 +3940,9 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.fill();
 
   const logoX = 76;
-  const logoY = 78;
-  const logoW = 292;
-  const logoH = 96;
+  const logoY = 68;
+  const logoW = 430;
+  const logoH = 112;
   ctx.fillStyle = "rgba(2, 8, 23, 0.88)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.42)";
   ctx.lineWidth = 2;
@@ -3953,10 +3953,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.save();
     ctx.shadowColor = "rgba(124, 251, 255, 0.22)";
     ctx.shadowBlur = 12;
-    drawContainedImage(logo, logoX + 14, logoY + 12, logoW - 28, logoH - 24, 14, "rgba(255, 255, 255, 0.02)", { trimWhite: true, removeWhiteBackground: true });
+    drawContainedImage(logo, logoX + 16, logoY + 12, logoW - 32, logoH - 24, 16, "rgba(255, 255, 255, 0.02)", { trimWhite: true, removeWhiteBackground: true });
     ctx.restore();
   } else {
-    drawInitials(businessName, logoX + 14, logoY + 12, logoW - 28, logoH - 24, {
+    drawInitials(businessName, logoX + 16, logoY + 12, logoW - 32, logoH - 24, {
       background: "#071225",
       color: "#7cfbff",
       radius: 14,
@@ -3966,22 +3966,22 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#f8fdff";
-  ctx.font = "900 34px Inter, Arial, sans-serif";
-  fitTextLines(businessName, 460, 1).forEach((line, index) => {
-    ctx.fillText(line, 398, 108 + index * 36);
+  ctx.font = "900 31px Inter, Arial, sans-serif";
+  fitTextLines(businessName, 348, 1).forEach((line, index) => {
+    ctx.fillText(line, 536, 108 + index * 34);
   });
   ctx.fillStyle = "#a8c6d9";
   ctx.font = "800 15px Inter, Arial, sans-serif";
-  ctx.fillText("PROGRAMA DE AFILIADOS - CARNET DIGITAL", 400, 148);
+  ctx.fillText("EMPRESA EMISORA DEL CARNET", 538, 148);
 
   ctx.fillStyle = "rgba(124, 251, 255, 0.16)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.34)";
-  ctx.roundRect(910, 86, 190, 48, 24);
+  ctx.roundRect(916, 86, 190, 48, 24);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = "#dff8ff";
   ctx.font = "900 15px Inter, Arial, sans-serif";
-  ctx.fillText("QR PERMANENTE", 940, 116);
+  ctx.fillText("QR PERMANENTE", 946, 116);
 
   const photoX = 78;
   const photoY = 226;
