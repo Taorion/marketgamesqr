@@ -3812,32 +3812,6 @@ async function buildAffiliateCardDataUrl(affiliate) {
     };
   };
 
-  const imageLooksBlankWhite = (img) => {
-    const imageWidth = img?.naturalWidth || img?.width;
-    const imageHeight = img?.naturalHeight || img?.height;
-    if (!imageWidth || !imageHeight) return true;
-    const sampleCanvas = document.createElement("canvas");
-    const sampleWidth = Math.min(320, imageWidth);
-    const sampleHeight = Math.max(1, Math.round((imageHeight / imageWidth) * sampleWidth));
-    sampleCanvas.width = sampleWidth;
-    sampleCanvas.height = sampleHeight;
-    const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
-    sampleContext.drawImage(img, 0, 0, sampleWidth, sampleHeight);
-    const data = sampleContext.getImageData(0, 0, sampleWidth, sampleHeight).data;
-    let opaque = 0;
-    let nonWhite = 0;
-    const total = sampleWidth * sampleHeight;
-    for (let index = 0; index < data.length; index += 4) {
-      if (data[index + 3] <= 12) continue;
-      opaque += 1;
-      if (data[index] < 244 || data[index + 1] < 244 || data[index + 2] < 244) {
-        nonWhite += 1;
-      }
-    }
-    if (!opaque) return true;
-    return opaque / total > 0.92 && nonWhite / opaque < 0.015;
-  };
-
   const drawContainedImage = (img, x, y, w, h, radius = 18, background = "#ffffff", options = {}) => {
     const imageWidth = img?.naturalWidth || img?.width;
     const imageHeight = img?.naturalHeight || img?.height;
@@ -3916,7 +3890,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const photo = await loadImageDataUrl(photoSource);
   const platformLogo = await loadImageDataUrl("/img/MGLogo-01.png");
   const uploadedLogo = await loadImageDataUrl(logoSource);
-  const businessLogo = uploadedLogo && !imageLooksBlankWhite(uploadedLogo) ? uploadedLogo : null;
+  const businessLogo = uploadedLogo || null;
   const logo = businessLogo || platformLogo;
   const qrImg = await loadImageDataUrl(qrSource);
 
@@ -3965,8 +3939,8 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   const logoX = 76;
   const logoY = 78;
-  const logoW = 226;
-  const logoH = 82;
+  const logoW = 292;
+  const logoH = 96;
   ctx.fillStyle = "rgba(2, 8, 23, 0.88)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.42)";
   ctx.lineWidth = 2;
@@ -3977,7 +3951,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.save();
     ctx.shadowColor = "rgba(124, 251, 255, 0.22)";
     ctx.shadowBlur = 12;
-    drawContainedImage(logo, logoX + 14, logoY + 12, logoW - 28, logoH - 24, 14, "rgba(255, 255, 255, 0.03)", { trimWhite: !businessLogo });
+    drawContainedImage(logo, logoX + 14, logoY + 12, logoW - 28, logoH - 24, 14, "rgba(255, 255, 255, 0.02)", { trimWhite: true });
     ctx.restore();
   } else {
     drawInitials(businessName, logoX + 14, logoY + 12, logoW - 28, logoH - 24, {
@@ -3991,12 +3965,12 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "left";
   ctx.fillStyle = "#f8fdff";
   ctx.font = "900 34px Inter, Arial, sans-serif";
-  fitTextLines(businessName, 540, 1).forEach((line, index) => {
-    ctx.fillText(line, 330, 108 + index * 36);
+  fitTextLines(businessName, 460, 1).forEach((line, index) => {
+    ctx.fillText(line, 398, 108 + index * 36);
   });
   ctx.fillStyle = "#a8c6d9";
   ctx.font = "800 15px Inter, Arial, sans-serif";
-  ctx.fillText("PROGRAMA DE AFILIADOS - CARNET DIGITAL", 332, 148);
+  ctx.fillText("PROGRAMA DE AFILIADOS - CARNET DIGITAL", 400, 148);
 
   ctx.fillStyle = "rgba(124, 251, 255, 0.16)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.34)";
@@ -4100,25 +4074,31 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.font = "900 19px Inter, Arial, sans-serif";
   ctx.fillText("1 punto / $1.000", infoX + 230, 646);
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "rgba(2, 8, 23, 0.82)";
   ctx.strokeStyle = "rgba(124, 251, 255, 0.44)";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.roundRect(qrX - 24, qrY - 24, qrSize + 48, qrSize + 122, 30);
   ctx.fill();
   ctx.stroke();
 
   if (qrImg) {
     ctx.save();
+    ctx.fillStyle = "#f8fdff";
+    ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 16);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(qrX, qrY, qrSize, qrSize, 10);
+    ctx.clip();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
     ctx.restore();
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
   } else {
-    ctx.fillStyle = "#f3f7f5";
+    ctx.fillStyle = "rgba(124, 251, 255, 0.1)";
     ctx.roundRect(qrX, qrY, qrSize, qrSize, 14);
     ctx.fill();
-    ctx.fillStyle = "#789186";
+    ctx.fillStyle = "#7cfbff";
     ctx.font = "900 28px Inter, Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("SIN QR", qrX + qrSize / 2, qrY + 108);
@@ -4129,10 +4109,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
   }
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "#031122";
+  ctx.fillStyle = "#7cfbff";
   ctx.font = "900 16px Inter, Arial, sans-serif";
   ctx.fillText("CODIGO DEL AFILIADO", qrX + qrSize / 2, qrY + qrSize + 36);
-  ctx.fillStyle = "#40576a";
+  ctx.fillStyle = "#a8c6d9";
   ctx.font = "800 15px JetBrains Mono, monospace";
   ctx.fillText(`${tokenPreview || "SIN TOKEN"}...`, qrX + qrSize / 2, qrY + qrSize + 62);
 
