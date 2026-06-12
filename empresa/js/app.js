@@ -3648,6 +3648,8 @@ function businessProfileLogoSource() {
   return state.businessProfile?.logo_data_url
     || session?.user?.business?.logo_data_url
     || session?.user?.business?.settings?.logo_data_url
+    || businessLogoPreview?.querySelector("img")?.getAttribute("src")
+    || accountLogoPreview?.querySelector("img")?.getAttribute("src")
     || "";
 }
 
@@ -3894,6 +3896,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const uploadedLogo = await loadImageDataUrl(logoSource);
   const businessLogo = uploadedLogo || null;
   const logo = businessLogo || platformLogo;
+  const isCompanyProfileLogo = Boolean(businessLogo);
   const qrImg = await loadImageDataUrl(qrSource);
 
   const bgGradient = ctx.createLinearGradient(0, 0, width, height);
@@ -3953,7 +3956,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.save();
     ctx.shadowColor = "rgba(124, 251, 255, 0.22)";
     ctx.shadowBlur = 12;
-    drawContainedImage(logo, logoX + 16, logoY + 12, logoW - 32, logoH - 24, 16, "rgba(255, 255, 255, 0.02)", { trimWhite: true, removeWhiteBackground: true });
+    drawContainedImage(logo, logoX + 16, logoY + 12, logoW - 32, logoH - 24, 16, "rgba(255, 255, 255, 0.02)", {
+      trimWhite: !isCompanyProfileLogo,
+      removeWhiteBackground: false,
+    });
     ctx.restore();
   } else {
     drawInitials(businessName, logoX + 16, logoY + 12, logoW - 32, logoH - 24, {
