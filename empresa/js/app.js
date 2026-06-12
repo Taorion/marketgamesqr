@@ -3637,11 +3637,17 @@ function affiliatePhotoSource(affiliate) {
 }
 
 function businessLogoSource(affiliate) {
-  return affiliate?.business_logo_data_url
+  return businessProfileLogoSource()
+    || affiliate?.business_logo_data_url
     || affiliate?.logo_data_url
     || affiliate?.business_settings?.logo_data_url
-    || state.businessProfile?.logo_data_url
+    || "";
+}
+
+function businessProfileLogoSource() {
+  return state.businessProfile?.logo_data_url
     || session?.user?.business?.logo_data_url
+    || session?.user?.business?.settings?.logo_data_url
     || "";
 }
 
@@ -3816,7 +3822,44 @@ async function buildAffiliateCardDataUrl(affiliate) {
     const imageWidth = img?.naturalWidth || img?.width;
     const imageHeight = img?.naturalHeight || img?.height;
     if (!imageWidth || !imageHeight) return false;
-    const bounds = getImageContentBounds(img, options);
+    let sourceImage = img;
+    let bounds = getImageContentBounds(img, options);
+    if (options.removeWhiteBackground) {
+      const cropCanvas = document.createElement("canvas");
+      cropCanvas.width = Math.max(1, Math.round(bounds.sw));
+      cropCanvas.height = Math.max(1, Math.round(bounds.sh));
+      const cropContext = cropCanvas.getContext("2d", { willReadFrequently: true });
+      cropContext.drawImage(img, bounds.sx, bounds.sy, bounds.sw, bounds.sh, 0, 0, cropCanvas.width, cropCanvas.height);
+      const imageData = cropContext.getImageData(0, 0, cropCanvas.width, cropCanvas.height);
+      const pixels = imageData.data;
+      let opaque = 0;
+      let removableWhite = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const alpha = pixels[index + 3];
+        if (alpha <= 12) continue;
+        opaque += 1;
+        const red = pixels[index];
+        const green = pixels[index + 1];
+        const blue = pixels[index + 2];
+        const isWhiteBackground = red > 242 && green > 242 && blue > 242 && Math.max(red, green, blue) - Math.min(red, green, blue) < 18;
+        if (isWhiteBackground) removableWhite += 1;
+      }
+      const total = cropCanvas.width * cropCanvas.height;
+      const hasWhiteBackground = opaque / total > 0.55 && removableWhite / Math.max(1, opaque) > 0.45;
+      if (hasWhiteBackground) {
+        for (let index = 0; index < pixels.length; index += 4) {
+          const red = pixels[index];
+          const green = pixels[index + 1];
+          const blue = pixels[index + 2];
+          if (pixels[index + 3] > 12 && red > 242 && green > 242 && blue > 242 && Math.max(red, green, blue) - Math.min(red, green, blue) < 18) {
+            pixels[index + 3] = 0;
+          }
+        }
+        cropContext.putImageData(imageData, 0, 0);
+        sourceImage = cropCanvas;
+        bounds = { sx: 0, sy: 0, sw: cropCanvas.width, sh: cropCanvas.height };
+      }
+    }
     const scale = Math.min(w / bounds.sw, h / bounds.sh);
     const drawW = bounds.sw * scale;
     const drawH = bounds.sh * scale;
@@ -3826,7 +3869,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.clip();
     ctx.fillStyle = background;
     ctx.fillRect(x, y, w, h);
-    ctx.drawImage(img, bounds.sx, bounds.sy, bounds.sw, bounds.sh, x + (w - drawW) / 2, y + (h - drawH) / 2, drawW, drawH);
+    ctx.drawImage(sourceImage, bounds.sx, bounds.sy, bounds.sw, bounds.sh, x + (w - drawW) / 2, y + (h - drawH) / 2, drawW, drawH);
     ctx.restore();
     return true;
   };
@@ -3951,7 +3994,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.save();
     ctx.shadowColor = "rgba(124, 251, 255, 0.22)";
     ctx.shadowBlur = 12;
-    drawContainedImage(logo, logoX + 14, logoY + 12, logoW - 28, logoH - 24, 14, "rgba(255, 255, 255, 0.02)", { trimWhite: true });
+    drawContainedImage(logo, logoX + 14, logoY + 12, logoW - 28, logoH - 24, 14, "rgba(255, 255, 255, 0.02)", { trimWhite: true, removeWhiteBackground: true });
     ctx.restore();
   } else {
     drawInitials(businessName, logoX + 14, logoY + 12, logoW - 28, logoH - 24, {
@@ -4123,7 +4166,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.font = "800 15px Inter, Arial, sans-serif";
   ctx.fillText("QR permanente de afiliado. No redime premios.", width / 2, 706);
   if (platformLogo) {
-    drawContainedImage(platformLogo, width - 204, 684, 138, 38, 8, "rgba(255, 255, 255, 0.03)", { trimWhite: true });
+    drawContainedImage(platformLogo, width - 204, 684, 138, 38, 8, "rgba(255, 255, 255, 0.03)", { trimWhite: true, removeWhiteBackground: true });
   } else {
     ctx.fillStyle = "#7cfbff";
     ctx.font = "900 13px Inter, Arial, sans-serif";
@@ -4225,6 +4268,13 @@ async function updateBusinessLogo(logoDataUrl) {
     body: JSON.stringify({ logo_data_url: logoDataUrl || "" }),
   });
   state.businessProfile = data.business || null;
+  if (session?.user?.business) {
+    session.user.business.logo_data_url = data.business?.logo_data_url || "";
+    session.user.business.settings = {
+      ...(session.user.business.settings || {}),
+      logo_data_url: data.business?.logo_data_url || "",
+    };
+  }
   renderAccountView();
   renderBusinessLogoPanel();
   if (state.selectedAffiliate) {
@@ -4318,16 +4368,27 @@ async function handleBusinessLogoFile(file) {
   }
 }
 
+async function ensureBusinessProfileForCard() {
+  if (!session?.user?.business_id || businessProfileLogoSource()) return;
+  const data = await apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null });
+  if (data.business) {
+    state.businessProfile = data.business;
+    renderAccountView();
+    renderBusinessLogoPanel();
+  }
+}
+
 async function renderAffiliateCardPreview(affiliate) {
   if (!affiliate) return;
   affiliateCardPreviewWrap?.classList.remove("is-empty");
   affiliateCardPreviewWrap?.classList.add("is-loading");
   try {
+    await ensureBusinessProfileForCard();
     let renderAffiliate = affiliate;
     if (session?.user?.business_id && affiliate.id) {
       const detail = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${affiliate.id}`, { headers: authHeaders() });
       renderAffiliate = { ...affiliate, ...(detail.affiliate || {}) };
-      renderAffiliate.business_logo_data_url = businessLogoSource(renderAffiliate) || state.businessProfile?.logo_data_url || "";
+      renderAffiliate.business_logo_data_url = businessProfileLogoSource() || businessLogoSource(renderAffiliate) || "";
       state.selectedAffiliate = renderAffiliate;
       state.affiliates = (state.affiliates || []).map((item) => (item.id === renderAffiliate.id ? { ...item, ...renderAffiliate } : item));
     }
@@ -4586,7 +4647,7 @@ async function submitAffiliateForm(event) {
 
     const affiliate = {
       ...(data.affiliate || {}),
-      business_logo_data_url: state.businessProfile?.logo_data_url || "",
+      business_logo_data_url: businessProfileLogoSource(),
     };
     state.affiliates = [affiliate, ...(state.affiliates || []).filter((item) => item.id !== affiliate.id)];
     state.selectedAffiliateId = affiliate.id;
@@ -5131,10 +5192,10 @@ async function renderAffiliatesView() {
   const selected = selectedRow && state.selectedAffiliate?.id === selectedRow.id
     ? {
         ...selectedRow,
-        business_logo_data_url: businessLogoSource(selectedRow) || businessLogoSource(state.selectedAffiliate) || state.businessProfile?.logo_data_url || "",
+        business_logo_data_url: businessProfileLogoSource() || businessLogoSource(selectedRow) || businessLogoSource(state.selectedAffiliate) || "",
         qr_data_url: affiliateQrSource(selectedRow) || affiliateQrSource(state.selectedAffiliate),
       }
-    : (selectedRow ? { ...selectedRow, business_logo_data_url: businessLogoSource(selectedRow) || state.businessProfile?.logo_data_url || "" } : null);
+    : (selectedRow ? { ...selectedRow, business_logo_data_url: businessProfileLogoSource() || businessLogoSource(selectedRow) || "" } : null);
   if (selected && selected.id !== state.selectedAffiliateId) {
     state.selectedAffiliateId = selected.id;
   }
@@ -5195,7 +5256,7 @@ async function renderAffiliatesView() {
     state.selectedAffiliate = {
       ...selected,
       ...(detail.affiliate || {}),
-      business_logo_data_url: businessLogoSource(detail.affiliate || {}) || businessLogoSource(selected) || state.businessProfile?.logo_data_url || "",
+      business_logo_data_url: businessProfileLogoSource() || businessLogoSource(detail.affiliate || {}) || businessLogoSource(selected) || "",
       qr_data_url: affiliateQrSource(detail.affiliate || {}) || affiliateQrSource(selected),
     };
     state.selectedAffiliateLedger = detail.ledger || [];
