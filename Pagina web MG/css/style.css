@@ -3325,6 +3325,61 @@ body::before {
   overflow: hidden;
 }
 
+/* First viewport refinement: keep the hero visual controlled and content-led. */
+.rms-hero-premium {
+  min-height: 560px;
+  align-items: center;
+}
+
+.rms-hero-bg {
+  object-position: 68% center;
+  opacity: 0.58;
+}
+
+.rms-hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(4, 8, 18, 0.98) 0%, rgba(4, 8, 18, 0.86) 48%, rgba(4, 8, 18, 0.34) 100%),
+    linear-gradient(180deg, rgba(4, 8, 18, 0.72) 0%, rgba(4, 8, 18, 0.22) 52%, rgba(4, 8, 18, 0.82) 100%);
+}
+
+.rms-hero-premium-inner {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  align-items: center;
+  padding: 128px 0 42px;
+}
+
+.rms-hero-panel h1 {
+  max-width: 760px;
+  font-size: clamp(2.8rem, 5.8vw, 4.25rem);
+}
+
+.rms-hero-panel p {
+  max-width: 650px;
+  margin-top: 16px;
+}
+
+.rms-hero-actions,
+.rms-hero-metrics {
+  margin-top: 22px;
+}
+
+.rms-command-card {
+  min-height: 270px;
+  max-height: 310px;
+  border-radius: 22px;
+}
+
+.rms-command-card img {
+  min-height: 270px;
+}
+
+.rms-command-card div {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 12px 14px;
+}
+
 @media (max-width: 1100px) {
   .rms-hero-premium-inner,
   .rms-split-section,
@@ -3360,8 +3415,8 @@ body::before {
   }
 
   .rms-hero-bg {
-    opacity: 0.46;
-    object-position: 62% center;
+    opacity: 0.26;
+    object-position: 68% center;
   }
 
   .rms-hero-overlay {
@@ -3371,7 +3426,7 @@ body::before {
 
   .rms-hero-premium-inner {
     width: min(100%, calc(100% - 20px));
-    padding: 118px 0 34px;
+    padding: 104px 0 30px;
   }
 
   .rms-hero-panel h1,
@@ -3410,6 +3465,10 @@ body::before {
 
   .rms-command-card img {
     min-height: 320px;
+  }
+
+  .rms-command-card {
+    display: none;
   }
 
   .rms-os-grid,
