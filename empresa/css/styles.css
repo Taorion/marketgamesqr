@@ -5275,3 +5275,156 @@ textarea {
   color: #991b1b !important;
 }
 
+/* Light profile contrast hardening: final layer wins over legacy dark-view rules. */
+:root[data-theme="light"] {
+  --light-text-strong: #0b1f1a;
+  --light-text-body: #243c35;
+  --light-text-muted: #3f5d54;
+  --light-accent-text: #06634c;
+  --light-panel: #ffffff;
+  --light-panel-soft: #f4fff9;
+  --light-border: #cfe5dd;
+}
+
+:root[data-theme="light"] .subscription-banner,
+:root[data-theme="light"] .subscription-banner * {
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .subscription-banner :where(h1, h2, h3, h4, strong, b, dt, dd),
+:root[data-theme="light"] .subscription-banner #subscriptionPlanName {
+  color: var(--light-text-strong) !important;
+}
+
+:root[data-theme="light"] .subscription-banner :where(p, small),
+:root[data-theme="light"] .subscription-banner #subscriptionPlanSummary {
+  color: var(--light-text-muted) !important;
+}
+
+:root[data-theme="light"] .subscription-banner span:not(.mono-label):not(.material-symbols-outlined) {
+  color: var(--light-text-body) !important;
+}
+
+:root[data-theme="light"] .subscription-banner .mono-label {
+  color: var(--light-accent-text) !important;
+}
+
+:root[data-theme="light"] .subscription-banner .subscription-limit-chip {
+  background: var(--light-panel) !important;
+  border-color: var(--light-border) !important;
+  color: var(--light-text-strong) !important;
+}
+
+:root[data-theme="light"] .subscription-banner .subscription-limit-chip * {
+  color: inherit !important;
+}
+
+:root[data-theme="light"] .view-section,
+:root[data-theme="light"] .view-section :where(.surface-card, .data-table-card, .chart-card, .map-card, .placeholder-card, .campaign-rail, .insight-card, .explain-card, .asset-card, .setting-card, .validator-panel, .affiliate-panel, .affiliate-logo-panel, .geo-branch-card, .modal-card, .table-card, .busy-card, .kpi-card, .affiliate-stat-card, .metric-card, .profile-detail, .campaign-meta-card, .channel-card, .qr-batch-stat, .account-meta-grid div, .account-billing-panel, .modal-actions, .inline-selects, .validator-result-item, .result-item, .sale-summary-card, .affiliate-selected-summary, .affiliate-referral-flow, .affiliate-step, .affiliate-photo-capture, .business-logo-preview, .portal-plan-card, .qr-result) {
+  background-color: var(--light-panel) !important;
+  color: var(--light-text-body) !important;
+}
+
+:root[data-theme="light"] .view-section :where(h1, h2, h3, h4, h5, h6, strong, b, label, legend, dt, dd, th, td, .kpi-value, .campaign-title, .table-card-head strong, .affiliate-selected-grid dd, .profile-detail strong, .metric-card strong, .asset-card strong) {
+  color: var(--light-text-strong) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section :where(p, small, li, figcaption, .muted, .table-muted, .table-secondary, .chart-explainer, .chart-note, .kpi-meta, .setting-card p, .asset-card p, .placeholder-card p, .map-card p, .affiliate-card-note, .affiliate-card-meta, .affiliate-selected-empty, .affiliate-referral-status, .error-line) {
+  color: var(--light-text-muted) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section :where(.mono-label, th, .package-code, .affiliate-selected-grid dt, .campaign-item-row strong) {
+  color: var(--light-accent-text) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section :where(input, select, textarea, .search-shell) {
+  background: var(--light-panel) !important;
+  border-color: var(--light-border) !important;
+  color: var(--light-text-strong) !important;
+}
+
+:root[data-theme="light"] .view-section :where(input, textarea)::placeholder {
+  color: #647a72 !important;
+}
+
+:root[data-theme="light"] .view-section :where(.table-wrap, table, thead, tbody, tr, th, td) {
+  border-color: #dcece6 !important;
+}
+
+:root[data-theme="light"] .view-section th {
+  background: var(--light-panel-soft) !important;
+}
+
+:root[data-theme="light"] .view-section tr:hover td {
+  background: #f8fffb !important;
+}
+
+:root[data-theme="light"] .view-section :where(.ghost-button, .icon-button, .link-button) {
+  background: var(--light-panel) !important;
+  border-color: var(--light-border) !important;
+  color: var(--light-text-strong) !important;
+}
+
+:root[data-theme="light"] .view-section :where(.ghost-button, .icon-button, .link-button) * {
+  color: inherit !important;
+}
+
+:root[data-theme="light"] :where(.solid-button, .request-button),
+:root[data-theme="light"] :where(.solid-button, .request-button) * {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card),
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) * {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(6, 55, 46, 0.35) !important;
+}
+
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) :where(p, small, span:not(.mono-label)) {
+  color: #e8fff7 !important;
+}
+
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) :where(.mono-label, .kpi-meta) {
+  color: #c8fff0 !important;
+}
+
+:root[data-theme="light"] .view-section :where(.status-chip, .pill, .tag, .subscription-limit-chip) {
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.ok {
+  background: #e4f8ed !important;
+  border-color: #abdcc2 !important;
+  color: #064f3a !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.ok * {
+  color: inherit !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.pending,
+:root[data-theme="light"] .view-section .pill.muted {
+  background: #fff6c9 !important;
+  border-color: #dfc35d !important;
+  color: #674800 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.pending *,
+:root[data-theme="light"] .view-section .pill.muted * {
+  color: inherit !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.danger,
+:root[data-theme="light"] .view-section .error-line[data-kind="error"] {
+  background: #ffe8e8 !important;
+  border-color: #edb9b9 !important;
+  color: #8f1111 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.danger * {
+  color: inherit !important;
+}
+
