@@ -4276,6 +4276,52 @@ textarea {
   border-bottom-color: rgba(124, 251, 255, 0.1) !important;
 }
 
+.view-section[data-view="campaigns"] .funnel-stack {
+  gap: 12px;
+}
+
+.view-section[data-view="campaigns"] .funnel-row {
+  background:
+    linear-gradient(145deg, rgba(1, 12, 25, 0.98), rgba(2, 8, 23, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.28) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.view-section[data-view="campaigns"] .funnel-bar {
+  min-height: 54px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background-blend-mode: screen;
+  box-shadow:
+    inset 0 0 0 999px rgba(0, 0, 0, 0.28),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.view-section[data-view="campaigns"] .funnel-bar span,
+.view-section[data-view="campaigns"] .funnel-bar strong {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+}
+
+.view-section[data-view="campaigns"] .funnel-bar span {
+  font-weight: 900;
+}
+
+.view-section[data-view="campaigns"] .funnel-bar strong {
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.view-section[data-view="campaigns"] .funnel-rate {
+  min-width: 74px;
+  padding: 10px 12px;
+  border: 1px solid rgba(244, 200, 79, 0.38);
+  border-radius: 12px;
+  background: rgba(244, 200, 79, 0.13);
+  color: #ffe08a !important;
+  font-weight: 900;
+  text-align: center;
+}
+
 .view-section table,
 .view-section thead,
 .view-section tbody,
