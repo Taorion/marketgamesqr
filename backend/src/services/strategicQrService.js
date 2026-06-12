@@ -638,10 +638,22 @@ async function getBatchCsvDownload(businessId, batchId) {
 
 async function getBatchJsonDownload(businessId, batchId) {
   const result = await query(
-    `select id, token, status, created_at, expires_at, origin_type, benefit_type, benefit_value
-     from qr_codes
-     where batch_id = $1 and business_id = $2
-     order by created_at asc`,
+    `select
+       q.id,
+       q.token,
+       q.status,
+       q.created_at,
+       q.expires_at,
+       q.origin_type,
+       q.benefit_type,
+       q.benefit_value,
+       q.affiliate_id,
+       a.full_name as affiliate_name,
+       a.document_id as affiliate_document_id
+     from qr_codes q
+     left join affiliates a on a.id = q.affiliate_id
+     where q.batch_id = $1 and q.business_id = $2
+     order by q.created_at asc`,
     [batchId, businessId]
   );
   if (!result.rowCount) {
@@ -663,6 +675,7 @@ async function getBatchContext(businessId, batchId) {
        qb.channel_use,
        qb.benefit_type,
        qb.benefit_value,
+       qb.metadata,
        b.name as business_name,
        b.settings as business_settings
      from qr_batches qb
@@ -800,11 +813,15 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
     qrRows.map(async (row) => {
       const qrImage = await QRCode.toDataURL(buildClaimUrl(row.token));
       const label = row.benefit_value?.label || row.benefit_type || "Beneficio";
+      const affiliateLine = row.affiliate_name
+        ? `Afiliado asignado: ${row.affiliate_name}${row.affiliate_document_id ? ` · ${row.affiliate_document_id}` : ""}`
+        : "";
       return `
         <article class="label-card">
           <img src="${qrImage}" alt="QR ${row.id}">
           <h2>${escapeHtml(label)}</h2>
           <p>${escapeHtml(batch.name)}</p>
+          ${affiliateLine ? `<p class="affiliate-line">${escapeHtml(affiliateLine)}</p>` : ""}
           <small>${escapeHtml(row.origin_type)} | ${escapeHtml(row.status)}</small>
         </article>
       `;
@@ -831,6 +848,7 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
     .label-card img { width: ${layout.qrSize + 30}px; height: ${layout.qrSize + 30}px; object-fit: contain; }
     .label-card h2 { margin: 10px 0 6px; font-size: ${layout.titleSize + 5}px; }
     .label-card p { margin: 0 0 6px; font-size: 13px; color: #444; }
+    .label-card .affiliate-line { font-weight: 700; color: #111; }
     .label-card small { color: #666; font-size: 11px; }
     @page { size: ${paperSpec.id === "letter" ? "Letter" : "A4"}; margin: 10mm; }
     @media print {
@@ -990,23 +1008,34 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
       color: primaryColor,
       maxWidth: cardWidth - 20,
     });
+    if (row.affiliate_name) {
+      const affiliateLine = `Afiliado: ${row.affiliate_name}${row.affiliate_document_id ? ` - ${row.affiliate_document_id}` : ""}`;
+      page.drawText(affiliateLine.slice(0, 42), {
+        x: x + 10,
+        y: y + 32,
+        size: 8,
+        font: bold,
+        color: rgb(0.08, 0.13, 0.17),
+        maxWidth: cardWidth - 20,
+      });
+    }
     page.drawText((row.origin_type || "").slice(0, 30), {
       x: x + 10,
-      y: y + 30,
+      y: y + (row.affiliate_name ? 21 : 30),
       size: 8,
       font,
       color: rgb(0.36, 0.4, 0.44),
     });
     page.drawText(String(row.id).slice(0, 8), {
       x: x + 10,
-      y: y + 20,
+      y: y + (row.affiliate_name ? 12 : 20),
       size: 8,
       font,
       color: rgb(0.36, 0.4, 0.44),
     });
     page.drawText(row.status, {
       x: x + cardWidth - 52,
-      y: y + 20,
+      y: y + (row.affiliate_name ? 12 : 20),
       size: 8,
       font: bold,
       color: rgb(0.08, 0.13, 0.17),

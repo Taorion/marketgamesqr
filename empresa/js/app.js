@@ -4035,6 +4035,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
   };
 
   const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
+  const affiliateName = firstTextValue(affiliate.full_name, affiliate.name, affiliate.card_metadata?.full_name, "Afiliado");
+  const affiliateDocument = firstTextValue(affiliate.document_id, affiliate.document, affiliate.card_metadata?.document_id, "Sin documento");
+  const affiliatePhone = firstTextValue(affiliate.phone, affiliate.card_metadata?.phone, "Sin telefono");
+  const affiliateEmail = firstTextValue(affiliate.email, affiliate.card_metadata?.email, "Sin email");
   const businessProfile = businessCardProfile(affiliate);
   const businessName = businessProfile.name;
   const businessSlogan = businessProfile.slogan;
@@ -4171,7 +4175,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     drawCoverImage(photo, photoX, photoY, photoW, photoH);
     ctx.restore();
   } else {
-    drawInitials(affiliate.full_name || businessName, photoX, photoY, photoW, photoH, {
+    drawInitials(affiliateName || businessName, photoX, photoY, photoW, photoH, {
       background: "rgba(124, 251, 255, 0.1)",
       color: "#7cfbff",
       radius: 24,
@@ -4188,29 +4192,35 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.fillText("Identificacion presencial y acumulacion", photoX + photoW / 2, photoY + photoH + 62);
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#f8fdff";
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(124, 251, 255, 0.28)";
+  ctx.lineWidth = 2;
+  ctx.roundRect(infoX - 24, 214, 464, 456, 28);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#0f172a";
   ctx.font = "900 42px Inter, Arial, sans-serif";
-  const nameLines = fitTextLines(affiliate.full_name || "-", 396, 2);
+  const nameLines = fitTextLines(affiliateName, 396, 2);
   nameLines.forEach((line, index) => {
     ctx.fillText(line, infoX, infoY + index * 46);
   });
 
   const nameBlockHeight = Math.max(1, nameLines.length) * 46;
-  ctx.fillStyle = "#7cfbff";
+  ctx.fillStyle = "#0369a1";
   ctx.font = "900 15px Inter, Arial, sans-serif";
   ctx.fillText("CARNET VERIFICADO", infoX, infoY + nameBlockHeight + 24);
 
   const infoRows = [
-    ["Documento", affiliate.document_id || "-"],
-    ["Telefono", affiliate.phone || "-"],
-    ["Email", affiliate.email || "-"],
+    ["Documento", affiliateDocument],
+    ["Telefono", affiliatePhone],
+    ["Email", affiliateEmail],
   ];
   infoRows.forEach(([label, value], index) => {
     const y = infoY + nameBlockHeight + 76 + index * 62;
-    ctx.fillStyle = "#8fb2c4";
+    ctx.fillStyle = "#475569";
     ctx.font = "900 13px Inter, Arial, sans-serif";
     ctx.fillText(label.toUpperCase(), infoX, y);
-    ctx.fillStyle = "#f8fdff";
+    ctx.fillStyle = "#0f172a";
     ctx.font = "800 21px Inter, Arial, sans-serif";
     fitTextLines(value, 390, 1).forEach((line) => ctx.fillText(line, infoX, y + 28));
   });
@@ -4220,10 +4230,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.roundRect(infoX, 592, 188, 64, 18);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#7cfbff";
+  ctx.fillStyle = "#0369a1";
   ctx.font = "900 13px Inter, Arial, sans-serif";
   ctx.fillText("PUNTOS", infoX + 20, 616);
-  ctx.fillStyle = "#f8fdff";
+  ctx.fillStyle = "#0f172a";
   ctx.font = "900 28px Inter, Arial, sans-serif";
   ctx.fillText(String(points), infoX + 20, 646);
 
@@ -4232,10 +4242,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.roundRect(infoX + 210, 592, 244, 64, 18);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#80ffd9";
+  ctx.fillStyle = "#047857";
   ctx.font = "900 13px Inter, Arial, sans-serif";
   ctx.fillText("REGLA", infoX + 230, 616);
-  ctx.fillStyle = "#f8fdff";
+  ctx.fillStyle = "#0f172a";
   ctx.font = "900 19px Inter, Arial, sans-serif";
   ctx.fillText("1 punto / $1.000", infoX + 230, 646);
 
@@ -4830,7 +4840,7 @@ async function downloadSelectedAffiliateCard() {
   }
 }
 
-function renderAffiliateReferralQrResult(batch, qrCodes = []) {
+function renderAffiliateReferralQrResult(batch, qrCodes = [], affiliate = state.selectedAffiliate) {
   if (!affiliateReferralQrResult) return;
   if (!batch) {
     affiliateReferralQrResult.innerHTML = "";
@@ -4838,6 +4848,8 @@ function renderAffiliateReferralQrResult(batch, qrCodes = []) {
     return;
   }
 
+  const affiliateName = firstTextValue(batch.metadata?.affiliate_name, affiliate?.full_name, "Afiliado seleccionado");
+  const affiliateDocument = firstTextValue(affiliate?.document_id, affiliate?.document, "Sin documento");
   affiliateReferralQrResult.classList.remove("hidden");
   affiliateReferralQrResult.innerHTML = `
     <div class="qr-batch-result-head">
@@ -4845,6 +4857,7 @@ function renderAffiliateReferralQrResult(batch, qrCodes = []) {
         <span class="mono-label">QR de recomendacion creados</span>
         <h4>${escapeHtml(batch.name || "QR recomendacion afiliado")}</h4>
         <p>${escapeHtml(Number(batch.quantity || qrCodes.length || 0).toLocaleString("es-CO"))} QR unicos, de un solo uso, listos para entregar al afiliado.</p>
+        <p><strong>Afiliado asignado:</strong> ${escapeHtml(affiliateName)} · ${escapeHtml(affiliateDocument)}</p>
       </div>
     </div>
     <div class="qr-batch-actions">
@@ -4874,6 +4887,7 @@ async function generateSelectedAffiliateReferralQr() {
   setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} QR y descontando creditos disponibles...`, "info");
   renderAffiliateReferralQrResult(null);
   showFeedback("Generando QR de recomendacion para afiliado.", "loading", { title: "QR de recomendacion", timeout: 0 });
+  const referralAffiliate = { ...state.selectedAffiliate };
 
   try {
     const data = await api("/api/business/qr/affiliates/referral-batches", {
@@ -4897,16 +4911,16 @@ async function generateSelectedAffiliateReferralQr() {
       `Se generaron ${Number(data.batch?.quantity || quantity).toLocaleString("es-CO")} QR para ${state.selectedAffiliate.full_name || "el afiliado"}.`,
       "success"
     );
-    renderAffiliateReferralQrResult(data.batch, data.qr_codes || []);
-    await downloadBatchByFormat(data.batch.id, "zip", "card", "a4", { silentSuccess: true });
+    renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
+    await downloadBatchByFormat(data.batch.id, "pdf", "card", "a4", { silentSuccess: true });
     state.strategicQrLoaded = false;
     await loadWorkspace();
     if (state.currentView === "affiliates") {
       await loadAffiliatesData();
       await renderAffiliatesView();
-      renderAffiliateReferralQrResult(data.batch, data.qr_codes || []);
+      renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
     }
-    showFeedback("QR de recomendacion creados. La descarga ZIP fue iniciada.", "success", { title: "QR listos" });
+    showFeedback("QR de recomendacion creados. La descarga PDF fue iniciada.", "success", { title: "QR listos" });
   } catch (error) {
     setInlineMessage(affiliateReferralQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudieron generar los QR" });
