@@ -4090,6 +4090,157 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const platformLogo = await loadImageDataUrl("/img/MGLogo-01.png");
   const qrImg = await loadImageDataUrl(qrSource);
 
+  ctx.fillStyle = "#061a14";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#0b2a22";
+  ctx.roundRect(30, 30, width - 60, height - 60, 34);
+  ctx.fill();
+  ctx.strokeStyle = "#6ffbbe";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.fillStyle = "#12382d";
+  ctx.roundRect(58, 58, width - 116, 132, 26);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(111, 251, 190, 0.34)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6ffbbe";
+  ctx.font = "900 17px Inter, Arial, sans-serif";
+  ctx.fillText("EMPRESA EMISORA", 82, 98);
+  ctx.fillStyle = "#f8fdff";
+  ctx.font = "900 42px Inter, Arial, sans-serif";
+  fitTextLines(businessName, 650, 1).forEach((line) => ctx.fillText(line, 82, 144));
+  ctx.fillStyle = "#b8d3df";
+  ctx.font = "800 18px Inter, Arial, sans-serif";
+  fitTextLines(businessSlogan || "Programa de afiliados y recomendaciones", 650, 1).forEach((line) => ctx.fillText(line, 82, 172));
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#d9fff0";
+  ctx.font = "900 22px Inter, Arial, sans-serif";
+  ctx.fillText("CARNET AFILIADO", width - 82, 118);
+  ctx.fillStyle = "#a8c6d9";
+  ctx.font = "800 15px Inter, Arial, sans-serif";
+  ctx.fillText("Identificacion y puntos", width - 82, 150);
+
+  const photoPanelX = 72;
+  const photoPanelY = 232;
+  const photoPanelW = 276;
+  const photoPanelH = 382;
+  ctx.fillStyle = "#0f3028";
+  ctx.roundRect(photoPanelX, photoPanelY, photoPanelW, photoPanelH, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(111, 251, 190, 0.3)";
+  ctx.stroke();
+
+  if (photo) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268, 22);
+    ctx.clip();
+    drawCoverImage(photo, photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268);
+    ctx.restore();
+  } else {
+    drawInitials(affiliateName, photoPanelX + 18, photoPanelY + 18, photoPanelW - 36, 268, {
+      background: "#12382d",
+      color: "#6ffbbe",
+      radius: 22,
+      font: "900 72px Inter, Arial, sans-serif",
+    });
+  }
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#6ffbbe";
+  ctx.font = "900 16px Inter, Arial, sans-serif";
+  ctx.fillText("AFILIADO ACTIVO", photoPanelX + photoPanelW / 2, photoPanelY + 328);
+  ctx.fillStyle = "#f8fdff";
+  ctx.font = "900 30px Inter, Arial, sans-serif";
+  ctx.fillText(String(points), photoPanelX + photoPanelW / 2, photoPanelY + 366);
+  ctx.fillStyle = "#a8c6d9";
+  ctx.font = "800 13px Inter, Arial, sans-serif";
+  ctx.fillText("PUNTOS ACUMULADOS", photoPanelX + photoPanelW / 2, photoPanelY + 388);
+
+  const infoPanelX = 382;
+  const infoPanelY = 226;
+  const infoPanelW = 420;
+  const infoPanelH = 396;
+  ctx.fillStyle = "#09241e";
+  ctx.roundRect(infoPanelX, infoPanelY, infoPanelW, infoPanelH, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(111, 251, 190, 0.28)";
+  ctx.stroke();
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#f8fdff";
+  ctx.font = "900 48px Inter, Arial, sans-serif";
+  fitTextLines(affiliateName, infoPanelW - 48, 2).forEach((line, index) => {
+    ctx.fillText(line, infoPanelX + 24, infoPanelY + 64 + index * 52);
+  });
+
+  const dataRows = [
+    ["Documento", affiliateDocument],
+    ["Telefono", affiliatePhone],
+    ["Email", affiliateEmail],
+    ["QR afiliado", tokenPreview ? `${tokenPreview}...` : "Sin token"],
+  ];
+  dataRows.forEach(([label, value], index) => {
+    const y = infoPanelY + 170 + index * 54;
+    ctx.fillStyle = "#6ffbbe";
+    ctx.font = "900 13px Inter, Arial, sans-serif";
+    ctx.fillText(label.toUpperCase(), infoPanelX + 24, y);
+    ctx.fillStyle = "#f8fdff";
+    ctx.font = "800 22px Inter, Arial, sans-serif";
+    fitTextLines(value, infoPanelW - 48, 1).forEach((line) => ctx.fillText(line, infoPanelX + 24, y + 27));
+  });
+
+  const qrPanelX = 838;
+  const qrPanelY = 226;
+  const qrPanelW = 290;
+  const qrPanelH = 396;
+  ctx.fillStyle = "#f5fbf7";
+  ctx.roundRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 28);
+  ctx.fill();
+  ctx.strokeStyle = "#6ffbbe";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  if (qrImg) {
+    drawContainedImage(qrImg, qrPanelX + 24, qrPanelY + 26, qrPanelW - 48, qrPanelW - 48, 12, "#ffffff");
+  } else {
+    ctx.fillStyle = "#d9fff0";
+    ctx.roundRect(qrPanelX + 24, qrPanelY + 26, qrPanelW - 48, qrPanelW - 48, 12);
+    ctx.fill();
+    ctx.fillStyle = "#003527";
+    ctx.textAlign = "center";
+    ctx.font = "900 30px Inter, Arial, sans-serif";
+    ctx.fillText("SIN QR", qrPanelX + qrPanelW / 2, qrPanelY + 154);
+  }
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#003527";
+  ctx.font = "900 17px Inter, Arial, sans-serif";
+  ctx.fillText("QR PERMANENTE", qrPanelX + qrPanelW / 2, qrPanelY + 326);
+  ctx.fillStyle = "#41554e";
+  ctx.font = "800 13px JetBrains Mono, monospace";
+  fitTextLines(tokenPreview || "SIN TOKEN", qrPanelW - 44, 1).forEach((line) => {
+    ctx.fillText(line, qrPanelX + qrPanelW / 2, qrPanelY + 354);
+  });
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#a8c6d9";
+  ctx.font = "800 16px Inter, Arial, sans-serif";
+  const footerText = businessContactLines.length ? businessContactLines.join(" | ") : "Contacto del negocio no registrado";
+  fitTextLines(footerText, 920, 1).forEach((line) => ctx.fillText(line, 82, 690));
+  if (platformLogo) {
+    drawContainedImage(platformLogo, width - 188, 670, 112, 34, 6, "transparent", { trimWhite: true, removeWhiteBackground: true });
+  } else {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#6ffbbe";
+    ctx.font = "900 14px Inter, Arial, sans-serif";
+    ctx.fillText("MARKET GAMES QR", width - 82, 692);
+  }
+
+  return canvas.toDataURL("image/png");
+
   const bgGradient = ctx.createLinearGradient(0, 0, width, height);
   bgGradient.addColorStop(0, "#020617");
   bgGradient.addColorStop(0.5, "#061a2c");
