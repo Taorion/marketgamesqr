@@ -2380,6 +2380,156 @@ body::before {
   color: #b8c6e8;
 }
 
+.rms-premium-section {
+  width: min(1240px, calc(100% - 24px));
+  padding: 26px;
+  border: 1px solid rgba(111, 226, 255, 0.18);
+  border-radius: 32px;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 184, 0.08), rgba(77, 227, 255, 0.05)),
+    rgba(5, 10, 22, 0.74);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+}
+
+.rms-premium-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.rms-premium-copy {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 10px 22px 0;
+}
+
+.rms-premium-copy h2 {
+  margin: 0 0 16px;
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 4.1rem);
+  line-height: 0.95;
+}
+
+.rms-premium-copy p {
+  margin: 0;
+  max-width: 680px;
+  color: #c7d5f3;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.rms-premium-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.rms-premium-points span {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(77, 255, 184, 0.22);
+  border-radius: 16px;
+  color: #eff7ff;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 184, 0.12), rgba(77, 227, 255, 0.045)),
+    rgba(255, 255, 255, 0.035);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.rms-premium-media,
+.rms-visual-card {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid rgba(111, 226, 255, 0.2);
+  border-radius: 24px;
+  background: #061020;
+  box-shadow: 0 24px 62px rgba(0, 0, 0, 0.32);
+}
+
+.rms-premium-media {
+  min-height: 430px;
+}
+
+.rms-premium-media img,
+.rms-visual-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.rms-premium-media figcaption,
+.rms-visual-card div {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(111, 226, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(3, 9, 20, 0.78);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(14px);
+}
+
+.rms-premium-media figcaption strong,
+.rms-visual-card strong {
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.rms-premium-media figcaption span,
+.rms-visual-card span {
+  color: #92fbd2;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rms-premium-media figcaption span {
+  color: #c1d4f4;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.rms-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.rms-visual-card {
+  min-height: 330px;
+}
+
+.rms-visual-card::after,
+.rms-premium-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 42%, rgba(2, 8, 18, 0.86) 100%);
+  pointer-events: none;
+}
+
+.rms-premium-media figcaption,
+.rms-visual-card div {
+  z-index: 1;
+}
+
 .rms-why-section {
   width: min(1240px, calc(100% - 24px));
   padding: 56px 24px 30px;
@@ -2545,6 +2695,20 @@ body::before {
   .rms-benefit-grid {
     grid-template-columns: 1fr;
   }
+
+  .rms-premium-grid,
+  .rms-visual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-premium-copy {
+    padding: 4px 0 0;
+  }
+
+  .rms-premium-media,
+  .rms-visual-card {
+    min-height: 360px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -2565,6 +2729,35 @@ body::before {
     width: min(100%, calc(100% - 16px));
     padding: 34px 16px 18px;
     border-radius: 24px;
+  }
+
+  .rms-premium-section {
+    width: min(100%, calc(100% - 16px));
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .rms-premium-copy h2 {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .rms-premium-points {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-premium-media,
+  .rms-visual-card {
+    min-height: 310px;
+    border-radius: 20px;
+  }
+
+  .rms-premium-media figcaption,
+  .rms-visual-card div {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 12px;
   }
 
   .rms-definition {
