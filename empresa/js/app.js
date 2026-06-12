@@ -1106,7 +1106,13 @@ function setView(view) {
     }
   }
   if (view === "redemptions") renderRedemptionsView();
-  if (view === "sales") renderSalesView();
+  if (view === "sales") {
+    if (!state.affiliatesLoaded) {
+      loadAffiliatesData().then(renderSalesView);
+    } else {
+      renderSalesView();
+    }
+  }
   if (view === "strategic-qr") {
     if (!state.strategicQrLoaded) {
       loadStrategicQrData().then(renderStrategicQrView);
@@ -2020,6 +2026,7 @@ function renderSalesView() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
+  renderCustomerAcquisitionAffiliateOptions();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -2590,10 +2597,8 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     customerAcquisitionCurrencyInput.value = "COP";
-    state.strategicQrLoaded = false;
     await loadWorkspace();
-    await loadStrategicQrData();
-    setView("strategic-qr");
+    setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
   } catch (error) {
     setInlineMessage(customerAcquisitionMessage, error.message, "error");
@@ -5413,6 +5418,7 @@ function renderSalesView() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
+  renderCustomerAcquisitionAffiliateOptions();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>

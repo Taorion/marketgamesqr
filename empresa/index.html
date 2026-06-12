@@ -608,43 +608,6 @@
             <section class="charts-grid dashboard-charts">
               <article class="surface-card data-table-card">
                 <div class="table-card-head">
-                  <div>
-                    <span class="mono-label">Medicion comercial</span>
-                    <h3>Registrar llegada y venta</h3>
-                  </div>
-                  <span class="status-chip ok">Ventas reales</span>
-                </div>
-                <p class="chart-explainer">Registra como llego el cliente y deja lo especifico en observaciones: volante, gamificacion, feria concreta o pieza puntual.</p>
-                <form class="modal-form" id="customerAcquisitionForm">
-                  <label><span>Valor de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" required></label>
-                  <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
-                  <label><span>Producto / servicio</span><input id="customerAcquisitionProductInput" type="text"></label>
-                  <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
-                  <label><span>Cedula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
-                  <label><span>Telefono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
-                  <label><span>Correo</span><input id="customerAcquisitionEmailInput" type="email"></label>
-                  <label><span>Medio de llegada</span>
-                    <select id="customerAcquisitionSourceInput" required>
-                      <option value="STORE_WALK_IN">Vio el almacen</option>
-                      <option value="FRIEND_REFERRAL">Recomendacion de un amigo</option>
-                      <option value="FAIR_EVENT">Feria o evento</option>
-                      <option value="INTERNET_SEARCH">Internet / buscador</option>
-                      <option value="SOCIAL_MEDIA">Redes sociales</option>
-                      <option value="PAID_ADS">Pauta digital</option>
-                      <option value="QR_SCAN">QR / pieza impresa</option>
-                      <option value="OTHER">Otro</option>
-                    </select>
-                  </label>
-                  <label><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
-                  <label><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
-                  <label><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
-                  <button class="solid-button" type="submit">Registrar venta</button>
-                  <p class="error-line" id="customerAcquisitionMessage"></p>
-                </form>
-              </article>
-
-              <article class="surface-card data-table-card">
-                <div class="table-card-head">
                   <span class="mono-label">QR postventa</span>
                   <h3>Generar QR unico</h3>
                 </div>
@@ -1144,13 +1107,50 @@
           <section class="view-section" data-view="sales">
             <div class="view-head">
               <div>
-                <h2>Ventas Atribuidas</h2>
-                <p>Resultado comercial registrado despues de redimir el QR.</p>
+                <h2>Ventas y tracker comercial</h2>
+                <p>Resultado comercial registrado desde redenciones, ventas observadas y medios de llegada.</p>
               </div>
               <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
             </div>
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Medicion comercial</span>
+                  <h3>Registrar llegada y venta</h3>
+                </div>
+                <span class="status-chip ok">Ventas reales</span>
+              </div>
+              <p class="chart-explainer">Registra como llego el cliente y deja lo especifico en observaciones: volante, gamificacion, feria concreta o pieza puntual.</p>
+              <form class="modal-form" id="customerAcquisitionForm">
+                <label><span>Valor de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" required></label>
+                <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
+                <label><span>Producto / servicio</span><input id="customerAcquisitionProductInput" type="text"></label>
+                <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
+                <label><span>Cedula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
+                <label><span>Telefono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
+                <label><span>Correo</span><input id="customerAcquisitionEmailInput" type="email"></label>
+                <label><span>Medio de llegada</span>
+                  <select id="customerAcquisitionSourceInput" required>
+                    <option value="STORE_WALK_IN">Vio el almacen</option>
+                    <option value="FRIEND_REFERRAL">Recomendacion de un amigo</option>
+                    <option value="FAIR_EVENT">Feria o evento</option>
+                    <option value="INTERNET_SEARCH">Internet / buscador</option>
+                    <option value="SOCIAL_MEDIA">Redes sociales</option>
+                    <option value="PAID_ADS">Pauta digital</option>
+                    <option value="QR_SCAN">QR / pieza impresa</option>
+                    <option value="OTHER">Otro</option>
+                  </select>
+                </label>
+                <label><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
+                <label><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
+                <label><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
+                <button class="solid-button" type="submit">Registrar venta</button>
+                <p class="error-line" id="customerAcquisitionMessage"></p>
+              </form>
+            </article>
 
             <article class="surface-card data-table-card">
               <div class="table-card-head">
