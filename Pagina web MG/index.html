@@ -32,7 +32,7 @@
   <link rel="shortcut icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="apple-touch-icon" href="/img/MGLogo-01.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=portal-validator-access-20260612">
+  <link rel="stylesheet" href="css/style.css?v=session-access-header-20260612">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -101,6 +101,20 @@
             <strong>QR prepago</strong>
           </a>
         </div>
+
+        <details class="header-login-menu">
+          <summary>Entrar</summary>
+          <div class="header-login-dropdown" role="menu">
+            <a class="access-feedback-link" href="/empresa/" data-feedback="Abriendo portal empresa" role="menuitem">
+              <span>Portal empresa</span>
+              <strong>Dashboard y gestion</strong>
+            </a>
+            <a class="access-feedback-link" href="/qr-validador/" data-feedback="Abriendo QR Validador" role="menuitem">
+              <span>QR validador</span>
+              <strong>Escanear y redimir</strong>
+            </a>
+          </div>
+        </details>
       </div>
     </header>
 
@@ -432,23 +446,12 @@
       </div>
     </footer>
 
-    <nav class="corner-quick-access" aria-label="Acceso rapido al portal y validador">
-      <a class="corner-quick-link access-feedback-link" href="/empresa/" data-feedback="Abriendo portal empresa">
-        <span>Portal</span>
-        <strong>Empresa</strong>
-      </a>
-      <a class="corner-quick-link corner-quick-link-validator access-feedback-link" href="/qr-validador/" data-feedback="Abriendo QR Validador">
-        <span>QR</span>
-        <strong>Validador</strong>
-      </a>
-    </nav>
-
     <a class="floating-whatsapp" href="https://wa.me/573001112233?text=Hola%2C%20quiero%20mas%20informacion%20sobre%20MarketGamesQR%20RMS" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp">
       <img src="img/whatsappicon.png" alt="WhatsApp">
     </a>
     <p class="access-feedback-toast" id="accessFeedbackToast" role="status" aria-live="polite"></p>
   </div>
 
-  <script src="js/main.js?v=portal-validator-access-20260612" defer></script>
+  <script src="js/main.js?v=session-access-header-20260612" defer></script>
 </body>
 </html>
