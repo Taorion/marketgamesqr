@@ -4211,16 +4211,26 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.fillText("DATOS DEL AFILIADO", dataX + 30, dataY + 46);
 
   const drawCardField = (label, value, x, y, fieldW, valueSize = 29) => {
+    const displayValue = String(value || "-").trim() || "-";
     ctx.fillStyle = palette.gold;
     ctx.font = "900 13px Inter, Arial, sans-serif";
     ctx.fillText(label.toUpperCase(), x, y);
     ctx.fillStyle = palette.ink;
-    ctx.font = `900 ${valueSize}px Inter, Arial, sans-serif`;
-    fitTextLines(value, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + valueSize + 8));
+    let fittedSize = valueSize;
+    ctx.font = `900 ${fittedSize}px Inter, Arial, sans-serif`;
+    while (fittedSize > 18 && ctx.measureText(displayValue).width > fieldW) {
+      fittedSize -= 1;
+      ctx.font = `900 ${fittedSize}px Inter, Arial, sans-serif`;
+    }
+    if (ctx.measureText(displayValue).width <= fieldW) {
+      ctx.fillText(displayValue, x, y + fittedSize + 8);
+      return;
+    }
+    fitTextLines(displayValue, fieldW, 1).forEach((line) => ctx.fillText(line, x, y + fittedSize + 8));
   };
 
-  drawCardField("Documento", affiliateDocument, dataX + 30, dataY + 94, 182, 30);
-  drawCardField("Telefono", affiliatePhone, dataX + 246, dataY + 94, 174, 30);
+  drawCardField("Documento", affiliateDocument, dataX + 30, dataY + 94, 202, 26);
+  drawCardField("Telefono", affiliatePhone, dataX + 262, dataY + 94, 158, 26);
   ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
   ctx.beginPath();
   ctx.moveTo(dataX + 30, dataY + 158);
