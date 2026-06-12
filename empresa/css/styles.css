@@ -5201,3 +5201,77 @@ textarea {
   background: #f6fffb !important;
 }
 
+/* Final contrast sweep for light profile: dark text on light panels, light text on accent panels. */
+:root[data-theme="light"] .view-section :where(.surface-card, .data-table-card, .chart-card, .map-card, .placeholder-card, .campaign-rail, .insight-card, .explain-card, .asset-card, .setting-card, .validator-panel, .affiliate-panel, .affiliate-logo-panel, .geo-branch-card, .modal-card, .table-card, .busy-card, .kpi-card, .affiliate-stat-card, .metric-card, .profile-detail, .campaign-meta-card, .channel-card, .qr-batch-stat, .account-meta-grid div, .account-billing-panel, .modal-actions, .inline-selects, .validator-result-item, .result-item, .sale-summary-card, .affiliate-selected-summary, .affiliate-referral-flow, .affiliate-step, .affiliate-photo-capture, .business-logo-preview) {
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .view-section :where(.surface-card, .data-table-card, .chart-card, .map-card, .placeholder-card, .campaign-rail, .insight-card, .explain-card, .asset-card, .setting-card, .validator-panel, .affiliate-panel, .affiliate-logo-panel, .geo-branch-card, .modal-card, .table-card, .busy-card, .kpi-card, .affiliate-stat-card, .metric-card, .profile-detail, .campaign-meta-card, .channel-card, .qr-batch-stat, .account-meta-grid div, .account-billing-panel, .modal-actions, .inline-selects, .validator-result-item, .result-item, .sale-summary-card, .affiliate-selected-summary, .affiliate-referral-flow, .affiliate-step, .affiliate-photo-capture, .business-logo-preview) :where(h1, h2, h3, h4, strong, b, dt, dd, td, th, label) {
+  color: #10201c !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section :where(.surface-card, .data-table-card, .chart-card, .map-card, .placeholder-card, .campaign-rail, .insight-card, .explain-card, .asset-card, .setting-card, .validator-panel, .affiliate-panel, .affiliate-logo-panel, .geo-branch-card, .modal-card, .table-card, .busy-card, .kpi-card, .affiliate-stat-card, .metric-card, .profile-detail, .campaign-meta-card, .channel-card, .qr-batch-stat, .account-meta-grid div, .account-billing-panel, .modal-actions, .inline-selects, .validator-result-item, .result-item, .sale-summary-card, .affiliate-selected-summary, .affiliate-referral-flow, .affiliate-step, .affiliate-photo-capture, .business-logo-preview) :where(p, span, small, li, .table-secondary, .table-muted, .muted, .chart-explainer, .chart-note, .kpi-meta) {
+  color: #475d55 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section :where(.mono-label, th, .package-code) {
+  color: #087a5e !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] :where(.dark-hero-card, .dark-insight-card),
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(244, 200, 79, 0.18), transparent 34%),
+    linear-gradient(135deg, #087a5e, #075985) !important;
+  border-color: rgba(8, 122, 94, 0.32) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] :where(.dark-hero-card, .dark-insight-card) :where(h1, h2, h3, h4, strong, b, p, span, small, .mono-label, .kpi-meta, .table-secondary, .muted),
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) :where(h1, h2, h3, h4, strong, b, p, span, small, .mono-label, .kpi-meta, .table-secondary, .muted) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(6, 55, 46, 0.34) !important;
+}
+
+:root[data-theme="light"] :where(.dark-hero-card, .dark-insight-card) :where(p, span:not(.mono-label), small),
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) :where(p, span:not(.mono-label), small) {
+  color: #eafff8 !important;
+}
+
+:root[data-theme="light"] :where(.dark-hero-card, .dark-insight-card) .link-button {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="light"] :where(.solid-button, .request-button),
+:root[data-theme="light"] :where(.solid-button, .request-button) *,
+:root[data-theme="light"] .view-section :where(.solid-button, .request-button),
+:root[data-theme="light"] .view-section :where(.solid-button, .request-button) * {
+  color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.ok {
+  background: #e6fbef !important;
+  border-color: #bdebd0 !important;
+  color: #065f46 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.pending,
+:root[data-theme="light"] .view-section .pill.muted {
+  background: #fff8d7 !important;
+  border-color: #ead17a !important;
+  color: #745500 !important;
+}
+
+:root[data-theme="light"] .view-section .status-chip.danger {
+  background: #fff0f0 !important;
+  border-color: #f3c7c7 !important;
+  color: #991b1b !important;
+}
+
