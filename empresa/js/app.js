@@ -3660,97 +3660,6 @@ function affiliateQrSource(affiliate) {
     || "";
 }
 
-async function buildLegacyAffiliateCardDataUrl(affiliate) {
-  const canvas = document.createElement("canvas");
-  const width = 1200;
-  const height = 760;
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#f5f3ec";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.fillStyle = "#0b1f17";
-  ctx.fillRect(0, 0, width, 120);
-
-  ctx.fillStyle = "#f5f3ec";
-  ctx.font = "700 44px Inter, sans-serif";
-  ctx.fillText(affiliate.business_name || "UNIVERSAL QR", 48, 68);
-
-  ctx.fillStyle = "#d2e6dc";
-  ctx.font = "500 24px Inter, sans-serif";
-  ctx.fillText("Carnet de afiliado", 48, 104);
-
-  const photoX = 52;
-  const photoY = 160;
-  const photoW = 280;
-  const photoH = 360;
-  const qrX = 860;
-  const qrY = 196;
-  const qrSize = 250;
-
-  ctx.fillStyle = "#ffffff";
-  ctx.strokeStyle = "#d8ddda";
-  ctx.lineWidth = 4;
-  ctx.roundRect(42, 148, 1116, 560, 28);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#0b1f17";
-  ctx.font = "700 38px Inter, sans-serif";
-  ctx.fillText(affiliate.full_name || "-", 370, 222);
-
-  ctx.fillStyle = "#3d5148";
-  ctx.font = "500 23px Inter, sans-serif";
-  ctx.fillText(`Documento: ${affiliate.document_id || "-"}`, 370, 270);
-  ctx.fillText(`Telefono: ${affiliate.phone || "-"}`, 370, 312);
-  ctx.fillText(`Email: ${affiliate.email || "-"}`, 370, 354);
-  ctx.fillText(`Puntos acumulados: ${toNumber(affiliate.points_total || affiliate.ledger_points || 0)}`, 370, 396);
-  ctx.fillText(`QR afiliado: ${String(affiliate.qr_token || "").slice(0, 12)}...`, 370, 438);
-
-  ctx.fillStyle = "#0b6c4a";
-  ctx.font = "600 22px Inter, sans-serif";
-  ctx.fillText("Este QR no es redimible. Solo identifica al afiliado y acumula puntos.", 370, 520);
-
-  const photo = await loadImageDataUrl(affiliate.photo_data_url);
-  if (photo) {
-    const radius = 18;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(photoX + radius, photoY);
-    ctx.arcTo(photoX + photoW, photoY, photoX + photoW, photoY + photoH, radius);
-    ctx.arcTo(photoX + photoW, photoY + photoH, photoX, photoY + photoH, radius);
-    ctx.arcTo(photoX, photoY + photoH, photoX, photoY, radius);
-    ctx.arcTo(photoX, photoY, photoX + photoW, photoY, radius);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(photo, photoX, photoY, photoW, photoH);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = "#e8ece9";
-    ctx.fillRect(photoX, photoY, photoW, photoH);
-    ctx.fillStyle = "#799082";
-    ctx.font = "600 24px Inter, sans-serif";
-    ctx.fillText("Sin foto", photoX + 92, photoY + 190);
-  }
-
-  const qrImg = await loadImageDataUrl(affiliate.qr_data_url);
-  if (qrImg) {
-    ctx.fillStyle = "#f6f8f7";
-    ctx.fillRect(qrX - 18, qrY - 18, qrSize + 36, qrSize + 84);
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-  }
-
-  ctx.fillStyle = "#0b1f17";
-  ctx.font = "700 24px Inter, sans-serif";
-  ctx.fillText("Nombre del negocio", 860, 500);
-  ctx.font = "500 22px Inter, sans-serif";
-  ctx.fillText(affiliate.business_name || "-", 860, 536);
-
-  return canvas.toDataURL("image/png");
-}
-
 async function buildAffiliateCardDataUrl(affiliate) {
   const canvas = document.createElement("canvas");
   const logicalWidth = 1200;
@@ -3892,6 +3801,56 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.font = options.font || "900 42px Inter, Arial, sans-serif";
     ctx.fillText(initials, x + w / 2, y + h / 2 + 2);
     ctx.restore();
+  };
+
+  const drawDarkQrImage = (img, x, y, size) => {
+    const qrCanvas = document.createElement("canvas");
+    qrCanvas.width = size;
+    qrCanvas.height = size;
+    const qrContext = qrCanvas.getContext("2d", { willReadFrequently: true });
+    qrContext.imageSmoothingEnabled = false;
+    qrContext.drawImage(img, 0, 0, size, size);
+    const imageData = qrContext.getImageData(0, 0, size, size);
+    const pixels = imageData.data;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index];
+      const green = pixels[index + 1];
+      const blue = pixels[index + 2];
+      const alpha = pixels[index + 3];
+      if (alpha <= 12) {
+        pixels[index + 3] = 0;
+        continue;
+      }
+      const luminance = (red * 0.299) + (green * 0.587) + (blue * 0.114);
+      if (luminance < 170) {
+        pixels[index] = 248;
+        pixels[index + 1] = 253;
+        pixels[index + 2] = 255;
+        pixels[index + 3] = 255;
+      } else {
+        pixels[index + 3] = 0;
+      }
+    }
+    qrContext.putImageData(imageData, 0, 0);
+
+    ctx.save();
+    ctx.fillStyle = "#020817";
+    ctx.strokeStyle = "rgba(124, 251, 255, 0.42)";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "rgba(124, 251, 255, 0.2)";
+    ctx.shadowBlur = 16;
+    ctx.roundRect(x - 10, y - 10, size + 20, size + 20, 18);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 10);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(qrCanvas, x, y, size, size);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
   };
 
   const fitTextLines = (text, maxWidth, maxLines) => {
@@ -4125,18 +4084,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.stroke();
 
   if (qrImg) {
-    ctx.save();
-    ctx.fillStyle = "#f8fdff";
-    ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 16);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(qrX, qrY, qrSize, qrSize, 10);
-    ctx.clip();
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-    ctx.restore();
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+    drawDarkQrImage(qrImg, qrX, qrY, qrSize);
   } else {
     ctx.fillStyle = "rgba(124, 251, 255, 0.1)";
     ctx.roundRect(qrX, qrY, qrSize, qrSize, 14);
