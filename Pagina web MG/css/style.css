@@ -3271,6 +3271,60 @@ body::before {
   background: rgba(3, 8, 18, 0.74);
 }
 
+.is-zoomable {
+  cursor: zoom-in;
+}
+
+.is-zoomable:focus-visible {
+  outline: 3px solid rgba(77, 255, 184, 0.82);
+  outline-offset: 4px;
+}
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 24px 24px;
+  background: rgba(1, 5, 14, 0.92);
+}
+
+.image-lightbox.is-open {
+  display: flex;
+}
+
+.image-lightbox-image {
+  max-width: min(1180px, 96vw);
+  max-height: calc(100vh - 120px);
+  display: block;
+  object-fit: contain;
+  border: 1px solid rgba(111, 226, 255, 0.28);
+  border-radius: 18px;
+  background: #020713;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+  cursor: zoom-out;
+}
+
+.image-lightbox-close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(111, 226, 255, 0.32);
+  border-radius: 999px;
+  color: #06121a;
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.has-lightbox-open {
+  overflow: hidden;
+}
+
 @media (max-width: 1100px) {
   .rms-hero-premium-inner,
   .rms-split-section,
@@ -3388,5 +3442,15 @@ body::before {
 
   .rms-doc-cta {
     align-items: flex-start;
+  }
+
+  .image-lightbox {
+    padding: 68px 12px 16px;
+  }
+
+  .image-lightbox-image {
+    max-width: 96vw;
+    max-height: calc(100vh - 92px);
+    border-radius: 14px;
   }
 }

@@ -329,6 +329,80 @@ function initAccessFeedback() {
   });
 }
 
+function initImageLightbox() {
+  const images = document.querySelectorAll([
+    ".rms-command-card img",
+    ".rms-large-visual img",
+    ".rms-os-card img",
+    ".rms-bento-card img",
+    ".rms-product-card img",
+    ".rms-guide-rail img",
+    ".rms-strategy-media img"
+  ].join(", "));
+
+  if (!images.length) {
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "image-lightbox";
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.innerHTML = [
+    "<button class=\"image-lightbox-close\" type=\"button\" aria-label=\"Cerrar imagen ampliada\">Cerrar</button>",
+    "<img class=\"image-lightbox-image\" alt=\"\">"
+  ].join("");
+  document.body.appendChild(overlay);
+
+  const preview = overlay.querySelector(".image-lightbox-image");
+  const closeButton = overlay.querySelector(".image-lightbox-close");
+
+  function closeLightbox() {
+    overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("has-lightbox-open");
+  }
+
+  function openLightbox(image) {
+    preview.src = image.currentSrc || image.src;
+    preview.alt = image.alt || "Imagen ampliada";
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("has-lightbox-open");
+    closeButton.focus();
+  }
+
+  images.forEach((image) => {
+    image.classList.add("is-zoomable");
+    image.setAttribute("tabindex", "0");
+    image.setAttribute("role", "button");
+    image.setAttribute("aria-label", `${image.alt || "Imagen"} - ampliar`);
+
+    image.addEventListener("click", () => openLightbox(image));
+    image.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      openLightbox(image);
+    });
+  });
+
+  closeButton.addEventListener("click", closeLightbox);
+  preview.addEventListener("click", closeLightbox);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && overlay.classList.contains("is-open")) {
+      closeLightbox();
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initMenu();
   initReveal();
@@ -338,4 +412,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initIframeFullscreen();
   initContactForm();
   initAccessFeedback();
+  initImageLightbox();
 });
