@@ -3513,3 +3513,337 @@ body::before {
     border-radius: 14px;
   }
 }
+
+/* Immersive RMS homepage bands */
+.rms-full-band,
+.rms-panel-band,
+.rms-rail-band {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(76px, 8vw, 114px) max(20px, calc((100vw - 1240px) / 2));
+}
+
+.rms-full-band {
+  min-height: clamp(620px, 74vh, 840px);
+  display: grid;
+  align-items: center;
+  border-top: 1px solid rgba(111, 226, 255, 0.12);
+  border-bottom: 1px solid rgba(111, 226, 255, 0.12);
+}
+
+.rms-panel-band {
+  background:
+    radial-gradient(circle at 14% 10%, rgba(77, 227, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 88% 20%, rgba(77, 255, 184, 0.1), transparent 28%),
+    linear-gradient(180deg, #050914 0%, #07111f 100%);
+}
+
+.rms-rail-band {
+  background:
+    linear-gradient(180deg, rgba(4, 8, 18, 0.98), rgba(6, 13, 28, 0.98)),
+    radial-gradient(circle at 50% 0%, rgba(77, 227, 255, 0.18), transparent 36%);
+}
+
+.rms-full-band::before,
+.rms-panel-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transform: scale(1.04);
+}
+
+.rms-full-band::after,
+.rms-panel-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(3, 8, 18, 0.96), rgba(3, 8, 18, 0.78) 48%, rgba(3, 8, 18, 0.5)),
+    linear-gradient(180deg, rgba(3, 8, 18, 0.86), rgba(3, 8, 18, 0.4) 48%, rgba(3, 8, 18, 0.92));
+}
+
+.rms-band-rms::before {
+  background-image: url("../img/rms-brand-cosmos.png");
+  background-position: center 44%;
+  opacity: 0.52;
+}
+
+.rms-band-ecosystem::before {
+  background-image: url("../img/rms-vision-negocio.png");
+  background-position: center 48%;
+  opacity: 0.13;
+}
+
+.rms-band-proof::before {
+  background-image: url("../img/rms-fisico-digital.png");
+  background-position: center 52%;
+  opacity: 0.5;
+}
+
+.rms-band-products::before {
+  background-image: url("../img/rms-ux-interface.jpg");
+  background-position: center 40%;
+  opacity: 0.16;
+}
+
+.rms-band-strategy::before {
+  background-image: url("../img/rms-office-analytics.jpg");
+  background-position: center 36%;
+  opacity: 0.46;
+}
+
+.rms-band-plans::before {
+  background-image: url("../img/rms-revenue-pos.png");
+  background-position: center 58%;
+  opacity: 0.12;
+}
+
+.rms-band-contact::before {
+  background-image: url("../img/rms-mide-revenue.png");
+  background-position: center 50%;
+  opacity: 0.4;
+}
+
+.rms-full-band > *,
+.rms-panel-band > *,
+.rms-rail-band > * {
+  position: relative;
+  z-index: 1;
+}
+
+.rms-full-band.rms-split-section,
+.rms-full-band.rms-strategy-section,
+.rms-full-band.rms-contact-premium {
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(22px, 4vw, 52px);
+}
+
+.rms-full-band.rms-band-strategy {
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+}
+
+.rms-band-strategy .rms-strategy-media {
+  order: -1;
+}
+
+.rms-full-band .rms-section-copy,
+.rms-full-band .rms-strategy-copy,
+.rms-full-band.rms-contact-premium > div,
+.rms-full-band .rms-contact-form {
+  border-color: rgba(111, 226, 255, 0.24);
+  background:
+    linear-gradient(135deg, rgba(77, 227, 255, 0.12), rgba(77, 255, 184, 0.06)),
+    rgba(3, 8, 18, 0.72);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.rms-full-band .rms-large-visual,
+.rms-full-band .rms-strategy-media {
+  min-height: clamp(430px, 58vh, 660px);
+  border-color: rgba(111, 226, 255, 0.26);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.44);
+}
+
+.rms-full-band .rms-large-visual img,
+.rms-full-band .rms-strategy-media img {
+  transition: transform 500ms ease, filter 500ms ease;
+}
+
+.rms-full-band .rms-large-visual:hover img,
+.rms-full-band .rms-strategy-media:hover img {
+  transform: scale(1.035);
+  filter: saturate(1.08) contrast(1.06);
+}
+
+.rms-panel-band .rms-section-heading,
+.rms-rail-band .rms-section-heading {
+  max-width: 940px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.rms-panel-band .rms-os-grid,
+.rms-panel-band .rms-bento-grid,
+.rms-panel-band .rms-product-grid,
+.rms-panel-band .rms-plan-cards,
+.rms-rail-band .rms-guide-rail,
+.rms-rail-band .rms-doc-cta {
+  width: min(1320px, 100%);
+  margin-inline: auto;
+}
+
+.rms-panel-band .rms-os-card,
+.rms-panel-band .rms-bento-card,
+.rms-panel-band .rms-product-card,
+.rms-panel-band .rms-plan-cards article,
+.rms-rail-band .rms-guide-rail figure {
+  border-color: rgba(111, 226, 255, 0.22);
+  background-color: rgba(5, 12, 26, 0.84);
+  backdrop-filter: blur(10px);
+}
+
+.rms-panel-band .rms-os-card,
+.rms-panel-band .rms-product-card {
+  transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.rms-panel-band .rms-os-card:hover,
+.rms-panel-band .rms-product-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(77, 255, 184, 0.42);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+}
+
+.rms-band-proof .rms-section-heading {
+  max-width: 820px;
+  padding: 26px;
+  border: 1px solid rgba(111, 226, 255, 0.2);
+  border-radius: 26px;
+  background: rgba(3, 8, 18, 0.66);
+  backdrop-filter: blur(16px);
+}
+
+.rms-band-proof .rms-bento-grid {
+  margin-top: 8px;
+}
+
+.rms-band-products .rms-product-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.rms-band-products .rms-product-card {
+  min-height: 420px;
+}
+
+.rms-band-products .rms-product-card:nth-child(1),
+.rms-band-products .rms-product-card:nth-child(2) {
+  grid-column: span 3;
+}
+
+.rms-band-products .rms-product-card:nth-child(3),
+.rms-band-products .rms-product-card:nth-child(4),
+.rms-band-products .rms-product-card:nth-child(5) {
+  grid-column: span 2;
+}
+
+.rms-band-products .rms-product-card:nth-child(6) {
+  grid-column: span 6;
+  min-height: 360px;
+}
+
+.rms-rail-band .rms-guide-rail {
+  padding-bottom: 26px;
+}
+
+.rms-rail-band .rms-doc-cta {
+  margin-top: 20px;
+}
+
+.rms-band-plans .rms-plan-cards article {
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+@supports not (background-attachment: fixed) {
+  .rms-full-band::before,
+  .rms-panel-band::before {
+    background-attachment: scroll;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rms-full-band::before,
+  .rms-panel-band::before {
+    background-attachment: scroll;
+  }
+
+  .rms-full-band .rms-large-visual img,
+  .rms-full-band .rms-strategy-media img,
+  .rms-panel-band .rms-os-card,
+  .rms-panel-band .rms-product-card {
+    transition: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .rms-full-band,
+  .rms-panel-band,
+  .rms-rail-band {
+    padding-inline: 20px;
+  }
+
+  .rms-full-band.rms-split-section,
+  .rms-full-band.rms-strategy-section,
+  .rms-full-band.rms-contact-premium,
+  .rms-full-band.rms-band-strategy {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-band-strategy .rms-strategy-media {
+    order: 0;
+  }
+
+  .rms-band-products .rms-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rms-band-products .rms-product-card,
+  .rms-band-products .rms-product-card:nth-child(1),
+  .rms-band-products .rms-product-card:nth-child(6),
+  .rms-band-products .rms-product-card:nth-child(2),
+  .rms-band-products .rms-product-card:nth-child(3),
+  .rms-band-products .rms-product-card:nth-child(4),
+  .rms-band-products .rms-product-card:nth-child(5) {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .rms-full-band,
+  .rms-panel-band,
+  .rms-rail-band {
+    width: 100%;
+    min-height: auto;
+    padding: 56px 10px;
+  }
+
+  .rms-full-band::before,
+  .rms-panel-band::before {
+    background-attachment: scroll;
+    transform: none;
+    opacity: 0.22;
+  }
+
+  .rms-full-band .rms-section-copy,
+  .rms-full-band .rms-strategy-copy,
+  .rms-full-band.rms-contact-premium > div,
+  .rms-full-band .rms-contact-form,
+  .rms-band-proof .rms-section-heading {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .rms-full-band .rms-large-visual,
+  .rms-full-band .rms-strategy-media {
+    min-height: 300px;
+  }
+
+  .rms-band-products .rms-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-band-products .rms-product-card {
+    min-height: 320px;
+  }
+}
