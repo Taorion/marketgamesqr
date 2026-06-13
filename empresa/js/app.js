@@ -2252,14 +2252,14 @@ function renderCommandCenter() {
         <article class="command-panel revenue-score-panel" data-command-focus="revenue-score" tabindex="0" role="button">
           <div class="command-panel-head">
             <div><span class="mono-label">MG Revenue Score</span><h3>${score.score}/100 · ${escapeHtml(score.status)}</h3></div>
-            ${commandFocusButton("revenue-score")}
+            ${commandPanelActions("revenue-score")}
             <span class="score-orbit">${score.score}</span>
           </div>
           <canvas id="commandRadarChart" width="680" height="360"></canvas>
           <ul>${(score.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </article>
         <article class="command-panel" data-command-focus="rms-funnel" tabindex="0" role="button">
-          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div>${commandFocusButton("rms-funnel")}</div>
+          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div>${commandPanelActions("rms-funnel")}</div>
           ${renderFunnelChart(data.funnel || [])}
         </article>
       </section>
@@ -2275,18 +2275,18 @@ function renderCommandCenter() {
       </section>
 
       <section class="command-chart-grid" id="commandCenterDetail">
-        <article class="command-panel" data-command-focus="timeline" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, QR, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div>${commandFocusButton("timeline")}</div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div>${commandFocusButton("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
-        <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandFocusButton("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
-        <article class="command-panel" data-command-focus="treemap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div>${commandFocusButton("treemap")}</div>${renderTreemapChart(data.revenue_treemap)}</article>
-        <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, QR, redenciones, ventas y revenue</h3></div>${commandFocusButton("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div>${commandFocusButton("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
-        <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandFocusButton("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
-        <article class="command-panel" data-command-focus="branch-ranking" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div>${commandFocusButton("branch-ranking")}</div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="qr-status" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">QR status</span><h3>Activos, redimidos, vencidos y reclamados</h3></div>${commandFocusButton("qr-status")}</div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / QR vs revenue</h3></div>${commandFocusButton("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="waterfall" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div>${commandFocusButton("waterfall")}</div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="cohorts" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y QR postventa</h3></div>${commandFocusButton("cohorts")}</div>${renderCohortChart(data.cohorts)}</article>
+        <article class="command-panel" data-command-focus="timeline" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, QR, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div>${commandPanelActions("timeline")}</div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div>${commandPanelActions("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
+        <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandPanelActions("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
+        <article class="command-panel" data-command-focus="treemap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div>${commandPanelActions("treemap")}</div>${renderTreemapChart(data.revenue_treemap)}</article>
+        <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, QR, redenciones, ventas y revenue</h3></div>${commandPanelActions("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div>${commandPanelActions("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
+        <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandPanelActions("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
+        <article class="command-panel" data-command-focus="branch-ranking" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div>${commandPanelActions("branch-ranking")}</div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="qr-status" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">QR status</span><h3>Activos, redimidos, vencidos y reclamados</h3></div>${commandPanelActions("qr-status")}</div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / QR vs revenue</h3></div>${commandPanelActions("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="waterfall" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div>${commandPanelActions("waterfall")}</div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="cohorts" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y QR postventa</h3></div>${commandPanelActions("cohorts")}</div>${renderCohortChart(data.cohorts)}</article>
       </section>
 
       <section class="command-panel">
@@ -2295,7 +2295,7 @@ function renderCommandCenter() {
       </section>
 
       <section class="command-panel" data-command-focus="power-table" tabindex="0" role="button">
-        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div>${commandFocusButton("power-table")}</div>
+        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div>${commandPanelActions("power-table")}</div>
         ${renderPowerTable(data.power_table)}
       </section>
     </div>`;
@@ -2408,6 +2408,31 @@ function commandFocusButton(chartId, label = "Analizar") {
   return `<button class="command-focus-button" type="button" data-command-focus="${escapeHtml(chartId)}" aria-label="Abrir ${escapeHtml(label)} en RMS Data Explorer">
     <span class="material-symbols-outlined">open_in_full</span>${escapeHtml(label)}
   </button>`;
+}
+
+function commandChartHelpButton(chartId) {
+  const meta = chartFocusMeta(chartId);
+  const copy = [
+    `Como leer: ${meta.description}`,
+    `Como se calcula: ${meta.calculation}`,
+    `Decision: ${meta.businessMeaning}`,
+    "Tip: haz clic en la grafica o en Analizar para ver el detalle.",
+  ].join(" ");
+  return `
+    <button class="command-chart-help-button" type="button" aria-label="${escapeHtml(copy)}" title="${escapeHtml(copy)}">
+      <span class="material-symbols-outlined">help</span>
+      <span class="command-help-popover">
+        <strong>${escapeHtml(meta.title)}</strong>
+        <em>Como leer</em>
+        <small>${escapeHtml(meta.description)}</small>
+        <em>Decision</em>
+        <small>${escapeHtml(meta.businessMeaning)}</small>
+      </span>
+    </button>`;
+}
+
+function commandPanelActions(chartId) {
+  return `<div class="command-panel-actions">${commandChartHelpButton(chartId)}${commandFocusButton(chartId)}</div>`;
 }
 
 function chartFocusMeta(chartId) {

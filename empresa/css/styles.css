@@ -7148,6 +7148,112 @@ body.chart-focus-open {
   font-size: 12px;
 }
 
+.command-panel-actions {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.command-chart-help-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(124, 251, 255, 0.28);
+  border-radius: 999px;
+  color: #7cfbff;
+  background: rgba(124, 251, 255, 0.08);
+  display: inline-grid;
+  place-items: center;
+  cursor: help;
+  transition: transform 150ms var(--ease-out-premium, ease), border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.command-chart-help-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.command-chart-help-button:hover,
+.command-chart-help-button:focus-visible {
+  border-color: rgba(111, 251, 190, 0.7);
+  color: #041018;
+  background: #7cfbff;
+  box-shadow: 0 0 0 3px rgba(124, 251, 255, 0.12), 0 12px 34px rgba(0, 245, 170, 0.16);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+.command-help-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 20;
+  width: min(310px, 76vw);
+  padding: 13px;
+  border: 1px solid rgba(124, 251, 255, 0.26);
+  border-radius: 14px;
+  color: #eaf7ff;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(0, 245, 170, 0.14), transparent 38%),
+    linear-gradient(145deg, rgba(5, 16, 30, 0.98), rgba(2, 8, 18, 0.96));
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translateY(-4px) scale(0.98);
+  transition: opacity 150ms ease, transform 150ms var(--ease-out-premium, ease);
+}
+
+.command-help-popover::before {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid rgba(124, 251, 255, 0.26);
+  border-top: 1px solid rgba(124, 251, 255, 0.26);
+  background: rgba(5, 16, 30, 0.98);
+  transform: rotate(45deg);
+}
+
+.command-chart-help-button:hover .command-help-popover,
+.command-chart-help-button:focus-visible .command-help-popover {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.command-help-popover strong,
+.command-help-popover em,
+.command-help-popover small {
+  display: block;
+}
+
+.command-help-popover strong {
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.command-help-popover em {
+  margin-top: 8px;
+  color: #7cfbff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.command-help-popover small {
+  margin-top: 3px;
+  color: #c9ddea;
+  font-size: 12px;
+  line-height: 1.45;
+  text-transform: none;
+}
+
 .command-focus-hint {
   color: #7cfbff;
   font-size: 11px;
@@ -7446,6 +7552,26 @@ body.chart-focus-open {
   color: #7cfbff !important;
 }
 
+:root[data-theme="light"] .command-chart-help-button {
+  color: #dffbff !important;
+  background: rgba(2, 12, 22, 0.72) !important;
+  border-color: rgba(124, 251, 255, 0.36) !important;
+}
+
+:root[data-theme="light"] .command-chart-help-button:hover,
+:root[data-theme="light"] .command-chart-help-button:focus-visible {
+  color: #021018 !important;
+  background: #7cfbff !important;
+}
+
+:root[data-theme="light"] .command-help-popover {
+  color: #eaf7ff !important;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(0, 245, 170, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(5, 16, 30, 0.98), rgba(2, 8, 18, 0.96)) !important;
+  border-color: rgba(124, 251, 255, 0.3) !important;
+}
+
 @media (max-width: 960px) {
   .chart-focus-overlay {
     padding: 8px;
@@ -7482,6 +7608,26 @@ body.chart-focus-open {
   .data-explanation-panel,
   .comparison-panel {
     grid-template-columns: 1fr;
+  }
+
+  .command-panel-head {
+    align-items: flex-start;
+  }
+
+  .command-panel-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .command-help-popover {
+    left: 0;
+    right: auto;
+    width: min(320px, calc(100vw - 48px));
+  }
+
+  .command-help-popover::before {
+    left: 14px;
+    right: auto;
   }
 }
 
