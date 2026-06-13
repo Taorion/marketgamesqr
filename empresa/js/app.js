@@ -1954,6 +1954,147 @@ function renderSuggestedDecisions(insights = []) {
     </div>`;
 }
 
+function feedToneIcon(priority) {
+  if (priority === "risk") return "warning";
+  if (priority === "alert") return "report";
+  if (priority === "win") return "verified";
+  return "tips_and_updates";
+}
+
+function renderGuidedRevenueFeed(data = {}) {
+  const executive = data.executive_summary || {};
+  const totals = data.totals || {};
+  const score = data.revenue_score || {};
+  const funnel = Array.isArray(data.funnel) ? data.funnel : [];
+  const insights = Array.isArray(data.insights) ? data.insights : [];
+  const campaigns = Array.isArray(data.power_table) ? data.power_table : [];
+  const branches = Array.isArray(data.branch_performance) ? data.branch_performance : [];
+  const topCampaign = campaigns[0] || {};
+  const topBranch = branches[0] || {};
+  const leakStage = funnel.slice(1).sort((a, b) => toNumber(b.loss_from_previous) - toNumber(a.loss_from_previous))[0] || null;
+  const scoreValue = toNumber(score.score);
+  const scoreLabel = score.status || (scoreValue >= 75 ? "Excelente" : scoreValue >= 55 ? "Bueno" : scoreValue >= 35 ? "En observacion" : "Critico");
+  const scoreAction = (score.recommendations || [])[0] || "Registra ventas con canal, sucursal y origen para mejorar la lectura del RMS.";
+
+  const feedItems = [
+    {
+      priority: scoreValue >= 70 ? "win" : scoreValue >= 45 ? "alert" : "risk",
+      eyebrow: "Lectura inicial",
+      title: `MG Revenue Score: ${scoreValue}/100`,
+      metric: scoreLabel,
+      what: "Es la salud comercial del negocio en el periodo filtrado. Combina redencion, conversion, revenue, afiliados, sucursales y calidad de datos.",
+      signal: `El sistema interpreta el negocio como: ${scoreLabel}.`,
+      action: scoreAction,
+    },
+    {
+      priority: toNumber(executive.revenue || totals.revenue) > 0 ? "win" : "opportunity",
+      eyebrow: "Revenue real",
+      title: "Cuanto dinero se puede atribuir",
+      metric: money(executive.revenue || totals.revenue || 0),
+      what: "Revenue atribuido es la venta registrada que el RMS puede conectar con una campana, canal, QR, afiliado o sucursal.",
+      signal: `Canal ganador: ${executive.winning_channel || "Sin datos"} · Campana ganadora: ${executive.winning_campaign || "Sin datos"}.`,
+      action: executive.recommended_action || "Registra cada venta con origen para que el sistema sepa que estrategia repetir.",
+    },
+    {
+      priority: leakStage && toNumber(leakStage.loss_from_previous) > 0 ? "alert" : "opportunity",
+      eyebrow: "Embudo RMS",
+      title: leakStage ? `Fuga principal: ${leakStage.label}` : "Embudo listo para lectura",
+      metric: leakStage ? commandValue(leakStage.loss_from_previous, leakStage.format) : `${toNumber(totals.redemptions)} redenciones`,
+      what: "El embudo muestra como una persona avanza desde campana hasta venta. Cada salto mide donde se gana o pierde valor.",
+      signal: leakStage ? `Conversion desde la etapa anterior: ${leakStage.conversion_from_previous}%.` : "Aun no hay una fuga dominante en el periodo.",
+      action: leakStage ? "Revisa beneficio, urgencia, recordatorio o cierre comercial en esta etapa." : "Mantén ventas y redenciones bien registradas para detectar fugas reales.",
+    },
+    {
+      priority: topCampaign.revenue > 0 || topCampaign.sales > 0 ? "win" : "opportunity",
+      eyebrow: "Campana",
+      title: topCampaign.campaign_name || "Campana pendiente de destacar",
+      metric: topCampaign.campaign_name ? `${money(topCampaign.revenue || 0)} · ${toNumber(topCampaign.sales)} ventas` : "Sin datos suficientes",
+      what: "Una campana sana no solo trae leads: tambien produce redenciones, ventas y revenue medible.",
+      signal: topCampaign.campaign_name ? `Decision sugerida: ${topCampaign.decision_hint || "Investigar"}.` : "Crea o activa campanas con QR y registra el canal de llegada.",
+      action: topCampaign.decision_reason || "Usa la tabla PowerBI-style para abrir el detalle de cada campana.",
+    },
+    {
+      priority: topBranch.revenue > 0 || topBranch.sales > 0 ? "win" : "opportunity",
+      eyebrow: "Sucursal",
+      title: topBranch.branch_name || executive.leading_branch || "Sucursal sin lider",
+      metric: topBranch.branch_name ? `${money(topBranch.revenue || 0)} · ${toNumber(topBranch.redemptions)} redenciones` : "Sin datos suficientes",
+      what: "La sucursal lider muestra donde la operacion esta cerrando mejor el ciclo QR -> visita -> venta.",
+      signal: topBranch.branch_name ? "Compara esta sede contra las demas para replicar horarios, guion o incentivo." : "Asocia redenciones y ventas a una sucursal para activar rankings utiles.",
+      action: "Si una sede convierte mejor, documenta que hizo distinto y pruebalo en las sedes con menor conversion.",
+    },
+    ...insights.slice(0, 4).map((item) => ({
+      priority: item.priority || "opportunity",
+      eyebrow: "Insight automatico",
+      title: item.title || "Decision RMS",
+      metric: item.metric || item.explanation || "Senal detectada",
+      what: "Este insight sale de reglas del RMS que cruzan leads, QR, redenciones, ventas, canales y revenue.",
+      signal: item.explanation || item.metric || "El sistema encontro una senal relevante en el periodo.",
+      action: item.action || "Revisa el detalle antes de invertir mas presupuesto.",
+    })),
+  ].slice(0, 9);
+
+  return `
+    <section class="command-feed-panel">
+      <div class="command-feed-head">
+        <div>
+          <span class="mono-label">RMS Live Feed</span>
+          <h3>Lectura guiada del negocio</h3>
+          <p>Un feed didactico que explica que estas viendo, por que importa y cual es la siguiente decision comercial.</p>
+        </div>
+        <div class="command-feed-guide" aria-label="Como leer el feed RMS">
+          <span><strong>1</strong> Lee la senal</span>
+          <span><strong>2</strong> Entiende el impacto</span>
+          <span><strong>3</strong> Ejecuta la accion</span>
+        </div>
+      </div>
+
+      <div class="command-feed-glossary" aria-label="Diccionario rapido RMS">
+        ${[
+          ["Lead", "Persona capturada por campana o QR."],
+          ["QR reclamado", "Cliente tomo el beneficio, aun no necesariamente compro."],
+          ["QR redimido", "Beneficio usado en tienda o punto de venta."],
+          ["Venta atribuida", "Compra conectada con canal, campana o QR."],
+          ["ROI", "Retorno estimado frente a inversion registrada."],
+        ].map(([term, definition]) => `<span title="${escapeHtml(definition)}"><strong>${term}</strong>${definition}</span>`).join("")}
+      </div>
+
+      <div class="command-feed-stream">
+        ${feedItems.map((item, index) => `
+          <article class="command-feed-item is-${escapeHtml(item.priority)}">
+            <div class="command-feed-rail">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <i></i>
+            </div>
+            <div class="command-feed-card">
+              <div class="command-feed-card-head">
+                <span class="material-symbols-outlined">${feedToneIcon(item.priority)}</span>
+                <div>
+                  <small>${escapeHtml(item.eyebrow)}</small>
+                  <h4>${escapeHtml(item.title)}</h4>
+                </div>
+                <strong>${escapeHtml(item.metric)}</strong>
+              </div>
+              <div class="command-feed-explain-grid">
+                <section>
+                  <span>Que es</span>
+                  <p>${escapeHtml(item.what)}</p>
+                </section>
+                <section>
+                  <span>Que indica</span>
+                  <p>${escapeHtml(item.signal)}</p>
+                </section>
+                <section>
+                  <span>Que hacer</span>
+                  <p>${escapeHtml(item.action)}</p>
+                </section>
+              </div>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>`;
+}
+
 function renderCommandCenter() {
   const data = state.commandCenter;
   if (!commandCenterRoot) return;
@@ -1991,6 +2132,7 @@ function renderCommandCenter() {
 
       ${renderCommandCenterFilters(data)}
       ${renderCommandCenterKpis(data)}
+      ${renderGuidedRevenueFeed(data)}
 
       <section class="command-main-grid">
         <article class="command-panel revenue-score-panel">
