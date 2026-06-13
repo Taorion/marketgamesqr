@@ -1,6 +1,10 @@
 const { query } = require("../config/db");
 const { safeDivide, safeRate, safeRoi } = require("./metricsService");
 
+const ANALYTICS_CACHE_TTL_MS = 45 * 1000;
+const ANALYTICS_CACHE_MAX_ENTRIES = 80;
+const analyticsCache = new Map();
+
 const QR_TYPE_LABELS = {
   CAMPAIGN_GAME: "Campana",
   POST_SALE: "Postventa",
@@ -26,6 +30,30 @@ const SOURCE_LABELS = {
 
 function number(value) {
   return Number(value || 0);
+}
+
+function cacheKeyFor(businessId, filters) {
+  return JSON.stringify({ businessId, filters });
+}
+
+function getCachedAnalytics(cacheKey) {
+  const cached = analyticsCache.get(cacheKey);
+  if (!cached) return null;
+  if (Date.now() - cached.createdAt > ANALYTICS_CACHE_TTL_MS) {
+    analyticsCache.delete(cacheKey);
+    return null;
+  }
+  analyticsCache.delete(cacheKey);
+  analyticsCache.set(cacheKey, cached);
+  return cached.value;
+}
+
+function setCachedAnalytics(cacheKey, value) {
+  analyticsCache.set(cacheKey, { createdAt: Date.now(), value });
+  while (analyticsCache.size > ANALYTICS_CACHE_MAX_ENTRIES) {
+    const oldestKey = analyticsCache.keys().next().value;
+    analyticsCache.delete(oldestKey);
+  }
 }
 
 function round(value, decimals = 1) {
@@ -456,22 +484,75 @@ async function getSeriesAndCharts(businessId, filters) {
     ),
     query(
       `with sales as (${salesUnionSql()})
+       , lead_counts as (
+         select p.campaign_id, count(*)::int as leads
+         from players p
+         where p.business_id = $${campaignParams.push(businessId)}
+           and p.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+           and p.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${campaignParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${campaignParams.length}::uuid)
+         group by p.campaign_id
+       ),
+       qr_counts as (
+         select q.campaign_id, count(*)::int as qr_generated
+         from qr_codes q
+         where q.business_id = $${campaignParams.push(businessId)}
+           and q.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+           and q.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${campaignParams.push(filters.campaignId)}::uuid is null or q.campaign_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.qrStatus)}::text is null or q.status::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.qrType)}::text is null or q.origin_type::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${campaignParams.length}::uuid)
+         group by q.campaign_id
+       ),
+       redemption_counts as (
+         select rd.campaign_id, count(*)::int as redemptions
+         from redemptions rd
+         left join qr_codes q on q.id = rd.qr_code_id
+         where rd.business_id = $${campaignParams.push(businessId)}
+           and rd.redeemed_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+           and rd.redeemed_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${campaignParams.push(filters.campaignId)}::uuid is null or rd.campaign_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.branchId)}::uuid is null or rd.branch_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.qrStatus)}::text is null or q.status::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.qrType)}::text is null or q.origin_type::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.sellerId)}::uuid is null or rd.redeemed_by_user_id = $${campaignParams.length}::uuid)
+         group by rd.campaign_id
+       ),
+       sale_counts as (
+         select s.campaign_id,
+                count(*)::int as sales,
+                coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+         from sales s
+         left join qr_codes q on q.id = s.qr_code_id
+         where s.business_id = $${campaignParams.push(businessId)}
+           and s.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+           and s.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${campaignParams.push(filters.campaignId)}::uuid is null or s.campaign_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.branchId)}::uuid is null or s.branch_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.qrStatus)}::text is null or q.status::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.qrType)}::text is null or q.origin_type::text = $${campaignParams.length}::text)
+           and ($${campaignParams.push(filters.affiliateId)}::uuid is null or coalesce(s.referred_affiliate_id, q.affiliate_id) = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.sellerId)}::uuid is null or s.seller_user_id = $${campaignParams.length}::uuid)
+           and ($${campaignParams.push(filters.channel)}::text is null or coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION') = $${campaignParams.length}::text)
+         group by s.campaign_id
+       )
        select c.id, coalesce(c.name, 'Sin campana') as campaign_name,
               c.status as campaign_status,
               coalesce(c.budget_total, 0)::numeric(14, 2) as investment,
-              count(distinct p.id)::int as leads,
-              count(distinct q.id)::int as qr_generated,
-              count(distinct rd.id)::int as redemptions,
-              count(distinct s.created_at::text || s.sale_amount::text || coalesce(s.qr_code_id::text, ''))::int as sales,
-              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+              coalesce(l.leads, 0)::int as leads,
+              coalesce(qr.qr_generated, 0)::int as qr_generated,
+              coalesce(r.redemptions, 0)::int as redemptions,
+              coalesce(sa.sales, 0)::int as sales,
+              coalesce(sa.revenue, 0)::numeric(14, 2) as revenue
        from campaigns c
-       left join players p on p.campaign_id = c.id and p.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz and p.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
-       left join qr_codes q on q.campaign_id = c.id
-       left join redemptions rd on rd.campaign_id = c.id and rd.redeemed_at >= $${campaignParams.push(filters.startDate)}::timestamptz and rd.redeemed_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
-       left join sales s on s.campaign_id = c.id and s.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz and s.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+       left join lead_counts l on l.campaign_id = c.id
+       left join qr_counts qr on qr.campaign_id = c.id
+       left join redemption_counts r on r.campaign_id = c.id
+       left join sale_counts sa on sa.campaign_id = c.id
        where c.business_id = $${campaignParams.push(businessId)}
          and ($${campaignParams.push(filters.campaignId)}::uuid is null or c.id = $${campaignParams.length}::uuid)
-       group by c.id, c.name, c.status, c.budget_total
        order by revenue desc, redemptions desc, leads desc
        limit 16`,
       campaignParams
@@ -922,6 +1003,12 @@ function buildSankey(charts) {
 
 async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const filters = normalizeFilters(rawFilters);
+  const cacheKey = cacheKeyFor(businessId, filters);
+  const cached = getCachedAnalytics(cacheKey);
+  if (cached) {
+    return { ...cached, cache: { hit: true, ttl_seconds: ANALYTICS_CACHE_TTL_MS / 1000 } };
+  }
+
   const [options, current, previousRaw, charts] = await Promise.all([
     getOptions(businessId),
     getTotals(businessId, filters, "current"),
@@ -941,7 +1028,7 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const topCampaign = charts.campaigns[0] || null;
   const powerTable = enrichPowerTable(charts);
 
-  return {
+  const analytics = {
     filters,
     options,
     kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary),
@@ -980,7 +1067,11 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
       main_risk: insights.find((item) => item.priority === "risk" || item.priority === "alert")?.title || "Sin riesgo critico detectado",
       recommended_action: insights[0]?.action || "Registra ventas y canales para activar mas recomendaciones.",
     },
+    cache: { hit: false, ttl_seconds: ANALYTICS_CACHE_TTL_MS / 1000 },
   };
+
+  setCachedAnalytics(cacheKey, analytics);
+  return analytics;
 }
 
 module.exports = { getCommandCenterAnalytics };
