@@ -4331,3 +4331,120 @@ body::before {
       linear-gradient(180deg, rgba(3, 7, 14, 0.94), rgba(5, 12, 24, 0.88) 46%, rgba(3, 7, 14, 0.96));
   }
 }
+
+/* Balanced dark image scale: less oversized media, softer background images */
+.rms-full-band,
+.rms-panel-band,
+.rms-rail-band {
+  padding-top: clamp(58px, 6vw, 88px);
+  padding-bottom: clamp(58px, 6vw, 88px);
+}
+
+.rms-full-band {
+  min-height: clamp(500px, 62vh, 680px);
+}
+
+.rms-panel-band::before,
+.rms-band-ecosystem::before,
+.rms-band-products::before,
+.rms-band-plans::before {
+  opacity: 0.08;
+}
+
+.rms-band-rms::before,
+.rms-band-proof::before,
+.rms-band-strategy::before,
+.rms-band-contact::before {
+  opacity: 0.2;
+}
+
+.rms-full-band::after,
+.rms-panel-band::after {
+  background:
+    linear-gradient(90deg, rgba(3, 7, 14, 0.98), rgba(5, 12, 24, 0.9) 56%, rgba(5, 12, 24, 0.7)),
+    linear-gradient(180deg, rgba(3, 7, 14, 0.95), rgba(5, 12, 24, 0.68) 48%, rgba(3, 7, 14, 0.96));
+}
+
+.rms-full-band .rms-large-visual,
+.rms-full-band .rms-strategy-media {
+  min-height: clamp(320px, 42vh, 480px);
+  max-height: 520px;
+}
+
+.rms-os-card-wide {
+  min-height: 520px;
+}
+
+.rms-os-card {
+  min-height: 200px;
+}
+
+.rms-bento-card.tall {
+  min-height: 520px;
+}
+
+.rms-bento-card {
+  min-height: 132px;
+}
+
+.rms-band-products .rms-product-card,
+.rms-band-products .rms-product-card:nth-child(1),
+.rms-band-products .rms-product-card:nth-child(2),
+.rms-band-products .rms-product-card:nth-child(3),
+.rms-band-products .rms-product-card:nth-child(4),
+.rms-band-products .rms-product-card:nth-child(5),
+.rms-band-products .rms-product-card:nth-child(6) {
+  min-height: 320px;
+}
+
+.rms-product-card img {
+  height: 66%;
+}
+
+.rms-guide-rail {
+  grid-auto-columns: minmax(220px, 300px);
+}
+
+.rms-guide-rail img {
+  aspect-ratio: 0.82;
+}
+
+@media (max-width: 1100px) {
+  .rms-os-card-wide,
+  .rms-bento-card.tall,
+  .rms-bento-card.wide {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 720px) {
+  .rms-full-band,
+  .rms-panel-band,
+  .rms-rail-band {
+    padding-top: 46px;
+    padding-bottom: 46px;
+  }
+
+  .rms-full-band::before,
+  .rms-panel-band::before {
+    opacity: 0.08;
+  }
+
+  .rms-band-rms::before,
+  .rms-band-proof::before,
+  .rms-band-strategy::before,
+  .rms-band-contact::before {
+    opacity: 0.12;
+  }
+
+  .rms-full-band .rms-large-visual,
+  .rms-full-band .rms-strategy-media,
+  .rms-os-card-wide,
+  .rms-bento-card.tall,
+  .rms-bento-card.wide,
+  .rms-bento-card,
+  .rms-os-card,
+  .rms-band-products .rms-product-card {
+    min-height: 260px;
+  }
+}
