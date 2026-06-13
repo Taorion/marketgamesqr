@@ -4137,3 +4137,197 @@ body::before {
     min-height: 300px;
   }
 }
+
+/* Refined dark RMS UX: strong contrast without the light panels */
+.rms-home .rms-premium-home {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(77, 227, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(77, 255, 184, 0.08), transparent 26%),
+    linear-gradient(180deg, #030713 0%, #07101b 44%, #040812 100%);
+}
+
+.rms-full-band,
+.rms-panel-band,
+.rms-rail-band {
+  background:
+    radial-gradient(circle at 16% 10%, rgba(77, 227, 255, 0.1), transparent 32%),
+    linear-gradient(180deg, #07101b 0%, #040914 100%);
+}
+
+.rms-full-band::after,
+.rms-panel-band::after {
+  background:
+    linear-gradient(90deg, rgba(3, 7, 14, 0.96), rgba(5, 12, 24, 0.82) 54%, rgba(5, 12, 24, 0.58)),
+    linear-gradient(180deg, rgba(3, 7, 14, 0.92), rgba(5, 12, 24, 0.56) 48%, rgba(3, 7, 14, 0.94));
+}
+
+.rms-panel-band::before,
+.rms-band-ecosystem::before,
+.rms-band-products::before,
+.rms-band-plans::before {
+  opacity: 0.16;
+  filter: saturate(1.04) brightness(0.82) contrast(1.08);
+}
+
+.rms-band-rms::before,
+.rms-band-proof::before,
+.rms-band-strategy::before,
+.rms-band-contact::before {
+  opacity: 0.34;
+  filter: saturate(1.06) brightness(0.74) contrast(1.12);
+}
+
+.rms-panel-band .rms-section-heading h2,
+.rms-rail-band .rms-section-heading h2,
+.rms-full-band .rms-section-copy h2,
+.rms-full-band .rms-strategy-copy h2,
+.rms-full-band.rms-contact-premium h2,
+.rms-band-proof .rms-section-heading h2 {
+  color: #ffffff;
+  text-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+}
+
+.rms-panel-band .rms-section-heading p,
+.rms-rail-band .rms-section-heading p,
+.rms-full-band .rms-section-copy p,
+.rms-full-band .rms-strategy-copy p,
+.rms-full-band.rms-contact-premium p,
+.rms-band-proof .rms-section-heading p {
+  color: #cbd8ee;
+}
+
+.rms-panel-band .eyebrow,
+.rms-rail-band .eyebrow,
+.rms-full-band .eyebrow {
+  color: #6fe2ff;
+}
+
+.rms-full-band .rms-section-copy,
+.rms-full-band .rms-strategy-copy,
+.rms-full-band.rms-contact-premium > div,
+.rms-full-band .rms-contact-form,
+.rms-band-proof .rms-section-heading {
+  border-color: rgba(111, 226, 255, 0.22);
+  background:
+    linear-gradient(135deg, rgba(77, 227, 255, 0.1), rgba(77, 255, 184, 0.045)),
+    rgba(4, 10, 22, 0.86);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.rms-full-band .rms-large-visual,
+.rms-full-band .rms-strategy-media,
+.rms-panel-band .rms-os-card,
+.rms-panel-band .rms-bento-card,
+.rms-panel-band .rms-product-card,
+.rms-panel-band .rms-plan-cards article,
+.rms-rail-band .rms-guide-rail figure {
+  border-color: rgba(111, 226, 255, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+    rgba(5, 12, 26, 0.88);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.rms-full-band .rms-large-visual::after,
+.rms-full-band .rms-strategy-media::after,
+.rms-panel-band .rms-os-card::after,
+.rms-panel-band .rms-bento-card::after,
+.rms-panel-band .rms-product-card::after {
+  background: linear-gradient(180deg, transparent 44%, rgba(2, 7, 16, 0.88) 100%);
+}
+
+.rms-panel-band .rms-os-card div,
+.rms-panel-band .rms-product-card div,
+.rms-panel-band .rms-bento-card figcaption {
+  border-color: rgba(111, 226, 255, 0.22);
+  background: rgba(3, 8, 18, 0.84);
+  color: #ffffff;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+}
+
+.rms-panel-band .rms-os-card h3,
+.rms-panel-band .rms-product-card strong,
+.rms-panel-band .rms-bento-card figcaption,
+.rms-panel-band .rms-plan-cards h3,
+.rms-panel-band .rms-plan-cards strong,
+.rms-doc-cta strong {
+  color: #ffffff;
+}
+
+.rms-panel-band .rms-os-card p,
+.rms-panel-band .rms-plan-cards p,
+.rms-doc-cta span {
+  color: #c6d4eb;
+}
+
+.rms-panel-band .rms-os-card span,
+.rms-panel-band .rms-product-card span,
+.rms-panel-band .rms-plan-cards span {
+  color: #80ffd4;
+}
+
+.rms-pill-row span,
+.rms-strategy-list span {
+  color: #dbe8fb;
+  border-color: rgba(111, 226, 255, 0.22);
+  background: rgba(4, 10, 22, 0.72);
+}
+
+.rms-pill-row strong {
+  color: #041019;
+  border-color: rgba(77, 255, 184, 0.74);
+  background: linear-gradient(135deg, #4de3ff, #4dffb8);
+}
+
+.rms-product-card div {
+  background: rgba(3, 8, 18, 0.86);
+}
+
+.rms-rail-band .rms-guide-rail figure {
+  background: rgba(5, 12, 26, 0.88);
+}
+
+.rms-rail-band .rms-guide-rail figcaption {
+  color: #ffffff;
+}
+
+.rms-doc-cta {
+  border-color: rgba(77, 255, 184, 0.22);
+  background:
+    linear-gradient(135deg, rgba(77, 255, 184, 0.11), rgba(77, 227, 255, 0.05)),
+    rgba(4, 10, 22, 0.88);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.rms-contact-form label {
+  color: #e8f2ff;
+}
+
+.rms-contact-form input,
+.rms-contact-form textarea {
+  color: #ffffff;
+  border-color: rgba(111, 226, 255, 0.24);
+  background: rgba(3, 8, 18, 0.78);
+}
+
+.rms-contact-form input::placeholder,
+.rms-contact-form textarea::placeholder {
+  color: #8fa4c4;
+}
+
+.rms-panel-band .button-secondary,
+.rms-full-band .button-secondary,
+.rms-rail-band .button-secondary {
+  color: #ffffff;
+  border-color: rgba(111, 226, 255, 0.42);
+  background: rgba(5, 12, 26, 0.64);
+}
+
+@media (max-width: 720px) {
+  .rms-full-band::after,
+  .rms-panel-band::after {
+    background:
+      linear-gradient(180deg, rgba(3, 7, 14, 0.94), rgba(5, 12, 24, 0.88) 46%, rgba(3, 7, 14, 0.96));
+  }
+}
