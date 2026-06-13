@@ -6288,3 +6288,254 @@ textarea {
   }
 }
 
+/* RMS Command Center contrast hardening */
+.command-center {
+  color: #f4fbff;
+  text-rendering: geometricPrecision;
+}
+
+.command-center :where(h2, h3, h4, strong, b, dt, dd, th, label) {
+  color: #f8fdff;
+}
+
+.command-center :where(p, li, small, .chart-explainer, .chart-note) {
+  color: #b7cddd;
+}
+
+.command-center :where(.mono-label, .command-filters label > span, .command-table-toolbar span, .command-detail-grid span, .executive-summary-card dt) {
+  color: #7cfbff;
+}
+
+.command-center .material-symbols-outlined {
+  color: currentColor;
+}
+
+.command-center :where(.command-panel, .command-kpi-card, .executive-summary-card, .revenue-story, .suggested-decision, .decision-map article) {
+  border-color: rgba(124, 251, 255, 0.24);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(0, 245, 170, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(10, 22, 38, 0.94), rgba(3, 8, 18, 0.88));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.command-center :where(.command-hero, .command-filter-panel) {
+  color: #f4fbff;
+}
+
+.command-kpi-top small,
+.command-funnel-row span,
+.command-panel-head p,
+.command-panel-head span:not(.mono-label),
+.revenue-story p,
+.suggested-decision p,
+.decision-map span,
+.cohort-grid small,
+.command-treemap small,
+.executive-summary-card dd,
+.analytics-empty-state p {
+  color: #b9d2e2;
+}
+
+.command-kpi-value,
+.command-funnel-row strong,
+.executive-summary-card strong,
+.revenue-story strong,
+.suggested-decision strong,
+.command-treemap span,
+.cohort-grid strong {
+  color: #ffffff;
+}
+
+.command-kpi-top .material-symbols-outlined,
+.revenue-story > .material-symbols-outlined,
+.suggested-decision > .material-symbols-outlined,
+.score-orbit,
+.command-funnel-row .material-symbols-outlined {
+  color: #7cfbff;
+}
+
+.command-filters select,
+.command-filters input[type="date"],
+.command-table-toolbar input,
+.command-table-toolbar select {
+  color: #f8fdff;
+  background: rgba(4, 15, 29, 0.94);
+  border-color: rgba(124, 251, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(0, 245, 170, 0.035);
+}
+
+.command-filters select:focus,
+.command-filters input[type="date"]:focus,
+.command-table-toolbar input:focus,
+.command-table-toolbar select:focus {
+  border-color: rgba(0, 245, 170, 0.7);
+  box-shadow: 0 0 0 3px rgba(0, 245, 170, 0.15);
+  outline: none;
+}
+
+.command-filters select option,
+.command-table-toolbar select option {
+  color: #06101e;
+  background: #f7fbff;
+}
+
+.command-center :where(.solid-button, .ghost-button) {
+  font-weight: 800;
+}
+
+.command-center .ghost-button {
+  color: #dffbff;
+  border-color: rgba(124, 251, 255, 0.38);
+  background: rgba(124, 251, 255, 0.07);
+}
+
+.command-center .ghost-button:hover {
+  color: #ffffff;
+  border-color: rgba(0, 245, 170, 0.65);
+  background: rgba(0, 245, 170, 0.13);
+}
+
+.command-table-wrap {
+  border-color: rgba(124, 251, 255, 0.18);
+  background: rgba(2, 8, 23, 0.66);
+}
+
+.command-table th,
+.command-matrix th {
+  color: #9dfcff;
+  background: rgba(4, 18, 34, 0.96);
+  border-color: rgba(124, 251, 255, 0.18);
+}
+
+.command-table td {
+  color: #eaf7ff;
+  border-color: rgba(124, 251, 255, 0.1);
+}
+
+.command-table td small {
+  color: #a9c4d6;
+}
+
+.command-table tr:hover td {
+  background: rgba(124, 251, 255, 0.055);
+}
+
+.command-table tr.is-expanded td {
+  background: rgba(0, 245, 170, 0.075);
+}
+
+.command-detail-row td {
+  background: rgba(2, 8, 23, 0.86);
+}
+
+.command-detail-grid article,
+.cohort-grid article,
+.analytics-empty-state {
+  border-color: rgba(124, 251, 255, 0.22);
+  background: rgba(124, 251, 255, 0.06);
+}
+
+.command-matrix td {
+  color: #f8fdff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78);
+}
+
+.command-matrix td small {
+  color: #d7f6ff;
+}
+
+.command-sankey text,
+.command-network text {
+  fill: #f8fdff;
+  paint-order: stroke;
+  stroke: rgba(1, 7, 16, 0.72);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.command-center .decision-map i,
+.command-center .decision-map em,
+.command-center .status-chip,
+.command-center .pill {
+  color: #ecfbff;
+  background: rgba(124, 251, 255, 0.1);
+  border: 1px solid rgba(124, 251, 255, 0.15);
+}
+
+:root[data-theme="light"] .command-center {
+  color: #f4fbff !important;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0, 245, 170, 0.15), transparent 26%),
+    radial-gradient(circle at 85% 5%, rgba(27, 109, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, #05070d, #07111f 46%, #05070d) !important;
+}
+
+:root[data-theme="light"] .command-center :where(h2, h3, h4, strong, b, dt, dd, th, td, label) {
+  color: #f8fdff !important;
+}
+
+:root[data-theme="light"] .command-center :where(p, li, small, .chart-explainer, .chart-note) {
+  color: #b7cddd !important;
+}
+
+:root[data-theme="light"] .command-center :where(.mono-label, .command-filters label > span, .command-table-toolbar span, .command-detail-grid span, .executive-summary-card dt) {
+  color: #7cfbff !important;
+}
+
+:root[data-theme="light"] .command-center :where(.command-hero, .command-filter-panel, .command-panel, .command-kpi-card, .executive-summary-card, .revenue-story, .suggested-decision, .decision-map article) {
+  color: #f4fbff !important;
+  border-color: rgba(124, 251, 255, 0.24) !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(0, 245, 170, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(10, 22, 38, 0.94), rgba(3, 8, 18, 0.88)) !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+:root[data-theme="light"] .command-center :where(.command-filters select, .command-filters input[type="date"], .command-table-toolbar input, .command-table-toolbar select) {
+  color: #f8fdff !important;
+  background: rgba(4, 15, 29, 0.94) !important;
+  border-color: rgba(124, 251, 255, 0.28) !important;
+}
+
+:root[data-theme="light"] .command-center :where(.command-filters select option, .command-table-toolbar select option) {
+  color: #06101e !important;
+  background: #f7fbff !important;
+}
+
+:root[data-theme="light"] .command-center .ghost-button {
+  color: #dffbff !important;
+  border-color: rgba(124, 251, 255, 0.38) !important;
+  background: rgba(124, 251, 255, 0.07) !important;
+}
+
+:root[data-theme="light"] .command-center .solid-button {
+  color: #021018 !important;
+}
+
+:root[data-theme="light"] .command-center :where(.command-table-wrap, .command-detail-row td) {
+  background: rgba(2, 8, 23, 0.86) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+}
+
+:root[data-theme="light"] .command-center :where(.command-table th, .command-matrix th) {
+  color: #9dfcff !important;
+  background: rgba(4, 18, 34, 0.96) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+}
+
+:root[data-theme="light"] .command-center .command-table td {
+  color: #eaf7ff !important;
+  border-color: rgba(124, 251, 255, 0.1) !important;
+}
+
+:root[data-theme="light"] .command-center .command-matrix td {
+  color: #f8fdff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78) !important;
+}
+
+:root[data-theme="light"] .command-center :where(.decision-map i, .decision-map em, .status-chip, .pill) {
+  color: #ecfbff !important;
+  background: rgba(124, 251, 255, 0.1) !important;
+  border-color: rgba(124, 251, 255, 0.15) !important;
+}
+
