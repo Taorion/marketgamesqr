@@ -3,6 +3,7 @@ const { authRequired } = require("../middleware/auth");
 const { requirePortalAccess } = require("../middleware/subscription");
 const {
   getBusinessProfile,
+  commandCenterAnalytics,
   updateBusinessProfile,
   createCustomerAcquisitionSale,
   listCampaigns,
@@ -25,6 +26,7 @@ router.use(authRequired);
 router.use(requirePortalAccess);
 router.get("/profile", getBusinessProfile);
 router.patch("/profile", updateBusinessProfile);
+router.get("/analytics/command-center", commandCenterAnalytics);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/campaigns", listCampaigns);
 router.get("/campaigns/:id", getCampaign);

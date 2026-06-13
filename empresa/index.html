@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=light-ux-contrast-hardening-20260612">
+  <link rel="stylesheet" href="css/styles.css?v=rms-command-center-20260613">
 </head>
 <body>
   <main class="portal-shell">
@@ -189,10 +189,20 @@
           <section class="view-section active" data-view="dashboard">
             <div class="view-head">
               <div>
-                <h2>Dashboard Analitico</h2>
-                <p>Resumen ejecutivo del embudo completo: captacion, redencion, adquisicion y ventas atribuidas.</p>
+                <h2>RMS Command Center</h2>
+                <p>Centro de comando ejecutivo para revenue, campanas, canales, QR, sucursales, afiliados y decisiones comerciales.</p>
               </div>
             </div>
+
+            <section class="command-center-shell" id="commandCenterRoot" aria-live="polite">
+              <article class="command-center-loading surface-card">
+                <span class="busy-spinner" aria-hidden="true"></span>
+                <div>
+                  <strong>Cargando RMS Command Center</strong>
+                  <p>Consolidando marketing, operacion, QR y revenue real.</p>
+                </div>
+              </article>
+            </section>
 
             <section class="kpi-grid business-kpis" id="businessKpiGrid"></section>
 
@@ -1871,7 +1881,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=global-plan-20260612" defer></script>
+  <script src="js/app.js?v=rms-command-center-20260613" defer></script>
 </body>
 </html>
 

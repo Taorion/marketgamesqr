@@ -10,6 +10,7 @@ const {
   getCampaignMetrics,
   safeRoi,
 } = require("../services/metricsService");
+const { getCommandCenterAnalytics } = require("../services/commandCenterAnalyticsService");
 const {
   assertFeatureForRequest,
   assertMonthlyUsageLimit,
@@ -262,6 +263,16 @@ async function getBusinessProfile(req, res, next) {
       subscription: await getBusinessSubscription(businessId),
       credit_account: mapPublicCreditAccount(creditResult.rows[0]),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function commandCenterAnalytics(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const analytics = await getCommandCenterAnalytics(businessId, req.query);
+    res.json(analytics);
   } catch (error) {
     next(error);
   }
@@ -822,6 +833,7 @@ async function updateSalesSnapshot(req, res, next) {
 
 module.exports = {
   getBusinessProfile,
+  commandCenterAnalytics,
   updateBusinessProfile,
   createCustomerAcquisitionSale,
   listCampaigns,

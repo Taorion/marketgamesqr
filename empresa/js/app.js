@@ -40,6 +40,7 @@ const adminKpiGrid = document.getElementById("adminKpiGrid");
 const recentRedemptionsTable = document.getElementById("recentRedemptionsTable");
 const recentLeadsTable = document.getElementById("recentLeadsTable");
 const branchPerformanceTable = document.getElementById("branchPerformanceTable");
+const commandCenterRoot = document.getElementById("commandCenterRoot");
 const campaignList = document.getElementById("campaignList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
@@ -348,6 +349,24 @@ let state = {
   currentView: "dashboard",
   filter: "",
   dashboard: null,
+  commandCenter: null,
+  commandCenterFilters: {
+    range: "30d",
+    startDate: "",
+    endDate: "",
+    campaignId: "",
+    channel: "",
+    branchId: "",
+    qrStatus: "",
+    qrType: "",
+    sellerId: "",
+    affiliateId: "",
+    comparePrevious: true,
+    matrixMetric: "revenue",
+    tableSearch: "",
+    tableSort: "revenue",
+    expandedCampaignId: "",
+  },
   summary: null,
   businessProfile: null,
   subscription: null,
@@ -414,6 +433,60 @@ const ACQUISITION_SOURCE_LABELS = {
   QR_SCAN: "QR / pieza impresa",
   OTHER: "Otro",
 };
+
+const COMMAND_CENTER_RANGE_LABELS = {
+  today: "Hoy",
+  "7d": "7 dias",
+  "30d": "30 dias",
+  current_month: "Mes actual",
+  previous_month: "Mes anterior",
+  custom: "Personalizado",
+};
+
+function commandCenterDateRange(range = state.commandCenterFilters.range) {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+  if (range === "today") {
+    return { startDate: now.toISOString().slice(0, 10), endDate: now.toISOString().slice(0, 10) };
+  }
+  if (range === "7d") {
+    start.setDate(now.getDate() - 6);
+  } else if (range === "current_month") {
+    start.setDate(1);
+  } else if (range === "previous_month") {
+    start.setMonth(now.getMonth() - 1, 1);
+    end.setDate(0);
+  } else if (range === "custom") {
+    return {
+      startDate: state.commandCenterFilters.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10),
+      endDate: state.commandCenterFilters.endDate || now.toISOString().slice(0, 10),
+    };
+  } else {
+    start.setDate(now.getDate() - 29);
+  }
+  return { startDate: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) };
+}
+
+function commandCenterQueryString() {
+  const params = new URLSearchParams();
+  const dates = commandCenterDateRange();
+  params.set("startDate", dates.startDate);
+  params.set("endDate", dates.endDate);
+  [
+    "campaignId",
+    "channel",
+    "branchId",
+    "qrStatus",
+    "qrType",
+    "sellerId",
+    "affiliateId",
+  ].forEach((key) => {
+    if (state.commandCenterFilters[key]) params.set(key, state.commandCenterFilters[key]);
+  });
+  params.set("comparePrevious", String(Boolean(state.commandCenterFilters.comparePrevious)));
+  return params.toString();
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -1356,6 +1429,7 @@ async function loadWorkspace() {
 
   const requests = [
     api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
+    apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null),
     api("/api/business/campaigns", { headers: authHeaders() }),
     apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
@@ -1367,8 +1441,9 @@ async function loadWorkspace() {
   }
 
   try {
-    const [dashboardData, campaignData, businessProfileData, creditData, subscriptionPlansData, adminCampaignData] = await Promise.all(requests);
+    const [dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, adminCampaignData] = await Promise.all(requests);
     state.dashboard = dashboardData;
+    state.commandCenter = commandCenterData;
     state.summary = campaignData.summary || null;
     state.businessProfile = businessProfileData.business || null;
     state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
@@ -1463,7 +1538,634 @@ async function loadPrepaidValidatorWorkspace() {
   }
 }
 
+function commandValue(value, format = "number") {
+  if (format === "money") return money(value);
+  if (format === "percent") return `${toNumber(value).toFixed(1)}%`;
+  if (format === "ratio") return ratioLabel(value);
+  if (format === "text") return value || "-";
+  return Number.isFinite(Number(value)) ? Number(value).toLocaleString("es-CO") : escapeHtml(value || "-");
+}
+
+function commandMetricSparkline(key) {
+  const rows = state.commandCenter?.timeline || [];
+  const map = {
+    revenue: "revenue",
+    sales: "sales",
+    leads: "leads",
+    qr: "qr_generated",
+    active_qr: "qr_generated",
+    redeemed_qr: "redemptions",
+    expired_qr: "qr_generated",
+    redemption_rate: "redemptions",
+    conversion_rate: "sales",
+    avg_ticket: "revenue",
+    cac: "sales",
+    roi: "revenue",
+    affiliates: "sales",
+    referrals: "sales",
+  };
+  const field = map[key] || "revenue";
+  const values = rows.slice(-10).map((row) => toNumber(row[field]));
+  const max = Math.max(1, ...values);
+  return `<span class="command-sparkline" aria-hidden="true">${
+    values.map((value) => `<i style="height:${Math.max(12, Math.round((value / max) * 100))}%"></i>`).join("")
+  }</span>`;
+}
+
+function commandOptions(options = [], selected = "", allLabel = "Todos") {
+  return [
+    `<option value="">${escapeHtml(allLabel)}</option>`,
+    ...options.map((item) => {
+      const value = item.id || item.value;
+      const label = item.name || item.label || item.value;
+      return `<option value="${escapeHtml(value)}" ${String(selected) === String(value) ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    }),
+  ].join("");
+}
+
+function commandEmpty(title = "Aun no hay datos suficientes.", action = "Activa campanas, registra ventas o genera QR para alimentar esta grafica.") {
+  return `
+    <div class="analytics-empty-state">
+      <span class="material-symbols-outlined">query_stats</span>
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(action)}</p>
+    </div>`;
+}
+
+async function loadCommandCenterData({ quiet = false } = {}) {
+  if (!session?.user?.business_id) return;
+  if (!quiet) {
+    commandCenterRoot?.classList.add("is-loading");
+  }
+  try {
+    state.commandCenter = await api(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() });
+    renderCommandCenter();
+  } catch (error) {
+    if (commandCenterRoot) {
+      commandCenterRoot.innerHTML = commandEmpty("No se pudo cargar RMS Command Center.", error.message || "Reintenta la sincronizacion del portal.");
+    }
+  } finally {
+    commandCenterRoot?.classList.remove("is-loading");
+  }
+}
+
+function renderCommandCenterFilters(data) {
+  const options = data.options || {};
+  const filters = state.commandCenterFilters;
+  const dates = commandCenterDateRange();
+  return `
+    <form class="command-filters" id="commandCenterFilters">
+      <label>
+        <span>Rango</span>
+        <select data-command-filter="range">
+          ${Object.entries(COMMAND_CENTER_RANGE_LABELS).map(([value, label]) => `<option value="${value}" ${filters.range === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>
+      <label class="${filters.range === "custom" ? "" : "is-filter-hidden"}">
+        <span>Inicio</span>
+        <input data-command-filter="startDate" type="date" value="${escapeHtml(dates.startDate)}">
+      </label>
+      <label class="${filters.range === "custom" ? "" : "is-filter-hidden"}">
+        <span>Fin</span>
+        <input data-command-filter="endDate" type="date" value="${escapeHtml(dates.endDate)}">
+      </label>
+      <label><span>Campana</span><select data-command-filter="campaignId">${commandOptions(options.campaigns, filters.campaignId, "Todas")}</select></label>
+      <label><span>Canal</span><select data-command-filter="channel">${commandOptions(options.channels, filters.channel, "Todos")}</select></label>
+      <label><span>Sucursal</span><select data-command-filter="branchId">${commandOptions(options.branches, filters.branchId, "Todas")}</select></label>
+      <label><span>Estado QR</span><select data-command-filter="qrStatus">${commandOptions(options.qr_statuses, filters.qrStatus, "Todos")}</select></label>
+      <label><span>Tipo QR</span><select data-command-filter="qrType">${commandOptions(options.qr_types, filters.qrType, "Todos")}</select></label>
+      <label><span>Vendedor / validador</span><select data-command-filter="sellerId">${commandOptions(options.sellers, filters.sellerId, "Todos")}</select></label>
+      <label><span>Afiliado</span><select data-command-filter="affiliateId">${commandOptions(options.affiliates, filters.affiliateId, "Todos")}</select></label>
+      <label class="command-toggle">
+        <input data-command-filter="comparePrevious" type="checkbox" ${filters.comparePrevious ? "checked" : ""}>
+        <span>Comparar periodo anterior</span>
+      </label>
+      <button class="ghost-button" data-command-reset type="button">Limpiar</button>
+    </form>`;
+}
+
+function renderCommandCenterKpis(data) {
+  const items = data.kpis || [];
+  return `
+    <section class="command-kpi-grid" aria-label="KPIs ejecutivos RMS">
+      ${items.map((item) => `
+        <article class="command-kpi-card is-${escapeHtml(item.state)}" title="${escapeHtml(item.help)}">
+          <div class="command-kpi-top">
+            <span class="material-symbols-outlined">${escapeHtml(item.icon || "analytics")}</span>
+            <small>${item.change > 0 ? "+" : ""}${toNumber(item.change).toFixed(1)}%</small>
+          </div>
+          <strong>${commandValue(item.value, item.format)}</strong>
+          <p>${escapeHtml(item.label)}</p>
+          ${commandMetricSparkline(item.key)}
+        </article>
+      `).join("")}
+    </section>`;
+}
+
+function renderFunnelChart(stages = []) {
+  const max = Math.max(1, ...stages.map((stage) => toNumber(stage.value)));
+  if (!stages.some((stage) => toNumber(stage.value) > 0)) return commandEmpty();
+  return `
+    <div class="command-funnel">
+      ${stages.map((stage) => {
+        const width = Math.max(8, Math.round((toNumber(stage.value) / max) * 100));
+        return `
+          <div class="command-funnel-row">
+            <div>
+              <strong>${escapeHtml(stage.label)}</strong>
+              <span>${stage.conversion_from_previous}% conversion · fuga ${commandValue(stage.loss_from_previous, stage.format)}</span>
+            </div>
+            <div class="command-funnel-track"><i style="width:${width}%"></i></div>
+            <b>${commandValue(stage.value, stage.format)}</b>
+          </div>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderHeatmapChart(rows = []) {
+  const weekdays = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+  const max = Math.max(1, ...rows.map((row) => toNumber(row.value)));
+  const bucket = new Map(rows.map((row) => [`${row.dow}-${row.hour}`, row.value]));
+  if (!rows.length || !rows.some((row) => toNumber(row.value) > 0)) return commandEmpty("Aun no hay redenciones por hora.", "Cuando el equipo redima QR, veras los mejores dias y horas.");
+  return `
+    <div class="command-heatmap" role="img" aria-label="Mapa de calor de redenciones por dia y hora">
+      <span></span>${Array.from({ length: 24 }, (_, hour) => `<b>${hour}</b>`).join("")}
+      ${weekdays.map((label, dow) => `
+        <strong>${label}</strong>
+        ${Array.from({ length: 24 }, (_, hour) => {
+          const value = toNumber(bucket.get(`${dow}-${hour}`));
+          const alpha = value ? Math.max(0.16, value / max) : 0.04;
+          return `<i title="${label} ${hour}:00 · ${value} redenciones" style="--heat:${alpha}"></i>`;
+        }).join("")}
+      `).join("")}
+    </div>`;
+}
+
+function renderMatrixChart(rows = []) {
+  const metric = state.commandCenterFilters.matrixMetric || "revenue";
+  const metricLabels = {
+    leads: "Leads",
+    qr_generated: "QR",
+    redemptions: "Redenciones",
+    sales: "Ventas",
+    revenue: "Revenue",
+    conversion_rate: "Conversion",
+  };
+  if (!rows.length || !rows.some((row) => toNumber(row[metric] || row.revenue || row.sales || row.leads || row.redemptions) > 0)) return commandEmpty("La matriz aun no tiene cruces medibles.", "Registra leads, QR, redenciones o ventas con canal para saber que campana funciona en cada medio.");
+  const campaigns = Array.from(new Set(rows.map((row) => row.campaign_name))).slice(0, 8);
+  const channels = Array.from(new Set(rows.map((row) => row.channel))).slice(0, 7);
+  const max = Math.max(1, ...rows.map((row) => toNumber(row[metric])));
+  return `
+    <div class="command-panel-tools" aria-label="Selector de metrica de matriz">
+      ${Object.entries(metricLabels).map(([value, label]) => `
+        <button class="${metric === value ? "active" : ""}" data-command-matrix-metric="${value}" type="button">${label}</button>
+      `).join("")}
+    </div>
+    <div class="command-matrix-wrap">
+      <table class="command-matrix">
+        <thead><tr><th>Campana / Canal</th>${channels.map((channel) => `<th>${escapeHtml(channel)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${campaigns.map((campaign) => `
+            <tr>
+              <th>${escapeHtml(campaign)}</th>
+              ${channels.map((channel) => {
+                const row = rows.find((item) => item.campaign_name === campaign && item.channel === channel) || {};
+                const value = toNumber(row[metric]);
+                const label = metric === "revenue" ? money(value) : metric === "conversion_rate" ? `${value}%` : value.toLocaleString("es-CO");
+                return `<td style="--intensity:${value / max}" title="${escapeHtml(campaign)} / ${escapeHtml(channel)} · ${escapeHtml(metricLabels[metric])}: ${escapeHtml(label)}">${value ? escapeHtml(label) : "-"}</td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderTreemapChart(rows = []) {
+  const total = rows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
+  if (!total) return commandEmpty("Sin revenue por canal todavia.", "Registra ventas con origen para construir el treemap.");
+  return `
+    <div class="command-treemap">
+      ${rows.slice(0, 9).map((row, index) => {
+        const share = Math.max(12, Math.round((toNumber(row.revenue) / total) * 100));
+        const span = Math.max(2, Math.min(6, Math.ceil(share / 18)));
+        return `<article style="--share:${share}; --span:${span}; --tone:${index}">
+          <strong>${escapeHtml(row.label)}</strong>
+          <span>${money(row.revenue)}</span>
+          <small>${row.sales} ventas · ${Math.round((toNumber(row.revenue) / total) * 100)}%</small>
+        </article>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderSankeyChart(data = {}) {
+  const nodes = data.nodes || [];
+  const links = data.links || [];
+  if (!nodes.length || !links.length) return commandEmpty("No hay flujo de atribucion suficiente.", "Cuando haya canales, campanas y ventas, se dibujara el flujo RMS.");
+  const max = Math.max(1, ...links.map((link) => toNumber(link.value)));
+  const left = nodes.slice(0, Math.ceil(nodes.length / 2));
+  const right = nodes.slice(Math.ceil(nodes.length / 2));
+  const point = (name, side) => {
+    const list = side === "left" ? left : right;
+    const index = Math.max(0, list.findIndex((node) => node.name === name));
+    const y = 34 + index * (210 / Math.max(1, list.length - 1 || 1));
+    return { x: side === "left" ? 70 : 520, y };
+  };
+  return `
+    <svg class="command-sankey" viewBox="0 0 600 280" role="img" aria-label="Flujo de atribucion RMS">
+      ${links.slice(0, 14).map((link) => {
+        const sourceSide = left.some((node) => node.name === link.source) ? "left" : "right";
+        const targetSide = sourceSide === "left" ? "right" : "left";
+        const a = point(link.source, sourceSide);
+        const b = point(link.target, targetSide);
+        const width = 1 + (toNumber(link.value) / max) * 10;
+        return `<path d="M ${a.x} ${a.y} C 245 ${a.y}, 345 ${b.y}, ${b.x} ${b.y}" stroke-width="${width}" />`;
+      }).join("")}
+      ${left.map((node, index) => `<g><circle cx="70" cy="${34 + index * (210 / Math.max(1, left.length - 1 || 1))}" r="8"/><text x="86" y="${39 + index * (210 / Math.max(1, left.length - 1 || 1))}">${escapeHtml(node.name).slice(0, 22)}</text></g>`).join("")}
+      ${right.map((node, index) => `<g><circle cx="520" cy="${34 + index * (210 / Math.max(1, right.length - 1 || 1))}" r="8"/><text x="332" y="${39 + index * (210 / Math.max(1, right.length - 1 || 1))}">${escapeHtml(node.name).slice(0, 22)}</text></g>`).join("")}
+    </svg>`;
+}
+
+function renderAffiliateNetwork(data = {}) {
+  const nodes = data.nodes || [];
+  if (!nodes.length) return commandEmpty("Aun no hay red de afiliados.", "Crea afiliados y QR de recomendacion para ver el grafo.");
+  const max = Math.max(1, ...nodes.map((node) => toNumber(node.revenue)));
+  const centerX = 300;
+  const centerY = 170;
+  return `
+    <svg class="command-network" viewBox="0 0 600 340" role="img" aria-label="Red de afiliados y referidos">
+      <circle class="center-node" cx="${centerX}" cy="${centerY}" r="34"></circle>
+      <text x="${centerX}" y="${centerY + 5}" text-anchor="middle">MG</text>
+      ${nodes.slice(0, 14).map((node, index) => {
+        const angle = (Math.PI * 2 * index) / Math.max(1, nodes.length);
+        const radius = 110 + ((index % 3) * 24);
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        const size = 9 + (toNumber(node.revenue) / max) * 22;
+        return `
+          <line x1="${centerX}" y1="${centerY}" x2="${x}" y2="${y}"></line>
+          <circle cx="${x}" cy="${y}" r="${size}"></circle>
+          <text x="${x}" y="${y + size + 16}" text-anchor="middle">${escapeHtml(node.name || "Afiliado").slice(0, 14)}</text>`;
+      }).join("")}
+    </svg>`;
+}
+
+function renderDecisionMap(map = {}) {
+  const config = [
+    ["repeat", "Repetir", "Alto ROI y conversion"],
+    ["optimize", "Optimizar", "Muchos leads, baja venta"],
+    ["pause", "Pausar", "Costo alto, bajo revenue"],
+    ["scale", "Escalar", "Buen ticket con bajo volumen"],
+    ["investigate", "Investigar", "Datos incompletos o atipicos"],
+  ];
+  return `
+    <div class="decision-map">
+      ${config.map(([key, title, help]) => `
+        <article>
+          <strong>${title}</strong>
+          <span>${help}</span>
+          <div>${(map[key] || []).slice(0, 5).map((item) => `<i>${escapeHtml(item)}</i>`).join("") || "<em>Sin elementos</em>"}</div>
+        </article>
+      `).join("")}
+    </div>`;
+}
+
+function renderCohortChart(rows = []) {
+  if (!rows.length) return commandEmpty("Sin cohortes postventa.", "Registra ventas y genera QR postventa para medir recompra.");
+  const max = Math.max(1, ...rows.map((row) => toNumber(row.post_sale_qr)));
+  return `
+    <div class="cohort-grid">
+      ${rows.map((row) => `
+        <article>
+          <strong>${formatDateShort(row.cohort)}</strong>
+          <span>${row.purchases} compras · ${money(row.revenue)}</span>
+          <div><i style="width:${Math.max(6, (toNumber(row.post_sale_qr) / max) * 100)}%"></i></div>
+          <small>${row.post_sale_redeemed}/${row.post_sale_qr} QR postventa redimidos · ${row.retention_rate}%</small>
+        </article>
+      `).join("")}
+    </div>`;
+}
+
+function renderPowerTable(rows = []) {
+  if (!rows.length) return commandEmpty("Sin campanas para tabla avanzada.", "Crea campanas y registra ventas para activar drill-down.");
+  const search = (state.commandCenterFilters.tableSearch || "").trim().toLowerCase();
+  const sortKey = state.commandCenterFilters.tableSort || "revenue";
+  const sortedRows = rows
+    .filter((row) => !search || [row.campaign_name, row.top_channel, row.health_state].some((value) => String(value || "").toLowerCase().includes(search)))
+    .sort((a, b) => toNumber(b[sortKey]) - toNumber(a[sortKey]));
+  return `
+    <div class="command-table-toolbar">
+      <label>
+        <span>Buscar</span>
+        <input data-command-table-search type="search" value="${escapeHtml(state.commandCenterFilters.tableSearch || "")}" placeholder="Campana, canal o estado">
+      </label>
+      <label>
+        <span>Ordenar por</span>
+        <select data-command-table-sort>
+          ${[
+            ["revenue", "Revenue"],
+            ["conversion_rate", "Conversion"],
+            ["redemption_rate", "Redencion"],
+            ["sales", "Ventas"],
+            ["leads", "Leads"],
+            ["roi", "ROI"],
+          ].map(([value, label]) => `<option value="${value}" ${sortKey === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>
+    </div>
+    <div class="table-wrap command-table-wrap">
+      <table class="command-table">
+        <thead>
+          <tr>
+            <th>Campana</th><th>Canal</th><th>Leads</th><th>QR</th><th>Redenciones</th><th>Ventas</th><th>Revenue</th><th>CAC</th><th>ROI</th><th>Conversion</th><th>Salud</th><th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sortedRows.map((row) => {
+            const health = row.roi > 0.25 || row.conversion_rate > 15 ? "Sana" : row.leads > 10 && row.sales < 2 ? "Optimizar" : "Observar";
+            const isExpanded = state.commandCenterFilters.expandedCampaignId === row.id;
+            return `
+              <tr class="${isExpanded ? "is-expanded" : ""}">
+                <td><strong>${escapeHtml(row.campaign_name)}</strong><small>${escapeHtml(row.campaign_status || "Campana")}</small></td>
+                <td>${escapeHtml(row.top_channel || "Sin canal")}</td>
+                <td>${row.leads}</td>
+                <td>${row.qr_generated}</td>
+                <td>${row.redemptions}</td>
+                <td>${row.sales}</td>
+                <td>${money(row.revenue)}</td>
+                <td>${money(row.cac)}</td>
+                <td>${ratioLabel(row.roi)}</td>
+                <td>${row.conversion_rate}%</td>
+                <td><span class="status-chip ${health === "Sana" ? "ok" : health === "Optimizar" ? "pending" : "danger"}">${health}</span></td>
+                <td><button class="ghost-button command-row-button" data-command-expand-row="${escapeHtml(row.id)}" type="button">${isExpanded ? "Cerrar" : "Ver"}</button></td>
+              </tr>
+              ${isExpanded ? `
+                <tr class="command-detail-row">
+                  <td colspan="12">
+                    <div class="command-detail-grid">
+                      <article><span>Redencion</span><strong>${row.redemption_rate}%</strong><small>QR redimidos sobre QR generados.</small></article>
+                      <article><span>Ticket promedio</span><strong>${money(row.avg_ticket)}</strong><small>Revenue por venta registrada.</small></article>
+                      <article><span>Canal dominante</span><strong>${escapeHtml(row.top_channel || "Sin datos")}</strong><small>Origen con mayor revenue o ventas.</small></article>
+                      <article><span>Decision sugerida</span><strong>${escapeHtml(row.decision_hint || "Investigar")}</strong><small>${escapeHtml(row.decision_reason || "Completa datos de canal y ventas para cerrar lectura.")}</small></article>
+                    </div>
+                  </td>
+                </tr>` : ""}`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderRevenueStories(stories = []) {
+  return `
+    <section class="revenue-stories-grid">
+      ${(stories.length ? stories : [{ priority: "opportunity", title: "Activa tus historias de revenue", metric: "El RMS necesita ventas, QR y canales para narrar decisiones.", action: "Registra la proxima venta con origen y sucursal." }]).map((story) => `
+        <article class="revenue-story is-${escapeHtml(story.priority)}">
+          <span class="material-symbols-outlined">${story.priority === "risk" ? "warning" : story.priority === "win" ? "trophy" : "auto_graph"}</span>
+          <div>
+            <strong>${escapeHtml(story.title)}</strong>
+            <p>${escapeHtml(story.metric || story.explanation || "")}</p>
+            <small>${escapeHtml(story.action || "")}</small>
+          </div>
+        </article>
+      `).join("")}
+    </section>`;
+}
+
+function renderSuggestedDecisions(insights = []) {
+  const rows = insights.length ? insights : [{
+    priority: "opportunity",
+    title: "Completa el ciclo RMS",
+    explanation: "El sistema necesita campañas, QR, redenciones y ventas para priorizar decisiones.",
+    action: "Registra ventas con canal, sucursal y vendedor para activar recomendaciones mas precisas.",
+  }];
+  return `
+    <div class="suggested-decisions">
+      ${rows.slice(0, 5).map((item) => `
+        <article class="suggested-decision is-${escapeHtml(item.priority)}">
+          <span class="material-symbols-outlined">${item.priority === "risk" ? "priority_high" : item.priority === "alert" ? "report" : item.priority === "win" ? "verified" : "lightbulb"}</span>
+          <div>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.explanation || item.metric || "")}</p>
+            <small>${escapeHtml(item.action || "")}</small>
+          </div>
+        </article>
+      `).join("")}
+    </div>`;
+}
+
+function renderCommandCenter() {
+  const data = state.commandCenter;
+  if (!commandCenterRoot) return;
+  if (!data) {
+    commandCenterRoot.innerHTML = commandEmpty("RMS Command Center sin datos cargados.", "Sincroniza el portal para cargar analytics avanzados.");
+    return;
+  }
+
+  const executive = data.executive_summary || {};
+  const score = data.revenue_score || { score: 0, status: "Sin datos", dimensions: [], recommendations: [] };
+  commandCenterRoot.innerHTML = `
+    <div class="command-center">
+      <section class="command-hero">
+        <div>
+          <span class="mono-label">MarketGamesQR RMS</span>
+          <h2>Centro de comando de revenue marketing</h2>
+          <p>Lectura ejecutiva de campanas, canales, QR, redenciones, ventas, afiliados, sucursales y revenue real.</p>
+          <div class="command-hero-actions">
+            <button class="solid-button" data-command-scroll="detail" type="button">Ver detalle</button>
+            <button class="ghost-button" data-command-export type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <aside class="executive-summary-card">
+          <span>Modo ejecutivo</span>
+          <strong>${money(executive.revenue)}</strong>
+          <p>Canal: ${escapeHtml(executive.winning_channel)} · Campana: ${escapeHtml(executive.winning_campaign)}</p>
+          <dl>
+            <div><dt>Sucursal lider</dt><dd>${escapeHtml(executive.leading_branch)}</dd></div>
+            <div><dt>Afiliado destacado</dt><dd>${escapeHtml(executive.top_affiliate)}</dd></div>
+            <div><dt>Riesgo</dt><dd>${escapeHtml(executive.main_risk)}</dd></div>
+            <div><dt>Accion</dt><dd>${escapeHtml(executive.recommended_action)}</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      ${renderCommandCenterFilters(data)}
+      ${renderCommandCenterKpis(data)}
+
+      <section class="command-main-grid">
+        <article class="command-panel revenue-score-panel">
+          <div class="command-panel-head">
+            <div><span class="mono-label">MG Revenue Score</span><h3>${score.score}/100 · ${escapeHtml(score.status)}</h3></div>
+            <span class="score-orbit">${score.score}</span>
+          </div>
+          <canvas id="commandRadarChart" width="680" height="360"></canvas>
+          <ul>${(score.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </article>
+        <article class="command-panel">
+          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div></div>
+          ${renderFunnelChart(data.funnel || [])}
+        </article>
+      </section>
+
+      <section class="command-panel">
+        <div class="command-panel-head"><div><span class="mono-label">Historias de Revenue</span><h3>Infografias dinamicas para decidir</h3></div></div>
+        ${renderRevenueStories(data.revenue_stories)}
+      </section>
+
+      <section class="command-panel">
+        <div class="command-panel-head"><div><span class="mono-label">Decisiones sugeridas</span><h3>Insights automaticos del RMS</h3><p>Reglas de negocio que conectan interes, redencion, venta, afiliados y revenue.</p></div></div>
+        ${renderSuggestedDecisions(data.insights)}
+      </section>
+
+      <section class="command-chart-grid" id="commandCenterDetail">
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, QR, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div></div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div></div>${renderHeatmapChart(data.heatmap)}</article>
+        <article class="command-panel command-wide"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div></div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div></div>${renderTreemapChart(data.revenue_treemap)}</article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, QR, redenciones, ventas y revenue</h3></div></div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div></div>${renderSankeyChart(data.attribution_sankey)}</article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div></div>${renderAffiliateNetwork(data.affiliate_network)}</article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div></div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">QR status</span><h3>Activos, redimidos, vencidos y reclamados</h3></div></div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / QR vs revenue</h3></div></div><canvas id="commandScatter" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div></div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
+        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y QR postventa</h3></div></div>${renderCohortChart(data.cohorts)}</article>
+      </section>
+
+      <section class="command-panel">
+        <div class="command-panel-head"><div><span class="mono-label">RMS Mapa de Decisiones</span><h3>Repetir, optimizar, pausar, escalar e investigar</h3></div></div>
+        ${renderDecisionMap(data.decision_map)}
+      </section>
+
+      <section class="command-panel">
+        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div></div>
+        ${renderPowerTable(data.power_table)}
+      </section>
+    </div>`;
+
+  bindCommandCenterEvents();
+  drawCommandCenterCharts(data);
+}
+
+function bindCommandCenterEvents() {
+  const form = document.getElementById("commandCenterFilters");
+  form?.querySelectorAll("[data-command-filter]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const key = event.target.dataset.commandFilter;
+      state.commandCenterFilters[key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+      if (key === "range") {
+        const dates = commandCenterDateRange(event.target.value);
+        state.commandCenterFilters.startDate = dates.startDate;
+        state.commandCenterFilters.endDate = dates.endDate;
+      }
+      loadCommandCenterData({ quiet: true });
+    });
+  });
+  commandCenterRoot?.querySelector("[data-command-reset]")?.addEventListener("click", () => {
+    state.commandCenterFilters = {
+      range: "30d",
+      startDate: "",
+      endDate: "",
+      campaignId: "",
+      channel: "",
+      branchId: "",
+      qrStatus: "",
+      qrType: "",
+      sellerId: "",
+      affiliateId: "",
+      comparePrevious: true,
+      matrixMetric: "revenue",
+      tableSearch: "",
+      tableSort: "revenue",
+      expandedCampaignId: "",
+    };
+    loadCommandCenterData({ quiet: true });
+  });
+  commandCenterRoot?.querySelectorAll("[data-command-matrix-metric]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.commandCenterFilters.matrixMetric = button.dataset.commandMatrixMetric || "revenue";
+      renderCommandCenter();
+    });
+  });
+  commandCenterRoot?.querySelector("[data-command-table-search]")?.addEventListener("input", (event) => {
+    state.commandCenterFilters.tableSearch = event.target.value || "";
+    renderCommandCenter();
+  });
+  commandCenterRoot?.querySelector("[data-command-table-sort]")?.addEventListener("change", (event) => {
+    state.commandCenterFilters.tableSort = event.target.value || "revenue";
+    renderCommandCenter();
+  });
+  commandCenterRoot?.querySelectorAll("[data-command-expand-row]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.commandExpandRow || "";
+      state.commandCenterFilters.expandedCampaignId = state.commandCenterFilters.expandedCampaignId === id ? "" : id;
+      renderCommandCenter();
+    });
+  });
+  commandCenterRoot?.querySelector("[data-command-scroll]")?.addEventListener("click", () => {
+    document.getElementById("commandCenterDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  commandCenterRoot?.querySelector("[data-command-export]")?.addEventListener("click", exportCommandCenterCsv);
+}
+
+function exportCommandCenterCsv() {
+  const rows = state.commandCenter?.power_table || [];
+  downloadCsv("rms-command-center", [
+    ["Campana", "Leads", "QR", "Redenciones", "Ventas", "Revenue", "CAC", "ROI", "Conversion"],
+    ...rows.map((row) => [
+      row.campaign_name,
+      row.leads,
+      row.qr_generated,
+      row.redemptions,
+      row.sales,
+      row.revenue,
+      row.cac,
+      row.roi,
+      row.conversion_rate,
+    ]),
+  ]);
+}
+
+function drawCommandCenterCharts(data) {
+  drawRadarChart(document.getElementById("commandRadarChart"), data.revenue_score?.dimensions || []);
+  drawMultiLineChart(document.getElementById("commandTimelineChart"), data.timeline || [], [
+    { key: "leads", label: "Leads", color: "#7cfbff" },
+    { key: "qr_generated", label: "QR", color: "#6ffbbe" },
+    { key: "redemptions", label: "Redenciones", color: "#c084fc" },
+    { key: "sales", label: "Ventas", color: "#facc15" },
+    { key: "revenue", label: "Revenue", color: "#38bdf8", scale: "money" },
+  ]);
+  drawGroupedBars(document.getElementById("commandCampaignBars"), (data.campaign_comparison || []).slice(0, 8).map((row) => ({
+    label: row.campaign_name.slice(0, 12),
+    leads: row.leads,
+    qr: row.qr_generated,
+    redemptions: row.redemptions,
+    sales: row.sales,
+    revenue: Math.round(toNumber(row.revenue) / 100000),
+  })), [
+    { key: "leads", label: "Leads", color: "#7cfbff" },
+    { key: "qr", label: "QR", color: "#6ffbbe" },
+    { key: "redemptions", label: "Redenciones", color: "#c084fc" },
+    { key: "sales", label: "Ventas", color: "#facc15" },
+    { key: "revenue", label: "Revenue x100k", color: "#38bdf8" },
+  ]);
+  drawGroupedBars(document.getElementById("commandBranchRanking"), (data.branch_performance || []).slice(0, 8).map((row) => ({
+    label: row.branch_name.slice(0, 12),
+    redemptions: row.redemptions,
+    sales: row.sales,
+    revenue: Math.round(toNumber(row.revenue) / 100000),
+  })), [
+    { key: "redemptions", label: "Redenciones", color: "#7cfbff" },
+    { key: "sales", label: "Ventas", color: "#6ffbbe" },
+    { key: "revenue", label: "Revenue x100k", color: "#facc15" },
+  ]);
+  drawDonutChart(document.getElementById("commandQrDonut"), data.qr_status || [], ["#6ffbbe", "#38bdf8", "#facc15", "#fb7185", "#c084fc"]);
+  drawScatterPlot(document.getElementById("commandScatter"), data.campaign_scatter || []);
+  drawWaterfallChart(document.getElementById("commandWaterfall"), data.revenue_waterfall || []);
+}
+
 function renderDashboard() {
+  renderCommandCenter();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
   const recentRedemptions = withFilters(
@@ -3738,6 +4440,178 @@ function drawGroupedBars(canvas, rows, series) {
   attachChartHover(canvas, hoverItems, (item) => `
     <div class="chart-tooltip-title">${escapeHtml(item.row.label)}</div>
     ${tooltipRow(item.series.label || item.series.key, item.value)}
+  `);
+}
+
+function drawRadarChart(canvas, dimensions = []) {
+  if (!canvas) return;
+  const { ctx, width, height } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
+  const points = dimensions.length ? dimensions : [{ label: "Sin datos", score: 0 }];
+  const centerX = width / 2;
+  const centerY = height / 2 + 8;
+  const radius = Math.min(width, height) * 0.34;
+  [0.25, 0.5, 0.75, 1].forEach((scale) => {
+    ctx.beginPath();
+    points.forEach((_, index) => {
+      const angle = (Math.PI * 2 * index) / points.length - Math.PI / 2;
+      const x = centerX + Math.cos(angle) * radius * scale;
+      const y = centerY + Math.sin(angle) * radius * scale;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = NEON_CHART.grid;
+    ctx.stroke();
+  });
+  points.forEach((point, index) => {
+    const angle = (Math.PI * 2 * index) / points.length - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius);
+    ctx.strokeStyle = NEON_CHART.grid;
+    ctx.stroke();
+    drawLabel(ctx, point.label.slice(0, 15), centerX + Math.cos(angle) * (radius + 42), centerY + Math.sin(angle) * (radius + 26), { align: "center", size: 10, color: NEON_CHART.label });
+  });
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "rgba(0, 245, 170, 0.58)");
+  gradient.addColorStop(1, "rgba(0, 229, 255, 0.32)");
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    const angle = (Math.PI * 2 * index) / points.length - Math.PI / 2;
+    const scaled = radius * (Math.max(0, Math.min(100, toNumber(point.score))) / 100);
+    const x = centerX + Math.cos(angle) * scaled;
+    const y = centerY + Math.sin(angle) * scaled;
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.strokeStyle = NEON_CHART.green;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawMultiLineChart(canvas, rows = [], series = []) {
+  if (!canvas) return;
+  const { ctx, width, height } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
+  const margin = { top: 26, right: 20, bottom: 44, left: 46 };
+  const chartW = width - margin.left - margin.right;
+  const chartH = height - margin.top - margin.bottom;
+  const hoverItems = [];
+  if (!rows.length || !series.length) {
+    attachChartHover(canvas, [], () => "");
+    drawLabel(ctx, "Sin datos", width / 2, height / 2, { align: "center", size: 14, font: "Inter" });
+    return;
+  }
+  drawAxes(ctx, margin.left, margin.top, chartW, chartH);
+  series.forEach((serie, serieIndex) => {
+    const max = Math.max(1, ...rows.map((row) => toNumber(row[serie.key])));
+    ctx.strokeStyle = serie.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    rows.forEach((row, index) => {
+      const x = margin.left + (chartW * index) / Math.max(1, rows.length - 1);
+      const y = margin.top + chartH - (toNumber(row[serie.key]) / max) * chartH;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      hoverItems.push({ x, y, r: 9, row, serie, type: "circle" });
+    });
+    ctx.stroke();
+    drawLabel(ctx, serie.label, margin.left + serieIndex * 96, 16, { color: serie.color, size: 11 });
+  });
+  rows.forEach((row, index) => {
+    if (index % Math.max(1, Math.ceil(rows.length / 6)) === 0) {
+      const x = margin.left + (chartW * index) / Math.max(1, rows.length - 1);
+      drawLabel(ctx, formatDateShort(row.date), x, height - 12, { align: "center", size: 10 });
+    }
+  });
+  attachChartHover(canvas, hoverItems, (item) => `
+    <div class="chart-tooltip-title">${escapeHtml(formatDateShort(item.row.date))}</div>
+    ${series.map((serie) => tooltipRow(serie.label, serie.scale === "money" ? money(item.row[serie.key]) : item.row[serie.key])).join("")}
+  `);
+}
+
+function drawScatterPlot(canvas, rows = []) {
+  if (!canvas) return;
+  const { ctx, width, height } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
+  const margin = { top: 24, right: 26, bottom: 42, left: 54 };
+  const chartW = width - margin.left - margin.right;
+  const chartH = height - margin.top - margin.bottom;
+  const points = rows.filter((row) => toNumber(row.qr_generated || row.investment || row.revenue || row.sales) > 0);
+  if (!points.length) {
+    attachChartHover(canvas, [], () => "");
+    drawLabel(ctx, "Sin datos", width / 2, height / 2, { align: "center", size: 14, font: "Inter" });
+    return;
+  }
+  drawAxes(ctx, margin.left, margin.top, chartW, chartH);
+  const maxX = Math.max(1, ...points.map((row) => toNumber(row.investment || row.qr_generated)));
+  const maxY = Math.max(1, ...points.map((row) => toNumber(row.revenue || row.sales)));
+  const maxSize = Math.max(1, ...points.map((row) => toNumber(row.leads)));
+  const hoverItems = [];
+  points.slice(0, 24).forEach((row) => {
+    const x = margin.left + (toNumber(row.investment || row.qr_generated) / maxX) * chartW;
+    const y = margin.top + chartH - (toNumber(row.revenue || row.sales) / maxY) * chartH;
+    const r = 6 + (toNumber(row.leads) / maxSize) * 16;
+    ctx.beginPath();
+    ctx.fillStyle = row.roi > 0 ? "rgba(0, 245, 170, 0.72)" : "rgba(248, 232, 90, 0.68)";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 16;
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    hoverItems.push({ type: "circle", x, y, r: r + 4, row });
+  });
+  drawLabel(ctx, "Inversion o QR generados", margin.left + chartW / 2, height - 10, { align: "center", size: 10 });
+  drawLabel(ctx, "Revenue / ventas", 12, margin.top + chartH / 2, { size: 10 });
+  attachChartHover(canvas, hoverItems, (item) => `
+    <div class="chart-tooltip-title">${escapeHtml(item.row.campaign_name)}</div>
+    ${tooltipRow("Revenue", money(item.row.revenue))}
+    ${tooltipRow("Leads", item.row.leads)}
+    ${tooltipRow("Redencion", `${item.row.redemption_rate}%`)}
+    ${tooltipRow("ROI", ratioLabel(item.row.roi))}
+  `);
+}
+
+function drawWaterfallChart(canvas, rows = []) {
+  if (!canvas) return;
+  const { ctx, width, height } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, width, height);
+  paintChartSurface(ctx, width, height);
+  const data = rows.filter((row) => toNumber(row.value) > 0).slice(0, 8);
+  if (!data.length) {
+    attachChartHover(canvas, [], () => "");
+    drawLabel(ctx, "Sin datos", width / 2, height / 2, { align: "center", size: 14, font: "Inter" });
+    return;
+  }
+  const margin = { top: 24, right: 20, bottom: 54, left: 44 };
+  const chartW = width - margin.left - margin.right;
+  const chartH = height - margin.top - margin.bottom;
+  const max = Math.max(1, ...data.map((row) => toNumber(row.value)));
+  const barW = (chartW / data.length) * 0.64;
+  const hoverItems = [];
+  data.forEach((row, index) => {
+    const x = margin.left + index * (chartW / data.length) + (chartW / data.length - barW) / 2;
+    const h = (toNumber(row.value) / max) * chartH;
+    const y = margin.top + chartH - h;
+    const gradient = ctx.createLinearGradient(0, y, 0, y + h);
+    gradient.addColorStop(0, index === 0 ? NEON_CHART.green : NEON_CHART.cyan);
+    gradient.addColorStop(1, "rgba(7, 18, 31, 0.36)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, barW, h);
+    drawLabel(ctx, money(row.value), x + barW / 2, y - 6, { align: "center", size: 10, color: NEON_CHART.text });
+    drawLabel(ctx, row.label.slice(0, 12), x + barW / 2, height - 16, { align: "center", size: 10 });
+    hoverItems.push({ type: "rect", x, y, width: barW, height: h, row });
+  });
+  attachChartHover(canvas, hoverItems, (item) => `
+    <div class="chart-tooltip-title">${escapeHtml(item.row.label)}</div>
+    ${tooltipRow("Revenue", money(item.row.value))}
   `);
 }
 
