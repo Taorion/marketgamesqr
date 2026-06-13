@@ -136,7 +136,7 @@ function renderPlanComparison() {
         <h3>${escapeHtml(plan.name)}</h3>
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
-        <p>${plan.code === "GLOBAL" ? "10.000+ QR al mes por cotizacion" : qrIncluded ? `${Number(qrIncluded).toLocaleString("es-CO")} QR incluidos al mes` : "QR por paquete comprado"}</p>
+        <p>${plan.code === "GLOBAL" ? "25.000+ QR al mes por cotizacion" : qrIncluded ? `${Number(qrIncluded).toLocaleString("es-CO")} QR incluidos al mes` : "QR por paquete comprado"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -169,7 +169,7 @@ function syncMode() {
 
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge el portal RMS para operar campanas";
-  offerCopy.textContent = "Registra tus datos, paga desde $89.000 al mes o solicita Global por cotizacion para operaciones de alto volumen.";
+  offerCopy.textContent = "Registra tus datos, paga desde $149.000 al mes o solicita Global por cotizacion para operaciones de alto volumen.";
   formEyebrow.textContent = "Datos para portal mensual";
   formTitle.textContent = "Registro y pago mensual";
   formCopy.textContent = "Elige el plan mensual. El usuario y la empresa quedan activos solo cuando el pago sea aprobado.";
@@ -197,7 +197,7 @@ function selectPlan(code, shouldScroll = true) {
   selectedBox.innerHTML = `
     <span>${selectedPlan.monthly_price_cop ? "Portal mensual" : "Plan por cotizacion"}</span>
     <strong>${escapeHtml(selectedPlan.name)}</strong>
-    <p>${selectedPlan.monthly_price_cop ? money(selectedPlan.monthly_price_cop) : escapeHtml(selectedPlan.price_label || "Cotizacion")} - ${selectedPlan.code === "GLOBAL" ? "10.000+ QR/mes segun alcance" : `${Number(selectedPlan.limits?.monthly_qr_included || 0).toLocaleString("es-CO")} QR/mes`}. ${selectedPlan.monthly_price_cop ? "Crea usuario, paga y activa el portal." : "Deja tus datos y solicita una propuesta a medida."}</p>
+    <p>${selectedPlan.monthly_price_cop ? money(selectedPlan.monthly_price_cop) : escapeHtml(selectedPlan.price_label || "Cotizacion")} - ${selectedPlan.code === "GLOBAL" ? "25.000+ QR/mes segun alcance" : `${Number(selectedPlan.limits?.monthly_qr_included || 0).toLocaleString("es-CO")} QR/mes`}. ${selectedPlan.monthly_price_cop ? "Crea usuario, paga y activa el portal." : "Deja tus datos y solicita una propuesta a medida."}</p>
   `;
   renderPlans();
   if (mode === "portal") {
@@ -243,7 +243,7 @@ async function submitSignup(event) {
     return;
   }
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
-    requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia estos datos al equipo comercial para definir QR desde 10.000 al mes, portal brandeable, sedes, afiliados, integraciones y soporte.";
+    requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia estos datos al equipo comercial para definir QR desde 25.000 al mes, portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
     return;
   }

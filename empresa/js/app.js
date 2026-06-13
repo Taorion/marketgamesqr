@@ -1127,7 +1127,7 @@ function planBenefitList(plan) {
   const limits = plan.limits || {};
   const features = plan.features || {};
   const benefits = [
-    plan.code === "GLOBAL" ? "10.000+ QR mensuales segun cotizacion" : `${formatLimitValue(limits.monthly_qr_included)} QR incluidos cada mes`,
+    plan.code === "GLOBAL" ? "25.000+ QR mensuales segun cotizacion" : `${formatLimitValue(limits.monthly_qr_included)} QR incluidos cada mes`,
     `${formatLimitValue(limits.users)} usuarios y ${formatLimitValue(limits.branches)} sede(s)`,
     `${formatLimitValue(limits.active_campaigns)} campanas activas`,
   ];
@@ -1162,7 +1162,7 @@ function renderSubscriptionPricing() {
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const qrIncluded = plan.code === "GLOBAL"
-      ? "10.000+"
+      ? "25.000+"
       : formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);
     const prepaidReference = plan.prepaid_reference_cop ? money(plan.prepaid_reference_cop) : "Referencia comercial";
     const portalValue = plan.portal_value_cop ? money(plan.portal_value_cop) : "Incluido";

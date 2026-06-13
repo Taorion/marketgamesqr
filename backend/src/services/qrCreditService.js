@@ -41,9 +41,9 @@ async function getSubscriptionQuota(client, businessId) {
   const code = String(business.rows[0]?.plan_code || "PREPAID_QR").toUpperCase();
   const status = business.rows[0]?.subscription_status || "ACTIVE";
   const quotas = {
-    STARTER: 500,
+    STARTER: 300,
     GROWTH: 2000,
-    PRO: 6000,
+    PRO: 8000,
     GLOBAL: null,
     ENTERPRISE: null,
   };
