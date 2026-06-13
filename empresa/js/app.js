@@ -417,6 +417,36 @@ let state = {
   busyDepth: 0,
 };
 
+function mergeBusinessProfile(nextProfile) {
+  if (!nextProfile) {
+    return state.businessProfile || null;
+  }
+  const existingLogo = state.businessProfile?.logo_data_url
+    || session?.user?.business?.logo_data_url
+    || session?.user?.business?.settings?.logo_data_url
+    || "";
+  const merged = {
+    ...(state.businessProfile || {}),
+    ...nextProfile,
+  };
+  if (!merged.logo_data_url && existingLogo && merged.has_logo_data_url !== false) {
+    merged.logo_data_url = existingLogo;
+  }
+  state.businessProfile = merged;
+  if (session?.user?.business) {
+    session.user.business = {
+      ...session.user.business,
+      name: merged.name || session.user.business.name,
+      logo_data_url: merged.logo_data_url || "",
+      settings: {
+        ...(session.user.business.settings || {}),
+        logo_data_url: merged.logo_data_url || "",
+      },
+    };
+  }
+  return merged;
+}
+
 const chartTooltip = document.createElement("div");
 chartTooltip.className = "chart-tooltip hidden";
 document.body.appendChild(chartTooltip);
@@ -1427,11 +1457,15 @@ async function loadWorkspace() {
   qrBatchTable.innerHTML = '<tr><td colspan="5">Cargando paquetes QR...</td></tr>';
   strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial QR...</td></tr>';
 
+  const needsLogoPayload = !(state.businessProfile?.logo_data_url
+    || session?.user?.business?.logo_data_url
+    || session?.user?.business?.settings?.logo_data_url);
+  const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
   const requests = [
     api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
     apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null),
     api("/api/business/campaigns", { headers: authHeaders() }),
-    apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null }),
+    apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
   ];
@@ -1445,7 +1479,7 @@ async function loadWorkspace() {
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
     state.summary = campaignData.summary || null;
-    state.businessProfile = businessProfileData.business || null;
+    mergeBusinessProfile(businessProfileData.business || null);
     state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
     state.campaignGroups = campaignData.groups || null;
     state.campaigns = campaignData.campaigns || [];
@@ -5672,7 +5706,7 @@ async function updateBusinessLogo(logoDataUrl) {
     headers: authHeaders(),
     body: JSON.stringify({ logo_data_url: logoDataUrl || "" }),
   });
-  state.businessProfile = data.business || null;
+  mergeBusinessProfile(data.business || null);
   if (session?.user?.business) {
     session.user.business.logo_data_url = data.business?.logo_data_url || "";
     session.user.business.settings = {
@@ -5713,7 +5747,7 @@ async function submitAccountProfile(event) {
         address: optionalInputValue(accountAddressInput),
       }),
     });
-    state.businessProfile = data.business || state.businessProfile;
+    mergeBusinessProfile(data.business || null);
     renderAccountView();
     renderBusinessLogoPanel();
     setInlineMessage(accountProfileMessage, "Datos guardados.", "success");
@@ -5760,10 +5794,10 @@ async function handleBusinessLogoFile(file) {
   try {
     if (businessLogoMessage) businessLogoMessage.textContent = "Procesando logo...";
     const logoDataUrl = await normalizeAffiliatePhotoDataUrl(file, {
-      maxWidth: 1200,
-      maxHeight: 800,
-      quality: 0.92,
-      mimeType: "image/png",
+      maxWidth: 560,
+      maxHeight: 360,
+      quality: 0.82,
+      mimeType: "image/webp",
     });
     if (!logoDataUrl) throw new Error("No se pudo procesar el logo. Usa JPG o PNG.");
     await updateBusinessLogo(logoDataUrl);
@@ -5775,10 +5809,11 @@ async function handleBusinessLogoFile(file) {
 }
 
 async function ensureBusinessProfileForCard() {
-  if (!session?.user?.business_id || state.businessProfile) return;
-  const data = await apiSafe("/api/business/profile", { headers: authHeaders() }, { business: null });
+  if (!session?.user?.business_id) return;
+  if (state.businessProfile && (businessProfileLogoSource() || state.businessProfile.has_logo_data_url === false)) return;
+  const data = await apiSafe("/api/business/profile?includeLogo=1", { headers: authHeaders() }, { business: null });
   if (data.business) {
-    state.businessProfile = data.business;
+    mergeBusinessProfile(data.business);
     renderAccountView();
     renderBusinessLogoPanel();
   }

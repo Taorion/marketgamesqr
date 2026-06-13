@@ -62,7 +62,7 @@ const businessProfileSchema = z.object({
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(220).optional().nullable(),
-  logo_data_url: z.string().trim().max(9_000_000).optional().nullable(),
+  logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
 });
 
 const acquisitionSourceOptions = [
@@ -215,8 +215,13 @@ function cleanSetting(value) {
   return value === null || value === undefined ? "" : String(value).trim();
 }
 
-function businessProfileFromRow(row, user = null) {
+function wantsLogoPayload(req) {
+  return ["1", "true", "yes"].includes(String(req.query.includeLogo || "").toLowerCase());
+}
+
+function businessProfileFromRow(row, user = null, options = {}) {
   const settings = row.settings || {};
+  const includeLogo = Boolean(options.includeLogo);
   return {
     id: row.id,
     name: row.name,
@@ -229,7 +234,8 @@ function businessProfileFromRow(row, user = null) {
     website: settings.website || "",
     city: settings.city || "",
     address: settings.address || "",
-    logo_data_url: settings.logo_data_url || "",
+    logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
+    has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
     logo_url: settings.logo_url || "",
     current_user: user ? {
       id: user.id,
@@ -246,20 +252,26 @@ function businessProfileFromRow(row, user = null) {
 async function getBusinessProfile(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    const includeLogo = wantsLogoPayload(req);
+    const settingsSelect = includeLogo ? "settings" : "settings - 'logo_data_url'";
     const result = await query(
-      "select id, name, slug, settings from businesses where id = $1 and is_active = true",
+      `select id, name, slug, ${settingsSelect} as settings,
+              nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url
+       from businesses
+       where id = $1 and is_active = true`,
       [businessId]
     );
     const business = result.rows[0];
     if (!business) {
       throw notFound("Business not found.");
     }
+    res.set("Cache-Control", includeLogo ? "private, max-age=300" : "private, max-age=30");
     const creditResult = await query(
       "select * from business_qr_credit_accounts where business_id = $1",
       [businessId]
     );
     res.json({
-      business: businessProfileFromRow(business, req.user),
+      business: businessProfileFromRow(business, req.user, { includeLogo }),
       subscription: await getBusinessSubscription(businessId),
       credit_account: mapPublicCreditAccount(creditResult.rows[0]),
     });
@@ -283,7 +295,7 @@ async function updateBusinessProfile(req, res, next) {
     const businessId = businessIdFor(req);
     const body = validate(businessProfileSchema, req.body);
     const existing = await query(
-      "select id, name, slug, settings from businesses where id = $1 and is_active = true",
+      "select id, name from businesses where id = $1 and is_active = true",
       [businessId]
     );
     const current = existing.rows[0];
@@ -291,8 +303,7 @@ async function updateBusinessProfile(req, res, next) {
       throw notFound("Business not found.");
     }
 
-    const currentSettings = current.settings || {};
-    const nextSettings = { ...currentSettings };
+    const settingsPatch = {};
     [
       "contact_name",
       "slogan",
@@ -304,21 +315,28 @@ async function updateBusinessProfile(req, res, next) {
       "logo_data_url",
     ].forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(body, key)) {
-        nextSettings[key] = cleanSetting(body[key]);
+        settingsPatch[key] = cleanSetting(body[key]);
       }
     });
 
+    const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url") || wantsLogoPayload(req);
+    const returningSettings = includeLogo ? "settings" : "settings - 'logo_data_url'";
     const result = await query(
       `update businesses
        set name = $2,
-           settings = $3::jsonb,
+           settings = coalesce(settings, '{}'::jsonb) || $3::jsonb,
            updated_at = now()
        where id = $1 and is_active = true
-       returning id, name, slug, settings`,
-      [businessId, body.name || current.name, JSON.stringify(nextSettings)]
+       returning id, name, slug, ${returningSettings} as settings,
+                 nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url`,
+      [businessId, body.name || current.name, JSON.stringify(settingsPatch)]
     );
     const business = result.rows[0];
-    res.json({ business: businessProfileFromRow(business, req.user) });
+    res.json({
+      business: businessProfileFromRow(business, req.user, {
+        includeLogo,
+      }),
+    });
   } catch (error) {
     next(error);
   }

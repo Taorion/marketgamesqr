@@ -8,6 +8,14 @@ const { createSecureToken, normalizeToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 
+const BUSINESS_BRAND_SETTINGS_SQL = `
+  jsonb_strip_nulls(jsonb_build_object(
+    'brand_primary', b.settings->>'brand_primary',
+    'brand_secondary', b.settings->>'brand_secondary',
+    'logo_url', b.settings->>'logo_url'
+  ))
+`;
+
 function publicAppBaseUrl() {
   try {
     const parsed = new URL(env.publicValidatorUrl);
@@ -677,7 +685,7 @@ async function getBatchContext(businessId, batchId) {
        qb.benefit_value,
        qb.metadata,
        b.name as business_name,
-       b.settings as business_settings
+       ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
      from qr_batches qb
      join businesses b on b.id = qb.business_id
      where qb.id = $1 and qb.business_id = $2`,

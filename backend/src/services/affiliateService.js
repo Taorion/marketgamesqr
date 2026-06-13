@@ -5,6 +5,22 @@ const { createSecureToken } = require("../utils/token");
 const { canAccessBusiness } = require("../middleware/auth");
 
 const POINTS_PER_PESO = 1000;
+const BUSINESS_CARD_SETTINGS_SQL = `
+  jsonb_strip_nulls(jsonb_build_object(
+    'slogan', b.settings->>'slogan',
+    'tagline', b.settings->>'tagline',
+    'contact_name', b.settings->>'contact_name',
+    'email', b.settings->>'email',
+    'contact_email', b.settings->>'contact_email',
+    'phone', b.settings->>'phone',
+    'website', b.settings->>'website',
+    'city', b.settings->>'city',
+    'address', b.settings->>'address',
+    'brand_primary', b.settings->>'brand_primary',
+    'brand_secondary', b.settings->>'brand_secondary',
+    'logo_url', b.settings->>'logo_url'
+  ))
+`;
 
 function ensureBusinessAccess(user, businessId) {
   if (!canAccessBusiness(user, businessId)) {
@@ -13,7 +29,12 @@ function ensureBusinessAccess(user, businessId) {
 }
 
 async function businessNameFor(businessId) {
-  const result = await query("select id, name, settings from businesses where id = $1", [businessId]);
+  const result = await query(
+    `select id, name, ${BUSINESS_CARD_SETTINGS_SQL} as settings
+     from businesses b
+     where id = $1`,
+    [businessId]
+  );
   return result.rows[0] || null;
 }
 
@@ -34,7 +55,7 @@ async function listAffiliates(businessId, user) {
     `select
        a.*,
        b.name as business_name,
-       b.settings as business_settings,
+       ${BUSINESS_CARD_SETTINGS_SQL} as business_settings,
        u.full_name as created_by_name,
        coalesce((select sum(l.points_awarded)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as ledger_points,
        coalesce((select count(*)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as point_events,
@@ -98,7 +119,7 @@ async function getAffiliate(businessId, affiliateId, user) {
     `select
        a.*,
        b.name as business_name,
-       b.settings as business_settings,
+       ${BUSINESS_CARD_SETTINGS_SQL} as business_settings,
        u.full_name as created_by_name,
        coalesce((select sum(l.points_awarded)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as ledger_points,
        coalesce((select count(*)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as point_events,
