@@ -367,6 +367,15 @@ let state = {
     tableSort: "revenue",
     expandedCampaignId: "",
   },
+  chartFocus: {
+    open: false,
+    chartId: "",
+    tab: "summary",
+    context: {},
+    presentation: false,
+    savedScrollY: 0,
+    deepLinkHandled: false,
+  },
   summary: null,
   businessProfile: null,
   subscription: null,
@@ -451,6 +460,11 @@ const chartTooltip = document.createElement("div");
 chartTooltip.className = "chart-tooltip hidden";
 document.body.appendChild(chartTooltip);
 
+const chartFocusRoot = document.createElement("div");
+chartFocusRoot.className = "chart-focus-root hidden";
+chartFocusRoot.setAttribute("aria-live", "polite");
+document.body.appendChild(chartFocusRoot);
+
 const chartHoverRegistry = new WeakMap();
 
 const ACQUISITION_SOURCE_LABELS = {
@@ -471,6 +485,44 @@ const COMMAND_CENTER_RANGE_LABELS = {
   current_month: "Mes actual",
   previous_month: "Mes anterior",
   custom: "Personalizado",
+};
+
+const DATA_DICTIONARY = {
+  lead: { name: "Lead", description: "Persona capturada por una campana, QR, formulario o canal comercial.", formula: "Conteo de registros de clientes potenciales asociados al negocio.", example: "Un cliente deja nombre y telefono despues de escanear un QR.", decision: "Si suben los leads pero no las ventas, refuerza seguimiento y oferta." },
+  qr_generated: { name: "QR generado", description: "Codigo creado para activar, reclamar, redimir o rastrear una estrategia RMS.", formula: "Conteo de QR creados en el periodo filtrado.", example: "50 QR impresos para una feria o volante.", decision: "Si hay muchos QR sin redimir, crea urgencia o mejora el beneficio." },
+  active_qr: { name: "QR activo", description: "QR disponible para uso, reclamo o redencion.", formula: "QR con estado activo y vigencia util.", example: "Beneficios listos para validar en tienda.", decision: "Activa recordatorios si se acumulan QR activos sin redencion." },
+  redeemed_qr: { name: "QR redimido", description: "QR usado por un cliente y validado por el negocio.", formula: "Conteo de redenciones confirmadas.", example: "Cliente llega a tienda y valida su beneficio.", decision: "Cruza redenciones con ventas para medir revenue real." },
+  expired_qr: { name: "QR vencido", description: "QR que ya no puede usarse por fecha o estado.", formula: "Conteo de QR con estado vencido o fecha expirada.", example: "Beneficio no reclamado antes del limite.", decision: "Reduce vigencia o envia recordatorios antes del vencimiento." },
+  redemption_rate: { name: "Tasa de redencion", description: "Mide cuantos QR generados terminaron siendo usados.", formula: "QR redimidos / QR generados.", example: "20 redenciones sobre 100 QR = 20%.", decision: "Si es baja, revisa beneficio, urgencia, canal y entrenamiento del equipo." },
+  conversion_rate: { name: "Tasa de conversion", description: "Mide cuantas oportunidades terminaron en venta registrada.", formula: "Ventas registradas / leads o redenciones, segun el contexto.", example: "10 ventas sobre 100 leads = 10%.", decision: "Si baja, revisa cierre comercial, oferta y seguimiento." },
+  revenue: { name: "Revenue atribuido", description: "Ingreso registrado y conectado a campanas, QR, canales o ventas RMS.", formula: "Suma de ventas atribuidas al periodo y filtros activos.", example: "$2.500.000 vendidos por una campana de Instagram.", decision: "Escala lo que produce revenue, no solo lo que produce trafico." },
+  avg_ticket: { name: "Ticket promedio", description: "Valor promedio de compra por venta registrada.", formula: "Revenue atribuido / ventas registradas.", example: "$1.000.000 / 5 ventas = $200.000.", decision: "Canales de menor volumen pueden valer mas si traen ticket alto." },
+  cac: { name: "CAC", description: "Costo estimado de adquirir una venta o cliente.", formula: "Inversion atribuida / ventas registradas.", example: "$300.000 de pauta / 10 ventas = $30.000 por venta.", decision: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
+  roi: { name: "ROI", description: "Retorno estimado de la inversion de marketing.", formula: "(Revenue - inversion) / inversion.", example: "$1.200.000 de revenue con $300.000 de inversion = 3x.", decision: "Repite y escala campanas con ROI positivo y datos confiables." },
+  channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificacion de leads, QR, redenciones o ventas por fuente.", example: "Instagram, referidos, vitrina, feria o QR fisico.", decision: "Compara canales por revenue, no solo por volumen." },
+  affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con QR o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendacion.", example: "Un cliente compra por QR de un afiliado.", decision: "Premia afiliados con alto ticket y entregales mas QR." },
+  branch: { name: "Sucursal", description: "Punto fisico o sede donde se redime, vende o atiende.", formula: "Agrupacion de redenciones y ventas por branch_id.", example: "Sucursal Norte convierte mejor que Centro.", decision: "Replica practicas de la sede lider y capacita sedes rezagadas." },
+  campaign: { name: "Campana", description: "Estrategia comercial o promocional conectada a QR, leads y revenue.", formula: "Datos agrupados por campaign_id.", example: "Feria Junio, Lanzamiento postventa o pauta Instagram.", decision: "Escala campanas con conversion y revenue; optimiza las de solo leads." },
+  mg_score: { name: "MG Revenue Score", description: "Score de salud comercial que resume redencion, conversion, revenue, referidos, sucursales y calidad de datos.", formula: "Promedio ponderado de dimensiones RMS normalizadas de 0 a 100.", example: "82/100 indica buena salud con oportunidades puntuales.", decision: "Usa las dimensiones bajas para priorizar la siguiente mejora." },
+};
+
+const CHART_FOCUS_REGISTRY = {
+  "executive-summary": { title: "Modo ejecutivo RMS", subtitle: "Resumen para socios y decisiones rapidas", chartType: "summary", primaryMetric: "revenue", description: "Resume revenue, canal ganador, campana ganadora, sucursal lider y riesgo principal.", calculation: "Combina KPIs y rankings del periodo filtrado.", businessMeaning: "Permite explicar en una reunion que estrategia trajo ventas reales.", recommendedActions: ["Presenta este resumen en comite comercial.", "Abre el detalle del canal o campana ganadora.", "Convierte el riesgo principal en tarea operativa."], supportedDrilldowns: ["campaign", "channel", "branch"], relatedMetrics: ["revenue", "conversion_rate", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "campaign", "branch"] },
+  "rms-funnel": { title: "Funnel RMS", subtitle: "De campana a revenue", chartType: "funnel", primaryMetric: "conversion_rate", description: "Muestra como avanzan las personas desde la campana hasta la venta.", calculation: "Cuenta etapas del flujo: leads, QR generados, reclamados, redimidos, ventas y revenue.", businessMeaning: "Permite detectar donde se pierde valor comercial.", recommendedActions: ["Si hay muchos leads y pocos QR, revisa captura.", "Si hay muchos QR y pocas redenciones, crea urgencia.", "Si hay redenciones sin venta, revisa oferta o cierre en tienda."], supportedDrilldowns: ["stage", "campaign", "channel", "branch"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redemption_rate", "conversion_rate", "revenue"] },
+  "revenue-score": { title: "MG Revenue Score", subtitle: "Salud comercial del RMS", chartType: "radar", primaryMetric: "mg_score", description: "Evalua dimensiones comerciales clave en una escala de 0 a 100.", calculation: "Promedia dimensiones normalizadas de captacion, redencion, conversion, revenue, fidelizacion, referidos, sucursales y calidad de datos.", businessMeaning: "Convierte muchos indicadores en una lectura ejecutiva accionable.", recommendedActions: ["Ataca primero la dimension con menor score.", "Usa el radar para explicar fortalezas y riesgos.", "Compara contra el periodo anterior despues de cada ajuste."], supportedDrilldowns: ["dimension"], relatedMetrics: ["mg_score", "redemption_rate", "conversion_rate", "revenue"], dataDictionaryKeys: ["mg_score", "redemption_rate", "conversion_rate", "revenue"] },
+  timeline: { title: "Linea temporal multiserie", subtitle: "Leads, QR, redenciones, ventas y revenue por fecha", chartType: "line", primaryMetric: "revenue", description: "Muestra la evolucion del ciclo RMS en el tiempo.", calculation: "Agrupa eventos por dia dentro del periodo filtrado.", businessMeaning: "Ayuda a detectar dias fuertes, caidas y anomalias.", recommendedActions: ["Investiga picos y caidas.", "Replica los dias con mayor conversion.", "Cruza con activaciones comerciales o eventos."], supportedDrilldowns: ["date", "metric"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redeemed_qr", "revenue"] },
+  heatmap: { title: "Heatmap horario", subtitle: "Redenciones por dia y hora", chartType: "heatmap", primaryMetric: "redemptions", description: "Muestra cuando se concentran las redenciones.", calculation: "Cuenta redenciones por dia de semana y hora.", businessMeaning: "Sirve para reforzar equipo, horarios y activaciones.", recommendedActions: ["Refuerza vendedores en horas calientes.", "Activa recordatorios antes de los mejores bloques.", "Compara sucursales si una hora convierte mejor."], supportedDrilldowns: ["weekday", "hour"], relatedMetrics: ["redeemed_qr", "branch", "conversion_rate"], dataDictionaryKeys: ["redeemed_qr", "branch", "conversion_rate"] },
+  matrix: { title: "Matriz campana vs canal", subtitle: "Cruce exacto entre estrategia y fuente", chartType: "matrix", primaryMetric: "revenue", description: "Cruza campanas con canales para encontrar combinaciones rentables.", calculation: "Agrupa leads, QR, redenciones, ventas y revenue por campana y canal.", businessMeaning: "Identifica que combinacion merece repetirse, optimizarse o pausarse.", recommendedActions: ["Escala celdas con revenue alto.", "Optimiza celdas con leads pero baja venta.", "Investiga celdas vacias con gasto o esfuerzo comercial."], supportedDrilldowns: ["campaign", "channel", "metric"], relatedMetrics: ["campaign", "channel", "revenue", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "conversion_rate"] },
+  treemap: { title: "Treemap de revenue por canal", subtitle: "Canales que aportan ingreso real", chartType: "treemap", primaryMetric: "revenue", description: "Dimensiona los canales segun el revenue atribuido.", calculation: "Suma ventas registradas por canal de llegada.", businessMeaning: "Diferencia canales de ruido contra canales que compran.", recommendedActions: ["Escala el canal con mejor revenue y conversion.", "No descartes canales chicos si tienen ticket alto.", "Completa origen de ventas para mejorar la lectura."], supportedDrilldowns: ["channel"], relatedMetrics: ["channel", "revenue", "avg_ticket", "roi"], dataDictionaryKeys: ["channel", "revenue", "avg_ticket", "roi"] },
+  "campaign-comparison": { title: "Campanas comparadas", subtitle: "Leads, QR, redenciones, ventas y revenue", chartType: "bar", primaryMetric: "revenue", description: "Compara campanas por impacto comercial.", calculation: "Agrupa metricas RMS por campana y las ordena por desempeno.", businessMeaning: "Permite decidir que campana repetir, escalar, optimizar o pausar.", recommendedActions: ["Abre la campana ganadora y replica su canal.", "Optimiza campanas con leads sin ventas.", "Pausa campanas sin revenue ni conversion."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "lead", "redeemed_qr", "revenue"], dataDictionaryKeys: ["campaign", "lead", "redeemed_qr", "revenue", "roi"] },
+  sankey: { title: "Sankey RMS", subtitle: "Flujo de atribucion", chartType: "sankey", primaryMetric: "revenue", description: "Conecta canal, campana, QR/redencion, venta y revenue.", calculation: "Construye enlaces agregados desde origen hasta venta registrada.", businessMeaning: "Explica como se mueve el valor dentro del RMS.", recommendedActions: ["Haz foco en enlaces con mayor salida a ventas.", "Investiga nodos con mucho volumen y baja continuidad.", "Aplica filtro global sobre el nodo mas rentable."], supportedDrilldowns: ["node", "channel", "campaign"], relatedMetrics: ["channel", "campaign", "revenue"], dataDictionaryKeys: ["channel", "campaign", "redeemed_qr", "revenue"] },
+  "affiliate-network": { title: "Red de afiliados y referidos", subtitle: "Voz a voz medible", chartType: "network", primaryMetric: "revenue", description: "Muestra afiliados como nodos conectados al negocio.", calculation: "Agrupa actividad, puntos, compras y revenue por afiliado.", businessMeaning: "Detecta quienes recomiendan clientes que compran.", recommendedActions: ["Premia afiliados con alto revenue.", "Genera mas QR para afiliados activos.", "Reactiva afiliados sin ultima actividad."], supportedDrilldowns: ["affiliate"], relatedMetrics: ["affiliate", "revenue", "avg_ticket"], dataDictionaryKeys: ["affiliate", "revenue", "avg_ticket"] },
+  "branch-ranking": { title: "Ranking de sucursales", subtitle: "Redenciones, ventas, revenue y conversion", chartType: "ranking", primaryMetric: "revenue", description: "Compara sedes por ejecucion comercial.", calculation: "Agrupa redenciones y ventas por sucursal.", businessMeaning: "Muestra que sede convierte mejor y donde hay oportunidad operativa.", recommendedActions: ["Replica practicas de la sucursal lider.", "Capacita sedes con redenciones sin ventas.", "Filtra por sucursal para ver detalles."], supportedDrilldowns: ["branch"], relatedMetrics: ["branch", "redeemed_qr", "revenue", "conversion_rate"], dataDictionaryKeys: ["branch", "redeemed_qr", "revenue", "conversion_rate"] },
+  "qr-status": { title: "Estados QR", subtitle: "Activos, redimidos, vencidos y reclamados", chartType: "donut", primaryMetric: "qr_generated", description: "Muestra la salud operativa del inventario QR.", calculation: "Cuenta QR agrupados por estado.", businessMeaning: "Ayuda a detectar oportunidad perdida o beneficios no usados.", recommendedActions: ["Si hay muchos vencidos, mejora recordatorios.", "Si hay muchos activos, crea urgencia.", "Si hay pocos redimidos, revisa beneficio y canal."], supportedDrilldowns: ["status"], relatedMetrics: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"], dataDictionaryKeys: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"] },
+  scatter: { title: "Scatter de campanas", subtitle: "Inversion o QR vs revenue", chartType: "scatter", primaryMetric: "roi", description: "Ubica campanas segun esfuerzo y resultado.", calculation: "Eje X usa inversion o QR generados; eje Y usa revenue o ventas; tamano usa leads.", businessMeaning: "Encuentra campanas sanas, costosas o escalables.", recommendedActions: ["Escala puntos con alto revenue y bajo esfuerzo.", "Optimiza puntos con muchos leads y poco revenue.", "Investiga campanas sin datos completos."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "qr_generated", "revenue", "roi"], dataDictionaryKeys: ["campaign", "qr_generated", "revenue", "roi"] },
+  waterfall: { title: "Waterfall de revenue", subtitle: "Composicion del ingreso", chartType: "waterfall", primaryMetric: "revenue", description: "Muestra como se compone el revenue total por canales principales.", calculation: "Parte de revenue total y desglosa contribuciones por canal.", businessMeaning: "Explica de donde viene el dinero de forma ejecutiva.", recommendedActions: ["Prioriza los canales con mayor contribucion.", "Completa ventas sin origen.", "Compara canales con ticket alto."], supportedDrilldowns: ["channel"], relatedMetrics: ["revenue", "channel", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "avg_ticket"] },
+  cohorts: { title: "Cohort postventa", subtitle: "Recompra y QR postventa", chartType: "cohort", primaryMetric: "retention", description: "Mide si las ventas generan nuevas visitas o recompras.", calculation: "Agrupa compras por cohorte y cuenta QR postventa generados y redimidos.", businessMeaning: "Indica si el RMS crea fidelizacion despues de la primera compra.", recommendedActions: ["Crea QR postventa para compradores recientes.", "Escala beneficios que traen recompra.", "Mide cohortes por mes para ver retencion."], supportedDrilldowns: ["cohort"], relatedMetrics: ["revenue", "redeemed_qr", "avg_ticket"], dataDictionaryKeys: ["revenue", "redeemed_qr", "avg_ticket"] },
+  "power-table": { title: "Tabla PowerBI-style", subtitle: "Drill-down por campana", chartType: "table", primaryMetric: "revenue", description: "Tabla ejecutiva para ordenar, buscar y abrir detalle por campana.", calculation: "Une KPIs de campana con canal dominante, CAC, ROI, conversion y decision sugerida.", businessMeaning: "Convierte la data en una lista de prioridades comerciales.", recommendedActions: ["Ordena por revenue para repetir.", "Ordena por conversion para escalar.", "Ordena por ROI para optimizar inversion."], supportedDrilldowns: ["campaign", "channel"], relatedMetrics: ["campaign", "revenue", "roi", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "cac", "roi", "conversion_rate"] },
 };
 
 function commandCenterDateRange(range = state.commandCenterFilters.range) {
@@ -1634,6 +1686,7 @@ async function loadCommandCenterData({ quiet = false } = {}) {
   try {
     state.commandCenter = await api(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() });
     renderCommandCenter();
+    if (state.chartFocus.open) renderChartFocusMode();
   } catch (error) {
     if (commandCenterRoot) {
       commandCenterRoot.innerHTML = commandEmpty("No se pudo cargar RMS Command Center.", error.message || "Reintenta la sincronizacion del portal.");
@@ -1683,7 +1736,7 @@ function renderCommandCenterKpis(data) {
   return `
     <section class="command-kpi-grid" aria-label="KPIs ejecutivos RMS">
       ${items.map((item) => `
-        <article class="command-kpi-card is-${escapeHtml(item.state)}" title="${escapeHtml(item.help)}">
+        <article class="command-kpi-card is-${escapeHtml(item.state)}" title="${escapeHtml(item.help)}" data-command-focus="kpi:${escapeHtml(item.key)}" tabindex="0" role="button">
           <div class="command-kpi-top">
             <span class="material-symbols-outlined">${escapeHtml(item.icon || "analytics")}</span>
             <small>${item.change > 0 ? "+" : ""}${toNumber(item.change).toFixed(1)}%</small>
@@ -1691,6 +1744,7 @@ function renderCommandCenterKpis(data) {
           <strong>${commandValue(item.value, item.format)}</strong>
           <p>${escapeHtml(item.label)}</p>
           ${commandMetricSparkline(item.key)}
+          <small class="command-focus-hint">Haz clic para entender este KPI</small>
         </article>
       `).join("")}
     </section>`;
@@ -1704,7 +1758,7 @@ function renderFunnelChart(stages = []) {
       ${stages.map((stage) => {
         const width = Math.max(8, Math.round((toNumber(stage.value) / max) * 100));
         return `
-          <div class="command-funnel-row">
+          <div class="command-funnel-row" data-command-focus="rms-funnel" data-focus-stage="${escapeHtml(stage.key || stage.label)}" tabindex="0" role="button">
             <div>
               <strong>${escapeHtml(stage.label)}</strong>
               <span>${stage.conversion_from_previous}% conversion · fuga ${commandValue(stage.loss_from_previous, stage.format)}</span>
@@ -1729,7 +1783,7 @@ function renderHeatmapChart(rows = []) {
         ${Array.from({ length: 24 }, (_, hour) => {
           const value = toNumber(bucket.get(`${dow}-${hour}`));
           const alpha = value ? Math.max(0.16, value / max) : 0.04;
-          return `<i title="${label} ${hour}:00 · ${value} redenciones" style="--heat:${alpha}"></i>`;
+          return `<i title="${label} ${hour}:00 · ${value} redenciones" style="--heat:${alpha}" data-command-focus="heatmap" data-focus-dow="${dow}" data-focus-hour="${hour}" tabindex="0" role="button"></i>`;
         }).join("")}
       `).join("")}
     </div>`;
@@ -1766,7 +1820,7 @@ function renderMatrixChart(rows = []) {
                 const row = rows.find((item) => item.campaign_name === campaign && item.channel === channel) || {};
                 const value = toNumber(row[metric]);
                 const label = metric === "revenue" ? money(value) : metric === "conversion_rate" ? `${value}%` : value.toLocaleString("es-CO");
-                return `<td style="--intensity:${value / max}" title="${escapeHtml(campaign)} / ${escapeHtml(channel)} · ${escapeHtml(metricLabels[metric])}: ${escapeHtml(label)}">${value ? escapeHtml(label) : "-"}</td>`;
+                return `<td style="--intensity:${value / max}" title="${escapeHtml(campaign)} / ${escapeHtml(channel)} · ${escapeHtml(metricLabels[metric])}: ${escapeHtml(label)}" data-command-focus="matrix" data-focus-campaign="${escapeHtml(campaign)}" data-focus-channel="${escapeHtml(channel)}" tabindex="0" role="button">${value ? escapeHtml(label) : "-"}</td>`;
               }).join("")}
             </tr>
           `).join("")}
@@ -1783,7 +1837,7 @@ function renderTreemapChart(rows = []) {
       ${rows.slice(0, 9).map((row, index) => {
         const share = Math.max(12, Math.round((toNumber(row.revenue) / total) * 100));
         const span = Math.max(2, Math.min(6, Math.ceil(share / 18)));
-        return `<article style="--share:${share}; --span:${span}; --tone:${index}">
+        return `<article style="--share:${share}; --span:${span}; --tone:${index}" data-command-focus="treemap" data-focus-channel="${escapeHtml(row.label)}" tabindex="0" role="button">
           <strong>${escapeHtml(row.label)}</strong>
           <span>${money(row.revenue)}</span>
           <small>${row.sales} ventas · ${Math.round((toNumber(row.revenue) / total) * 100)}%</small>
@@ -2169,16 +2223,17 @@ function renderCommandCenter() {
       ${renderGuidedRevenueFeed(data)}
 
       <section class="command-main-grid">
-        <article class="command-panel revenue-score-panel">
+        <article class="command-panel revenue-score-panel" data-command-focus="revenue-score" tabindex="0" role="button">
           <div class="command-panel-head">
             <div><span class="mono-label">MG Revenue Score</span><h3>${score.score}/100 · ${escapeHtml(score.status)}</h3></div>
+            ${commandFocusButton("revenue-score")}
             <span class="score-orbit">${score.score}</span>
           </div>
           <canvas id="commandRadarChart" width="680" height="360"></canvas>
           <ul>${(score.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </article>
-        <article class="command-panel">
-          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div></div>
+        <article class="command-panel" data-command-focus="rms-funnel" tabindex="0" role="button">
+          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div>${commandFocusButton("rms-funnel")}</div>
           ${renderFunnelChart(data.funnel || [])}
         </article>
       </section>
@@ -2194,18 +2249,18 @@ function renderCommandCenter() {
       </section>
 
       <section class="command-chart-grid" id="commandCenterDetail">
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, QR, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div></div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div></div>${renderHeatmapChart(data.heatmap)}</article>
-        <article class="command-panel command-wide"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div></div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div></div>${renderTreemapChart(data.revenue_treemap)}</article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, QR, redenciones, ventas y revenue</h3></div></div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div></div>${renderSankeyChart(data.attribution_sankey)}</article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div></div>${renderAffiliateNetwork(data.affiliate_network)}</article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div></div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">QR status</span><h3>Activos, redimidos, vencidos y reclamados</h3></div></div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / QR vs revenue</h3></div></div><canvas id="commandScatter" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div></div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
-        <article class="command-panel"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y QR postventa</h3></div></div>${renderCohortChart(data.cohorts)}</article>
+        <article class="command-panel" data-command-focus="timeline" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, QR, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div>${commandFocusButton("timeline")}</div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div>${commandFocusButton("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
+        <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandFocusButton("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
+        <article class="command-panel" data-command-focus="treemap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div>${commandFocusButton("treemap")}</div>${renderTreemapChart(data.revenue_treemap)}</article>
+        <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, QR, redenciones, ventas y revenue</h3></div>${commandFocusButton("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div>${commandFocusButton("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
+        <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandFocusButton("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
+        <article class="command-panel" data-command-focus="branch-ranking" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div>${commandFocusButton("branch-ranking")}</div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="qr-status" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">QR status</span><h3>Activos, redimidos, vencidos y reclamados</h3></div>${commandFocusButton("qr-status")}</div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / QR vs revenue</h3></div>${commandFocusButton("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="waterfall" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div>${commandFocusButton("waterfall")}</div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="cohorts" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y QR postventa</h3></div>${commandFocusButton("cohorts")}</div>${renderCohortChart(data.cohorts)}</article>
       </section>
 
       <section class="command-panel">
@@ -2213,17 +2268,43 @@ function renderCommandCenter() {
         ${renderDecisionMap(data.decision_map)}
       </section>
 
-      <section class="command-panel">
-        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div></div>
+      <section class="command-panel" data-command-focus="power-table" tabindex="0" role="button">
+        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div>${commandFocusButton("power-table")}</div>
         ${renderPowerTable(data.power_table)}
       </section>
     </div>`;
 
   bindCommandCenterEvents();
   drawCommandCenterCharts(data);
+  const focusParam = new URLSearchParams(window.location.search).get("focus");
+  if (focusParam && !state.chartFocus.deepLinkHandled && CHART_FOCUS_REGISTRY[focusParam]) {
+    state.chartFocus.deepLinkHandled = true;
+    openChartFocusMode(focusParam);
+  }
 }
 
 function bindCommandCenterEvents() {
+  commandCenterRoot?.querySelectorAll("[data-command-focus]").forEach((element) => {
+    const open = () => {
+      openChartFocusMode(element.dataset.commandFocus, {
+        stage: element.dataset.focusStage || "",
+        dow: element.dataset.focusDow || "",
+        hour: element.dataset.focusHour || "",
+        campaign: element.dataset.focusCampaign || "",
+        channel: element.dataset.focusChannel || "",
+      });
+    };
+    element.addEventListener("click", (event) => {
+      if (event.target.closest("button, select, input, textarea") && event.target !== element) return;
+      open();
+    });
+    element.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
   const form = document.getElementById("commandCenterFilters");
   form?.querySelectorAll("[data-command-filter]").forEach((input) => {
     input.addEventListener("change", (event) => {
@@ -2300,6 +2381,474 @@ function exportCommandCenterCsv() {
       row.conversion_rate,
     ]),
   ]);
+}
+
+function commandFocusButton(chartId, label = "Analizar") {
+  return `<button class="command-focus-button" type="button" data-command-focus="${escapeHtml(chartId)}" aria-label="Abrir ${escapeHtml(label)} en RMS Data Explorer">
+    <span class="material-symbols-outlined">open_in_full</span>${escapeHtml(label)}
+  </button>`;
+}
+
+function chartFocusMeta(chartId) {
+  if (chartId?.startsWith("kpi:")) {
+    const key = chartId.split(":")[1] || "";
+    const kpi = (state.commandCenter?.kpis || []).find((item) => item.key === key) || {};
+    const dictionaryKey = key === "qr_redeemed" ? "redeemed_qr" : key;
+    return {
+      title: kpi.label || "KPI RMS",
+      subtitle: "Indicador ejecutivo del periodo",
+      chartType: "kpi",
+      primaryMetric: dictionaryKey,
+      description: kpi.help || "Este KPI resume una senal clave del negocio.",
+      calculation: DATA_DICTIONARY[dictionaryKey]?.formula || "Se calcula desde los datos filtrados del RMS.",
+      businessMeaning: DATA_DICTIONARY[dictionaryKey]?.decision || "Ayuda a decidir que estrategia repetir, optimizar o investigar.",
+      recommendedActions: [DATA_DICTIONARY[dictionaryKey]?.decision || "Abre el desglose y compara contra el periodo anterior.", "Revisa los filtros activos para entender el contexto.", "Usa la tabla de campanas para llegar al detalle operativo."],
+      supportedDrilldowns: ["campaign", "channel", "branch"],
+      relatedMetrics: [dictionaryKey, "revenue", "conversion_rate"],
+      dataDictionaryKeys: [dictionaryKey, "revenue", "conversion_rate"],
+    };
+  }
+  return CHART_FOCUS_REGISTRY[chartId] || CHART_FOCUS_REGISTRY["executive-summary"];
+}
+
+function commandFilterLabel(key, value) {
+  const data = state.commandCenter || {};
+  const options = data.options || {};
+  const optionMaps = {
+    campaignId: options.campaigns?.map((item) => ({ value: item.id, label: item.name })),
+    branchId: options.branches?.map((item) => ({ value: item.id, label: item.name })),
+    affiliateId: options.affiliates?.map((item) => ({ value: item.id, label: item.name })),
+    sellerId: options.sellers?.map((item) => ({ value: item.id, label: item.name })),
+    channel: options.channels,
+    qrType: options.qr_types,
+    qrStatus: options.qr_statuses,
+  };
+  const match = optionMaps[key]?.find((item) => String(item.value) === String(value));
+  return match?.label || value;
+}
+
+function activeCommandFilterChips(extra = {}) {
+  const filters = { ...state.commandCenterFilters, ...extra };
+  const dates = commandCenterDateRange();
+  const chips = [{ key: "range", label: "Periodo", value: COMMAND_CENTER_RANGE_LABELS[filters.range] || `${dates.startDate} - ${dates.endDate}` }];
+  [
+    ["campaignId", "Campana"],
+    ["channel", "Canal"],
+    ["branchId", "Sucursal"],
+    ["qrStatus", "Estado QR"],
+    ["qrType", "Tipo QR"],
+    ["sellerId", "Vendedor"],
+    ["affiliateId", "Afiliado"],
+  ].forEach(([key, label]) => {
+    if (filters[key]) chips.push({ key, label, value: commandFilterLabel(key, filters[key]) });
+  });
+  if (filters.comparePrevious) chips.push({ key: "comparePrevious", label: "Comparacion", value: "Periodo anterior" });
+  return chips;
+}
+
+function renderActiveFiltersBar(chips = activeCommandFilterChips()) {
+  return `
+    <div class="active-filters-bar" aria-label="Filtros activos">
+      <span class="material-symbols-outlined">filter_alt</span>
+      ${chips.map((chip) => `
+        <button type="button" data-focus-remove-filter="${escapeHtml(chip.key)}">
+          <b>${escapeHtml(chip.label)}:</b> ${escapeHtml(chip.value)}
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      `).join("")}
+    </div>`;
+}
+
+function openChartFocusMode(chartId, context = {}) {
+  state.chartFocus = {
+    ...state.chartFocus,
+    open: true,
+    chartId,
+    context,
+    tab: context.tab || "summary",
+    presentation: Boolean(context.presentation),
+    savedScrollY: window.scrollY || state.chartFocus.savedScrollY || 0,
+  };
+  renderChartFocusMode();
+}
+
+function closeChartFocusMode() {
+  const y = state.chartFocus.savedScrollY || 0;
+  state.chartFocus.open = false;
+  state.chartFocus.presentation = false;
+  chartFocusRoot.classList.add("hidden");
+  chartFocusRoot.innerHTML = "";
+  document.body.classList.remove("chart-focus-open");
+  window.scrollTo({ top: y, behavior: "auto" });
+}
+
+function chartFocusRecords(chartId, context = {}) {
+  const data = state.commandCenter || {};
+  const metric = state.commandCenterFilters.matrixMetric || "revenue";
+  if (chartId === "rms-funnel") {
+    return {
+      columns: ["Etapa", "Valor", "Conversion anterior", "Fuga"],
+      rows: (data.funnel || []).map((row) => [row.label, commandValue(row.value, row.format), `${row.conversion_from_previous || 0}%`, commandValue(row.loss_from_previous || 0, row.format)]),
+    };
+  }
+  if (chartId === "heatmap") {
+    const weekdays = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+    return {
+      columns: ["Dia", "Hora", "Redenciones"],
+      rows: (data.heatmap || []).sort((a, b) => toNumber(b.value) - toNumber(a.value)).slice(0, 20).map((row) => [weekdays[row.dow] || row.dow, `${row.hour}:00`, row.value]),
+    };
+  }
+  if (chartId === "matrix") {
+    return {
+      columns: ["Campana", "Canal", "Leads", "QR", "Redenciones", "Ventas", "Revenue"],
+      rows: (data.campaign_channel_matrix || [])
+        .filter((row) => !context.campaign || row.campaign_name === context.campaign)
+        .filter((row) => !context.channel || row.channel === context.channel)
+        .sort((a, b) => toNumber(b[metric]) - toNumber(a[metric]))
+        .slice(0, 25)
+        .map((row) => [row.campaign_name, row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue)]),
+    };
+  }
+  if (chartId === "treemap" || chartId === "waterfall") {
+    return {
+      columns: ["Canal", "Leads", "Ventas", "Revenue", "Conversion"],
+      rows: (data.revenue_treemap || []).map((row) => [row.label, row.leads, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`]),
+    };
+  }
+  if (chartId === "affiliate-network") {
+    return {
+      columns: ["Afiliado", "Ventas", "Revenue", "Puntos", "Ultima actividad"],
+      rows: (data.affiliate_network?.nodes || []).map((row) => [row.full_name || row.name, row.sales || 0, money(row.revenue || 0), row.points_total || 0, row.last_activity_at ? formatDateShort(row.last_activity_at) : "-"]),
+    };
+  }
+  if (chartId === "branch-ranking") {
+    return {
+      columns: ["Sucursal", "Redenciones", "Ventas", "Revenue", "Conversion"],
+      rows: (data.branch_performance || []).map((row) => [row.branch_name || "Sin sucursal", row.redemptions, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`]),
+    };
+  }
+  if (chartId === "qr-status") {
+    return {
+      columns: ["Estado", "QR", "Lectura"],
+      rows: (data.qr_status || []).map((row) => [row.label, row.value, row.label === "REDEEMED" ? "Valor capturado" : row.label === "EXPIRED" ? "Oportunidad perdida" : "Seguimiento requerido"]),
+    };
+  }
+  if (chartId === "timeline") {
+    return {
+      columns: ["Fecha", "Leads", "QR", "Redenciones", "Ventas", "Revenue"],
+      rows: (data.timeline || []).slice(-30).map((row) => [formatDateShort(row.date), row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue)]),
+    };
+  }
+  if (chartId === "cohorts") {
+    return {
+      columns: ["Cohorte", "Compras", "QR postventa", "Redimidos", "Retencion"],
+      rows: (data.cohorts || []).map((row) => [row.cohort, row.purchases, row.post_sale_qr, row.post_sale_redeemed, `${row.retention_rate || 0}%`]),
+    };
+  }
+  return {
+    columns: ["Campana", "Canal", "Leads", "QR", "Redenciones", "Ventas", "Revenue", "Decision"],
+    rows: (data.power_table || []).slice(0, 25).map((row) => [row.campaign_name, row.top_channel || "-", row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), row.decision_hint || "Investigar"]),
+  };
+}
+
+function focusPrimaryMetric(chartId, context = {}) {
+  const data = state.commandCenter || {};
+  const meta = chartFocusMeta(chartId);
+  if (chartId?.startsWith("kpi:")) {
+    const kpi = (data.kpis || []).find((item) => item.key === chartId.split(":")[1]);
+    return { label: kpi?.label || meta.title, value: kpi?.value || "-", hint: kpi?.help || meta.businessMeaning };
+  }
+  if (chartId === "revenue-score") return { label: "MG Revenue Score", value: `${data.revenue_score?.score || 0}/100`, hint: data.revenue_score?.status || "Sin datos" };
+  if (chartId === "rms-funnel") {
+    const last = (data.funnel || []).slice(-1)[0];
+    return { label: last?.label || "Revenue", value: commandValue(last?.value || 0, last?.format || "money"), hint: "Resultado final del embudo RMS." };
+  }
+  if (chartId === "heatmap") {
+    const hot = [...(data.heatmap || [])].sort((a, b) => toNumber(b.value) - toNumber(a.value))[0];
+    return { label: "Bloque mas activo", value: hot ? `${hot.value} redenciones` : "Sin datos", hint: hot ? `Dia ${hot.dow}, ${hot.hour}:00` : "Aun no hay redenciones horarias." };
+  }
+  return { label: meta.primaryMetric === "revenue" ? "Revenue atribuido" : meta.title, value: money(data.totals?.revenue || 0), hint: meta.businessMeaning };
+}
+
+function focusNarrative(chartId, context = {}) {
+  const data = state.commandCenter || {};
+  const metric = focusPrimaryMetric(chartId, context);
+  const topCampaign = data.power_table?.[0];
+  const topChannel = data.revenue_treemap?.[0];
+  if (chartId === "rms-funnel") {
+    const stages = data.funnel || [];
+    const worst = stages.slice(1).sort((a, b) => toNumber(b.loss_from_previous) - toNumber(a.loss_from_previous))[0];
+    return `Durante el periodo filtrado, el RMS llega hasta ${metric.value}. La mayor fuga visible esta en ${worst?.label || "una etapa pendiente"}, con ${commandValue(worst?.loss_from_previous || 0, worst?.format)} de diferencia frente a la etapa anterior. Recomendacion: enfoca seguimiento, urgencia o cierre comercial en esa etapa.`;
+  }
+  if (chartId === "treemap") {
+    return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue. Si este canal tambien convierte bien, conviene escalarlo; si solo trae volumen, revisa ticket y calidad del cierre.`;
+  }
+  if (chartId === "power-table" || chartId === "campaign-comparison" || chartId === "scatter") {
+    return `${topCampaign?.campaign_name || "La campana principal"} lidera la lectura con ${money(topCampaign?.revenue || 0)}. Su decision sugerida es ${topCampaign?.decision_hint || "Investigar"} porque ${topCampaign?.decision_reason || "faltan datos completos de conversion y revenue"}.`;
+  }
+  return `${metric.label}: ${metric.value}. Este dato importa porque conecta actividad de marketing con comportamiento comercial real. Usa el desglose y los registros agregados para decidir si repetir, optimizar, pausar, escalar o investigar.`;
+}
+
+function focusInsightList(chartId) {
+  const data = state.commandCenter || {};
+  const base = (data.insights || []).slice(0, 3).map((item) => item.explanation || item.title).filter(Boolean);
+  const meta = chartFocusMeta(chartId);
+  return base.length ? base : meta.recommendedActions;
+}
+
+function renderFocusVisualization(chartId, context = {}) {
+  const data = state.commandCenter || {};
+  if (chartId === "rms-funnel") return renderFunnelChart(data.funnel || []);
+  if (chartId === "heatmap") return renderHeatmapChart(data.heatmap || []);
+  if (chartId === "matrix") return renderMatrixChart(data.campaign_channel_matrix || []);
+  if (chartId === "treemap") return renderTreemapChart(data.revenue_treemap || []);
+  if (chartId === "sankey") return renderSankeyChart(data.attribution_sankey || {});
+  if (chartId === "affiliate-network") return renderAffiliateNetwork(data.affiliate_network || {});
+  if (chartId === "cohorts") return renderCohortChart(data.cohorts || []);
+  if (chartId === "power-table") return renderPowerTable(data.power_table || []);
+  if (["timeline", "campaign-comparison", "branch-ranking", "qr-status", "scatter", "waterfall", "revenue-score"].includes(chartId)) {
+    return `<canvas id="chartFocusCanvas" width="1200" height="560"></canvas>`;
+  }
+  const metric = focusPrimaryMetric(chartId, context);
+  return `
+    <div class="focus-kpi-hero">
+      <span class="mono-label">${escapeHtml(metric.label)}</span>
+      <strong>${escapeHtml(metric.value)}</strong>
+      <p>${escapeHtml(metric.hint)}</p>
+    </div>`;
+}
+
+function renderRecordsTable(records) {
+  if (!records.rows.length) {
+    return commandEmpty("Aun no hay registros suficientes.", "Activa campanas, registra ventas o valida QR para alimentar este detalle.");
+  }
+  return `
+    <div class="drilldown-table-wrap">
+      <table class="drilldown-table">
+        <thead><tr>${records.columns.map((col) => `<th>${escapeHtml(col)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${records.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell ?? "-")}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderDataDictionaryTooltip(keys = []) {
+  return `
+    <div class="data-dictionary-grid">
+      ${keys.map((key) => {
+        const item = DATA_DICTIONARY[key];
+        if (!item) return "";
+        return `
+          <article class="dictionary-card">
+            <h4>${escapeHtml(item.name)}</h4>
+            <p>${escapeHtml(item.description)}</p>
+            <dl>
+              <dt>Formula</dt><dd>${escapeHtml(item.formula)}</dd>
+              <dt>Ejemplo</dt><dd>${escapeHtml(item.example)}</dd>
+              <dt>Decision</dt><dd>${escapeHtml(item.decision)}</dd>
+            </dl>
+          </article>`;
+      }).join("")}
+    </div>`;
+}
+
+function renderFocusTabContent(chartId, context = {}) {
+  const meta = chartFocusMeta(chartId);
+  const tab = state.chartFocus.tab || "summary";
+  const records = chartFocusRecords(chartId, context);
+  const metric = focusPrimaryMetric(chartId, context);
+  if (tab === "records") return renderRecordsTable(records);
+  if (tab === "comparison") {
+    const current = toNumber(state.commandCenter?.totals?.revenue);
+    const previous = toNumber(state.commandCenter?.previous_totals?.revenue);
+    const diff = current - previous;
+    return `
+      <div class="comparison-panel">
+        <article><span>Actual</span><strong>${money(current)}</strong></article>
+        <article><span>Anterior</span><strong>${money(previous)}</strong></article>
+        <article><span>Diferencia</span><strong>${money(diff)}</strong><small>${safeRate(diff, previous || current || 1)}%</small></article>
+        <p>${diff >= 0 ? "El periodo actual supera al anterior. Revisa que canal o campana explica el crecimiento." : "El periodo actual esta por debajo del anterior. Investiga caidas por canal, horario o sucursal."}</p>
+      </div>`;
+  }
+  if (tab === "insights") {
+    return `<div class="focus-insight-list">${focusInsightList(chartId).map((item) => `<article><span class="material-symbols-outlined">auto_awesome</span><p>${escapeHtml(item)}</p></article>`).join("")}</div>`;
+  }
+  if (tab === "actions") {
+    return `<div class="decision-recommendation-panel">${meta.recommendedActions.map((item) => `<button type="button" data-focus-action><span class="material-symbols-outlined">task_alt</span>${escapeHtml(item)}</button>`).join("")}</div>`;
+  }
+  if (tab === "definitions") return renderDataDictionaryTooltip(meta.dataDictionaryKeys || []);
+  if (tab === "breakdown") {
+    return `
+      <div class="related-metrics-strip">
+        ${(meta.relatedMetrics || []).map((key) => {
+          const item = DATA_DICTIONARY[key];
+          return `<article><span>${escapeHtml(item?.name || key)}</span><strong>${escapeHtml(item?.formula || "Metrica relacionada")}</strong></article>`;
+        }).join("")}
+      </div>
+      ${renderRecordsTable(records)}`;
+  }
+  return `
+    <div class="data-explanation-panel">
+      <article><span>Que significa</span><p>${escapeHtml(meta.description)}</p></article>
+      <article><span>Como se calcula</span><p>${escapeHtml(meta.calculation)}</p></article>
+      <article><span>Por que importa</span><p>${escapeHtml(meta.businessMeaning)}</p></article>
+      <article><span>Que mirar</span><p>${escapeHtml(metric.hint || "Busca cambios bruscos, concentraciones y combinaciones con bajo rendimiento.")}</p></article>
+      <article><span>Que hacer</span><p>${escapeHtml(meta.recommendedActions[0] || "Investiga el desglose y aplica un filtro global.")}</p></article>
+    </div>`;
+}
+
+function drawChartFocusCanvas(chartId) {
+  const canvas = document.getElementById("chartFocusCanvas");
+  if (!canvas) return;
+  const data = state.commandCenter || {};
+  if (chartId === "revenue-score") drawRadarChart(canvas, data.revenue_score?.dimensions || []);
+  if (chartId === "timeline") drawMultiLineChart(canvas, data.timeline || [], [
+    { key: "leads", label: "Leads", color: "#7cfbff" },
+    { key: "qr_generated", label: "QR", color: "#6ffbbe" },
+    { key: "redemptions", label: "Redenciones", color: "#c084fc" },
+    { key: "sales", label: "Ventas", color: "#facc15" },
+    { key: "revenue", label: "Revenue", color: "#38bdf8", scale: "money" },
+  ]);
+  if (chartId === "campaign-comparison") drawGroupedBars(canvas, data.campaign_comparison || [], [
+    { key: "leads", label: "Leads", color: "#7cfbff" },
+    { key: "redemptions", label: "Redenciones", color: "#6ffbbe" },
+    { key: "sales", label: "Ventas", color: "#facc15" },
+  ]);
+  if (chartId === "branch-ranking") drawHorizontalBars(canvas, (data.branch_performance || []).map((row) => ({ label: row.branch_name || "Sin sucursal", value: row.revenue || row.sales || row.redemptions, valueLabel: money(row.revenue || 0), meta: `${row.sales || 0} ventas · ${row.redemptions || 0} redenciones` })), "#6ffbbe");
+  if (chartId === "qr-status") drawDonutChart(canvas, data.qr_status || [], ["#6ffbbe", "#38bdf8", "#facc15", "#fb7185", "#c084fc"]);
+  if (chartId === "scatter") drawScatterPlot(canvas, data.campaign_scatter || []);
+  if (chartId === "waterfall") drawWaterfallChart(canvas, data.revenue_waterfall || []);
+}
+
+function renderFocusContextActions(context = {}) {
+  const actions = [];
+  if (context.channel) actions.push(`<button type="button" data-focus-apply-filter="channel" data-focus-filter-value="${escapeHtml(context.channel)}"><span class="material-symbols-outlined">filter_alt</span>Aplicar canal: ${escapeHtml(context.channel)}</button>`);
+  if (context.campaign) {
+    const campaign = (state.commandCenter?.options?.campaigns || []).find((item) => item.name === context.campaign);
+    if (campaign?.id) actions.push(`<button type="button" data-focus-apply-filter="campaignId" data-focus-filter-value="${escapeHtml(campaign.id)}"><span class="material-symbols-outlined">filter_alt</span>Aplicar campana: ${escapeHtml(context.campaign)}</button>`);
+  }
+  if (!actions.length) {
+    actions.push(`<button type="button" data-focus-tab-shortcut="breakdown"><span class="material-symbols-outlined">account_tree</span>Ver desglose</button>`);
+  }
+  return `<div class="focus-context-actions">${actions.join("")}</div>`;
+}
+
+function renderChartFocusMode() {
+  if (!state.chartFocus.open) return;
+  const { chartId, context, presentation } = state.chartFocus;
+  const meta = chartFocusMeta(chartId);
+  const metric = focusPrimaryMetric(chartId, context);
+  const tabs = [
+    ["summary", "Resumen"],
+    ["breakdown", "Desglose"],
+    ["records", "Registros"],
+    ["comparison", "Comparacion"],
+    ["insights", "Insights"],
+    ["actions", "Acciones"],
+    ["definitions", "Definiciones"],
+  ];
+  document.body.classList.add("chart-focus-open");
+  chartFocusRoot.classList.remove("hidden");
+  chartFocusRoot.innerHTML = `
+    <section class="chart-focus-overlay ${presentation ? "is-presentation" : ""}" role="dialog" aria-modal="true" aria-labelledby="chartFocusTitle">
+      <header class="chart-focus-header">
+        <div>
+          <nav>Dashboard &gt; RMS Command Center &gt; ${escapeHtml(meta.title)}</nav>
+          <h2 id="chartFocusTitle">${escapeHtml(meta.title)}</h2>
+          <p>${escapeHtml(meta.subtitle)}</p>
+        </div>
+        <div class="chart-focus-metric"><span>${escapeHtml(metric.label)}</span><strong>${escapeHtml(metric.value)}</strong></div>
+        <div class="chart-focus-actions">
+          <button type="button" data-focus-presentation><span class="material-symbols-outlined">present_to_all</span>Presentar</button>
+          <button type="button" data-focus-copy><span class="material-symbols-outlined">link</span>Copiar</button>
+          <button type="button" data-focus-export><span class="material-symbols-outlined">download</span>Exportar</button>
+          <button type="button" data-focus-close aria-label="Cerrar RMS Data Explorer"><span class="material-symbols-outlined">close</span></button>
+        </div>
+      </header>
+      ${renderActiveFiltersBar()}
+      <main class="chart-focus-layout">
+        <section class="chart-focus-main">
+          <div class="chart-focus-stage">${renderFocusVisualization(chartId, context)}</div>
+          <div class="chart-focus-tabs" role="tablist">
+            ${tabs.map(([id, label]) => `<button type="button" class="${state.chartFocus.tab === id ? "active" : ""}" data-focus-tab="${id}">${label}</button>`).join("")}
+          </div>
+          <div class="chart-focus-tab-panel">${renderFocusTabContent(chartId, context)}</div>
+        </section>
+        <aside class="chart-focus-sidebar">
+          <section>
+            <span class="mono-label">Entiende este dato</span>
+            <h3>${escapeHtml(meta.primaryMetric || meta.chartType)}</h3>
+            <p>${escapeHtml(meta.description)}</p>
+          </section>
+          <section>
+            <span class="mono-label">Historia de este dato</span>
+            <p>${escapeHtml(focusNarrative(chartId, context))}</p>
+          </section>
+          <section>
+            <span class="mono-label">Decision recomendada</span>
+            <ul>${meta.recommendedActions.slice(0, 3).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          </section>
+          <section>
+            <span class="mono-label">Drill-down disponible</span>
+            <div class="focus-chip-row">${(meta.supportedDrilldowns || []).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
+          </section>
+          <section>
+            <span class="mono-label">Cross-filtering</span>
+            ${renderFocusContextActions(context)}
+          </section>
+        </aside>
+      </main>
+    </section>`;
+  bindChartFocusEvents();
+  drawChartFocusCanvas(chartId);
+}
+
+function bindChartFocusEvents() {
+  chartFocusRoot.querySelector("[data-focus-close]")?.addEventListener("click", closeChartFocusMode);
+  chartFocusRoot.querySelector("[data-focus-copy]")?.addEventListener("click", () => {
+    const url = `${window.location.origin}${window.location.pathname}?focus=${encodeURIComponent(state.chartFocus.chartId)}`;
+    navigator.clipboard?.writeText(url);
+    showFeedback("Enlace interno del RMS Data Explorer copiado.", "success");
+  });
+  chartFocusRoot.querySelector("[data-focus-export]")?.addEventListener("click", () => {
+    const records = chartFocusRecords(state.chartFocus.chartId, state.chartFocus.context);
+    downloadCsv(`rms-data-explorer-${state.chartFocus.chartId}`, [records.columns, ...records.rows]);
+  });
+  chartFocusRoot.querySelector("[data-focus-presentation]")?.addEventListener("click", () => {
+    state.chartFocus.presentation = !state.chartFocus.presentation;
+    renderChartFocusMode();
+  });
+  chartFocusRoot.querySelectorAll("[data-focus-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.chartFocus.tab = button.dataset.focusTab || "summary";
+      renderChartFocusMode();
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-focus-remove-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.focusRemoveFilter;
+      if (key && key !== "range" && key !== "comparePrevious") {
+        state.commandCenterFilters[key] = "";
+        loadCommandCenterData({ quiet: true });
+      }
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-focus-apply-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.focusApplyFilter;
+      if (!key) return;
+      state.commandCenterFilters[key] = button.dataset.focusFilterValue || "";
+      loadCommandCenterData({ quiet: true });
+      showFeedback("Filtro aplicado al RMS Command Center.", "success");
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-focus-tab-shortcut]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.chartFocus.tab = button.dataset.focusTabShortcut || "breakdown";
+      renderChartFocusMode();
+    });
+  });
 }
 
 function drawCommandCenterCharts(data) {
@@ -7089,6 +7638,10 @@ document.addEventListener("click", (event) => {
   closePortalMenu();
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.chartFocus.open) {
+    closeChartFocusMode();
+    return;
+  }
   if (event.key === "Escape") closePortalMenu();
 });
 rangeButton.addEventListener("click", handleRangeToggle);
