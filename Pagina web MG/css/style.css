@@ -3847,3 +3847,293 @@ body::before {
     min-height: 320px;
   }
 }
+
+/* Cleaner, lighter RMS section treatment */
+.rms-panel-band {
+  background:
+    linear-gradient(180deg, rgba(248, 252, 255, 0.98), rgba(231, 245, 255, 0.98)),
+    radial-gradient(circle at 16% 8%, rgba(77, 227, 255, 0.22), transparent 34%),
+    radial-gradient(circle at 86% 14%, rgba(77, 255, 184, 0.18), transparent 30%);
+}
+
+.rms-rail-band {
+  background:
+    linear-gradient(180deg, #f7fbff 0%, #edf8ff 100%),
+    radial-gradient(circle at 50% 0%, rgba(77, 227, 255, 0.24), transparent 34%);
+}
+
+.rms-full-band::after,
+.rms-panel-band::after {
+  background:
+    linear-gradient(90deg, rgba(246, 251, 255, 0.94), rgba(241, 250, 255, 0.82) 54%, rgba(241, 250, 255, 0.46)),
+    linear-gradient(180deg, rgba(248, 252, 255, 0.84), rgba(248, 252, 255, 0.48) 48%, rgba(240, 249, 255, 0.86));
+}
+
+.rms-panel-band::before {
+  opacity: 0.08;
+  filter: saturate(0.9) brightness(1.08);
+}
+
+.rms-band-rms::before,
+.rms-band-proof::before,
+.rms-band-strategy::before,
+.rms-band-contact::before {
+  opacity: 0.3;
+  filter: saturate(0.95) brightness(1.18);
+}
+
+.rms-band-ecosystem::before,
+.rms-band-products::before,
+.rms-band-plans::before {
+  opacity: 0.07;
+  filter: saturate(0.85) brightness(1.14);
+}
+
+.rms-panel-band .rms-section-heading h2,
+.rms-rail-band .rms-section-heading h2,
+.rms-full-band .rms-section-copy h2,
+.rms-full-band .rms-strategy-copy h2,
+.rms-full-band.rms-contact-premium h2,
+.rms-band-proof .rms-section-heading h2 {
+  color: #071425;
+}
+
+.rms-panel-band .rms-section-heading p,
+.rms-rail-band .rms-section-heading p,
+.rms-full-band .rms-section-copy p,
+.rms-full-band .rms-strategy-copy p,
+.rms-full-band.rms-contact-premium p,
+.rms-band-proof .rms-section-heading p {
+  color: #30445c;
+}
+
+.rms-panel-band .eyebrow,
+.rms-rail-band .eyebrow,
+.rms-full-band .eyebrow {
+  color: #04738a;
+}
+
+.rms-full-band .rms-section-copy,
+.rms-full-band .rms-strategy-copy,
+.rms-full-band.rms-contact-premium > div,
+.rms-full-band .rms-contact-form,
+.rms-band-proof .rms-section-heading {
+  border-color: rgba(24, 126, 154, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(239, 250, 255, 0.88)),
+    rgba(255, 255, 255, 0.84);
+  box-shadow: 0 28px 80px rgba(22, 53, 82, 0.18);
+}
+
+.rms-full-band .rms-large-visual,
+.rms-full-band .rms-strategy-media {
+  border-color: rgba(24, 126, 154, 0.18);
+  background: #eef8ff;
+  box-shadow: 0 28px 80px rgba(22, 53, 82, 0.2);
+}
+
+.rms-full-band .rms-large-visual::after,
+.rms-full-band .rms-strategy-media::after {
+  background: linear-gradient(180deg, transparent 54%, rgba(240, 249, 255, 0.68) 100%);
+}
+
+.rms-pill-row span,
+.rms-strategy-list span {
+  color: #15314a;
+  border-color: rgba(24, 126, 154, 0.22);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.rms-panel-band .rms-os-card,
+.rms-panel-band .rms-bento-card,
+.rms-panel-band .rms-product-card,
+.rms-panel-band .rms-plan-cards article,
+.rms-rail-band .rms-guide-rail figure {
+  border-color: rgba(24, 126, 154, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 54px rgba(25, 68, 104, 0.16);
+}
+
+.rms-panel-band .rms-os-card::after,
+.rms-panel-band .rms-bento-card::after,
+.rms-panel-band .rms-product-card::after {
+  background: linear-gradient(180deg, transparent 46%, rgba(6, 21, 36, 0.58) 100%);
+}
+
+.rms-panel-band .rms-os-card div,
+.rms-panel-band .rms-product-card div,
+.rms-panel-band .rms-bento-card figcaption {
+  border-color: rgba(24, 126, 154, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+  color: #081726;
+  box-shadow: 0 14px 38px rgba(12, 40, 64, 0.14);
+}
+
+.rms-panel-band .rms-os-card h3,
+.rms-panel-band .rms-product-card strong,
+.rms-panel-band .rms-bento-card figcaption,
+.rms-panel-band .rms-plan-cards h3,
+.rms-panel-band .rms-plan-cards strong {
+  color: #081726;
+}
+
+.rms-panel-band .rms-os-card p,
+.rms-panel-band .rms-plan-cards p {
+  color: #40556d;
+}
+
+.rms-panel-band .rms-os-card span,
+.rms-panel-band .rms-product-card span,
+.rms-panel-band .rms-plan-cards span {
+  color: #04738a;
+}
+
+.rms-os-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-auto-rows: auto;
+  align-items: stretch;
+}
+
+.rms-os-card {
+  min-height: 235px;
+}
+
+.rms-os-card-wide {
+  grid-column: 1;
+  grid-row: span 4;
+  min-height: 720px;
+}
+
+.rms-bento-grid {
+  grid-template-columns: minmax(0, 1.14fr) minmax(280px, 0.86fr);
+  grid-auto-rows: minmax(132px, auto);
+  align-items: stretch;
+}
+
+.rms-bento-card {
+  min-height: 154px;
+}
+
+.rms-bento-card.tall {
+  grid-column: 1;
+  grid-row: span 5;
+  min-height: 700px;
+}
+
+.rms-bento-card.wide {
+  grid-column: 2;
+}
+
+.rms-bento-card:not(.tall) img {
+  filter: saturate(0.95) brightness(1.06);
+}
+
+.rms-bento-card:not(.tall) figcaption {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.rms-product-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rms-band-products .rms-product-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rms-band-products .rms-product-card,
+.rms-band-products .rms-product-card:nth-child(1),
+.rms-band-products .rms-product-card:nth-child(2),
+.rms-band-products .rms-product-card:nth-child(3),
+.rms-band-products .rms-product-card:nth-child(4),
+.rms-band-products .rms-product-card:nth-child(5),
+.rms-band-products .rms-product-card:nth-child(6) {
+  grid-column: auto;
+  min-height: 390px;
+}
+
+.rms-product-card img {
+  height: 74%;
+}
+
+.rms-product-card div {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.rms-rail-band .rms-guide-rail figure {
+  background: #ffffff;
+}
+
+.rms-rail-band .rms-guide-rail figcaption,
+.rms-doc-cta strong {
+  color: #081726;
+}
+
+.rms-doc-cta {
+  border-color: rgba(24, 126, 154, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(237, 249, 255, 0.88)),
+    #ffffff;
+  box-shadow: 0 18px 50px rgba(25, 68, 104, 0.14);
+}
+
+.rms-doc-cta span {
+  color: #40556d;
+}
+
+.rms-contact-form label {
+  color: #10243a;
+}
+
+.rms-contact-form input,
+.rms-contact-form textarea {
+  color: #10243a;
+  border-color: rgba(24, 126, 154, 0.22);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+@media (max-width: 1100px) {
+  .rms-os-grid,
+  .rms-bento-grid,
+  .rms-band-products .rms-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rms-os-card-wide,
+  .rms-bento-card.tall,
+  .rms-bento-card.wide {
+    grid-column: span 2;
+    grid-row: auto;
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 720px) {
+  .rms-full-band::after,
+  .rms-panel-band::after {
+    background:
+      linear-gradient(180deg, rgba(248, 252, 255, 0.96), rgba(241, 250, 255, 0.92));
+  }
+
+  .rms-os-grid,
+  .rms-bento-grid,
+  .rms-band-products .rms-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-os-card-wide,
+  .rms-bento-card.tall,
+  .rms-bento-card.wide {
+    grid-column: auto;
+    min-height: 340px;
+  }
+
+  .rms-bento-card,
+  .rms-os-card,
+  .rms-band-products .rms-product-card {
+    min-height: 300px;
+  }
+}
