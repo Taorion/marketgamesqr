@@ -375,6 +375,11 @@ let state = {
     presentation: false,
     savedScrollY: 0,
     deepLinkHandled: false,
+    sourceRect: null,
+    originLabel: "",
+    journeyMode: false,
+    journeyStep: 0,
+    direction: 0,
   },
   summary: null,
   businessProfile: null,
@@ -485,6 +490,23 @@ const COMMAND_CENTER_RANGE_LABELS = {
   current_month: "Mes actual",
   previous_month: "Mes anterior",
   custom: "Personalizado",
+};
+
+const MOTION_TOKENS = {
+  duration: {
+    fast: 0.15,
+    normal: 0.3,
+    slow: 0.55,
+    focus: 0.65,
+  },
+  ease: {
+    premiumOut: [0.16, 1, 0.3, 1],
+    premiumInOut: [0.65, 0, 0.35, 1],
+  },
+  spring: {
+    soft: { type: "spring", stiffness: 180, damping: 26, mass: 0.9 },
+    focus: { type: "spring", stiffness: 120, damping: 24, mass: 1 },
+  },
 };
 
 const DATA_DICTIONARY = {
@@ -1682,6 +1704,8 @@ async function loadCommandCenterData({ quiet = false } = {}) {
   if (!session?.user?.business_id) return;
   if (!quiet) {
     commandCenterRoot?.classList.add("is-loading");
+  } else {
+    commandCenterRoot?.classList.add("is-recalculating");
   }
   try {
     state.commandCenter = await api(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() });
@@ -1693,6 +1717,7 @@ async function loadCommandCenterData({ quiet = false } = {}) {
     }
   } finally {
     commandCenterRoot?.classList.remove("is-loading");
+    commandCenterRoot?.classList.remove("is-recalculating");
   }
 }
 
@@ -1728,6 +1753,7 @@ function renderCommandCenterFilters(data) {
         <span>Comparar periodo anterior</span>
       </label>
       <button class="ghost-button" data-command-reset type="button">Limpiar</button>
+      <small class="command-recalc-status"><span class="material-symbols-outlined">sync</span>Recalculando lectura RMS...</small>
     </form>`;
 }
 
@@ -2286,13 +2312,8 @@ function renderCommandCenter() {
 function bindCommandCenterEvents() {
   commandCenterRoot?.querySelectorAll("[data-command-focus]").forEach((element) => {
     const open = () => {
-      openChartFocusMode(element.dataset.commandFocus, {
-        stage: element.dataset.focusStage || "",
-        dow: element.dataset.focusDow || "",
-        hour: element.dataset.focusHour || "",
-        campaign: element.dataset.focusCampaign || "",
-        channel: element.dataset.focusChannel || "",
-      });
+      const context = chartFocusContextFromElement(element);
+      openChartFocusMode(element.dataset.commandFocus, context, element);
     };
     element.addEventListener("click", (event) => {
       if (event.target.closest("button, select, input, textarea") && event.target !== element) return;
@@ -2411,6 +2432,196 @@ function chartFocusMeta(chartId) {
   return CHART_FOCUS_REGISTRY[chartId] || CHART_FOCUS_REGISTRY["executive-summary"];
 }
 
+function reducedMotionSafe() {
+  return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+}
+
+function chartFocusContextFromElement(element) {
+  return {
+    stage: element.dataset.focusStage || "",
+    dow: element.dataset.focusDow || "",
+    hour: element.dataset.focusHour || "",
+    campaign: element.dataset.focusCampaign || "",
+    channel: element.dataset.focusChannel || "",
+  };
+}
+
+function captureDataTravelOrigin(element) {
+  if (!element || reducedMotionSafe()) return null;
+  const rect = element.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  return {
+    left: Math.round(rect.left),
+    top: Math.round(rect.top),
+    width: Math.round(rect.width),
+    height: Math.round(rect.height),
+  };
+}
+
+function dataTravelGhostStyle(rect) {
+  if (!rect) return "";
+  const targetX = window.innerWidth / 2 - (rect.left + rect.width / 2);
+  const targetY = Math.max(180, window.innerHeight * 0.38) - (rect.top + rect.height / 2);
+  const scaleX = Math.min(3.8, Math.max(1.08, (window.innerWidth * 0.62) / Math.max(rect.width, 1)));
+  const scaleY = Math.min(3.2, Math.max(1.08, (window.innerHeight * 0.34) / Math.max(rect.height, 1)));
+  return `style="--travel-left:${rect.left}px; --travel-top:${rect.top}px; --travel-width:${rect.width}px; --travel-height:${rect.height}px; --travel-x:${Math.round(targetX)}px; --travel-y:${Math.round(targetY)}px; --travel-scale-x:${scaleX.toFixed(3)}; --travel-scale-y:${scaleY.toFixed(3)};"`;
+}
+
+function chartFocusOriginLabel(chartId, context = {}) {
+  const meta = chartFocusMeta(chartId);
+  if (context.stage) return `Etapa: ${context.stage}`;
+  if (context.channel && context.campaign) return `${context.campaign} / ${context.channel}`;
+  if (context.channel) return `Canal: ${context.channel}`;
+  if (context.campaign) return `Campana: ${context.campaign}`;
+  if (context.dow || context.hour) return `Bloque horario: ${context.dow || "-"} ${context.hour || "0"}:00`;
+  return meta.title;
+}
+
+function activeDataPath(chartId, context = {}) {
+  const meta = chartFocusMeta(chartId);
+  const path = ["Command Center", meta.title];
+  if (context.stage) path.push(context.stage);
+  if (context.campaign) path.push(context.campaign);
+  if (context.channel) path.push(context.channel);
+  if (context.dow || context.hour) path.push(`${context.dow || "Dia"} ${context.hour || "0"}:00`);
+  if ((state.chartFocus.tab || "summary") !== "summary") path.push(state.chartFocus.tab);
+  return path;
+}
+
+function renderMetricTravelBreadcrumb(chartId, context = {}) {
+  const path = activeDataPath(chartId, context);
+  return `
+    <nav class="metric-travel-breadcrumb" aria-label="Ruta de exploracion">
+      ${path.map((item, index) => `
+        <button type="button" data-data-path-index="${index}" ${index === path.length - 1 ? "aria-current=\"page\"" : ""}>
+          ${escapeHtml(item)}
+        </button>
+      `).join("<span>/</span>")}
+    </nav>`;
+}
+
+function renderDataTravelOverlay(chartId, context = {}) {
+  const rect = state.chartFocus.sourceRect;
+  const label = state.chartFocus.originLabel || chartFocusOriginLabel(chartId, context);
+  if (!rect) return "";
+  return `
+    <div class="data-travel-origin" ${dataTravelGhostStyle(rect)} aria-hidden="true">
+      <span>${escapeHtml(label)}</span>
+    </div>
+    <div class="data-path-connector" aria-hidden="true"></div>`;
+}
+
+function renderDataPathMap(chartId, context = {}) {
+  const path = activeDataPath(chartId, context);
+  return `
+    <div class="data-path-map" aria-label="Mapa de analisis">
+      <span class="material-symbols-outlined">route</span>
+      ${path.map((item, index) => `
+        <button type="button" data-data-path-index="${index}" class="${index === path.length - 1 ? "active" : ""}">
+          ${escapeHtml(item)}
+        </button>
+      `).join("<i></i>")}
+    </div>`;
+}
+
+function dataJourneySteps(chartId, context = {}) {
+  const data = state.commandCenter || {};
+  if (chartId === "rms-funnel") {
+    return (data.funnel || []).map((stage, index, list) => ({
+      label: stage.label || stage.key || `Etapa ${index + 1}`,
+      value: stage.value || 0,
+      detail: index === 0
+        ? "Todo empieza con la captacion. Aqui se ve el tamano de la oportunidad."
+        : `Desde aqui se compara contra ${list[index - 1]?.label || "la etapa anterior"} para encontrar fuga o avance.`,
+    }));
+  }
+  if (chartId === "treemap") {
+    return (data.revenue_treemap || []).slice(0, 5).map((row) => ({
+      label: row.label || "Canal",
+      value: money(row.value || row.revenue || 0),
+      detail: "Este canal muestra cuanto revenue atribuido aporta frente al resto del mix comercial.",
+    }));
+  }
+  if (chartId === "timeline") {
+    return (data.timeline || []).slice(-5).map((row) => ({
+      label: row.date || "Fecha",
+      value: money(row.revenue || 0),
+      detail: "Este punto ayuda a explicar que paso ese dia entre leads, redenciones, ventas y revenue.",
+    }));
+  }
+  if (chartId === "sankey") {
+    return [
+      { label: "Canal", value: "Origen", detail: "El revenue empieza en la fuente que atrajo al cliente." },
+      { label: "Campana", value: "Estrategia", detail: "La campana convierte la atencion en una accion medible." },
+      { label: "QR / Redencion", value: "Activacion", detail: "El QR conecta la promesa con una visita o validacion real." },
+      { label: "Venta", value: "Cierre", detail: "La venta confirma que el flujo produjo resultado comercial." },
+      { label: "Revenue", value: "Dinero", detail: "Este es el valor atribuido que el RMS puede explicar." },
+    ];
+  }
+  const meta = chartFocusMeta(chartId);
+  return [
+    { label: meta.title, value: focusPrimaryMetric(chartId, context).value, detail: meta.description },
+    { label: "Desglose", value: "Explorar", detail: meta.businessMeaning },
+    { label: "Decision", value: "Accion", detail: meta.recommendedActions[0] || "Revisa el detalle y aplica filtros." },
+  ];
+}
+
+function renderDataJourneyMode(chartId, context = {}) {
+  if (!state.chartFocus.journeyMode) return "";
+  const steps = dataJourneySteps(chartId, context);
+  if (!steps.length) return "";
+  const stepIndex = Math.min(Math.max(state.chartFocus.journeyStep || 0, 0), steps.length - 1);
+  const step = steps[stepIndex];
+  return `
+    <aside class="data-journey-mode" aria-live="polite">
+      <div>
+        <span class="mono-label">Explorar como historia</span>
+        <h3>${escapeHtml(step.label)}</h3>
+        <strong>${escapeHtml(String(step.value ?? ""))}</strong>
+        <p>${escapeHtml(step.detail)}</p>
+      </div>
+      <div class="data-journey-controls">
+        <button type="button" data-journey-prev ${stepIndex === 0 ? "disabled" : ""}><span class="material-symbols-outlined">chevron_left</span>Anterior</button>
+        <small>${stepIndex + 1} / ${steps.length}</small>
+        <button type="button" data-journey-next ${stepIndex === steps.length - 1 ? "disabled" : ""}>Siguiente<span class="material-symbols-outlined">chevron_right</span></button>
+        <button type="button" data-journey-exit><span class="material-symbols-outlined">close</span>Salir</button>
+      </div>
+    </aside>`;
+}
+
+function renderDataPointFocus(chartId, context = {}) {
+  const label = chartFocusOriginLabel(chartId, context);
+  const metric = focusPrimaryMetric(chartId, context);
+  return `
+    <section class="data-point-focus">
+      <span class="mono-label">Dato activo</span>
+      <h3>${escapeHtml(label)}</h3>
+      <p>La vista esta enfocada en este punto. Puedes ver el desglose, llevarlo a filtro global o regresar al mapa general.</p>
+      <div><strong>${escapeHtml(metric.value)}</strong><small>${escapeHtml(metric.label)}</small></div>
+      <button type="button" data-focus-tab-shortcut="records">
+        <span class="material-symbols-outlined">table_rows</span>Ver registros detras del dato
+      </button>
+    </section>`;
+}
+
+function focusChartSequence() {
+  return ["executive-summary", "rms-funnel", "revenue-score", "timeline", "heatmap", "matrix", "treemap", "campaign-comparison", "sankey", "affiliate-network", "branch-ranking", "qr-status", "scatter", "waterfall", "cohorts", "power-table"];
+}
+
+function moveChartFocus(direction) {
+  const sequence = focusChartSequence();
+  const current = sequence.includes(state.chartFocus.chartId) ? state.chartFocus.chartId : "executive-summary";
+  const nextIndex = (sequence.indexOf(current) + direction + sequence.length) % sequence.length;
+  state.chartFocus.chartId = sequence[nextIndex];
+  state.chartFocus.context = {};
+  state.chartFocus.tab = "summary";
+  state.chartFocus.direction = direction;
+  state.chartFocus.sourceRect = null;
+  state.chartFocus.originLabel = chartFocusMeta(sequence[nextIndex]).title;
+  state.chartFocus.journeyStep = 0;
+  renderChartFocusMode();
+}
+
 function commandFilterLabel(key, value) {
   const data = state.commandCenter || {};
   const options = data.options || {};
@@ -2459,7 +2670,7 @@ function renderActiveFiltersBar(chips = activeCommandFilterChips()) {
     </div>`;
 }
 
-function openChartFocusMode(chartId, context = {}) {
+function openChartFocusMode(chartId, context = {}, sourceElement = null) {
   state.chartFocus = {
     ...state.chartFocus,
     open: true,
@@ -2468,18 +2679,36 @@ function openChartFocusMode(chartId, context = {}) {
     tab: context.tab || "summary",
     presentation: Boolean(context.presentation),
     savedScrollY: window.scrollY || state.chartFocus.savedScrollY || 0,
+    sourceRect: captureDataTravelOrigin(sourceElement),
+    originLabel: chartFocusOriginLabel(chartId, context),
+    journeyMode: false,
+    journeyStep: 0,
+    direction: 0,
   };
   renderChartFocusMode();
 }
 
 function closeChartFocusMode() {
   const y = state.chartFocus.savedScrollY || 0;
-  state.chartFocus.open = false;
-  state.chartFocus.presentation = false;
-  chartFocusRoot.classList.add("hidden");
-  chartFocusRoot.innerHTML = "";
-  document.body.classList.remove("chart-focus-open");
-  window.scrollTo({ top: y, behavior: "auto" });
+  const overlay = chartFocusRoot.querySelector(".chart-focus-overlay");
+  const finish = () => {
+    state.chartFocus.open = false;
+    state.chartFocus.presentation = false;
+    state.chartFocus.sourceRect = null;
+    state.chartFocus.originLabel = "";
+    state.chartFocus.journeyMode = false;
+    state.chartFocus.journeyStep = 0;
+    chartFocusRoot.classList.add("hidden");
+    chartFocusRoot.innerHTML = "";
+    document.body.classList.remove("chart-focus-open");
+    window.scrollTo({ top: y, behavior: "auto" });
+  };
+  if (overlay && !reducedMotionSafe()) {
+    overlay.classList.add("is-closing");
+    window.setTimeout(finish, MOTION_TOKENS.duration.normal * 1000);
+    return;
+  }
+  finish();
 }
 
 function chartFocusRecords(chartId, context = {}) {
@@ -2737,6 +2966,7 @@ function renderFocusContextActions(context = {}) {
 function renderChartFocusMode() {
   if (!state.chartFocus.open) return;
   const { chartId, context, presentation } = state.chartFocus;
+  const direction = state.chartFocus.direction;
   const meta = chartFocusMeta(chartId);
   const metric = focusPrimaryMetric(chartId, context);
   const tabs = [
@@ -2751,15 +2981,19 @@ function renderChartFocusMode() {
   document.body.classList.add("chart-focus-open");
   chartFocusRoot.classList.remove("hidden");
   chartFocusRoot.innerHTML = `
-    <section class="chart-focus-overlay ${presentation ? "is-presentation" : ""}" role="dialog" aria-modal="true" aria-labelledby="chartFocusTitle">
+    <section class="chart-focus-overlay ${presentation ? "is-presentation" : ""} ${direction ? "is-side-travel" : ""}" role="dialog" aria-modal="true" aria-labelledby="chartFocusTitle">
+      ${renderDataTravelOverlay(chartId, context)}
       <header class="chart-focus-header">
         <div>
-          <nav>Dashboard &gt; RMS Command Center &gt; ${escapeHtml(meta.title)}</nav>
+          ${renderMetricTravelBreadcrumb(chartId, context)}
           <h2 id="chartFocusTitle">${escapeHtml(meta.title)}</h2>
           <p>${escapeHtml(meta.subtitle)}</p>
         </div>
         <div class="chart-focus-metric"><span>${escapeHtml(metric.label)}</span><strong>${escapeHtml(metric.value)}</strong></div>
         <div class="chart-focus-actions">
+          <button type="button" data-focus-prev><span class="material-symbols-outlined">arrow_back</span>Anterior</button>
+          <button type="button" data-focus-next>Siguiente<span class="material-symbols-outlined">arrow_forward</span></button>
+          <button type="button" data-focus-journey><span class="material-symbols-outlined">route</span>${state.chartFocus.journeyMode ? "Salir historia" : "Explorar historia"}</button>
           <button type="button" data-focus-presentation><span class="material-symbols-outlined">present_to_all</span>Presentar</button>
           <button type="button" data-focus-copy><span class="material-symbols-outlined">link</span>Copiar</button>
           <button type="button" data-focus-export><span class="material-symbols-outlined">download</span>Exportar</button>
@@ -2767,9 +3001,14 @@ function renderChartFocusMode() {
         </div>
       </header>
       ${renderActiveFiltersBar()}
+      ${renderDataPathMap(chartId, context)}
       <main class="chart-focus-layout">
         <section class="chart-focus-main">
-          <div class="chart-focus-stage">${renderFocusVisualization(chartId, context)}</div>
+          <div class="chart-focus-stage data-travel-scene">
+            <div class="chart-stage-help"><span class="material-symbols-outlined">touch_app</span>Haz clic en una barra, etapa, celda o canal para viajar al detalle de ese dato.</div>
+            ${renderFocusVisualization(chartId, context)}
+            ${renderDataJourneyMode(chartId, context)}
+          </div>
           <div class="chart-focus-tabs" role="tablist">
             ${tabs.map(([id, label]) => `<button type="button" class="${state.chartFocus.tab === id ? "active" : ""}" data-focus-tab="${id}">${label}</button>`).join("")}
           </div>
@@ -2785,6 +3024,7 @@ function renderChartFocusMode() {
             <span class="mono-label">Historia de este dato</span>
             <p>${escapeHtml(focusNarrative(chartId, context))}</p>
           </section>
+          ${renderDataPointFocus(chartId, context)}
           <section>
             <span class="mono-label">Decision recomendada</span>
             <ul>${meta.recommendedActions.slice(0, 3).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
@@ -2802,10 +3042,18 @@ function renderChartFocusMode() {
     </section>`;
   bindChartFocusEvents();
   drawChartFocusCanvas(chartId);
+  state.chartFocus.direction = 0;
 }
 
 function bindChartFocusEvents() {
   chartFocusRoot.querySelector("[data-focus-close]")?.addEventListener("click", closeChartFocusMode);
+  chartFocusRoot.querySelector("[data-focus-prev]")?.addEventListener("click", () => moveChartFocus(-1));
+  chartFocusRoot.querySelector("[data-focus-next]")?.addEventListener("click", () => moveChartFocus(1));
+  chartFocusRoot.querySelector("[data-focus-journey]")?.addEventListener("click", () => {
+    state.chartFocus.journeyMode = !state.chartFocus.journeyMode;
+    state.chartFocus.journeyStep = 0;
+    renderChartFocusMode();
+  });
   chartFocusRoot.querySelector("[data-focus-copy]")?.addEventListener("click", () => {
     const url = `${window.location.origin}${window.location.pathname}?focus=${encodeURIComponent(state.chartFocus.chartId)}`;
     navigator.clipboard?.writeText(url);
@@ -2822,6 +3070,7 @@ function bindChartFocusEvents() {
   chartFocusRoot.querySelectorAll("[data-focus-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       state.chartFocus.tab = button.dataset.focusTab || "summary";
+      state.chartFocus.direction = 0;
       renderChartFocusMode();
     });
   });
@@ -2846,6 +3095,56 @@ function bindChartFocusEvents() {
   chartFocusRoot.querySelectorAll("[data-focus-tab-shortcut]").forEach((button) => {
     button.addEventListener("click", () => {
       state.chartFocus.tab = button.dataset.focusTabShortcut || "breakdown";
+      state.chartFocus.direction = 0;
+      renderChartFocusMode();
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-journey-prev]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.chartFocus.journeyStep = Math.max(0, (state.chartFocus.journeyStep || 0) - 1);
+      renderChartFocusMode();
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-journey-next]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const steps = dataJourneySteps(state.chartFocus.chartId, state.chartFocus.context);
+      state.chartFocus.journeyStep = Math.min(Math.max(steps.length - 1, 0), (state.chartFocus.journeyStep || 0) + 1);
+      renderChartFocusMode();
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-journey-exit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.chartFocus.journeyMode = false;
+      state.chartFocus.journeyStep = 0;
+      renderChartFocusMode();
+    });
+  });
+  chartFocusRoot.querySelectorAll("[data-data-path-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.dataPathIndex || 0);
+      if (index <= 1) {
+        state.chartFocus.context = {};
+        state.chartFocus.tab = "summary";
+        state.chartFocus.journeyStep = 0;
+        renderChartFocusMode();
+      } else if (index === activeDataPath(state.chartFocus.chartId, state.chartFocus.context).length - 1) {
+        state.chartFocus.tab = "summary";
+        renderChartFocusMode();
+      }
+    });
+  });
+  chartFocusRoot.querySelectorAll(".chart-focus-stage [data-command-focus]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (event.target.closest("button, select, input, textarea") && event.target !== element) return;
+      event.stopPropagation();
+      const nextChartId = element.dataset.commandFocus || state.chartFocus.chartId;
+      state.chartFocus.chartId = nextChartId;
+      state.chartFocus.context = chartFocusContextFromElement(element);
+      state.chartFocus.tab = "summary";
+      state.chartFocus.sourceRect = captureDataTravelOrigin(element);
+      state.chartFocus.originLabel = chartFocusOriginLabel(nextChartId, state.chartFocus.context);
+      state.chartFocus.journeyStep = 0;
+      state.chartFocus.direction = 0;
       renderChartFocusMode();
     });
   });

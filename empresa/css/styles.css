@@ -7491,3 +7491,512 @@ body.chart-focus-open {
   }
 }
 
+/* RMS Data Travel System */
+:root {
+  --motion-fast: 150ms;
+  --motion-normal: 300ms;
+  --motion-slow: 550ms;
+  --motion-focus: 650ms;
+  --ease-out-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-premium: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+body.chart-focus-open .command-center {
+  filter: saturate(0.82) blur(1.5px);
+  transform: scale(0.996);
+  transition: filter var(--motion-normal) var(--ease-out-premium), transform var(--motion-normal) var(--ease-out-premium);
+}
+
+.chart-focus-overlay {
+  animation: chartFocusIn var(--motion-focus) var(--ease-out-premium);
+}
+
+.chart-focus-overlay.is-closing {
+  animation: chartFocusOut var(--motion-normal) var(--ease-in-out-premium) forwards;
+}
+
+.chart-focus-overlay.is-side-travel .chart-focus-stage,
+.chart-focus-overlay.is-side-travel .chart-focus-tab-panel {
+  animation: dataRoomShift var(--motion-slow) var(--ease-out-premium);
+}
+
+.chart-focus-header,
+.active-filters-bar,
+.data-path-map,
+.chart-focus-stage,
+.chart-focus-tab-panel,
+.chart-focus-sidebar section {
+  animation: dataPanelEnter var(--motion-slow) var(--ease-out-premium) both;
+}
+
+.active-filters-bar {
+  animation-delay: 70ms;
+}
+
+.data-path-map {
+  animation-delay: 110ms;
+}
+
+.chart-focus-stage {
+  animation-delay: 150ms;
+}
+
+.chart-focus-tab-panel {
+  animation-delay: 220ms;
+}
+
+.chart-focus-sidebar section:nth-child(1) {
+  animation-delay: 180ms;
+}
+
+.chart-focus-sidebar section:nth-child(2) {
+  animation-delay: 230ms;
+}
+
+.chart-focus-sidebar section:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.chart-focus-sidebar section:nth-child(4) {
+  animation-delay: 330ms;
+}
+
+.chart-focus-sidebar section:nth-child(5) {
+  animation-delay: 380ms;
+}
+
+.data-travel-origin {
+  position: fixed;
+  left: var(--travel-left);
+  top: var(--travel-top);
+  z-index: 1210;
+  width: var(--travel-width);
+  height: var(--travel-height);
+  pointer-events: none;
+  border: 1px solid rgba(111, 251, 190, 0.5);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0, 245, 170, 0.16), rgba(56, 189, 248, 0.12));
+  box-shadow: 0 0 0 1px rgba(124, 251, 255, 0.16), 0 0 46px rgba(0, 245, 170, 0.24);
+  transform-origin: center;
+  animation: dataTravelZoom var(--motion-focus) var(--ease-out-premium) forwards;
+}
+
+.data-travel-origin span {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  color: #eaffff;
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-path-connector {
+  position: fixed;
+  left: 50%;
+  top: 96px;
+  z-index: 1201;
+  width: min(44vw, 620px);
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(111, 251, 190, 0.78), rgba(56, 189, 248, 0.58), transparent);
+  transform: translateX(-50%);
+  animation: dataPathPulse 980ms var(--ease-out-premium) forwards;
+}
+
+.metric-travel-breadcrumb,
+.data-path-map {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.metric-travel-breadcrumb button,
+.data-path-map button {
+  border: 1px solid rgba(124, 251, 255, 0.16);
+  border-radius: 999px;
+  color: #c9f7ff;
+  background: rgba(124, 251, 255, 0.07);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.metric-travel-breadcrumb button {
+  padding: 5px 8px;
+}
+
+.metric-travel-breadcrumb button[aria-current="page"],
+.data-path-map button.active {
+  border-color: rgba(111, 251, 190, 0.5);
+  color: #ffffff;
+  background: rgba(0, 245, 170, 0.14);
+}
+
+.metric-travel-breadcrumb span,
+.data-path-map i {
+  width: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(124, 251, 255, 0.15), rgba(111, 251, 190, 0.7));
+}
+
+.data-path-map {
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 251, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(3, 12, 22, 0.72);
+}
+
+.data-path-map > .material-symbols-outlined {
+  color: #6ffbbe;
+}
+
+.chart-stage-help {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(124, 251, 255, 0.16);
+  border-radius: 999px;
+  color: #dffbff;
+  background: rgba(3, 9, 18, 0.82);
+  font-size: 12px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+}
+
+.command-panel[data-command-focus],
+.command-kpi-card[data-command-focus],
+.command-funnel-row[data-command-focus],
+.command-heatmap i[data-command-focus],
+.command-matrix td[data-command-focus],
+.command-treemap article[data-command-focus] {
+  transition: transform var(--motion-fast) var(--ease-out-premium), opacity var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, filter var(--motion-fast) ease;
+}
+
+.command-panel[data-command-focus]:hover,
+.command-kpi-card[data-command-focus]:hover,
+.command-funnel-row[data-command-focus]:hover,
+.command-heatmap i[data-command-focus]:hover,
+.command-matrix td[data-command-focus]:hover,
+.command-treemap article[data-command-focus]:hover {
+  border-color: rgba(111, 251, 190, 0.46);
+  box-shadow: 0 18px 52px rgba(0, 245, 170, 0.1), 0 0 0 1px rgba(124, 251, 255, 0.08);
+  filter: saturate(1.08);
+  transform: translateY(-2px);
+}
+
+.command-heatmap i[data-command-focus]:hover,
+.command-matrix td[data-command-focus]:hover {
+  transform: scale(1.08);
+}
+
+.chart-focus-stage :where(.command-funnel-row, .command-heatmap i, .command-matrix td, .command-treemap article)[data-command-focus]:hover {
+  outline: 2px solid rgba(111, 251, 190, 0.58);
+  outline-offset: 2px;
+}
+
+.chart-focus-stage :where(.command-funnel-row, .command-heatmap i, .command-matrix td, .command-treemap article)[data-command-focus] {
+  position: relative;
+}
+
+.chart-focus-stage :where(.command-funnel-row, .command-heatmap i, .command-matrix td, .command-treemap article)[data-command-focus]:hover::after {
+  content: "Ver detalle";
+  position: absolute;
+  z-index: 7;
+  right: 8px;
+  top: 8px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #041018;
+  background: #7cfbff;
+  font-size: 10px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.data-journey-mode {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(111, 251, 190, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0, 245, 170, 0.13), rgba(27, 109, 255, 0.14)), rgba(2, 8, 18, 0.92);
+  box-shadow: 0 -18px 52px rgba(0, 0, 0, 0.32);
+  animation: dataPanelEnter var(--motion-normal) var(--ease-out-premium) both;
+}
+
+.data-journey-mode h3 {
+  margin: 5px 0;
+  color: #ffffff;
+}
+
+.data-journey-mode strong {
+  display: inline-block;
+  color: #6ffbbe;
+  font-size: 24px;
+}
+
+.data-journey-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.data-journey-controls button,
+.data-point-focus button {
+  min-height: 36px;
+  border: 1px solid rgba(124, 251, 255, 0.22);
+  border-radius: 999px;
+  color: #f8fdff;
+  background: rgba(8, 22, 38, 0.84);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  cursor: pointer;
+}
+
+.data-journey-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.data-point-focus {
+  border-color: rgba(111, 251, 190, 0.24) !important;
+  background: linear-gradient(145deg, rgba(0, 245, 170, 0.12), rgba(3, 9, 18, 0.86)) !important;
+}
+
+.data-point-focus div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid rgba(124, 251, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(2, 8, 23, 0.72);
+}
+
+.data-point-focus strong {
+  color: #ffffff;
+  font-size: 26px;
+}
+
+.data-point-focus small {
+  color: #7cfbff;
+  text-transform: uppercase;
+}
+
+.chart-focus-metric strong,
+.command-kpi-card strong {
+  animation: metricValuePulse var(--motion-slow) var(--ease-out-premium);
+}
+
+.focus-insight-list article,
+.decision-recommendation-panel button,
+.drilldown-table tbody tr,
+.data-dictionary-grid article {
+  animation: dataRowReveal var(--motion-normal) var(--ease-out-premium) both;
+}
+
+.focus-insight-list article:nth-child(2),
+.decision-recommendation-panel button:nth-child(2),
+.drilldown-table tbody tr:nth-child(2),
+.data-dictionary-grid article:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.focus-insight-list article:nth-child(3),
+.decision-recommendation-panel button:nth-child(3),
+.drilldown-table tbody tr:nth-child(3),
+.data-dictionary-grid article:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.command-center.is-recalculating .command-panel,
+.command-center.is-recalculating .command-kpi-card {
+  opacity: 0.72;
+  transform: translateY(1px);
+  transition: opacity var(--motion-normal) ease, transform var(--motion-normal) var(--ease-out-premium);
+}
+
+.command-recalc-status {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  color: #7cfbff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.command-center.is-recalculating .command-recalc-status {
+  display: inline-flex;
+}
+
+.command-center.is-recalculating .command-recalc-status .material-symbols-outlined {
+  animation: recalcSpin 900ms linear infinite;
+}
+
+@keyframes dataTravelZoom {
+  0% {
+    opacity: 0.92;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  68% {
+    opacity: 0.34;
+    transform: translate3d(var(--travel-x), var(--travel-y), 0) scale(var(--travel-scale-x), var(--travel-scale-y));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--travel-x), var(--travel-y), 0) scale(var(--travel-scale-x), var(--travel-scale-y));
+  }
+}
+
+@keyframes chartFocusOut {
+  to {
+    opacity: 0;
+    transform: scale(0.986);
+  }
+}
+
+@keyframes dataPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dataRoomShift {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes dataPathPulse {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleX(0.2);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scaleX(1);
+  }
+}
+
+@keyframes metricValuePulse {
+  0% {
+    text-shadow: 0 0 0 rgba(111, 251, 190, 0);
+  }
+  42% {
+    text-shadow: 0 0 22px rgba(111, 251, 190, 0.45);
+  }
+  100% {
+    text-shadow: 0 0 0 rgba(111, 251, 190, 0);
+  }
+}
+
+@keyframes dataRowReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes recalcSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 960px) {
+  .data-path-map {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .data-journey-mode {
+    position: static;
+    grid-template-columns: 1fr;
+  }
+
+  .data-journey-controls {
+    justify-content: flex-start;
+  }
+
+  .chart-stage-help {
+    position: static;
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.chart-focus-open .command-center {
+    filter: none;
+    transform: none;
+  }
+
+  .chart-focus-overlay,
+  .chart-focus-overlay.is-closing,
+  .chart-focus-overlay.is-side-travel .chart-focus-stage,
+  .chart-focus-overlay.is-side-travel .chart-focus-tab-panel,
+  .chart-focus-header,
+  .active-filters-bar,
+  .data-path-map,
+  .chart-focus-stage,
+  .chart-focus-tab-panel,
+  .chart-focus-sidebar section,
+  .data-travel-origin,
+  .data-path-connector,
+  .data-journey-mode,
+  .focus-insight-list article,
+  .decision-recommendation-panel button,
+  .drilldown-table tbody tr,
+  .data-dictionary-grid article,
+  .chart-focus-metric strong,
+  .command-kpi-card strong,
+  .command-center.is-recalculating .command-recalc-status .material-symbols-outlined {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+
+  .data-travel-origin,
+  .data-path-connector {
+    display: none;
+  }
+}
+
