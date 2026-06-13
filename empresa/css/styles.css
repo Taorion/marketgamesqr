@@ -6878,3 +6878,136 @@ textarea {
   }
 }
 
+/* Final light theme legibility pass */
+:root[data-theme="light"] .view-section {
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .view-section > .view-head,
+:root[data-theme="light"] .view-section :where(.surface-card, .data-table-card, .chart-card, .map-card, .placeholder-card, .campaign-rail, .insight-card, .explain-card, .asset-card, .setting-card, .validator-panel, .affiliate-panel, .affiliate-logo-panel, .geo-branch-card, .modal-card, .table-card, .busy-card, .kpi-card, .affiliate-stat-card, .metric-card, .profile-detail, .campaign-meta-card, .channel-card, .qr-batch-stat, .account-meta-grid div, .account-billing-panel, .modal-actions, .inline-selects, .validator-result-item, .result-item, .sale-summary-card, .affiliate-step, .affiliate-photo-capture, .business-logo-preview, .portal-plan-card, .qr-result) {
+  background: #ffffff !important;
+  border-color: #cfe0da !important;
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .view-section :where(h1, h2, h3, h4, h5, h6, strong, b, label, legend, dt, dd, th, td, .kpi-value, .campaign-title, .table-card-head strong, .profile-detail strong, .metric-card strong, .asset-card strong) {
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .view-section :where(p, span, small, li, figcaption, .muted, .table-muted, .table-secondary, .chart-explainer, .chart-note, .kpi-meta, .setting-card p, .asset-card p, .placeholder-card p, .map-card p, .affiliate-card-note, .affiliate-card-meta, .affiliate-selected-empty) {
+  color: #475d55 !important;
+}
+
+:root[data-theme="light"] .view-section :where(.mono-label, th, .package-code, .affiliate-selected-grid dt, .campaign-item-row strong) {
+  color: #087a5e !important;
+}
+
+:root[data-theme="light"] .view-section :where(.table-wrap, table, thead, tbody, tr, th, td) {
+  background: #ffffff !important;
+  border-color: #dcece6 !important;
+}
+
+:root[data-theme="light"] .view-section th {
+  background: #f3fbf7 !important;
+}
+
+:root[data-theme="light"] .view-section :where(input, select, textarea, .search-shell) {
+  background: #ffffff !important;
+  border-color: #cfe0da !important;
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .view-section :where(input, textarea)::placeholder {
+  color: #647a72 !important;
+}
+
+:root[data-theme="light"] .view-section :where(.ghost-button, .icon-button, .link-button) {
+  background: #ffffff !important;
+  border-color: #cfe0da !important;
+  color: #06372e !important;
+}
+
+:root[data-theme="light"] .view-section :where(.ghost-button, .icon-button, .link-button) * {
+  color: inherit !important;
+}
+
+:root[data-theme="light"] .view-section :where(.solid-button, .request-button),
+:root[data-theme="light"] .view-section :where(.solid-button, .request-button) * {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card),
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) * {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .view-section :where(.dark-hero-card, .dark-insight-card) :where(p, small, span:not(.mono-label)) {
+  color: #e8fff7 !important;
+}
+
+:root[data-theme="light"] .view-section .command-center,
+:root[data-theme="light"] .view-section .command-center :where(.command-hero, .command-filter-panel, .command-panel, .command-kpi-card, .executive-summary-card, .revenue-story, .suggested-decision, .decision-map article, .command-feed-panel, .command-feed-card, .command-feed-explain-grid section, .command-detail-grid article, .cohort-grid article, .analytics-empty-state) {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0, 245, 170, 0.15), transparent 26%),
+    radial-gradient(circle at 85% 5%, rgba(27, 109, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, #05070d, #07111f 46%, #05070d) !important;
+  border-color: rgba(124, 251, 255, 0.24) !important;
+  color: #f4fbff !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(h1, h2, h3, h4, h5, h6, strong, b, label, legend, dt, dd, th, td, .command-kpi-value, .command-feed-card-head > strong, .score-orbit) {
+  color: #f8fdff !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(p, span, small, li, figcaption, .chart-explainer, .chart-note, .command-funnel-row span, .decision-map span, .executive-summary-card dd, .command-table td small, .command-feed-head p, .command-feed-explain-grid p) {
+  color: #c9ddea !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.mono-label, .command-filters label > span, .command-table-toolbar span, .command-detail-grid span, .executive-summary-card dt, .command-feed-explain-grid span, .command-feed-card-head small, .command-feed-glossary strong, .command-matrix th, .command-table th) {
+  color: #7cfbff !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.command-filters select, .command-filters input[type="date"], .command-table-toolbar input, .command-table-toolbar select) {
+  background: rgba(4, 15, 29, 0.94) !important;
+  border-color: rgba(124, 251, 255, 0.28) !important;
+  color: #f8fdff !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.command-table-wrap, .command-matrix-wrap, .command-table, .command-matrix, .command-table thead, .command-matrix thead, .command-table tbody, .command-matrix tbody, .command-table tr, .command-matrix tr) {
+  background: rgba(2, 8, 23, 0.76) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.command-table th, .command-matrix th) {
+  background: rgba(4, 18, 34, 0.96) !important;
+}
+
+:root[data-theme="light"] .view-section .command-center canvas {
+  background: transparent !important;
+}
+
+:root[data-theme="light"] .view-section .command-center .command-matrix td {
+  color: #f8fdff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78) !important;
+}
+
+:root[data-theme="light"] .view-section .command-center .command-feed-guide strong {
+  color: #03101a !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.solid-button) {
+  color: #021018 !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.ghost-button, .command-row-button) {
+  background: rgba(124, 251, 255, 0.07) !important;
+  border-color: rgba(124, 251, 255, 0.38) !important;
+  color: #dffbff !important;
+}
+
+:root[data-theme="light"] .view-section .command-center :where(.status-chip, .pill, .decision-map i, .decision-map em) {
+  background: rgba(124, 251, 255, 0.1) !important;
+  border-color: rgba(124, 251, 255, 0.15) !important;
+  color: #ecfbff !important;
+}
+
