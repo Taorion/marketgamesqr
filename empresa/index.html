@@ -173,6 +173,7 @@
               <span class="mono-label">Plan actual</span>
               <h3 id="subscriptionPlanName">Sin plan cargado</h3>
               <p id="subscriptionPlanSummary">Los permisos del portal se cargan al iniciar sesion.</p>
+              <p class="subscription-timing" id="subscriptionTiming">Sin fecha de renovacion cargada.</p>
             </div>
             <div class="subscription-limits" id="subscriptionLimits"></div>
           </section>
@@ -497,6 +498,8 @@
                       <select id="subscriptionRenewalPlanSelect" required></select>
                     </label>
                     <button class="solid-button" id="subscriptionRenewalButton" type="submit">Renovar mensualidad</button>
+                    <button class="ghost-button" id="subscriptionAutoRenewButton" type="button">Activar cobro automatico</button>
+                    <span class="table-secondary" id="subscriptionAutoRenewStatus">Cobro automatico no configurado.</span>
                   </form>
                 </div>
                 <p class="error-line" id="subscriptionRenewalMessage"></p>
@@ -631,6 +634,9 @@
                   <h3>Generar QR unico</h3>
                 </div>
                 <form class="modal-form" id="postSaleQrForm">
+                  <label class="full"><span>Campana asociada</span><select id="postSaleCampaignInput" required></select></label>
+                  <label><span>Origen / referido</span><input id="postSaleAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, WhatsApp"></label>
+                  <label><span>Asunto / canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre del influencer o activacion"></label>
                   <label><span>Valor de venta</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" required></label>
                   <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
                   <label><span>Producto / servicio</span><input id="postSaleProductInput" type="text"></label>
@@ -676,6 +682,9 @@
                   <h3>Crear paquete descargable</h3>
                 </div>
                 <form class="modal-form" id="qrBatchForm">
+                  <label class="full"><span>Campana asociada</span><select id="qrBatchCampaignInput" required></select></label>
+                  <label><span>Origen / referido</span><input id="qrBatchAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, pauta"></label>
+                  <label><span>Asunto / canal</span><input id="qrBatchAttributionSubjectInput" type="text" placeholder="Nombre del influencer, stand o lote"></label>
                   <label><span>Nombre del paquete</span><input id="qrBatchNameInput" type="text" required></label>
                   <label><span>Cantidad de QR</span><input id="qrBatchQuantityInput" type="number" min="1" max="5000" value="50" required></label>
                   <label><span>Uso del paquete</span>
@@ -1034,11 +1043,36 @@
           <section class="view-section" data-view="leads">
             <div class="view-head">
               <div>
-                <h2>Base de Leads</h2>
-                <p>Participantes capturados en la campana seleccionada, con origen, intereses e intencion comercial para orientar seguimiento.</p>
+                <h2>Feed de Leads y Contactos</h2>
+                <p>Contactos capturados, compradores y referidos con origen, campana, interes y accion recomendada para email, WhatsApp y remarketing.</p>
               </div>
-              <button class="ghost-button" id="exportLeadsButton" type="button">Exportar Datos</button>
+              <button class="ghost-button" id="exportLeadsButton" type="button">Exportar Feed</button>
             </div>
+            <section class="kpi-grid compact" id="leadFeedKpiGrid"></section>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Feed comercial</span>
+                  <h3>Leads, compradores y contactos retenidos por plan</h3>
+                </div>
+                <span class="pill muted" id="leadFeedRetention">Retencion sin cargar</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Contacto</th>
+                      <th>Origen</th>
+                      <th>Campana / asunto</th>
+                      <th>Estado</th>
+                      <th>Compra</th>
+                      <th>Accion sugerida</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leadFeedTable"></tbody>
+                </table>
+              </div>
+            </article>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
                 <span class="mono-label">Leads de la campana</span>
@@ -1663,6 +1697,10 @@
                     <span><strong>3</strong> El referido compra y suma puntos</span>
                   </div>
                 </div>
+                <label class="stacked-field">
+                  <span>Campana asociada</span>
+                  <select id="affiliateReferralQrCampaignInput" required></select>
+                </label>
                 <div class="affiliate-card-actions">
                   <label>
                     <span>Cantidad de QR</span>

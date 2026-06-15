@@ -435,6 +435,19 @@ textarea {
   color: var(--muted);
 }
 
+.subscription-banner[data-access-status="GRACE"] {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.subscription-banner[data-access-status="LOCKED"] {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.subscription-timing {
+  margin-top: 6px !important;
+  font-weight: 700;
+}
+
 .subscription-limits {
   display: flex;
   flex-wrap: wrap;

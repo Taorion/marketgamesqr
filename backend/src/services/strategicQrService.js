@@ -75,7 +75,7 @@ async function assertReward(client, businessId, rewardId) {
 
 async function assertCampaign(client, businessId, campaignId) {
   if (!campaignId) {
-    return null;
+    throw badRequest("Selecciona una campana para atribuir este QR.");
   }
   const result = await client.query(
     "select id, name, status from campaigns where id = $1 and business_id = $2",
@@ -84,6 +84,9 @@ async function assertCampaign(client, businessId, campaignId) {
   const campaign = result.rows[0];
   if (!campaign) {
     throw badRequest("Campaign does not exist for this business.");
+  }
+  if (["FINISHED", "ARCHIVED"].includes(campaign.status)) {
+    throw badRequest("La campana seleccionada ya finalizo o esta archivada.");
   }
   return campaign;
 }
@@ -152,7 +155,7 @@ function buildBenefitPayload(benefit, reward) {
 
 async function createPostSaleQr(businessId, user, body) {
   return withTransaction(async (client) => {
-    const [reward] = await Promise.all([
+    const [reward, campaign] = await Promise.all([
       assertReward(client, businessId, body.benefit.reward_id),
       assertCampaign(client, businessId, body.campaign_id),
       assertBranch(client, businessId, body.branch_id),
@@ -174,10 +177,12 @@ async function createPostSaleQr(businessId, user, body) {
       }
     );
 
+    const attributionSource = body.metadata?.attribution_source || "POST_SALE";
+    const attributionSubject = body.metadata?.attribution_subject || body.product_name || null;
     const saleResult = await client.query(
       `insert into business_sales
-        (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, branch_id, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, branch_id, notes, metadata, acquisition_source, acquisition_channel, customer_document_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        returning *`,
       [
         businessId,
@@ -192,6 +197,9 @@ async function createPostSaleQr(businessId, user, body) {
         body.branch_id || user.branch_id || null,
         body.notes || null,
         body.metadata || {},
+        attributionSource,
+        attributionSubject,
+        body.document_id || null,
       ]
     );
     const sale = saleResult.rows[0];
@@ -214,6 +222,8 @@ async function createPostSaleQr(businessId, user, body) {
         {
           strategic_qr: true,
           origin_label: "QR postventa",
+          campaign_id: campaign.id,
+          campaign_name: campaign.name,
           notes: body.notes || null,
           product_name: body.product_name || null,
           ...body.metadata,
@@ -299,7 +309,7 @@ function buildBatchInsert(rows) {
 async function createQrBatch(businessId, user, body) {
   return withTransaction(async (client) => {
     const reward = await assertReward(client, businessId, body.benefit.reward_id);
-    await assertCampaign(client, businessId, body.campaign_id);
+    const campaign = await assertCampaign(client, businessId, body.campaign_id);
     const affiliate = await assertAffiliate(client, businessId, body.affiliate_id);
     const expiresAt = resolveExpiration(body);
     const benefitPayload = buildBenefitPayload(body.benefit, reward);
@@ -325,6 +335,8 @@ async function createQrBatch(businessId, user, body) {
         user.id,
         {
           notes: body.notes || null,
+          campaign_id: campaign.id,
+          campaign_name: campaign.name,
           claim_required: body.claim_required,
           affiliate_id: affiliate?.id || null,
           affiliate_name: affiliate?.full_name || null,
@@ -345,10 +357,13 @@ async function createQrBatch(businessId, user, body) {
         metadata: {
           strategic_qr: true,
           origin_label: body.qr_origin_type === "AFFILIATE_REFERRAL" ? "QR recomendacion afiliado" : "Paquete QR",
+          campaign_id: campaign.id,
+          campaign_name: campaign.name,
           package_name: body.name,
           channel_use: body.channel_use,
           affiliate_id: affiliate?.id || null,
           affiliate_name: affiliate?.full_name || null,
+          ...body.metadata,
         },
         expires_at: expiresAt,
         batch_id: batch.id,
@@ -415,7 +430,7 @@ async function createAffiliateReferralQrBatch(businessId, user, body) {
     name: `QR recomendacion - ${row.full_name}`,
     description: body.notes || `QR unicos de recomendacion asignados a ${row.full_name}.`,
     quantity: body.quantity,
-    campaign_id: null,
+    campaign_id: body.campaign_id,
     qr_origin_type: "AFFILIATE_REFERRAL",
     channel_use: "recomendacion",
     claim_required: true,
@@ -426,6 +441,9 @@ async function createAffiliateReferralQrBatch(businessId, user, body) {
     affiliate_id: row.id,
     metadata: {
       source: "affiliate_referral_generator",
+      attribution_source: "affiliate_referral",
+      attribution_subject: row.full_name,
+      campaign_id: body.campaign_id,
       affiliate_id: row.id,
       affiliate_name: row.full_name,
     },

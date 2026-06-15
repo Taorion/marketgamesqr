@@ -13,6 +13,7 @@ const {
 const { getCommandCenterAnalytics } = require("../services/commandCenterAnalyticsService");
 const {
   assertFeatureForRequest,
+  assertLimitForBusiness,
   assertMonthlyUsageLimit,
   getBusinessSubscription,
   recordUsage,
@@ -43,6 +44,26 @@ const clientSetupSchema = z.object({
   objective: z.string().trim().max(500).optional().nullable(),
   additional_budget: z.number().min(0).optional().nullable(),
 });
+
+const ownerCampaignSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  type: z.enum(["GAME", "FORM", "LANDING", "INFLUENCER", "EVENT", "FLYER", "SOCIAL", "MIXED"]).default("FORM"),
+  status: z.enum(["DRAFT", "SCHEDULED", "ACTIVE", "PAUSED"]).default("DRAFT"),
+  objective: z.string().trim().max(500).optional().nullable(),
+  strategy_summary: z.string().trim().max(2000).optional().nullable(),
+  budget_total: z.number().min(0).default(0),
+  expected_sales_goal: z.number().min(0).optional().nullable(),
+  expected_leads_goal: z.number().min(0).optional().nullable(),
+  expected_redemptions_goal: z.number().min(0).optional().nullable(),
+  launch_channels: z.array(z.string().trim().min(2).max(80)).optional(),
+  starts_at: z.string().datetime().optional().nullable(),
+  ends_at: z.string().datetime().optional().nullable(),
+  client_notes: z.string().trim().max(2000).optional().nullable(),
+  delivered_assets: z.record(z.string(), z.unknown()).optional(),
+});
+
+const ownerCampaignPatchSchema = ownerCampaignSchema.partial();
 
 const salesSnapshotSchema = z.object({
   period_type: z.enum(["BEFORE", "DURING", "AFTER"]),
@@ -290,6 +311,64 @@ async function commandCenterAnalytics(req, res, next) {
   }
 }
 
+async function businessActivity(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `with activity as (
+         select created_at as happened_at, 'QR_CREATED' as event_type
+         from qr_codes
+         where business_id = $1
+         union all
+         select created_at as happened_at, event_type
+         from qr_event_logs
+         where business_id = $1
+         union all
+         select created_at as happened_at, result as event_type
+         from validation_logs
+         where business_id = $1
+         union all
+         select claimed_at as happened_at, 'QR_CLAIMED' as event_type
+         from qr_claims
+         where business_id = $1
+         union all
+         select redeemed_at as happened_at, 'QR_REDEEMED' as event_type
+         from redemptions
+         where business_id = $1
+         union all
+         select created_at as happened_at, 'SALE_RECORDED' as event_type
+         from business_sales
+         where business_id = $1
+       )
+       select
+         coalesce(sum(event_count), 0)::int as total_events,
+         max(latest) as last_event_at,
+         jsonb_object_agg(event_type, event_count) as event_counts
+       from (
+         select event_type, count(*)::int as event_count, max(happened_at) as latest
+         from activity
+         where happened_at is not null
+         group by event_type
+       ) grouped`,
+      [businessId]
+    );
+
+    const row = result.rows[0] || {};
+    const lastEventAt = row.last_event_at ? new Date(row.last_event_at).toISOString() : null;
+    res.json({
+      activity: {
+        business_id: businessId,
+        total_events: Number(row.total_events || 0),
+        last_event_at: lastEventAt,
+        event_counts: row.event_counts || {},
+        version: `${lastEventAt || "none"}:${Number(row.total_events || 0)}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateBusinessProfile(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -467,6 +546,125 @@ async function listCampaigns(req, res, next) {
   }
 }
 
+async function createCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_reports");
+    const body = validate(ownerCampaignSchema, req.body);
+
+    const activeCount = await query(
+      `select count(*)::int as total
+       from campaigns
+       where business_id = $1 and status not in ('FINISHED', 'ARCHIVED')`,
+      [businessId]
+    );
+    await assertLimitForBusiness(
+      businessId,
+      "active_campaigns",
+      Number(activeCount.rows[0]?.total || 0),
+      "campanas activas"
+    );
+
+    const result = await query(
+      `insert into campaigns
+        (business_id, name, slug, public_slug, type, objective, strategy_summary, status,
+         starts_at, ends_at, budget_total, expected_sales_goal, expected_leads_goal,
+         expected_redemptions_goal, launch_channels, client_notes, delivered_assets,
+         client_setup_completed_at, activated_at, metadata)
+       values ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16::jsonb,
+         case when $7 in ('SCHEDULED', 'ACTIVE') then now() else null end,
+         case when $7 = 'ACTIVE' then now() else null end,
+         $17::jsonb)
+       returning id`,
+      [
+        businessId,
+        body.name,
+        body.slug,
+        body.type,
+        body.objective || null,
+        body.strategy_summary || null,
+        body.status,
+        body.starts_at || null,
+        body.ends_at || null,
+        body.budget_total,
+        body.expected_sales_goal ?? null,
+        body.expected_leads_goal ?? null,
+        body.expected_redemptions_goal ?? null,
+        JSON.stringify(body.launch_channels || []),
+        body.client_notes || null,
+        JSON.stringify(body.delivered_assets || {}),
+        {
+          owner_created: true,
+          creation_source: "business_portal",
+        },
+      ]
+    );
+
+    res.status(201).json({ campaign: await getCampaignMetrics(result.rows[0].id, businessId) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_reports");
+    await requireCampaignForBusiness(req.params.id, businessId);
+    const body = validate(ownerCampaignPatchSchema, req.body);
+    const deliveredAssets = Object.prototype.hasOwnProperty.call(body, "delivered_assets")
+      ? JSON.stringify(body.delivered_assets || {})
+      : null;
+
+    const result = await query(
+      `update campaigns
+       set name = coalesce($3, name),
+           slug = coalesce($4, slug),
+           public_slug = coalesce($4, public_slug),
+           type = coalesce($5, type),
+           objective = case when $6::text is null then objective else $6 end,
+           strategy_summary = case when $7::text is null then strategy_summary else $7 end,
+           status = coalesce($8, status),
+           starts_at = case when $9::timestamptz is null then starts_at else $9 end,
+           ends_at = case when $10::timestamptz is null then ends_at else $10 end,
+           budget_total = coalesce($11, budget_total),
+           expected_sales_goal = case when $12::numeric is null then expected_sales_goal else $12 end,
+           expected_leads_goal = case when $13::numeric is null then expected_leads_goal else $13 end,
+           expected_redemptions_goal = case when $14::numeric is null then expected_redemptions_goal else $14 end,
+           launch_channels = case when $15::jsonb is null then launch_channels else $15 end,
+           client_notes = case when $16::text is null then client_notes else $16 end,
+           delivered_assets = case when $17::jsonb is null then delivered_assets else $17 end,
+           client_setup_completed_at = case when coalesce($8, status) in ('SCHEDULED', 'ACTIVE') then coalesce(client_setup_completed_at, now()) else client_setup_completed_at end,
+           activated_at = case when coalesce($8, status) = 'ACTIVE' then coalesce(activated_at, now()) else activated_at end
+       where id = $1 and business_id = $2
+       returning id`,
+      [
+        req.params.id,
+        businessId,
+        body.name || null,
+        body.slug || null,
+        body.type || null,
+        body.objective ?? null,
+        body.strategy_summary ?? null,
+        body.status || null,
+        body.starts_at || null,
+        body.ends_at || null,
+        body.budget_total ?? null,
+        body.expected_sales_goal ?? null,
+        body.expected_leads_goal ?? null,
+        body.expected_redemptions_goal ?? null,
+        Object.prototype.hasOwnProperty.call(body, "launch_channels") ? JSON.stringify(body.launch_channels || []) : null,
+        body.client_notes ?? null,
+        deliveredAssets,
+      ]
+    );
+
+    res.json({ campaign: await getCampaignMetrics(result.rows[0].id, businessId) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getCampaign(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -614,6 +812,260 @@ async function campaignLeads(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "leads_view");
     res.json({ leads: await getCampaignLeadRows(businessId, req.params.id) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function contactFeedToCsv(rows) {
+  const headers = [
+    "tipo",
+    "nombre",
+    "documento",
+    "telefono",
+    "email",
+    "campana",
+    "origen",
+    "asunto",
+    "estado_qr",
+    "ultima_redencion",
+    "valor_compra",
+    "producto",
+    "canal_preferido",
+    "hora_contacto",
+    "temperatura",
+    "recomendacion",
+    "fecha",
+  ];
+  const lines = rows.map((row) => [
+    row.stage,
+    row.name,
+    row.document_id,
+    row.phone,
+    row.email,
+    row.campaign_name,
+    row.attribution_source,
+    row.attribution_subject,
+    row.qr_status,
+    row.redeemed_at,
+    row.sale_amount,
+    row.product_name,
+    row.preferred_channel,
+    row.preferred_contact_time,
+    row.lead_temperature,
+    row.recommended_action,
+    row.created_at,
+  ].map(csvValue).join(","));
+  return [headers.join(","), ...lines].join("\n");
+}
+
+function mapContactFeedRows(rows) {
+  return rows.map((row) => {
+    const hasSale = Number(row.sale_amount || 0) > 0;
+    const hotSignals = ["hoy", "esta-semana", "regalo-padre", "compra-propia"];
+    const signalText = [
+      row.purchase_window,
+      row.purchase_intent,
+      row.qr_status,
+      row.stage,
+    ].filter(Boolean).join(" ").toLowerCase();
+    const leadTemperature = hasSale || row.qr_status === "REDEEMED"
+      ? "buyer"
+      : hotSignals.some((signal) => signalText.includes(signal))
+        ? "hot"
+        : row.qr_status === "ACTIVE"
+          ? "warm"
+          : "nurture";
+    const channel = row.preferred_channel || row.attribution_source || "WhatsApp/email";
+    const recommendedAction = leadTemperature === "buyer"
+      ? "Enviar postventa, recompra o fidelizacion."
+      : leadTemperature === "hot"
+        ? `Contactar hoy por ${channel} con oferta concreta.`
+        : leadTemperature === "warm"
+          ? `Hacer seguimiento por ${channel} y reforzar beneficio antes de vencer.`
+          : `Nutrir con email/remarketing y nuevo incentivo asociado a ${row.attribution_subject || "la campana"}.`;
+    return {
+      ...row,
+      sale_amount: row.sale_amount === null ? null : Number(row.sale_amount || 0),
+      lead_temperature: leadTemperature,
+      recommended_action: recommendedAction,
+    };
+  });
+}
+
+async function getContactFeedRows(businessId, retentionDays) {
+  const result = await query(
+    `with lead_rows as (
+       select
+         p.id::text as id,
+         'LEAD' as stage,
+         p.name,
+         p.document_id,
+         p.phone,
+         p.email,
+         p.created_at,
+         c.id as campaign_id,
+         c.name as campaign_name,
+         coalesce(qn.answers->>'source', p.metadata->>'source', q.metadata->>'attribution_source', q.metadata->>'channel_use', 'Sin origen') as attribution_source,
+         coalesce(qn.answers->>'campaign_label', q.metadata->>'attribution_subject', q.metadata->>'package_name', c.name, 'Sin asunto') as attribution_subject,
+         q.id as qr_code_id,
+         q.status as qr_status,
+         q.origin_type,
+         q.created_at as qr_created_at,
+         q.claimed_at,
+         q.redeemed_at,
+         q.affiliate_id,
+         a.full_name as affiliate_name,
+         qn.answers->>'favorite_product' as favorite_product,
+         qn.answers->>'purchase_intent' as purchase_intent,
+         qn.answers->>'gift_budget' as gift_budget,
+         qn.answers->>'purchase_window' as purchase_window,
+         qn.answers->>'preferred_channel' as preferred_channel,
+         qn.answers->>'preferred_contact_time' as preferred_contact_time,
+         s.sale_amount,
+         s.currency,
+         s.product_name,
+         s.created_at as sale_created_at,
+         p.metadata as metadata
+       from players p
+       left join campaigns c on c.id = p.campaign_id
+       left join lateral (
+         select *
+         from qr_codes
+         where player_id = p.id
+         order by created_at desc
+         limit 1
+       ) q on true
+       left join affiliates a on a.id = q.affiliate_id
+       left join lateral (
+         select answers
+         from questionnaires
+         where player_id = p.id
+         order by created_at desc
+         limit 1
+       ) qn on true
+       left join lateral (
+         select sale_amount, currency, product_name, created_at
+         from business_sales
+         where business_id = p.business_id
+           and (
+             nullif(customer_document_id, '') = nullif(p.document_id, '')
+             or nullif(customer_phone, '') = nullif(p.phone, '')
+             or nullif(customer_email, '') = nullif(p.email, '')
+           )
+         order by created_at desc
+         limit 1
+       ) s on true
+       where p.business_id = $1
+         and ($2::int is null or p.created_at >= now() - ($2::int * interval '1 day'))
+     ),
+     buyer_rows as (
+       select
+         bs.id::text as id,
+         'BUYER' as stage,
+         bs.customer_name as name,
+         bs.customer_document_id as document_id,
+         bs.customer_phone as phone,
+         bs.customer_email as email,
+         bs.created_at,
+         bs.campaign_id,
+         c.name as campaign_name,
+         coalesce(bs.acquisition_source, bs.metadata->>'attribution_source', 'Venta registrada') as attribution_source,
+         coalesce(nullif(bs.acquisition_channel, ''), bs.metadata->>'attribution_subject', bs.product_name, 'Comprador') as attribution_subject,
+         bs.qr_code_id,
+         q.status as qr_status,
+         q.origin_type,
+         q.created_at as qr_created_at,
+         q.claimed_at,
+         q.redeemed_at,
+         bs.referred_affiliate_id as affiliate_id,
+         a.full_name as affiliate_name,
+         null as favorite_product,
+         null as purchase_intent,
+         null as gift_budget,
+         null as purchase_window,
+         coalesce(bs.acquisition_channel, bs.acquisition_source) as preferred_channel,
+         null as preferred_contact_time,
+         bs.sale_amount,
+         bs.currency,
+         bs.product_name,
+         bs.created_at as sale_created_at,
+         bs.metadata
+       from business_sales bs
+       left join campaigns c on c.id = bs.campaign_id
+       left join qr_codes q on q.id = bs.qr_code_id
+       left join affiliates a on a.id = bs.referred_affiliate_id
+       where bs.business_id = $1
+         and ($2::int is null or bs.created_at >= now() - ($2::int * interval '1 day'))
+     )
+     select *
+     from lead_rows
+     union all
+     select *
+     from buyer_rows
+     order by created_at desc
+     limit 1000`,
+    [businessId, retentionDays]
+  );
+  return mapContactFeedRows(result.rows);
+}
+
+async function contactFeed(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await assertFeatureForRequest(req, businessId, "leads_view");
+    const retentionDays = subscription.plan.limits.history_days ?? null;
+    const contacts = await getContactFeedRows(businessId, retentionDays);
+    res.json({
+      retention: {
+        plan_code: subscription.plan.code,
+        history_days: retentionDays,
+        label: retentionDays === null ? "Ilimitado" : `${retentionDays} dias`,
+      },
+      contacts,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function exportContactFeed(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await assertFeatureForRequest(req, businessId, "leads_export");
+    const retentionDays = subscription.plan.limits.history_days ?? null;
+    const rows = await getContactFeedRows(businessId, retentionDays);
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export",
+      subscription.plan.limits.lead_exports_month,
+      1,
+      "exportaciones de leads"
+    );
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export_row",
+      subscription.plan.limits.lead_export_rows_month,
+      rows.length,
+      "filas exportadas"
+    );
+    await recordUsage({
+      business_id: businessId,
+      user_id: req.user.id,
+      event_type: "lead_export",
+      quantity: 1,
+      metadata: { source: "contact_feed", rows: rows.length },
+    });
+    await recordUsage({
+      business_id: businessId,
+      user_id: req.user.id,
+      event_type: "lead_export_row",
+      quantity: rows.length,
+      metadata: { source: "contact_feed" },
+    });
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="contactos-leads-${businessId}.csv"`);
+    res.send(contactFeedToCsv(rows));
   } catch (error) {
     next(error);
   }
@@ -852,14 +1304,19 @@ async function updateSalesSnapshot(req, res, next) {
 module.exports = {
   getBusinessProfile,
   commandCenterAnalytics,
+  businessActivity,
   updateBusinessProfile,
   createCustomerAcquisitionSale,
   listCampaigns,
+  createCampaign,
+  updateCampaign,
   getCampaign,
   patchClientSetup,
   confirmLaunch,
   campaignReport,
   campaignLeads,
+  contactFeed,
+  exportContactFeed,
   exportCampaignLeads,
   downloadActiveLeadQr,
   campaignRedemptions,

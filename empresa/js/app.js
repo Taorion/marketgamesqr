@@ -41,6 +41,9 @@ const recentRedemptionsTable = document.getElementById("recentRedemptionsTable")
 const recentLeadsTable = document.getElementById("recentLeadsTable");
 const branchPerformanceTable = document.getElementById("branchPerformanceTable");
 const commandCenterRoot = document.getElementById("commandCenterRoot");
+const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
+const leadFeedRetention = document.getElementById("leadFeedRetention");
+const leadFeedTable = document.getElementById("leadFeedTable");
 const campaignList = document.getElementById("campaignList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
@@ -139,6 +142,7 @@ const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseA
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
 const affiliateReferralQrQuantityInput = document.getElementById("affiliateReferralQrQuantityInput");
+const affiliateReferralQrCampaignInput = document.getElementById("affiliateReferralQrCampaignInput");
 const affiliateReferralQrBenefitInput = document.getElementById("affiliateReferralQrBenefitInput");
 const affiliateReferralQrNotesInput = document.getElementById("affiliateReferralQrNotesInput");
 const affiliateGenerateReferralQrButton = document.getElementById("affiliateGenerateReferralQrButton");
@@ -224,6 +228,9 @@ const validatorSaleStatus = document.getElementById("validatorSaleStatus");
 const validatorHistoryTable = document.getElementById("validatorHistoryTable");
 const strategicQrKpiGrid = document.getElementById("strategicQrKpiGrid");
 const postSaleQrForm = document.getElementById("postSaleQrForm");
+const postSaleCampaignInput = document.getElementById("postSaleCampaignInput");
+const postSaleAttributionSourceInput = document.getElementById("postSaleAttributionSourceInput");
+const postSaleAttributionSubjectInput = document.getElementById("postSaleAttributionSubjectInput");
 const postSaleAmountInput = document.getElementById("postSaleAmountInput");
 const postSaleCurrencyInput = document.getElementById("postSaleCurrencyInput");
 const postSaleProductInput = document.getElementById("postSaleProductInput");
@@ -253,6 +260,9 @@ const customerAcquisitionAffiliateInput = document.getElementById("customerAcqui
 const customerAcquisitionNotesInput = document.getElementById("customerAcquisitionNotesInput");
 const customerAcquisitionMessage = document.getElementById("customerAcquisitionMessage");
 const qrBatchForm = document.getElementById("qrBatchForm");
+const qrBatchCampaignInput = document.getElementById("qrBatchCampaignInput");
+const qrBatchAttributionSourceInput = document.getElementById("qrBatchAttributionSourceInput");
+const qrBatchAttributionSubjectInput = document.getElementById("qrBatchAttributionSubjectInput");
 const qrBatchNameInput = document.getElementById("qrBatchNameInput");
 const qrBatchQuantityInput = document.getElementById("qrBatchQuantityInput");
 const qrBatchChannelInput = document.getElementById("qrBatchChannelInput");
@@ -287,7 +297,10 @@ const accountOpenQrShopButton = document.getElementById("accountOpenQrShopButton
 const subscriptionRenewalForm = document.getElementById("subscriptionRenewalForm");
 const subscriptionRenewalPlanSelect = document.getElementById("subscriptionRenewalPlanSelect");
 const subscriptionRenewalButton = document.getElementById("subscriptionRenewalButton");
+const subscriptionAutoRenewButton = document.getElementById("subscriptionAutoRenewButton");
+const subscriptionAutoRenewStatus = document.getElementById("subscriptionAutoRenewStatus");
 const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalMessage");
+const subscriptionTiming = document.getElementById("subscriptionTiming");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll(".segment-tab"));
@@ -349,6 +362,9 @@ let state = {
   currentView: "dashboard",
   filter: "",
   dashboard: null,
+  activityVersion: "",
+  activityPollingTimer: 0,
+  activityRefreshInFlight: false,
   commandCenter: null,
   commandCenterFilters: {
     range: "30d",
@@ -392,6 +408,8 @@ let state = {
   selectedCampaign: null,
   selectedReport: null,
   selectedLeads: [],
+  contactFeed: [],
+  contactFeedRetention: null,
   selectedRedemptions: [],
   selectedSales: [],
   selectedAffiliateId: null,
@@ -619,6 +637,7 @@ function saveValidatorSession(value) {
 }
 
 function clearSession() {
+  stopActivityPolling();
   session = null;
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(VALIDATOR_SESSION_KEY);
@@ -906,6 +925,47 @@ function formatDate(value) {
   });
 }
 
+function formatDateOnly(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("es-CO", {
+    dateStyle: "medium",
+  });
+}
+
+function subscriptionAccessLabel(plan = {}) {
+  const status = plan.access_status || plan.status || "-";
+  const labels = {
+    ACTIVE: "Activa",
+    GRACE: "En gracia",
+    LOCKED: "Bloqueada",
+    PREPAID: "Prepago",
+    CANCELLED: "Cancelada",
+    PAUSED: "Pausada",
+  };
+  return labels[status] || status;
+}
+
+function subscriptionTimingText(plan = {}) {
+  if (plan.category !== "subscription") {
+    return "Cuenta prepago: no tiene fecha mensual de renovacion.";
+  }
+  if (!plan.official_payment_due_at) {
+    return "Mensualidad activa sin fecha oficial de renovacion configurada.";
+  }
+  const dueDate = formatDateOnly(plan.official_payment_due_at);
+  const graceDate = formatDateOnly(plan.grace_period_ends_at);
+  if (plan.access_status === "LOCKED") {
+    return `Acceso al portal bloqueado. La fecha oficial de pago fue ${dueDate}; la gracia termino el ${graceDate}. Tus datos siguen guardados.`;
+  }
+  if (plan.access_status === "GRACE") {
+    return `Pago vencido el ${dueDate}. Quedan ${formatLimitValue(plan.days_until_lock)} dia(s) de gracia antes del bloqueo del portal.`;
+  }
+  if (plan.days_until_due === 0) {
+    return `La mensualidad vence hoy (${dueDate}). Despues tienes ${formatLimitValue(plan.grace_period_days)} dias de gracia.`;
+  }
+  return `Renovacion oficial: ${dueDate}. Quedan ${formatLimitValue(plan.days_until_due)} dia(s) para pagar; gracia hasta ${graceDate}.`;
+}
+
 function formatDateTimeLocal(value) {
   if (!value) return null;
   const date = new Date(value);
@@ -1051,7 +1111,7 @@ function currentCampaignRows() {
 
 const viewFeatureMap = {
   dashboard: "portal_access",
-  account: "portal_access",
+  account: null,
   campaigns: "portal_access",
   leads: "leads_view",
   affiliates: "affiliates",
@@ -1073,6 +1133,10 @@ function planLimits() {
 function hasPlanFeature(feature) {
   if (!feature) return true;
   if (isAdmin()) return true;
+  const plan = currentPlan();
+  if (plan.category === "subscription" && plan.portal_access_allowed === false) {
+    return false;
+  }
   return Boolean(planFeatures()[feature]);
 }
 
@@ -1106,14 +1170,20 @@ function renderSubscriptionBanner() {
     subscriptionPlanName.textContent = "Plan no cargado";
     subscriptionPlanSummary.textContent = "Sin informacion de permisos.";
     subscriptionLimits.innerHTML = "";
+    if (subscriptionTiming) subscriptionTiming.textContent = "Sin fecha de renovacion cargada.";
     return;
   }
   const limits = planLimits();
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
   subscriptionPlanSummary.textContent = plan.category === "prepaid"
     ? "Cliente prepago: opera QR y validacion sin portal completo ni exportacion de leads."
-    : `Suscripcion activa: ${formatLimitValue(limits.monthly_qr_included)} QR mensuales incluidos.`;
+    : `${subscriptionAccessLabel(plan)}: ${formatLimitValue(limits.monthly_qr_included)} QR mensuales incluidos.`;
+  if (subscriptionTiming) {
+    subscriptionTiming.textContent = subscriptionTimingText(plan);
+  }
+  subscriptionBanner.dataset.accessStatus = plan.access_status || plan.status || "ACTIVE";
   subscriptionLimits.innerHTML = [
+    ["Estado", subscriptionAccessLabel(plan)],
     ["QR/mes", limits.monthly_qr_included],
     ["Usuarios", limits.users],
     ["Sedes", limits.branches],
@@ -1201,6 +1271,7 @@ function renderSubscriptionRenewal() {
   const plan = state.subscription?.plan || {};
   const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop);
   const hasMonthlyPlan = plan.category === "subscription";
+  const autoRenew = plan.auto_renew || {};
 
   subscriptionRenewalPlanSelect.innerHTML = plans.length
     ? plans.map((item) => `
@@ -1211,13 +1282,26 @@ function renderSubscriptionRenewal() {
     : '<option value="">No hay planes disponibles</option>';
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
+  if (subscriptionAutoRenewButton) {
+    subscriptionAutoRenewButton.disabled = !hasMonthlyPlan || !plans.length || autoRenew.enabled;
+    subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Activar cobro automatico";
+  }
+  if (subscriptionAutoRenewStatus) {
+    const autoRenewLabel = autoRenew.enabled
+      ? "Cobro automatico autorizado en Mercado Pago."
+      : autoRenew.status && autoRenew.status !== "DISABLED"
+        ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
+        : "Cobro automatico no configurado.";
+    subscriptionAutoRenewStatus.textContent = autoRenewLabel;
+  }
   if (accountBillingStatus) {
-    accountBillingStatus.textContent = hasMonthlyPlan ? "Mensualidad activa" : "Solo prepago";
-    accountBillingStatus.className = `status-chip ${hasMonthlyPlan ? "ok" : "pending"}`;
+    accountBillingStatus.textContent = hasMonthlyPlan ? subscriptionAccessLabel(plan) : "Solo prepago";
+    const className = plan.access_status === "LOCKED" ? "danger" : plan.access_status === "GRACE" ? "pending" : hasMonthlyPlan ? "ok" : "pending";
+    accountBillingStatus.className = `status-chip ${className}`;
   }
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
-      setInlineMessage(subscriptionRenewalMessage, "Renueva el plan actual o cambia de nivel pagando una nueva mensualidad.", "info");
+      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Puedes renovar manualmente o autorizar cobro automatico mensual.`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Tu cuenta prepago no tiene mensualidad para renovar. Puedes comprar paquetes QR.", "info");
     }
@@ -1254,7 +1338,7 @@ function renderAccountView() {
   setAccountText(accountUserId, user.id);
   setAccountText(accountPlanName, plan.name || plan.code);
   setAccountText(accountType, plan.category === "prepaid" ? "Prepago QR" : (plan.billing_period === "monthly" ? "Suscripcion mensual" : plan.category));
-  setAccountText(accountPlanStatus, plan.status);
+  setAccountText(accountPlanStatus, subscriptionAccessLabel(plan));
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
   renderSubscriptionRenewal();
@@ -1480,6 +1564,75 @@ function initPasswordResetFromUrl() {
   setInlineMessage(passwordResetMessage, "Escribe y confirma tu nuevo password.", "info");
 }
 
+function campaignAssociationOptions(selectedValue = "") {
+  const campaigns = (state.campaigns || []).filter((campaign) => !["ARCHIVED", "FINISHED"].includes(campaign.status));
+  return [
+    `<option value="">Selecciona una campana</option>`,
+    ...campaigns.map((campaign) => `
+      <option value="${escapeHtml(campaign.id)}" ${campaign.id === selectedValue ? "selected" : ""}>
+        ${escapeHtml(campaign.name)} (${escapeHtml(campaign.status || "-")})
+      </option>
+    `),
+  ].join("");
+}
+
+function campaignPublicLeadQrPath(campaign) {
+  const businessSlug = state.businessProfile?.slug || session.user?.business?.slug || "";
+  const campaignSlug = campaign?.public_slug || campaign?.slug || "";
+  if (!businessSlug || !campaignSlug) return "";
+  return `/api/public/campaigns/${encodeURIComponent(businessSlug)}/${encodeURIComponent(campaignSlug)}/lead-qr`;
+}
+
+function campaignPublicLeadQrUrl(campaign) {
+  const path = campaignPublicLeadQrPath(campaign);
+  return path ? `${window.location.origin}${path}` : "";
+}
+
+function renderCampaignAssociationInputs() {
+  const selectedCampaignId = state.selectedCampaignId || "";
+  [postSaleCampaignInput, qrBatchCampaignInput, affiliateReferralQrCampaignInput].forEach((input) => {
+    if (!input) return;
+    const currentValue = input.value || selectedCampaignId;
+    input.innerHTML = campaignAssociationOptions(currentValue);
+    if (currentValue && Array.from(input.options).some((option) => option.value === currentValue)) {
+      input.value = currentValue;
+    }
+  });
+}
+
+async function loadLockedSubscriptionWorkspace(errorMessage = "") {
+  stopActivityPolling();
+  const subscriptionPlansData = await apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] });
+  state.subscription = session.user?.subscription || state.subscription;
+  state.subscriptionPlans = subscriptionPlansData.plans || [];
+  state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
+  state.dashboard = null;
+  state.commandCenter = null;
+  state.summary = null;
+  state.campaigns = [];
+  state.campaignGroups = null;
+  state.contactFeed = [];
+  state.contactFeedRetention = null;
+  state.qrCreditAccount = null;
+  state.businessProfile = {
+    id: session.user?.business_id,
+    name: state.subscription?.business_name || session.user?.business_id || "Negocio",
+    current_user: session.user,
+  };
+
+  renderSubscriptionBanner();
+  renderSubscriptionPricing();
+  renderAccountView();
+  applyPlanNavigation();
+  renderNoCampaignState();
+  setView("account");
+  showFeedback(
+    errorMessage || "La mensualidad supero la gracia de 15 dias. Renueva para recuperar el portal; tus datos siguen guardados.",
+    "error",
+    { title: "Portal bloqueado" }
+  );
+}
+
 async function loadWorkspace() {
   state.subscription = session.user?.subscription || state.subscription;
   if (isPrepaidValidatorOnly()) {
@@ -1503,6 +1656,8 @@ async function loadWorkspace() {
         state.selectedCampaign = null;
         state.selectedReport = null;
         state.selectedLeads = [];
+        state.contactFeed = [];
+        state.contactFeedRetention = null;
         state.selectedRedemptions = [];
         state.selectedSales = [];
         renderNoCampaignState();
@@ -1542,6 +1697,8 @@ async function loadWorkspace() {
     apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
+    apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null }),
+    apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
   ];
 
   if (isAdmin()) {
@@ -1549,9 +1706,10 @@ async function loadWorkspace() {
   }
 
   try {
-    const [dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, adminCampaignData] = await Promise.all(requests);
+    const [dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, activityData, adminCampaignData] = await Promise.all(requests);
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
+    state.activityVersion = activityData.activity?.version || state.activityVersion || "";
     state.summary = campaignData.summary || null;
     mergeBusinessProfile(businessProfileData.business || null);
     state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
@@ -1560,6 +1718,8 @@ async function loadWorkspace() {
     state.qrCreditAccount = creditData.credit_account || businessProfileData.credit_account || null;
     state.subscriptionPlans = subscriptionPlansData.plans || [];
     state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
+    state.contactFeed = contactFeedData.contacts || [];
+    state.contactFeedRetention = contactFeedData.retention || null;
     state.affiliates = [];
     state.strategicQrMetrics = null;
     state.qrPackageOffers = [];
@@ -1577,6 +1737,7 @@ async function loadWorkspace() {
     renderBusinessLogoPanel();
     renderCampaignStateGrid();
     renderCampaignList();
+    renderCampaignAssociationInputs();
     renderAdminView();
 
     const selectedCampaignId = state.campaigns.some((item) => item.id === state.selectedCampaignId)
@@ -1588,12 +1749,90 @@ async function loadWorkspace() {
     } else {
       renderNoCampaignState();
     }
+    startActivityPolling();
     showFeedback("Datos actualizados. Ya puedes revisar saldos, QR y ventas.", "success", { title: "Portal actualizado" });
   } catch (error) {
+    if (
+      currentPlan().access_status === "LOCKED"
+      || currentPlan().portal_access_allowed === false
+      || /mensualidad vencio|15 dias de gracia|portal bloqueado/i.test(error.message || "")
+    ) {
+      await loadLockedSubscriptionWorkspace(error.message);
+      return;
+    }
     showFeedback(error.message, "error");
   } finally {
     refreshButton.disabled = false;
     hideBusyOverlay();
+  }
+}
+
+function stopActivityPolling() {
+  if (state.activityPollingTimer) {
+    window.clearInterval(state.activityPollingTimer);
+    state.activityPollingTimer = 0;
+  }
+}
+
+function startActivityPolling() {
+  stopActivityPolling();
+  if (!session?.user?.business_id || isPrepaidValidatorOnly()) return;
+  state.activityPollingTimer = window.setInterval(checkBusinessActivity, 8000);
+}
+
+async function checkBusinessActivity() {
+  if (!session?.user?.business_id || state.activityRefreshInFlight) return;
+  try {
+    const data = await apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null });
+    const nextVersion = data.activity?.version || "";
+    if (!nextVersion || nextVersion === state.activityVersion) return;
+    state.activityVersion = nextVersion;
+    await refreshLiveBusinessData();
+  } catch (error) {
+    console.warn("Activity polling failed:", error.message);
+  }
+}
+
+async function refreshLiveBusinessData() {
+  if (!session?.user?.business_id || state.activityRefreshInFlight) return;
+  state.activityRefreshInFlight = true;
+  try {
+    const [dashboardData, commandCenterData, campaignData, contactFeedData, activityData] = await Promise.all([
+      api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
+      apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter),
+      api("/api/business/campaigns", { headers: authHeaders() }),
+      apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: state.contactFeed || [], retention: state.contactFeedRetention }),
+      apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
+    ]);
+
+    state.dashboard = dashboardData;
+    state.commandCenter = commandCenterData;
+    state.summary = campaignData.summary || null;
+    state.campaignGroups = campaignData.groups || null;
+    state.campaigns = campaignData.campaigns || [];
+    state.contactFeed = contactFeedData.contacts || [];
+    state.contactFeedRetention = contactFeedData.retention || null;
+    state.activityVersion = activityData.activity?.version || state.activityVersion;
+
+    renderDashboard();
+    renderCampaignStateGrid();
+    renderCampaignList();
+    renderCampaignAssociationInputs();
+    if (state.currentView === "leads") renderLeadsView();
+    renderCommandCenter();
+
+    if (state.selectedCampaignId && state.campaigns.some((item) => item.id === state.selectedCampaignId)) {
+      await selectCampaign(state.selectedCampaignId);
+    }
+    if (state.strategicQrLoaded || state.currentView === "strategic-qr") {
+      await loadStrategicQrData();
+      renderStrategicQrView();
+    }
+    showFeedback("Graficas actualizadas con la ultima actividad QR.", "success", { title: "Datos en vivo", timeout: 2500 });
+  } catch (error) {
+    console.warn("Live refresh failed:", error.message);
+  } finally {
+    state.activityRefreshInFlight = false;
   }
 }
 
@@ -1604,9 +1843,11 @@ async function loadPrepaidValidatorWorkspace() {
 
   state.dashboard = null;
   state.summary = null;
-  state.campaigns = [];
-  state.campaignGroups = null;
-  state.affiliates = [];
+    state.campaigns = [];
+    state.campaignGroups = null;
+    state.affiliates = [];
+    state.contactFeed = [];
+    state.contactFeedRetention = null;
   state.strategicQrMetrics = null;
   state.strategicQrBatches = [];
   state.strategicQrHistory = [];
@@ -3434,6 +3675,7 @@ function renderCampaignList() {
     <article class="campaign-item ${campaign.id === state.selectedCampaignId ? "active" : ""}" data-campaign-id="${escapeHtml(campaign.id)}">
       <h3>${escapeHtml(campaign.name)}</h3>
       <p>${escapeHtml(campaign.objective || "Sin objetivo cargado.")}</p>
+      <div class="campaign-item-row"><span>Captura QR</span><strong>${campaignPublicLeadQrPath(campaign) ? "Disponible" : "Pendiente"}</strong></div>
       <div class="campaign-item-row"><span>Estado</span><strong>${escapeHtml(statusLabel(campaign.status))}</strong></div>
       <div class="campaign-item-row"><span>Tipo</span><strong>${escapeHtml(campaign.type || "-")}</strong></div>
       <div class="campaign-item-row"><span>Canales</span><strong>${escapeHtml(Array.isArray(campaign.launch_channels) ? campaign.launch_channels.length : 0)}</strong></div>
@@ -3532,6 +3774,7 @@ async function loadAdminCampaignWorkspace(campaignId) {
 async function selectCampaign(campaignId) {
   state.selectedCampaignId = campaignId;
   renderCampaignList();
+  renderCampaignAssociationInputs();
 
   try {
     const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
@@ -3549,6 +3792,7 @@ async function selectCampaign(campaignId) {
     state.selectedSales = salesData.sales || [];
 
     renderCampaignView();
+    renderCampaignAssociationInputs();
     renderLeadsView();
     renderRedemptionsView();
     renderSalesView();
@@ -3636,7 +3880,11 @@ function renderCampaignView() {
   launchSetupMessage.textContent = "";
 
   const deliveredAssets = campaign.delivered_assets || {};
-  const assetEntries = Object.entries(deliveredAssets).filter(([, value]) => value && (!Array.isArray(value) || value.length));
+  const publicLeadQrUrl = campaignPublicLeadQrUrl(campaign);
+  const assetEntries = [
+    ...(publicLeadQrUrl ? [["captura_qr_publica", publicLeadQrUrl]] : []),
+    ...Object.entries(deliveredAssets).filter(([, value]) => value && (!Array.isArray(value) || value.length)),
+  ];
   campaignAssetsGrid.innerHTML = assetEntries.length
     ? assetEntries.map(([key, value]) => `
         <article class="asset-card">
@@ -3768,17 +4016,83 @@ function buildTimelineSeries() {
 }
 
 function renderLeadsView() {
-  const rows = filterRows(state.selectedLeads || [], ["name", "document_id", "phone", "email", "qr_status", "reward_name"]);
+  const feedRows = filterRows(state.contactFeed || [], [
+    "name",
+    "document_id",
+    "phone",
+    "email",
+    "campaign_name",
+    "attribution_source",
+    "attribution_subject",
+    "lead_temperature",
+    "recommended_action",
+  ]);
+  const buyers = feedRows.filter((item) => item.lead_temperature === "buyer").length;
+  const hot = feedRows.filter((item) => item.lead_temperature === "hot").length;
+  const exportable = feedRows.filter((item) => item.email || item.phone).length;
+  const topSource = Object.entries(feedRows.reduce((acc, item) => {
+    const key = item.attribution_source || "Sin origen";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1])[0];
+
+  if (leadFeedKpiGrid) {
+    leadFeedKpiGrid.innerHTML = [
+      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Segun plan"],
+      ["Compradores", buyers, "Con venta registrada"],
+      ["Leads calientes", hot, "Prioridad comercial"],
+      ["Exportables", exportable, "Email o telefono"],
+      ["Origen lider", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
+    ].map(([label, value, meta]) => `
+      <article class="kpi-card">
+        <span class="mono-label">${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value ?? 0)}</strong>
+        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+      </article>
+    `).join("");
+  }
+  if (leadFeedRetention) {
+    leadFeedRetention.textContent = `Retencion ${state.contactFeedRetention?.label || "segun plan"}`;
+  }
+  if (leadFeedTable) {
+    leadFeedTable.innerHTML = feedRows.map((item) => `
+      <tr>
+        <td>
+          <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
+          <br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>
+        </td>
+        <td>${escapeHtml(item.attribution_source || "-")}</td>
+        <td>
+          ${escapeHtml(item.campaign_name || "Sin campana")}
+          <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
+        </td>
+        <td>
+          <span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span>
+          <br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span>
+        </td>
+        <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
+        <td>${escapeHtml(item.recommended_action || "-")}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retencion de tu plan.</td></tr>';
+  }
+
+  const rows = filterRows(state.selectedLeads || [], ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source"]);
   campaignLeadsTable.innerHTML = rows.map((item) => `
     <tr>
       <td>${escapeHtml(item.name || "-")}</td>
+      <td>${escapeHtml(item.lead_source || "-")}</td>
+      <td>${escapeHtml(leadInterestSummary(item))}</td>
+      <td>${escapeHtml(leadActionRecommendation(item))}</td>
       <td>${escapeHtml(item.document_id || "-")}</td>
-      <td>${escapeHtml(item.phone || "-")}</td>
-      <td>${escapeHtml(item.email || "-")}</td>
+      <td>${escapeHtml(item.phone || item.email || "-")}</td>
       <td>${escapeHtml(item.qr_status || "-")}</td>
       <td>${escapeHtml(item.reward_name || "-")}</td>
+      <td>${item.qr_code_id ? `<button class="ghost-button" type="button" data-download-lead-qr="${escapeHtml(item.qr_code_id)}">QR</button>` : "-"}</td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Sin leads para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="9">Sin leads para esta campana.</td></tr>';
+  campaignLeadsTable.querySelectorAll("[data-download-lead-qr]").forEach((button) => {
+    button.addEventListener("click", () => downloadActiveLeadQr(button.dataset.downloadLeadQr));
+  });
 }
 
 function renderRedemptionsView() {
@@ -4365,6 +4679,39 @@ async function submitSubscriptionRenewal(event) {
   }
 }
 
+async function submitSubscriptionAutoRenewal() {
+  const planCode = subscriptionRenewalPlanSelect?.value;
+  if (!planCode) {
+    setInlineMessage(subscriptionRenewalMessage, "Selecciona un plan mensual para activar cobro automatico.", "error");
+    return;
+  }
+
+  setButtonLoading(subscriptionAutoRenewButton, true, "Autorizando...");
+  setInlineMessage(subscriptionRenewalMessage, "Creando autorizacion de cobro mensual en Mercado Pago...", "info");
+  showFeedback("Preparando autorizacion de cobro automatico mensual.", "loading", { title: "Cobro automatico", timeout: 0 });
+  try {
+    const data = await api("/api/payments/subscriptions/auto-renewal", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ plan_code: planCode }),
+    });
+    const checkoutUrl = data.auto_renewal?.checkout_url
+      || data.auto_renewal?.sandbox_checkout_url
+      || data.order?.checkout_url
+      || data.order?.sandbox_checkout_url;
+    if (!checkoutUrl) {
+      throw new Error("Mercado Pago no devolvio un link para autorizar el cobro automatico.");
+    }
+    setInlineMessage(subscriptionRenewalMessage, "Autorizacion creada. Redirigiendo a Mercado Pago...", "success");
+    showFeedback("Autoriza el cobro mensual en Mercado Pago. Los siguientes pagos se procesaran automaticamente.", "success", { title: "Autorizacion lista" });
+    window.location.href = checkoutUrl;
+  } catch (error) {
+    setInlineMessage(subscriptionRenewalMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo activar cobro automatico" });
+    setButtonLoading(subscriptionAutoRenewButton, false);
+  }
+}
+
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
@@ -4409,15 +4756,23 @@ async function submitCustomerAcquisitionSale(event) {
 async function submitPostSaleQr(event) {
   event.preventDefault();
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
+  if (!postSaleCampaignInput?.value) {
+    setInlineMessage(postSaleQrMessage, "Selecciona la campana que debe recibir la atribucion de este QR.", "error");
+    postSaleCampaignInput?.focus();
+    return;
+  }
   setButtonLoading(submitButton, true, "Generando...");
   setInlineMessage(postSaleQrMessage, "Generando QR postventa y descontando 1 credito...", "info");
   showFeedback("Creando token unico, registrando venta y preparando el PNG del QR.", "loading", { title: "Generando QR postventa", timeout: 0 });
   showBusyOverlay("Generando QR postventa", "Registrando venta, creando QR y actualizando creditos.");
   try {
+    const attributionSource = postSaleAttributionSourceInput?.value.trim() || "post-sale";
+    const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || postSaleProductInput.value.trim() || null;
     const data = await api("/api/business/qr/post-sale", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
+        campaign_id: postSaleCampaignInput.value,
         sale_amount: Number(postSaleAmountInput.value || 0),
         currency: postSaleCurrencyInput.value.trim() || "COP",
         customer_name: postSaleCustomerInput.value.trim() || null,
@@ -4426,6 +4781,12 @@ async function submitPostSaleQr(event) {
         customer_email: postSaleEmailInput.value.trim() || null,
         product_name: postSaleProductInput.value.trim() || null,
         notes: postSaleNotesInput.value.trim() || null,
+        metadata: {
+          attribution_source: attributionSource,
+          attribution_subject: attributionSubject,
+          campaign_id: postSaleCampaignInput.value,
+          qr_creation_context: "business_owner_post_sale",
+        },
         expires_mode: postSaleExpiresModeInput.value,
         expires_at: postSaleExpiresAtInput.value ? new Date(postSaleExpiresAtInput.value).toISOString() : null,
         benefit: {
@@ -4462,6 +4823,11 @@ async function submitQrBatch(event) {
   event.preventDefault();
   const requestedQuantity = Number(qrBatchQuantityInput.value || 0);
   const submitButton = qrBatchForm.querySelector("button[type='submit']");
+  if (!qrBatchCampaignInput?.value) {
+    setInlineMessage(qrBatchMessage, "Selecciona la campana para que todos los QR del paquete queden atribuidos.", "error");
+    qrBatchCampaignInput?.focus();
+    return;
+  }
   setButtonLoading(submitButton, true, "Generando paquete...");
   setInlineMessage(qrBatchMessage, `Generando paquete y reservando ${requestedQuantity.toLocaleString("es-CO")} creditos QR...`, "info");
   showFeedback(`Preparando ${requestedQuantity.toLocaleString("es-CO")} QR. Mantente en esta pantalla hasta que termine.`, "loading", { title: "Generando paquete", timeout: 0 });
@@ -4469,10 +4835,13 @@ async function submitQrBatch(event) {
   qrBatchResult.innerHTML = "";
   startQrBatchProgress(requestedQuantity);
   try {
+    const attributionSource = qrBatchAttributionSourceInput?.value.trim() || qrBatchChannelInput.value;
+    const attributionSubject = qrBatchAttributionSubjectInput?.value.trim() || qrBatchNameInput.value.trim();
     const data = await api("/api/business/qr/batches", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
+        campaign_id: qrBatchCampaignInput.value,
         name: qrBatchNameInput.value.trim(),
         quantity: Number(qrBatchQuantityInput.value || 0),
         channel_use: qrBatchChannelInput.value,
@@ -4481,6 +4850,12 @@ async function submitQrBatch(event) {
         expires_mode: qrBatchExpiresModeInput.value,
         expires_at: qrBatchExpiresAtInput.value ? new Date(qrBatchExpiresAtInput.value).toISOString() : null,
         notes: qrBatchNotesInput.value.trim() || null,
+        metadata: {
+          attribution_source: attributionSource,
+          attribution_subject: attributionSubject,
+          campaign_id: qrBatchCampaignInput.value,
+          qr_creation_context: "business_owner_batch",
+        },
         benefit: {
           benefit_type: qrBatchBenefitTypeInput.value,
           benefit_label: qrBatchBenefitLabelInput.value.trim(),
@@ -4974,7 +5349,7 @@ function closeSnapshotModal() {
 
 async function submitCampaignModal(event) {
   event.preventDefault();
-  if (!isAdmin()) return;
+  if (!session?.user?.business_id) return;
 
   const payload = {
     name: campaignFormName.value.trim(),
@@ -4999,18 +5374,18 @@ async function submitCampaignModal(event) {
 
   try {
     if (state.campaignModalMode === "create") {
-      const result = await api("/api/admin/campaigns", {
+      const result = await api(isAdmin() ? "/api/admin/campaigns" : "/api/business/campaigns", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
           ...payload,
-          business_id: session.user.business_id,
+          ...(isAdmin() ? { business_id: session.user.business_id } : {}),
         }),
       });
       state.selectedCampaignId = result.campaign?.id || state.selectedCampaignId;
       showFeedback("Campana creada correctamente.");
     } else {
-      await api(`/api/admin/campaigns/${state.selectedCampaignId}`, {
+      await api(`${isAdmin() ? "/api/admin" : "/api/business"}/campaigns/${state.selectedCampaignId}`, {
         method: "PATCH",
         headers: authHeaders(),
         body: JSON.stringify(payload),
@@ -7074,6 +7449,11 @@ async function generateSelectedAffiliateReferralQr() {
     setInlineMessage(affiliateReferralQrMessage, "Ingresa una cantidad entre 1 y 100.", "error");
     return;
   }
+  if (!affiliateReferralQrCampaignInput?.value) {
+    setInlineMessage(affiliateReferralQrMessage, "Selecciona la campana que medira estos QR de recomendacion.", "error");
+    affiliateReferralQrCampaignInput?.focus();
+    return;
+  }
 
   setButtonLoading(affiliateGenerateReferralQrButton, true, "Generando...");
   setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} QR y descontando creditos disponibles...`, "info");
@@ -7087,6 +7467,7 @@ async function generateSelectedAffiliateReferralQr() {
       headers: authHeaders(),
       body: JSON.stringify({
         affiliate_id: state.selectedAffiliate.id,
+        campaign_id: affiliateReferralQrCampaignInput.value,
         quantity,
         notes: affiliateReferralQrNotesInput?.value.trim() || null,
         expires_mode: "NONE",
@@ -7245,10 +7626,6 @@ function exportCampaignReport() {
 }
 
 async function exportLeads() {
-  if (!state.selectedCampaignId) {
-    showFeedback("Selecciona una campana antes de exportar leads.", "info", { title: "Sin campana" });
-    return;
-  }
   if (!hasPlanFeature("leads_export")) {
     showFeedback("Tu plan actual no incluye exportacion de leads.", "info", { title: "Upgrade requerido" });
     return;
@@ -7256,7 +7633,7 @@ async function exportLeads() {
   try {
     exportLeadsButton.disabled = true;
     exportLeadsButton.textContent = "Exportando...";
-    const response = await fetch(`/api/business/campaigns/${state.selectedCampaignId}/leads/export.csv`, {
+    const response = await fetch("/api/business/contacts/feed/export.csv", {
       headers: authHeaders(),
     });
     if (!response.ok) {
@@ -7267,17 +7644,17 @@ async function exportLeads() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `leads-${state.selectedCampaignId}.csv`;
+    link.download = "contactos-leads-rms.csv";
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    showFeedback("Exportacion generada con los limites de tu plan.", "success", { title: "Leads exportados" });
+    showFeedback("Feed exportado con contactos, origen, campana, estado y accion sugerida.", "success", { title: "Leads exportados" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "Exportacion bloqueada" });
   } finally {
     exportLeadsButton.disabled = false;
-    exportLeadsButton.textContent = "Exportar Datos";
+    exportLeadsButton.textContent = "Exportar Feed";
   }
 }
 
@@ -7915,6 +8292,7 @@ qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
+subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
 refreshAdminWorkspaceButton.addEventListener("click", loadWorkspace);
 newAdminCampaignButton.addEventListener("click", startNewAdminCampaign);
 adminCampaignForm.addEventListener("submit", saveAdminCampaign);

@@ -4,14 +4,19 @@ const { requirePortalAccess } = require("../middleware/subscription");
 const {
   getBusinessProfile,
   commandCenterAnalytics,
+  businessActivity,
   updateBusinessProfile,
   createCustomerAcquisitionSale,
   listCampaigns,
+  createCampaign,
+  updateCampaign,
   getCampaign,
   patchClientSetup,
   confirmLaunch,
   campaignReport,
   campaignLeads,
+  contactFeed,
+  exportContactFeed,
   exportCampaignLeads,
   downloadActiveLeadQr,
   campaignRedemptions,
@@ -26,13 +31,18 @@ router.use(authRequired);
 router.use(requirePortalAccess);
 router.get("/profile", getBusinessProfile);
 router.patch("/profile", updateBusinessProfile);
+router.get("/activity", businessActivity);
 router.get("/analytics/command-center", commandCenterAnalytics);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/campaigns", listCampaigns);
+router.post("/campaigns", createCampaign);
 router.get("/campaigns/:id", getCampaign);
+router.patch("/campaigns/:id", updateCampaign);
 router.patch("/campaigns/:id/client-setup", patchClientSetup);
 router.post("/campaigns/:id/confirm-launch", confirmLaunch);
 router.get("/campaigns/:id/report", campaignReport);
+router.get("/contacts/feed", contactFeed);
+router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/campaigns/:id/leads", campaignLeads);
 router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);

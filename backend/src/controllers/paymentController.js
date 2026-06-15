@@ -4,6 +4,7 @@ const { validate } = require("../utils/validators");
 const {
   createCreditCheckout,
   createDemoCreditPurchase,
+  createSubscriptionAutoRenewal,
   createSubscriptionRenewalCheckout,
   listCreditOrders,
   processMercadoPagoWebhook,
@@ -36,6 +37,16 @@ async function createSubscriptionCheckout(req, res, next) {
     const body = validate(subscriptionRenewalSchema, req.body);
     const order = await createSubscriptionRenewalCheckout(req.user, body);
     res.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createSubscriptionAutoRenewalCheckout(req, res, next) {
+  try {
+    const body = validate(subscriptionRenewalSchema, req.body);
+    const result = await createSubscriptionAutoRenewal(req.user, body);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -76,6 +87,7 @@ async function mercadoPagoWebhook(req, res, next) {
 module.exports = {
   createQrCreditCheckout,
   createQrCreditDemoPurchase,
+  createSubscriptionAutoRenewalCheckout,
   createSubscriptionCheckout,
   listQrCreditOrders,
   mercadoPagoWebhook,

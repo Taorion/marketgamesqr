@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { env } = require("../config/env");
+const { query } = require("../config/db");
 const { generateQr } = require("../services/qrService");
 const { validate } = require("../utils/validators");
 
@@ -96,6 +97,159 @@ const productPreferenceSchema = z.object({
   usageContext: z.enum(["oficina", "diario", "viaje", "regalo-especial"]),
   preferredContactTime: z.enum(["manana", "tarde", "noche"]),
 });
+
+const publicCampaignLeadQrSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  email: z.string().email().max(160).optional().nullable(),
+  phone: z.string().trim().max(40).optional().nullable(),
+  document_id: z.string().trim().max(40).optional().nullable(),
+  source: z.string().trim().min(2).max(80).optional().nullable(),
+  referrer: z.string().trim().max(120).optional().nullable(),
+  subject: z.string().trim().max(160).optional().nullable(),
+  answers: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+async function resolveCampaignCaptureContext(businessSlug, campaignSlug) {
+  const result = await query(
+    `select
+       c.id as campaign_id,
+       c.name as campaign_name,
+       c.public_slug,
+       c.status,
+       c.starts_at,
+       c.ends_at,
+       coalesce(c.game_id, g.id) as game_id,
+       coalesce(c.reward_id, r.id) as reward_id,
+       b.id as business_id
+     from businesses b
+     join campaigns c on c.business_id = b.id
+     left join lateral (
+       select id
+       from games
+       where business_id = b.id and is_active = true
+       order by created_at asc
+       limit 1
+     ) g on true
+     left join lateral (
+       select id
+       from rewards
+       where business_id = b.id and is_active = true
+       order by created_at asc
+       limit 1
+     ) r on true
+     where b.slug = $1
+       and c.public_slug = $2
+       and b.is_active = true`,
+    [businessSlug, campaignSlug]
+  );
+  const campaign = result.rows[0];
+  if (!campaign) {
+    const error = new Error("Campana publica no encontrada.");
+    error.status = 404;
+    throw error;
+  }
+  if (campaign.status !== "ACTIVE") {
+    const error = new Error("La campana aun no esta activa para capturar leads.");
+    error.status = 409;
+    throw error;
+  }
+  const now = new Date();
+  if (campaign.starts_at && new Date(campaign.starts_at) > now) {
+    const error = new Error("La campana todavia no ha iniciado.");
+    error.status = 409;
+    throw error;
+  }
+  if (campaign.ends_at && new Date(campaign.ends_at) <= now) {
+    const error = new Error("La campana ya finalizo.");
+    error.status = 409;
+    throw error;
+  }
+  if (!campaign.game_id || !campaign.reward_id) {
+    const error = new Error("La campana necesita un juego y beneficio activo para emitir QR publicos.");
+    error.status = 409;
+    throw error;
+  }
+  return campaign;
+}
+
+async function createPublicCampaignLeadQr(req, res, next) {
+  try {
+    const body = validate(publicCampaignLeadQrSchema, req.body);
+    const context = await resolveCampaignCaptureContext(req.params.businessSlug, req.params.campaignSlug);
+    const source = body.source || body.referrer || "public-campaign";
+    const subject = body.subject || body.referrer || context.campaign_name;
+
+    const result = await generateQr(
+      {
+        business_id: context.business_id,
+        campaign_id: context.campaign_id,
+        game_id: context.game_id,
+        reward_id: context.reward_id,
+        player: {
+          name: body.name,
+          email: body.email || undefined,
+          phone: body.phone || undefined,
+          document_id: body.document_id || undefined,
+          metadata: {
+            source,
+            referrer: body.referrer || null,
+            attribution_source: source,
+            attribution_subject: subject,
+            public_campaign_slug: context.public_slug,
+            ...(body.metadata || {}),
+          },
+        },
+        questionnaire: {
+          name: body.name,
+          email: body.email || null,
+          phone: body.phone || null,
+          document_id: body.document_id || null,
+          source,
+          referrer: body.referrer || null,
+          campaign_label: context.campaign_name,
+          attribution_subject: subject,
+          ...(body.answers || {}),
+        },
+        metadata: {
+          source,
+          attribution_source: source,
+          attribution_subject: subject,
+          campaign_label: context.campaign_name,
+          public_campaign_slug: context.public_slug,
+          qr_creation_context: "public_campaign_landing",
+          ...(body.metadata || {}),
+        },
+      },
+      {
+        type: "game",
+        game: {
+          id: context.game_id,
+          business_id: context.business_id,
+        },
+      }
+    );
+
+    res.status(201).json({
+      campaign: {
+        id: context.campaign_id,
+        name: context.campaign_name,
+        public_slug: context.public_slug,
+      },
+      qr_content: result.qr_content,
+      validator_url: result.validator_url,
+      qr_image_data_url: result.qr_image_data_url,
+      qr_code: {
+        id: result.qr_code.id,
+        status: result.qr_code.status,
+        created_at: result.qr_code.created_at,
+        expires_at: result.qr_code.expires_at,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 const demoTypes = new Map([
   ["form-qr", "Formulario directo"],
@@ -257,4 +411,9 @@ async function createProductPreferenceQr(req, res, next) {
   }
 }
 
-module.exports = { createMotoRewardQr, createDemoQr, createProductPreferenceQr };
+module.exports = {
+  createMotoRewardQr,
+  createDemoQr,
+  createProductPreferenceQr,
+  createPublicCampaignLeadQr,
+};

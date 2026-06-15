@@ -253,12 +253,30 @@ async function getQrDetails(tokenInput, user) {
 
   await logValidation(query, {
     business_id: qr.business_id,
+    campaign_id: qr.campaign_id,
     game_id: qr.game_id,
     qr_code_id: qr.id,
     user_id: user.id,
     token_preview: token.slice(0, 10),
     result: effectiveStatus,
     message: `QR validation returned ${effectiveStatus}.`,
+  });
+
+  await logQrEvent(query, {
+    business_id: qr.business_id,
+    campaign_id: qr.campaign_id,
+    qr_code_id: qr.id,
+    batch_id: qr.batch_id,
+    player_id: qr.player_id,
+    user_id: user.id,
+    event_type: "QR_VALIDATED",
+    message: `QR scan returned ${effectiveStatus}.`,
+    metadata: {
+      result: effectiveStatus,
+      origin_type: qr.origin_type,
+      affiliate_id: qr.affiliate_id || null,
+      batch_id: qr.batch_id || null,
+    },
   });
 
   return {

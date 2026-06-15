@@ -68,7 +68,7 @@ const strategicBenefitSchema = z.object({
 });
 
 const postSaleQrSchema = z.object({
-  campaign_id: z.string().uuid().optional().nullable(),
+  campaign_id: z.string().uuid(),
   sale_amount: z.number().min(0),
   currency: z.string().trim().min(3).max(8).default("COP"),
   customer_name: z.string().trim().max(160).optional().nullable(),
@@ -89,7 +89,7 @@ const qrBatchSchema = z.object({
   name: z.string().trim().min(2).max(160),
   description: z.string().trim().max(1000).optional().nullable(),
   quantity: z.number().int().min(1).max(5000),
-  campaign_id: z.string().uuid().optional().nullable(),
+  campaign_id: z.string().uuid(),
   qr_origin_type: z.enum(qrOriginTypes).refine((value) => value !== "POST_SALE", "POST_SALE is not valid for batches."),
   channel_use: z.enum(["etiqueta", "empaque", "volante", "evento", "producto", "mostrador", "campana-interna", "punto-de-venta"]),
   claim_required: z.boolean().default(true),
@@ -103,6 +103,7 @@ const qrBatchSchema = z.object({
 
 const affiliateReferralQrBatchSchema = z.object({
   affiliate_id: z.string().uuid(),
+  campaign_id: z.string().uuid(),
   quantity: z.number().int().min(1).max(100),
   notes: z.string().trim().max(2000).optional().nullable(),
   expires_mode: z.enum(expirationPresets).default("NONE"),

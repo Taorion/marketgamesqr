@@ -74,6 +74,12 @@ create table if not exists businesses (
   subscription_status text not null default 'ACTIVE',
   subscription_started_at timestamptz,
   subscription_current_period_ends_at timestamptz,
+  subscription_auto_renew_enabled boolean not null default false,
+  subscription_auto_renew_status text not null default 'DISABLED',
+  mercado_pago_preapproval_id text,
+  subscription_auto_renew_checkout_url text,
+  subscription_auto_renew_authorized_at timestamptz,
+  subscription_auto_renew_cancelled_at timestamptz,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -83,6 +89,12 @@ alter table businesses add column if not exists plan_code text not null default 
 alter table businesses add column if not exists subscription_status text not null default 'ACTIVE';
 alter table businesses add column if not exists subscription_started_at timestamptz;
 alter table businesses add column if not exists subscription_current_period_ends_at timestamptz;
+alter table businesses add column if not exists subscription_auto_renew_enabled boolean not null default false;
+alter table businesses add column if not exists subscription_auto_renew_status text not null default 'DISABLED';
+alter table businesses add column if not exists mercado_pago_preapproval_id text;
+alter table businesses add column if not exists subscription_auto_renew_checkout_url text;
+alter table businesses add column if not exists subscription_auto_renew_authorized_at timestamptz;
+alter table businesses add column if not exists subscription_auto_renew_cancelled_at timestamptz;
 update businesses
 set plan_code = coalesce(nullif(plan_code, ''), settings->'subscription'->>'plan_code', settings->>'plan_code', 'PREPAID_QR');
 
@@ -507,6 +519,8 @@ create table if not exists campaign_sales_snapshots (
 
 create index if not exists idx_games_business_id on games(business_id);
 create index if not exists idx_businesses_plan_code on businesses(plan_code);
+create index if not exists idx_businesses_subscription_due on businesses(subscription_current_period_ends_at);
+create index if not exists idx_businesses_mp_preapproval on businesses(mercado_pago_preapproval_id);
 create index if not exists idx_subscription_usage_business_type_created on subscription_usage_events(business_id, event_type, created_at desc);
 create index if not exists idx_users_business_id on app_users(business_id);
 create index if not exists idx_players_business_game on players(business_id, game_id);

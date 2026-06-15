@@ -11,6 +11,8 @@ const PLAN_CODES = {
 };
 
 const unlimited = null;
+const SUBSCRIPTION_GRACE_DAYS = 15;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const PLAN_PRICING_NOTES = {
   STARTER: {
@@ -330,15 +332,111 @@ function normalizePlanCode(value) {
   return PLAN_CATALOG[code] ? code : PLAN_CODES.PREPAID_QR;
 }
 
+function dateOrNull(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addDays(date, days) {
+  return new Date(date.getTime() + Number(days || 0) * MS_PER_DAY);
+}
+
+function daysUntil(date, now = new Date()) {
+  if (!date) return null;
+  return Math.ceil((date.getTime() - now.getTime()) / MS_PER_DAY);
+}
+
+function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_QR]) {
+  const now = new Date();
+  const rawStatus = row.subscription_status || row.settings?.subscription?.status || "ACTIVE";
+  const periodEnd = dateOrNull(row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at);
+  const graceEndsAt = periodEnd ? addDays(periodEnd, SUBSCRIPTION_GRACE_DAYS) : null;
+  const autoRenew = {
+    enabled: Boolean(row.subscription_auto_renew_enabled),
+    status: row.subscription_auto_renew_status || row.settings?.subscription?.auto_renew_status || "DISABLED",
+    mercado_pago_preapproval_id: row.mercado_pago_preapproval_id || null,
+    checkout_url: row.subscription_auto_renew_checkout_url || null,
+    authorized_at: row.subscription_auto_renew_authorized_at || null,
+    cancelled_at: row.subscription_auto_renew_cancelled_at || null,
+  };
+
+  if (plan.category !== "subscription") {
+    return {
+      raw_status: rawStatus,
+      access_status: "PREPAID",
+      access_allowed: Boolean(plan.features?.qr_validator),
+      portal_access_allowed: false,
+      is_subscription: false,
+      official_payment_due_at: null,
+      grace_period_days: 0,
+      grace_period_ends_at: null,
+      days_until_due: null,
+      days_overdue: 0,
+      days_until_lock: null,
+      auto_renew: autoRenew,
+    };
+  }
+
+  const manuallyInactive = rawStatus !== "ACTIVE";
+  let accessStatus = manuallyInactive ? rawStatus : "ACTIVE";
+  let portalAccessAllowed = !manuallyInactive;
+  let daysOverdue = 0;
+  let daysUntilLock = null;
+
+  if (!manuallyInactive && periodEnd) {
+    if (now > graceEndsAt) {
+      accessStatus = "LOCKED";
+      portalAccessAllowed = false;
+      daysOverdue = Math.max(0, Math.ceil((now.getTime() - periodEnd.getTime()) / MS_PER_DAY));
+      daysUntilLock = 0;
+    } else if (now > periodEnd) {
+      accessStatus = "GRACE";
+      portalAccessAllowed = true;
+      daysOverdue = Math.max(1, Math.ceil((now.getTime() - periodEnd.getTime()) / MS_PER_DAY));
+      daysUntilLock = Math.max(0, daysUntil(graceEndsAt, now));
+    } else {
+      daysUntilLock = daysUntil(graceEndsAt, now);
+    }
+  }
+
+  return {
+    raw_status: rawStatus,
+    access_status: accessStatus,
+    access_allowed: portalAccessAllowed,
+    portal_access_allowed: portalAccessAllowed,
+    is_subscription: true,
+    official_payment_due_at: periodEnd ? periodEnd.toISOString() : null,
+    grace_period_days: SUBSCRIPTION_GRACE_DAYS,
+    grace_period_ends_at: graceEndsAt ? graceEndsAt.toISOString() : null,
+    days_until_due: periodEnd ? Math.max(0, daysUntil(periodEnd, now)) : null,
+    days_overdue: daysOverdue,
+    days_until_lock: daysUntilLock,
+    auto_renew: autoRenew,
+  };
+}
+
 function planFromBusiness(row = {}) {
   const settingsPlan = row.settings?.subscription?.plan_code || row.settings?.plan_code;
   const code = normalizePlanCode(row.plan_code || settingsPlan);
   const plan = PLAN_CATALOG[code];
+  const lifecycle = subscriptionLifecycle(row, plan);
   return {
     ...plan,
     status: row.subscription_status || row.settings?.subscription?.status || "ACTIVE",
+    raw_status: lifecycle.raw_status,
+    access_status: lifecycle.access_status,
+    access_allowed: lifecycle.access_allowed,
+    portal_access_allowed: lifecycle.portal_access_allowed,
     started_at: row.subscription_started_at || row.settings?.subscription?.started_at || null,
     current_period_ends_at: row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at || null,
+    official_payment_due_at: lifecycle.official_payment_due_at,
+    grace_period_days: lifecycle.grace_period_days,
+    grace_period_ends_at: lifecycle.grace_period_ends_at,
+    days_until_due: lifecycle.days_until_due,
+    days_overdue: lifecycle.days_overdue,
+    days_until_lock: lifecycle.days_until_lock,
+    auto_renew: lifecycle.auto_renew,
   };
 }
 
@@ -349,7 +447,10 @@ function listPlans() {
 async function getBusinessSubscription(businessId) {
   const result = await query(
     `select id, name, slug, settings, plan_code, subscription_status,
-            subscription_started_at, subscription_current_period_ends_at
+            subscription_started_at, subscription_current_period_ends_at,
+            subscription_auto_renew_enabled, subscription_auto_renew_status,
+            mercado_pago_preapproval_id, subscription_auto_renew_checkout_url,
+            subscription_auto_renew_authorized_at, subscription_auto_renew_cancelled_at
      from businesses
      where id = $1 and is_active = true`,
     [businessId]
@@ -381,7 +482,10 @@ async function setBusinessSubscription(businessId, payload) {
          updated_at = now()
      where id = $1 and is_active = true
      returning id, name, slug, settings, plan_code, subscription_status,
-               subscription_started_at, subscription_current_period_ends_at`,
+               subscription_started_at, subscription_current_period_ends_at,
+               subscription_auto_renew_enabled, subscription_auto_renew_status,
+               mercado_pago_preapproval_id, subscription_auto_renew_checkout_url,
+               subscription_auto_renew_authorized_at, subscription_auto_renew_cancelled_at`,
     [
       businessId,
       planCode,
@@ -407,8 +511,11 @@ async function assertBusinessFeature(user, businessId, feature) {
     return getBusinessSubscription(businessId);
   }
   const subscription = await getBusinessSubscription(businessId);
-  if (subscription.plan.status !== "ACTIVE") {
+  if (subscription.plan.raw_status !== "ACTIVE") {
     throw forbidden("La suscripcion del negocio no esta activa.");
+  }
+  if (!subscription.plan.portal_access_allowed) {
+    throw forbidden(`La mensualidad vencio y ya pasaron los ${SUBSCRIPTION_GRACE_DAYS} dias de gracia. Renueva para recuperar el acceso al portal; tus datos se conservan.`);
   }
   if (!subscription.plan.features[feature]) {
     throw forbidden(`Tu plan no incluye: ${feature}.`);
@@ -492,9 +599,11 @@ function publicSubscription(subscription) {
 module.exports = {
   PLAN_CODES,
   PLAN_CATALOG,
+  SUBSCRIPTION_GRACE_DAYS,
   listPlans,
   normalizePlanCode,
   planFromBusiness,
+  subscriptionLifecycle,
   getBusinessSubscription,
   setBusinessSubscription,
   assertBusinessFeature,
