@@ -241,7 +241,7 @@ function syncMode() {
   planGrid.classList.toggle("hidden", mode !== "portal");
 
   if (mode === "prepaid") {
-    offerEyebrow.textContent = "Compra minima para activar";
+    offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
     offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
     formEyebrow.textContent = "Datos para activar prepago";
@@ -356,7 +356,7 @@ async function submitSignup(event) {
   requestMessage.textContent = "";
 
   if (mode === "prepaid" && !selectedPackage) {
-    requestMessage.textContent = "Selecciona el paquete minimo o uno superior para activar QR Validator.";
+    requestMessage.textContent = "Selecciona un paquete de activacion para activar QR Validator.";
     requestMessage.classList.add("error");
     return;
   }

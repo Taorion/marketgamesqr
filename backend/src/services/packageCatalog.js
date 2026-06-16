@@ -19,7 +19,7 @@ const rawPackageOffers = [
     prepaid_allowed: true,
     subscriber_allowed: true,
     title: "Paquete x50",
-    description: "Entrada minima para probar QR Validator.",
+    description: "Activacion inicial para validar beneficios con QR Validator.",
   },
   {
     code: "QR200",
