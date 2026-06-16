@@ -344,7 +344,7 @@ function renderQrRechargeShop() {
 
   validatorQrRechargeButton.disabled = false;
   if (account) {
-    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en USD. Para paquetes grandes y ahorro hasta 50%, activa Portal RMS.`;
+    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en USD. Para paquetes superiores, dashboard y medicion avanzada, activa Portal RMS.`;
   } else {
     validatorQrRechargeMessage.textContent = "El pago confirmado crea o incrementa la cartera de tickets QR.";
   }

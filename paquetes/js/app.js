@@ -116,11 +116,6 @@ function defaultPortalPackage() {
     || null;
 }
 
-function maxSavingsLabel() {
-  const maxSavings = Math.max(0, ...packages.map((item) => Number(item.savings_percent || 0)));
-  return `${maxSavings}%`;
-}
-
 function selectedTotal() {
   if (mode === "prepaid") {
     return {
@@ -164,7 +159,7 @@ function renderPackages() {
       <h3>${escapeHtml(item.title)}</h3>
       <p>${Number(item.package_size).toLocaleString("es-CO")} tickets QR. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
       <div class="price">${priceLabel(item)}</div>
-      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket${Number(item.savings_percent || 0) ? ` · ahorras ${Number(item.savings_percent)}%` : ""}</p>
+      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket · capacidad premium de ${Number(item.package_size || 0).toLocaleString("es-CO")} validaciones</p>
       <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir recarga prepago" : "Empezar con este paquete"}</button>
     </article>
   `).join("");
@@ -226,17 +221,15 @@ function renderPricingLogic() {
   const visible = visiblePackages();
   if (pricingLogicCopy) {
     pricingLogicCopy.textContent = mode === "prepaid"
-      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El precio base es USD 0.25 por ticket y el paquete x200 ya muestra ahorro; para descuentos mayores se requiere Portal RMS."
-      : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte con descuento por volumen desde el precio base de USD 0.25.";
+      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El precio base es USD 0.25 por ticket y el paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
+      : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
-    const baseTotal = Number(offer.package_size || 0) * 0.25;
-    const savingUsd = Math.max(0, baseTotal - Number(offer.price_usd || 0));
     return `
       <article>
         <span>${escapeHtml(offer.code)}</span>
         <strong>${usdUnitMoney(packageUnitUsd(offer))} / ticket</strong>
-        <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets. Ahorro ${Number(offer.savings_percent || 0)}% frente a USD 0.25; beneficio estimado ${usdMoney(savingUsd)}.</p>
+        <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets para operar campanas, beneficios, redenciones y medicion de revenue con trazabilidad RMS.</p>
       </article>
     `;
   }).join("");
@@ -250,7 +243,7 @@ function syncMode() {
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Compra minima para activar";
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
-    offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para comprar mas volumen y ahorrar hasta 50% por ticket debes activar Portal RMS mensual.";
+    offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
     formEyebrow.textContent = "Datos para activar prepago";
     formTitle.textContent = "Registro y pago minimo";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
@@ -267,7 +260,7 @@ function syncMode() {
 
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
-  offerCopy.textContent = `El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y puedes ahorrar hasta ${maxSavingsLabel()} comprando paquetes grandes.`;
+  offerCopy.textContent = "El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
   formEyebrow.textContent = "Datos para portal mensual";
   formTitle.textContent = "Registro, plan y paquete inicial";
   formCopy.textContent = "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
@@ -286,7 +279,7 @@ function renderSelectionBox() {
     const html = `
       <span>QR Validator prepago</span>
       <strong>${escapeHtml(selectedPackage.code)} - ${escapeHtml(selectedPackage.title)}</strong>
-      <p>${priceLabel(selectedPackage)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets. Para comprar mas de 200 y ahorrar hasta ${maxSavingsLabel()}, activa Portal RMS.</p>
+      <p>${priceLabel(selectedPackage)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets. Para operar mas de 200 tickets con dashboard, campanas y analitica, activa Portal RMS.</p>
       <p>Precio mostrado en USD. Mercado Pago procesa la activacion del servicio.</p>
     `;
     selectedBox.innerHTML = html;
@@ -303,7 +296,7 @@ function renderSelectionBox() {
       <span>${selectedPlan.monthly_price_cop ? "Portal mensual + tickets" : "Plan por cotizacion"}</span>
       <strong>${escapeHtml(selectedPlan.name)}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Deja tus datos y solicita una propuesta a medida."}</p>
-      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets a ${usdUnitMoney(packageUnitUsd(selectedPackage))} c/u. Ahorro ${Number(selectedPackage.savings_percent || 0)}% frente a comprar tickets de USD 0.25.</p>` : ""}
+      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets a ${usdUnitMoney(packageUnitUsd(selectedPackage))} c/u. Capacidad inicial para operar activaciones premium con trazabilidad RMS.</p>` : ""}
     `;
     selectedBox.innerHTML = html;
     syncSticky(html);

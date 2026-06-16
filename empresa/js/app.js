@@ -4064,7 +4064,7 @@ function renderCampaignView() {
     : 0;
   campaignAnalysisTitle.textContent = campaign.estimated_roi === null
     ? "La campana aun no tiene suficiente cierre comercial."
-    : `${campaign.name} ya muestra una lectura economica clara.`;
+    : `${campaign.name} ya muestra una lectura comercial clara.`;
   campaignAnalysisText.textContent = `Con ${campaign.total_leads} leads, ${campaign.total_qr_redeemed} redenciones y ${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)} compras, la campana convierte interes digital en visitas y ventas medibles.`;
   campaignEconomicsText.textContent = `ROI actual: ${ratioLabel(campaign.estimated_roi)}. CAC: ${money(campaign.cost_per_acquired_customer)}. Ticket promedio atribuido: ${money(avgTicket)}. La relacion mejora cuando CAC se mantiene bastante por debajo del ticket.`;
   campaignActionText.textContent = campaign.redemption_rate < 30
@@ -4694,7 +4694,7 @@ function renderQrCreditShop() {
   qrCreditPackageSelect.innerHTML = offers.length
     ? offers.map((offer) => `
       <option value="${escapeHtml(offer.code)}">
-        ${escapeHtml(offer.title)} · ${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets · ${packagePriceLabel(offer)}${Number(offer.savings_percent || 0) ? ` · ahorro ${Number(offer.savings_percent)}%` : ""}
+        ${escapeHtml(offer.title)} · ${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets · ${packagePriceLabel(offer)} · capacidad premium
       </option>
     `).join("")
     : '<option value="">No hay paquetes disponibles</option>';

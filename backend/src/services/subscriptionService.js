@@ -28,17 +28,17 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: "QR500",
     portal_access_fee_cop: STARTER_PORTAL_COP,
-    pricing_note: "Starter cobra solo el uso mensual del portal. Los tickets se compran aparte; si el negocio necesita mas volumen, el ahorro fuerte aparece con paquetes superiores exclusivos para suscriptores.",
+    pricing_note: "Starter cobra el uso mensual del portal premium. Los tickets se compran aparte; si el negocio necesita mas capacidad, accede a paquetes superiores exclusivos para suscriptores.",
   },
   GROWTH: {
     recommended_start_package: "QR1000",
     portal_access_fee_cop: GROWTH_PORTAL_COP,
-    pricing_note: "Growth cuesta tres veces Starter y desbloquea operacion real de crecimiento: afiliados hasta 10, mas usuarios, ventas atribuidas, reportes y automatizaciones basicas.",
+    pricing_note: "Growth amplia el nivel de servicio frente a Starter y desbloquea operacion real de crecimiento: afiliados hasta 10, mas usuarios, ventas atribuidas, reportes y automatizaciones operativas.",
   },
   PRO: {
     recommended_start_package: "QR2000",
     portal_access_fee_cop: PRO_PORTAL_COP,
-    pricing_note: "Pro cuesta tres veces Growth y desbloquea todo el poder del portal: equipos, sedes, API, automatizaciones, reportes ejecutivos, exportaciones y afiliados a escala.",
+    pricing_note: "Pro eleva el portal a operacion avanzada: equipos, sedes, API, automatizaciones, reportes ejecutivos, exportaciones y afiliados a escala.",
   },
 };
 
@@ -111,11 +111,11 @@ const PLAN_CATALOG = {
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.STARTER.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.STARTER.recommended_start_package,
-    best_for: "Negocios que quieren dejar el validador solo y empezar a ver leads, campanas y trazabilidad basica.",
-    access_summary: "Portal basico sin tickets incluidos: muestra valor, ordena leads y empuja a Growth para afiliados, automatizaciones y mas control.",
+    best_for: "Negocios que quieren dejar el validador solo y empezar a ver leads, campanas y trazabilidad inicial.",
+    access_summary: "Portal premium de entrada sin tickets incluidos: muestra valor, ordena leads y abre el camino a Growth para afiliados, automatizaciones y mas control.",
     pricing_note: PLAN_PRICING_NOTES.STARTER.pricing_note,
     included: [
-      "Portal RMS basico",
+      "Portal RMS premium de entrada",
       "Dashboard inicial de QR y leads",
       "Hasta 1 campana activa",
       "Vista de leads sin exportacion masiva",
@@ -183,8 +183,8 @@ const PLAN_CATALOG = {
       "Sales Tracker con medios de llegada y revenue real",
       "Hasta 2 sedes y 6 usuarios",
       "5 exportaciones de leads al mes",
-      "MG Revenue Score y Focus Mode basico",
-      "Automatizaciones operativas basicas",
+      "MG Revenue Score y Focus Mode inicial",
+      "Automatizaciones operativas",
     ],
     not_included: [
       "Afiliados masivos y equipos grandes",

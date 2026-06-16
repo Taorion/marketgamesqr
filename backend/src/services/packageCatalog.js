@@ -46,7 +46,7 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Portal x1000",
-    description: "Volumen comercial con ahorro claro por ticket.",
+    description: "Volumen comercial para campanas con seguimiento premium.",
   },
   {
     code: "QR2000",
@@ -64,7 +64,7 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Portal x4000",
-    description: "Alto volumen con casi el maximo ahorro.",
+    description: "Alto volumen para activaciones recurrentes y medicion avanzada.",
   },
   {
     code: "QR8000",
@@ -73,7 +73,7 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Portal x8000",
-    description: "Maximo ahorro: el ticket baja de $1.000 a $500.",
+    description: "Capacidad premium para operaciones de alto alcance.",
   },
 ];
 
