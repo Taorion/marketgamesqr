@@ -964,21 +964,12 @@ function usdMoney(value) {
   })}`;
 }
 
-function copMoney(value) {
-  if (value === null || value === undefined) return "-";
-  return `COP ${Number(value || 0).toLocaleString("es-CO")}`;
-}
-
-function exchangeRateLabel() {
-  return `TRM ${Number(state.pricing?.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
-}
-
 function packagePriceLabel(offer) {
   if (!offer) return "-";
   if (Number.isFinite(Number(offer.price_usd))) {
-    return `${usdMoney(offer.price_usd)} (${copMoney(offer.price_cop)} al pagar)`;
+    return usdMoney(offer.price_usd);
   }
-  return copMoney(offer.price_cop);
+  return offer.price_label || "-";
 }
 
 function planMonthlyLabel(plan) {
@@ -1303,12 +1294,12 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = `El portal se muestra en USD y Mercado Pago cobra el equivalente en COP segun ${exchangeRateLabel()}. El prepago solo compra 50 o 200 tickets; los suscriptores acceden a paquetes superiores.`;
+    subscriptionPricingNote.textContent = "El portal y los paquetes se muestran en USD. El prepago solo compra 50 o 200 tickets; los suscriptores acceden a paquetes superiores.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotizacion" : "tickets por recarga";
     const recommendedPackage = plan.recommended_start_package || "QR500";
-    const portalValue = plan.monthly_price_cop ? `${planMonthlyLabel(plan)} (${copMoney(plan.monthly_price_cop)} al pagar)` : "Incluido";
+    const portalValue = plan.monthly_price_cop ? planMonthlyLabel(plan) : "Incluido";
     const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotizacion");
     const isCurrent = plan.code === currentCode;
     return `
@@ -1322,7 +1313,7 @@ function renderSubscriptionPricing() {
         </div>
         <div class="portal-plan-price">
           <strong>${escapeHtml(monthlyPrice)}</strong>
-          <span>${plan.monthly_price_cop ? `${escapeHtml(copMoney(plan.monthly_price_cop))} al pagar con Mercado Pago` : "Cotizacion personalizada"}; ${escapeHtml(ticketPolicy)}</span>
+          <span>${plan.monthly_price_cop ? "Pago mensual del portal" : "Cotizacion personalizada"}; ${escapeHtml(ticketPolicy)}</span>
         </div>
         <div class="portal-plan-economics">
           Valor portal: ${escapeHtml(portalValue)}. Paquete sugerido para iniciar: ${escapeHtml(recommendedPackage)}.
@@ -1349,7 +1340,7 @@ function renderSubscriptionRenewal() {
   subscriptionRenewalPlanSelect.innerHTML = plans.length
     ? plans.map((item) => `
       <option value="${escapeHtml(item.code)}" ${item.code === plan.code ? "selected" : ""}>
-        ${escapeHtml(item.name)} · ${planMonthlyLabel(item)} · ${copMoney(item.monthly_price_cop)} al pagar
+        ${escapeHtml(item.name)} · ${planMonthlyLabel(item)}
       </option>
     `).join("")
     : '<option value="">No hay planes disponibles</option>';
@@ -4716,8 +4707,8 @@ function renderQrCreditShop() {
     const account = state.qrCreditAccount || {};
     const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
     const rechargeCopy = isSubscription
-      ? `Como suscriptor puedes comprar paquetes superiores en USD y pagar el equivalente COP segun ${exchangeRateLabel()}.`
-      : `Prepago solo permite 50 o 200 tickets; Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}.`;
+      ? "Como suscriptor puedes comprar paquetes superiores en USD."
+      : "Prepago solo permite 50 o 200 tickets. Los paquetes se muestran en USD.";
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
 
@@ -4726,7 +4717,7 @@ function renderQrCreditShop() {
       <tr>
         <td>${escapeHtml(formatDate(order.created_at))}</td>
         <td>${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} QR</small></td>
-        <td>${escapeHtml(copMoney(order.price_cop))}</td>
+        <td>${escapeHtml(packagePriceLabel((state.qrPackageOffers || []).find((offer) => offer.code === order.package_code)))}</td>
         <td><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span></td>
       </tr>
     `).join("")
@@ -4858,7 +4849,7 @@ async function submitCustomerAcquisitionSale(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         sale_amount: Number(customerAcquisitionAmountInput.value || 0),
-        currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
+        currency: customerAcquisitionCurrencyInput.value.trim() || "USD",
         product_name: customerAcquisitionProductInput.value.trim() || null,
         customer_name: customerAcquisitionNameInput.value.trim() || null,
         customer_document_id: customerAcquisitionDocumentInput.value.trim() || null,
@@ -4876,7 +4867,7 @@ async function submitCustomerAcquisitionSale(event) {
       : "Venta registrada con su medio de llegada.";
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
-    customerAcquisitionCurrencyInput.value = "COP";
+    customerAcquisitionCurrencyInput.value = "USD";
     await loadWorkspace();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
@@ -4904,7 +4895,7 @@ async function submitPostSaleQr(event) {
       body: JSON.stringify({
         campaign_id: postSaleCampaignInput.value || null,
         sale_amount: Number(postSaleAmountInput.value || 0),
-        currency: postSaleCurrencyInput.value.trim() || "COP",
+        currency: postSaleCurrencyInput.value.trim() || "USD",
         customer_name: postSaleCustomerInput.value.trim() || null,
         document_id: postSaleDocumentInput.value.trim() || null,
         customer_phone: postSalePhoneInput.value.trim() || null,
@@ -5224,7 +5215,7 @@ async function saveValidatorAttributedSale(event) {
       body: JSON.stringify({
         had_sale: validatorHadSaleInput.checked,
         sale_amount: Number(validatorSaleAmountInput.value || 0),
-        currency: "COP",
+        currency: "USD",
         payment_method: validatorPaymentMethodInput.value.trim() || null,
         product_or_service: validatorProductServiceInput.value.trim() || null,
         notes: validatorSaleNotesInput.value.trim() || null,

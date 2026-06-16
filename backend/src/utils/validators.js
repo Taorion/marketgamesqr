@@ -70,7 +70,7 @@ const strategicBenefitSchema = z.object({
 const postSaleQrSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
   sale_amount: z.number().min(0),
-  currency: z.string().trim().min(3).max(8).default("COP"),
+  currency: z.string().trim().min(3).max(8).default("USD"),
   customer_name: z.string().trim().max(160).optional().nullable(),
   customer_phone: z.string().trim().max(40).optional().nullable(),
   customer_email: z.string().email().max(160).optional().nullable(),

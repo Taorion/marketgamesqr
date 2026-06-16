@@ -88,29 +88,17 @@ function usdUnitMoney(value) {
   })}`;
 }
 
-function copMoney(value) {
-  return `COP ${Number(value || 0).toLocaleString("es-CO")}`;
-}
-
-function exchangeRateLabel() {
-  return `TRM ${Number(pricing.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
-}
-
 function priceLabel(item) {
   if (!item) return "";
   if (Number.isFinite(Number(item.price_usd))) {
-    return `${usdMoney(item.price_usd)} · ${copMoney(item.price_cop)} al pagar`;
+    return usdMoney(item.price_usd);
   }
-  return copMoney(item.price_cop);
+  return escapeHtml(item.price_label || "Cotizacion");
 }
 
 function monthlyPlanLabel(plan) {
   if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
   return `${usdMoney(plan.monthly_price_usd)} / mes`;
-}
-
-function packageUnitPrice(offer) {
-  return Math.round(Number(offer?.price_cop || 0) / Math.max(1, Number(offer?.package_size || 1)));
 }
 
 function packageUnitUsd(offer) {
@@ -176,7 +164,7 @@ function renderPackages() {
       <h3>${escapeHtml(item.title)}</h3>
       <p>${Number(item.package_size).toLocaleString("es-CO")} tickets QR. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
       <div class="price">${priceLabel(item)}</div>
-      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket · ${copMoney(packageUnitPrice(item))} aprox.${Number(item.savings_percent || 0) ? ` · ahorras ${Number(item.savings_percent)}%` : ""}</p>
+      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket${Number(item.savings_percent || 0) ? ` · ahorras ${Number(item.savings_percent)}%` : ""}</p>
       <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir recarga prepago" : "Empezar con este paquete"}</button>
     </article>
   `).join("");
@@ -198,7 +186,6 @@ function renderPlans() {
         `).join("")}
       </ul>
       <div class="price">${item.monthly_price_cop ? monthlyPlanLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
-      ${item.monthly_price_cop ? `<p>${copMoney(item.monthly_price_cop)} al pagar con Mercado Pago · ${exchangeRateLabel()}</p>` : ""}
       <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir plan" : "Solicitar cotizacion"}</button>
     </article>
   `).join("");
@@ -280,7 +267,7 @@ function syncMode() {
 
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
-  offerCopy.textContent = `El portal se muestra en dolares desde USD 80 al mes. Mercado Pago cobra el equivalente en COP con ${exchangeRateLabel()}; al suscribirte eliges con cuantos tickets empezar y puedes ahorrar hasta ${maxSavingsLabel()} comprando paquetes grandes.`;
+  offerCopy.textContent = `El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y puedes ahorrar hasta ${maxSavingsLabel()} comprando paquetes grandes.`;
   formEyebrow.textContent = "Datos para portal mensual";
   formTitle.textContent = "Registro, plan y paquete inicial";
   formCopy.textContent = "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
@@ -300,7 +287,7 @@ function renderSelectionBox() {
       <span>QR Validator prepago</span>
       <strong>${escapeHtml(selectedPackage.code)} - ${escapeHtml(selectedPackage.title)}</strong>
       <p>${priceLabel(selectedPackage)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets. Para comprar mas de 200 y ahorrar hasta ${maxSavingsLabel()}, activa Portal RMS.</p>
-      <p>${exchangeRateLabel()}. Mercado Pago procesa el equivalente en COP.</p>
+      <p>Precio mostrado en USD. Mercado Pago procesa la activacion del servicio.</p>
     `;
     selectedBox.innerHTML = html;
     syncSticky(html);
@@ -309,9 +296,6 @@ function renderSelectionBox() {
 
   if (mode === "portal" && selectedPlan) {
     const totalData = selectedTotal();
-    const planPrice = totalData.plan_cop;
-    const packagePrice = totalData.package_cop;
-    const total = totalData.total_cop;
     const planUsd = Number(selectedPlan.monthly_price_usd || 0);
     const packageUsd = Number(selectedPackage?.price_usd || 0);
     const totalUsd = totalData.total_usd;
@@ -319,7 +303,6 @@ function renderSelectionBox() {
       <span>${selectedPlan.monthly_price_cop ? "Portal mensual + tickets" : "Plan por cotizacion"}</span>
       <strong>${escapeHtml(selectedPlan.name)}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Deja tus datos y solicita una propuesta a medida."}</p>
-      ${selectedPlan.monthly_price_cop ? `<p>Equivalente Mercado Pago: ${copMoney(planPrice)} + ${copMoney(packagePrice)} = ${copMoney(total)} con ${exchangeRateLabel()}.</p>` : ""}
       ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets a ${usdUnitMoney(packageUnitUsd(selectedPackage))} c/u. Ahorro ${Number(selectedPackage.savings_percent || 0)}% frente a comprar tickets de USD 0.25.</p>` : ""}
     `;
     selectedBox.innerHTML = html;

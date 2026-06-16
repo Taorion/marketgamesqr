@@ -253,14 +253,6 @@ function formatNumber(value) {
   return Number(value || 0).toLocaleString("es-CO");
 }
 
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-}
-
 function formatUsd(value) {
   return `USD ${Number(value || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -268,15 +260,11 @@ function formatUsd(value) {
   })}`;
 }
 
-function exchangeRateLabel() {
-  return `TRM ${Number(state.pricing?.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
-}
-
 function packagePriceLabel(offer) {
   if (Number.isFinite(Number(offer?.price_usd))) {
-    return `${formatUsd(offer.price_usd)} (${formatCurrency(offer.price_cop)} al pagar)`;
+    return formatUsd(offer.price_usd);
   }
-  return formatCurrency(offer?.price_cop);
+  return offer?.price_label || "-";
 }
 
 function renderTrafficBalance(account) {
@@ -356,9 +344,9 @@ function renderQrRechargeShop() {
 
   validatorQrRechargeButton.disabled = false;
   if (account) {
-    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en USD; Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}. Para paquetes grandes y ahorro hasta 50%, activa Portal RMS.`;
+    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en USD. Para paquetes grandes y ahorro hasta 50%, activa Portal RMS.`;
   } else {
-    validatorQrRechargeMessage.textContent = `El pago confirmado crea o incrementa la cartera de tickets QR. Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}.`;
+    validatorQrRechargeMessage.textContent = "El pago confirmado crea o incrementa la cartera de tickets QR.";
   }
 
   const latestOrder = state.qrCreditOrders[0];
@@ -477,7 +465,7 @@ function setResult(mode, title, message, data = null) {
   documentValue.textContent = data?.player?.document_id || "-";
   contactValue.textContent = [data?.player?.email, data?.player?.phone].filter(Boolean).join(" | ") || "-";
   expiresValue.textContent = formatDate(data?.qr_code?.expires_at);
-  saleValue.textContent = data?.sale?.id ? `${data.sale.currency || "COP"} ${Number(data.sale.amount || 0).toLocaleString("es-CO")} ${data.sale.product_name ? `| ${data.sale.product_name}` : ""}` : "-";
+  saleValue.textContent = data?.sale?.id ? `${data.sale.currency || "USD"} ${Number(data.sale.amount || 0).toLocaleString("es-CO")} ${data.sale.product_name ? `| ${data.sale.product_name}` : ""}` : "-";
   batchValue.textContent = data?.batch?.name || "-";
   redeemButton.disabled = !data?.allowed;
   if (!data?.allowed) {
@@ -747,7 +735,7 @@ async function submitPostSaleQr(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         sale_amount: saleAmount,
-        currency: "COP",
+        currency: "USD",
         customer_name: postSaleCustomerInput.value.trim() || null,
         document_id: postSaleDocumentInput.value.trim() || null,
         customer_phone: postSalePhoneInput.value.trim() || null,
@@ -864,7 +852,7 @@ async function saveAttributedSale(event) {
       body: JSON.stringify({
         had_sale: hadSale,
         sale_amount: hadSale ? saleAmount : 0,
-        currency: "COP",
+        currency: "USD",
         payment_method: hadSale ? paymentMethodInput.value.trim() || null : null,
         product_or_service: hadSale ? productServiceInput.value.trim() || null : null,
         notes: saleNotesInput.value.trim() || null,
