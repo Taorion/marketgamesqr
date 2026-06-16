@@ -49,7 +49,7 @@ const ownerCampaignSchema = z.object({
   name: z.string().trim().min(2).max(160),
   slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
   type: z.enum(["GAME", "FORM", "LANDING", "INFLUENCER", "EVENT", "FLYER", "SOCIAL", "MIXED"]).default("FORM"),
-  status: z.enum(["DRAFT", "SCHEDULED", "ACTIVE", "PAUSED"]).default("DRAFT"),
+  status: z.enum(["DRAFT", "READY_FOR_CLIENT_SETUP", "SCHEDULED", "ACTIVE", "PAUSED", "FINISHED", "ARCHIVED"]).default("DRAFT"),
   objective: z.string().trim().max(500).optional().nullable(),
   strategy_summary: z.string().trim().max(2000).optional().nullable(),
   budget_total: z.number().min(0).default(0),
@@ -114,6 +114,7 @@ const customerAcquisitionSaleSchema = z.object({
 
 const AFFILIATE_POINTS_PER_PESO = 1000;
 const REFERRAL_POINTS_RATE = 0.2;
+const PREPAID_LEAD_SAMPLE_LIMIT = 20;
 
 function businessIdFor(req) {
   if (!req.user.business_id) {
@@ -893,7 +894,7 @@ function mapContactFeedRows(rows) {
   });
 }
 
-async function getContactFeedRows(businessId, retentionDays) {
+async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
   const result = await query(
     `with lead_rows as (
        select
@@ -1004,24 +1005,70 @@ async function getContactFeedRows(businessId, retentionDays) {
      select *
      from buyer_rows
      order by created_at desc
-     limit 1000`,
-    [businessId, retentionDays]
+     limit $3`,
+    [businessId, retentionDays, limit]
   );
   return mapContactFeedRows(result.rows);
+}
+
+async function countContactFeedRows(businessId, retentionDays) {
+  const result = await query(
+    `select (
+       (select count(*)::int
+        from players p
+        where p.business_id = $1
+          and ($2::int is null or p.created_at >= now() - ($2::int * interval '1 day')))
+       +
+       (select count(*)::int
+        from business_sales bs
+        where bs.business_id = $1
+          and ($2::int is null or bs.created_at >= now() - ($2::int * interval '1 day')))
+     )::int as total`,
+    [businessId, retentionDays]
+  );
+  return Number(result.rows[0]?.total || 0);
 }
 
 async function contactFeed(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await assertFeatureForRequest(req, businessId, "leads_view");
-    const retentionDays = subscription.plan.limits.history_days ?? null;
-    const contacts = await getContactFeedRows(businessId, retentionDays);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para recuperar tus leads y el portal.`);
+    }
+    const isPrepaid = subscription.plan.category === "prepaid";
+    const planRetentionDays = subscription.plan.limits.history_days ?? null;
+    const retentionDays = isPrepaid ? null : planRetentionDays;
+    const limit = isPrepaid ? PREPAID_LEAD_SAMPLE_LIMIT : 1000;
+    const [contacts, totalContacts] = await Promise.all([
+      getContactFeedRows(businessId, retentionDays, limit),
+      countContactFeedRows(businessId, retentionDays),
+    ]);
     res.json({
       retention: {
         plan_code: subscription.plan.code,
-        history_days: retentionDays,
-        label: retentionDays === null ? "Ilimitado" : `${retentionDays} dias`,
+        history_days: isPrepaid ? null : retentionDays,
+        label: isPrepaid ? `Muestra de ${PREPAID_LEAD_SAMPLE_LIMIT} leads` : (retentionDays === null ? "Ilimitado" : `${retentionDays} dias`),
       },
+      lead_gate: isPrepaid
+        ? {
+            locked: true,
+            sample_limit: PREPAID_LEAD_SAMPLE_LIMIT,
+            total_available: totalContacts,
+            hidden_count: Math.max(0, totalContacts - contacts.length),
+            upgrade_url: "/paquetes/?mode=portal&plan=STARTER",
+            title: "Ya tienes leads reales. Ahora necesitas el portal.",
+            message: `El prepago solo muestra ${PREPAID_LEAD_SAMPLE_LIMIT} contactos de muestra. Suscribete al Portal RMS para ver todos los leads, exportarlos, medir campanas, ventas y revenue.`,
+          }
+        : {
+            locked: false,
+            sample_limit: null,
+            total_available: totalContacts,
+            hidden_count: 0,
+          },
       contacts,
     });
   } catch (error) {

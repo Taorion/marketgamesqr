@@ -17,8 +17,6 @@ const {
 } = require("../services/strategicQrService");
 const {
   assertFeatureForRequest,
-  assertMonthlyUsageLimit,
-  getBusinessSubscription,
   recordUsage,
 } = require("../services/subscriptionService");
 
@@ -32,16 +30,7 @@ function businessIdFor(req) {
 async function createPostSale(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await assertFeatureForRequest(req, businessId, "qr_simple_generator");
-    if (subscription.plan.category === "subscription") {
-      await assertMonthlyUsageLimit(
-        businessId,
-        "qr_generated",
-        subscription.plan.limits.monthly_qr_included,
-        1,
-        "QR incluidos del plan"
-      );
-    }
+    await assertFeatureForRequest(req, businessId, "qr_simple_generator");
     const body = validate(postSaleQrSchema, req.body);
     const result = await createPostSaleQr(businessId, req.user, body);
     await recordUsage({
@@ -61,16 +50,7 @@ async function createBatch(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const body = validate(qrBatchSchema, req.body);
-    const subscription = await assertFeatureForRequest(req, businessId, "qr_batch_generator");
-    if (subscription.plan.category === "subscription") {
-      await assertMonthlyUsageLimit(
-        businessId,
-        "qr_generated",
-        subscription.plan.limits.monthly_qr_included,
-        body.quantity,
-        "QR incluidos del plan"
-      );
-    }
+    await assertFeatureForRequest(req, businessId, "qr_batch_generator");
     const result = await createQrBatch(businessId, req.user, body);
     await recordUsage({
       business_id: businessId,
@@ -89,16 +69,7 @@ async function createAffiliateReferralBatch(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const body = validate(affiliateReferralQrBatchSchema, req.body);
-    const subscription = await assertFeatureForRequest(req, businessId, "affiliates");
-    if (subscription.plan.category === "subscription") {
-      await assertMonthlyUsageLimit(
-        businessId,
-        "qr_generated",
-        subscription.plan.limits.monthly_qr_included,
-        body.quantity,
-        "QR incluidos del plan"
-      );
-    }
+    await assertFeatureForRequest(req, businessId, "affiliates");
     const result = await createAffiliateReferralQrBatch(businessId, req.user, body);
     await recordUsage({
       business_id: businessId,

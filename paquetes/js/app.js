@@ -25,6 +25,10 @@ const paymentStatusPrimaryLink = document.getElementById("paymentStatusPrimaryLi
 const planComparisonGrid = document.getElementById("planComparisonGrid");
 const themeSwitch = document.getElementById("themeSwitch");
 const themeSwitchLabel = document.getElementById("themeSwitchLabel");
+const stickySelectedBox = document.getElementById("stickySelectedBox");
+const continueToSignupButton = document.getElementById("continueToSignupButton");
+const pricingLogicGrid = document.getElementById("pricingLogicGrid");
+const pricingLogicCopy = document.getElementById("pricingLogicCopy");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialMode = urlParams.get("mode");
@@ -35,8 +39,14 @@ let mode = initialMode === "portal" ? "portal" : "prepaid";
 let packages = [];
 let plans = [];
 let prepaidPlan = null;
+let subscriberPackages = [];
 let selectedPackage = null;
 let selectedPlan = null;
+let pricing = {
+  display_currency: "USD",
+  payment_currency: "COP",
+  usd_to_cop_rate: 4000,
+};
 
 function readPreferredTheme() {
   try {
@@ -64,8 +74,80 @@ function togglePackagesTheme() {
   applyPackagesTheme(themeSwitch?.checked ? "light" : "dark");
 }
 
-function money(value) {
-  return `$ ${Number(value || 0).toLocaleString("es-CO")}`;
+function usdMoney(value) {
+  return `USD ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function usdUnitMoney(value) {
+  return `USD ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  })}`;
+}
+
+function copMoney(value) {
+  return `COP ${Number(value || 0).toLocaleString("es-CO")}`;
+}
+
+function exchangeRateLabel() {
+  return `TRM ${Number(pricing.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
+}
+
+function priceLabel(item) {
+  if (!item) return "";
+  if (Number.isFinite(Number(item.price_usd))) {
+    return `${usdMoney(item.price_usd)} · ${copMoney(item.price_cop)} al pagar`;
+  }
+  return copMoney(item.price_cop);
+}
+
+function monthlyPlanLabel(plan) {
+  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
+  return `${usdMoney(plan.monthly_price_usd)} / mes`;
+}
+
+function packageUnitPrice(offer) {
+  return Math.round(Number(offer?.price_cop || 0) / Math.max(1, Number(offer?.package_size || 1)));
+}
+
+function packageUnitUsd(offer) {
+  return Number(offer?.unit_price_usd || (Number(offer?.price_usd || 0) / Math.max(1, Number(offer?.package_size || 1))));
+}
+
+function visiblePackages() {
+  return packages.filter((item) => mode === "prepaid" ? item.prepaid_allowed : item.subscriber_allowed);
+}
+
+function defaultPortalPackage() {
+  return subscriberPackages.find((item) => item.code === initialPackageCode)
+    || subscriberPackages.find((item) => item.code === "QR500")
+    || subscriberPackages[0]
+    || null;
+}
+
+function maxSavingsLabel() {
+  const maxSavings = Math.max(0, ...packages.map((item) => Number(item.savings_percent || 0)));
+  return `${maxSavings}%`;
+}
+
+function selectedTotal() {
+  if (mode === "prepaid") {
+    return {
+      total_cop: Number(selectedPackage?.price_cop || 0),
+      total_usd: Number(selectedPackage?.price_usd || 0),
+      plan_cop: 0,
+      package_cop: Number(selectedPackage?.price_cop || 0),
+    };
+  }
+  return {
+    total_cop: Number(selectedPlan?.monthly_price_cop || 0) + Number(selectedPackage?.price_cop || 0),
+    total_usd: Number(selectedPlan?.monthly_price_usd || 0) + Number(selectedPackage?.price_usd || 0),
+    plan_cop: Number(selectedPlan?.monthly_price_cop || 0),
+    package_cop: Number(selectedPackage?.price_cop || 0),
+  };
 }
 
 function escapeHtml(value) {
@@ -87,13 +169,15 @@ async function fetchJson(path) {
 }
 
 function renderPackages() {
-  packageGrid.innerHTML = packages.map((item) => `
+  const offers = visiblePackages();
+  packageGrid.innerHTML = offers.map((item) => `
     <article class="package-card ${selectedPackage?.code === item.code ? "selected" : ""}">
       <span class="package-code">${escapeHtml(item.code)}</span>
       <h3>${escapeHtml(item.title)}</h3>
-      <p>${Number(item.package_size).toLocaleString("es-CO")} creditos para activar beneficios QR y validarlos en tienda.</p>
-      <div class="price">${money(item.price_cop)}</div>
-      <button type="button" data-package-code="${escapeHtml(item.code)}">Elegir y registrarme</button>
+      <p>${Number(item.package_size).toLocaleString("es-CO")} tickets QR. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
+      <div class="price">${priceLabel(item)}</div>
+      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket · ${copMoney(packageUnitPrice(item))} aprox.${Number(item.savings_percent || 0) ? ` · ahorras ${Number(item.savings_percent)}%` : ""}</p>
+      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir recarga prepago" : "Empezar con este paquete"}</button>
     </article>
   `).join("");
 
@@ -113,8 +197,9 @@ function renderPlans() {
           <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
         `).join("")}
       </ul>
-      <div class="price">${item.monthly_price_cop ? money(item.monthly_price_cop) : escapeHtml(item.price_label || "Cotizacion")}</div>
-      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir y registrarme" : "Solicitar cotizacion"}</button>
+      <div class="price">${item.monthly_price_cop ? monthlyPlanLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
+      ${item.monthly_price_cop ? `<p>${copMoney(item.monthly_price_cop)} al pagar con Mercado Pago · ${exchangeRateLabel()}</p>` : ""}
+      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir plan" : "Solicitar cotizacion"}</button>
     </article>
   `).join("");
 
@@ -128,15 +213,14 @@ function renderPlanComparison() {
   const comparisonPlans = [prepaidPlan, ...plans].filter(Boolean);
   planComparisonGrid.innerHTML = comparisonPlans.map((plan) => {
     const isFull = plan.code === "GLOBAL";
-    const price = plan.monthly_price_cop ? money(plan.monthly_price_cop) : escapeHtml(plan.price_label || "Compra por paquete");
-    const qrIncluded = plan.limits?.monthly_qr_included ?? plan.qr_monthly_included;
+    const price = plan.monthly_price_cop ? monthlyPlanLabel(plan) : escapeHtml(plan.price_label || "Compra por paquete");
     return `
       <article class="plan-access-card ${isFull ? "featured" : ""}">
         <span class="package-code">${escapeHtml(plan.code)}</span>
         <h3>${escapeHtml(plan.name)}</h3>
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
-        <p>${plan.code === "GLOBAL" ? "25.000+ QR al mes por cotizacion" : qrIncluded ? `${Number(qrIncluded).toLocaleString("es-CO")} QR incluidos al mes` : "QR por paquete comprado"}</p>
+        <p>${plan.category === "prepaid" ? "Solo paquetes x50 o x200" : "Tickets se compran aparte por paquete"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -150,43 +234,106 @@ function renderPlanComparison() {
   }).join("");
 }
 
+function renderPricingLogic() {
+  if (!pricingLogicGrid) return;
+  const visible = visiblePackages();
+  if (pricingLogicCopy) {
+    pricingLogicCopy.textContent = mode === "prepaid"
+      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El precio base es USD 0.25 por ticket y el paquete x200 ya muestra ahorro; para descuentos mayores se requiere Portal RMS."
+      : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte con descuento por volumen desde el precio base de USD 0.25.";
+  }
+  pricingLogicGrid.innerHTML = visible.map((offer) => {
+    const baseTotal = Number(offer.package_size || 0) * 0.25;
+    const savingUsd = Math.max(0, baseTotal - Number(offer.price_usd || 0));
+    return `
+      <article>
+        <span>${escapeHtml(offer.code)}</span>
+        <strong>${usdUnitMoney(packageUnitUsd(offer))} / ticket</strong>
+        <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets. Ahorro ${Number(offer.savings_percent || 0)}% frente a USD 0.25; beneficio estimado ${usdMoney(savingUsd)}.</p>
+      </article>
+    `;
+  }).join("");
+}
+
 function syncMode() {
   modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
-  packageGrid.classList.toggle("hidden", mode !== "prepaid");
+  packageGrid.classList.toggle("hidden", false);
   planGrid.classList.toggle("hidden", mode !== "portal");
 
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Compra minima para activar";
-    offerTitle.textContent = "Escoge tus creditos QR";
-    offerCopy.textContent = "El paquete mas basico cuesta $19.900 y ya te permite crear cuenta, pagar y empezar a validar beneficios.";
+    offerTitle.textContent = "Escoge una de las dos recargas prepago";
+    offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para comprar mas volumen y ahorrar hasta 50% por ticket debes activar Portal RMS mensual.";
     formEyebrow.textContent = "Datos para activar prepago";
     formTitle.textContent = "Registro y pago minimo";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
     submitButton.textContent = "Crear cuenta y pagar activacion";
-    selectPackage(selectedPackage?.code || packages[0]?.code, false);
+    selectedPackage = packages.find((item) => item.prepaid_allowed && item.code === selectedPackage?.code)
+      || packages.find((item) => item.prepaid_allowed && item.code === initialPackageCode)
+      || packages.find((item) => item.prepaid_allowed)
+      || null;
+    renderPackages();
+    renderSelectionBox();
+    renderPricingLogic();
     return;
   }
 
   offerEyebrow.textContent = "Planes mensuales";
-  offerTitle.textContent = "Escoge el portal RMS para operar campanas";
-  offerCopy.textContent = "Registra tus datos, paga desde $149.000 al mes o solicita Global por cotizacion para operaciones de alto volumen.";
+  offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
+  offerCopy.textContent = `El portal se muestra en dolares desde USD 80 al mes. Mercado Pago cobra el equivalente en COP con ${exchangeRateLabel()}; al suscribirte eliges con cuantos tickets empezar y puedes ahorrar hasta ${maxSavingsLabel()} comprando paquetes grandes.`;
   formEyebrow.textContent = "Datos para portal mensual";
-  formTitle.textContent = "Registro y pago mensual";
-  formCopy.textContent = "Elige el plan mensual. El usuario y la empresa quedan activos solo cuando el pago sea aprobado.";
-  submitButton.textContent = "Crear cuenta y pagar mensualidad";
+  formTitle.textContent = "Registro, plan y paquete inicial";
+  formCopy.textContent = "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
+  submitButton.textContent = "Crear cuenta y pagar plan + tickets";
+  selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || defaultPortalPackage();
+  renderPackages();
+  renderPricingLogic();
   selectPlan(selectedPlan?.code || plans[0]?.code, false);
+}
+
+function renderSelectionBox() {
+  const syncSticky = (html) => {
+    if (stickySelectedBox) stickySelectedBox.innerHTML = html;
+  };
+  if (mode === "prepaid" && selectedPackage) {
+    const html = `
+      <span>QR Validator prepago</span>
+      <strong>${escapeHtml(selectedPackage.code)} - ${escapeHtml(selectedPackage.title)}</strong>
+      <p>${priceLabel(selectedPackage)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets. Para comprar mas de 200 y ahorrar hasta ${maxSavingsLabel()}, activa Portal RMS.</p>
+      <p>${exchangeRateLabel()}. Mercado Pago procesa el equivalente en COP.</p>
+    `;
+    selectedBox.innerHTML = html;
+    syncSticky(html);
+    return;
+  }
+
+  if (mode === "portal" && selectedPlan) {
+    const totalData = selectedTotal();
+    const planPrice = totalData.plan_cop;
+    const packagePrice = totalData.package_cop;
+    const total = totalData.total_cop;
+    const planUsd = Number(selectedPlan.monthly_price_usd || 0);
+    const packageUsd = Number(selectedPackage?.price_usd || 0);
+    const totalUsd = totalData.total_usd;
+    const html = `
+      <span>${selectedPlan.monthly_price_cop ? "Portal mensual + tickets" : "Plan por cotizacion"}</span>
+      <strong>${escapeHtml(selectedPlan.name)}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
+      <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Deja tus datos y solicita una propuesta a medida."}</p>
+      ${selectedPlan.monthly_price_cop ? `<p>Equivalente Mercado Pago: ${copMoney(planPrice)} + ${copMoney(packagePrice)} = ${copMoney(total)} con ${exchangeRateLabel()}.</p>` : ""}
+      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets a ${usdUnitMoney(packageUnitUsd(selectedPackage))} c/u. Ahorro ${Number(selectedPackage.savings_percent || 0)}% frente a comprar tickets de USD 0.25.</p>` : ""}
+    `;
+    selectedBox.innerHTML = html;
+    syncSticky(html);
+  }
 }
 
 function selectPackage(code, shouldScroll = true) {
   if (!code) return;
   selectedPackage = packages.find((item) => item.code === code) || selectedPackage;
   if (!selectedPackage) return;
-  selectedBox.innerHTML = `
-    <span>QR Validator prepago</span>
-    <strong>${escapeHtml(selectedPackage.code)} - ${escapeHtml(selectedPackage.title)}</strong>
-    <p>${money(selectedPackage.price_cop)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} creditos. Crea usuario, paga y empieza cuando Mercado Pago apruebe.</p>
-  `;
+  renderSelectionBox();
   renderPackages();
+  renderPricingLogic();
   if (shouldScroll) signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -194,14 +341,11 @@ function selectPlan(code, shouldScroll = true) {
   if (!code) return;
   selectedPlan = plans.find((item) => item.code === code) || selectedPlan;
   if (!selectedPlan) return;
-  selectedBox.innerHTML = `
-    <span>${selectedPlan.monthly_price_cop ? "Portal mensual" : "Plan por cotizacion"}</span>
-    <strong>${escapeHtml(selectedPlan.name)}</strong>
-    <p>${selectedPlan.monthly_price_cop ? money(selectedPlan.monthly_price_cop) : escapeHtml(selectedPlan.price_label || "Cotizacion")} - ${selectedPlan.code === "GLOBAL" ? "25.000+ QR/mes segun alcance" : `${Number(selectedPlan.limits?.monthly_qr_included || 0).toLocaleString("es-CO")} QR/mes`}. ${selectedPlan.monthly_price_cop ? "Crea usuario, paga y activa el portal." : "Deja tus datos y solicita una propuesta a medida."}</p>
-  `;
+  renderSelectionBox();
   renderPlans();
+  renderPricingLogic();
   if (mode === "portal") {
-    submitButton.textContent = selectedPlan.monthly_price_cop ? "Crear cuenta y pagar mensualidad" : "Solicitar cotizacion";
+    submitButton.textContent = selectedPlan.monthly_price_cop ? "Crear cuenta y pagar plan + tickets" : "Solicitar cotizacion";
   }
   if (shouldScroll) signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -224,6 +368,9 @@ function formPayload() {
     website: document.getElementById("website").value.trim() || null,
     city: document.getElementById("city").value.trim() || null,
     address: document.getElementById("address").value.trim() || null,
+    terms_accepted: document.getElementById("termsAccepted").checked,
+    privacy_accepted: document.getElementById("privacyAccepted").checked,
+    legal_version: "2026-06-16",
   };
 }
 
@@ -242,6 +389,11 @@ async function submitSignup(event) {
     requestMessage.classList.add("error");
     return;
   }
+  if (mode === "portal" && !selectedPackage) {
+    requestMessage.textContent = "Selecciona con cuantos tickets quieres empezar.";
+    requestMessage.classList.add("error");
+    return;
+  }
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
     requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia estos datos al equipo comercial para definir QR desde 25.000 al mes, portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
@@ -253,6 +405,11 @@ async function submitSignup(event) {
     requestMessage.classList.add("error");
     return;
   }
+  if (!payload.terms_accepted || !payload.privacy_accepted) {
+    requestMessage.textContent = "Debes aceptar terminos, condiciones y politica de privacidad antes de continuar al pago.";
+    requestMessage.classList.add("error");
+    return;
+  }
 
   submitButton.disabled = true;
   requestMessage.textContent = mode === "prepaid" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout mensual...";
@@ -260,7 +417,7 @@ async function submitSignup(event) {
     const path = mode === "prepaid" ? "/api/public/signup/prepaid" : "/api/public/signup/portal";
     const body = mode === "prepaid"
       ? { ...payload, package_code: selectedPackage.code }
-      : { ...payload, plan_code: selectedPlan.code };
+      : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code };
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -277,7 +434,7 @@ async function submitSignup(event) {
     }
     requestMessage.textContent = mode === "prepaid"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
-      : `Cuenta creada para ${data.plan?.name || "el plan mensual"}. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
+      : `Cuenta creada para ${data.plan?.name || "el plan mensual"} con ${selectedPackage.package_size} tickets iniciales. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
     requestMessage.classList.add("ok");
     window.location.href = checkoutUrl;
   } catch (error) {
@@ -335,13 +492,16 @@ async function init() {
       fetchJson("/api/public/subscription-plans"),
     ]);
     packages = packageData.packages || [];
+    pricing = planData.pricing || packageData.pricing || pricing;
     prepaidPlan = planData.prepaid_plan || null;
     plans = planData.plans || [];
-    selectedPackage = packages.find((item) => item.code === initialPackageCode) || packages[0] || null;
+    subscriberPackages = planData.subscriber_packages || packages.filter((item) => item.subscriber_allowed);
+    selectedPackage = packages.find((item) => item.code === initialPackageCode) || null;
     selectedPlan = plans.find((item) => item.code === initialPlanCode) || plans[0] || null;
     renderPackages();
     renderPlans();
     renderPlanComparison();
+    renderPricingLogic();
     syncMode();
     renderPaymentStatus();
   } catch (error) {
@@ -355,6 +515,7 @@ modeButtons.forEach((button) => {
 });
 startPrepaidButton.addEventListener("click", () => switchMode("prepaid"));
 startPortalButton.addEventListener("click", () => switchMode("portal"));
+continueToSignupButton?.addEventListener("click", () => signupSection.scrollIntoView({ behavior: "smooth", block: "start" }));
 signupForm.addEventListener("submit", submitSignup);
 themeSwitch?.addEventListener("change", togglePackagesTheme);
 applyPackagesTheme(readPreferredTheme());

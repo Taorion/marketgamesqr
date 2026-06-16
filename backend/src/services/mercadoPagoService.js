@@ -95,12 +95,26 @@ async function createCreditCheckout(user, body) {
     throw badRequest("Este usuario no tiene negocio asignado.");
   }
   if (!canAccessBusiness(user, user.business_id)) {
-    throw forbidden("No puedes comprar creditos para este negocio.");
+    throw forbidden("No puedes comprar tickets QR para este negocio.");
   }
 
   const offer = findPackageOffer(body.package_code);
   if (!offer) {
     throw badRequest("Paquete QR no disponible.");
+  }
+  const businessPlan = await query(
+    `select plan_code
+     from businesses
+     where id = $1`,
+    [user.business_id]
+  );
+  const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
+  const isSubscription = plan?.category === "subscription";
+  if (!isSubscription && !offer.prepaid_allowed) {
+    throw badRequest("Tu acceso prepago solo permite recargar 50 o 200 tickets. Para comprar paquetes superiores activa Portal RMS mensual.");
+  }
+  if (isSubscription && !offer.subscriber_allowed) {
+    throw badRequest("Paquete QR no disponible para suscriptores.");
   }
 
   const order = await query(
@@ -411,8 +425,8 @@ async function createSubscriptionAutoRenewal(user, body) {
 
 async function createPrepaidSignupCheckout(client, payload) {
   const offer = findPackageOffer(payload.package_code);
-  if (!offer) {
-    throw badRequest("Paquete QR no disponible.");
+  if (!offer || !offer.prepaid_allowed) {
+    throw badRequest("El QR Validator prepago solo permite paquetes de 50 o 200 tickets.");
   }
 
   const order = await client.query(
@@ -500,8 +514,12 @@ async function createPortalSignupCheckout(client, payload) {
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para pago automatico.");
   }
+  const offer = findPackageOffer(payload.package_code);
+  if (!offer || !offer.subscriber_allowed) {
+    throw badRequest("Paquete inicial QR no disponible para suscriptores.");
+  }
 
-  const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
+  const totalPriceCop = Number(plan.monthly_price_cop) + Number(offer.price_cop);
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -511,9 +529,9 @@ async function createPortalSignupCheckout(client, payload) {
       payload.business_id,
       payload.user_id,
       plan.code,
-      monthlyQrIncluded,
-      plan.name,
-      plan.monthly_price_cop,
+      offer.package_size,
+      `${plan.name} + ${offer.title}`,
+      totalPriceCop,
       JSON.stringify({
         source: "public_portal_signup",
         signup: {
@@ -522,6 +540,9 @@ async function createPortalSignupCheckout(client, payload) {
           user_id: payload.user_id,
           email: payload.email,
           plan_code: plan.code,
+          initial_package_code: offer.code,
+          initial_package_size: offer.package_size,
+          initial_package_price_cop: offer.price_cop,
         },
       }),
     ]
@@ -537,6 +558,13 @@ async function createPortalSignupCheckout(client, payload) {
           title: `${plan.name} - mensualidad portal Market Games`,
           quantity: 1,
           unit_price: Number(plan.monthly_price_cop),
+          currency_id: "COP",
+        },
+        {
+          id: offer.code,
+          title: `${offer.title} - tickets iniciales QR`,
+          quantity: 1,
+          unit_price: Number(offer.price_cop),
           currency_id: "COP",
         },
       ],
@@ -556,6 +584,7 @@ async function createPortalSignupCheckout(client, payload) {
         business_id: payload.business_id,
         user_id: payload.user_id,
         plan_code: plan.code,
+        package_code: offer.code,
         signup_type: "portal_monthly_subscription",
       },
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
@@ -759,12 +788,22 @@ async function createDemoCreditPurchase(user, body) {
     throw badRequest("Este usuario no tiene negocio asignado.");
   }
   if (!canAccessBusiness(user, user.business_id)) {
-    throw forbidden("No puedes comprar creditos para este negocio.");
+    throw forbidden("No puedes comprar tickets QR para este negocio.");
   }
 
   const offer = findPackageOffer(body.package_code);
   if (!offer) {
     throw badRequest("Paquete QR no disponible.");
+  }
+  const businessPlan = await query(
+    `select plan_code
+     from businesses
+     where id = $1`,
+    [user.business_id]
+  );
+  const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
+  if (plan?.category !== "subscription" && !offer.prepaid_allowed) {
+    throw badRequest("Tu acceso prepago solo permite recargar 50 o 200 tickets. Para comprar paquetes superiores activa Portal RMS mensual.");
   }
 
   return withTransaction(async (client) => {
@@ -893,6 +932,16 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
 
   await ensureCreditAccount(client, order.business_id);
+  let account = null;
+  if (signup.initial_package_code && Number(order.package_size || 0) > 0) {
+    account = await addQrCredits(client, {
+      business_id: order.business_id,
+      package_size: order.package_size,
+      public_label: `${order.package_title} comprado al activar el portal`,
+      notes: `Paquete inicial de tickets al activar Portal RMS. Payment ID ${payment.id}.`,
+      created_by_user_id: order.created_by_user_id,
+    });
+  }
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
@@ -939,7 +988,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       status: "ACTIVE",
       current_period_ends_at: periodEnd.toISOString(),
     },
-    credited: false,
+    credit_account: account ? mapPublicCreditAccount(account) : null,
+    credited: Boolean(account),
   };
 }
 

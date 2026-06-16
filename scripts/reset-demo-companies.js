@@ -208,7 +208,7 @@ async function insertCreditAccount(client, businessId, company, ownerId) {
       company.prepaid.balance,
       company.prepaid.purchased,
       company.prepaid.used + company.monthly_used,
-      company.plan_code === "PREPAID_QR" ? `${company.prepaid.balance} creditos prepago disponibles` : "Cuota mensual incluida",
+      company.plan_code === "PREPAID_QR" ? `${company.prepaid.balance} tickets prepago disponibles` : "Tickets por recarga separada",
     ]
   );
 
@@ -241,7 +241,7 @@ async function insertCreditAccount(client, businessId, company, ownerId) {
         account.rows[0].id,
         -company.prepaid.used,
         company.prepaid.balance,
-        `${company.prepaid.used} creditos consumidos`,
+        `${company.prepaid.used} tickets consumidos`,
         "Uso demo de QR prepago.",
         ownerId,
       ]

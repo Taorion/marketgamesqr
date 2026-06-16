@@ -66,13 +66,13 @@ async function main() {
   const demoPurchase = await request("/api/payments/qr-credits/checkout/demo", {
     method: "POST",
     headers,
-    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR100" }),
+    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR50" }),
   });
   const ordersAfterDemo = await request("/api/payments/qr-credits/orders", { headers });
   const checkout = await request("/api/payments/qr-credits/checkout", {
     method: "POST",
     headers,
-    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR100" }),
+    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR50" }),
   });
 
   result.orders_before = {

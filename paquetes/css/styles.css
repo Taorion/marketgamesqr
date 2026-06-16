@@ -191,6 +191,69 @@ p { color: var(--muted); line-height: 1.45; }
 .use-cases {
   padding: 20px;
 }
+.checkout-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 14px;
+  align-items: start;
+}
+.checkout-main {
+  display: grid;
+  gap: 14px;
+}
+.checkout-summary {
+  position: sticky;
+  top: 14px;
+  display: grid;
+  gap: 10px;
+}
+.pricing-logic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pricing-logic-grid article {
+  min-height: 130px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.pricing-logic-grid span {
+  color: var(--primary);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.pricing-logic-grid strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 1.15rem;
+}
+.consent-field {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.consent-field input {
+  width: 18px;
+  min-height: 18px;
+  margin: 2px 0 0;
+}
+.consent-field span {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: none;
+}
+.consent-field a {
+  color: var(--primary);
+  font-weight: 900;
+}
 .selling-section .section-head {
   margin-bottom: 14px;
 }
@@ -334,6 +397,24 @@ button:disabled {
 }
 .message.error { color: var(--danger); }
 .message.ok { color: var(--primary-strong); }
+.legal-page {
+  max-width: 980px;
+}
+.legal-document {
+  display: grid;
+  gap: 10px;
+}
+.legal-document h2,
+.legal-document h3 {
+  margin: 0;
+}
+.legal-document h3 {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.legal-document p {
+  margin-bottom: 0;
+}
 .plan-access-section {
   display: grid;
   gap: 14px;
@@ -399,13 +480,18 @@ button:disabled {
 }
 @media (max-width: 900px) {
   .hero,
+  .checkout-workspace,
   .benefit-grid,
   .steps-strip,
   .use-cases,
   .package-grid,
+  .pricing-logic-grid,
   .plan-comparison-grid,
   .request-form {
     grid-template-columns: 1fr;
+  }
+  .checkout-summary {
+    position: static;
   }
   .hero-actions {
     display: grid;

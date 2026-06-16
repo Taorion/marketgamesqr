@@ -27,6 +27,8 @@ const postSaleGeneratorForm = document.getElementById("postSaleGeneratorForm");
 const postSaleCreditChip = document.getElementById("postSaleCreditChip");
 const postSaleAmountInput = document.getElementById("postSaleAmountInput");
 const postSaleProductInput = document.getElementById("postSaleProductInput");
+const postSaleActivationSourceInput = document.getElementById("postSaleActivationSourceInput");
+const postSaleActivationSubjectInput = document.getElementById("postSaleActivationSubjectInput");
 const postSaleCustomerInput = document.getElementById("postSaleCustomerInput");
 const postSaleDocumentInput = document.getElementById("postSaleDocumentInput");
 const postSalePhoneInput = document.getElementById("postSalePhoneInput");
@@ -109,6 +111,11 @@ const state = {
   lastGeneratedPostSaleQr: null,
   qrPackageOffers: [],
   qrCreditOrders: [],
+  pricing: {
+    display_currency: "USD",
+    payment_currency: "COP",
+    usd_to_cop_rate: 4000,
+  },
 };
 
 function escapeHtml(value) {
@@ -254,6 +261,24 @@ function formatCurrency(value) {
   });
 }
 
+function formatUsd(value) {
+  return `USD ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function exchangeRateLabel() {
+  return `TRM ${Number(state.pricing?.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
+}
+
+function packagePriceLabel(offer) {
+  if (Number.isFinite(Number(offer?.price_usd))) {
+    return `${formatUsd(offer.price_usd)} (${formatCurrency(offer.price_cop)} al pagar)`;
+  }
+  return formatCurrency(offer?.price_cop);
+}
+
 function renderTrafficBalance(account) {
   state.creditAccount = account;
   trafficCard.classList.remove("warning", "danger");
@@ -266,7 +291,7 @@ function renderTrafficBalance(account) {
     return;
   }
 
-  trafficBalanceValue.textContent = `${formatNumber(account.qr_balance)} creditos`;
+  trafficBalanceValue.textContent = `${formatNumber(account.qr_balance)} tickets`;
   trafficBalanceCopy.textContent = `${formatNumber(account.qr_used_total)} consumidos de ${formatNumber(account.qr_purchased_total)} disponibles contratados.`;
   trafficStatusValue.textContent = account.exhausted ? "Agotado" : account.low_balance ? "Bajo" : "Activo";
   if (account.exhausted) {
@@ -294,28 +319,28 @@ function renderPostSaleCreditChip() {
   const account = state.creditAccount;
   postSaleCreditChip.className = "result-chip neutral";
   if (!account) {
-    postSaleCreditChip.textContent = "Credito legacy";
+    postSaleCreditChip.textContent = "Ticket legacy";
     return;
   }
   if (account.exhausted) {
     postSaleCreditChip.className = "result-chip danger";
-    postSaleCreditChip.textContent = "Sin creditos";
+    postSaleCreditChip.textContent = "Sin tickets";
     return;
   }
   if (account.low_balance) {
     postSaleCreditChip.className = "result-chip loading";
-    postSaleCreditChip.textContent = `${formatNumber(account.qr_balance)} creditos`;
+    postSaleCreditChip.textContent = `${formatNumber(account.qr_balance)} tickets`;
     return;
   }
   postSaleCreditChip.className = "result-chip ok";
-  postSaleCreditChip.textContent = `${formatNumber(account.qr_balance)} creditos`;
+  postSaleCreditChip.textContent = `${formatNumber(account.qr_balance)} tickets`;
 }
 
 function renderQrRechargeShop() {
-  const packages = state.qrPackageOffers || [];
+  const packages = (state.qrPackageOffers || []).filter((offer) => offer.prepaid_allowed);
   validatorQrPackageSelect.innerHTML = packages.map((offer) => `
     <option value="${escapeHtml(offer.code)}">
-      ${escapeHtml(offer.title)} - ${formatNumber(offer.package_size)} QR - ${formatCurrency(offer.price_cop)}
+      ${escapeHtml(offer.title)} - ${formatNumber(offer.package_size)} tickets - ${packagePriceLabel(offer)}
     </option>
   `).join("");
 
@@ -331,9 +356,9 @@ function renderQrRechargeShop() {
 
   validatorQrRechargeButton.disabled = false;
   if (account) {
-    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} creditos. La recarga se activa cuando Mercado Pago confirme el pago.`;
+    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en USD; Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}. Para paquetes grandes y ahorro hasta 50%, activa Portal RMS.`;
   } else {
-    validatorQrRechargeMessage.textContent = "El pago confirmado crea o incrementa la cartera QR de este negocio.";
+    validatorQrRechargeMessage.textContent = `El pago confirmado crea o incrementa la cartera de tickets QR. Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}.`;
   }
 
   const latestOrder = state.qrCreditOrders[0];
@@ -359,6 +384,7 @@ async function loadQrRechargeData() {
       }),
     ]);
     state.qrPackageOffers = packageData.packages || [];
+    state.pricing = packageData.pricing || state.pricing;
     state.qrCreditOrders = orderData.orders || [];
     renderQrRechargeShop();
   } catch (error) {
@@ -585,6 +611,8 @@ async function validateToken(rawValue) {
 function resetPostSaleFormAfterSuccess() {
   postSaleAmountInput.value = "";
   postSaleProductInput.value = "";
+  postSaleActivationSourceInput.value = "post-sale";
+  postSaleActivationSubjectInput.value = "";
   postSaleCustomerInput.value = "";
   postSaleDocumentInput.value = "";
   postSalePhoneInput.value = "";
@@ -705,11 +733,13 @@ async function submitPostSaleQr(event) {
 
   setBusy(true);
   postSaleQrStatus.textContent = "Generando QR postventa...";
-  showToast("loading", "Generando QR", "Se consumira 1 credito de trafico si el negocio tiene cartera activa.", 0);
+  showToast("loading", "Generando QR", "Se consumira 1 ticket QR si el negocio tiene cartera activa.", 0);
   showScreenFeedback("loading", "Generando QR", "Creando token, venta y beneficio postventa.");
 
   const productName = postSaleProductInput.value.trim();
   const benefitLabel = postSaleBenefitLabelInput.value.trim();
+  const activationSource = postSaleActivationSourceInput.value || "post-sale";
+  const activationSubject = postSaleActivationSubjectInput.value.trim() || productName || null;
 
   try {
     const data = await api("/api/business/qr/post-sale", {
@@ -724,6 +754,11 @@ async function submitPostSaleQr(event) {
         customer_email: postSaleEmailInput.value.trim() || null,
         product_name: productName || null,
         notes: postSaleNotesInput.value.trim() || null,
+        metadata: {
+          attribution_source: activationSource,
+          attribution_subject: activationSubject,
+          qr_creation_context: "validator_prepaid_unit",
+        },
         expires_mode: postSaleExpiresModeInput.value,
         benefit: {
           benefit_type: postSaleBenefitTypeInput.value,
@@ -741,7 +776,7 @@ async function submitPostSaleQr(event) {
       renderTrafficBalance(data.credit_account);
     }
     resetPostSaleFormAfterSuccess();
-    postSaleQrStatus.textContent = "QR postventa generado y credito descontado.";
+    postSaleQrStatus.textContent = "QR postventa generado y ticket descontado.";
     showToast("ok", "QR generado", "El QR quedo listo para enviar o validar.");
     await loadTrafficBalance();
   } catch (error) {
@@ -871,15 +906,21 @@ async function loadHistory() {
       method: "GET",
       headers: authHeaders(),
     });
-    renderHistory(data.redemptions || []);
+    renderHistory(data.redemptions || [], data.lead_gate);
   } catch (error) {
     historyList.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
   }
 }
 
-function renderHistory(redemptions) {
+function renderHistory(redemptions, leadGate = null) {
   if (!redemptions.length) {
-    historyList.innerHTML = '<p class="empty-state">Todavia no hay redenciones registradas.</p>';
+    historyList.innerHTML = leadGate?.locked
+      ? `<div class="empty-state">
+          <strong>${escapeHtml(leadGate.title || "Desbloquea el portal")}</strong>
+          <p>${escapeHtml(leadGate.message || "El plan prepago solo muestra una parte del historial.")}</p>
+          <a class="primary-button compact" href="${escapeHtml(leadGate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
+        </div>`
+      : '<p class="empty-state">Todavia no hay redenciones registradas.</p>';
     return;
   }
 
@@ -892,7 +933,15 @@ function renderHistory(redemptions) {
       <span>${formatDate(item.redeemed_at)} por ${escapeHtml(item.redeemed_by || "usuario")}</span>
     </article>
   `);
-  historyList.innerHTML = rows.join("");
+  const gateNotice = leadGate?.locked
+    ? `<div class="empty-state">
+        <strong>${escapeHtml(leadGate.title || "Desbloquea todos tus leads")}</strong>
+        <p>${escapeHtml(leadGate.message || "El plan prepago solo muestra una muestra del historial.")}</p>
+        <p>Estas viendo ${escapeHtml(redemptions.length)} de ${escapeHtml(leadGate.total_available || redemptions.length)} registros. ${escapeHtml(leadGate.hidden_count || 0)} quedan reservados para Portal RMS.</p>
+        <a class="primary-button compact" href="${escapeHtml(leadGate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Ver todos con Portal RMS</a>
+      </div>`
+    : "";
+  historyList.innerHTML = `${gateNotice}${rows.join("")}`;
 }
 
 function canUseBarcodeDetector() {

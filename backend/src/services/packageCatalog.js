@@ -1,71 +1,115 @@
-const QR_PACKAGE_OFFERS = [
+const { env } = require("../config/env");
+
+const USD_TO_COP_RATE = Number(env.usdToCopRate || 4000);
+const BASE_TICKET_PRICE_USD = 0.25;
+
+function roundCop(value) {
+  return Math.round(Number(value || 0) / 1000) * 1000;
+}
+
+function usdToCop(value) {
+  return roundCop(Number(value || 0) * USD_TO_COP_RATE);
+}
+
+const rawPackageOffers = [
   {
-    code: "QR100",
-    package_size: 100,
-    title: "Paquete x100",
-    price_cop: 29900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR100",
+    code: "QR50",
+    package_size: 50,
+    unit_price_usd: 0.25,
+    prepaid_allowed: true,
+    subscriber_allowed: true,
+    title: "Paquete x50",
+    description: "Entrada minima para probar QR Validator.",
   },
   {
-    code: "QR300",
-    package_size: 300,
-    title: "Paquete x300",
-    price_cop: 69900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR300",
+    code: "QR200",
+    package_size: 200,
+    unit_price_usd: 0.2125,
+    prepaid_allowed: true,
+    subscriber_allowed: true,
+    title: "Paquete x200",
+    description: "Mayor alcance prepago antes de pasar al portal.",
   },
   {
     code: "QR500",
     package_size: 500,
-    title: "Paquete x500",
-    price_cop: 99900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR500",
-  },
-  {
-    code: "QR800",
-    package_size: 800,
-    title: "Paquete x800",
-    price_cop: 139900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR800",
+    unit_price_usd: 0.1875,
+    prepaid_allowed: false,
+    subscriber_allowed: true,
+    title: "Portal x500",
+    description: "Primer paquete superior exclusivo para suscriptores.",
   },
   {
     code: "QR1000",
     package_size: 1000,
-    title: "Paquete x1000",
-    price_cop: 169900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR1000",
-  },
-  {
-    code: "QR1500",
-    package_size: 1500,
-    title: "Paquete x1500",
-    price_cop: 229900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR1500",
+    unit_price_usd: 0.1625,
+    prepaid_allowed: false,
+    subscriber_allowed: true,
+    title: "Portal x1000",
+    description: "Volumen comercial con ahorro claro por ticket.",
   },
   {
     code: "QR2000",
     package_size: 2000,
-    title: "Paquete x2000",
-    price_cop: 289900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR2000",
+    unit_price_usd: 0.14375,
+    prepaid_allowed: false,
+    subscriber_allowed: true,
+    title: "Portal x2000",
+    description: "Escala para campanas recurrentes y referidos.",
   },
   {
-    code: "QR5000",
-    package_size: 5000,
-    title: "Paquete x5000",
-    price_cop: 599900,
-    payment_url: "/paquetes/?mode=prepaid&package=QR5000",
+    code: "QR4000",
+    package_size: 4000,
+    unit_price_usd: 0.13125,
+    prepaid_allowed: false,
+    subscriber_allowed: true,
+    title: "Portal x4000",
+    description: "Alto volumen con casi el maximo ahorro.",
   },
   {
-    code: "QRMAX",
-    package_size: 10000,
-    title: "Paquete x10000",
-    price_cop: 999900,
-    payment_url: "/paquetes/?mode=prepaid&package=QRMAX",
+    code: "QR8000",
+    package_size: 8000,
+    unit_price_usd: 0.125,
+    prepaid_allowed: false,
+    subscriber_allowed: true,
+    title: "Portal x8000",
+    description: "Maximo ahorro: el ticket baja de $1.000 a $500.",
   },
 ];
 
-function findPackageOffer(code) {
-  return QR_PACKAGE_OFFERS.find((offer) => offer.code === code);
+function savingsPercent(unitPrice) {
+  return Math.round((1 - Number(unitPrice || 0) / BASE_TICKET_PRICE_USD) * 100);
 }
 
-module.exports = { QR_PACKAGE_OFFERS, findPackageOffer };
+const QR_PACKAGE_OFFERS = rawPackageOffers.map((offer) => ({
+  ...offer,
+  price_usd: Number((offer.package_size * offer.unit_price_usd).toFixed(2)),
+  price_cop: usdToCop(offer.package_size * offer.unit_price_usd),
+  unit_price_cop: Math.round(usdToCop(offer.package_size * offer.unit_price_usd) / offer.package_size),
+  usd_to_cop_rate: USD_TO_COP_RATE,
+  display_currency: "USD",
+  payment_currency: "COP",
+  savings_percent: savingsPercent(offer.unit_price_usd),
+  payment_url: `/paquetes/?mode=${offer.prepaid_allowed ? "prepaid" : "portal"}&package=${offer.code}`,
+}));
+
+function findPackageOffer(code) {
+  return QR_PACKAGE_OFFERS.find((offer) => offer.code === String(code || "").trim().toUpperCase());
+}
+
+function prepaidPackageOffers() {
+  return QR_PACKAGE_OFFERS.filter((offer) => offer.prepaid_allowed);
+}
+
+function subscriberPackageOffers() {
+  return QR_PACKAGE_OFFERS.filter((offer) => offer.subscriber_allowed);
+}
+
+module.exports = {
+  BASE_TICKET_PRICE_USD,
+  USD_TO_COP_RATE,
+  QR_PACKAGE_OFFERS,
+  findPackageOffer,
+  prepaidPackageOffers,
+  subscriberPackageOffers,
+};

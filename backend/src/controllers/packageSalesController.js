@@ -4,7 +4,13 @@ const { query, withTransaction } = require("../config/db");
 const { badRequest, notFound, forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const { canAccessBusiness } = require("../middleware/auth");
-const { QR_PACKAGE_OFFERS, findPackageOffer } = require("../services/packageCatalog");
+const {
+  QR_PACKAGE_OFFERS,
+  USD_TO_COP_RATE,
+  findPackageOffer,
+  prepaidPackageOffers,
+  subscriberPackageOffers,
+} = require("../services/packageCatalog");
 const { listPlans, normalizePlanCode } = require("../services/subscriptionService");
 const {
   createPrepaidSignupCheckout,
@@ -43,6 +49,9 @@ const publicSignupBaseSchema = z.object({
   address: z.string().trim().max(220).optional().nullable(),
   password: z.string().min(8).max(120),
   password_confirm: z.string().min(8).max(120),
+  terms_accepted: z.boolean().refine((value) => value === true, "Debes aceptar los terminos y condiciones."),
+  privacy_accepted: z.boolean().refine((value) => value === true, "Debes aceptar la politica de privacidad."),
+  legal_version: z.string().trim().max(40).default("2026-06-16"),
 }).refine((body) => body.password === body.password_confirm, {
   message: "La confirmacion de password no coincide.",
   path: ["password_confirm"],
@@ -54,6 +63,7 @@ const prepaidSignupSchema = publicSignupBaseSchema.extend({
 
 const portalSignupSchema = publicSignupBaseSchema.extend({
   plan_code: z.string().trim().min(2).max(40),
+  package_code: z.string().trim().min(2).max(40),
 });
 
 function requireMarketAdmin(user) {
@@ -94,6 +104,12 @@ function signupSettings(body, type) {
     address: body.address || "",
     signup_type: type,
     account_document_type: body.company_name ? "NIT" : "CEDULA",
+    legal_acceptance: {
+      terms_accepted: body.terms_accepted,
+      privacy_accepted: body.privacy_accepted,
+      legal_version: body.legal_version || "2026-06-16",
+      accepted_at: new Date().toISOString(),
+    },
   };
 }
 
@@ -121,7 +137,14 @@ function publicSignupResponse({ business, user, order = null, plan = null }) {
 
 async function listPackageOffers(_req, res, next) {
   try {
-    res.json({ packages: QR_PACKAGE_OFFERS });
+    res.json({
+      packages: QR_PACKAGE_OFFERS,
+      pricing: {
+        display_currency: "USD",
+        payment_currency: "COP",
+        usd_to_cop_rate: USD_TO_COP_RATE,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -133,7 +156,13 @@ async function listPublicSubscriptionPlans(_req, res, next) {
     res.json({
       prepaid_plan: plans.find((plan) => plan.code === "PREPAID_QR"),
       plans: plans.filter((plan) => plan.category === "subscription"),
-      prepaid_reference: QR_PACKAGE_OFFERS,
+      prepaid_reference: prepaidPackageOffers(),
+      subscriber_packages: subscriberPackageOffers(),
+      pricing: {
+        display_currency: "USD",
+        payment_currency: "COP",
+        usd_to_cop_rate: USD_TO_COP_RATE,
+      },
     });
   } catch (error) {
     next(error);
@@ -191,8 +220,8 @@ async function createPrepaidSignup(req, res, next) {
   try {
     const body = validate(prepaidSignupSchema, req.body);
     const offer = findPackageOffer(body.package_code);
-    if (!offer) {
-      throw badRequest("Selecciona un paquete QR valido para activar QR Validator.");
+    if (!offer || !offer.prepaid_allowed) {
+      throw badRequest("El QR Validator prepago solo permite paquetes de 50 o 200 tickets.");
     }
 
     const result = await withTransaction(async (client) => {
@@ -243,6 +272,10 @@ async function createPortalSignup(req, res, next) {
     if (!plan) {
       throw badRequest("Selecciona un plan mensual valido para el portal.");
     }
+    const offer = findPackageOffer(body.package_code);
+    if (!offer || !offer.subscriber_allowed) {
+      throw badRequest("Selecciona un paquete inicial valido para suscriptores del portal.");
+    }
 
     const result = await withTransaction(async (client) => {
       const existingUser = await client.query("select id from app_users where lower(email) = lower($1)", [body.email]);
@@ -274,6 +307,7 @@ async function createPortalSignup(req, res, next) {
         email: user.email,
         full_name: user.full_name,
         plan_code: plan.code,
+        package_code: offer.code,
       });
 
       return { business, user, plan, order };

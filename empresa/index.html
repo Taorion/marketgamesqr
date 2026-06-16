@@ -400,7 +400,7 @@
             <div class="view-head">
               <div>
                 <h2>Usuario y configuracion</h2>
-                <p>Datos de la empresa, usuario activo, plan contratado y creditos QR disponibles.</p>
+                <p>Datos de la empresa, usuario activo, plan contratado y tickets QR disponibles.</p>
               </div>
             </div>
 
@@ -484,7 +484,7 @@
                   </div>
                   <span class="status-chip pending" id="accountBillingStatus">Mercado Pago</span>
                 </div>
-                <p class="table-secondary">Compra paquetes QR cuando necesites mas creditos. Si tienes portal mensual, renueva tu plan para extender el periodo activo.</p>
+                <p class="table-secondary">Compra tickets QR cuando necesites mas saldo. Si tienes portal mensual, renueva tu plan para extender el periodo activo.</p>
                 <div class="account-billing-grid">
                   <div class="account-billing-panel">
                     <strong>Recarga de QR</strong>
@@ -594,7 +594,6 @@
                 </label>
                 <div class="qr-credit-shop-actions">
                   <button class="solid-button" id="qrCreditCheckoutButton" type="submit">Ir a pagar</button>
-                  <button class="ghost-button" id="qrCreditDemoButton" type="button">Simular pago aprobado</button>
                 </div>
               </form>
               <p class="error-line" id="qrCreditCheckoutMessage"></p>
@@ -617,12 +616,12 @@
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Planes del portal</span>
-                  <h3>Suscripcion mensual con QR incluidos</h3>
+                  <h3>Suscripcion mensual + tickets por recarga</h3>
                 </div>
                 <span class="status-chip ok">Precios coherentes con prepago</span>
               </div>
               <p class="pricing-intro" id="subscriptionPricingNote">
-                Cada plan toma como piso el paquete prepago comparable y suma el valor del portal: dashboard, permisos, exportaciones, afiliados y operacion por equipo.
+                La mensualidad cobra el uso del portal. Los tickets QR se compran aparte: prepago solo 50/200, suscriptores con paquetes superiores y ahorro por volumen.
               </p>
               <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
             </article>
@@ -634,7 +633,7 @@
                   <h3>Generar QR unico</h3>
                 </div>
                 <form class="modal-form" id="postSaleQrForm">
-                  <label class="full"><span>Campana asociada</span><select id="postSaleCampaignInput" required></select></label>
+                  <label class="full"><span>Campana asociada (opcional)</span><select id="postSaleCampaignInput"></select></label>
                   <label><span>Origen / referido</span><input id="postSaleAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, WhatsApp"></label>
                   <label><span>Asunto / canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre del influencer o activacion"></label>
                   <label><span>Valor de venta</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" required></label>
@@ -682,7 +681,7 @@
                   <h3>Crear paquete descargable</h3>
                 </div>
                 <form class="modal-form" id="qrBatchForm">
-                  <label class="full"><span>Campana asociada</span><select id="qrBatchCampaignInput" required></select></label>
+                  <label class="full"><span>Campana asociada (opcional)</span><select id="qrBatchCampaignInput"></select></label>
                   <label><span>Origen / referido</span><input id="qrBatchAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, pauta"></label>
                   <label><span>Asunto / canal</span><input id="qrBatchAttributionSubjectInput" type="text" placeholder="Nombre del influencer, stand o lote"></label>
                   <label><span>Nombre del paquete</span><input id="qrBatchNameInput" type="text" required></label>
@@ -693,6 +692,14 @@
                       <option value="empaque">Empaque</option>
                       <option value="volante">Volante</option>
                       <option value="evento">Evento</option>
+                      <option value="feria">Feria</option>
+                      <option value="influencer">Influencer</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="redes-sociales">Redes sociales</option>
+                      <option value="pauta">Pauta digital</option>
+                      <option value="alianza">Alianza</option>
+                      <option value="referido">Referido</option>
+                      <option value="activacion-marca">Activacion de marca</option>
                       <option value="producto">Producto</option>
                       <option value="mostrador">Mostrador</option>
                       <option value="campana-interna">Campana interna</option>
@@ -1919,7 +1926,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-chart-help-20260613" defer></script>
+  <script src="js/app.js?v=portal-session-legal-campaigns-20260616" defer></script>
 </body>
 </html>
 

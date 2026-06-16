@@ -137,6 +137,8 @@ app.use("/demo", express.static(path.join(__dirname, "../..", "demo")));
 app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa")));
 app.use("/admin", express.static(path.join(__dirname, "../..", "admin")));
 app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes")));
+app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos")));
+app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad")));
 app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos")));
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));

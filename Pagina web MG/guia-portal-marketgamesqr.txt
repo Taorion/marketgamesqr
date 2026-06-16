@@ -967,7 +967,7 @@ Que no incluye:
 
 Esto es importante comercialmente porque evita vender el prepago como si fuera el portal completo. La promesa del prepago es mas directa:
 
-"Compra creditos QR, genera beneficios y validalos en tienda."
+"Compra tickets QR, genera beneficios y validalos en tienda."
 
 La promesa del portal mensual es mas amplia:
 
@@ -988,27 +988,23 @@ El prepago sirve para negocios que:
 
 Paquetes disponibles:
 
-- QR100: 100 creditos QR.
-- QR300: 300 creditos QR.
-- QR500: 500 creditos QR.
-- QR800: 800 creditos QR.
-- QR1000: 1000 creditos QR.
-- QR1500: 1500 creditos QR.
-- QR2000: 2000 creditos QR.
-- QR5000: 5000 creditos QR.
-- QRMAX: 10000 creditos QR.
+- QR50: 50 tickets QR. Disponible para prepago y portal.
+- QR200: 200 tickets QR. Disponible para prepago y portal.
+- QR500: 500 tickets QR. Exclusivo para clientes con portal mensual.
+- QR1000: 1000 tickets QR. Exclusivo para clientes con portal mensual.
+- QR2000: 2000 tickets QR. Exclusivo para clientes con portal mensual.
+- QR4000: 4000 tickets QR. Exclusivo para clientes con portal mensual.
+- QR8000: 8000 tickets QR. Exclusivo para clientes con portal mensual.
 
 Precios actuales de referencia en el sistema:
 
-- QR100: COP 19.900.
-- QR300: COP 39.900.
-- QR500: COP 59.900.
-- QR800: COP 69.900.
-- QR1000: COP 84.900.
-- QR1500: COP 119.900.
-- QR2000: COP 139.900.
-- QR5000: COP 249.900.
-- QRMAX / QR10000: COP 339.900.
+- QR50: USD 12.50, equivalente COP 50.000 a TRM 4.000.
+- QR200: USD 42.50, equivalente COP 170.000 a TRM 4.000.
+- QR500: USD 93.75, equivalente COP 375.000 a TRM 4.000.
+- QR1000: USD 162.50, equivalente COP 650.000 a TRM 4.000.
+- QR2000: USD 287.50, equivalente COP 1.150.000 a TRM 4.000.
+- QR4000: USD 525.00, equivalente COP 2.100.000 a TRM 4.000.
+- QR8000: USD 1,000.00, equivalente COP 4.000.000 a TRM 4.000.
 
 Beneficios posibles de la version prepago:
 
@@ -1016,7 +1012,7 @@ Beneficios posibles de la version prepago:
    Permite empezar con una compra minima sin pagar portal mensual. Es util para negocios que quieren ensayar el sistema sin una decision grande.
 
 2. Control de gasto.
-   El negocio compra una cantidad especifica de QR. Cuando se acaban, recarga. Esto evita costos recurrentes si no hay campanas activas.
+   El negocio compra una cantidad especifica de tickets QR. Cuando se acaban, recarga. Esto evita costos recurrentes si no hay campanas activas.
 
 3. Validacion en tienda.
    El vendedor puede escanear QR y controlar beneficios. Esto ya mejora mucho frente a cupones impresos o codigos faciles de copiar.
@@ -1031,7 +1027,7 @@ Beneficios posibles de la version prepago:
    Permite demostrar valor antes de vender Starter, Growth o Pro.
 
 7. Util para microcampanas.
-   Una tienda puede comprar 100 o 300 QR para una activacion pequena, un fin de semana, una feria local o una promocion de baja escala.
+   Una tienda puede comprar 50 o 200 tickets QR para una activacion pequena, un fin de semana, una feria local o una promocion de baja escala.
 
 8. Util para negocios sin area de mercadeo.
    No todos los negocios necesitan dashboard avanzado desde el primer dia. Algunos solo quieren validar beneficios y no perder control.

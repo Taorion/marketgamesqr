@@ -88,7 +88,7 @@
         <div class="panel-head">
           <div>
             <span class="label">Recarga QR</span>
-            <strong>Comprar paquete de creditos</strong>
+            <strong>Comprar tickets QR</strong>
           </div>
           <span class="result-chip neutral" id="validatorQrRechargeStatus">Mercado Pago</span>
         </div>
@@ -99,7 +99,7 @@
           </label>
           <button class="primary-button" id="validatorQrRechargeButton" type="submit">Recargar QR</button>
         </form>
-        <p class="status-line" id="validatorQrRechargeMessage">El pago confirmado suma creditos al saldo de este negocio.</p>
+        <p class="status-line" id="validatorQrRechargeMessage">El pago confirmado suma tickets al saldo de este negocio. Prepago solo permite 50 o 200.</p>
       </section>
 
       <section class="panel post-sale-generator hidden" id="postSaleGeneratorPanel">
@@ -108,7 +108,7 @@
             <span class="label">Postventa</span>
             <strong>Generar QR desde una venta</strong>
           </div>
-          <span class="result-chip neutral" id="postSaleCreditChip">Credito requerido</span>
+          <span class="result-chip neutral" id="postSaleCreditChip">Ticket requerido</span>
         </div>
         <form class="post-sale-form" id="postSaleGeneratorForm">
           <label class="field">
@@ -118,6 +118,24 @@
           <label class="field">
             <span>Producto o servicio</span>
             <input id="postSaleProductInput" type="text" placeholder="Compra asociada">
+          </label>
+          <label class="field">
+            <span>Activacion</span>
+            <select id="postSaleActivationSourceInput">
+              <option value="post-sale">Postventa</option>
+              <option value="feria">Feria</option>
+              <option value="influencer">Influencer</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="redes-sociales">Redes sociales</option>
+              <option value="pauta">Pauta digital</option>
+              <option value="alianza">Alianza</option>
+              <option value="referido">Referido</option>
+              <option value="activacion-marca">Activacion de marca</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Detalle de activacion</span>
+            <input id="postSaleActivationSubjectInput" type="text" placeholder="Nombre del stand, influencer o lote">
           </label>
           <label class="field">
             <span>Cliente</span>

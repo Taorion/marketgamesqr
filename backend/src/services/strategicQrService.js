@@ -75,7 +75,7 @@ async function assertReward(client, businessId, rewardId) {
 
 async function assertCampaign(client, businessId, campaignId) {
   if (!campaignId) {
-    throw badRequest("Selecciona una campana para atribuir este QR.");
+    return null;
   }
   const result = await client.query(
     "select id, name, status from campaigns where id = $1 and business_id = $2",
@@ -222,8 +222,8 @@ async function createPostSaleQr(businessId, user, body) {
         {
           strategic_qr: true,
           origin_label: "QR postventa",
-          campaign_id: campaign.id,
-          campaign_name: campaign.name,
+          campaign_id: campaign?.id || null,
+          campaign_name: campaign?.name || null,
           notes: body.notes || null,
           product_name: body.product_name || null,
           ...body.metadata,
@@ -335,8 +335,8 @@ async function createQrBatch(businessId, user, body) {
         user.id,
         {
           notes: body.notes || null,
-          campaign_id: campaign.id,
-          campaign_name: campaign.name,
+          campaign_id: campaign?.id || null,
+          campaign_name: campaign?.name || null,
           claim_required: body.claim_required,
           affiliate_id: affiliate?.id || null,
           affiliate_name: affiliate?.full_name || null,
@@ -357,8 +357,8 @@ async function createQrBatch(businessId, user, body) {
         metadata: {
           strategic_qr: true,
           origin_label: body.qr_origin_type === "AFFILIATE_REFERRAL" ? "QR recomendacion afiliado" : "Paquete QR",
-          campaign_id: campaign.id,
-          campaign_name: campaign.name,
+          campaign_id: campaign?.id || null,
+          campaign_name: campaign?.name || null,
           package_name: body.name,
           channel_use: body.channel_use,
           affiliate_id: affiliate?.id || null,

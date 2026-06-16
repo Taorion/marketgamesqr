@@ -1,6 +1,6 @@
 const { badRequest } = require("../utils/http");
 
-const QR_PACKAGES = [100, 300, 500, 800, 1000, 1500, 2000, 5000, 10000];
+const QR_PACKAGES = [50, 200, 500, 1000, 2000, 4000, 8000];
 const INTERNAL_UNIT_PRICE_COP = 1000;
 
 function assertValidPackage(packageSize) {
@@ -10,7 +10,7 @@ function assertValidPackage(packageSize) {
 }
 
 function trafficLabel(quantity) {
-  return `${Number(quantity || 0).toLocaleString("es-CO")} creditos de trafico`;
+  return `${Number(quantity || 0).toLocaleString("es-CO")} tickets QR`;
 }
 
 async function ensureCreditAccount(client, businessId) {
@@ -41,11 +41,11 @@ async function getSubscriptionQuota(client, businessId) {
   const code = String(business.rows[0]?.plan_code || "PREPAID_QR").toUpperCase();
   const status = business.rows[0]?.subscription_status || "ACTIVE";
   const quotas = {
-    STARTER: 300,
-    GROWTH: 2000,
-    PRO: 8000,
-    GLOBAL: null,
-    ENTERPRISE: null,
+    STARTER: 0,
+    GROWTH: 0,
+    PRO: 0,
+    GLOBAL: 0,
+    ENTERPRISE: 0,
   };
   if (status !== "ACTIVE" || !Object.prototype.hasOwnProperty.call(quotas, code)) {
     return { included: 0, used: 0, remaining: 0, plan_code: code };
@@ -129,7 +129,7 @@ async function addQrCredits(client, payload) {
 async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, userId = null, notes = null) {
   const amount = Number(quantity || 0);
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw badRequest("La cantidad de creditos QR a consumir debe ser mayor a 0.");
+    throw badRequest("La cantidad de tickets QR a consumir debe ser mayor a 0.");
   }
 
   const accountResult = await client.query(
@@ -166,7 +166,7 @@ async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, u
           Number(account.qr_balance || 0),
           qrCodeId,
           trafficLabel(amount),
-          notes || `${amount} credito${amount === 1 ? "" : "s"} de trafico consumido${amount === 1 ? "" : "s"} desde cuota ${quota.plan_code}.`,
+          notes || `${amount} ticket${amount === 1 ? "" : "s"} QR consumido${amount === 1 ? "" : "s"} desde cuota ${quota.plan_code}.`,
           userId,
         ]
       );
@@ -200,7 +200,7 @@ async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, u
       nextBalance,
       qrCodeId,
       trafficLabel(amount),
-      notes || `${amount} credito${amount === 1 ? "" : "s"} de trafico consumido${amount === 1 ? "" : "s"}.`,
+      notes || `${amount} ticket${amount === 1 ? "" : "s"} QR consumido${amount === 1 ? "" : "s"}.`,
       userId,
     ]
   );

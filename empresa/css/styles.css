@@ -7038,9 +7038,9 @@ body.chart-focus-open {
   inset: 0;
   z-index: 1200;
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 14px;
-  padding: 18px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
   color: #f8fdff;
   background:
     radial-gradient(circle at 14% 12%, rgba(0, 245, 170, 0.18), transparent 28%),
@@ -7048,6 +7048,11 @@ body.chart-focus-open {
     rgba(3, 7, 14, 0.96);
   backdrop-filter: blur(18px);
   animation: chartFocusIn 180ms ease-out;
+}
+
+.chart-focus-overlay > .active-filters-bar,
+.chart-focus-overlay > .data-path-map {
+  display: none;
 }
 
 .chart-focus-header,
@@ -7064,10 +7069,10 @@ body.chart-focus-open {
 .chart-focus-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 18px;
+  gap: 12px;
   align-items: center;
-  padding: 16px;
-  border-radius: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .chart-focus-header nav {
@@ -7078,7 +7083,7 @@ body.chart-focus-open {
 
 .chart-focus-header h2 {
   margin: 4px 0;
-  font-size: clamp(24px, 3vw, 42px);
+  font-size: clamp(22px, 2.4vw, 34px);
   letter-spacing: 0;
 }
 
@@ -7307,10 +7312,10 @@ body.chart-focus-open {
 .chart-focus-layout {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
-  gap: 14px;
-  padding: 14px;
-  border-radius: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
   overflow: hidden;
 }
 
@@ -7318,21 +7323,21 @@ body.chart-focus-open {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(300px, 1fr) auto minmax(180px, 0.58fr);
-  gap: 12px;
+  grid-template-rows: minmax(520px, 1fr) auto minmax(120px, 0.34fr);
+  gap: 8px;
 }
 
 .chart-focus-stage,
 .chart-focus-tab-panel {
   min-width: 0;
   overflow: auto;
-  border-radius: 18px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 12px;
 }
 
 .chart-focus-stage canvas {
   width: 100%;
-  min-height: 440px;
+  min-height: min(64vh, 680px);
 }
 
 .chart-focus-stage .command-panel-tools {
@@ -7506,16 +7511,44 @@ body.chart-focus-open {
 .chart-focus-overlay.is-presentation .chart-focus-sidebar,
 .chart-focus-overlay.is-presentation .chart-focus-tabs,
 .chart-focus-overlay.is-presentation .chart-focus-tab-panel,
-.chart-focus-overlay.is-presentation .active-filters-bar {
+.chart-focus-overlay.is-presentation .active-filters-bar,
+.chart-focus-overlay.is-presentation .data-path-map,
+.chart-focus-overlay.is-presentation .chart-stage-help,
+.chart-focus-overlay.is-presentation .data-journey-mode,
+.chart-focus-overlay.is-presentation .chart-focus-header p,
+.chart-focus-overlay.is-presentation .chart-focus-metric {
   display: none;
+}
+
+.chart-focus-overlay.is-presentation {
+  gap: 8px;
+  padding: 8px;
+}
+
+.chart-focus-overlay.is-presentation .chart-focus-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 8px 10px;
 }
 
 .chart-focus-overlay.is-presentation .chart-focus-layout {
   grid-template-columns: 1fr;
+  min-height: 0;
+  padding: 8px;
 }
 
 .chart-focus-overlay.is-presentation .chart-focus-main {
   grid-template-rows: 1fr;
+  min-height: 0;
+}
+
+.chart-focus-overlay.is-presentation .chart-focus-stage {
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.chart-focus-overlay.is-presentation .chart-focus-stage canvas {
+  min-height: calc(100vh - 128px);
 }
 
 @keyframes chartFocusIn {
@@ -7587,6 +7620,7 @@ body.chart-focus-open {
 
 @media (max-width: 960px) {
   .chart-focus-overlay {
+    grid-template-rows: auto minmax(0, 1fr);
     padding: 8px;
   }
 
@@ -7607,11 +7641,15 @@ body.chart-focus-open {
   }
 
   .chart-focus-main {
-    grid-template-rows: auto auto auto;
+    grid-template-rows: minmax(380px, 60vh) auto minmax(120px, auto);
   }
 
   .chart-focus-stage canvas {
-    min-height: 300px;
+    min-height: min(60vh, 520px);
+  }
+
+  .chart-focus-overlay.is-presentation .chart-focus-stage canvas {
+    min-height: calc(100vh - 112px);
   }
 
   .chart-focus-sidebar {

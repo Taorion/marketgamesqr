@@ -1,6 +1,9 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
+const APP_VERSION = "empresa-20260616-session-legal-campaigns-v1";
+const APP_VERSION_KEY = "qr_business_portal_app_version";
+const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -410,6 +413,7 @@ let state = {
   selectedLeads: [],
   contactFeed: [],
   contactFeedRetention: null,
+  contactFeedGate: null,
   selectedRedemptions: [],
   selectedSales: [],
   selectedAffiliateId: null,
@@ -438,6 +442,11 @@ let state = {
   qrPackageOffers: [],
   subscriptionPlans: [],
   prepaidReference: [],
+  pricing: {
+    display_currency: "USD",
+    payment_currency: "COP",
+    usd_to_cop_rate: 4000,
+  },
   qrCreditOrders: [],
   strategicQrBatches: [],
   strategicQrHistory: [],
@@ -621,7 +630,17 @@ function escapeHtml(value) {
 
 function loadSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY)) || null;
+    const rawSession = localStorage.getItem(SESSION_KEY);
+    const storedVersion = localStorage.getItem(APP_VERSION_KEY);
+    if (rawSession && storedVersion !== APP_VERSION) {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(VALIDATOR_SESSION_KEY);
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Por seguridad cerramos tu sesion anterior; inicia sesion de nuevo para cargar la version vigente.");
+      localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+      return null;
+    }
+    localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+    return JSON.parse(rawSession) || null;
   } catch {
     return null;
   }
@@ -629,6 +648,7 @@ function loadSession() {
 
 function saveSession(value) {
   session = value;
+  localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
   localStorage.setItem(SESSION_KEY, JSON.stringify(value));
 }
 
@@ -641,6 +661,26 @@ function clearSession() {
   session = null;
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(VALIDATOR_SESSION_KEY);
+}
+
+function consumeAppUpdateNotice() {
+  try {
+    const notice = localStorage.getItem(APP_UPDATE_NOTICE_KEY) || "";
+    if (notice) localStorage.removeItem(APP_UPDATE_NOTICE_KEY);
+    return notice;
+  } catch {
+    return "";
+  }
+}
+
+function forceLoginAfterSessionIssue(message) {
+  clearSession();
+  try {
+    localStorage.setItem(APP_UPDATE_NOTICE_KEY, message || "Tu sesion debe actualizarse. Inicia sesion de nuevo.");
+  } catch {
+    // The login panel still renders even if storage is unavailable.
+  }
+  renderShell();
 }
 
 function isAdmin() {
@@ -819,6 +859,9 @@ async function api(path, options = {}) {
     }
   })() : {};
   if (!response.ok) {
+    if (response.status === 401) {
+      forceLoginAfterSessionIssue("Tu sesion expiro o el portal fue actualizado. Inicia sesion de nuevo para continuar.");
+    }
     throw new Error(data.error?.message || httpErrorMessage(response, rawText));
   }
   return data;
@@ -884,6 +927,7 @@ async function loadStrategicQrData() {
   ]);
   state.strategicQrMetrics = strategicMetrics || null;
   state.qrPackageOffers = packageData.packages || [];
+  state.pricing = packageData.pricing || state.pricing;
   state.qrCreditOrders = creditOrdersData.orders || [];
   state.strategicQrBatches = strategicBatches.batches || [];
   state.strategicQrHistory = strategicHistory.history || [];
@@ -910,6 +954,36 @@ function acquisitionSourceLabel(value) {
 function money(value) {
   if (value === null || value === undefined) return "-";
   return `$${Number(value || 0).toLocaleString("es-CO")}`;
+}
+
+function usdMoney(value) {
+  if (value === null || value === undefined) return "-";
+  return `USD ${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function copMoney(value) {
+  if (value === null || value === undefined) return "-";
+  return `COP ${Number(value || 0).toLocaleString("es-CO")}`;
+}
+
+function exchangeRateLabel() {
+  return `TRM ${Number(state.pricing?.usd_to_cop_rate || 0).toLocaleString("es-CO")}`;
+}
+
+function packagePriceLabel(offer) {
+  if (!offer) return "-";
+  if (Number.isFinite(Number(offer.price_usd))) {
+    return `${usdMoney(offer.price_usd)} (${copMoney(offer.price_cop)} al pagar)`;
+  }
+  return copMoney(offer.price_cop);
+}
+
+function planMonthlyLabel(plan) {
+  if (!plan?.monthly_price_cop) return plan?.price_label || "Cotizacion";
+  return `${usdMoney(plan.monthly_price_usd)} / mes`;
 }
 
 function ratioLabel(value) {
@@ -1133,6 +1207,7 @@ function planLimits() {
 function hasPlanFeature(feature) {
   if (!feature) return true;
   if (isAdmin()) return true;
+  if (feature === "leads_view" && isPrepaidValidatorOnly()) return true;
   const plan = currentPlan();
   if (plan.category === "subscription" && plan.portal_access_allowed === false) {
     return false;
@@ -1154,7 +1229,7 @@ function loginRedirectForSession(value) {
   const plan = value?.user?.subscription?.plan || {};
   const features = plan.features || {};
   if (plan.category === "prepaid" && features.qr_validator && !features.portal_access) {
-    return "/qr-validador/";
+    return "";
   }
   return "";
 }
@@ -1176,15 +1251,15 @@ function renderSubscriptionBanner() {
   const limits = planLimits();
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
   subscriptionPlanSummary.textContent = plan.category === "prepaid"
-    ? "Cliente prepago: opera QR y validacion sin portal completo ni exportacion de leads."
-    : `${subscriptionAccessLabel(plan)}: ${formatLimitValue(limits.monthly_qr_included)} QR mensuales incluidos.`;
+    ? "Cliente prepago: puedes ver una muestra de 20 leads. El historial completo, exportaciones y revenue se desbloquean con Portal RMS mensual."
+    : `${subscriptionAccessLabel(plan)}: mensualidad del portal activa. Los tickets QR se compran por recarga separada.`;
   if (subscriptionTiming) {
     subscriptionTiming.textContent = subscriptionTimingText(plan);
   }
   subscriptionBanner.dataset.accessStatus = plan.access_status || plan.status || "ACTIVE";
   subscriptionLimits.innerHTML = [
     ["Estado", subscriptionAccessLabel(plan)],
-    ["QR/mes", limits.monthly_qr_included],
+    ["Tickets incluidos", limits.monthly_qr_included],
     ["Usuarios", limits.users],
     ["Sedes", limits.branches],
     ["Campanas", limits.active_campaigns],
@@ -1197,7 +1272,7 @@ function planBenefitList(plan) {
   const limits = plan.limits || {};
   const features = plan.features || {};
   const benefits = [
-    plan.code === "GLOBAL" ? "25.000+ QR mensuales segun cotizacion" : `${formatLimitValue(limits.monthly_qr_included)} QR incluidos cada mes`,
+    plan.code === "GLOBAL" ? "Tickets por cotizacion segun volumen" : "Tickets QR por recarga separada",
     `${formatLimitValue(limits.users)} usuarios y ${formatLimitValue(limits.branches)} sede(s)`,
     `${formatLimitValue(limits.active_campaigns)} campanas activas`,
   ];
@@ -1228,15 +1303,13 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "El QR prepago es mas barato para validar codigos. Los planes mensuales cuestan mas porque incluyen portal, dashboard, permisos, exportaciones, leads y medicion comercial.";
+    subscriptionPricingNote.textContent = `El portal se muestra en USD y Mercado Pago cobra el equivalente en COP segun ${exchangeRateLabel()}. El prepago solo compra 50 o 200 tickets; los suscriptores acceden a paquetes superiores.`;
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
-    const qrIncluded = plan.code === "GLOBAL"
-      ? "25.000+"
-      : formatLimitValue(plan.limits?.monthly_qr_included ?? plan.qr_monthly_included);
-    const prepaidReference = plan.prepaid_reference_cop ? money(plan.prepaid_reference_cop) : "Referencia comercial";
-    const portalValue = plan.portal_value_cop ? money(plan.portal_value_cop) : "Incluido";
-    const monthlyPrice = plan.monthly_price_cop ? money(plan.monthly_price_cop) : (plan.price_label || "Cotizacion");
+    const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotizacion" : "tickets por recarga";
+    const recommendedPackage = plan.recommended_start_package || "QR500";
+    const portalValue = plan.monthly_price_cop ? `${planMonthlyLabel(plan)} (${copMoney(plan.monthly_price_cop)} al pagar)` : "Incluido";
+    const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotizacion");
     const isCurrent = plan.code === currentCode;
     return `
       <article class="portal-plan-card ${isCurrent ? "is-current" : ""}">
@@ -1249,10 +1322,10 @@ function renderSubscriptionPricing() {
         </div>
         <div class="portal-plan-price">
           <strong>${escapeHtml(monthlyPrice)}</strong>
-          <span>${escapeHtml(qrIncluded)} QR mensuales ${plan.code === "GLOBAL" ? "por cotizacion" : "incluidos"}</span>
+          <span>${plan.monthly_price_cop ? `${escapeHtml(copMoney(plan.monthly_price_cop))} al pagar con Mercado Pago` : "Cotizacion personalizada"}; ${escapeHtml(ticketPolicy)}</span>
         </div>
         <div class="portal-plan-economics">
-          Piso prepago comparable: ${escapeHtml(prepaidReference)}. Valor portal y beneficios: ${escapeHtml(portalValue)}.
+          Valor portal: ${escapeHtml(portalValue)}. Paquete sugerido para iniciar: ${escapeHtml(recommendedPackage)}.
         </div>
         <ul class="portal-plan-benefits">
           ${planBenefitList(plan).map((benefit) => `
@@ -1276,7 +1349,7 @@ function renderSubscriptionRenewal() {
   subscriptionRenewalPlanSelect.innerHTML = plans.length
     ? plans.map((item) => `
       <option value="${escapeHtml(item.code)}" ${item.code === plan.code ? "selected" : ""}>
-        ${escapeHtml(item.name)} · ${money(item.monthly_price_cop)} · ${Number(item.limits?.monthly_qr_included || item.qr_monthly_included || 0).toLocaleString("es-CO")} QR/mes
+        ${escapeHtml(item.name)} · ${planMonthlyLabel(item)} · ${copMoney(item.monthly_price_cop)} al pagar
       </option>
     `).join("")
     : '<option value="">No hay planes disponibles</option>';
@@ -1291,7 +1364,7 @@ function renderSubscriptionRenewal() {
       ? "Cobro automatico autorizado en Mercado Pago."
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
-        : "Cobro automatico no configurado.";
+        : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
     subscriptionAutoRenewStatus.textContent = autoRenewLabel;
   }
   if (accountBillingStatus) {
@@ -1301,7 +1374,7 @@ function renderSubscriptionRenewal() {
   }
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
-      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Puedes renovar manualmente o autorizar cobro automatico mensual.`, "info");
+      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Tu cuenta prepago no tiene mensualidad para renovar. Puedes comprar paquetes QR.", "info");
     }
@@ -1449,7 +1522,14 @@ function renderShell() {
   const logged = Boolean(session?.token);
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
-  if (!logged) return;
+  if (!logged) {
+    const updateNotice = consumeAppUpdateNotice();
+    if (updateNotice) {
+      setInlineMessage(loginError, updateNotice, "info");
+      showFeedback(updateNotice, "info", { title: "Portal actualizado", timeout: 9000 });
+    }
+    return;
+  }
 
   const redirectTo = loginRedirectForSession(session);
   if (redirectTo) {
@@ -1462,7 +1542,7 @@ function renderShell() {
   profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
   requestCampaignButton.textContent = isAdmin()
     ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
-    : "Launch Queue";
+    : "Nueva campana";
   loadWorkspace();
 
   const urlToken = new URLSearchParams(window.location.search).get("token");
@@ -1564,10 +1644,14 @@ function initPasswordResetFromUrl() {
   setInlineMessage(passwordResetMessage, "Escribe y confirma tu nuevo password.", "info");
 }
 
-function campaignAssociationOptions(selectedValue = "") {
+function campaignAssociationOptions(selectedValue = "", options = {}) {
   const campaigns = (state.campaigns || []).filter((campaign) => !["ARCHIVED", "FINISHED"].includes(campaign.status));
+  const allowNoCampaign = options.allowNoCampaign !== false;
+  const defaultLabel = allowNoCampaign && isPrepaidValidatorOnly()
+    ? "Sin campana: activacion prepago"
+    : allowNoCampaign ? "Sin campana asociada" : "Selecciona una campana";
   return [
-    `<option value="">Selecciona una campana</option>`,
+    `<option value="">${defaultLabel}</option>`,
     ...campaigns.map((campaign) => `
       <option value="${escapeHtml(campaign.id)}" ${campaign.id === selectedValue ? "selected" : ""}>
         ${escapeHtml(campaign.name)} (${escapeHtml(campaign.status || "-")})
@@ -1590,10 +1674,14 @@ function campaignPublicLeadQrUrl(campaign) {
 
 function renderCampaignAssociationInputs() {
   const selectedCampaignId = state.selectedCampaignId || "";
-  [postSaleCampaignInput, qrBatchCampaignInput, affiliateReferralQrCampaignInput].forEach((input) => {
+  [
+    [postSaleCampaignInput, true],
+    [qrBatchCampaignInput, true],
+    [affiliateReferralQrCampaignInput, false],
+  ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
     const currentValue = input.value || selectedCampaignId;
-    input.innerHTML = campaignAssociationOptions(currentValue);
+    input.innerHTML = campaignAssociationOptions(currentValue, { allowNoCampaign });
     if (currentValue && Array.from(input.options).some((option) => option.value === currentValue)) {
       input.value = currentValue;
     }
@@ -1606,6 +1694,7 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   state.subscription = session.user?.subscription || state.subscription;
   state.subscriptionPlans = subscriptionPlansData.plans || [];
   state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
+  state.pricing = subscriptionPlansData.pricing || state.pricing;
   state.dashboard = null;
   state.commandCenter = null;
   state.summary = null;
@@ -1613,6 +1702,7 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   state.campaignGroups = null;
   state.contactFeed = [];
   state.contactFeedRetention = null;
+  state.contactFeedGate = null;
   state.qrCreditAccount = null;
   state.businessProfile = {
     id: session.user?.business_id,
@@ -1636,12 +1726,11 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
 async function loadWorkspace() {
   state.subscription = session.user?.subscription || state.subscription;
   if (isPrepaidValidatorOnly()) {
-    saveValidatorSession(session);
-    window.location.assign("/qr-validador/");
+    await loadPrepaidValidatorWorkspace();
     return;
   }
 
-  showFeedback("Actualizando dashboard, creditos QR, campanas e historial.", "loading", { title: "Sincronizando portal", timeout: 0 });
+  showFeedback("Actualizando dashboard, tickets QR, campanas e historial.", "loading", { title: "Sincronizando portal", timeout: 0 });
   showBusyOverlay("Sincronizando portal", "Cargando metricas, cartera QR y ultimos movimientos.");
   refreshButton.disabled = true;
   if (!session?.user?.business_id) {
@@ -1658,6 +1747,7 @@ async function loadWorkspace() {
         state.selectedLeads = [];
         state.contactFeed = [];
         state.contactFeedRetention = null;
+        state.contactFeedGate = null;
         state.selectedRedemptions = [];
         state.selectedSales = [];
         renderNoCampaignState();
@@ -1718,8 +1808,10 @@ async function loadWorkspace() {
     state.qrCreditAccount = creditData.credit_account || businessProfileData.credit_account || null;
     state.subscriptionPlans = subscriptionPlansData.plans || [];
     state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
+    state.pricing = subscriptionPlansData.pricing || state.pricing;
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
+    state.contactFeedGate = contactFeedData.lead_gate || null;
     state.affiliates = [];
     state.strategicQrMetrics = null;
     state.qrPackageOffers = [];
@@ -1812,6 +1904,7 @@ async function refreshLiveBusinessData() {
     state.campaigns = campaignData.campaigns || [];
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
+    state.contactFeedGate = contactFeedData.lead_gate || null;
     state.activityVersion = activityData.activity?.version || state.activityVersion;
 
     renderDashboard();
@@ -1837,17 +1930,18 @@ async function refreshLiveBusinessData() {
 }
 
 async function loadPrepaidValidatorWorkspace() {
-  showFeedback("Cargando validador QR prepago.", "loading", { title: "Acceso prepago", timeout: 0 });
-  showBusyOverlay("Validador QR", "Preparando saldo prepago, paquetes e historial operativo.");
+  showFeedback("Cargando muestra de leads y herramientas prepago.", "loading", { title: "Acceso prepago", timeout: 0 });
+  showBusyOverlay("Acceso prepago", "Preparando saldo QR, paquetes y muestra comercial de leads.");
   refreshButton.disabled = true;
 
   state.dashboard = null;
   state.summary = null;
-    state.campaigns = [];
-    state.campaignGroups = null;
-    state.affiliates = [];
-    state.contactFeed = [];
-    state.contactFeedRetention = null;
+  state.campaigns = [];
+  state.campaignGroups = null;
+  state.affiliates = [];
+  state.contactFeed = [];
+  state.contactFeedRetention = null;
+  state.contactFeedGate = null;
   state.strategicQrMetrics = null;
   state.strategicQrBatches = [];
   state.strategicQrHistory = [];
@@ -1859,26 +1953,39 @@ async function loadPrepaidValidatorWorkspace() {
   };
 
   try {
-    const [creditData, packageData, subscriptionPlansData, creditOrdersData] = await Promise.all([
+    const needsLogoPayload = !(state.businessProfile?.logo_data_url
+      || session?.user?.business?.logo_data_url
+      || session?.user?.business?.settings?.logo_data_url);
+    const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
+    const [creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData] = await Promise.all([
       apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
       apiSafe("/api/public/packages", {}, { packages: [] }),
       apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
       apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
+      apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null, subscription: session.user?.subscription || null }),
+      apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null }),
     ]);
 
+    mergeBusinessProfile(businessProfileData.business || null);
+    state.subscription = businessProfileData.subscription || session.user?.subscription || state.subscription;
     state.qrCreditAccount = creditData.credit_account || null;
     state.qrPackageOffers = packageData.packages || [];
     state.subscriptionPlans = subscriptionPlansData.plans || [];
     state.prepaidReference = subscriptionPlansData.prepaid_reference || packageData.packages || [];
+    state.pricing = subscriptionPlansData.pricing || packageData.pricing || state.pricing;
     state.qrCreditOrders = creditOrdersData.orders || [];
+    state.contactFeed = contactFeedData.contacts || [];
+    state.contactFeedRetention = contactFeedData.retention || null;
+    state.contactFeedGate = contactFeedData.lead_gate || null;
 
     renderSubscriptionBanner();
     applyPlanNavigation();
     renderAccountView();
+    renderCampaignAssociationInputs();
     renderStrategicQrView();
     renderValidatorHistory([]);
-    setView("validator");
-    showFeedback("Plan prepago activo. Este acceso queda limitado al validador QR y compra de creditos.", "success", { title: "Validador listo" });
+    setView("strategic-qr");
+    showFeedback("Crea QR individuales o paquetes con tus tickets prepago. La muestra de 20 leads queda disponible para medir resultados y Portal RMS desbloquea historial completo y exportacion.", "success", { title: "Herramienta prepago lista" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
   } finally {
@@ -2937,6 +3044,7 @@ function renderActiveFiltersBar(chips = activeCommandFilterChips()) {
 }
 
 function openChartFocusMode(chartId, context = {}, sourceElement = null) {
+  if (!chartId) return;
   state.chartFocus = {
     ...state.chartFocus,
     open: true,
@@ -2955,6 +3063,7 @@ function openChartFocusMode(chartId, context = {}, sourceElement = null) {
 }
 
 function closeChartFocusMode() {
+  if (!state.chartFocus.open) return;
   const y = state.chartFocus.savedScrollY || 0;
   const overlay = chartFocusRoot.querySelector(".chart-focus-overlay");
   const finish = () => {
@@ -3312,9 +3421,21 @@ function renderChartFocusMode() {
 }
 
 function bindChartFocusEvents() {
-  chartFocusRoot.querySelector("[data-focus-close]")?.addEventListener("click", closeChartFocusMode);
-  chartFocusRoot.querySelector("[data-focus-prev]")?.addEventListener("click", () => moveChartFocus(-1));
-  chartFocusRoot.querySelector("[data-focus-next]")?.addEventListener("click", () => moveChartFocus(1));
+  chartFocusRoot.querySelector(".chart-focus-overlay")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  chartFocusRoot.querySelector("[data-focus-close]")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeChartFocusMode();
+  });
+  chartFocusRoot.querySelector("[data-focus-prev]")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    moveChartFocus(-1);
+  });
+  chartFocusRoot.querySelector("[data-focus-next]")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    moveChartFocus(1);
+  });
   chartFocusRoot.querySelector("[data-focus-journey]")?.addEventListener("click", () => {
     state.chartFocus.journeyMode = !state.chartFocus.journeyMode;
     state.chartFocus.journeyStep = 0;
@@ -3404,8 +3525,12 @@ function bindChartFocusEvents() {
       if (event.target.closest("button, select, input, textarea") && event.target !== element) return;
       event.stopPropagation();
       const nextChartId = element.dataset.commandFocus || state.chartFocus.chartId;
+      const nextContext = chartFocusContextFromElement(element);
+      if (nextChartId === state.chartFocus.chartId && JSON.stringify(nextContext) === JSON.stringify(state.chartFocus.context || {})) {
+        return;
+      }
       state.chartFocus.chartId = nextChartId;
-      state.chartFocus.context = chartFocusContextFromElement(element);
+      state.chartFocus.context = nextContext;
       state.chartFocus.tab = "summary";
       state.chartFocus.sourceRect = captureDataTravelOrigin(element);
       state.chartFocus.originLabel = chartFocusOriginLabel(nextChartId, state.chartFocus.context);
@@ -4473,8 +4598,8 @@ function renderStrategicQrView() {
   const creditPurchased = credits ? Number(credits.qr_purchased_total || 0).toLocaleString("es-CO") : "sin cartera configurada";
   const creditTone = credits?.exhausted ? "danger" : credits?.low_balance ? "warning" : "highlight";
   strategicQrKpiGrid.innerHTML = [
-    strategicMetricCard("Creditos QR", creditBalance, creditTone),
-    strategicMetricCard("Creditos usados", creditUsed, "default"),
+    strategicMetricCard("Tickets QR", creditBalance, creditTone),
+    strategicMetricCard("Tickets usados", creditUsed, "default"),
     strategicMetricCard("Uso cartera", credits ? `${Number(credits.used_rate || 0).toFixed(1)}%` : "-", credits?.low_balance ? "warning" : "default"),
     strategicMetricCard("QR postventa", String(metrics.post_sale_generated || 0)),
     strategicMetricCard("Redimidos postventa", String(metrics.post_sale_redeemed || 0)),
@@ -4486,7 +4611,7 @@ function renderStrategicQrView() {
   if (credits) {
     strategicQrKpiGrid.insertAdjacentHTML(
       "beforeend",
-      `<article class="kpi-card" title="Creditos comprados y consumidos">
+      `<article class="kpi-card" title="Tickets comprados y consumidos">
         <span class="mono-label">Cartera QR</span>
         <strong>${escapeHtml(creditBalance)}</strong>
         <p class="kpi-meta">${escapeHtml(creditUsed)} usados de ${escapeHtml(creditPurchased)} comprados</p>
@@ -4573,11 +4698,12 @@ function renderStrategicQrView() {
 }
 
 function renderQrCreditShop() {
-  const offers = state.qrPackageOffers || [];
+  const isSubscription = currentPlan().category === "subscription";
+  const offers = (state.qrPackageOffers || []).filter((offer) => isSubscription ? offer.subscriber_allowed : offer.prepaid_allowed);
   qrCreditPackageSelect.innerHTML = offers.length
     ? offers.map((offer) => `
       <option value="${escapeHtml(offer.code)}">
-        ${escapeHtml(offer.title)} · ${Number(offer.package_size || 0).toLocaleString("es-CO")} QR · ${money(offer.price_cop)}
+        ${escapeHtml(offer.title)} · ${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets · ${packagePriceLabel(offer)}${Number(offer.savings_percent || 0) ? ` · ahorro ${Number(offer.savings_percent)}%` : ""}
       </option>
     `).join("")
     : '<option value="">No hay paquetes disponibles</option>';
@@ -4586,13 +4712,21 @@ function renderQrCreditShop() {
   const latest = (state.qrCreditOrders || [])[0];
   qrCreditCheckoutStatus.textContent = latest ? paymentStatusLabel(latest.status) : "Sin compras recientes";
   qrCreditCheckoutStatus.className = `status-chip ${latest?.status === "APPROVED" ? "ok" : latest?.status === "PENDING" ? "pending" : latest ? "danger" : "pending"}`;
+  if (qrCreditCheckoutMessage) {
+    const account = state.qrCreditAccount || {};
+    const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
+    const rechargeCopy = isSubscription
+      ? `Como suscriptor puedes comprar paquetes superiores en USD y pagar el equivalente COP segun ${exchangeRateLabel()}.`
+      : `Prepago solo permite 50 o 200 tickets; Mercado Pago cobra el equivalente COP segun ${exchangeRateLabel()}.`;
+    setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
+  }
 
   qrCreditOrdersTable.innerHTML = (state.qrCreditOrders || []).length
     ? state.qrCreditOrders.map((order) => `
       <tr>
         <td>${escapeHtml(formatDate(order.created_at))}</td>
         <td>${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} QR</small></td>
-        <td>${escapeHtml(money(order.price_cop))}</td>
+        <td>${escapeHtml(copMoney(order.price_cop))}</td>
         <td><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span></td>
       </tr>
     `).join("")
@@ -4687,8 +4821,8 @@ async function submitSubscriptionAutoRenewal() {
   }
 
   setButtonLoading(subscriptionAutoRenewButton, true, "Autorizando...");
-  setInlineMessage(subscriptionRenewalMessage, "Creando autorizacion de cobro mensual en Mercado Pago...", "info");
-  showFeedback("Preparando autorizacion de cobro automatico mensual.", "loading", { title: "Cobro automatico", timeout: 0 });
+  setInlineMessage(subscriptionRenewalMessage, "Creando autorizacion de tarjeta para renovaciones futuras. No se recobra la mensualidad vigente.", "info");
+  showFeedback("Preparando autorizacion de cobro automatico mensual sin recobrar el periodo activo.", "loading", { title: "Cobro automatico", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/auto-renewal", {
       method: "POST",
@@ -4702,8 +4836,9 @@ async function submitSubscriptionAutoRenewal() {
     if (!checkoutUrl) {
       throw new Error("Mercado Pago no devolvio un link para autorizar el cobro automatico.");
     }
-    setInlineMessage(subscriptionRenewalMessage, "Autorizacion creada. Redirigiendo a Mercado Pago...", "success");
-    showFeedback("Autoriza el cobro mensual en Mercado Pago. Los siguientes pagos se procesaran automaticamente.", "success", { title: "Autorizacion lista" });
+    const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : "la proxima renovacion";
+    setInlineMessage(subscriptionRenewalMessage, `Autorizacion creada. Primer cobro programado para ${firstCharge}. Redirigiendo a Mercado Pago...`, "success");
+    showFeedback(`Autoriza la tarjeta en Mercado Pago. El primer cobro queda programado para ${firstCharge}.`, "success", { title: "Autorizacion lista" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
@@ -4756,15 +4891,10 @@ async function submitCustomerAcquisitionSale(event) {
 async function submitPostSaleQr(event) {
   event.preventDefault();
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
-  if (!postSaleCampaignInput?.value) {
-    setInlineMessage(postSaleQrMessage, "Selecciona la campana que debe recibir la atribucion de este QR.", "error");
-    postSaleCampaignInput?.focus();
-    return;
-  }
   setButtonLoading(submitButton, true, "Generando...");
-  setInlineMessage(postSaleQrMessage, "Generando QR postventa y descontando 1 credito...", "info");
+  setInlineMessage(postSaleQrMessage, "Generando QR postventa y descontando 1 ticket...", "info");
   showFeedback("Creando token unico, registrando venta y preparando el PNG del QR.", "loading", { title: "Generando QR postventa", timeout: 0 });
-  showBusyOverlay("Generando QR postventa", "Registrando venta, creando QR y actualizando creditos.");
+  showBusyOverlay("Generando QR postventa", "Registrando venta, creando QR y actualizando tickets.");
   try {
     const attributionSource = postSaleAttributionSourceInput?.value.trim() || "post-sale";
     const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || postSaleProductInput.value.trim() || null;
@@ -4772,7 +4902,7 @@ async function submitPostSaleQr(event) {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        campaign_id: postSaleCampaignInput.value,
+        campaign_id: postSaleCampaignInput.value || null,
         sale_amount: Number(postSaleAmountInput.value || 0),
         currency: postSaleCurrencyInput.value.trim() || "COP",
         customer_name: postSaleCustomerInput.value.trim() || null,
@@ -4784,7 +4914,7 @@ async function submitPostSaleQr(event) {
         metadata: {
           attribution_source: attributionSource,
           attribution_subject: attributionSubject,
-          campaign_id: postSaleCampaignInput.value,
+          campaign_id: postSaleCampaignInput.value || null,
           qr_creation_context: "business_owner_post_sale",
         },
         expires_mode: postSaleExpiresModeInput.value,
@@ -4796,7 +4926,7 @@ async function submitPostSaleQr(event) {
         },
       }),
     });
-    setInlineMessage(postSaleQrMessage, "QR generado. El credito fue descontado y el PNG esta listo.", "success");
+    setInlineMessage(postSaleQrMessage, "QR generado. El ticket fue descontado y el PNG esta listo.", "success");
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
@@ -4823,13 +4953,8 @@ async function submitQrBatch(event) {
   event.preventDefault();
   const requestedQuantity = Number(qrBatchQuantityInput.value || 0);
   const submitButton = qrBatchForm.querySelector("button[type='submit']");
-  if (!qrBatchCampaignInput?.value) {
-    setInlineMessage(qrBatchMessage, "Selecciona la campana para que todos los QR del paquete queden atribuidos.", "error");
-    qrBatchCampaignInput?.focus();
-    return;
-  }
   setButtonLoading(submitButton, true, "Generando paquete...");
-  setInlineMessage(qrBatchMessage, `Generando paquete y reservando ${requestedQuantity.toLocaleString("es-CO")} creditos QR...`, "info");
+  setInlineMessage(qrBatchMessage, `Generando paquete y reservando ${requestedQuantity.toLocaleString("es-CO")} tickets QR...`, "info");
   showFeedback(`Preparando ${requestedQuantity.toLocaleString("es-CO")} QR. Mantente en esta pantalla hasta que termine.`, "loading", { title: "Generando paquete", timeout: 0 });
   qrBatchResult.classList.add("hidden");
   qrBatchResult.innerHTML = "";
@@ -4841,7 +4966,7 @@ async function submitQrBatch(event) {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        campaign_id: qrBatchCampaignInput.value,
+        campaign_id: qrBatchCampaignInput.value || null,
         name: qrBatchNameInput.value.trim(),
         quantity: Number(qrBatchQuantityInput.value || 0),
         channel_use: qrBatchChannelInput.value,
@@ -4853,7 +4978,7 @@ async function submitQrBatch(event) {
         metadata: {
           attribution_source: attributionSource,
           attribution_subject: attributionSubject,
-          campaign_id: qrBatchCampaignInput.value,
+          campaign_id: qrBatchCampaignInput.value || null,
           qr_creation_context: "business_owner_batch",
         },
         benefit: {
@@ -4896,7 +5021,7 @@ async function submitQrBatch(event) {
     qrBatchQuantityInput.value = "50";
     qrBatchClaimRequiredInput.value = "true";
     qrBatchExpiresModeInput.value = "NONE";
-    showFeedback("Paquete creado. La descarga del ZIP fue iniciada y los creditos quedaron actualizados.", "success", { title: "Paquete QR listo" });
+    showFeedback("Paquete creado. La descarga del ZIP fue iniciada y los tickets quedaron actualizados.", "success", { title: "Paquete QR listo" });
   } catch (error) {
     clearQrBatchProgressTimer();
     setQrBatchProgress(100, {
@@ -5290,12 +5415,6 @@ function renderNoCampaignState() {
 }
 
 function openCampaignModal(mode) {
-  if (!isAdmin()) {
-    setView("campaigns");
-    showFeedback("La creacion y edicion de campanas esta restringida a usuarios admin.", "error");
-    return;
-  }
-
   if (mode === "edit" && !state.selectedCampaign) {
     showFeedback("Selecciona una campana antes de editar.", "error");
     return;
@@ -5383,20 +5502,24 @@ async function submitCampaignModal(event) {
         }),
       });
       state.selectedCampaignId = result.campaign?.id || state.selectedCampaignId;
-      showFeedback("Campana creada correctamente.");
+      showFeedback("Campana creada. Ya aparece en el listado y queda disponible para asociar QR, afiliados y paquetes.", "success", { title: "Campana disponible", timeout: 6500 });
     } else {
       await api(`${isAdmin() ? "/api/admin" : "/api/business"}/campaigns/${state.selectedCampaignId}`, {
         method: "PATCH",
         headers: authHeaders(),
         body: JSON.stringify(payload),
       });
-      showFeedback("Campana actualizada correctamente.");
+      showFeedback("Campana actualizada. Los cambios ya se reflejan en el dashboard y en los selectores de QR.", "success", { title: "Campana sincronizada", timeout: 6500 });
     }
 
     closeCampaignModal();
     await loadWorkspace();
     if (state.selectedCampaignId) {
       await selectCampaign(state.selectedCampaignId);
+    }
+    renderCampaignAssociationInputs();
+    if (state.currentView === "strategic-qr" || state.strategicQrLoaded) {
+      renderStrategicQrView();
     }
   } catch (error) {
     campaignModalMessage.textContent = error.message;
@@ -7456,7 +7579,7 @@ async function generateSelectedAffiliateReferralQr() {
   }
 
   setButtonLoading(affiliateGenerateReferralQrButton, true, "Generando...");
-  setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} QR y descontando creditos disponibles...`, "info");
+  setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} QR y descontando tickets disponibles...`, "info");
   renderAffiliateReferralQrResult(null);
   showFeedback(`Generando QR de recomendacion para ${state.selectedAffiliate.full_name || "el afiliado"}.`, "loading", { title: "QR de recomendacion", timeout: 0 });
   const referralAffiliate = { ...state.selectedAffiliate };
@@ -7627,7 +7750,7 @@ function exportCampaignReport() {
 
 async function exportLeads() {
   if (!hasPlanFeature("leads_export")) {
-    showFeedback("Tu plan actual no incluye exportacion de leads.", "info", { title: "Upgrade requerido" });
+    showFeedback("Tus 20 leads de muestra ya prueban el valor. Activa Portal RMS mensual para llevarte la base completa en CSV y trabajarla con tu equipo.", "info", { title: "Exportacion lista con Portal RMS" });
     return;
   }
   try {
@@ -7906,6 +8029,42 @@ function buildTimelineSeries() {
 }
 
 function renderLeadsView() {
+  const gate = state.contactFeedGate;
+  if (gate?.locked && (!state.selectedCampaignId || !(state.selectedLeads || []).length)) {
+    const sampleRows = withFilters(
+      state.contactFeed || [],
+      ["name", "document_id", "phone", "email", "qr_status", "campaign_name", "attribution_source", "attribution_subject", "preferred_channel"],
+      ["created_at", "redeemed_at", "sale_created_at"]
+    );
+    const gateRow = `
+      <tr>
+        <td colspan="9">
+          <div class="empty-state">
+            <strong>${escapeHtml(gate.title || "Ya tienes leads reales. Ahora necesitas el portal.")}</strong>
+            <p>${escapeHtml(gate.message || "El prepago solo muestra una parte de tus contactos. El plan mensual desbloquea el historial completo.")}</p>
+            <p>Estas viendo ${escapeHtml(sampleRows.length)} de ${escapeHtml(gate.total_available || sampleRows.length)} contactos. ${escapeHtml(gate.hidden_count || 0)} quedan reservados para Portal RMS.</p>
+            <a class="primary-button compact" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
+          </div>
+        </td>
+      </tr>
+    `;
+    const rows = sampleRows.map((item) => `
+      <tr>
+        <td>${escapeHtml(item.name || "-")}</td>
+        <td>${escapeHtml(prettyLeadValue(item.attribution_source || item.lead_source || "-"))}</td>
+        <td>${escapeHtml(item.attribution_subject || item.campaign_name || "Contacto capturado")}</td>
+        <td>${escapeHtml(item.recommended_action || "Suscribete para priorizar, exportar y hacer seguimiento comercial.")}</td>
+        <td>${escapeHtml(item.document_id || "-")}</td>
+        <td>${escapeHtml(item.phone || "-")}</td>
+        <td>${escapeHtml(item.qr_status || item.stage || "-")}</td>
+        <td>${escapeHtml(item.campaign_name || "-")}<br><span class="table-secondary">${escapeHtml(item.email || "-")}</span></td>
+        <td><a class="ghost-button" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Ver todo</a></td>
+      </tr>
+    `).join("");
+    campaignLeadsTable.innerHTML = `${gateRow}${rows || '<tr><td colspan="9">Genera tus primeros QR para empezar a capturar leads.</td></tr>'}`;
+    return;
+  }
+
   const rows = withFilters(
     state.selectedLeads || [],
     ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source", "favorite_product", "purchase_intent", "gift_budget", "purchase_window", "preferred_channel"],
@@ -8040,7 +8199,7 @@ async function renderAffiliatesView() {
   downloadAffiliateCardButton.disabled = false;
   if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = false;
   if (affiliateReferralQrSelectedMeta) {
-    affiliateReferralQrSelectedMeta.textContent = `Generando QR para ${selected.full_name || "el afiliado seleccionado"}. Se descontaran de los creditos QR disponibles.`;
+    affiliateReferralQrSelectedMeta.textContent = `Generando QR para ${selected.full_name || "el afiliado seleccionado"}. Se descontaran de los tickets QR disponibles.`;
   }
   affiliateLedgerTitle.textContent = `Movimientos de ${selected.full_name || "afiliado"}`;
 
@@ -8299,8 +8458,7 @@ adminCampaignForm.addEventListener("submit", saveAdminCampaign);
 adminMarkReadyButton.addEventListener("click", markAdminCampaignReady);
 requestCampaignButton.addEventListener("click", () => {
   if (!isAdmin()) {
-    setView("campaigns");
-    showFeedback("Aqui veras las campanas listas para lanzamiento y las que ya estan en medicion.");
+    openCampaignModal("create");
     return;
   }
   if (isAdmin() && !session?.user?.business_id) {
@@ -8384,7 +8542,7 @@ initPasswordResetFromUrl();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {
-  showFeedback("Pago aprobado. Si Mercado Pago ya notifico el webhook, los creditos apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
+  showFeedback("Pago aprobado. Si Mercado Pago ya notifico el webhook, los tickets apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
 } else if (paymentResult === "pending") {
   showFeedback("Pago pendiente. Actualizaremos el saldo cuando Mercado Pago confirme la transaccion.", "info", { title: "Pago en revision", timeout: 8000 });
 } else if (paymentResult === "failure") {
