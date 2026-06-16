@@ -245,7 +245,7 @@ function syncMode() {
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
     offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
     formEyebrow.textContent = "Datos para activar prepago";
-    formTitle.textContent = "Registro y pago minimo";
+    formTitle.textContent = "Registro y activacion";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
     submitButton.textContent = "Crear cuenta y pagar activacion";
     selectedPackage = packages.find((item) => item.prepaid_allowed && item.code === selectedPackage?.code)
