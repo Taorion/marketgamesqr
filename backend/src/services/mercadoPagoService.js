@@ -41,6 +41,17 @@ function nextSubscriptionChargeDate(currentPeriodEndsAt) {
   return now;
 }
 
+function normalizeBillingCycle(value) {
+  return value === "annual" ? "annual" : "monthly";
+}
+
+function planChargeCop(plan, billingCycle) {
+  if (billingCycle === "annual") {
+    return Number(plan.annual_price_cop || (Number(plan.monthly_price_cop || 0) * 12 * 0.7));
+  }
+  return Number(plan.monthly_price_cop || 0);
+}
+
 async function mpRequest(path, options = {}) {
   requireMercadoPagoConfig();
   const response = await fetch(`${MP_API_BASE}${path}`, {
@@ -519,7 +530,11 @@ async function createPortalSignupCheckout(client, payload) {
     throw badRequest("Paquete inicial QR no disponible para suscriptores.");
   }
 
-  const totalPriceCop = Number(plan.monthly_price_cop) + Number(offer.price_cop);
+  const billingCycle = normalizeBillingCycle(payload.billing_cycle);
+  const planPriceCop = planChargeCop(plan, billingCycle);
+  const totalPriceCop = planPriceCop + Number(offer.price_cop);
+  const subscriptionType = billingCycle === "annual" ? "portal_annual_subscription" : "portal_monthly_subscription";
+  const billingLabel = billingCycle === "annual" ? "anualidad" : "mensualidad";
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -535,14 +550,16 @@ async function createPortalSignupCheckout(client, payload) {
       JSON.stringify({
         source: "public_portal_signup",
         signup: {
-          type: "portal_monthly_subscription",
+          type: subscriptionType,
           business_id: payload.business_id,
           user_id: payload.user_id,
           email: payload.email,
           plan_code: plan.code,
+          billing_cycle: billingCycle,
           initial_package_code: offer.code,
           initial_package_size: offer.package_size,
           initial_package_price_cop: offer.price_cop,
+          plan_price_cop: planPriceCop,
         },
       }),
     ]
@@ -555,9 +572,9 @@ async function createPortalSignupCheckout(client, payload) {
       items: [
         {
           id: plan.code,
-          title: `${plan.name} - mensualidad portal Market Games`,
+          title: `${plan.name} - ${billingLabel} portal Market Games`,
           quantity: 1,
-          unit_price: Number(plan.monthly_price_cop),
+          unit_price: planPriceCop,
           currency_id: "COP",
         },
         {
@@ -585,7 +602,8 @@ async function createPortalSignupCheckout(client, payload) {
         user_id: payload.user_id,
         plan_code: plan.code,
         package_code: offer.code,
-        signup_type: "portal_monthly_subscription",
+        billing_cycle: billingCycle,
+        signup_type: subscriptionType,
       },
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
@@ -863,7 +881,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
   }
 
   const signup = order.metadata?.signup;
-  if (["portal_monthly_subscription", "portal_monthly_subscription_auto_renewal"].includes(signup?.type)) {
+  if (["portal_monthly_subscription", "portal_annual_subscription", "portal_monthly_subscription_auto_renewal"].includes(signup?.type)) {
     return finalizeApprovedPortalSubscription(client, order, payment, signup);
   }
 
@@ -929,7 +947,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     : null;
   const now = new Date();
   const periodEnd = currentEnd && currentEnd > now ? currentEnd : now;
-  periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
+  const billingCycle = normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
+  periodEnd.setUTCMonth(periodEnd.getUTCMonth() + (billingCycle === "annual" ? 12 : 1));
 
   await ensureCreditAccount(client, order.business_id);
   let account = null;
@@ -962,12 +981,15 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
          subscription_started_at = coalesce(subscription_started_at, now()),
          subscription_current_period_ends_at = $3,
          settings = jsonb_set(
-           jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription,plan_code}', to_jsonb($2::text), true),
-           '{subscription,status}', to_jsonb('ACTIVE'::text), true
+           jsonb_set(
+             jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription,plan_code}', to_jsonb($2::text), true),
+             '{subscription,status}', to_jsonb('ACTIVE'::text), true
+           ),
+           '{subscription,billing_cycle}', to_jsonb($4::text), true
          ),
          updated_at = now()
      where id = $1`,
-    [order.business_id, planCode, periodEnd.toISOString()]
+    [order.business_id, planCode, periodEnd.toISOString(), billingCycle]
   );
 
   if (order.created_by_user_id) {
@@ -986,6 +1008,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       business_id: order.business_id,
       plan_code: planCode,
       status: "ACTIVE",
+      billing_cycle: billingCycle,
       current_period_ends_at: periodEnd.toISOString(),
     },
     credit_account: account ? mapPublicCreditAccount(account) : null,

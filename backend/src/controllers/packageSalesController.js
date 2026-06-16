@@ -53,7 +53,7 @@ const publicSignupBaseSchema = z.object({
   privacy_accepted: z.boolean().refine((value) => value === true, "Debes aceptar la politica de privacidad."),
   legal_version: z.string().trim().max(40).default("2026-06-16"),
 }).refine((body) => body.password === body.password_confirm, {
-  message: "La confirmacion de password no coincide.",
+  message: "La confirmacion de clave no coincide.",
   path: ["password_confirm"],
 });
 
@@ -64,6 +64,7 @@ const prepaidSignupSchema = publicSignupBaseSchema.extend({
 const portalSignupSchema = publicSignupBaseSchema.extend({
   plan_code: z.string().trim().min(2).max(40),
   package_code: z.string().trim().min(2).max(40),
+  billing_cycle: z.enum(["monthly", "annual"]).default("monthly"),
 });
 
 function requireMarketAdmin(user) {
@@ -103,6 +104,7 @@ function signupSettings(body, type) {
     city: body.city || "",
     address: body.address || "",
     signup_type: type,
+    billing_cycle: body.billing_cycle || "monthly",
     account_document_type: body.company_name ? "NIT" : "CEDULA",
     legal_acceptance: {
       terms_accepted: body.terms_accepted,
@@ -308,6 +310,7 @@ async function createPortalSignup(req, res, next) {
         full_name: user.full_name,
         plan_code: plan.code,
         package_code: offer.code,
+        billing_cycle: body.billing_cycle,
       });
 
       return { business, user, plan, order };

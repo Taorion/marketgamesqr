@@ -229,6 +229,66 @@ p { color: var(--muted); line-height: 1.45; }
   margin: 8px 0;
   font-size: 1.15rem;
 }
+.billing-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.billing-switch strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+.billing-switch p {
+  margin: 0;
+}
+.billing-toggle {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.billing-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.billing-toggle-track {
+  position: relative;
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.18);
+  border: 1px solid rgba(15, 118, 110, 0.26);
+}
+.billing-toggle-track span {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: transform 0.18s ease;
+}
+.billing-toggle input:checked + .billing-toggle-track span {
+  transform: translateX(23px);
+}
 .consent-field {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
@@ -1140,7 +1200,8 @@ textarea {
 :root[data-theme="light"] .selected-box,
 :root[data-theme="light"] .use-cases li,
 :root[data-theme="light"] .steps-strip div,
-:root[data-theme="light"] .plan-access-list li {
+:root[data-theme="light"] .plan-access-list li,
+:root[data-theme="light"] .billing-switch {
   background: #f8fffb !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
@@ -1189,7 +1250,8 @@ textarea {
 
 :root[data-theme="light"] .admin-link,
 :root[data-theme="light"] .secondary-button,
-:root[data-theme="light"] .theme-switch {
+:root[data-theme="light"] .theme-switch,
+:root[data-theme="light"] .billing-toggle {
   background: #ffffff !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
@@ -1243,6 +1305,15 @@ textarea {
 @media (max-width: 720px) {
   .packages-shell {
     padding: 12px;
+  }
+  .billing-switch {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .billing-toggle {
+    justify-content: space-between;
+    width: 100%;
+    white-space: normal;
   }
 
   .topbar,

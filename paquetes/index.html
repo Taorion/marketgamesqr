@@ -25,7 +25,7 @@
   <link rel="shortcut icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="apple-touch-icon" href="/img/MGLogo-01.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="css/styles.css?v=checkout-legal-pricing-20260616">
+  <link rel="stylesheet" href="css/styles.css?v=annual-billing-20260616">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -85,7 +85,7 @@
       <div class="selected-box" id="selectedBox">
         <span>Ruta rapida</span>
         <strong>1. Elige</strong>
-        <p>Selecciona paquete o plan, crea usuario y password, paga y entra a usar cuando el pago este confirmado.</p>
+        <p>Selecciona paquete o plan, crea tu acceso, paga y entra a usar cuando el pago este confirmado.</p>
       </div>
     </section>
 
@@ -132,7 +132,7 @@
 
     <section class="steps-strip">
       <div><strong>Elige</strong><span>Paquete prepago o plan + tickets</span></div>
-      <div><strong>Registra</strong><span>Empresa, NIT o cedula, usuario y password</span></div>
+      <div><strong>Registra</strong><span>Empresa, documento de facturacion y acceso</span></div>
       <div><strong>Paga</strong><span>Mercado Pago confirma la activacion</span></div>
       <div><strong>Usa</strong><span>Entra al QR Validator o al portal</span></div>
     </section>
@@ -153,6 +153,19 @@
         </div>
       </div>
       <section class="package-grid" id="packageGrid"></section>
+      <div class="billing-switch hidden" id="billingSwitchPanel" aria-label="Ciclo de facturacion del portal">
+        <div>
+          <span class="eyebrow">Ciclo del portal</span>
+          <strong id="billingSwitchTitle">Mensual</strong>
+          <p id="billingSwitchCopy">Activa el switch anual para pagar 12 meses con beneficio anual del 30% frente al pago mes a mes.</p>
+        </div>
+        <label class="billing-toggle" for="billingCycleSwitch">
+          <span>Mensual</span>
+          <input id="billingCycleSwitch" type="checkbox" aria-label="Activar pago anual con beneficio del 30%">
+          <span class="billing-toggle-track" aria-hidden="true"><span></span></span>
+          <span>Anual -30%</span>
+        </label>
+      </div>
       <section class="package-grid hidden" id="planGrid"></section>
     </section>
 
@@ -161,7 +174,7 @@
         <div>
           <p class="eyebrow">Logica de precios</p>
           <h2>Cada plan amplia capacidad, control y medicion.</h2>
-          <p id="pricingLogicCopy">El precio base es USD 0.25 por ticket. Cada paquete define una capacidad operativa clara para que la empresa dimensione su activacion con criterio.</p>
+          <p id="pricingLogicCopy">Cada paquete define una capacidad operativa clara para que la empresa dimensione su activacion con criterio.</p>
         </div>
       </div>
       <div class="pricing-logic-grid" id="pricingLogicGrid"></div>
@@ -171,7 +184,7 @@
         <div class="selected-box" id="stickySelectedBox">
           <span>Resumen de compra</span>
           <strong>Elige un paquete</strong>
-          <p>Veras aqui el plan, tickets, precio total y alcance operativo antes de registrar datos.</p>
+          <p>Veras aqui el plan, tickets, precio total y alcance operativo antes de completar la activacion.</p>
         </div>
         <button class="primary-button full" id="continueToSignupButton" type="button">Continuar al registro</button>
       </aside>
@@ -204,7 +217,7 @@
     <section class="form-section" id="signupSection">
       <div class="section-head">
         <div>
-          <p class="eyebrow" id="formEyebrow">Datos para activar prepago</p>
+          <p class="eyebrow" id="formEyebrow">Informacion de activacion</p>
           <h2 id="formTitle">Registro y activacion</h2>
           <p id="formCopy">Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.</p>
         </div>
@@ -213,11 +226,11 @@
       <form id="signupForm" class="request-form">
         <label><span>Empresa o nombre comercial</span><input id="companyName" type="text" placeholder="Opcional si eres persona natural"></label>
         <label><span>Nombre del usuario</span><input id="contactName" type="text" required></label>
-        <label><span>NIT o cedula</span><input id="nit" type="text" required></label>
+        <label><span>Documento de facturacion</span><input id="nit" type="text" required></label>
         <label><span>Telefono</span><input id="phone" type="tel" required></label>
         <label><span>Email de acceso</span><input id="email" type="email" required></label>
-        <label><span>Password</span><input id="password" type="password" minlength="8" autocomplete="new-password" required></label>
-        <label><span>Confirmar password</span><input id="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label><span>Clave de acceso</span><input id="password" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label><span>Confirmar clave</span><input id="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required></label>
         <label><span>Web o Instagram</span><input id="website" type="text" placeholder="Opcional"></label>
         <label><span>Ciudad</span><input id="city" type="text" placeholder="Opcional"></label>
         <label><span>Direccion</span><input id="address" type="text" placeholder="Opcional"></label>
@@ -235,6 +248,6 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=checkout-legal-pricing-20260616" defer></script>
+  <script src="js/app.js?v=annual-billing-20260616" defer></script>
 </body>
 </html>

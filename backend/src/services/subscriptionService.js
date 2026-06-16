@@ -16,8 +16,17 @@ const SUBSCRIPTION_GRACE_DAYS = 15;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const USD_TO_COP_REFERENCE = Number(env.usdToCopRate || 4000);
 const STARTER_PORTAL_USD = 80;
+const ANNUAL_BENEFIT_RATE = 0.3;
 function roundCop(value) {
   return Math.round(Number(value || 0) / 1000) * 1000;
+}
+
+function annualUsd(monthlyUsd) {
+  return Number((Number(monthlyUsd || 0) * 12 * (1 - ANNUAL_BENEFIT_RATE)).toFixed(2));
+}
+
+function annualCop(monthlyCop) {
+  return roundCop(Number(monthlyCop || 0) * 12 * (1 - ANNUAL_BENEFIT_RATE));
 }
 
 const STARTER_PORTAL_COP = roundCop(STARTER_PORTAL_USD * USD_TO_COP_REFERENCE);
@@ -104,6 +113,9 @@ const PLAN_CATALOG = {
     category: "subscription",
     monthly_price_cop: STARTER_PORTAL_COP,
     monthly_price_usd: STARTER_PORTAL_USD,
+    annual_price_cop: annualCop(STARTER_PORTAL_COP),
+    annual_price_usd: annualUsd(STARTER_PORTAL_USD),
+    annual_benefit_percent: 30,
     usd_to_cop_rate: USD_TO_COP_REFERENCE,
     display_currency: "USD",
     payment_currency: "COP",
@@ -165,6 +177,9 @@ const PLAN_CATALOG = {
     category: "subscription",
     monthly_price_cop: GROWTH_PORTAL_COP,
     monthly_price_usd: STARTER_PORTAL_USD * 3,
+    annual_price_cop: annualCop(GROWTH_PORTAL_COP),
+    annual_price_usd: annualUsd(STARTER_PORTAL_USD * 3),
+    annual_benefit_percent: 30,
     usd_to_cop_rate: USD_TO_COP_REFERENCE,
     display_currency: "USD",
     payment_currency: "COP",
@@ -229,6 +244,9 @@ const PLAN_CATALOG = {
     category: "subscription",
     monthly_price_cop: PRO_PORTAL_COP,
     monthly_price_usd: STARTER_PORTAL_USD * 9,
+    annual_price_cop: annualCop(PRO_PORTAL_COP),
+    annual_price_usd: annualUsd(STARTER_PORTAL_USD * 9),
+    annual_benefit_percent: 30,
     usd_to_cop_rate: USD_TO_COP_REFERENCE,
     display_currency: "USD",
     payment_currency: "COP",

@@ -29,13 +29,19 @@ const stickySelectedBox = document.getElementById("stickySelectedBox");
 const continueToSignupButton = document.getElementById("continueToSignupButton");
 const pricingLogicGrid = document.getElementById("pricingLogicGrid");
 const pricingLogicCopy = document.getElementById("pricingLogicCopy");
+const billingSwitchPanel = document.getElementById("billingSwitchPanel");
+const billingCycleSwitch = document.getElementById("billingCycleSwitch");
+const billingSwitchTitle = document.getElementById("billingSwitchTitle");
+const billingSwitchCopy = document.getElementById("billingSwitchCopy");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialMode = urlParams.get("mode");
 const initialPackageCode = String(urlParams.get("package") || "").toUpperCase();
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
+const initialBillingCycle = String(urlParams.get("billing") || "").toLowerCase();
 const THEME_KEY = "marketgames_portal_theme";
 let mode = initialMode === "portal" ? "portal" : "prepaid";
+let billingCycle = initialBillingCycle === "annual" ? "annual" : "monthly";
 let packages = [];
 let plans = [];
 let prepaidPlan = null;
@@ -101,6 +107,29 @@ function monthlyPlanLabel(plan) {
   return `${usdMoney(plan.monthly_price_usd)} / mes`;
 }
 
+function annualPlanUsd(plan) {
+  return Number(plan?.annual_price_usd || (Number(plan?.monthly_price_usd || 0) * 12 * 0.7));
+}
+
+function annualPlanCop(plan) {
+  return Number(plan?.annual_price_cop || (Number(plan?.monthly_price_cop || 0) * 12 * 0.7));
+}
+
+function planBillingAmountUsd(plan) {
+  if (!plan?.monthly_price_cop) return 0;
+  return billingCycle === "annual" ? annualPlanUsd(plan) : Number(plan.monthly_price_usd || 0);
+}
+
+function planBillingAmountCop(plan) {
+  if (!plan?.monthly_price_cop) return 0;
+  return billingCycle === "annual" ? annualPlanCop(plan) : Number(plan.monthly_price_cop || 0);
+}
+
+function planBillingLabel(plan) {
+  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
+  return billingCycle === "annual" ? `${usdMoney(annualPlanUsd(plan))} / ano` : monthlyPlanLabel(plan);
+}
+
 function packageUnitUsd(offer) {
   return Number(offer?.unit_price_usd || (Number(offer?.price_usd || 0) / Math.max(1, Number(offer?.package_size || 1))));
 }
@@ -126,9 +155,9 @@ function selectedTotal() {
     };
   }
   return {
-    total_cop: Number(selectedPlan?.monthly_price_cop || 0) + Number(selectedPackage?.price_cop || 0),
-    total_usd: Number(selectedPlan?.monthly_price_usd || 0) + Number(selectedPackage?.price_usd || 0),
-    plan_cop: Number(selectedPlan?.monthly_price_cop || 0),
+    total_cop: planBillingAmountCop(selectedPlan) + Number(selectedPackage?.price_cop || 0),
+    total_usd: planBillingAmountUsd(selectedPlan) + Number(selectedPackage?.price_usd || 0),
+    plan_cop: planBillingAmountCop(selectedPlan),
     package_cop: Number(selectedPackage?.price_cop || 0),
   };
 }
@@ -159,7 +188,7 @@ function renderPackages() {
       <h3>${escapeHtml(item.title)}</h3>
       <p>${Number(item.package_size).toLocaleString("es-CO")} tickets QR. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
       <div class="price">${priceLabel(item)}</div>
-      <p>${usdUnitMoney(packageUnitUsd(item))} por ticket · capacidad premium de ${Number(item.package_size || 0).toLocaleString("es-CO")} validaciones</p>
+      <p>Capacidad premium de ${Number(item.package_size || 0).toLocaleString("es-CO")} validaciones para operar activaciones con trazabilidad.</p>
       <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir recarga prepago" : "Empezar con este paquete"}</button>
     </article>
   `).join("");
@@ -180,7 +209,8 @@ function renderPlans() {
           <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
         `).join("")}
       </ul>
-      <div class="price">${item.monthly_price_cop ? monthlyPlanLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
+      <div class="price">${item.monthly_price_cop ? planBillingLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
+      ${item.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Beneficio anual 30% frente al pago mes a mes." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
       <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir plan" : "Solicitar cotizacion"}</button>
     </article>
   `).join("");
@@ -195,13 +225,14 @@ function renderPlanComparison() {
   const comparisonPlans = [prepaidPlan, ...plans].filter(Boolean);
   planComparisonGrid.innerHTML = comparisonPlans.map((plan) => {
     const isFull = plan.code === "GLOBAL";
-    const price = plan.monthly_price_cop ? monthlyPlanLabel(plan) : escapeHtml(plan.price_label || "Compra por paquete");
+    const price = plan.monthly_price_cop ? planBillingLabel(plan) : escapeHtml(plan.price_label || "Compra por paquete");
     return `
       <article class="plan-access-card ${isFull ? "featured" : ""}">
         <span class="package-code">${escapeHtml(plan.code)}</span>
         <h3>${escapeHtml(plan.name)}</h3>
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
+        ${plan.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Anualidad activa con beneficio del 30%." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
         <p>${plan.category === "prepaid" ? "Solo paquetes x50 o x200" : "Tickets se compran aparte por paquete"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
@@ -221,14 +252,16 @@ function renderPricingLogic() {
   const visible = visiblePackages();
   if (pricingLogicCopy) {
     pricingLogicCopy.textContent = mode === "prepaid"
-      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El precio base es USD 0.25 por ticket y el paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
-      : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
+      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
+      : billingCycle === "annual"
+        ? "La anualidad toma el valor de 12 meses del portal y aplica un beneficio del 30%. Los tickets iniciales se cobran aparte segun la capacidad de activacion."
+        : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
     return `
       <article>
         <span>${escapeHtml(offer.code)}</span>
-        <strong>${usdUnitMoney(packageUnitUsd(offer))} / ticket</strong>
+        <strong>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets QR</strong>
         <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets para operar campanas, beneficios, redenciones y medicion de revenue con trazabilidad RMS.</p>
       </article>
     `;
@@ -239,12 +272,13 @@ function syncMode() {
   modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
   packageGrid.classList.toggle("hidden", false);
   planGrid.classList.toggle("hidden", mode !== "portal");
+  billingSwitchPanel?.classList.toggle("hidden", mode !== "portal");
 
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
     offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
-    formEyebrow.textContent = "Datos para activar prepago";
+    formEyebrow.textContent = "Informacion de activacion";
     formTitle.textContent = "Registro y activacion";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
     submitButton.textContent = "Crear cuenta y pagar activacion";
@@ -260,11 +294,16 @@ function syncMode() {
 
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
-  offerCopy.textContent = "El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
-  formEyebrow.textContent = "Datos para portal mensual";
+  offerCopy.textContent = billingCycle === "annual"
+    ? "El portal anual se muestra en USD con beneficio del 30% frente al pago mes a mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium."
+    : "El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
+  formEyebrow.textContent = "Informacion de activacion";
   formTitle.textContent = "Registro, plan y paquete inicial";
-  formCopy.textContent = "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
-  submitButton.textContent = "Crear cuenta y pagar plan + tickets";
+  formCopy.textContent = billingCycle === "annual"
+    ? "El pago total suma la anualidad del portal con beneficio del 30% mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe."
+    : "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
+  submitButton.textContent = billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets";
+  syncBillingSwitch();
   selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || defaultPortalPackage();
   renderPackages();
   renderPricingLogic();
@@ -289,14 +328,15 @@ function renderSelectionBox() {
 
   if (mode === "portal" && selectedPlan) {
     const totalData = selectedTotal();
-    const planUsd = Number(selectedPlan.monthly_price_usd || 0);
+    const planUsd = planBillingAmountUsd(selectedPlan);
     const packageUsd = Number(selectedPackage?.price_usd || 0);
     const totalUsd = totalData.total_usd;
     const html = `
-      <span>${selectedPlan.monthly_price_cop ? "Portal mensual + tickets" : "Plan por cotizacion"}</span>
+      <span>${selectedPlan.monthly_price_cop ? `${billingCycle === "annual" ? "Portal anual" : "Portal mensual"} + tickets` : "Plan por cotizacion"}</span>
       <strong>${escapeHtml(selectedPlan.name)}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
-      <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Deja tus datos y solicita una propuesta a medida."}</p>
-      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets a ${usdUnitMoney(packageUnitUsd(selectedPackage))} c/u. Capacidad inicial para operar activaciones premium con trazabilidad RMS.</p>` : ""}
+      <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal ${billingCycle === "annual" ? "anual" : "mensual"} + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Solicita una propuesta a medida."}</p>
+      ${selectedPlan.monthly_price_cop && billingCycle === "annual" ? `<p>Beneficio anual 30% frente al pago mes a mes. La suscripcion queda activa por 12 meses.</p>` : ""}
+      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets iniciales. Capacidad para operar activaciones premium con trazabilidad RMS.</p>` : ""}
     `;
     selectedBox.innerHTML = html;
     syncSticky(html);
@@ -321,9 +361,33 @@ function selectPlan(code, shouldScroll = true) {
   renderPlans();
   renderPricingLogic();
   if (mode === "portal") {
-    submitButton.textContent = selectedPlan.monthly_price_cop ? "Crear cuenta y pagar plan + tickets" : "Solicitar cotizacion";
+    submitButton.textContent = selectedPlan.monthly_price_cop
+      ? billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets"
+      : "Solicitar cotizacion";
   }
   if (shouldScroll) signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function syncBillingSwitch() {
+  if (billingCycleSwitch) billingCycleSwitch.checked = billingCycle === "annual";
+  if (billingSwitchTitle) billingSwitchTitle.textContent = billingCycle === "annual" ? "Anualidad activa" : "Mensual";
+  if (billingSwitchCopy) {
+    billingSwitchCopy.textContent = billingCycle === "annual"
+      ? "Pagas 12 meses del portal con beneficio anual del 30%. Los tickets iniciales se suman una sola vez."
+      : "Activa el switch anual para pagar 12 meses con beneficio anual del 30% frente al pago mes a mes.";
+  }
+}
+
+function setBillingCycle(nextCycle) {
+  billingCycle = nextCycle === "annual" ? "annual" : "monthly";
+  syncBillingSwitch();
+  renderPlans();
+  renderPlanComparison();
+  renderPricingLogic();
+  renderSelectionBox();
+  if (mode === "portal") {
+    syncMode();
+  }
 }
 
 function switchMode(nextMode, shouldScroll = true) {
@@ -347,6 +411,7 @@ function formPayload() {
     terms_accepted: document.getElementById("termsAccepted").checked,
     privacy_accepted: document.getElementById("privacyAccepted").checked,
     legal_version: "2026-06-16",
+    billing_cycle: billingCycle,
   };
 }
 
@@ -371,13 +436,13 @@ async function submitSignup(event) {
     return;
   }
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
-    requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia estos datos al equipo comercial para definir QR desde 25.000 al mes, portal brandeable, sedes, afiliados, integraciones y soporte.";
+    requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia la informacion de activacion al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
     return;
   }
   const payload = formPayload();
   if (payload.password !== payload.password_confirm) {
-    requestMessage.textContent = "La confirmacion de password no coincide.";
+    requestMessage.textContent = "La confirmacion de clave no coincide.";
     requestMessage.classList.add("error");
     return;
   }
@@ -388,12 +453,12 @@ async function submitSignup(event) {
   }
 
   submitButton.disabled = true;
-  requestMessage.textContent = mode === "prepaid" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout mensual...";
+  requestMessage.textContent = mode === "prepaid" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout del portal...";
   try {
     const path = mode === "prepaid" ? "/api/public/signup/prepaid" : "/api/public/signup/portal";
     const body = mode === "prepaid"
       ? { ...payload, package_code: selectedPackage.code }
-      : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code };
+      : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code, billing_cycle: billingCycle };
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -410,7 +475,7 @@ async function submitSignup(event) {
     }
     requestMessage.textContent = mode === "prepaid"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
-      : `Cuenta creada para ${data.plan?.name || "el plan mensual"} con ${selectedPackage.package_size} tickets iniciales. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
+      : `Cuenta creada para ${data.plan?.name || "el plan del portal"} en ciclo ${billingCycle === "annual" ? "anual" : "mensual"} con ${selectedPackage.package_size} tickets iniciales. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
     requestMessage.classList.add("ok");
     window.location.href = checkoutUrl;
   } catch (error) {
@@ -432,8 +497,8 @@ function renderPaymentStatus() {
     paymentStatusCopy.textContent = "Si Mercado Pago ya notifico el webhook, tu empresa y usuario quedan activos. Si aun no, espera unos segundos y vuelve a intentar.";
     paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmacion";
     paymentStatusActionCopy.textContent = mode === "portal"
-      ? "Entra al portal con el email y password que registraste."
-      : "Entra al QR Validador simple con el email y password que registraste.";
+      ? "Entra al portal con tu acceso registrado."
+      : "Entra al QR Validador simple con tu acceso registrado.";
     paymentStatusPrimaryLink.href = mode === "portal" ? "/empresa/" : "/qr-validador/";
     paymentStatusPrimaryLink.textContent = mode === "portal" ? "Ingresar al portal" : "Ingresar al QR Validator";
     return;
@@ -494,5 +559,7 @@ startPortalButton.addEventListener("click", () => switchMode("portal"));
 continueToSignupButton?.addEventListener("click", () => signupSection.scrollIntoView({ behavior: "smooth", block: "start" }));
 signupForm.addEventListener("submit", submitSignup);
 themeSwitch?.addEventListener("change", togglePackagesTheme);
+billingCycleSwitch?.addEventListener("change", () => setBillingCycle(billingCycleSwitch.checked ? "annual" : "monthly"));
 applyPackagesTheme(readPreferredTheme());
+syncBillingSwitch();
 init();
