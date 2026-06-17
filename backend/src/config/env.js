@@ -28,10 +28,9 @@ const env = {
   mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || "",
   mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET || "",
   mercadoPagoWebhookUrl: process.env.MERCADO_PAGO_WEBHOOK_URL || "",
-  usdToCopRate: Number(process.env.USD_TO_COP_RATE || 4000),
-  motoBusinessId: process.env.MOTO_BUSINESS_ID || "d081638a-8667-437d-a882-72bd19545792",
-  motoGameId: process.env.MOTO_GAME_ID || "cf48e22f-4107-4369-8446-f03f443ef778",
-  motoRewardId: process.env.MOTO_REWARD_ID || "f10ebf47-3cea-46b8-acdf-d18e7088a50c",
+  motoBusinessId: process.env.MOTO_BUSINESS_ID || null,
+  motoGameId: process.env.MOTO_GAME_ID || null,
+  motoRewardId: process.env.MOTO_REWARD_ID || null,
   motoCampaignId: process.env.MOTO_CAMPAIGN_ID || null,
   productCampaignId: process.env.PRODUCT_CAMPAIGN_ID || null,
 };

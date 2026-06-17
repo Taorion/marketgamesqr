@@ -17,6 +17,7 @@ const {
 } = require("../services/strategicQrService");
 const {
   assertFeatureForRequest,
+  getBusinessSubscription,
   recordUsage,
 } = require("../services/subscriptionService");
 

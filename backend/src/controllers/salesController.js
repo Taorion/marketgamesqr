@@ -10,7 +10,7 @@ const REFERRAL_POINTS_RATE = 0.2;
 const attributedSaleSchema = z.object({
   had_sale: z.boolean().default(true),
   sale_amount: z.number().min(0).default(0),
-  currency: z.string().trim().min(3).max(3).default("USD"),
+  currency: z.string().trim().min(3).max(3).default("COP"),
   branch_id: z.string().uuid().optional().nullable(),
   payment_method: z.string().trim().max(80).optional().nullable(),
   product_or_service: z.string().trim().max(200).optional().nullable(),

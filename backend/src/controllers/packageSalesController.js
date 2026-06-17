@@ -6,7 +6,6 @@ const { validate } = require("../utils/validators");
 const { canAccessBusiness } = require("../middleware/auth");
 const {
   QR_PACKAGE_OFFERS,
-  USD_TO_COP_RATE,
   findPackageOffer,
   prepaidPackageOffers,
   subscriberPackageOffers,
@@ -142,9 +141,8 @@ async function listPackageOffers(_req, res, next) {
     res.json({
       packages: QR_PACKAGE_OFFERS,
       pricing: {
-        display_currency: "USD",
+        display_currency: "COP",
         payment_currency: "COP",
-        usd_to_cop_rate: USD_TO_COP_RATE,
       },
     });
   } catch (error) {
@@ -161,9 +159,8 @@ async function listPublicSubscriptionPlans(_req, res, next) {
       prepaid_reference: prepaidPackageOffers(),
       subscriber_packages: subscriberPackageOffers(),
       pricing: {
-        display_currency: "USD",
+        display_currency: "COP",
         payment_currency: "COP",
-        usd_to_cop_rate: USD_TO_COP_RATE,
       },
     });
   } catch (error) {
@@ -223,7 +220,7 @@ async function createPrepaidSignup(req, res, next) {
     const body = validate(prepaidSignupSchema, req.body);
     const offer = findPackageOffer(body.package_code);
     if (!offer || !offer.prepaid_allowed) {
-      throw badRequest("El QR Validator prepago solo permite paquetes de 50 o 200 tickets.");
+      throw badRequest("El validador prepago solo permite paquetes de 50 o 200 tickets.");
     }
 
     const result = await withTransaction(async (client) => {

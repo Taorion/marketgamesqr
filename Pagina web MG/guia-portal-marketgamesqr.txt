@@ -998,13 +998,11 @@ Paquetes disponibles:
 
 Precios actuales de referencia en el sistema:
 
-- QR50: USD 12.50, equivalente COP 50.000 a TRM 4.000.
-- QR200: USD 42.50, equivalente COP 170.000 a TRM 4.000.
-- QR500: USD 93.75, equivalente COP 375.000 a TRM 4.000.
-- QR1000: USD 162.50, equivalente COP 650.000 a TRM 4.000.
-- QR2000: USD 287.50, equivalente COP 1.150.000 a TRM 4.000.
-- QR4000: USD 525.00, equivalente COP 2.100.000 a TRM 4.000.
-- QR8000: USD 1,000.00, equivalente COP 4.000.000 a TRM 4.000.
+- T50: COP 75.000.
+- T200: COP 291.000.
+- T600: COP 829.350.
+- T2000: COP 2.515.695.
+- T6000: COP 7.169.731.
 
 Beneficios posibles de la version prepago:
 

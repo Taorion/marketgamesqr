@@ -13,17 +13,105 @@ const motoRewardSchema = z.object({
   lockedPercent: z.number().int().min(0).max(100),
 });
 
+function publicQrContextError() {
+  const error = new Error("No hay negocio, juego y beneficio activos para emitir QR publicos. Configura MOTO_* o ejecuta el seed/demo.");
+  error.status = 503;
+  return error;
+}
+
+async function resolvePublicQrContext(campaignId = null) {
+  const result = env.motoBusinessId
+    ? await query(
+      `select
+         b.id as business_id,
+         coalesce(g_config.id, g_default.id) as game_id,
+         coalesce(r_config.id, r_default.id) as reward_id
+       from businesses b
+       left join games g_config
+         on $2::uuid is not null
+        and g_config.id = $2::uuid
+        and g_config.business_id = b.id
+        and g_config.is_active = true
+       left join lateral (
+         select id
+         from games
+         where business_id = b.id and is_active = true
+         order by created_at asc
+         limit 1
+       ) g_default on true
+       left join rewards r_config
+         on $3::uuid is not null
+        and r_config.id = $3::uuid
+        and r_config.business_id = b.id
+        and r_config.is_active = true
+       left join lateral (
+         select id
+         from rewards
+         where business_id = b.id and is_active = true
+         order by created_at asc
+         limit 1
+       ) r_default on true
+       where b.id = $1::uuid
+         and b.is_active = true`,
+      [env.motoBusinessId, env.motoGameId, env.motoRewardId]
+    )
+    : await query(
+      `select
+         b.id as business_id,
+         g.id as game_id,
+         r.id as reward_id
+       from businesses b
+       join lateral (
+         select id
+         from games
+         where business_id = b.id and is_active = true
+         order by created_at asc
+         limit 1
+       ) g on true
+       join lateral (
+         select id
+         from rewards
+         where business_id = b.id and is_active = true
+         order by created_at asc
+         limit 1
+       ) r on true
+       where b.is_active = true
+       order by
+         case
+           when b.slug = 'bodega-qr-express' then 0
+           when b.slug = 'atelier-de-coleccion-demo' then 1
+           when b.slug = 'demo-store' then 2
+           else 3
+         end,
+         b.created_at asc
+       limit 1`
+    );
+
+  const context = result.rows[0];
+  if (!context?.business_id || !context?.game_id || !context?.reward_id) {
+    throw publicQrContextError();
+  }
+
+  return {
+    businessId: context.business_id,
+    gameId: context.game_id,
+    rewardId: context.reward_id,
+    campaignId,
+  };
+}
+
 async function createMotoRewardQr(req, res, next) {
   try {
     const body = validate(motoRewardSchema, req.body);
     const fullName = `${body.firstName} ${body.lastName}`;
+    const context = await resolvePublicQrContext(env.motoCampaignId || null);
 
     const result = await generateQr(
       {
-        business_id: env.motoBusinessId,
-        campaign_id: env.motoCampaignId || undefined,
-        game_id: env.motoGameId,
-        reward_id: env.motoRewardId,
+        business_id: context.businessId,
+        campaign_id: context.campaignId || undefined,
+        game_id: context.gameId,
+        reward_id: context.rewardId,
         player: {
           name: fullName,
           email: body.email,
@@ -50,8 +138,8 @@ async function createMotoRewardQr(req, res, next) {
       {
         type: "game",
         game: {
-          id: env.motoGameId,
-          business_id: env.motoBusinessId,
+          id: context.gameId,
+          business_id: context.businessId,
         },
       }
     );
@@ -271,12 +359,13 @@ async function createDemoQr(req, res, next) {
     const body = validate(demoQrSchema, req.body);
     const fullName = `${body.firstName} ${body.lastName}`.trim();
     const campaignLabel = body.campaignLabel || defaultLabel;
+    const context = await resolvePublicQrContext(null);
 
     const result = await generateQr(
       {
-        business_id: env.motoBusinessId,
-        game_id: env.motoGameId,
-        reward_id: env.motoRewardId,
+        business_id: context.businessId,
+        game_id: context.gameId,
+        reward_id: context.rewardId,
         player: {
           name: fullName,
           email: body.email,
@@ -306,8 +395,8 @@ async function createDemoQr(req, res, next) {
       {
         type: "game",
         game: {
-          id: env.motoGameId,
-          business_id: env.motoBusinessId,
+          id: context.gameId,
+          business_id: context.businessId,
         },
       }
     );
@@ -334,6 +423,7 @@ async function createProductPreferenceQr(req, res, next) {
   try {
     const body = validate(productPreferenceSchema, req.body);
     const fullName = `${body.firstName} ${body.lastName}`;
+    const context = await resolvePublicQrContext(env.productCampaignId || null);
 
     const answers = {
       first_name: body.firstName,
@@ -355,10 +445,10 @@ async function createProductPreferenceQr(req, res, next) {
 
     const result = await generateQr(
       {
-        business_id: env.motoBusinessId,
-        campaign_id: env.productCampaignId || undefined,
-        game_id: env.motoGameId,
-        reward_id: env.motoRewardId,
+        business_id: context.businessId,
+        campaign_id: context.campaignId || undefined,
+        game_id: context.gameId,
+        reward_id: context.rewardId,
         player: {
           name: fullName,
           email: body.email,
@@ -388,8 +478,8 @@ async function createProductPreferenceQr(req, res, next) {
       {
         type: "game",
         game: {
-          id: env.motoGameId,
-          business_id: env.motoBusinessId,
+          id: context.gameId,
+          business_id: context.businessId,
         },
       }
     );

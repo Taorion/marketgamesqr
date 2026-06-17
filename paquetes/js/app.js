@@ -49,9 +49,8 @@ let subscriberPackages = [];
 let selectedPackage = null;
 let selectedPlan = null;
 let pricing = {
-  display_currency: "USD",
+  display_currency: "COP",
   payment_currency: "COP",
-  usd_to_cop_rate: 4000,
 };
 
 function readPreferredTheme() {
@@ -80,44 +79,27 @@ function togglePackagesTheme() {
   applyPackagesTheme(themeSwitch?.checked ? "light" : "dark");
 }
 
-function usdMoney(value) {
-  return `USD ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function usdUnitMoney(value) {
-  return `USD ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
+function copMoney(value) {
+  return `COP ${Number(value || 0).toLocaleString("es-CO", {
+    maximumFractionDigits: 0,
   })}`;
 }
 
 function priceLabel(item) {
   if (!item) return "";
-  if (Number.isFinite(Number(item.price_usd))) {
-    return usdMoney(item.price_usd);
+  if (Number.isFinite(Number(item.price_cop))) {
+    return copMoney(item.price_cop);
   }
   return escapeHtml(item.price_label || "Cotizacion");
 }
 
 function monthlyPlanLabel(plan) {
   if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
-  return `${usdMoney(plan.monthly_price_usd)} / mes`;
-}
-
-function annualPlanUsd(plan) {
-  return Number(plan?.annual_price_usd || (Number(plan?.monthly_price_usd || 0) * 12 * 0.7));
+  return `${copMoney(plan.monthly_price_cop)} / mes`;
 }
 
 function annualPlanCop(plan) {
   return Number(plan?.annual_price_cop || (Number(plan?.monthly_price_cop || 0) * 12 * 0.7));
-}
-
-function planBillingAmountUsd(plan) {
-  if (!plan?.monthly_price_cop) return 0;
-  return billingCycle === "annual" ? annualPlanUsd(plan) : Number(plan.monthly_price_usd || 0);
 }
 
 function planBillingAmountCop(plan) {
@@ -127,39 +109,50 @@ function planBillingAmountCop(plan) {
 
 function planBillingLabel(plan) {
   if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
-  return billingCycle === "annual" ? `${usdMoney(annualPlanUsd(plan))} / ano` : monthlyPlanLabel(plan);
-}
-
-function packageUnitUsd(offer) {
-  return Number(offer?.unit_price_usd || (Number(offer?.price_usd || 0) / Math.max(1, Number(offer?.package_size || 1))));
+  return billingCycle === "annual" ? `${copMoney(annualPlanCop(plan))} / ano` : monthlyPlanLabel(plan);
 }
 
 function visiblePackages() {
   return packages.filter((item) => mode === "prepaid" ? item.prepaid_allowed : item.subscriber_allowed);
 }
 
-function defaultPortalPackage() {
-  return subscriberPackages.find((item) => item.code === initialPackageCode)
-    || subscriberPackages.find((item) => item.code === "QR500")
-    || subscriberPackages[0]
-    || null;
-}
-
 function selectedTotal() {
   if (mode === "prepaid") {
     return {
       total_cop: Number(selectedPackage?.price_cop || 0),
-      total_usd: Number(selectedPackage?.price_usd || 0),
       plan_cop: 0,
       package_cop: Number(selectedPackage?.price_cop || 0),
     };
   }
   return {
     total_cop: planBillingAmountCop(selectedPlan) + Number(selectedPackage?.price_cop || 0),
-    total_usd: planBillingAmountUsd(selectedPlan) + Number(selectedPackage?.price_usd || 0),
     plan_cop: planBillingAmountCop(selectedPlan),
     package_cop: Number(selectedPackage?.price_cop || 0),
   };
+}
+
+function selectionComplete() {
+  if (mode === "prepaid") return Boolean(selectedPackage);
+  return Boolean(selectedPlan && selectedPackage && selectedPlan.monthly_price_cop);
+}
+
+function resetSignupVisibility() {
+  signupSection.classList.add("hidden");
+}
+
+function selectedBenefits() {
+  if (mode === "prepaid") {
+    return [
+      "Validador de tickets para validar beneficios en tienda",
+      "Generador simple y paquetes descargables",
+      "Control de canje para evitar doble redencion",
+      "Visualizacion de los ultimos 50 leads, sin exportacion",
+    ];
+  }
+  return [
+    ...(selectedPlan?.included || []).slice(0, 5),
+    selectedPackage ? `${Number(selectedPackage.package_size || 0).toLocaleString("es-CO")} tickets iniciales` : "Selecciona tickets iniciales",
+  ];
 }
 
 function escapeHtml(value) {
@@ -184,12 +177,13 @@ function renderPackages() {
   const offers = visiblePackages();
   packageGrid.innerHTML = offers.map((item) => `
     <article class="package-card ${selectedPackage?.code === item.code ? "selected" : ""}">
-      <span class="package-code">${escapeHtml(item.code)}</span>
+      <span class="package-code">${escapeHtml(item.display_code || item.public_code || item.code)}</span>
       <h3>${escapeHtml(item.title)}</h3>
-      <p>${Number(item.package_size).toLocaleString("es-CO")} tickets QR. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
+      <p>${Number(item.package_size).toLocaleString("es-CO")} tickets. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
       <div class="price">${priceLabel(item)}</div>
-      <p>Capacidad premium de ${Number(item.package_size || 0).toLocaleString("es-CO")} validaciones para operar activaciones con trazabilidad.</p>
-      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir recarga prepago" : "Empezar con este paquete"}</button>
+      <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
+      <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
+      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir tickets" : "Sumar tickets"}</button>
     </article>
   `).join("");
 
@@ -203,7 +197,7 @@ function renderPlans() {
     <article class="package-card ${selectedPlan?.code === item.code ? "selected" : ""} ${item.monthly_price_cop ? "" : "quote-plan"}">
       <span class="package-code">${escapeHtml(item.code)}</span>
       <h3>${escapeHtml(item.name)}</h3>
-      <p>${escapeHtml(item.access_summary || "Portal mensual para operar beneficios QR.")}</p>
+      <p>${escapeHtml(item.access_summary || "Portal mensual para operar beneficios con tickets.")}</p>
       <ul class="plan-access-list">
         ${(item.included || []).slice(0, item.monthly_price_cop ? 6 : 10).map((benefit) => `
           <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -211,7 +205,7 @@ function renderPlans() {
       </ul>
       <div class="price">${item.monthly_price_cop ? planBillingLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
       ${item.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Beneficio anual 30% frente al pago mes a mes." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir plan" : "Solicitar cotizacion"}</button>
+      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Sumar plan" : "Solicitar cotizacion"}</button>
     </article>
   `).join("");
 
@@ -233,7 +227,7 @@ function renderPlanComparison() {
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
         ${plan.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Anualidad activa con beneficio del 30%." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-        <p>${plan.category === "prepaid" ? "Solo paquetes x50 o x200" : "Tickets se compran aparte por paquete"}</p>
+        <p>${plan.category === "prepaid" ? "Solo paquetes T50 o T200" : "Tickets se compran aparte por paquete"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -255,13 +249,13 @@ function renderPricingLogic() {
       ? "Prepago mantiene entrada simple en 50 o 200 tickets. El paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
       : billingCycle === "annual"
         ? "La anualidad toma el valor de 12 meses del portal y aplica un beneficio del 30%. Los tickets iniciales se cobran aparte segun la capacidad de activacion."
-        : "La mensualidad del portal sigue una progresion 1x, 3x y 9x: Starter, Growth y Pro. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
+        : "La mensualidad del portal escala por capacidad operativa: Started, Medium y Premium. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
     return `
       <article>
-        <span>${escapeHtml(offer.code)}</span>
-        <strong>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets QR</strong>
+        <span>${escapeHtml(offer.display_code || offer.public_code || offer.code)}</span>
+        <strong>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets</strong>
         <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets para operar campanas, beneficios, redenciones y medicion de revenue con trazabilidad RMS.</p>
       </article>
     `;
@@ -277,16 +271,15 @@ function syncMode() {
   if (mode === "prepaid") {
     offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
-    offerCopy.textContent = "QR Validator prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
+    offerCopy.textContent = "El validador prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
     formEyebrow.textContent = "Informacion de activacion";
     formTitle.textContent = "Registro y activacion";
     formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
     submitButton.textContent = "Crear cuenta y pagar activacion";
-    selectedPackage = packages.find((item) => item.prepaid_allowed && item.code === selectedPackage?.code)
-      || packages.find((item) => item.prepaid_allowed && item.code === initialPackageCode)
-      || packages.find((item) => item.prepaid_allowed)
-      || null;
+    selectedPackage = packages.find((item) => item.prepaid_allowed && item.code === selectedPackage?.code) || null;
+    selectedPlan = null;
     renderPackages();
+    renderPlans();
     renderSelectionBox();
     renderPricingLogic();
     return;
@@ -295,8 +288,8 @@ function syncMode() {
   offerEyebrow.textContent = "Planes mensuales";
   offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
   offerCopy.textContent = billingCycle === "annual"
-    ? "El portal anual se muestra en USD con beneficio del 30% frente al pago mes a mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium."
-    : "El portal se muestra en USD desde USD 80 al mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
+    ? "El portal anual se muestra en COP con beneficio del 30% frente al pago mes a mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium."
+    : "El portal se muestra en COP por afiliacion mensual. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
   formEyebrow.textContent = "Informacion de activacion";
   formTitle.textContent = "Registro, plan y paquete inicial";
   formCopy.textContent = billingCycle === "annual"
@@ -304,59 +297,105 @@ function syncMode() {
     : "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
   submitButton.textContent = billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets";
   syncBillingSwitch();
-  selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || defaultPortalPackage();
+  selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || null;
   renderPackages();
+  renderPlans();
   renderPricingLogic();
-  selectPlan(selectedPlan?.code || plans[0]?.code, false);
+  renderSelectionBox();
 }
 
 function renderSelectionBox() {
   const syncSticky = (html) => {
     if (stickySelectedBox) stickySelectedBox.innerHTML = html;
   };
+  const bindSummaryActions = () => {
+    document.querySelectorAll("[data-remove-selection]").forEach((button) => {
+      button.addEventListener("click", () => removeSelection(button.dataset.removeSelection));
+    });
+  };
+
   if (mode === "prepaid" && selectedPackage) {
     const html = `
-      <span>QR Validator prepago</span>
-      <strong>${escapeHtml(selectedPackage.code)} - ${escapeHtml(selectedPackage.title)}</strong>
-      <p>${priceLabel(selectedPackage)} - ${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets. Para operar mas de 200 tickets con dashboard, campanas y analitica, activa Portal RMS.</p>
-      <p>Precio mostrado en USD. Mercado Pago procesa la activacion del servicio.</p>
+      <span>Resumen de compra</span>
+      <strong>${escapeHtml(selectedPackage.title)}</strong>
+      <div class="summary-lines">
+        <div><span>Servicio</span><b>Validador prepago</b></div>
+        <div><span>Tickets</span><b>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets</b></div>
+        <div><span>Total hoy</span><b>${priceLabel(selectedPackage)}</b></div>
+      </div>
+      <ul class="summary-list">
+        ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+      <div class="summary-actions">
+        <button class="secondary-button" type="button" data-remove-selection="package">Quitar tickets</button>
+      </div>
     `;
     selectedBox.innerHTML = html;
     syncSticky(html);
+    bindSummaryActions();
+    updateContinueState();
     return;
   }
 
-  if (mode === "portal" && selectedPlan) {
+  if (mode === "portal" && (selectedPlan || selectedPackage)) {
     const totalData = selectedTotal();
-    const planUsd = planBillingAmountUsd(selectedPlan);
-    const packageUsd = Number(selectedPackage?.price_usd || 0);
-    const totalUsd = totalData.total_usd;
     const html = `
-      <span>${selectedPlan.monthly_price_cop ? `${billingCycle === "annual" ? "Portal anual" : "Portal mensual"} + tickets` : "Plan por cotizacion"}</span>
-      <strong>${escapeHtml(selectedPlan.name)}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
-      <p>${selectedPlan.monthly_price_cop ? `${usdMoney(planUsd)} de portal ${billingCycle === "annual" ? "anual" : "mensual"} + ${usdMoney(packageUsd)} en tickets = ${usdMoney(totalUsd)} hoy.` : "Solicita una propuesta a medida."}</p>
-      ${selectedPlan.monthly_price_cop && billingCycle === "annual" ? `<p>Beneficio anual 30% frente al pago mes a mes. La suscripcion queda activa por 12 meses.</p>` : ""}
-      ${selectedPackage ? `<p>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets iniciales. Capacidad para operar activaciones premium con trazabilidad RMS.</p>` : ""}
+      <span>Resumen de compra</span>
+      <strong>${escapeHtml(selectedPlan?.name || "Plan pendiente")}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
+      <div class="summary-lines">
+        <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotizacion" : "Sin plan seleccionado"}</b></div>
+        <div><span>Tickets</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(selectedPackage.price_cop)}` : "Sin paquete seleccionado"}</b></div>
+        <div><span>Total hoy</span><b>${selectedPlan?.monthly_price_cop && selectedPackage ? copMoney(totalData.total_cop) : "Pendiente"}</b></div>
+      </div>
+      ${selectedPlan?.monthly_price_cop && billingCycle === "annual" ? `<p>Incluye beneficio anual del 30% frente al pago mes a mes. Los tickets se suman una sola vez al inicio.</p>` : ""}
+      <ul class="summary-list">
+        ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+      <div class="summary-actions">
+        ${selectedPlan ? '<button class="secondary-button" type="button" data-remove-selection="plan">Quitar plan</button>' : ""}
+        ${selectedPackage ? '<button class="secondary-button" type="button" data-remove-selection="package">Quitar tickets</button>' : ""}
+      </div>
     `;
     selectedBox.innerHTML = html;
     syncSticky(html);
+    bindSummaryActions();
+    updateContinueState();
+    return;
   }
+
+  const emptyCopy = mode === "portal"
+    ? "Elige primero un plan del portal y luego suma el paquete de tickets inicial. El registro se habilita solo cuando tengas ambos."
+    : "Elige un paquete prepago de 50 o 200 tickets. El registro se habilita cuando confirmes esa seleccion.";
+  const html = `
+    <span>Resumen de compra</span>
+    <strong>Seleccion pendiente</strong>
+    <p>${emptyCopy}</p>
+    <ul class="summary-list">
+      <li>El formulario queda oculto mientras comparas opciones.</li>
+      <li>Puedes cambiar o quitar selecciones antes de pagar.</li>
+      <li>Mercado Pago solo se abre despues del registro confirmado.</li>
+    </ul>
+  `;
+  selectedBox.innerHTML = html;
+  syncSticky(html);
+  updateContinueState();
 }
 
 function selectPackage(code, shouldScroll = true) {
   if (!code) return;
   selectedPackage = packages.find((item) => item.code === code) || selectedPackage;
   if (!selectedPackage) return;
+  resetSignupVisibility();
   renderSelectionBox();
   renderPackages();
   renderPricingLogic();
-  if (shouldScroll) signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function selectPlan(code, shouldScroll = true) {
   if (!code) return;
   selectedPlan = plans.find((item) => item.code === code) || selectedPlan;
   if (!selectedPlan) return;
+  resetSignupVisibility();
   renderSelectionBox();
   renderPlans();
   renderPricingLogic();
@@ -365,7 +404,33 @@ function selectPlan(code, shouldScroll = true) {
       ? billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets"
       : "Solicitar cotizacion";
   }
-  if (shouldScroll) signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function removeSelection(type) {
+  resetSignupVisibility();
+  if (type === "plan") selectedPlan = null;
+  if (type === "package") selectedPackage = null;
+  renderPackages();
+  renderPlans();
+  renderSelectionBox();
+}
+
+function updateContinueState() {
+  if (!continueToSignupButton) return;
+  const ready = selectionComplete();
+  continueToSignupButton.disabled = !ready;
+  continueToSignupButton.textContent = ready
+    ? "Confirmar seleccion y registrar"
+    : mode === "portal" ? "Elige plan y tickets" : "Elige tickets";
+}
+
+function continueToSignup() {
+  if (!selectionComplete()) {
+    renderSelectionBox();
+    return;
+  }
+  signupSection.classList.remove("hidden");
+  signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function syncBillingSwitch() {
@@ -392,6 +457,7 @@ function setBillingCycle(nextCycle) {
 
 function switchMode(nextMode, shouldScroll = true) {
   mode = nextMode;
+  resetSignupVisibility();
   syncMode();
   if (shouldScroll) offerSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -421,7 +487,7 @@ async function submitSignup(event) {
   requestMessage.textContent = "";
 
   if (mode === "prepaid" && !selectedPackage) {
-    requestMessage.textContent = "Selecciona un paquete de activacion para activar QR Validator.";
+    requestMessage.textContent = "Selecciona un paquete de activacion para activar el validador de tickets.";
     requestMessage.classList.add("error");
     return;
   }
@@ -436,7 +502,7 @@ async function submitSignup(event) {
     return;
   }
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
-    requestMessage.textContent = "MarketGamesQR Global requiere cotizacion. Envia la informacion de activacion al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
+    requestMessage.textContent = "Global requiere cotizacion. Envia la informacion de activacion al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
     return;
   }
@@ -498,9 +564,9 @@ function renderPaymentStatus() {
     paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmacion";
     paymentStatusActionCopy.textContent = mode === "portal"
       ? "Entra al portal con tu acceso registrado."
-      : "Entra al QR Validador simple con tu acceso registrado.";
+      : "Entra al validador de tickets con tu acceso registrado.";
     paymentStatusPrimaryLink.href = mode === "portal" ? "/empresa/" : "/qr-validador/";
-    paymentStatusPrimaryLink.textContent = mode === "portal" ? "Ingresar al portal" : "Ingresar al QR Validator";
+    paymentStatusPrimaryLink.textContent = mode === "portal" ? "Ingresar al portal" : "Ingresar al validador";
     return;
   }
 
@@ -538,7 +604,7 @@ async function init() {
     plans = planData.plans || [];
     subscriberPackages = planData.subscriber_packages || packages.filter((item) => item.subscriber_allowed);
     selectedPackage = packages.find((item) => item.code === initialPackageCode) || null;
-    selectedPlan = plans.find((item) => item.code === initialPlanCode) || plans[0] || null;
+    selectedPlan = plans.find((item) => item.code === initialPlanCode) || null;
     renderPackages();
     renderPlans();
     renderPlanComparison();
@@ -556,7 +622,7 @@ modeButtons.forEach((button) => {
 });
 startPrepaidButton.addEventListener("click", () => switchMode("prepaid"));
 startPortalButton.addEventListener("click", () => switchMode("portal"));
-continueToSignupButton?.addEventListener("click", () => signupSection.scrollIntoView({ behavior: "smooth", block: "start" }));
+continueToSignupButton?.addEventListener("click", continueToSignup);
 signupForm.addEventListener("submit", submitSignup);
 themeSwitch?.addEventListener("change", togglePackagesTheme);
 billingCycleSwitch?.addEventListener("change", () => setBillingCycle(billingCycleSwitch.checked ? "annual" : "monthly"));

@@ -1,95 +1,84 @@
-const { env } = require("../config/env");
-
-const USD_TO_COP_RATE = Number(env.usdToCopRate || 4000);
-const BASE_TICKET_PRICE_USD = 0.25;
-
-function roundCop(value) {
-  return Math.round(Number(value || 0) / 1000) * 1000;
-}
-
-function usdToCop(value) {
-  return roundCop(Number(value || 0) * USD_TO_COP_RATE);
-}
+const BASE_TICKET_PRICE_COP = 1500;
 
 const rawPackageOffers = [
   {
     code: "QR50",
+    public_code: "T50",
     package_size: 50,
-    unit_price_usd: 0.25,
+    price_cop: 75000,
     prepaid_allowed: true,
     subscriber_allowed: true,
-    title: "Paquete x50",
-    description: "Activacion inicial para validar beneficios con QR Validator.",
+    title: "Ticket x50",
+    description: "Entrada prepago para validar beneficios y ver los ultimos 50 leads.",
+    mode_label: "Prepago",
+    lead_access: "Visualizacion de los ultimos 50 leads, sin exportacion.",
+    expiration_label: "Con vencimiento operativo.",
   },
   {
     code: "QR200",
+    public_code: "T200",
     package_size: 200,
-    unit_price_usd: 0.2125,
+    price_cop: 291000,
     prepaid_allowed: true,
     subscriber_allowed: true,
-    title: "Paquete x200",
-    description: "Mayor alcance prepago antes de pasar al portal.",
+    title: "Ticket x200",
+    description: "Prepago ampliado con mejor valor por ticket y lista de los ultimos 50 leads.",
+    mode_label: "Prepago",
+    lead_access: "Visualizacion de los ultimos 50 leads, sin exportacion.",
+    expiration_label: "Con vencimiento operativo.",
   },
   {
-    code: "QR500",
-    package_size: 500,
-    unit_price_usd: 0.1875,
+    code: "QR600",
+    public_code: "T600",
+    package_size: 600,
+    price_cop: 829350,
     prepaid_allowed: false,
     subscriber_allowed: true,
-    title: "Portal x500",
-    description: "Primer paquete superior exclusivo para suscriptores.",
-  },
-  {
-    code: "QR1000",
-    package_size: 1000,
-    unit_price_usd: 0.1625,
-    prepaid_allowed: false,
-    subscriber_allowed: true,
-    title: "Portal x1000",
-    description: "Volumen comercial para campanas con seguimiento premium.",
+    title: "Ticket x600",
+    description: "Primer nivel pospago para campanas con acceso a todos los leads.",
+    mode_label: "Pospago",
+    lead_access: "Lista completa de leads capturados.",
+    expiration_label: "Sin vencimiento.",
   },
   {
     code: "QR2000",
+    public_code: "T2000",
     package_size: 2000,
-    unit_price_usd: 0.14375,
+    price_cop: 2515695,
     prepaid_allowed: false,
     subscriber_allowed: true,
-    title: "Portal x2000",
-    description: "Escala para campanas recurrentes y referidos.",
+    title: "Ticket x2.000",
+    description: "Volumen premium para activaciones recurrentes, referidos y medicion RMS.",
+    mode_label: "Pospago",
+    lead_access: "Lista completa de leads capturados.",
+    expiration_label: "Sin vencimiento.",
   },
   {
-    code: "QR4000",
-    package_size: 4000,
-    unit_price_usd: 0.13125,
+    code: "QR6000",
+    public_code: "T6000",
+    package_size: 6000,
+    price_cop: 7169731,
     prepaid_allowed: false,
     subscriber_allowed: true,
-    title: "Portal x4000",
-    description: "Alto volumen para activaciones recurrentes y medicion avanzada.",
-  },
-  {
-    code: "QR8000",
-    package_size: 8000,
-    unit_price_usd: 0.125,
-    prepaid_allowed: false,
-    subscriber_allowed: true,
-    title: "Portal x8000",
-    description: "Capacidad premium para operaciones de alto alcance.",
+    title: "Ticket x6.000",
+    description: "Escala de alto alcance para operaciones con multiples activaciones.",
+    mode_label: "Pospago",
+    lead_access: "Lista completa de leads capturados.",
+    expiration_label: "Sin vencimiento.",
   },
 ];
 
-function savingsPercent(unitPrice) {
-  return Math.round((1 - Number(unitPrice || 0) / BASE_TICKET_PRICE_USD) * 100);
+function savingsPercent(unitPriceCop) {
+  return Math.max(0, Math.round((1 - Number(unitPriceCop || 0) / BASE_TICKET_PRICE_COP) * 100));
 }
 
 const QR_PACKAGE_OFFERS = rawPackageOffers.map((offer) => ({
   ...offer,
-  price_usd: Number((offer.package_size * offer.unit_price_usd).toFixed(2)),
-  price_cop: usdToCop(offer.package_size * offer.unit_price_usd),
-  unit_price_cop: Math.round(usdToCop(offer.package_size * offer.unit_price_usd) / offer.package_size),
-  usd_to_cop_rate: USD_TO_COP_RATE,
-  display_currency: "USD",
+  display_code: offer.public_code,
+  unit_price_cop: Math.round(Number(offer.price_cop || 0) / Number(offer.package_size || 1)),
+  display_currency: "COP",
   payment_currency: "COP",
-  savings_percent: savingsPercent(offer.unit_price_usd),
+  savings_percent: savingsPercent(Number(offer.price_cop || 0) / Number(offer.package_size || 1)),
   payment_url: `/paquetes/?mode=${offer.prepaid_allowed ? "prepaid" : "portal"}&package=${offer.code}`,
 }));
 
@@ -106,8 +95,7 @@ function subscriberPackageOffers() {
 }
 
 module.exports = {
-  BASE_TICKET_PRICE_USD,
-  USD_TO_COP_RATE,
+  BASE_TICKET_PRICE_COP,
   QR_PACKAGE_OFFERS,
   findPackageOffer,
   prepaidPackageOffers,

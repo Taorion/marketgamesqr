@@ -2190,6 +2190,65 @@ td {
   margin: 24px 0;
 }
 
+.qr-workflow-card {
+  margin: 24px 0;
+  display: grid;
+  gap: 16px;
+}
+
+.qr-workflow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.qr-workflow-head h3 {
+  margin: 4px 0 0;
+}
+
+.qr-workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.qr-workflow-steps span {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: #f9fbfa;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.qr-workflow-steps strong {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: #fff;
+  font-size: 12px;
+}
+
+.qr-workflow-copy,
+.association-field small {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.association-field select:required:invalid {
+  border-color: rgba(196, 65, 65, 0.7);
+  background: #fff8f8;
+}
+
 .portal-pricing-card {
   margin: 24px 0;
   display: grid;
@@ -8141,6 +8200,10 @@ body.chart-focus-open .command-center {
 }
 
 @media (max-width: 960px) {
+  .qr-workflow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .data-path-map {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -8158,6 +8221,12 @@ body.chart-focus-open .command-center {
   .chart-stage-help {
     position: static;
     border-radius: 14px;
+  }
+}
+
+@media (max-width: 620px) {
+  .qr-workflow-steps {
+    grid-template-columns: 1fr;
   }
 }
 
