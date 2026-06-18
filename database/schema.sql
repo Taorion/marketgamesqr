@@ -533,7 +533,10 @@ create index if not exists idx_games_business_id on games(business_id);
 create index if not exists idx_businesses_plan_code on businesses(plan_code);
 create index if not exists idx_businesses_subscription_due on businesses(subscription_current_period_ends_at);
 create index if not exists idx_businesses_mp_preapproval on businesses(mercado_pago_preapproval_id);
+create index if not exists idx_businesses_settings_nit_normalized
+on businesses ((regexp_replace(lower(coalesce(settings->>'nit', '')), '[^a-z0-9]', '', 'g')));
 create index if not exists idx_subscription_usage_business_type_created on subscription_usage_events(business_id, event_type, created_at desc);
+create index if not exists idx_app_users_email_lower on app_users(lower(email));
 create index if not exists idx_users_business_id on app_users(business_id);
 create index if not exists idx_players_business_game on players(business_id, game_id);
 create index if not exists idx_questionnaires_player on questionnaires(player_id);

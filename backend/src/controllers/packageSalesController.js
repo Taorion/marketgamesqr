@@ -20,7 +20,7 @@ const packageRequestSchema = z.object({
   nit: z.string().trim().max(40).optional().nullable(),
   contact_name: z.string().trim().min(2).max(160),
   company_name: z.string().trim().min(2).max(180),
-  email: z.string().email().max(180),
+  email: z.string().trim().email().max(180),
   phone: z.string().trim().min(7).max(40),
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
@@ -40,7 +40,7 @@ const publicSignupBaseSchema = z.object({
   contact_name: z.string().trim().min(2).max(160),
   company_name: z.string().trim().min(2).max(180).optional().nullable(),
   nit: z.string().trim().min(5).max(40),
-  email: z.string().email().max(180),
+  email: z.string().trim().email().max(180),
   phone: z.string().trim().min(7).max(40),
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
@@ -79,6 +79,50 @@ function slugify(value) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 72) || "cliente";
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function normalizeDocument(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function assertUniqueSignupIdentity(client, body) {
+  const email = normalizeEmail(body.email);
+  const documentId = normalizeDocument(body.nit);
+  if (!email || !documentId) {
+    throw badRequest("Email y documento de facturacion son obligatorios.");
+  }
+
+  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-email:${email}`]);
+  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-document:${documentId}`]);
+
+  const existingUser = await client.query(
+    `select id, is_active
+     from app_users
+     where lower(email) = $1
+     limit 1`,
+    [email]
+  );
+  if (existingUser.rowCount) {
+    throw badRequest("Ya existe un usuario registrado con este correo electronico. Inicia sesion o usa otro correo.");
+  }
+
+  const existingBusiness = await client.query(
+    `select id, name
+     from businesses
+     where regexp_replace(lower(coalesce(settings->>'nit', '')), '[^a-z0-9]', '', 'g') = $1
+     limit 1`,
+    [documentId]
+  );
+  if (existingBusiness.rowCount) {
+    throw badRequest("Ya existe una empresa registrada con este documento o NIT. Inicia sesion o contacta soporte para recuperar el acceso.");
+  }
 }
 
 async function uniqueBusinessSlug(client, baseValue) {
@@ -225,10 +269,7 @@ async function createPrepaidSignup(req, res, next) {
     }
 
     const result = await withTransaction(async (client) => {
-      const existingUser = await client.query("select id from app_users where lower(email) = lower($1)", [body.email]);
-      if (existingUser.rowCount) {
-        throw badRequest("Ya existe un usuario con este email. Inicia sesion o usa otro correo.");
-      }
+      await assertUniqueSignupIdentity(client, body);
 
       const companyName = body.company_name || body.contact_name;
       const slug = await uniqueBusinessSlug(client, companyName);
@@ -278,10 +319,7 @@ async function createPortalSignup(req, res, next) {
     }
 
     const result = await withTransaction(async (client) => {
-      const existingUser = await client.query("select id from app_users where lower(email) = lower($1)", [body.email]);
-      if (existingUser.rowCount) {
-        throw badRequest("Ya existe un usuario con este email. Inicia sesion o usa otro correo.");
-      }
+      await assertUniqueSignupIdentity(client, body);
 
       const companyName = body.company_name || body.contact_name;
       const slug = await uniqueBusinessSlug(client, companyName);
