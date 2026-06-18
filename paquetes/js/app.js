@@ -149,9 +149,12 @@ function selectedBenefits() {
       "Visualizacion de los ultimos 50 leads, sin exportacion",
     ];
   }
+  if (selectedPlan && !selectedPlan.monthly_price_cop) {
+    return (selectedPlan.included || []).slice(0, 6);
+  }
   return [
     ...(selectedPlan?.included || []).slice(0, 5),
-    selectedPackage ? `${Number(selectedPackage.package_size || 0).toLocaleString("es-CO")} tickets iniciales` : "Selecciona tickets iniciales",
+    selectedPackage ? `${Number(selectedPackage.package_size || 0).toLocaleString("es-CO")} tickets iniciales sin vencimiento mensual` : "Selecciona tickets iniciales",
   ];
 }
 
@@ -174,6 +177,10 @@ async function fetchJson(path) {
 }
 
 function renderPackages() {
+  if (mode === "portal" && !selectedPlan?.monthly_price_cop) {
+    packageGrid.innerHTML = "";
+    return;
+  }
   const offers = visiblePackages();
   packageGrid.innerHTML = offers.map((item) => `
     <article class="package-card ${selectedPackage?.code === item.code ? "selected" : ""}">
@@ -183,6 +190,7 @@ function renderPackages() {
       <div class="price">${priceLabel(item)}</div>
       <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
       <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
+      ${mode === "portal" ? '<p class="ticket-balance-note">Saldo acumulado: los tickets no vencen con la mensualidad del portal.</p>' : ""}
       <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir tickets" : "Sumar tickets"}</button>
     </article>
   `).join("");
@@ -204,8 +212,8 @@ function renderPlans() {
         `).join("")}
       </ul>
       <div class="price">${item.monthly_price_cop ? planBillingLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
-      ${item.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Beneficio anual 30% frente al pago mes a mes." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Sumar plan" : "Solicitar cotizacion"}</button>
+      ${item.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Renueva 12 meses de portal con beneficio del 30%. Los tickets van aparte." : "Mensualidad del portal. Los tickets se recargan aparte y no vencen con el mes."}</p>` : ""}
+      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir portal" : "Solicitar cotizacion"}</button>
     </article>
   `).join("");
 
@@ -227,7 +235,7 @@ function renderPlanComparison() {
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
         ${plan.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Anualidad activa con beneficio del 30%." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-        <p>${plan.category === "prepaid" ? "Solo paquetes T50 o T200" : "Tickets se compran aparte por paquete"}</p>
+        <p>${plan.category === "prepaid" ? "Solo paquetes T50 o T200" : "Mensualidad del portal; tickets aparte como saldo sin vencimiento mensual"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -248,8 +256,8 @@ function renderPricingLogic() {
     pricingLogicCopy.textContent = mode === "prepaid"
       ? "Prepago mantiene entrada simple en 50 o 200 tickets. El paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
       : billingCycle === "annual"
-        ? "La anualidad toma el valor de 12 meses del portal y aplica un beneficio del 30%. Los tickets iniciales se cobran aparte segun la capacidad de activacion."
-        : "La mensualidad del portal escala por capacidad operativa: Started, Medium y Premium. Los tickets se cobran aparte segun la capacidad de activacion que requiera la empresa.";
+        ? "La anualidad renueva 12 meses de acceso al portal con beneficio del 30%. Los tickets iniciales se cobran aparte, quedan como saldo y no vencen con el mes."
+        : "La mensualidad del portal escala por capacidad operativa: Started, Medium y Premium. Los tickets se cobran aparte, quedan como saldo y se recargan cuando se agotan.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
     return `
@@ -264,11 +272,11 @@ function renderPricingLogic() {
 
 function syncMode() {
   modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
-  packageGrid.classList.toggle("hidden", false);
   planGrid.classList.toggle("hidden", mode !== "portal");
   billingSwitchPanel?.classList.toggle("hidden", mode !== "portal");
 
   if (mode === "prepaid") {
+    packageGrid.classList.remove("hidden");
     offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Escoge una de las dos recargas prepago";
     offerCopy.textContent = "El validador prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
@@ -286,18 +294,19 @@ function syncMode() {
   }
 
   offerEyebrow.textContent = "Planes mensuales";
-  offerTitle.textContent = "Escoge portal RMS y tickets iniciales";
+  offerTitle.textContent = selectedPlan ? "Ahora escoge tus tickets iniciales" : "Primero escoge tu Portal RMS";
   offerCopy.textContent = billingCycle === "annual"
-    ? "El portal anual se muestra en COP con beneficio del 30% frente al pago mes a mes. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium."
-    : "El portal se muestra en COP por afiliacion mensual. Al suscribirte eliges con cuantos tickets empezar y activas un entorno premium para medir campanas, leads, redenciones y ventas.";
+    ? "La anualidad paga el acceso al portal por 12 meses. Despues eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
+    : "La mensualidad paga el acceso al portal. Despues eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga segun uso.";
   formEyebrow.textContent = "Informacion de activacion";
   formTitle.textContent = "Registro, plan y paquete inicial";
   formCopy.textContent = billingCycle === "annual"
-    ? "El pago total suma la anualidad del portal con beneficio del 30% mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe."
-    : "El pago total suma la mensualidad del portal mas el paquete de tickets elegido. El usuario queda activo cuando Mercado Pago apruebe.";
+    ? "El pago inicial suma la anualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje."
+    : "El pago inicial suma la mensualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje.";
   submitButton.textContent = billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets";
   syncBillingSwitch();
   selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || null;
+  packageGrid.classList.toggle("hidden", !selectedPlan?.monthly_price_cop);
   renderPackages();
   renderPlans();
   renderPricingLogic();
@@ -344,10 +353,10 @@ function renderSelectionBox() {
       <strong>${escapeHtml(selectedPlan?.name || "Plan pendiente")}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <div class="summary-lines">
         <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotizacion" : "Sin plan seleccionado"}</b></div>
-        <div><span>Tickets</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(selectedPackage.price_cop)}` : "Sin paquete seleccionado"}</b></div>
+        <div><span>Tickets</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(selectedPackage.price_cop)}` : "Elige saldo inicial despues del portal"}</b></div>
         <div><span>Total hoy</span><b>${selectedPlan?.monthly_price_cop && selectedPackage ? copMoney(totalData.total_cop) : "Pendiente"}</b></div>
       </div>
-      ${selectedPlan?.monthly_price_cop && billingCycle === "annual" ? `<p>Incluye beneficio anual del 30% frente al pago mes a mes. Los tickets se suman una sola vez al inicio.</p>` : ""}
+      ${selectedPlan?.monthly_price_cop ? `<p>La renovacion cubre el portal. Los tickets son saldo aparte: se consumen por uso y no vencen por cierre de mes.</p>` : ""}
       <ul class="summary-list">
         ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
       </ul>
@@ -364,7 +373,7 @@ function renderSelectionBox() {
   }
 
   const emptyCopy = mode === "portal"
-    ? "Elige primero un plan del portal y luego suma el paquete de tickets inicial. El registro se habilita solo cuando tengas ambos."
+    ? "Elige primero un plan del portal. Despues te mostramos los paquetes para definir con cuantos tickets quieres empezar."
     : "Elige un paquete prepago de 50 o 200 tickets. El registro se habilita cuando confirmes esa seleccion.";
   const html = `
     <span>Resumen de compra</span>
@@ -383,6 +392,11 @@ function renderSelectionBox() {
 
 function selectPackage(code, shouldScroll = true) {
   if (!code) return;
+  if (mode === "portal" && !selectedPlan?.monthly_price_cop) {
+    requestMessage.textContent = "Primero selecciona el plan del portal; luego eliges con cuantos tickets quieres empezar.";
+    planGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
   selectedPackage = packages.find((item) => item.code === code) || selectedPackage;
   if (!selectedPackage) return;
   resetSignupVisibility();
@@ -403,12 +417,29 @@ function selectPlan(code, shouldScroll = true) {
     submitButton.textContent = selectedPlan.monthly_price_cop
       ? billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets"
       : "Solicitar cotizacion";
+    offerTitle.textContent = selectedPlan.monthly_price_cop ? "Ahora escoge tus tickets iniciales" : "Solicita tu portal Global";
+    offerCopy.textContent = selectedPlan.monthly_price_cop
+      ? "Ya elegiste el portal. Ahora define el saldo inicial de tickets; se conserva hasta consumirse y no vence con el mes."
+      : "Global se define por cotizacion para portal, volumen de tickets, sedes, integraciones y soporte.";
+    packageGrid.classList.toggle("hidden", !selectedPlan.monthly_price_cop);
+    renderPackages();
+    if (shouldScroll && selectedPlan.monthly_price_cop) {
+      packageGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 
 function removeSelection(type) {
   resetSignupVisibility();
-  if (type === "plan") selectedPlan = null;
+  if (type === "plan") {
+    selectedPlan = null;
+    selectedPackage = null;
+    packageGrid.classList.add("hidden");
+    offerTitle.textContent = "Primero escoge tu Portal RMS";
+    offerCopy.textContent = billingCycle === "annual"
+      ? "La anualidad paga el acceso al portal por 12 meses. Despues eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
+      : "La mensualidad paga el acceso al portal. Despues eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga segun uso.";
+  }
   if (type === "package") selectedPackage = null;
   renderPackages();
   renderPlans();
@@ -421,7 +452,7 @@ function updateContinueState() {
   continueToSignupButton.disabled = !ready;
   continueToSignupButton.textContent = ready
     ? "Confirmar seleccion y registrar"
-    : mode === "portal" ? "Elige plan y tickets" : "Elige tickets";
+    : mode === "portal" && !selectedPlan ? "Elige primero el portal" : mode === "portal" ? "Elige tickets iniciales" : "Elige tickets";
 }
 
 function continueToSignup() {
@@ -438,8 +469,8 @@ function syncBillingSwitch() {
   if (billingSwitchTitle) billingSwitchTitle.textContent = billingCycle === "annual" ? "Anualidad activa" : "Mensual";
   if (billingSwitchCopy) {
     billingSwitchCopy.textContent = billingCycle === "annual"
-      ? "Pagas 12 meses del portal con beneficio anual del 30%. Los tickets iniciales se suman una sola vez."
-      : "Activa el switch anual para pagar 12 meses con beneficio anual del 30% frente al pago mes a mes.";
+      ? "Pagas 12 meses del portal con beneficio anual del 30%. Los tickets iniciales se compran aparte y quedan como saldo."
+      : "La mensualidad renueva el portal. Los tickets no vencen con el mes y se recargan cuando el saldo se agota.";
   }
 }
 
@@ -541,7 +572,7 @@ async function submitSignup(event) {
     }
     requestMessage.textContent = mode === "prepaid"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
-      : `Cuenta creada para ${data.plan?.name || "el plan del portal"} en ciclo ${billingCycle === "annual" ? "anual" : "mensual"} con ${selectedPackage.package_size} tickets iniciales. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
+      : `Cuenta creada para ${data.plan?.name || "el plan del portal"} en ciclo ${billingCycle === "annual" ? "anual" : "mensual"} con ${selectedPackage.package_size} tickets iniciales como saldo. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
     requestMessage.classList.add("ok");
     window.location.href = checkoutUrl;
   } catch (error) {

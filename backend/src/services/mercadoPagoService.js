@@ -579,7 +579,7 @@ async function createPortalSignupCheckout(client, payload) {
         },
         {
           id: offer.code,
-          title: `${offer.title} - tickets iniciales QR`,
+          title: `${offer.title} - tickets iniciales`,
           quantity: 1,
           unit_price: Number(offer.price_cop),
           currency_id: "COP",
@@ -738,7 +738,7 @@ async function processMercadoPagoWebhook(req) {
     );
     const order = orderResult.rows[0];
     if (!order) {
-      throw notFound("Orden de recarga QR no encontrada.");
+      throw notFound("Orden de recarga de tickets no encontrada.");
     }
 
     let payableOrder = order;

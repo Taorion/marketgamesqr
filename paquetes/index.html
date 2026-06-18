@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Precios Market Games | Tickets prepago y Portal RMS</title>
-  <meta name="description" content="Validador prepago con paquetes de 50 o 200 tickets. Portal RMS mensual con paquetes de tickets para operar campanas, leads y ventas atribuidas.">
+  <meta name="description" content="Elige primero el Portal RMS mensual y luego suma tickets iniciales. Los tickets son saldo acumulado y no vencen con la mensualidad.">
   <meta name="keywords" content="precios tickets, paquetes prepago, validador de tickets, planes portal rms, market games precios, comprar tickets, validar beneficios, dashboard roi">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="theme-color" content="#050816">
@@ -14,18 +14,18 @@
   <meta property="og:type" content="product">
   <meta property="og:site_name" content="Market Games">
   <meta property="og:title" content="Precios Market Games | Tickets prepago y Portal RMS">
-  <meta property="og:description" content="Elige validador prepago o portal mensual para medir campanas, ROI, leads, afiliados, sedes y ventas atribuidas.">
+  <meta property="og:description" content="Elige el portal mensual y luego los tickets iniciales. La mensualidad renueva el acceso; los tickets quedan como saldo disponible.">
   <meta property="og:url" content="https://www.marketgamesqr.com/paquetes/">
   <meta property="og:image" content="https://www.marketgamesqr.com/img/mainimg/post.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Precios Market Games">
-  <meta name="twitter:description" content="Prepago con 50 o 200 tickets. Portal RMS mensual mas tickets iniciales.">
+  <meta name="twitter:description" content="Portal RMS mensual primero, tickets iniciales despues. Los tickets se recargan segun uso.">
   <meta name="twitter:image" content="https://www.marketgamesqr.com/img/mainimg/post.jpg">
   <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="shortcut icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="apple-touch-icon" href="/img/MGLogo-01.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="css/styles.css?v=ticket-pricing-20260617">
+  <link rel="stylesheet" href="css/styles.css?v=portal-first-tickets-20260617">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -76,7 +76,7 @@
       <div>
         <p class="eyebrow">Validador de tickets y Portal RMS</p>
         <h2>Activa un servicio premium de validacion, campanas y revenue con tickets.</h2>
-        <p>El prepago solo permite 50 o 200 tickets. Con Portal RMS pagas la mensualidad y eliges el paquete inicial para operar con tablero, trazabilidad, campanas, leads y ventas atribuidas.</p>
+        <p>Primero eliges el Portal RMS que renueva el acceso mensual. Despues eliges con cuantos tickets quieres empezar; esos tickets quedan como saldo disponible y no vencen con el mes.</p>
         <div class="hero-actions">
           <button class="primary-button" id="startPrepaidButton" type="button">Comprar tickets prepago</button>
           <button class="secondary-button" id="startPortalButton" type="button">Ver planes del portal</button>
@@ -85,7 +85,7 @@
       <div class="selected-box" id="selectedBox">
         <span>Ruta rapida</span>
         <strong>1. Elige</strong>
-        <p>Selecciona paquete o plan, crea tu acceso, paga y entra a usar cuando el pago este confirmado.</p>
+        <p>Para portal: elige plan, suma tickets iniciales, crea tu acceso y paga. Luego recargas tickets solo cuando el saldo se vaya agotando.</p>
       </div>
     </section>
 
@@ -126,12 +126,12 @@
       <article>
         <span class="benefit-icon">4</span>
         <h3>Portal premium por afiliacion mensual</h3>
-        <p>La mensualidad da acceso al entorno RMS y los tickets se compran por paquete segun la capacidad operativa que necesite la empresa.</p>
+        <p>La mensualidad renueva el acceso al entorno RMS. Los tickets son saldo aparte: se consumen por uso y permanecen disponibles aunque cambie el mes.</p>
       </article>
     </section>
 
     <section class="steps-strip">
-      <div><strong>Elige</strong><span>Paquete prepago o plan + tickets</span></div>
+      <div><strong>Elige</strong><span>Portal primero; tickets despues</span></div>
       <div><strong>Registra</strong><span>Empresa, documento de facturacion y acceso</span></div>
       <div><strong>Paga</strong><span>Mercado Pago confirma la activacion</span></div>
       <div><strong>Usa</strong><span>Entra al validador o al portal</span></div>
@@ -152,7 +152,7 @@
           <p id="offerCopy">El prepago solo permite 50 o 200 tickets. Para comprar paquetes superiores debes activar Portal RMS mensual.</p>
         </div>
       </div>
-      <section class="package-grid" id="packageGrid"></section>
+      <section class="package-grid hidden" id="planGrid"></section>
       <div class="billing-switch hidden" id="billingSwitchPanel" aria-label="Ciclo de facturacion del portal">
         <div>
           <span class="eyebrow">Ciclo del portal</span>
@@ -166,7 +166,7 @@
           <span>Anual -30%</span>
         </label>
       </div>
-      <section class="package-grid hidden" id="planGrid"></section>
+      <section class="package-grid" id="packageGrid"></section>
     </section>
 
     <section class="selling-section pricing-logic-section" id="pricingLogicSection">
@@ -208,7 +208,7 @@
         <div>
           <p class="eyebrow">Acceso por plan</p>
           <h2>Que obtiene cada empresa al elegir su nivel.</h2>
-          <p>Prepago activa solo el validador. Started, Medium y Premium cobran el uso mensual del Portal RMS sin tickets incluidos. Los tickets se compran aparte segun la capacidad de activacion que necesite la empresa. Global es por cotizacion cuando la operacion supera el modelo estandar.</p>
+          <p>Prepago activa solo el validador. Started, Medium y Premium cobran el uso mensual del Portal RMS sin tickets incluidos. Los tickets se compran aparte, se recargan cuando el saldo baja y no vencen por cierre de mes. Global es por cotizacion cuando la operacion supera el modelo estandar.</p>
         </div>
       </div>
       <div class="plan-comparison-grid" id="planComparisonGrid"></div>
@@ -236,7 +236,7 @@
         <label><span>Direccion</span><input id="address" type="text" placeholder="Opcional"></label>
         <label class="consent-field full">
           <input id="termsAccepted" type="checkbox" required>
-          <span>Acepto los <a href="/terminos/" target="_blank" rel="noopener">Terminos y Condiciones</a>, incluyendo que los pagos de activacion, mensualidades y paquetes de tickets no son reembolsables una vez confirmado el servicio.</span>
+          <span>Acepto los <a href="/terminos/" target="_blank" rel="noopener">Terminos y Condiciones</a>, incluyendo que la mensualidad renueva el acceso al portal y que los paquetes de tickets quedan como saldo disponible no reembolsable una vez confirmado el pago.</span>
         </label>
         <label class="consent-field full">
           <input id="privacyAccepted" type="checkbox" required>
@@ -248,6 +248,6 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=ticket-pricing-20260617" defer></script>
+  <script src="js/app.js?v=portal-first-tickets-20260617" defer></script>
 </body>
 </html>

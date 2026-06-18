@@ -410,7 +410,7 @@ async function submitQrRecharge(event) {
 
   setBusy(true);
   validatorQrRechargeMessage.textContent = "Creando checkout seguro en Mercado Pago...";
-  showToast("loading", "Preparando pago", "Creando checkout seguro de recarga QR.", 0);
+  showToast("loading", "Preparando pago", "Creando checkout seguro de recarga de tickets.", 0);
   showScreenFeedback("loading", "Preparando pago", "Te enviaremos a Mercado Pago para finalizar la compra.");
   try {
     const data = await api("/api/payments/qr-credits/checkout", {

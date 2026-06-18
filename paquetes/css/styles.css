@@ -451,6 +451,15 @@ label span {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16), 0 16px 40px var(--shadow);
 }
+.ticket-balance-note {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 700;
+}
 .package-card h3 {
   margin: 0;
   font-size: 1.35rem;

@@ -29,17 +29,17 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: "QR200",
     portal_access_fee_cop: STARTED_PORTAL_COP,
-    pricing_note: "Started cobra la afiliacion mensual de entrada y funciona mejor con el paquete T200: valida tickets, muestra los ultimos 100 leads y permite una exportacion mensual.",
+    pricing_note: "Started cobra la afiliacion mensual del portal y funciona mejor con T200 como saldo inicial. El portal se renueva; los tickets se recargan cuando el saldo baja.",
   },
   GROWTH: {
     recommended_start_package: "QR600",
     portal_access_fee_cop: MEDIUM_PORTAL_COP,
-    pricing_note: "Medium multiplica la capacidad operativa: T600 recomendado, dos activaciones mensuales, afiliados, referidos, sales tracker y exportaciones controladas.",
+    pricing_note: "Medium multiplica la capacidad operativa del portal: T600 recomendado como saldo inicial, dos activaciones mensuales, afiliados, referidos, sales tracker y exportaciones controladas.",
   },
   PRO: {
     recommended_start_package: "QR2000",
     portal_access_fee_cop: PREMIUM_PORTAL_COP,
-    pricing_note: "Premium esta pensado para operacion avanzada: T2000 recomendado, cuatro activaciones mensuales, mas sedes, mas usuarios, Focus Mode, Data Explorer y branding completo.",
+    pricing_note: "Premium esta pensado para operacion avanzada del portal: T2000 recomendado como saldo inicial, cuatro activaciones mensuales, mas sedes, mas usuarios, Focus Mode, Data Explorer y branding completo.",
   },
 };
 
@@ -125,6 +125,7 @@ const PLAN_CATALOG = {
       "Visualizacion de los ultimos 100 leads",
       "1 exportacion mensual de leads",
       "Paquete T200 recomendado",
+      "Los tickets quedan como saldo y no vencen con la mensualidad",
     ],
     not_included: [
       "Afiliados y referidos medibles",
@@ -192,6 +193,7 @@ const PLAN_CATALOG = {
       "Sales Tracker",
       "2 sedes y 4 usuarios",
       "Branding de tickets",
+      "Los tickets quedan como saldo y no vencen con la mensualidad",
     ],
     not_included: [
       "Afiliados masivos y equipos grandes",
@@ -260,6 +262,7 @@ const PLAN_CATALOG = {
       "Focus Mode con insights",
       "Data Explorer completo",
       "Branding de tickets y reportes",
+      "Los tickets quedan como saldo y no vencen con la mensualidad",
     ],
     not_included: [],
     qr_monthly_included: 0,

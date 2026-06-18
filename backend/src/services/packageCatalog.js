@@ -35,10 +35,10 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Ticket x600",
-    description: "Primer nivel pospago para campanas con acceso a todos los leads.",
+    description: "Saldo inicial para empresas con portal activo, campanas y acceso a todos los leads.",
     mode_label: "Pospago",
     lead_access: "Lista completa de leads capturados.",
-    expiration_label: "Sin vencimiento.",
+    expiration_label: "No vence con la mensualidad del portal.",
   },
   {
     code: "QR2000",
@@ -48,10 +48,10 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Ticket x2.000",
-    description: "Volumen premium para activaciones recurrentes, referidos y medicion RMS.",
+    description: "Saldo premium para activaciones recurrentes, referidos y medicion RMS.",
     mode_label: "Pospago",
     lead_access: "Lista completa de leads capturados.",
-    expiration_label: "Sin vencimiento.",
+    expiration_label: "No vence con la mensualidad del portal.",
   },
   {
     code: "QR6000",
@@ -61,10 +61,10 @@ const rawPackageOffers = [
     prepaid_allowed: false,
     subscriber_allowed: true,
     title: "Ticket x6.000",
-    description: "Escala de alto alcance para operaciones con multiples activaciones.",
+    description: "Saldo de alto alcance para operaciones con multiples activaciones.",
     mode_label: "Pospago",
     lead_access: "Lista completa de leads capturados.",
-    expiration_label: "Sin vencimiento.",
+    expiration_label: "No vence con la mensualidad del portal.",
   },
 ];
 
