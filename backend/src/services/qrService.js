@@ -8,8 +8,10 @@ const { logValidation, logQrEvent } = require("./auditService");
 const { consumeQrCredit } = require("./qrCreditService");
 
 function buildValidatorUrl(token) {
-  const base = env.publicValidatorUrl.replace(/\/$/, "");
-  return `${base}/?token=${encodeURIComponent(token)}`;
+  const target = new URL("/empresa/", env.publicAppUrl || "http://localhost:3000");
+  target.searchParams.set("view", "validator");
+  target.searchParams.set("token", token);
+  return target.toString();
 }
 
 async function generateQr(data, actor) {

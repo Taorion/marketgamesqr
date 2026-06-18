@@ -105,10 +105,6 @@ function findPackageOffer(code) {
   return QR_PACKAGE_OFFERS.find((offer) => offer.code === String(code || "").trim().toUpperCase());
 }
 
-function prepaidPackageOffers() {
-  return QR_PACKAGE_OFFERS.filter((offer) => offer.prepaid_allowed);
-}
-
 function baseAccessPackageOffers() {
   return QR_PACKAGE_OFFERS.filter((offer) => offer.base_access_allowed);
 }
@@ -122,6 +118,5 @@ module.exports = {
   QR_PACKAGE_OFFERS,
   baseAccessPackageOffers,
   findPackageOffer,
-  prepaidPackageOffers,
   subscriberPackageOffers,
 };

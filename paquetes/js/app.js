@@ -40,11 +40,11 @@ const initialPackageCode = String(urlParams.get("package") || "").toUpperCase();
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
 const initialBillingCycle = String(urlParams.get("billing") || "").toLowerCase();
 const THEME_KEY = "marketgames_portal_theme";
-let mode = initialMode === "portal" ? "portal" : "prepaid";
+let mode = initialMode === "portal" ? "portal" : "base";
 let billingCycle = initialBillingCycle === "annual" ? "annual" : "monthly";
 let packages = [];
 let plans = [];
-let prepaidPlan = null;
+let basePlan = null;
 let subscriberPackages = [];
 let selectedPackage = null;
 let selectedPlan = null;
@@ -113,11 +113,11 @@ function planBillingLabel(plan) {
 }
 
 function visiblePackages() {
-  return packages.filter((item) => mode === "prepaid" ? item.base_access_allowed : item.subscriber_allowed);
+  return packages.filter((item) => mode === "base" ? item.base_access_allowed : item.subscriber_allowed);
 }
 
 function selectedTotal() {
-  if (mode === "prepaid") {
+  if (mode === "base") {
     return {
       total_cop: Number(selectedPackage?.price_cop || 0),
       plan_cop: 0,
@@ -132,7 +132,7 @@ function selectedTotal() {
 }
 
 function selectionComplete() {
-  if (mode === "prepaid") return Boolean(selectedPackage);
+  if (mode === "base") return Boolean(selectedPackage);
   return Boolean(selectedPlan && selectedPackage && selectedPlan.monthly_price_cop);
 }
 
@@ -141,7 +141,7 @@ function resetSignupVisibility() {
 }
 
 function selectedBenefits() {
-  if (mode === "prepaid") {
+  if (mode === "base") {
     return [
       "Portal RMS Base sin mensualidad",
       "Dashboard base, validador interno y Sales Tracker basico",
@@ -191,7 +191,7 @@ function renderPackages() {
       <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
       <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
       <p class="ticket-balance-note">${Number(item.package_size || 0) >= 200 ? "Activa Portal Base sin mensualidad y suma saldo operativo RMS." : "Saldo operativo para generar QR."}</p>
-      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Activar Portal Base" : "Sumar tickets"}</button>
+      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "base" ? "Activar Portal Base" : "Sumar tickets"}</button>
     </article>
   `).join("");
 
@@ -224,7 +224,7 @@ function renderPlans() {
 
 function renderPlanComparison() {
   if (!planComparisonGrid) return;
-  const comparisonPlans = [prepaidPlan, ...plans].filter(Boolean);
+  const comparisonPlans = [basePlan, ...plans].filter(Boolean);
   planComparisonGrid.innerHTML = comparisonPlans.map((plan) => {
     const isFull = plan.code === "GLOBAL";
     const price = plan.monthly_price_cop ? planBillingLabel(plan) : escapeHtml(plan.price_label || "Compra por paquete");
@@ -253,7 +253,7 @@ function renderPricingLogic() {
   if (!pricingLogicGrid) return;
   const visible = visiblePackages();
   if (pricingLogicCopy) {
-    pricingLogicCopy.textContent = mode === "prepaid"
+    pricingLogicCopy.textContent = mode === "base"
       ? "T200 o superior activa Portal Base sin mensualidad. Los tickets son saldo operativo para generar QR, leads, redenciones y ventas medibles."
       : billingCycle === "annual"
         ? "La anualidad renueva 12 meses de acceso al portal con beneficio del 30%. Los tickets iniciales se cobran aparte, quedan como saldo y no vencen con el mes."
@@ -275,7 +275,7 @@ function syncMode() {
   planGrid.classList.toggle("hidden", mode !== "portal");
   billingSwitchPanel?.classList.toggle("hidden", mode !== "portal");
 
-  if (mode === "prepaid") {
+  if (mode === "base") {
     packageGrid.classList.remove("hidden");
     offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Compra tickets y activa tu Portal RMS";
@@ -323,7 +323,7 @@ function renderSelectionBox() {
     });
   };
 
-  if (mode === "prepaid" && selectedPackage) {
+  if (mode === "base" && selectedPackage) {
     const html = `
       <span>Resumen de compra</span>
       <strong>${escapeHtml(selectedPackage.title)}</strong>
@@ -517,7 +517,7 @@ async function submitSignup(event) {
   requestMessage.className = "message";
   requestMessage.textContent = "";
 
-  if (mode === "prepaid" && !selectedPackage) {
+  if (mode === "base" && !selectedPackage) {
     requestMessage.textContent = "Selecciona T200 o superior para activar el Portal Base.";
     requestMessage.classList.add("error");
     return;
@@ -550,10 +550,10 @@ async function submitSignup(event) {
   }
 
   submitButton.disabled = true;
-  requestMessage.textContent = mode === "prepaid" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout del portal...";
+  requestMessage.textContent = mode === "base" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout del portal...";
   try {
-    const path = mode === "prepaid" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
-    const body = mode === "prepaid"
+    const path = mode === "base" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
+    const body = mode === "base"
       ? { ...payload, package_code: selectedPackage.code }
       : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code, billing_cycle: billingCycle };
     const response = await fetch(path, {
@@ -570,7 +570,7 @@ async function submitSignup(event) {
     if (!checkoutUrl) {
       throw new Error("La cuenta fue creada, pero Mercado Pago no devolvio link de pago.");
     }
-    requestMessage.textContent = mode === "prepaid"
+    requestMessage.textContent = mode === "base"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
       : `Cuenta creada para ${data.plan?.name || "el plan del portal"} en ciclo ${billingCycle === "annual" ? "anual" : "mensual"} con ${selectedPackage.package_size} tickets iniciales como saldo. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
     requestMessage.classList.add("ok");
@@ -618,7 +618,7 @@ function renderPaymentStatus() {
     paymentStatusCopy.textContent = "El acceso sigue bloqueado porque el pago no fue aprobado. Puedes registrar una nueva compra o reintentar con otro medio.";
     paymentStatusActionTitle.textContent = "Reintentar pago";
     paymentStatusActionCopy.textContent = "Selecciona de nuevo el paquete o plan y completa el checkout.";
-    paymentStatusPrimaryLink.href = mode === "portal" ? "/paquetes/?mode=portal" : "/paquetes/?mode=prepaid";
+    paymentStatusPrimaryLink.href = mode === "portal" ? "/paquetes/?mode=portal" : "/paquetes/?mode=base";
     paymentStatusPrimaryLink.textContent = "Reintentar";
   }
 }
@@ -631,7 +631,7 @@ async function init() {
     ]);
     packages = packageData.packages || [];
     pricing = planData.pricing || packageData.pricing || pricing;
-    prepaidPlan = planData.portal_base_plan || planData.prepaid_plan || null;
+    basePlan = planData.portal_base_plan || planData.prepaid_plan || null;
     plans = planData.plans || [];
     subscriberPackages = planData.subscriber_packages || packages.filter((item) => item.subscriber_allowed);
     selectedPackage = packages.find((item) => item.code === initialPackageCode) || null;
@@ -651,7 +651,7 @@ async function init() {
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => switchMode(button.dataset.mode, false));
 });
-startPrepaidButton.addEventListener("click", () => switchMode("prepaid"));
+startPrepaidButton.addEventListener("click", () => switchMode("base"));
 startPortalButton.addEventListener("click", () => switchMode("portal"));
 continueToSignupButton?.addEventListener("click", continueToSignup);
 signupForm.addEventListener("submit", submitSignup);

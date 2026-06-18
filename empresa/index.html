@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=ticket-access-portal-base-20260618">
+  <link rel="stylesheet" href="css/styles.css?v=portal-only-validator-20260618">
 </head>
 <body>
   <main class="portal-shell">
@@ -112,7 +112,7 @@
           </button>
           <button class="nav-item" data-view="validator" type="button">
             <span class="material-symbols-outlined">qr_code_scanner</span>
-            <span>Validator</span>
+            <span>Validar QR</span>
           </button>
           <button class="nav-item" data-view="branches" type="button">
             <span class="material-symbols-outlined">storefront</span>
@@ -139,7 +139,7 @@
           <div class="topbar-actions">
             <a class="ghost-button nav-link-button" href="/">Home</a>
             <a class="ghost-button nav-link-button" href="/paquetes/">Planes</a>
-            <a class="ghost-button nav-link-button" href="/qr-validador/">Validador</a>
+            <a class="ghost-button nav-link-button" href="/empresa/?view=validator">Validar QR</a>
             <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
               <span class="material-symbols-outlined">refresh</span>
             </button>
@@ -367,7 +367,7 @@
                         <th>Cliente</th>
                         <th>Beneficio</th>
                         <th>Fecha</th>
-                        <th>Validador</th>
+                        <th>Operacion</th>
                       </tr>
                     </thead>
                     <tbody id="recentRedemptionsTable"></tbody>
@@ -1266,8 +1266,8 @@
           <section class="view-section" data-view="validator">
             <div class="view-head">
               <div>
-                <h2>Validator</h2>
-                <p>Validacion operativa de tickets, redenciones y venta atribuida en la misma interfaz del portal.</p>
+                <h2>Modulo de validacion QR</h2>
+                <p>Validacion operativa de tickets, redenciones y venta atribuida dentro del Portal RMS.</p>
               </div>
               <div class="head-actions">
                 <button class="ghost-button" id="refreshValidatorHistoryButton" type="button">Actualizar historial</button>
@@ -1543,7 +1543,7 @@
                     <input id="adminCampaignLandingUrlInput" type="url">
                   </label>
                   <label class="span-2">
-                    <span>Validator URL</span>
+                    <span>URL de validacion interna</span>
                     <input id="adminCampaignValidatorUrlInput" type="url">
                   </label>
                   <label class="span-2">
@@ -1872,7 +1872,7 @@
           <input id="campaignFormLandingUrl" type="url">
         </label>
         <label class="span-2">
-          <span>Validator URL</span>
+          <span>URL de validacion interna</span>
           <input id="campaignFormValidatorUrl" type="url">
         </label>
         <label class="span-2">
@@ -1953,7 +1953,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-ticket-access-20260618" defer></script>
+  <script src="js/app.js?v=portal-only-validator-20260618" defer></script>
 </body>
 </html>
 

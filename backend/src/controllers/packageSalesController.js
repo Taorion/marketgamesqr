@@ -7,7 +7,6 @@ const { canAccessBusiness } = require("../middleware/auth");
 const {
   QR_PACKAGE_OFFERS,
   findPackageOffer,
-  prepaidPackageOffers,
   subscriberPackageOffers,
 } = require("../services/packageCatalog");
 const { PLAN_CODES, listPlans, normalizePlanCode } = require("../services/subscriptionService");
@@ -157,7 +156,8 @@ async function listPublicSubscriptionPlans(_req, res, next) {
       prepaid_plan: null,
       portal_base_plan: plans.find((plan) => plan.code === PLAN_CODES.TICKET_BASE),
       plans: plans.filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code)),
-      legacy_prepaid_reference: prepaidPackageOffers(),
+      base_access_packages: QR_PACKAGE_OFFERS.filter((offer) => offer.base_access_allowed),
+      legacy_prepaid_reference: [],
       subscriber_packages: subscriberPackageOffers(),
       pricing: {
         display_currency: "COP",

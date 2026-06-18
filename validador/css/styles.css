@@ -873,7 +873,7 @@ textarea {
   }
 }
 
-/* QR Validator dark flow: remove aggressive light panels. */
+/* Legacy validation dark flow: remove aggressive light panels. */
 :root {
   --bg: #020617;
   --surface: #071426;

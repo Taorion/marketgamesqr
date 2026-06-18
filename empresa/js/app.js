@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260618-ticket-access-v1";
+const APP_VERSION = "empresa-20260618-portal-only-validator-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1542,10 +1542,18 @@ function renderShell() {
   requestCampaignButton.textContent = isAdmin()
     ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
     : "Nueva campana";
-  loadWorkspace();
+  loadWorkspace().then(applyInitialRouteParams);
+}
 
-  const urlToken = new URLSearchParams(window.location.search).get("token");
+function applyInitialRouteParams() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedView = urlParams.get("view");
+  const urlToken = urlParams.get("token");
+  if (requestedView && viewFeatureMap[requestedView] !== undefined) {
+    setView(requestedView);
+  }
   if (urlToken) {
+    setView("validator");
     validatorQrTokenInput.value = urlToken;
     validateValidatorToken(urlToken);
   }

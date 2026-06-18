@@ -131,8 +131,16 @@ app.use("/api/public", packageSalesRoutes);
 app.use("/api/payments", paymentRoutes);
 
 app.use(express.static(marketGamesWebRoot));
-app.use("/validador", express.static(path.join(__dirname, "../..", "validador")));
-app.use("/qr-validador", express.static(path.join(__dirname, "../..", "validador")));
+function redirectLegacyValidator(req, res) {
+  const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
+  target.searchParams.set("view", "validator");
+  if (req.query.token) {
+    target.searchParams.set("token", req.query.token);
+  }
+  res.redirect(302, `${target.pathname}${target.search}`);
+}
+
+app.get(["/validador", "/validador/", "/qr-validador", "/qr-validador/"], redirectLegacyValidator);
 app.use("/demo", express.static(path.join(__dirname, "../..", "demo")));
 app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa")));
 app.use("/admin", express.static(path.join(__dirname, "../..", "admin")));

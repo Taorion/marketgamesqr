@@ -18,7 +18,7 @@ const BUSINESS_BRAND_SETTINGS_SQL = `
 
 function publicAppBaseUrl() {
   try {
-    const parsed = new URL(env.publicValidatorUrl);
+    const parsed = new URL(env.publicAppUrl);
     return `${parsed.protocol}//${parsed.host}`;
   } catch {
     return "http://localhost:3000";
@@ -26,8 +26,10 @@ function publicAppBaseUrl() {
 }
 
 function buildValidatorUrl(token) {
-  const base = env.publicValidatorUrl.replace(/\/$/, "");
-  return `${base}/?token=${encodeURIComponent(token)}`;
+  const target = new URL("/empresa/", publicAppBaseUrl());
+  target.searchParams.set("view", "validator");
+  target.searchParams.set("token", token);
+  return target.toString();
 }
 
 function buildClaimUrl(token) {
