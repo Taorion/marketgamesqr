@@ -2,6 +2,9 @@ const express = require("express");
 const { authRequired } = require("../middleware/auth");
 const { requirePortalAccess } = require("../middleware/subscription");
 const {
+  businessAccess,
+  ticketBalance,
+  ticketTransactions,
   getBusinessProfile,
   commandCenterAnalytics,
   businessActivity,
@@ -29,6 +32,9 @@ const router = express.Router();
 
 router.use(authRequired);
 
+router.get("/access", businessAccess);
+router.get("/tickets/balance", ticketBalance);
+router.get("/tickets/transactions", ticketTransactions);
 router.get("/profile", getBusinessProfile);
 router.patch("/profile", updateBusinessProfile);
 router.get("/contacts/feed", contactFeed);

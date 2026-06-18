@@ -3,6 +3,8 @@ const { forbidden, badRequest, notFound } = require("../utils/http");
 const { canAccessBusiness } = require("../middleware/auth");
 
 const PLAN_CODES = {
+  TICKET_BASE: "TICKET_BASE",
+  GROWTH_TEMPORAL: "GROWTH_TEMPORAL",
   PREPAID_QR: "PREPAID_QR",
   STARTER: "STARTER",
   GROWTH: "GROWTH",
@@ -12,6 +14,7 @@ const PLAN_CODES = {
 
 const unlimited = null;
 const SUBSCRIPTION_GRACE_DAYS = 15;
+const BASE_PORTAL_MIN_TICKETS = 200;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const STARTED_PORTAL_COP = 262500;
 const MEDIUM_PORTAL_COP = 1312500;
@@ -29,12 +32,12 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: "QR200",
     portal_access_fee_cop: STARTED_PORTAL_COP,
-    pricing_note: "Started cobra la afiliacion mensual del portal y funciona mejor con T200 como saldo inicial. El portal se renueva; los tickets se recargan cuando el saldo baja.",
+    pricing_note: "Growth mensual desbloquea mas operacion continua sobre el Portal Base: mas historial, mas exportaciones y herramientas de expansion sin cambiar el saldo de tickets.",
   },
   GROWTH: {
     recommended_start_package: "QR600",
     portal_access_fee_cop: MEDIUM_PORTAL_COP,
-    pricing_note: "Medium multiplica la capacidad operativa del portal: T600 recomendado como saldo inicial, dos activaciones mensuales, afiliados, referidos, sales tracker y exportaciones controladas.",
+    pricing_note: "Premium mensual desbloquea afiliados, referidos, mas activaciones, sedes, usuarios, revenue avanzado y capacidad comercial continua.",
   },
   PRO: {
     recommended_start_package: "QR2000",
@@ -44,20 +47,157 @@ const PLAN_PRICING_NOTES = {
 };
 
 const PLAN_CATALOG = {
+  [PLAN_CODES.TICKET_BASE]: {
+    code: PLAN_CODES.TICKET_BASE,
+    name: "Portal Base",
+    category: "ticket_base",
+    monthly_price_cop: null,
+    price_label: "Incluido desde T200",
+    billing_period: "ticket_access",
+    portal_value_cop: 0,
+    recommended_start_package: "QR200",
+    best_for: "Negocios que quieren activar su Portal RMS comprando capacidad operativa, sin mensualidad inicial.",
+    access_summary: "Compra tus primeros 200 tickets y activa dashboard base, QR preventa/postventa, validador, leads, redenciones y Sales Tracker basico.",
+    pricing_note: "No pagas mensualidad por mirar un dashboard. Tus tickets son saldo operativo para generar QR, campanas, leads, redenciones y ventas medibles.",
+    included: [
+      "Portal RMS Base sin mensualidad desde T200",
+      "Dashboard base de campana y revenue atribuido",
+      "1 campana activa",
+      "QR preventa y postventa usando saldo de tickets",
+      "Validador integrado dentro del portal",
+      "Leads visibles por 30 dias",
+      "10 exportaciones de leads al mes",
+      "Sales Tracker basico",
+      "1 sede y 2 usuarios",
+    ],
+    not_included: [
+      "Afiliados y referidos",
+      "Mas de 1 campana activa",
+      "Historial de leads mayor a 30 dias",
+      "Exportaciones superiores a 10 al mes",
+      "Focus Mode, Data Explorer y automatizaciones avanzadas",
+    ],
+    qr_monthly_included: 0,
+    features: {
+      qr_validator: true,
+      qr_prepaid_purchase: true,
+      qr_simple_generator: true,
+      qr_batch_generator: true,
+      template_games: true,
+      portal_access: true,
+      dashboard_basic: true,
+      dashboard_full: false,
+      leads_view: true,
+      leads_export: true,
+      campaign_reports: false,
+      affiliates: false,
+      referrals: false,
+      multi_branch: false,
+      automations: false,
+      api_access: false,
+      white_label: false,
+      advanced_branding: false,
+      campaign_comparison: false,
+      focus_mode: false,
+      data_explorer: false,
+      advanced_reports: false,
+      post_sale_automation: false,
+    },
+    limits: {
+      users: 2,
+      validators: 1,
+      branches: 1,
+      active_campaigns: 1,
+      monthly_qr_included: 0,
+      lead_view_rows: 1000,
+      lead_export_rows_month: 10000,
+      lead_exports_month: 10,
+      metric_exports_month: 0,
+      affiliates: 0,
+      history_days: 30,
+    },
+  },
+  [PLAN_CODES.GROWTH_TEMPORAL]: {
+    code: PLAN_CODES.GROWTH_TEMPORAL,
+    name: "Growth Temporal",
+    category: "growth_temporal",
+    monthly_price_cop: null,
+    price_label: "Incluido 3 meses con campana gamificada",
+    billing_period: "temporary",
+    portal_value_cop: 0,
+    recommended_start_package: "QR200",
+    best_for: "Negocios que compran T200 o mas y activan una campana gamificada disenada por MarketGamesQR.",
+    access_summary: "Prueba Growth durante 3 meses con dashboard completo, embudo, mas historial y mas capacidad operativa. Al vencer vuelve a Portal Base.",
+    pricing_note: "Growth temporal no borra datos al vencer; conserva tickets restantes y restringe funciones premium si no hay suscripcion.",
+    included: [
+      "Todo lo incluido en Portal Base",
+      "Dashboard completo temporal",
+      "Lectura de embudo y revenue avanzada",
+      "Hasta 2 campanas activas",
+      "Historial extendido durante 3 meses",
+      "20 exportaciones de leads al mes",
+      "2 sedes y 4 usuarios",
+      "Campana gamificada con reto, score o test",
+    ],
+    not_included: [
+      "Afiliados y referidos continuos",
+      "API avanzada",
+      "Marca blanca completa",
+      "Soporte Global por cotizacion",
+    ],
+    qr_monthly_included: 0,
+    features: {
+      qr_validator: true,
+      qr_prepaid_purchase: true,
+      qr_simple_generator: true,
+      qr_batch_generator: true,
+      template_games: true,
+      portal_access: true,
+      dashboard_basic: true,
+      dashboard_full: true,
+      leads_view: true,
+      leads_export: true,
+      campaign_reports: true,
+      affiliates: false,
+      referrals: false,
+      multi_branch: true,
+      automations: false,
+      api_access: false,
+      white_label: false,
+      advanced_branding: false,
+      campaign_comparison: true,
+      focus_mode: true,
+      data_explorer: true,
+      advanced_reports: true,
+      post_sale_automation: false,
+    },
+    limits: {
+      users: 4,
+      validators: 4,
+      branches: 2,
+      active_campaigns: 2,
+      monthly_qr_included: 0,
+      lead_export_rows_month: 25000,
+      lead_exports_month: 20,
+      metric_exports_month: 10,
+      affiliates: 0,
+      history_days: 90,
+    },
+  },
   [PLAN_CODES.PREPAID_QR]: {
     code: PLAN_CODES.PREPAID_QR,
-    name: "Prepago",
+    name: "Legacy Validator",
     category: "prepaid",
     monthly_price_cop: null,
     price_label: "Compra por paquete",
     billing_period: "prepaid",
     portal_value_cop: 0,
-    best_for: "Negocios que solo necesitan validar beneficios en tienda con paquetes pequenos.",
-    access_summary: "Acceso al validador de tickets y solo dos recargas prepago: 50 o 200 tickets. Para comprar mas volumen debe pasar al portal mensual.",
-    pricing_note: "Compra tickets por demanda solo en paquetes de 50 o 200. No incluye portal, dashboard avanzado, campanas, afiliados ni exportacion de leads.",
+    best_for: "Clientes legacy que entraron antes del modelo Portal Base por tickets.",
+    access_summary: "Acceso legacy al validador. Compra T200 o superior para activar Portal Base sin mensualidad.",
+    pricing_note: "Plan legacy mantenido por compatibilidad. No se vende como producto separado.",
     included: [
       "Validador de tickets para escanear y redimir beneficios",
-      "Compra de paquetes prepago x50 o x200",
+      "Compatibilidad con paquetes legacy",
       "Generador simple y paquetes descargables",
       "Visualizacion de los ultimos 50 leads",
       "Un usuario propietario y un validador",
@@ -103,7 +243,7 @@ const PLAN_CATALOG = {
   },
   [PLAN_CODES.STARTER]: {
     code: PLAN_CODES.STARTER,
-    name: "Started",
+    name: "Growth Mensual",
     category: "subscription",
     monthly_price_cop: STARTED_PORTAL_COP,
     annual_price_cop: annualCop(STARTED_PORTAL_COP),
@@ -114,17 +254,17 @@ const PLAN_CATALOG = {
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.STARTER.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.STARTER.recommended_start_package,
-    best_for: "Negocios que quieren dejar el validador solo y ordenar sus primeras activaciones medibles.",
-    access_summary: "Afiliacion de entrada con portal, dashboard minimo, graficas de redencion, una activacion mensual, ultimos 100 leads y una exportacion mensual.",
+    best_for: "Negocios que ya activaron Portal Base y quieren mas historial, mas exportaciones y una operacion RMS mas ordenada.",
+    access_summary: "Plan mensual de expansion inicial: conserva el modelo de tickets como saldo operativo y agrega mas capacidad al portal.",
     pricing_note: PLAN_PRICING_NOTES.STARTER.pricing_note,
     included: [
-      "Portal de acceso",
-      "Dashboard minimo",
-      "Analitica de graficas de redencion",
+      "Todo lo incluido en Portal Base",
+      "Dashboard ampliado",
+      "Analitica de redencion y revenue basico",
       "1 tipo de activacion mensual",
-      "Visualizacion de los ultimos 100 leads",
-      "1 exportacion mensual de leads",
-      "Paquete T200 recomendado",
+      "Visualizacion ampliada de leads",
+      "Mas exportaciones mensuales",
+      "Retencion extendida frente al Portal Base",
       "Los tickets quedan como saldo y no vencen con la mensualidad",
     ],
     not_included: [
@@ -147,6 +287,7 @@ const PLAN_CATALOG = {
       leads_export: false,
       campaign_reports: false,
       affiliates: false,
+      referrals: false,
       multi_branch: false,
       automations: false,
       api_access: false,
@@ -158,16 +299,16 @@ const PLAN_CATALOG = {
       branches: 1,
       active_campaigns: 1,
       monthly_qr_included: 0,
-      lead_view_rows: 100,
-      lead_export_rows_month: 100,
-      lead_exports_month: 1,
+      lead_view_rows: 2500,
+      lead_export_rows_month: 25000,
+      lead_exports_month: 20,
       affiliates: 0,
-      history_days: 30,
+      history_days: 90,
     },
   },
   [PLAN_CODES.GROWTH]: {
     code: PLAN_CODES.GROWTH,
-    name: "Medium",
+    name: "Premium",
     category: "subscription",
     monthly_price_cop: MEDIUM_PORTAL_COP,
     annual_price_cop: annualCop(MEDIUM_PORTAL_COP),
@@ -178,8 +319,8 @@ const PLAN_CATALOG = {
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.GROWTH.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.GROWTH.recommended_start_package,
-    best_for: "Empresas que ya capturan leads y necesitan RMS, afiliados, referidos, sedes y ventas atribuidas.",
-    access_summary: "Plan medio con Command Center completo, dos activaciones mensuales, todos los leads, 400 afiliaciones de clientes, 400 referidos, sales tracker, dos sedes y cuatro usuarios.",
+    best_for: "Empresas que necesitan afiliados, referidos, sedes, varias activaciones y analitica RMS avanzada.",
+    access_summary: "Premium mensual con Command Center completo, dos activaciones, afiliados, referidos, sales tracker, sedes, usuarios y reportes avanzados.",
     pricing_note: PLAN_PRICING_NOTES.GROWTH.pricing_note,
     included: [
       "Todo lo incluido en Started",
@@ -215,6 +356,7 @@ const PLAN_CATALOG = {
       leads_export: true,
       campaign_reports: true,
       affiliates: true,
+      referrals: true,
       multi_branch: true,
       automations: true,
       api_access: false,
@@ -235,7 +377,7 @@ const PLAN_CATALOG = {
   },
   [PLAN_CODES.PRO]: {
     code: PLAN_CODES.PRO,
-    name: "Premium",
+    name: "Premium Legacy",
     category: "subscription",
     monthly_price_cop: PREMIUM_PORTAL_COP,
     annual_price_cop: annualCop(PREMIUM_PORTAL_COP),
@@ -279,6 +421,7 @@ const PLAN_CATALOG = {
       leads_export: true,
       campaign_reports: true,
       affiliates: true,
+      referrals: true,
       multi_branch: true,
       automations: true,
       api_access: true,
@@ -336,6 +479,7 @@ const PLAN_CATALOG = {
       leads_export: true,
       campaign_reports: true,
       affiliates: true,
+      referrals: true,
       multi_branch: true,
       automations: true,
       api_access: true,
@@ -380,6 +524,28 @@ function daysUntil(date, now = new Date()) {
   return Math.ceil((date.getTime() - now.getTime()) / MS_PER_DAY);
 }
 
+function isGrowthTemporalActive(row = {}, now = new Date()) {
+  const planType = row.plan_type || row.settings?.access?.plan_type;
+  const expiresAt = dateOrNull(row.growth_expires_at || row.settings?.access?.growth_expires_at);
+  return planType === "growth_temporal" && expiresAt && expiresAt > now;
+}
+
+function effectivePlanCode(row = {}) {
+  const now = new Date();
+  const planType = row.plan_type || row.settings?.access?.plan_type;
+  if (isGrowthTemporalActive(row, now)) {
+    return PLAN_CODES.GROWTH_TEMPORAL;
+  }
+  if (planType === "ticket_base" || planType === "growth_temporal") {
+    return PLAN_CODES.TICKET_BASE;
+  }
+  if (planType === "premium_monthly") {
+    return normalizePlanCode(row.plan_code || row.settings?.subscription?.plan_code || PLAN_CODES.STARTER);
+  }
+  const settingsPlan = row.settings?.subscription?.plan_code || row.settings?.plan_code;
+  return normalizePlanCode(row.plan_code || settingsPlan);
+}
+
 function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_QR]) {
   const now = new Date();
   const rawStatus = row.subscription_status || row.settings?.subscription?.status || "ACTIVE";
@@ -395,11 +561,14 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   };
 
   if (plan.category !== "subscription") {
+    const portalAccessAllowed = ["ticket_base", "growth_temporal"].includes(plan.category)
+      ? (row.portal_status || row.subscription_status || "ACTIVE") === "ACTIVE"
+      : false;
     return {
       raw_status: rawStatus,
-      access_status: "PREPAID",
-      access_allowed: Boolean(plan.features?.qr_validator),
-      portal_access_allowed: false,
+      access_status: plan.category === "prepaid" ? "PREPAID" : (portalAccessAllowed ? "ACTIVE" : "LOCKED"),
+      access_allowed: plan.category === "prepaid" ? Boolean(plan.features?.qr_validator) : portalAccessAllowed,
+      portal_access_allowed: portalAccessAllowed,
       is_subscription: false,
       official_payment_due_at: null,
       grace_period_days: 0,
@@ -450,12 +619,15 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
 }
 
 function planFromBusiness(row = {}) {
-  const settingsPlan = row.settings?.subscription?.plan_code || row.settings?.plan_code;
-  const code = normalizePlanCode(row.plan_code || settingsPlan);
+  const code = effectivePlanCode(row);
   const plan = PLAN_CATALOG[code];
   const lifecycle = subscriptionLifecycle(row, plan);
+  const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
+  const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;
   return {
     ...plan,
+    plan_type: row.plan_type || row.settings?.access?.plan_type || (plan.category === "prepaid" ? "legacy_prepaid" : plan.category),
+    portal_status: row.portal_status || row.settings?.access?.portal_status || null,
     status: row.subscription_status || row.settings?.subscription?.status || "ACTIVE",
     raw_status: lifecycle.raw_status,
     access_status: lifecycle.access_status,
@@ -463,6 +635,10 @@ function planFromBusiness(row = {}) {
     portal_access_allowed: lifecycle.portal_access_allowed,
     started_at: row.subscription_started_at || row.settings?.subscription?.started_at || null,
     current_period_ends_at: row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at || null,
+    growth_started_at: growthStartedAt,
+    growth_expires_at: growthExpiresAt,
+    growth_source: row.growth_source || row.settings?.access?.growth_source || null,
+    days_until_growth_expiration: growthExpiresAt ? Math.max(0, daysUntil(dateOrNull(growthExpiresAt))) : null,
     official_payment_due_at: lifecycle.official_payment_due_at,
     grace_period_days: lifecycle.grace_period_days,
     grace_period_ends_at: lifecycle.grace_period_ends_at,
@@ -479,7 +655,9 @@ function listPlans() {
 
 async function getBusinessSubscription(businessId) {
   const result = await query(
-    `select id, name, slug, settings, plan_code, subscription_status,
+    `select id, name, slug, settings, plan_code, plan_type, portal_status,
+            portal_activated_at, growth_started_at, growth_expires_at, growth_source,
+            subscription_status,
             subscription_started_at, subscription_current_period_ends_at,
             subscription_auto_renew_enabled, subscription_auto_renew_status,
             mercado_pago_preapproval_id, subscription_auto_renew_checkout_url,
@@ -505,6 +683,8 @@ async function setBusinessSubscription(businessId, payload) {
   const result = await query(
     `update businesses
      set plan_code = $2,
+         plan_type = case when $2 in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else plan_type end,
+         portal_status = 'ACTIVE',
          subscription_status = $3,
          subscription_started_at = coalesce(subscription_started_at, now()),
          subscription_current_period_ends_at = $4,
@@ -514,7 +694,9 @@ async function setBusinessSubscription(businessId, payload) {
          ),
          updated_at = now()
      where id = $1 and is_active = true
-     returning id, name, slug, settings, plan_code, subscription_status,
+     returning id, name, slug, settings, plan_code, plan_type, portal_status,
+               portal_activated_at, growth_started_at, growth_expires_at, growth_source,
+               subscription_status,
                subscription_started_at, subscription_current_period_ends_at,
                subscription_auto_renew_enabled, subscription_auto_renew_status,
                mercado_pago_preapproval_id, subscription_auto_renew_checkout_url,
@@ -621,6 +803,123 @@ async function assertLimitForBusiness(businessId, limitKey, current, label) {
   return subscription;
 }
 
+function featurePrompts(plan = {}) {
+  return {
+    portal_locked: {
+      title: "Activa tu Portal RMS",
+      message: "Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad.",
+      cta: "Comprar T200",
+      url: "/paquetes/?package=QR200",
+    },
+    tickets_empty: {
+      title: "Tickets insuficientes",
+      message: "No tienes tickets suficientes para esta accion. Compra tickets para seguir generando QR y campanas medibles.",
+      cta: "Comprar tickets",
+      url: "/paquetes/",
+    },
+    affiliates: {
+      title: "Afiliados y referidos son Premium",
+      message: "Activa afiliados y referidos para medir voz a voz con ventas reales.",
+      cta: "Ver Premium",
+      url: "/paquetes/?mode=portal&plan=GROWTH",
+    },
+    active_campaigns: {
+      title: "Mas campanas simultaneas",
+      message: `Tu ${plan.name || "portal"} incluye ${plan.limits?.active_campaigns || 1} campana activa. Para crear mas campanas simultaneas, activa Growth o Premium.`,
+      cta: "Ver planes",
+      url: "/paquetes/?mode=portal",
+    },
+    lead_retention: {
+      title: "Historial extendido",
+      message: "Tus leads de mas de 30 dias estan protegidos en Growth/Premium. Activa un plan para consultar historial extendido.",
+      cta: "Desbloquear historial",
+      url: "/paquetes/?mode=portal&plan=STARTER",
+    },
+    exports: {
+      title: "Exportaciones agotadas",
+      message: "Ya usaste el limite de exportaciones de este mes. Desbloquea mas exportaciones con Growth o Premium.",
+      cta: "Ver planes",
+      url: "/paquetes/?mode=portal",
+    },
+    branches: {
+      title: "Sedes adicionales",
+      message: "Desbloquea sedes para comparar rendimiento por punto de venta.",
+      cta: "Ver Premium",
+      url: "/paquetes/?mode=portal&plan=GROWTH",
+    },
+    advanced_analytics: {
+      title: "Analisis avanzado",
+      message: "Desbloquea analisis avanzado para explorar cada dato, comparar campanas y entender mejor tu revenue.",
+      cta: "Ver Premium",
+      url: "/paquetes/?mode=portal&plan=GROWTH",
+    },
+    gamified_campaign: {
+      title: "Campana gamificada",
+      message: "Activa una campana gamificada y prueba Growth durante 3 meses.",
+      cta: "Activar campana gamificada",
+      url: "/paquetes/?service=gamified-campaign",
+    },
+  };
+}
+
+async function getBusinessAccess(businessId) {
+  const subscription = await getBusinessSubscription(businessId);
+  const plan = subscription.plan;
+  const [account, activeCampaigns, users, branches, leadExports] = await Promise.all([
+    query("select * from business_qr_credit_accounts where business_id = $1", [businessId]),
+    query("select count(*)::int as total from campaigns where business_id = $1 and status = 'ACTIVE'", [businessId]),
+    query("select count(*)::int as total from app_users where business_id = $1 and is_active = true", [businessId]),
+    query("select count(*)::int as total from branches where business_id = $1 and is_active = true", [businessId]),
+    monthlyUsage(businessId, "lead_export"),
+  ]);
+  const ticketAccount = account.rows[0] || {};
+  const ticketBalance = Number(ticketAccount.qr_balance || 0);
+  const activeCampaignLimit = plan.limits?.active_campaigns ?? null;
+  const userLimit = plan.limits?.users ?? null;
+  const branchLimit = plan.limits?.branches ?? null;
+  const exportLimitMonthly = plan.limits?.lead_exports_month ?? null;
+  const leadRetentionDays = plan.limits?.history_days ?? null;
+  const features = plan.features || {};
+  const growthExpiresAt = dateOrNull(plan.growth_expires_at);
+
+  return {
+    business_id: businessId,
+    business_name: subscription.business_name,
+    planCode: plan.code,
+    planType: plan.plan_type,
+    planName: plan.name,
+    portalStatus: plan.portal_access_allowed ? "ACTIVE" : "LOCKED",
+    ticketBalance,
+    ticketAccount: account.rows[0] || null,
+    activeCampaignLimit,
+    activeCampaignCount: Number(activeCampaigns.rows[0]?.total || 0),
+    userLimit,
+    userCount: Number(users.rows[0]?.total || 0),
+    branchLimit,
+    branchCount: Number(branches.rows[0]?.total || 0),
+    exportLimitMonthly,
+    exportCountMonth: Number(leadExports || 0),
+    leadRetentionDays,
+    canUseAffiliates: Boolean(features.affiliates),
+    canUseReferrals: Boolean(features.referrals || features.affiliates),
+    canUseAdvancedReports: Boolean(features.advanced_reports || features.campaign_reports),
+    canUseCampaignComparison: Boolean(features.campaign_comparison || features.dashboard_full),
+    canUseFocusMode: Boolean(features.focus_mode || features.dashboard_full),
+    canUseDataExplorer: Boolean(features.data_explorer || features.dashboard_full),
+    canUseAutomation: Boolean(features.automations),
+    canUseBranding: Boolean(features.advanced_branding || features.white_label),
+    canUsePostSaleAutomation: Boolean(features.post_sale_automation || features.automations),
+    canUseValidator: Boolean(features.qr_validator),
+    canGeneratePreSaleQR: Boolean(features.qr_batch_generator || features.qr_simple_generator),
+    canGeneratePostSaleQR: Boolean(features.qr_simple_generator),
+    growthStartedAt: plan.growth_started_at || null,
+    growthExpiresAt: plan.growth_expires_at || null,
+    daysUntilGrowthExpiration: growthExpiresAt ? Math.max(0, daysUntil(growthExpiresAt)) : null,
+    prompts: featurePrompts(plan),
+    subscription,
+  };
+}
+
 function publicSubscription(subscription) {
   return {
     business_id: subscription.business_id,
@@ -632,7 +931,9 @@ function publicSubscription(subscription) {
 module.exports = {
   PLAN_CODES,
   PLAN_CATALOG,
+  BASE_PORTAL_MIN_TICKETS,
   SUBSCRIPTION_GRACE_DAYS,
+  getBusinessAccess,
   listPlans,
   normalizePlanCode,
   planFromBusiness,

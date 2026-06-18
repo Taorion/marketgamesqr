@@ -10,7 +10,7 @@ const {
   prepaidPackageOffers,
   subscriberPackageOffers,
 } = require("../services/packageCatalog");
-const { listPlans, normalizePlanCode } = require("../services/subscriptionService");
+const { PLAN_CODES, listPlans, normalizePlanCode } = require("../services/subscriptionService");
 const {
   createPrepaidSignupCheckout,
   createPortalSignupCheckout,
@@ -154,9 +154,10 @@ async function listPublicSubscriptionPlans(_req, res, next) {
   try {
     const plans = listPlans();
     res.json({
-      prepaid_plan: plans.find((plan) => plan.code === "PREPAID_QR"),
-      plans: plans.filter((plan) => plan.category === "subscription"),
-      prepaid_reference: prepaidPackageOffers(),
+      prepaid_plan: null,
+      portal_base_plan: plans.find((plan) => plan.code === PLAN_CODES.TICKET_BASE),
+      plans: plans.filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code)),
+      legacy_prepaid_reference: prepaidPackageOffers(),
       subscriber_packages: subscriberPackageOffers(),
       pricing: {
         display_currency: "COP",
@@ -219,8 +220,8 @@ async function createPrepaidSignup(req, res, next) {
   try {
     const body = validate(prepaidSignupSchema, req.body);
     const offer = findPackageOffer(body.package_code);
-    if (!offer || !offer.prepaid_allowed) {
-      throw badRequest("El validador prepago solo permite paquetes de 50 o 200 tickets.");
+    if (!offer || !offer.base_access_allowed || Number(offer.package_size || 0) < 200) {
+      throw badRequest("Compra T200 o superior para activar tu Portal RMS sin mensualidad.");
     }
 
     const result = await withTransaction(async (client) => {
@@ -234,9 +235,9 @@ async function createPrepaidSignup(req, res, next) {
       const passwordHash = await bcrypt.hash(body.password, 12);
       const businessResult = await client.query(
         `insert into businesses (name, slug, settings, plan_code, subscription_status, is_active)
-         values ($1, $2, $3::jsonb, 'PREPAID_QR', 'PENDING_PAYMENT', false)
+         values ($1, $2, $3::jsonb, $4, 'PENDING_PAYMENT', false)
          returning *`,
-        [companyName, slug, JSON.stringify(signupSettings(body, "prepaid_qr_validator"))]
+        [companyName, slug, JSON.stringify(signupSettings(body, "ticket_base_access")), PLAN_CODES.TICKET_BASE]
       );
       const business = businessResult.rows[0];
       const userResult = await client.query(

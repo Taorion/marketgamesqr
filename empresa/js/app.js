@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260617-ticket-balance-v1";
+const APP_VERSION = "empresa-20260618-ticket-access-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -407,6 +407,7 @@ let state = {
   summary: null,
   businessProfile: null,
   subscription: null,
+  access: null,
   campaignGroups: null,
   campaigns: [],
   adminCampaigns: [],
@@ -1005,7 +1006,7 @@ function subscriptionAccessLabel(plan = {}) {
     ACTIVE: "Activa",
     GRACE: "En gracia",
     LOCKED: "Bloqueada",
-    PREPAID: "Prepago",
+    PREPAID: "Legacy",
     CANCELLED: "Cancelada",
     PAUSED: "Pausada",
   };
@@ -1014,7 +1015,7 @@ function subscriptionAccessLabel(plan = {}) {
 
 function subscriptionTimingText(plan = {}) {
   if (plan.category !== "subscription") {
-    return "Cuenta prepago: no tiene fecha mensual de renovacion.";
+    return "Portal Base: no tiene fecha mensual de renovacion.";
   }
   if (!plan.official_payment_due_at) {
     return "Mensualidad activa sin fecha oficial de renovacion configurada.";
@@ -1242,17 +1243,22 @@ function renderSubscriptionBanner() {
     return;
   }
   const limits = planLimits();
+  const access = state.access || {};
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
-  subscriptionPlanSummary.textContent = plan.category === "prepaid"
-    ? "Cliente prepago: puedes ver una muestra de 20 leads. El historial completo, exportaciones y revenue se desbloquean con Portal RMS mensual."
-    : `${subscriptionAccessLabel(plan)}: mensualidad del portal activa. Los tickets se compran por recarga separada.`;
+  subscriptionPlanSummary.textContent = plan.category === "ticket_base"
+    ? `Portal Base activo sin mensualidad. Saldo operativo: ${formatNumber(access.ticketBalance || state.qrCreditAccount?.qr_balance || 0)} tickets.`
+    : plan.category === "growth_temporal"
+      ? `Growth temporal activo${access.daysUntilGrowthExpiration !== null && access.daysUntilGrowthExpiration !== undefined ? `: ${access.daysUntilGrowthExpiration} dias restantes` : ""}. Conservas tus tickets al volver a Base.`
+      : plan.category === "prepaid"
+        ? "Acceso legacy: compra T200 para activar Portal Base con dashboard, validador interno y Sales Tracker."
+        : `${subscriptionAccessLabel(plan)}: upgrade mensual activo. Los tickets se compran y consumen como saldo operativo.`;
   if (subscriptionTiming) {
     subscriptionTiming.textContent = subscriptionTimingText(plan);
   }
   subscriptionBanner.dataset.accessStatus = plan.access_status || plan.status || "ACTIVE";
   subscriptionLimits.innerHTML = [
     ["Estado", subscriptionAccessLabel(plan)],
-    ["Tickets incluidos", limits.monthly_qr_included],
+    ["Saldo tickets", access.ticketBalance ?? state.qrCreditAccount?.qr_balance ?? 0],
     ["Usuarios", limits.users],
     ["Sedes", limits.branches],
     ["Campanas", limits.active_campaigns],
@@ -1289,14 +1295,14 @@ function planBenefitList(plan) {
 
 function renderSubscriptionPricing() {
   if (!subscriptionPlansGrid) return;
-  const plans = (state.subscriptionPlans || []).filter((plan) => plan.category === "subscription");
+  const plans = (state.subscriptionPlans || []).filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code));
   const currentCode = state.subscription?.plan?.code;
   if (!plans.length) {
     subscriptionPlansGrid.innerHTML = '<p class="table-secondary">No se pudieron cargar los planes del portal.</p>';
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "El portal y los paquetes se muestran en COP. El prepago solo compra 50 o 200 tickets; los suscriptores acceden a paquetes superiores.";
+    subscriptionPricingNote.textContent = "Portal Base se activa desde T200 sin mensualidad. Growth y Premium agregan mas campanas, historial, exportaciones, sedes, afiliados, referidos y analitica avanzada.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotizacion" : "tickets por recarga";
@@ -1336,7 +1342,7 @@ function renderSubscriptionRenewal() {
   if (!subscriptionRenewalPlanSelect || !subscriptionRenewalButton) return;
   const plan = state.subscription?.plan || {};
   const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop);
-  const hasMonthlyPlan = plan.category === "subscription";
+  const hasMonthlyPlan = ["subscription", "ticket_base", "growth_temporal"].includes(plan.category);
   const autoRenew = plan.auto_renew || {};
 
   subscriptionRenewalPlanSelect.innerHTML = plans.length
@@ -1349,7 +1355,7 @@ function renderSubscriptionRenewal() {
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
   if (subscriptionAutoRenewButton) {
-    subscriptionAutoRenewButton.disabled = !hasMonthlyPlan || !plans.length || autoRenew.enabled;
+    subscriptionAutoRenewButton.disabled = plan.category !== "subscription" || !plans.length || autoRenew.enabled;
     subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Activar cobro automatico";
   }
   if (subscriptionAutoRenewStatus) {
@@ -1361,7 +1367,7 @@ function renderSubscriptionRenewal() {
     subscriptionAutoRenewStatus.textContent = autoRenewLabel;
   }
   if (accountBillingStatus) {
-    accountBillingStatus.textContent = hasMonthlyPlan ? subscriptionAccessLabel(plan) : "Solo prepago";
+    accountBillingStatus.textContent = hasMonthlyPlan ? subscriptionAccessLabel(plan) : "Portal no activado";
     const className = plan.access_status === "LOCKED" ? "danger" : plan.access_status === "GRACE" ? "pending" : hasMonthlyPlan ? "ok" : "pending";
     accountBillingStatus.className = `status-chip ${className}`;
   }
@@ -1369,7 +1375,7 @@ function renderSubscriptionRenewal() {
     if (hasMonthlyPlan) {
       setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.`, "info");
     } else {
-      setInlineMessage(subscriptionRenewalMessage, "Tu cuenta prepago no tiene mensualidad para renovar. Puedes comprar paquetes de tickets.", "info");
+      setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites mas herramientas.", "info");
     }
   }
 }
@@ -1403,7 +1409,7 @@ function renderAccountView() {
   setAccountText(accountUserBusiness, business.name || user.business_id);
   setAccountText(accountUserId, user.id);
   setAccountText(accountPlanName, plan.name || plan.code);
-  setAccountText(accountType, plan.category === "prepaid" ? "Prepago" : (plan.billing_period === "monthly" ? "Suscripcion mensual" : plan.category));
+  setAccountText(accountType, plan.category === "ticket_base" ? "Portal Base" : plan.category === "growth_temporal" ? "Growth temporal" : (plan.billing_period === "monthly" ? "Suscripcion mensual" : plan.category));
   setAccountText(accountPlanStatus, subscriptionAccessLabel(plan));
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
@@ -1565,8 +1571,8 @@ async function login(event) {
     const redirectTo = loginRedirectForSession(data);
     if (redirectTo) {
       saveValidatorSession(data);
-      setInlineMessage(loginError, "Acceso prepago detectado. Abriendo Validador...", "success");
-      showFeedback("Tu plan prepago usa el ticket Validador simple. Te estamos llevando alli.", "success", { title: "Acceso prepago", timeout: 0 });
+      setInlineMessage(loginError, "Acceso legacy detectado. Abriendo modulo Validador...", "success");
+      showFeedback("Tu acceso usa el modulo Validador. Compra T200 para activar Portal Base.", "success", { title: "Acceso legacy", timeout: 0 });
       window.location.assign(redirectTo);
       return;
     }
@@ -1653,7 +1659,7 @@ function campaignAssociationOptions(selectedValue = "", options = {}) {
     ? "Crea una campana antes de asociar tickets"
     : shouldForceCampaign || !allowNoCampaign
       ? "Selecciona campana / activacion"
-      : "Sin campana: activacion prepago";
+      : "Sin campana: activacion por tickets";
   const defaultOption = `<option value="" ${shouldForceCampaign || !allowNoCampaign ? "disabled" : ""}>${defaultLabel}</option>`;
   return [
     defaultOption,
@@ -1815,6 +1821,7 @@ async function loadWorkspace() {
     || session?.user?.business?.settings?.logo_data_url);
   const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
   const requests = [
+    apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
     api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
     apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null),
     api("/api/business/campaigns", { headers: authHeaders() }),
@@ -1830,7 +1837,8 @@ async function loadWorkspace() {
   }
 
   try {
-    const [dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, activityData, adminCampaignData] = await Promise.all(requests);
+    const [accessData, dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, activityData, adminCampaignData] = await Promise.all(requests);
+    state.access = accessData.access || null;
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
     state.activityVersion = activityData.activity?.version || state.activityVersion || "";
@@ -1839,7 +1847,7 @@ async function loadWorkspace() {
     state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
     state.campaignGroups = campaignData.groups || null;
     state.campaigns = campaignData.campaigns || [];
-    state.qrCreditAccount = creditData.credit_account || businessProfileData.credit_account || null;
+    state.qrCreditAccount = accessData.access?.ticketAccount || creditData.credit_account || businessProfileData.credit_account || null;
     state.subscriptionPlans = subscriptionPlansData.plans || [];
     state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
     state.pricing = subscriptionPlansData.pricing || state.pricing;
@@ -1964,8 +1972,8 @@ async function refreshLiveBusinessData() {
 }
 
 async function loadPrepaidValidatorWorkspace() {
-  showFeedback("Cargando muestra de leads y herramientas prepago.", "loading", { title: "Acceso prepago", timeout: 0 });
-  showBusyOverlay("Acceso prepago", "Preparando saldo de tickets, paquetes y muestra comercial de leads.");
+  showFeedback("Cargando saldo de tickets y herramientas del portal.", "loading", { title: "Portal por tickets", timeout: 0 });
+  showBusyOverlay("Portal por tickets", "Preparando saldo operativo, paquetes y muestra comercial de leads.");
   refreshButton.disabled = true;
 
   state.dashboard = null;
@@ -1991,7 +1999,8 @@ async function loadPrepaidValidatorWorkspace() {
       || session?.user?.business?.logo_data_url
       || session?.user?.business?.settings?.logo_data_url);
     const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
-    const [creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData] = await Promise.all([
+    const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData] = await Promise.all([
+      apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
       apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
       apiSafe("/api/public/packages", {}, { packages: [] }),
       apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
@@ -2001,8 +2010,9 @@ async function loadPrepaidValidatorWorkspace() {
     ]);
 
     mergeBusinessProfile(businessProfileData.business || null);
+    state.access = accessData.access || state.access || null;
     state.subscription = businessProfileData.subscription || session.user?.subscription || state.subscription;
-    state.qrCreditAccount = creditData.credit_account || null;
+    state.qrCreditAccount = accessData.access?.ticketAccount || creditData.credit_account || null;
     state.qrPackageOffers = packageData.packages || [];
     state.subscriptionPlans = subscriptionPlansData.plans || [];
     state.prepaidReference = subscriptionPlansData.prepaid_reference || packageData.packages || [];
@@ -2019,7 +2029,7 @@ async function loadPrepaidValidatorWorkspace() {
     renderStrategicQrView();
     renderValidatorHistory([]);
     setView("strategic-qr");
-    showFeedback("Crea tickets individuales o paquetes con tus tickets prepago. La muestra de 20 leads queda disponible para medir resultados y Portal RMS desbloquea historial completo y exportacion.", "success", { title: "Herramienta prepago lista" });
+    showFeedback("Crea tickets individuales o paquetes con tu saldo operativo. Portal Base muestra el historial permitido y Growth/Premium desbloquea mas profundidad.", "success", { title: "Herramientas listas" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
   } finally {
@@ -4734,7 +4744,7 @@ function renderStrategicQrView() {
 
 function renderQrCreditShop() {
   const isSubscription = currentPlan().category === "subscription";
-  const offers = (state.qrPackageOffers || []).filter((offer) => isSubscription ? offer.subscriber_allowed : offer.prepaid_allowed);
+  const offers = (state.qrPackageOffers || []).filter((offer) => isSubscription ? offer.subscriber_allowed : offer.base_access_allowed);
   qrCreditPackageSelect.innerHTML = offers.length
     ? offers.map((offer) => `
       <option value="${escapeHtml(offer.code)}">
@@ -4752,7 +4762,7 @@ function renderQrCreditShop() {
     const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
     const rechargeCopy = isSubscription
       ? "Como suscriptor puedes comprar paquetes superiores en COP."
-      : "Prepago solo permite 50 o 200 tickets. Los paquetes se muestran en COP.";
+      : "T200 o superior activa Portal Base. Los paquetes se muestran en COP.";
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
 
@@ -8083,7 +8093,7 @@ function renderLeadsView() {
         <td colspan="9">
           <div class="empty-state">
             <strong>${escapeHtml(gate.title || "Ya tienes leads reales. Ahora necesitas el portal.")}</strong>
-            <p>${escapeHtml(gate.message || "El prepago solo muestra una parte de tus contactos. El plan mensual desbloquea el historial completo.")}</p>
+            <p>${escapeHtml(gate.message || "Portal Base muestra el historial permitido. Growth/Premium desbloquea historial completo y mas exportaciones.")}</p>
             <p>Estas viendo ${escapeHtml(sampleRows.length)} de ${escapeHtml(gate.total_available || sampleRows.length)} contactos. ${escapeHtml(gate.hidden_count || 0)} quedan reservados para Portal RMS.</p>
             <a class="primary-button compact" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
           </div>

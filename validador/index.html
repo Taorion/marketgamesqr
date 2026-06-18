@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Validador Universal QR</title>
+  <title>Modulo Validador | MarketGamesQR</title>
   <meta name="description" content="Acceso privado al QR Validator de Market Games para validar beneficios y redenciones.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#075985">
@@ -12,7 +12,7 @@
   <link rel="shortcut icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="apple-touch-icon" href="/img/MGLogo-01.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="css/styles.css?v=validator-ticket-balance-20260617">
+  <link rel="stylesheet" href="css/styles.css?v=validator-ticket-access-20260618">
 </head>
 <body>
   <div class="feedback-toast hidden" id="feedbackToast" role="status" aria-live="polite">
@@ -36,7 +36,7 @@
       <div class="brand-block">
         <img class="brand-mark brand-logo" src="/img/MGLogo-01.png" alt="Market Games QR">
         <div>
-          <p class="eyebrow">Validador universal</p>
+          <p class="eyebrow">Modulo interno del Portal RMS</p>
           <h1>Redenciones multiempresa</h1>
         </div>
       </div>
@@ -99,7 +99,7 @@
           </label>
           <button class="primary-button" id="validatorQrRechargeButton" type="submit">Recargar tickets</button>
         </form>
-        <p class="status-line" id="validatorQrRechargeMessage">El pago confirmado suma tickets al saldo de este negocio. Prepago solo permite 50 o 200.</p>
+        <p class="status-line" id="validatorQrRechargeMessage">El pago confirmado suma tickets al saldo operativo del negocio. T200 o superior activa Portal Base.</p>
       </section>
 
       <section class="panel post-sale-generator hidden" id="postSaleGeneratorPanel">
@@ -343,6 +343,6 @@
   </main>
 
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js" defer></script>
+  <script src="js/app.js?v=validator-ticket-access-20260618" defer></script>
 </body>
 </html>

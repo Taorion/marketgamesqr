@@ -323,7 +323,7 @@ function renderPostSaleCreditChip() {
 }
 
 function renderQrRechargeShop() {
-  const packages = (state.qrPackageOffers || []).filter((offer) => offer.prepaid_allowed);
+  const packages = (state.qrPackageOffers || []).filter((offer) => offer.base_access_allowed || offer.subscriber_allowed);
   validatorQrPackageSelect.innerHTML = packages.map((offer) => `
     <option value="${escapeHtml(offer.code)}">
       ${escapeHtml(offer.title)} - ${formatNumber(offer.package_size)} tickets - ${packagePriceLabel(offer)}
@@ -342,7 +342,7 @@ function renderQrRechargeShop() {
 
   validatorQrRechargeButton.disabled = false;
   if (account) {
-    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. Precios en COP. Para paquetes superiores, dashboard y medicion avanzada, activa Portal RMS.`;
+    validatorQrRechargeMessage.textContent = `Saldo actual: ${formatNumber(account.qr_balance)} tickets. T200 o superior activa Portal Base; Growth/Premium desbloquea mas historial y analitica.`;
   } else {
     validatorQrRechargeMessage.textContent = "El pago confirmado crea o incrementa la cartera de tickets QR.";
   }
@@ -743,7 +743,7 @@ async function submitPostSaleQr(event) {
         metadata: {
           attribution_source: activationSource,
           attribution_subject: activationSubject,
-          qr_creation_context: "validator_prepaid_unit",
+          qr_creation_context: "validator_module_unit",
         },
         expires_mode: postSaleExpiresModeInput.value,
         benefit: {
@@ -903,7 +903,7 @@ function renderHistory(redemptions, leadGate = null) {
     historyList.innerHTML = leadGate?.locked
       ? `<div class="empty-state">
           <strong>${escapeHtml(leadGate.title || "Desbloquea el portal")}</strong>
-          <p>${escapeHtml(leadGate.message || "El plan prepago solo muestra una parte del historial.")}</p>
+          <p>${escapeHtml(leadGate.message || "Portal Base muestra el historial permitido por tu nivel actual.")}</p>
           <a class="primary-button compact" href="${escapeHtml(leadGate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
         </div>`
       : '<p class="empty-state">Todavia no hay redenciones registradas.</p>';
@@ -922,8 +922,8 @@ function renderHistory(redemptions, leadGate = null) {
   const gateNotice = leadGate?.locked
     ? `<div class="empty-state">
         <strong>${escapeHtml(leadGate.title || "Desbloquea todos tus leads")}</strong>
-        <p>${escapeHtml(leadGate.message || "El plan prepago solo muestra una muestra del historial.")}</p>
-        <p>Estas viendo ${escapeHtml(redemptions.length)} de ${escapeHtml(leadGate.total_available || redemptions.length)} registros. ${escapeHtml(leadGate.hidden_count || 0)} quedan reservados para Portal RMS.</p>
+        <p>${escapeHtml(leadGate.message || "Portal Base muestra el historial permitido por tu nivel actual.")}</p>
+        <p>Estas viendo ${escapeHtml(redemptions.length)} de ${escapeHtml(leadGate.total_available || redemptions.length)} registros. ${escapeHtml(leadGate.hidden_count || 0)} quedan reservados para Growth/Premium.</p>
         <a class="primary-button compact" href="${escapeHtml(leadGate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Ver todos con Portal RMS</a>
       </div>`
     : "";

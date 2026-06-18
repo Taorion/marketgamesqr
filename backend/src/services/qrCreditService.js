@@ -1,6 +1,6 @@
 const { badRequest } = require("../utils/http");
 
-const QR_PACKAGES = [50, 200, 500, 1000, 2000, 4000, 8000];
+const QR_PACKAGES = [50, 200, 500, 1000, 2000, 5000, 10000];
 const INTERNAL_UNIT_PRICE_COP = 1000;
 
 function assertValidPackage(packageSize) {
@@ -212,6 +212,60 @@ async function consumeQrCredit(client, businessId, qrCodeId, userId = null) {
   return consumeQrCredits(client, businessId, 1, qrCodeId, userId, "QR generado por experiencia publica o portal.");
 }
 
+async function getTicketBalance(client, businessId) {
+  const account = await ensureCreditAccount(client, businessId);
+  return mapPublicCreditAccount(account);
+}
+
+async function hasEnoughTickets(client, businessId, amount) {
+  const account = await ensureCreditAccount(client, businessId);
+  return Number(account.qr_balance || 0) >= Number(amount || 0);
+}
+
+async function consumeTickets(client, businessId, amount, reason, metadata = {}) {
+  return consumeQrCredits(
+    client,
+    businessId,
+    amount,
+    metadata.qr_code_id || null,
+    metadata.user_id || null,
+    reason
+  );
+}
+
+async function refundTickets(client, businessId, amount, reason, metadata = {}) {
+  const quantity = Number(amount || 0);
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw badRequest("La cantidad de tickets a devolver debe ser mayor a 0.");
+  }
+  const account = await ensureCreditAccount(client, businessId);
+  const nextBalance = Number(account.qr_balance || 0) + quantity;
+  const updated = await client.query(
+    `update business_qr_credit_accounts
+     set qr_balance = $2,
+         updated_at = now()
+     where business_id = $1
+     returning *`,
+    [businessId, nextBalance]
+  );
+  await client.query(
+    `insert into business_qr_credit_ledger
+      (business_id, account_id, entry_type, delta_qr, balance_after,
+       public_label, notes, created_by_user_id)
+     values ($1, $2, 'MANUAL_ADJUSTMENT', $3, $4, $5, $6, $7)`,
+    [
+      businessId,
+      account.id,
+      quantity,
+      nextBalance,
+      trafficLabel(quantity),
+      reason || "Devolucion manual de tickets.",
+      metadata.user_id || null,
+    ]
+  );
+  return updated.rows[0];
+}
+
 function mapCreditAccount(row) {
   if (!row) {
     return null;
@@ -267,8 +321,12 @@ module.exports = {
   addQrCredits,
   consumeQrCredit,
   consumeQrCredits,
+  consumeTickets,
   ensureCreditAccount,
+  getTicketBalance,
+  hasEnoughTickets,
   mapCreditAccount,
   mapPublicCreditAccount,
+  refundTickets,
   trafficLabel,
 };

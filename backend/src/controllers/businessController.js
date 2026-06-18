@@ -49,7 +49,7 @@ async function businessRedemptions(req, res, next) {
             hidden_count: Math.max(0, total - result.rows.length),
             upgrade_url: "/paquetes/?mode=portal&plan=STARTER",
             title: "Tu historial ya probo valor. Desbloquea el portal.",
-            message: `El validador prepago solo muestra ${PREPAID_HISTORY_SAMPLE_LIMIT} registros recientes. Con Portal RMS ves todos los leads, exportas datos y conectas cada QR con campanas, ventas y revenue.`,
+            message: `El acceso legacy solo muestra ${PREPAID_HISTORY_SAMPLE_LIMIT} registros recientes. Compra T200 para activar Portal Base o sube a Growth/Premium para historial completo, exportaciones y revenue avanzado.`,
           }
         : {
             locked: false,

@@ -71,6 +71,12 @@ create table if not exists businesses (
   slug text not null unique,
   settings jsonb not null default '{}',
   plan_code text not null default 'PREPAID_QR',
+  plan_type text,
+  portal_status text,
+  portal_activated_at timestamptz,
+  growth_started_at timestamptz,
+  growth_expires_at timestamptz,
+  growth_source text,
   subscription_status text not null default 'ACTIVE',
   subscription_started_at timestamptz,
   subscription_current_period_ends_at timestamptz,
@@ -86,6 +92,12 @@ create table if not exists businesses (
 );
 
 alter table businesses add column if not exists plan_code text not null default 'PREPAID_QR';
+alter table businesses add column if not exists plan_type text;
+alter table businesses add column if not exists portal_status text;
+alter table businesses add column if not exists portal_activated_at timestamptz;
+alter table businesses add column if not exists growth_started_at timestamptz;
+alter table businesses add column if not exists growth_expires_at timestamptz;
+alter table businesses add column if not exists growth_source text;
 alter table businesses add column if not exists subscription_status text not null default 'ACTIVE';
 alter table businesses add column if not exists subscription_started_at timestamptz;
 alter table businesses add column if not exists subscription_current_period_ends_at timestamptz;

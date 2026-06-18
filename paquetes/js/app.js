@@ -113,7 +113,7 @@ function planBillingLabel(plan) {
 }
 
 function visiblePackages() {
-  return packages.filter((item) => mode === "prepaid" ? item.prepaid_allowed : item.subscriber_allowed);
+  return packages.filter((item) => mode === "prepaid" ? item.base_access_allowed : item.subscriber_allowed);
 }
 
 function selectedTotal() {
@@ -143,10 +143,10 @@ function resetSignupVisibility() {
 function selectedBenefits() {
   if (mode === "prepaid") {
     return [
-      "Validador de tickets para validar beneficios en tienda",
-      "Generador simple y paquetes descargables",
-      "Control de canje para evitar doble redencion",
-      "Visualizacion de los ultimos 50 leads, sin exportacion",
+      "Portal RMS Base sin mensualidad",
+      "Dashboard base, validador interno y Sales Tracker basico",
+      "QR preventa y postventa usando saldo operativo",
+      "1 campana activa, leads 30 dias y 10 exportaciones al mes",
     ];
   }
   if (selectedPlan && !selectedPlan.monthly_price_cop) {
@@ -186,12 +186,12 @@ function renderPackages() {
     <article class="package-card ${selectedPackage?.code === item.code ? "selected" : ""}">
       <span class="package-code">${escapeHtml(item.display_code || item.public_code || item.code)}</span>
       <h3>${escapeHtml(item.title)}</h3>
-      <p>${Number(item.package_size).toLocaleString("es-CO")} tickets. ${escapeHtml(item.description || "Tickets para activar beneficios y medir resultados.")}</p>
+      <p>${Number(item.package_size).toLocaleString("es-CO")} tickets. ${escapeHtml(item.description || "Tickets para activar Portal RMS y medir resultados.")}</p>
       <div class="price">${priceLabel(item)}</div>
       <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
       <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
-      ${mode === "portal" ? '<p class="ticket-balance-note">Saldo acumulado: los tickets no vencen con la mensualidad del portal.</p>' : ""}
-      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Elegir tickets" : "Sumar tickets"}</button>
+      <p class="ticket-balance-note">${Number(item.package_size || 0) >= 200 ? "Activa Portal Base sin mensualidad y suma saldo operativo RMS." : "Saldo operativo para generar QR."}</p>
+      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "prepaid" ? "Activar Portal Base" : "Sumar tickets"}</button>
     </article>
   `).join("");
 
@@ -235,7 +235,7 @@ function renderPlanComparison() {
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
         ${plan.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Anualidad activa con beneficio del 30%." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-        <p>${plan.category === "prepaid" ? "Solo paquetes T50 o T200" : "Mensualidad del portal; tickets aparte como saldo sin vencimiento mensual"}</p>
+        <p>${plan.category === "ticket_base" || plan.code === "TICKET_BASE" ? "Portal Base incluido desde T200. Sin mensualidad; tickets como saldo operativo." : "Mensualidad del portal; tickets aparte como saldo sin vencimiento mensual"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -254,10 +254,10 @@ function renderPricingLogic() {
   const visible = visiblePackages();
   if (pricingLogicCopy) {
     pricingLogicCopy.textContent = mode === "prepaid"
-      ? "Prepago mantiene entrada simple en 50 o 200 tickets. El paquete x200 amplia la capacidad inicial antes de pasar al Portal RMS."
+      ? "T200 o superior activa Portal Base sin mensualidad. Los tickets son saldo operativo para generar QR, leads, redenciones y ventas medibles."
       : billingCycle === "annual"
         ? "La anualidad renueva 12 meses de acceso al portal con beneficio del 30%. Los tickets iniciales se cobran aparte, quedan como saldo y no vencen con el mes."
-        : "La mensualidad del portal escala por capacidad operativa: Started, Medium y Premium. Los tickets se cobran aparte, quedan como saldo y se recargan cuando se agotan.";
+        : "La mensualidad escala cuando necesitas mas poder: mas campanas, mas historial, afiliados, referidos, sedes, usuarios y analitica avanzada.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
     return `
@@ -278,13 +278,13 @@ function syncMode() {
   if (mode === "prepaid") {
     packageGrid.classList.remove("hidden");
     offerEyebrow.textContent = "Activacion inicial";
-    offerTitle.textContent = "Escoge una de las dos recargas prepago";
-    offerCopy.textContent = "El validador prepago solo permite 50 o 200 tickets. Para operar mas volumen, dashboard y medicion avanzada debes activar Portal RMS mensual.";
+    offerTitle.textContent = "Compra tickets y activa tu Portal RMS";
+    offerCopy.textContent = "Desde T200 desbloqueas Portal Base sin mensualidad: dashboard, validador interno, QR preventa/postventa, leads, redenciones y Sales Tracker basico.";
     formEyebrow.textContent = "Informacion de activacion";
-    formTitle.textContent = "Registro y activacion";
-    formCopy.textContent = "Usa el NIT de la empresa o tu cedula si aun no tienes empresa constituida.";
-    submitButton.textContent = "Crear cuenta y pagar activacion";
-    selectedPackage = packages.find((item) => item.prepaid_allowed && item.code === selectedPackage?.code) || null;
+    formTitle.textContent = "Crea tu acceso al Portal Base";
+    formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
+    submitButton.textContent = "Crear cuenta y activar portal";
+    selectedPackage = packages.find((item) => item.base_access_allowed && item.code === selectedPackage?.code) || null;
     selectedPlan = null;
     renderPackages();
     renderPlans();
@@ -293,13 +293,13 @@ function syncMode() {
     return;
   }
 
-  offerEyebrow.textContent = "Planes mensuales";
+  offerEyebrow.textContent = "Upgrades mensuales";
   offerTitle.textContent = selectedPlan ? "Ahora escoge tus tickets iniciales" : "Primero escoge tu Portal RMS";
   offerCopy.textContent = billingCycle === "annual"
     ? "La anualidad paga el acceso al portal por 12 meses. Despues eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
     : "La mensualidad paga el acceso al portal. Despues eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga segun uso.";
   formEyebrow.textContent = "Informacion de activacion";
-  formTitle.textContent = "Registro, plan y paquete inicial";
+  formTitle.textContent = "Registro, upgrade y tickets iniciales";
   formCopy.textContent = billingCycle === "annual"
     ? "El pago inicial suma la anualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje."
     : "El pago inicial suma la mensualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje.";
@@ -328,7 +328,7 @@ function renderSelectionBox() {
       <span>Resumen de compra</span>
       <strong>${escapeHtml(selectedPackage.title)}</strong>
       <div class="summary-lines">
-        <div><span>Servicio</span><b>Validador prepago</b></div>
+        <div><span>Servicio</span><b>Portal Base activado por tickets</b></div>
         <div><span>Tickets</span><b>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets</b></div>
         <div><span>Total hoy</span><b>${priceLabel(selectedPackage)}</b></div>
       </div>
@@ -374,7 +374,7 @@ function renderSelectionBox() {
 
   const emptyCopy = mode === "portal"
     ? "Elige primero un plan del portal. Despues te mostramos los paquetes para definir con cuantos tickets quieres empezar."
-    : "Elige un paquete prepago de 50 o 200 tickets. El registro se habilita cuando confirmes esa seleccion.";
+    : "Elige T200 o superior para activar tu Portal RMS sin mensualidad. El registro se habilita cuando confirmes esa seleccion.";
   const html = `
     <span>Resumen de compra</span>
     <strong>Seleccion pendiente</strong>
@@ -518,7 +518,7 @@ async function submitSignup(event) {
   requestMessage.textContent = "";
 
   if (mode === "prepaid" && !selectedPackage) {
-    requestMessage.textContent = "Selecciona un paquete de activacion para activar el validador de tickets.";
+    requestMessage.textContent = "Selecciona T200 o superior para activar el Portal Base.";
     requestMessage.classList.add("error");
     return;
   }
@@ -552,7 +552,7 @@ async function submitSignup(event) {
   submitButton.disabled = true;
   requestMessage.textContent = mode === "prepaid" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout del portal...";
   try {
-    const path = mode === "prepaid" ? "/api/public/signup/prepaid" : "/api/public/signup/portal";
+    const path = mode === "prepaid" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
     const body = mode === "prepaid"
       ? { ...payload, package_code: selectedPackage.code }
       : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code, billing_cycle: billingCycle };
@@ -595,9 +595,9 @@ function renderPaymentStatus() {
     paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmacion";
     paymentStatusActionCopy.textContent = mode === "portal"
       ? "Entra al portal con tu acceso registrado."
-      : "Entra al validador de tickets con tu acceso registrado.";
-    paymentStatusPrimaryLink.href = mode === "portal" ? "/empresa/" : "/qr-validador/";
-    paymentStatusPrimaryLink.textContent = mode === "portal" ? "Ingresar al portal" : "Ingresar al validador";
+      : "Entra al Portal Base con tu acceso registrado.";
+    paymentStatusPrimaryLink.href = "/empresa/";
+    paymentStatusPrimaryLink.textContent = "Ingresar al portal";
     return;
   }
 
@@ -631,7 +631,7 @@ async function init() {
     ]);
     packages = packageData.packages || [];
     pricing = planData.pricing || packageData.pricing || pricing;
-    prepaidPlan = planData.prepaid_plan || null;
+    prepaidPlan = planData.portal_base_plan || planData.prepaid_plan || null;
     plans = planData.plans || [];
     subscriberPackages = planData.subscriber_packages || packages.filter((item) => item.subscriber_allowed);
     selectedPackage = packages.find((item) => item.code === initialPackageCode) || null;

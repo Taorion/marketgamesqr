@@ -6,7 +6,7 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { canAccessBusiness } = require("../middleware/auth");
 const { findPackageOffer } = require("./packageCatalog");
 const { addQrCredits, ensureCreditAccount, mapPublicCreditAccount, trafficLabel } = require("./qrCreditService");
-const { listPlans } = require("./subscriptionService");
+const { BASE_PORTAL_MIN_TICKETS, PLAN_CODES, listPlans } = require("./subscriptionService");
 
 const MP_API_BASE = "https://api.mercadopago.com";
 
@@ -50,6 +50,73 @@ function planChargeCop(plan, billingCycle) {
     return Number(plan.annual_price_cop || (Number(plan.monthly_price_cop || 0) * 12 * 0.7));
   }
   return Number(plan.monthly_price_cop || 0);
+}
+
+function isBaseAccessPackage(packageSize) {
+  return Number(packageSize || 0) >= BASE_PORTAL_MIN_TICKETS;
+}
+
+async function activateTicketBaseAccess(client, businessId, userId = null, extraSettings = {}) {
+  await client.query(
+    `update businesses
+     set is_active = true,
+         plan_code = case when plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then plan_code else $2 end,
+         plan_type = case when plan_type = 'premium_monthly' or plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else 'ticket_base' end,
+         portal_status = 'ACTIVE',
+         portal_activated_at = coalesce(portal_activated_at, now()),
+         subscription_status = 'ACTIVE',
+         subscription_started_at = coalesce(subscription_started_at, now()),
+         settings = jsonb_set(
+           jsonb_set(
+             jsonb_set(coalesce(settings, '{}'::jsonb), '{access,plan_type}', to_jsonb(case when plan_type = 'premium_monthly' or plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else 'ticket_base' end), true),
+             '{access,portal_status}', to_jsonb('ACTIVE'::text), true
+           ),
+           '{access,source}', to_jsonb($3::text), true
+         ) || $4::jsonb,
+         updated_at = now()
+     where id = $1`,
+    [
+      businessId,
+      PLAN_CODES.TICKET_BASE,
+      extraSettings.source || "ticket_purchase",
+      JSON.stringify(extraSettings.settings || {}),
+    ]
+  );
+  if (userId) {
+    await client.query(
+      `update app_users
+       set is_active = true,
+           updated_at = now()
+       where id = $1 and business_id = $2`,
+      [userId, businessId]
+    );
+  }
+}
+
+async function activateGrowthTemporalAccess(client, businessId, userId = null, source = "gamified_campaign_service") {
+  await activateTicketBaseAccess(client, businessId, userId, { source });
+  await client.query(
+    `update businesses
+     set plan_code = case when plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then plan_code else $2 end,
+         plan_type = case when plan_type = 'premium_monthly' or plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else 'growth_temporal' end,
+         portal_status = 'ACTIVE',
+         growth_started_at = coalesce(growth_started_at, now()),
+         growth_expires_at = now() + interval '3 months',
+         growth_source = $3,
+         settings = jsonb_set(
+           jsonb_set(
+             jsonb_set(
+               jsonb_set(coalesce(settings, '{}'::jsonb), '{access,plan_type}', to_jsonb(case when plan_type = 'premium_monthly' or plan_code in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else 'growth_temporal' end), true),
+               '{access,growth_source}', to_jsonb($3::text), true
+             ),
+             '{access,growth_started_at}', to_jsonb(now()::text), true
+           ),
+           '{access,growth_expires_at}', to_jsonb((now() + interval '3 months')::text), true
+         ),
+         updated_at = now()
+     where id = $1`,
+    [businessId, PLAN_CODES.TICKET_BASE, source]
+  );
 }
 
 async function mpRequest(path, options = {}) {
@@ -121,8 +188,8 @@ async function createCreditCheckout(user, body) {
   );
   const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
   const isSubscription = plan?.category === "subscription";
-  if (!isSubscription && !offer.prepaid_allowed) {
-    throw badRequest("Tu acceso prepago solo permite recargar 50 o 200 tickets. Para comprar paquetes superiores activa Portal RMS mensual.");
+  if (!isSubscription && !offer.base_access_allowed && !offer.prepaid_allowed) {
+    throw badRequest("Compra T200 o superior para activar o recargar tu Portal RMS.");
   }
   if (isSubscription && !offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
@@ -221,8 +288,8 @@ async function createSubscriptionRenewalCheckout(user, body) {
     [user.business_id]
   );
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
-  if (currentPlan?.category !== "subscription") {
-    throw badRequest("Este negocio no tiene una mensualidad activa para renovar.");
+  if (!currentPlan || !["subscription", "ticket_base", "growth_temporal", "prepaid"].includes(currentPlan.category)) {
+    throw badRequest("Este negocio no puede activar una mensualidad del portal.");
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
@@ -436,8 +503,8 @@ async function createSubscriptionAutoRenewal(user, body) {
 
 async function createPrepaidSignupCheckout(client, payload) {
   const offer = findPackageOffer(payload.package_code);
-  if (!offer || !offer.prepaid_allowed) {
-    throw badRequest("El QR Validator prepago solo permite paquetes de 50 o 200 tickets.");
+  if (!offer || !offer.base_access_allowed || !isBaseAccessPackage(offer.package_size)) {
+    throw badRequest("Compra T200 o superior para activar tu Portal RMS sin mensualidad.");
   }
 
   const order = await client.query(
@@ -453,12 +520,15 @@ async function createPrepaidSignupCheckout(client, payload) {
       offer.title,
       offer.price_cop,
       JSON.stringify({
-        source: "public_prepaid_signup",
+        source: "public_ticket_base_signup",
         signup: {
-          type: "prepaid_qr_validator",
+          type: "ticket_base_access",
           business_id: payload.business_id,
           user_id: payload.user_id,
           email: payload.email,
+          plan_type: "ticket_base",
+          initial_package_code: offer.code,
+          initial_package_size: offer.package_size,
         },
       }),
     ]
@@ -471,7 +541,7 @@ async function createPrepaidSignupCheckout(client, payload) {
       items: [
         {
           id: offer.code,
-          title: `${offer.title} - activacion QR Validator`,
+          title: `${offer.title} - activacion Portal RMS Base`,
           quantity: 1,
           unit_price: Number(offer.price_cop),
           currency_id: "COP",
@@ -493,7 +563,7 @@ async function createPrepaidSignupCheckout(client, payload) {
         business_id: payload.business_id,
         user_id: payload.user_id,
         package_code: offer.code,
-        signup_type: "prepaid_qr_validator",
+        signup_type: "ticket_base_access",
       },
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
@@ -820,8 +890,8 @@ async function createDemoCreditPurchase(user, body) {
     [user.business_id]
   );
   const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
-  if (plan?.category !== "subscription" && !offer.prepaid_allowed) {
-    throw badRequest("Tu acceso prepago solo permite recargar 50 o 200 tickets. Para comprar paquetes superiores activa Portal RMS mensual.");
+  if (plan?.category !== "subscription" && !offer.base_access_allowed && !offer.prepaid_allowed) {
+    throw badRequest("Compra T200 o superior para activar o recargar tu Portal RMS.");
   }
 
   return withTransaction(async (client) => {
@@ -893,6 +963,16 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     created_by_user_id: order.created_by_user_id,
   });
 
+  if (isBaseAccessPackage(order.package_size)) {
+    await activateTicketBaseAccess(client, order.business_id, order.created_by_user_id, {
+      source: signup?.type || "ticket_purchase",
+    });
+  }
+
+  if (signup?.growth_source === "gamified_campaign_service" || signup?.service === "gamified_campaign_service") {
+    await activateGrowthTemporalAccess(client, order.business_id, order.created_by_user_id, "gamified_campaign_service");
+  }
+
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
@@ -906,24 +986,9 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
   );
 
   if (signup?.type === "prepaid_qr_validator") {
-    await client.query(
-      `update businesses
-       set is_active = true,
-           subscription_status = 'ACTIVE',
-           subscription_started_at = coalesce(subscription_started_at, now()),
-           updated_at = now()
-       where id = $1`,
-      [order.business_id]
-    );
-    if (order.created_by_user_id) {
-      await client.query(
-        `update app_users
-         set is_active = true,
-             updated_at = now()
-         where id = $1 and business_id = $2`,
-        [order.created_by_user_id, order.business_id]
-      );
-    }
+    await activateTicketBaseAccess(client, order.business_id, order.created_by_user_id, {
+      source: "legacy_prepaid_qr_validator",
+    });
   }
 
   return {
@@ -977,6 +1042,9 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     `update businesses
      set is_active = true,
          plan_code = $2,
+         plan_type = 'premium_monthly',
+         portal_status = 'ACTIVE',
+         portal_activated_at = coalesce(portal_activated_at, now()),
          subscription_status = 'ACTIVE',
          subscription_started_at = coalesce(subscription_started_at, now()),
          subscription_current_period_ends_at = $3,

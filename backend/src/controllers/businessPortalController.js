@@ -15,6 +15,7 @@ const {
   assertFeatureForRequest,
   assertLimitForBusiness,
   assertMonthlyUsageLimit,
+  getBusinessAccess,
   getBusinessSubscription,
   recordUsage,
 } = require("../services/subscriptionService");
@@ -153,6 +154,42 @@ function assertClientSetupEditable(status) {
 function buildValidatorUrl(token) {
   const base = env.publicValidatorUrl.replace(/\/$/, "");
   return `${base}/?token=${encodeURIComponent(token)}`;
+}
+
+async function businessAccess(req, res, next) {
+  try {
+    res.json({ access: await getBusinessAccess(businessIdFor(req)) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function ticketBalance(req, res, next) {
+  try {
+    const result = await query(
+      "select * from business_qr_credit_accounts where business_id = $1",
+      [businessIdFor(req)]
+    );
+    res.json({ ticket_account: mapPublicCreditAccount(result.rows[0]) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function ticketTransactions(req, res, next) {
+  try {
+    const result = await query(
+      `select id, entry_type, package_size, delta_qr, balance_after, public_label, notes, created_at
+       from business_qr_credit_ledger
+       where business_id = $1
+       order by created_at desc
+       limit 80`,
+      [businessIdFor(req)]
+    );
+    res.json({ transactions: result.rows });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function getCampaignLeadRows(businessId, campaignId) {
@@ -1061,7 +1098,7 @@ async function contactFeed(req, res, next) {
             hidden_count: Math.max(0, totalContacts - contacts.length),
             upgrade_url: "/paquetes/?mode=portal&plan=STARTER",
             title: "Ya tienes leads reales. Ahora necesitas el portal.",
-            message: `El prepago solo muestra ${PREPAID_LEAD_SAMPLE_LIMIT} contactos de muestra. Suscribete al Portal RMS para ver todos los leads, exportarlos, medir campanas, ventas y revenue.`,
+            message: `El acceso legacy solo muestra ${PREPAID_LEAD_SAMPLE_LIMIT} contactos de muestra. Compra T200 para activar Portal Base o sube a Growth/Premium para ver mas historial, exportar y medir revenue.`,
           }
         : {
             locked: false,
@@ -1349,6 +1386,9 @@ async function updateSalesSnapshot(req, res, next) {
 }
 
 module.exports = {
+  businessAccess,
+  ticketBalance,
+  ticketTransactions,
   getBusinessProfile,
   commandCenterAnalytics,
   businessActivity,
