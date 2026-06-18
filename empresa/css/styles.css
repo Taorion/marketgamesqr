@@ -524,6 +524,41 @@ textarea {
   color: var(--text);
 }
 
+.account-deal-card {
+  margin-bottom: 18px;
+}
+
+.account-deal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.account-deal-grid div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.account-deal-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.account-deal-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  color: var(--text);
+}
+
 .account-profile-form {
   margin-top: 16px;
 }
@@ -2812,6 +2847,7 @@ td {
 
   .account-summary-grid,
   .account-settings-grid,
+  .account-deal-grid,
   .account-meta-grid {
     grid-template-columns: 1fr;
   }

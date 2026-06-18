@@ -115,6 +115,11 @@ const accountType = document.getElementById("accountType");
 const accountPlanStatus = document.getElementById("accountPlanStatus");
 const accountQrAvailable = document.getElementById("accountQrAvailable");
 const accountQrUsed = document.getElementById("accountQrUsed");
+const accountCommercialDealCard = document.getElementById("accountCommercialDealCard");
+const accountCommercialDealTitle = document.getElementById("accountCommercialDealTitle");
+const accountCommercialDealStatus = document.getElementById("accountCommercialDealStatus");
+const accountCommercialDealSummary = document.getElementById("accountCommercialDealSummary");
+const accountCommercialDealGrid = document.getElementById("accountCommercialDealGrid");
 const accountProfileForm = document.getElementById("accountProfileForm");
 const accountNameInput = document.getElementById("accountNameInput");
 const accountSloganInput = document.getElementById("accountSloganInput");
@@ -1389,6 +1394,42 @@ function setAccountText(element, value, fallback = "-") {
   if (element) element.textContent = accountValue(value, fallback);
 }
 
+function renderCommercialDeal() {
+  const deal = state.businessProfile?.commercial_deal;
+  if (!accountCommercialDealCard) return;
+  if (!deal) {
+    accountCommercialDealCard.classList.add("hidden");
+    return;
+  }
+
+  accountCommercialDealCard.classList.remove("hidden");
+  if (accountCommercialDealTitle) {
+    accountCommercialDealTitle.textContent = deal.title || "Trato registrado";
+  }
+  if (accountCommercialDealStatus) {
+    accountCommercialDealStatus.textContent = deal.status || "Activo";
+  }
+  if (accountCommercialDealSummary) {
+    accountCommercialDealSummary.textContent = deal.summary || "";
+  }
+  if (accountCommercialDealGrid) {
+    const items = [
+      ["Premium sin costo", deal.free_period_label],
+      ["Primer cobro", deal.first_payment_due_at ? formatDateOnly(deal.first_payment_due_at) : deal.first_payment_label],
+      ["Primer ano", deal.first_year_price_label],
+      ["Desde segundo ano", deal.second_year_price_label],
+      ["Tickets incluidos", deal.initial_tickets_label],
+      ["Registrado", deal.recorded_at ? formatDateOnly(deal.recorded_at) : ""],
+    ].filter(([, value]) => value);
+    accountCommercialDealGrid.innerHTML = items.map(([label, value]) => `
+      <div>
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+    `).join("");
+  }
+}
+
 function renderAccountView() {
   const business = state.businessProfile || {};
   const user = business.current_user || session?.user || {};
@@ -1413,6 +1454,7 @@ function renderAccountView() {
   setAccountText(accountPlanStatus, subscriptionAccessLabel(plan));
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
+  renderCommercialDeal();
   renderSubscriptionRenewal();
 
   if (accountNameInput) accountNameInput.value = business.name || "";

@@ -295,6 +295,7 @@ function businessProfileFromRow(row, user = null, options = {}) {
     website: settings.website || "",
     city: settings.city || "",
     address: settings.address || "",
+    commercial_deal: settings.commercial_deal || null,
     logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
     has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
     logo_url: settings.logo_url || "",
