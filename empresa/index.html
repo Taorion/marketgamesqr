@@ -40,7 +40,12 @@
           </label>
           <label>
             <span>Password</span>
-            <input id="passwordInput" type="password" autocomplete="current-password" required>
+            <div class="password-field">
+              <input id="passwordInput" type="password" autocomplete="current-password" required>
+              <button class="password-reveal-button" type="button" data-password-toggle="passwordInput" aria-label="Mostrar password" aria-pressed="false">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              </button>
+            </div>
           </label>
           <button class="solid-button" type="submit">Entrar</button>
         </form>
@@ -55,11 +60,21 @@
         <form class="login-form hidden" id="passwordResetForm">
           <label>
             <span>Nuevo password</span>
-            <input id="passwordResetNewInput" type="password" minlength="8" autocomplete="new-password">
+            <div class="password-field">
+              <input id="passwordResetNewInput" type="password" minlength="8" autocomplete="new-password">
+              <button class="password-reveal-button" type="button" data-password-toggle="passwordResetNewInput" aria-label="Mostrar password" aria-pressed="false">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              </button>
+            </div>
           </label>
           <label>
             <span>Confirmar password</span>
-            <input id="passwordResetConfirmInput" type="password" minlength="8" autocomplete="new-password">
+            <div class="password-field">
+              <input id="passwordResetConfirmInput" type="password" minlength="8" autocomplete="new-password">
+              <button class="password-reveal-button" type="button" data-password-toggle="passwordResetConfirmInput" aria-label="Mostrar password" aria-pressed="false">
+                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              </button>
+            </div>
           </label>
           <button class="solid-button" type="submit">Actualizar password</button>
         </form>
@@ -569,14 +584,87 @@
                   </div>
                 </div>
                 <form class="modal-form account-profile-form" id="accountPasswordForm">
-                  <label><span>Password actual</span><input id="accountCurrentPasswordInput" type="password" autocomplete="current-password" required></label>
-                  <label><span>Nuevo password</span><input id="accountNewPasswordInput" type="password" minlength="8" autocomplete="new-password" required></label>
-                  <label><span>Confirmar nuevo password</span><input id="accountNewPasswordConfirmInput" type="password" minlength="8" autocomplete="new-password" required></label>
+                  <label>
+                    <span>Password actual</span>
+                    <div class="password-field">
+                      <input id="accountCurrentPasswordInput" type="password" autocomplete="current-password" required>
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountCurrentPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                      </button>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Nuevo password</span>
+                    <div class="password-field">
+                      <input id="accountNewPasswordInput" type="password" minlength="8" autocomplete="new-password" required>
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                      </button>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Confirmar nuevo password</span>
+                    <div class="password-field">
+                      <input id="accountNewPasswordConfirmInput" type="password" minlength="8" autocomplete="new-password" required>
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordConfirmInput" aria-label="Mostrar password" aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                      </button>
+                    </div>
+                  </label>
                   <div class="modal-actions span-2">
                     <p class="error-line" id="accountPasswordMessage"></p>
                     <button class="solid-button" id="accountPasswordSaveButton" type="submit">Cambiar password</button>
                   </div>
                 </form>
+              </article>
+
+              <article class="surface-card account-settings-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Usuarios del negocio</span>
+                    <h3>Equipo con acceso al portal</h3>
+                  </div>
+                  <button class="ghost-button" id="refreshAccountUsersButton" type="button">Actualizar</button>
+                </div>
+                <form class="modal-form account-profile-form" id="accountUserForm">
+                  <label><span>Nombre usuario</span><input id="accountUserFullNameInput" type="text" maxlength="160" required></label>
+                  <label><span>Email</span><input id="accountUserEmailInput" type="email" maxlength="180" required></label>
+                  <label>
+                    <span>Rol</span>
+                    <select id="accountUserRoleInput" required>
+                      <option value="VALIDATOR">Validador</option>
+                      <option value="BUSINESS_OWNER">Owner</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Password inicial</span>
+                    <div class="password-field">
+                      <input id="accountUserPasswordInput" type="password" minlength="8" autocomplete="new-password" required>
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountUserPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                      </button>
+                    </div>
+                  </label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="accountUserCreateMessage"></p>
+                    <button class="solid-button" id="accountUserCreateButton" type="submit">Crear usuario</button>
+                  </div>
+                </form>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Creado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="accountUsersTable"></tbody>
+                  </table>
+                </div>
               </article>
             </section>
           </section>

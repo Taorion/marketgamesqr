@@ -8302,3 +8302,42 @@ body.chart-focus-open .command-center {
   }
 }
 
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-field > input {
+  width: 100%;
+  padding-right: 48px !important;
+}
+
+.password-reveal-button {
+  position: absolute;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.password-reveal-button:hover,
+.password-reveal-button:focus-visible {
+  background: rgba(0, 108, 73, 0.1);
+  color: var(--primary);
+  outline: none;
+}
+
+.password-reveal-button .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+}
+

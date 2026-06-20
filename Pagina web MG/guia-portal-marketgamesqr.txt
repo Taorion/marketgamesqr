@@ -4,7 +4,7 @@ Uso comercial, uso operativo, ventajas y estrategias para sacar maximo provecho
 Version: 2026-06-12
 Dominio oficial: https://marketgamesqr.com
 Portal empresa: https://marketgamesqr.com/empresa/
-Validador: https://marketgamesqr.com/validador/
+Modulo de validacion QR: https://marketgamesqr.com/empresa/?view=validator
 Planes y registro: https://marketgamesqr.com/paquetes/
 
 
@@ -694,14 +694,13 @@ La clave es no imprimir QR genericos sin control. Lo valioso es que el lote qued
 - cuanta venta produjeron.
 
 
-14. VALIDADOR INTEGRADO Y VALIDADOR PUBLICO
+14. MODULO DE VALIDACION INTEGRADO
 
 El validador es la herramienta del vendedor.
 
-Puede estar en:
+Debe usarse desde:
 
-- /validador/ como app separada;
-- dentro del portal empresa como validador integrado.
+- /empresa/?view=validator dentro del portal empresa.
 
 Funciones:
 
@@ -927,240 +926,86 @@ Recomendacion:
 El agente de mercadeo debe planear las campanas segun creditos disponibles. No es lo mismo una activacion de 50 QR VIP que una feria con 2000 QR impresos.
 
 
-18A. VERSION PREPAGO: QR VALIDATOR SIN PORTAL MENSUAL
+18A. PORTAL BASE ACTIVADO POR TICKETS
 
-La version prepago es una entrada mas simple y economica al ecosistema MarketGamesQR.
+El acceso de entrada al ecosistema MarketGamesQR se presenta como Portal Base activado por tickets. El cliente compra tickets operativos y, desde T200, activa Portal Base sin mensualidad.
 
-No reemplaza el portal mensual completo. Es una opcion para negocios que quieren empezar a usar QR, validar beneficios en tienda y comprar creditos por demanda, sin comprometerse todavia con una suscripcion mensual de analitica, dashboard, campanas avanzadas o afiliados.
+La promesa correcta es:
 
-La version prepago se presenta como:
+"Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad. Tus tickets son saldo operativo para generar campanas, QR, leads, redenciones y ventas medibles."
 
-QR Validator prepago.
+Que obtiene el negocio con Portal Base:
 
-Que obtiene el negocio:
+- dashboard base;
+- una campana activa;
+- generacion de QR preventa y postventa;
+- modulo interno de validacion QR dentro del portal;
+- captura de leads;
+- redenciones;
+- Sales Tracker basico;
+- leads visibles por 30 dias;
+- hasta 10 exportaciones al mes;
+- un usuario administrador;
+- un usuario validador o vendedor;
+- una sede;
+- reporte basico de revenue atribuido;
+- consumo de tickets por uso operativo.
 
-- acceso al QR Validator;
-- posibilidad de escanear y redimir beneficios QR;
-- compra de paquetes QR prepago;
-- generador simple de QR;
-- paquetes descargables de QR;
-- un usuario propietario;
-- un validador;
-- una sede operativa basica;
-- uso por creditos comprados;
-- activacion por Mercado Pago cuando el pago queda aprobado.
+Que queda reservado para Growth o Premium:
 
-Que no incluye:
-
-- portal de dashboard y analitica completa;
-- gestion avanzada de campanas;
-- exportacion de leads;
-- sistema de afiliados;
-- QR de recomendacion de afiliados;
-- varias sedes;
-- multiples usuarios;
+- afiliados;
+- referidos;
+- mas de una campana activa;
+- mas sedes;
+- mas usuarios;
+- leads historicos mayores a 30 dias;
+- exportaciones superiores al limite base;
 - reportes avanzados;
-- API;
-- marca blanca;
-- automatizaciones;
-- analitica profunda de revenue por canales.
+- comparacion entre campanas;
+- Focus Mode;
+- Data Explorer;
+- segmentacion avanzada;
+- rankings de canales, afiliados y referidos;
+- automatizacion postventa avanzada;
+- branding avanzado.
 
-Esto es importante comercialmente porque evita vender el prepago como si fuera el portal completo. La promesa del prepago es mas directa:
+Paquetes de tickets operativos:
 
-"Compra tickets QR, genera beneficios y validalos en tienda."
+- T200: activa Portal Base y deja saldo operativo.
+- T500: suma mas capacidad para campanas y QR.
+- T1000: recomendado para negocios con activaciones recurrentes.
+- T2000, T5000 y T10000: para operaciones con mayor volumen.
 
-La promesa del portal mensual es mas amplia:
+Los tickets no son mensualidad. Son capacidad operativa. El cliente no paga por mirar un dashboard: compra capacidad para generar acciones medibles.
 
-"Mide campanas, leads, redenciones, ventas, fuentes de llegada, afiliados, sucursales y revenue real."
+Growth temporal:
 
-El prepago sirve para negocios que:
+Cuando el cliente compra T200 o mas junto con el servicio de campana gamificada, puede activar Growth temporal durante 3 meses. Durante ese periodo prueba una experiencia mas completa del portal, con mejor lectura de embudo, mas historial y herramientas premium seleccionadas. Al terminar, vuelve a Portal Base sin perder tickets restantes.
 
-- apenas quieren probar la herramienta;
-- no tienen presupuesto mensual;
-- hacen pocas activaciones;
-- necesitan validar cupones de forma controlada;
-- quieren reemplazar cupones genericos por QR de uso controlado;
-- tienen un solo punto de venta;
-- tienen un equipo pequeno;
-- quieren comprar solo cuando necesitan;
-- quieren iniciar con baja friccion;
-- todavia no tienen una estrategia formal de marketing medible.
+Premium mensual:
 
-Paquetes disponibles:
+Premium es para clientes que quieren operar de forma continua con mas campanas, afiliados, referidos, historial, sedes, usuarios, exportaciones y analitica avanzada.
 
-- QR50: 50 tickets QR. Disponible para prepago y portal.
-- QR200: 200 tickets QR. Disponible para prepago y portal.
-- QR500: 500 tickets QR. Exclusivo para clientes con portal mensual.
-- QR1000: 1000 tickets QR. Exclusivo para clientes con portal mensual.
-- QR2000: 2000 tickets QR. Exclusivo para clientes con portal mensual.
-- QR4000: 4000 tickets QR. Exclusivo para clientes con portal mensual.
-- QR8000: 8000 tickets QR. Exclusivo para clientes con portal mensual.
-
-Precios actuales de referencia en el sistema:
-
-- T50: COP 75.000.
-- T200: COP 291.000.
-- T600: COP 829.350.
-- T2000: COP 2.515.695.
-- T6000: COP 7.169.731.
-
-Beneficios posibles de la version prepago:
-
-1. Entrada economica.
-   Permite empezar con una compra minima sin pagar portal mensual. Es util para negocios que quieren ensayar el sistema sin una decision grande.
-
-2. Control de gasto.
-   El negocio compra una cantidad especifica de tickets QR. Cuando se acaban, recarga. Esto evita costos recurrentes si no hay campanas activas.
-
-3. Validacion en tienda.
-   El vendedor puede escanear QR y controlar beneficios. Esto ya mejora mucho frente a cupones impresos o codigos faciles de copiar.
-
-4. Uso unico.
-   Los QR pueden ayudar a controlar que un beneficio no se use varias veces, segun el flujo configurado.
-
-5. Ideal para promociones simples.
-   Si el negocio solo necesita entregar descuentos, muestras, rifas o regalos puntuales, prepago puede ser suficiente.
-
-6. Buen producto de prueba.
-   Permite demostrar valor antes de vender Starter, Growth o Pro.
-
-7. Util para microcampanas.
-   Una tienda puede comprar 50 o 200 tickets QR para una activacion pequena, un fin de semana, una feria local o una promocion de baja escala.
-
-8. Util para negocios sin area de mercadeo.
-   No todos los negocios necesitan dashboard avanzado desde el primer dia. Algunos solo quieren validar beneficios y no perder control.
-
-9. Reduce fraude.
-   Aunque no tenga analitica completa, ya mejora el control sobre promociones porque el QR se valida contra el sistema.
-
-10. Facil de explicar.
-   "Compra un paquete de QR y usalos para beneficios que se validan en tienda."
-
-Casos de uso ideales para prepago:
-
-- tienda pequena que quiere entregar 100 descuentos de inauguracion;
-- restaurante que quiere dar 300 QR para bebida gratis con compra;
-- peluqueria que quiere entregar QR de descuento a clientes frecuentes;
-- feria donde se reparten 500 beneficios;
-- gimnasio que quiere dar 100 pases de clase gratis;
-- emprendimiento que quiere medir una promocion puntual sin contratar mensualidad;
-- local que quiere evitar cupones duplicados;
-- marca que quiere probar QR en empaques;
-- negocio que solo tiene un vendedor o un punto de caja.
-
-Estrategias prepago:
-
-A. Promocion de apertura
-
-Comprar QR100 o QR300.
-Crear beneficios de inauguracion.
-Validarlos en tienda.
-Medir de forma operativa cuantos QR fueron usados.
-
-B. Feria o evento pequeno
-
-Comprar QR500.
-Imprimir QR en tarjetas o volantes.
-Validar en caja cuando el cliente llegue.
-Usar observaciones internas para saber de que feria vino.
-
-C. Beneficio de recompra
-
-Despues de vender, entregar QR para proxima visita.
-El cliente vuelve y el vendedor valida.
-El negocio no necesita un portal completo para empezar a controlar este flujo.
-
-D. Campana de baja escala en redes
-
-Publicar una pieza con QR o entregar QR a quienes escriban por WhatsApp.
-El beneficio se valida en tienda.
-Si la campana funciona, el negocio puede migrar a portal mensual para medir mejor.
-
-E. Prueba antes de Growth
-
-Un agente puede vender primero un paquete prepago para que el cliente entienda el valor del QR y luego proponer el portal mensual cuando ya quiera dashboard, ventas, fuentes de llegada y afiliados.
-
-Como vender prepago sin confundir al cliente:
+Como venderlo sin confundir al cliente:
 
 No decir:
-"Con prepago tienes todo el portal."
+"Compra un validador QR separado."
 
 Si decir:
-"Con prepago tienes QR Validator y creditos QR para activar beneficios de forma controlada. Si quieres dashboard, campanas, leads, ventas, afiliados y analitica, pasamos a un plan mensual."
+"Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad. Dentro del portal tienes dashboard, QR, leads, redenciones, Sales Tracker y modulo de validacion. Cuando necesites mas campanas, afiliados, referidos o historial, activas Growth o Premium."
 
-Comparacion simple:
+Casos ideales para Portal Base:
 
-Prepago:
-
-- compras creditos;
-- generas QR;
-- validas beneficios;
-- controlas uso;
-- no tienes analitica completa;
-- no tienes sistema de afiliados;
-- no tienes dashboard de revenue;
-- ideal para empezar.
-
-Portal mensual:
-
-- incluye acceso al portal;
-- permite dashboard;
-- permite campanas;
-- permite leads;
-- permite ventas y medios de llegada;
-- permite afiliados;
-- permite referidos;
-- permite exportaciones;
-- permite mejor seguimiento estrategico;
-- ideal para negocios que quieren medir marketing de forma recurrente.
-
-Beneficio para el agente de mercadeo:
-
-La version prepago puede ser una puerta de entrada. El agente puede decir:
-
-"Empecemos con un paquete de QR prepago para medir una activacion pequena. Si vemos traccion, pasamos al portal mensual para medir campanas, ventas y canales con mas detalle."
-
-Eso reduce la barrera de compra y permite que el negocio pruebe la logica del sistema.
-
-Beneficio para MarketGamesQR:
-
-Prepago crea adopcion. No todos los negocios van a entrar directo a Growth o Pro. Algunos necesitan una primera experiencia barata, simple y concreta.
-
-El prepago tambien permite monetizar negocios que:
-
-- no tienen campanas permanentes;
-- compran por temporada;
-- hacen eventos ocasionales;
-- solo necesitan validador;
-- no estan listos para CRM o analitica.
-
-Cuando conviene recomendar prepago:
-
-- el negocio pregunta por algo muy economico;
-- solo necesita validar un beneficio;
-- no tiene equipo para registrar ventas;
-- no tiene campanas recurrentes;
-- no necesita afiliados;
-- no necesita dashboard;
-- quiere probar antes de suscribirse;
-- solo quiere usar QR en una feria o promocion corta.
-
-Cuando NO conviene quedarse en prepago:
-
-- el negocio quiere medir canales de llegada;
-- quiere saber revenue por marketing;
-- quiere dashboard;
-- quiere comparar campanas;
-- quiere afiliados y referidos;
-- tiene varias sedes;
-- tiene varios vendedores;
-- quiere exportar leads;
-- quiere un sistema permanente;
-- quiere reportes para tomar decisiones.
+- negocio que quiere empezar sin mensualidad;
+- tienda que necesita una campana medible;
+- restaurante que quiere validar beneficios en punto de venta;
+- feria o activacion pequena;
+- negocio que quiere medir redenciones y ventas antes de escalar;
+- empresa que quiere probar el sistema con saldo operativo.
 
 Mensaje comercial recomendado:
 
-"El prepago es perfecto para empezar con QR y validacion. El portal mensual es para administrar y medir marketing con datos reales. Si solo quieres controlar beneficios, empieza prepago. Si quieres saber que canal te trae ventas, necesitas portal."
+"MarketGamesQR no te cobra por mirar un dashboard. Te da capacidad operativa para generar QR, leads, redenciones y ventas medibles. El Portal Base se activa desde T200 y crece hacia Growth o Premium cuando tu negocio necesita mas potencia."
 
 
 19. SUCURSALES

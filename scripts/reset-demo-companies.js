@@ -4,6 +4,8 @@ const { PLAN_CATALOG } = require("../backend/src/services/subscriptionService");
 
 const CONFIRM_FLAG = "--confirm-reset";
 const DEMO_PASSWORD = process.env.RESET_DEMO_PASSWORD || "MarketGames2026!";
+const GROWTH_MONTHLY_PRICE_LABEL = PLAN_CATALOG.STARTER?.price_label || "COP 262.500 / mes";
+const PREMIUM_MONTHLY_PRICE_LABEL = PLAN_CATALOG.GROWTH?.price_label || "COP 1.312.500 / mes";
 
 const TABLES_TO_RESET = [
   "password_reset_tokens",
@@ -41,10 +43,10 @@ const DEMO_COMPANIES = [
     nit: "900111001-1",
     city: "Bogota",
     phone: "3001110001",
-    owner: "Laura Prepago",
-    owner_email: "owner.prepago@demo.local",
-    validator: "Validador Prepago",
-    validator_email: "validator.prepago@demo.local",
+    owner: "Laura Base",
+    owner_email: "owner.base@demo.local",
+    validator: "Validador Base",
+    validator_email: "validator.base@demo.local",
     branches: ["Mostrador principal"],
     prepaid: { package_size: 100, purchased: 100, used: 18, balance: 82 },
     monthly_used: 0,
@@ -84,6 +86,46 @@ const DEMO_COMPANIES = [
     monthly_used: 640,
     campaigns: 3,
     affiliates: 8,
+  },
+  {
+    plan_code: "GROWTH",
+    plan_type: "premium_monthly",
+    name: "El Pano Ingles",
+    display_name: "El Paño Ingles",
+    slug: "el-pano-ingles",
+    nit: "900555005-5",
+    city: "Bogota",
+    phone: "3005550005",
+    owner: "El Paño Ingles",
+    owner_email: "owner.panoingles@demo.local",
+    validator: "Validador El Paño",
+    validator_email: "validator.panoingles@demo.local",
+    branches: ["Tienda principal", "Sastreria"],
+    prepaid: { package_size: 200, purchased: 200, used: 0, balance: 200 },
+    ticket_public_label: "200 tickets incluidos por acuerdo Premium",
+    prepaid_purchase_notes: "Tickets iniciales incluidos en el acuerdo Premium de El Paño Ingles.",
+    monthly_used: 0,
+    campaigns: 2,
+    affiliates: 12,
+    subscription_months: 3,
+    commercial_deal: {
+      title: "Acuerdo Premium El Paño Ingles",
+      status: "Activo",
+      summary: "Premium separado de Sofia Growth: 3 meses gratuitos con 200 tickets, luego Premium a precio Growth por un ano y despues tarifa Premium normal.",
+      free_period_label: "3 meses de Premium sin costo",
+      first_payment_label: "Al terminar los 3 meses gratuitos",
+      first_year_price_label: `Premium a precio Growth (${GROWTH_MONTHLY_PRICE_LABEL}) por 12 meses`,
+      second_year_price_label: `Tarifa Premium normal (${PREMIUM_MONTHLY_PRICE_LABEL})`,
+      initial_tickets_label: "200 tickets incluidos",
+      recorded_at: "2026-06-20",
+      terms: {
+        free_months: 3,
+        initial_tickets: 200,
+        first_year_plan_features: "GROWTH",
+        first_year_billing_price_reference: "STARTER",
+        normal_price_plan: "GROWTH",
+      },
+    },
   },
   {
     plan_code: "PRO",
@@ -159,13 +201,14 @@ function subscriptionSettings(company, plan) {
     phone: company.phone,
     city: company.city,
     address: `${company.city} - direccion demo`,
-    signup_type: company.plan_code === "PREPAID_QR" ? "demo_prepaid_validator" : "demo_portal_subscription",
+    signup_type: company.plan_code === "PREPAID_QR" ? "demo_ticket_base_legacy" : "demo_portal_subscription",
     subscription: {
       plan_code: company.plan_code,
       status: "ACTIVE",
       seeded_demo: true,
       access_summary: plan.access_summary,
     },
+    ...(company.commercial_deal ? { commercial_deal: company.commercial_deal } : {}),
   };
 }
 
@@ -173,10 +216,17 @@ async function insertBusiness(client, company) {
   const plan = PLAN_CATALOG[company.plan_code];
   const result = await client.query(
     `insert into businesses
-      (name, slug, settings, plan_code, subscription_status, subscription_started_at, subscription_current_period_ends_at, is_active)
-     values ($1, $2, $3::jsonb, $4, 'ACTIVE', now(), now() + interval '1 month', true)
+      (name, slug, settings, plan_code, plan_type, portal_status, subscription_status, subscription_started_at, subscription_current_period_ends_at, is_active)
+     values ($1, $2, $3::jsonb, $4, $5, 'ACTIVE', 'ACTIVE', now(), now() + make_interval(months => $6::int), true)
      returning *`,
-    [company.name, company.slug, JSON.stringify(subscriptionSettings(company, plan)), company.plan_code]
+    [
+      company.display_name || company.name,
+      company.slug,
+      JSON.stringify(subscriptionSettings(company, plan)),
+      company.plan_code,
+      company.plan_type || (["STARTER", "GROWTH", "PRO", "GLOBAL"].includes(company.plan_code) ? "premium_monthly" : null),
+      company.subscription_months || 1,
+    ]
   );
   return result.rows[0];
 }
@@ -208,7 +258,8 @@ async function insertCreditAccount(client, businessId, company, ownerId) {
       company.prepaid.balance,
       company.prepaid.purchased,
       company.prepaid.used + company.monthly_used,
-      company.plan_code === "PREPAID_QR" ? `${company.prepaid.balance} tickets prepago disponibles` : "Tickets por recarga separada",
+      company.ticket_public_label
+        || (company.plan_code === "PREPAID_QR" ? `${company.prepaid.balance} tickets operativos disponibles` : "Tickets por recarga separada"),
     ]
   );
 
@@ -225,7 +276,7 @@ async function insertCreditAccount(client, businessId, company, ownerId) {
         company.prepaid.purchased,
         company.prepaid.purchased * 1000,
         `Paquete x${company.prepaid.package_size}`,
-        "Compra prepago demo aprobada.",
+        company.prepaid_purchase_notes || "Compra demo de tickets operativos aprobada.",
         ownerId,
       ]
     );
@@ -242,7 +293,7 @@ async function insertCreditAccount(client, businessId, company, ownerId) {
         -company.prepaid.used,
         company.prepaid.balance,
         `${company.prepaid.used} tickets consumidos`,
-        "Uso demo de QR prepago.",
+        "Uso demo de tickets operativos.",
         ownerId,
       ]
     );

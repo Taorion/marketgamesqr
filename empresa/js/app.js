@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260618-portal-only-validator-v1";
+const APP_VERSION = "empresa-20260620-auth-sessions-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -16,6 +16,7 @@ const passwordResetForm = document.getElementById("passwordResetForm");
 const passwordResetNewInput = document.getElementById("passwordResetNewInput");
 const passwordResetConfirmInput = document.getElementById("passwordResetConfirmInput");
 const passwordResetMessage = document.getElementById("passwordResetMessage");
+const passwordRevealButtons = Array.from(document.querySelectorAll("[data-password-toggle]"));
 const actionFeedback = document.getElementById("actionFeedback");
 const subscriptionBanner = document.getElementById("subscriptionBanner");
 const subscriptionPlanName = document.getElementById("subscriptionPlanName");
@@ -140,6 +141,15 @@ const accountNewPasswordInput = document.getElementById("accountNewPasswordInput
 const accountNewPasswordConfirmInput = document.getElementById("accountNewPasswordConfirmInput");
 const accountPasswordMessage = document.getElementById("accountPasswordMessage");
 const accountPasswordSaveButton = document.getElementById("accountPasswordSaveButton");
+const accountUserForm = document.getElementById("accountUserForm");
+const accountUserFullNameInput = document.getElementById("accountUserFullNameInput");
+const accountUserEmailInput = document.getElementById("accountUserEmailInput");
+const accountUserRoleInput = document.getElementById("accountUserRoleInput");
+const accountUserPasswordInput = document.getElementById("accountUserPasswordInput");
+const accountUserCreateMessage = document.getElementById("accountUserCreateMessage");
+const accountUserCreateButton = document.getElementById("accountUserCreateButton");
+const accountUsersTable = document.getElementById("accountUsersTable");
+const refreshAccountUsersButton = document.getElementById("refreshAccountUsersButton");
 const resetAffiliateFormButton = document.getElementById("resetAffiliateFormButton");
 const affiliateCardTitle = document.getElementById("affiliateCardTitle");
 const affiliateCardPreviewWrap = document.getElementById("affiliateCardPreviewWrap");
@@ -413,6 +423,7 @@ let state = {
   businessProfile: null,
   subscription: null,
   access: null,
+  businessUsers: [],
   campaignGroups: null,
   campaigns: [],
   adminCampaigns: [],
@@ -637,6 +648,46 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function decodeJwtPayload(token) {
+  try {
+    const payload = String(token || "").split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function sessionExpiresAt(value) {
+  const explicit = value?.session?.expires_at || value?.expires_at;
+  if (explicit) return new Date(explicit).getTime();
+  const decoded = decodeJwtPayload(value?.token);
+  return decoded?.exp ? decoded.exp * 1000 : 0;
+}
+
+function isSessionExpired(value, skewMs = 30_000) {
+  const expiresAt = sessionExpiresAt(value);
+  return Boolean(expiresAt && Date.now() + skewMs >= expiresAt);
+}
+
+function normalizeSession(value) {
+  if (!value?.token || !value?.user) return null;
+  const decoded = decodeJwtPayload(value.token);
+  const expiresAt = value.session?.expires_at
+    || (decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : null);
+  return {
+    ...value,
+    session: {
+      token_type: "Bearer",
+      ...(value.session || {}),
+      expires_at: expiresAt,
+    },
+    saved_at: value.saved_at || new Date().toISOString(),
+  };
+}
+
 function loadSession() {
   try {
     const rawSession = localStorage.getItem(SESSION_KEY);
@@ -649,20 +700,29 @@ function loadSession() {
       return null;
     }
     localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
-    return JSON.parse(rawSession) || null;
+    const parsed = normalizeSession(JSON.parse(rawSession));
+    if (parsed && isSessionExpired(parsed, 0)) {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(VALIDATOR_SESSION_KEY);
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Tu sesion expiro. Inicia sesion de nuevo para continuar.");
+      return null;
+    }
+    return parsed;
   } catch {
+    localStorage.removeItem(SESSION_KEY);
     return null;
   }
 }
 
 function saveSession(value) {
-  session = value;
+  const nextSession = normalizeSession(value);
+  session = nextSession;
   localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
-  localStorage.setItem(SESSION_KEY, JSON.stringify(value));
+  localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
 }
 
 function saveValidatorSession(value) {
-  localStorage.setItem(VALIDATOR_SESSION_KEY, JSON.stringify(value));
+  localStorage.setItem(VALIDATOR_SESSION_KEY, JSON.stringify(normalizeSession(value)));
 }
 
 function clearSession() {
@@ -692,6 +752,16 @@ function forceLoginAfterSessionIssue(message) {
   renderShell();
 }
 
+function assertActiveSession() {
+  if (!session?.token) {
+    throw new Error("Debes iniciar sesion.");
+  }
+  if (isSessionExpired(session)) {
+    forceLoginAfterSessionIssue("Tu sesion expiro. Inicia sesion de nuevo para continuar.");
+    throw new Error("Sesion expirada.");
+  }
+}
+
 function isAdmin() {
   return ["ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
 }
@@ -701,6 +771,39 @@ function hideFeedback() {
   actionFeedback.classList.add("hidden");
   actionFeedback.className = "action-feedback hidden";
   actionFeedback.innerHTML = "";
+}
+
+function syncPasswordRevealButton(button, input) {
+  const isVisible = input.type === "text";
+  const icon = button.querySelector(".material-symbols-outlined");
+  button.setAttribute("aria-pressed", String(isVisible));
+  button.setAttribute("aria-label", isVisible ? "Ocultar password" : "Mostrar password");
+  button.title = isVisible ? "Ocultar password" : "Mostrar password";
+  if (icon) icon.textContent = isVisible ? "visibility_off" : "visibility";
+}
+
+function togglePasswordVisibility(button) {
+  const inputId = button.dataset.passwordToggle;
+  const input = inputId ? document.getElementById(inputId) : null;
+  if (!input) return;
+
+  const selectionStart = input.selectionStart;
+  const selectionEnd = input.selectionEnd;
+  input.type = input.type === "password" ? "text" : "password";
+  syncPasswordRevealButton(button, input);
+  input.focus({ preventScroll: true });
+  if (Number.isInteger(selectionStart) && Number.isInteger(selectionEnd)) {
+    input.setSelectionRange(selectionStart, selectionEnd);
+  }
+}
+
+function setupPasswordRevealButtons() {
+  passwordRevealButtons.forEach((button) => {
+    const input = document.getElementById(button.dataset.passwordToggle);
+    if (!input) return;
+    syncPasswordRevealButton(button, input);
+    button.addEventListener("click", () => togglePasswordVisibility(button));
+  });
 }
 
 function readPreferredTheme() {
@@ -947,9 +1050,24 @@ async function loadStrategicQrData() {
 }
 
 function authHeaders() {
+  assertActiveSession();
   return {
     Authorization: `Bearer ${session.token}`,
   };
+}
+
+async function refreshSessionIdentity() {
+  assertActiveSession();
+  const data = await api("/api/auth/me", { headers: authHeaders() });
+  const nextSession = {
+    ...session,
+    user: {
+      ...(session.user || {}),
+      ...(data.user || {}),
+    },
+  };
+  saveSession(nextSession);
+  return session;
 }
 
 function toNumber(value) {
@@ -1430,6 +1548,46 @@ function renderCommercialDeal() {
   }
 }
 
+function isBusinessOwnerUser() {
+  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
+function accountRoleLabel(role) {
+  if (role === "BUSINESS_OWNER") return "Owner";
+  if (role === "VALIDATOR") return "Validador";
+  return role || "-";
+}
+
+function renderBusinessUsers() {
+  if (!accountUsersTable) return;
+  const canManage = isBusinessOwnerUser();
+  const users = state.businessUsers || [];
+  if (accountUserForm) {
+    accountUserForm.classList.toggle("hidden", !canManage);
+  }
+  if (refreshAccountUsersButton) {
+    refreshAccountUsersButton.disabled = !session?.user?.business_id;
+  }
+  accountUsersTable.innerHTML = users.map((user) => {
+    const isSelf = user.id === session?.user?.id;
+    const active = Boolean(user.is_active);
+    return `
+      <tr>
+        <td>${escapeHtml(user.full_name || "-")}${isSelf ? '<br><span class="table-secondary">Sesion actual</span>' : ""}</td>
+        <td>${escapeHtml(user.email || "-")}</td>
+        <td>${escapeHtml(accountRoleLabel(user.role))}</td>
+        <td><span class="status-chip ${active ? "ok" : "danger"}">${active ? "Activo" : "Inactivo"}</span></td>
+        <td>${escapeHtml(formatDate(user.created_at))}</td>
+        <td>
+          <button class="ghost-button" type="button" data-account-user-toggle="${escapeHtml(user.id)}" data-active="${active ? "0" : "1"}" ${!canManage || isSelf ? "disabled" : ""}>
+            ${active ? "Desactivar" : "Activar"}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="6">No hay usuarios cargados para este negocio.</td></tr>';
+}
+
 function renderAccountView() {
   const business = state.businessProfile || {};
   const user = business.current_user || session?.user || {};
@@ -1455,6 +1613,7 @@ function renderAccountView() {
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
   renderCommercialDeal();
+  renderBusinessUsers();
   renderSubscriptionRenewal();
 
   if (accountNameInput) accountNameInput.value = business.name || "";
@@ -1572,19 +1731,32 @@ function renderShell() {
     return;
   }
 
-  const redirectTo = loginRedirectForSession(session);
-  if (redirectTo) {
-    saveValidatorSession(session);
-    window.location.assign(redirectTo);
+  if (isSessionExpired(session)) {
+    forceLoginAfterSessionIssue("Tu sesion expiro. Inicia sesion de nuevo para continuar.");
     return;
   }
 
-  profileName.textContent = session.user.full_name || session.user.email || "Business User";
-  profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
-  requestCampaignButton.textContent = isAdmin()
-    ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
-    : "Nueva campana";
-  loadWorkspace().then(applyInitialRouteParams);
+  refreshSessionIdentity()
+    .then(() => {
+      const redirectTo = loginRedirectForSession(session);
+      if (redirectTo) {
+        saveValidatorSession(session);
+        window.location.assign(redirectTo);
+        return;
+      }
+
+      profileName.textContent = session.user.full_name || session.user.email || "Business User";
+      profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
+      requestCampaignButton.textContent = isAdmin()
+        ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
+        : "Nueva campana";
+      return loadWorkspace().then(applyInitialRouteParams);
+    })
+    .catch((error) => {
+      if (session?.token) {
+        showFeedback(error.message || "No se pudo validar la sesion.", "error");
+      }
+    });
 }
 
 function applyInitialRouteParams() {
@@ -1780,11 +1952,15 @@ function requireCampaignAssociation(input, messageElement, actionLabel) {
 
 async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   stopActivityPolling();
-  const subscriptionPlansData = await apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] });
+  const [subscriptionPlansData, businessUsersData] = await Promise.all([
+    apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
+    apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
+  ]);
   state.subscription = session.user?.subscription || state.subscription;
   state.subscriptionPlans = subscriptionPlansData.plans || [];
   state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
   state.pricing = subscriptionPlansData.pricing || state.pricing;
+  state.businessUsers = businessUsersData.users || [];
   state.dashboard = null;
   state.commandCenter = null;
   state.summary = null;
@@ -1879,6 +2055,7 @@ async function loadWorkspace() {
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
     apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null }),
+    apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
     apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
   ];
 
@@ -1887,7 +2064,7 @@ async function loadWorkspace() {
   }
 
   try {
-    const [accessData, dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, activityData, adminCampaignData] = await Promise.all(requests);
+    const [accessData, dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, businessUsersData, activityData, adminCampaignData] = await Promise.all(requests);
     state.access = accessData.access || null;
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
@@ -1904,6 +2081,7 @@ async function loadWorkspace() {
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
+    state.businessUsers = businessUsersData.users || [];
     state.affiliates = [];
     state.strategicQrMetrics = null;
     state.qrPackageOffers = [];
@@ -2049,7 +2227,7 @@ async function loadPrepaidValidatorWorkspace() {
       || session?.user?.business?.logo_data_url
       || session?.user?.business?.settings?.logo_data_url);
     const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
-    const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData] = await Promise.all([
+    const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData, businessUsersData] = await Promise.all([
       apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
       apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
       apiSafe("/api/public/packages", {}, { packages: [] }),
@@ -2057,6 +2235,7 @@ async function loadPrepaidValidatorWorkspace() {
       apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
       apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null, subscription: session.user?.subscription || null }),
       apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null }),
+      apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
     ]);
 
     mergeBusinessProfile(businessProfileData.business || null);
@@ -2071,6 +2250,7 @@ async function loadPrepaidValidatorWorkspace() {
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
+    state.businessUsers = businessUsersData.users || [];
 
     renderSubscriptionBanner();
     applyPlanNavigation();
@@ -7262,6 +7442,69 @@ async function submitAccountPassword(event) {
   }
 }
 
+async function loadBusinessUsers() {
+  if (!session?.user?.business_id) return;
+  try {
+    const data = await api("/api/business/users", { headers: authHeaders() });
+    state.businessUsers = data.users || [];
+    renderBusinessUsers();
+  } catch (error) {
+    state.businessUsers = [];
+    renderBusinessUsers();
+    showFeedback(error.message || "No se pudieron cargar los usuarios del negocio.", "error");
+  }
+}
+
+async function submitAccountUser(event) {
+  event.preventDefault();
+  if (!isBusinessOwnerUser()) return;
+  setInlineMessage(accountUserCreateMessage, "Creando usuario...", "info");
+  setButtonLoading(accountUserCreateButton, true, "Creando...");
+  try {
+    const data = await api("/api/business/users", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        full_name: accountUserFullNameInput.value.trim(),
+        email: accountUserEmailInput.value.trim(),
+        role: accountUserRoleInput.value,
+        password: accountUserPasswordInput.value,
+      }),
+    });
+    state.businessUsers = [
+      data.user,
+      ...(state.businessUsers || []).filter((user) => user.id !== data.user.id),
+    ];
+    accountUserForm.reset();
+    renderBusinessUsers();
+    setInlineMessage(accountUserCreateMessage, "Usuario creado para este negocio.", "success");
+    showFeedback("Usuario creado correctamente.", "success", { title: "Equipo actualizado" });
+  } catch (error) {
+    setInlineMessage(accountUserCreateMessage, error.message || "No se pudo crear el usuario.", "error");
+    showFeedback(error.message || "No se pudo crear el usuario.", "error");
+  } finally {
+    setButtonLoading(accountUserCreateButton, false);
+  }
+}
+
+async function toggleBusinessUser(userId, isActive) {
+  if (!isBusinessOwnerUser() || !userId) return;
+  try {
+    const data = await api(`/api/business/users/${encodeURIComponent(userId)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ is_active: Boolean(isActive) }),
+    });
+    state.businessUsers = (state.businessUsers || []).map((user) => (
+      user.id === data.user.id ? data.user : user
+    ));
+    renderBusinessUsers();
+    showFeedback(`Usuario ${data.user.is_active ? "activado" : "desactivado"}.`, "success", { title: "Equipo actualizado" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el usuario.", "error");
+  }
+}
+
 async function handleBusinessLogoFile(file) {
   if (!file) return;
   try {
@@ -8634,6 +8877,13 @@ affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAff
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
+accountUserForm?.addEventListener("submit", submitAccountUser);
+refreshAccountUsersButton?.addEventListener("click", loadBusinessUsers);
+accountUsersTable?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-account-user-toggle]");
+  if (!button) return;
+  toggleBusinessUser(button.dataset.accountUserToggle, button.dataset.active === "1");
+});
 businessLogoUploadButton?.addEventListener("click", () => businessLogoInput?.click());
 businessLogoInput?.addEventListener("change", () => handleBusinessLogoFile(businessLogoInput.files?.[0]));
 businessLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo(""));
@@ -8642,6 +8892,7 @@ rangeButton.textContent = `Ultimos ${state.rangeDays} dias`;
 applyPortalTheme(readPreferredTheme());
 setView("dashboard");
 initPasswordResetFromUrl();
+setupPasswordRevealButtons();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

@@ -20,8 +20,8 @@ Este modelo separa el costo tecnico de operar la plataforma del costo comercial 
 
 | Paquete | Tickets incluidos | Precio COP | Ingreso COP por ticket | Modo |
 |---|---:|---:|---:|---|
-| T50 | 50 | 75.000 | 1.500 | Prepago |
-| T200 | 200 | 291.000 | 1.455 | Prepago |
+| T50 | 50 | 75.000 | 1.500 | Ticket operativo |
+| T200 | 200 | 291.000 | 1.455 | Activa Portal Base |
 | T600 | 600 | 829.350 | 1.382 | Pospago |
 | T2000 | 2.000 | 2.515.695 | 1.258 | Pospago |
 | T6000 | 6.000 | 7.169.731 | 1.195 | Pospago |
@@ -56,7 +56,7 @@ Mix:
 - 0 clientes Pro
 - 5 paquetes Portal QR500
 - 2 paquetes Portal QR1000
-- 4 recargas prepago QR200
+- 4 compras Ticket Access T200
 - Infra: Render Starter + Supabase Pro/Micro = 168.000 COP/mes
 
 | Metrica | Valor |
@@ -84,7 +84,7 @@ Mix:
 - 10 paquetes Portal QR500
 - 5 paquetes Portal QR1000
 - 1 paquete Portal QR2000
-- 4 recargas prepago QR200
+- 4 compras Ticket Access T200
 - Infra: Render Standard + Supabase Pro/Small = 260.000 COP/mes
 
 | Metrica | Valor |
@@ -112,7 +112,7 @@ Mix:
 - 20 paquetes Portal QR500
 - 10 paquetes Portal QR1000
 - 3 paquetes Portal QR4000
-- 8 recargas prepago QR200
+- 8 compras Ticket Access T200
 - Infra: Render Standard + Supabase Pro/Medium = 440.000 COP/mes
 
 | Metrica | Valor |
@@ -155,7 +155,7 @@ Con infraestructura recomendada minima de 168.000 COP/mes y pasarela estimada de
 | Starter RMS | 306.710 | 1 |
 | Growth RMS | 920.130 | 1 |
 | Pro RMS | 2.760.391 | 1 |
-| QR200 prepago | 162.940 | 2 |
+| Ticket Access T200 | 162.940 | 2 |
 | QR500 portal | 359.426 | 1 |
 | QR8000 portal | 3.833.876 | 1 |
 
@@ -165,13 +165,13 @@ Para recalcular cualquier mes:
 
 ```text
 Usuarios asociados =
-  Starter * 2 + Growth * 6 + Pro * 20 + clientes prepago * 1
+  Starter * 2 + Growth * 6 + Pro * 20 + clientes Portal Base * 2
 
 QR mensuales =
-  paquetes QR vendidos en prepago + paquetes QR vendidos a suscriptores
+  paquetes de tickets vendidos para Portal Base + paquetes de tickets vendidos a suscriptores
 
 Ingreso bruto =
-  suma de planes mensuales + suma de paquetes prepago
+  suma de planes mensuales + suma de paquetes de tickets
 
 Pasarela =
   ingreso bruto * 4,1531%
@@ -196,6 +196,6 @@ Margen =
 
 1. Mientras haya pocos clientes, mantener Render Free solo sirve para validar, pero no para prometer estabilidad comercial.
 2. El primer piso serio es Render Starter + Supabase Pro/Micro: aproximadamente 172.200 COP/mes.
-3. Con ese piso, el negocio se vuelve sano desde 1 Starter, 1 paquete Portal QR500 o 2 recargas prepago QR200.
+3. Con ese piso, el negocio se vuelve sano desde 1 Starter, 1 paquete Portal QR500 o 2 compras Ticket Access T200.
 4. Para cotizar QR, no mirar solo el costo tecnico por QR. El valor real debe cubrir soporte, diseno de campana, riesgo de operacion, pasarela, impuestos y margen comercial.
 5. Como regla conservadora: no vender QR masivos por debajo de 100 COP/QR mientras no haya volumen mensual estable y automatizacion completa.

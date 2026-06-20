@@ -309,14 +309,13 @@ backend/src/app.js
 
 Interfaz para vendedores o personal operativo.
 
-Ruta publica local:
+Ruta operativa local:
 
 ```text
-/validador
-/qr-validador
+/empresa/?view=validator
 ```
 
-`/qr-validador` expone el mismo validador standalone como link dedicado para personal operativo que no debe entrar al portal de `/empresa`. La ruta `/validador` se conserva para compatibilidad con QR existentes.
+El validador ya no se vende ni se muestra como producto independiente. Vive dentro del portal empresa como modulo operativo. Las rutas historicas se conservan solo como redirecciones legacy para QR existentes.
 
 Funciones:
 
@@ -433,8 +432,6 @@ Segun `backend/src/app.js`, el backend expone estas areas:
 Assets y frontends montados por Express:
 
 - `/`
-- `/validador`
-- `/qr-validador`
 - `/demo`
 - `/empresa`
 - `/admin`
@@ -576,8 +573,7 @@ npm run dev
 
 ```text
 http://localhost:3000/
-http://localhost:3000/validador
-http://localhost:3000/qr-validador
+http://localhost:3000/empresa/?view=validator
 http://localhost:3000/empresa
 http://localhost:3000/admin
 http://localhost:3000/campana-productos

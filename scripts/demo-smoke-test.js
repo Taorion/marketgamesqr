@@ -41,7 +41,7 @@ async function main() {
   const login = await request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({
-      email: process.env.DEMO_VALIDATOR_EMAIL || "validator.prepago@demo.local",
+      email: process.env.DEMO_VALIDATOR_EMAIL || "validator.base@demo.local",
       password: process.env.DEMO_VALIDATOR_PASSWORD || "MarketGames2026!",
     }),
   });

@@ -5,7 +5,7 @@ Este proyecto se despliega como una sola aplicacion Node/Express:
 - Landing comercial: `/paquetes/`
 - Portal empresa: `/empresa/`
 - Admin: `/admin/`
-- Validador: `/validador/`
+- Modulo de validacion QR: `/empresa/?view=validator`
 - API: `/api/...`
 
 ## 1. Base de datos
@@ -33,7 +33,7 @@ DB_SSL=true
 JWT_SECRET=un-secreto-largo-y-unico
 JWT_EXPIRES_IN=12h
 PUBLIC_APP_URL=https://TU-DOMINIO
-PUBLIC_VALIDATOR_URL=https://TU-DOMINIO/validador
+PUBLIC_VALIDATOR_URL=https://TU-DOMINIO/empresa/?view=validator
 CORS_ORIGINS=https://TU-DOMINIO
 ENABLE_DEMO_TOOLS=false
 MERCADO_PAGO_ACCESS_TOKEN=APP_USR_xxx
@@ -89,14 +89,16 @@ El reset demo deja:
 - `Bodega QR Express` en `PREPAID_QR`
 - `Cafe Barrio Norte` en `STARTER`
 - `Atelier de Coleccion` en `GROWTH`
+- `El Paño Ingles` en `GROWTH` con acuerdo comercial Premium especial
 - `Market Pro Retail` en `PRO`
 
 Acceso demo:
 
 ```text
-owner.prepago@demo.local
+owner.base@demo.local
 owner.starter@demo.local
 owner.growth@demo.local
+owner.panoingles@demo.local
 owner.pro@demo.local
 ```
 
@@ -112,7 +114,7 @@ MarketGames2026!
 https://TU-DOMINIO/paquetes/
 https://TU-DOMINIO/empresa/
 https://TU-DOMINIO/admin/
-https://TU-DOMINIO/validador/
+https://TU-DOMINIO/empresa/?view=validator
 ```
 
 ## 6. Mercado Pago

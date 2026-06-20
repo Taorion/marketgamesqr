@@ -5,8 +5,8 @@ Fecha: 2026-06-11
 ## Resumen
 
 El proyecto ya tiene una base funcional: API Express, Postgres, autenticacion JWT,
-portal empresa, admin, validador QR, pagina publica, flujo de paquetes prepago y
-webhook de Mercado Pago para activar usuarios prepago despues del pago.
+portal empresa, admin, modulo de validacion QR, pagina publica, flujo de paquetes de tickets operativos y
+webhook de Mercado Pago para activar Portal Base despues del pago.
 
 La revision encontro una falla critica de permisos en rutas admin, ya corregida,
 y varios puntos que deben ordenarse antes de produccion: seguridad de headers/CORS,
@@ -33,8 +33,8 @@ con codificacion rota y separacion entre demo/prototipos/producto.
 - HTTP 200 confirmado en:
   - `/`
   - `/empresa/`
+  - `/empresa/?view=validator`
   - `/admin/`
-  - `/validador/`
   - `/paquetes/`
   - `/api/health`
 - Prueba de acceso owner a admin: responde `403`.
@@ -169,7 +169,7 @@ con codificacion rota y separacion entre demo/prototipos/producto.
 - Migraciones versionadas.
 - Tests de permisos por rol.
 - Tests de webhook aprobado/rechazado/duplicado.
-- Tests de registro prepago y portal.
+- Tests de registro por tickets y portal.
 - Limpieza de docs UTF-8 y estructura de carpetas.
 
 ### Sprint 4: UX cliente
@@ -179,4 +179,3 @@ con codificacion rota y separacion entre demo/prototipos/producto.
 - Configuracion de empresa con NIT bloqueado.
 - Pantalla de onboarding despues de primer pago.
 - Acceso directo al validador o portal segun tipo de cuenta.
-

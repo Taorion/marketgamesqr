@@ -32,6 +32,36 @@ const changePasswordSchema = z.object({
   path: ["password_confirm"],
 });
 
+function publicUser(row = {}) {
+  return {
+    id: row.id,
+    business_id: row.business_id,
+    email: row.email,
+    full_name: row.full_name,
+    role: row.role,
+    is_active: row.is_active,
+    can_redeem_cross_business: row.can_redeem_cross_business,
+    branch_id: row.branch_id || null,
+  };
+}
+
+async function buildAuthUser(row = {}) {
+  const user = publicUser(row);
+  if (user.business_id) {
+    user.subscription = await getBusinessSubscription(user.business_id);
+  }
+  return user;
+}
+
+function sessionInfoFromToken(token) {
+  const decoded = jwt.decode(token) || {};
+  return {
+    token_type: "Bearer",
+    issued_at: decoded.iat ? new Date(decoded.iat * 1000).toISOString() : null,
+    expires_at: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null,
+  };
+}
+
 function hashResetToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -44,7 +74,7 @@ async function login(req, res, next) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
-      `select id, business_id, email, full_name, password_hash, role, is_active, can_redeem_cross_business
+      `select id, business_id, email, full_name, password_hash, role, is_active, can_redeem_cross_business, branch_id
        from app_users
        where lower(email) = lower($1)`,
       [body.email]
@@ -70,11 +100,19 @@ async function login(req, res, next) {
       { expiresIn: env.jwtExpiresIn }
     );
 
-    delete user.password_hash;
-    if (user.business_id) {
-      user.subscription = await getBusinessSubscription(user.business_id);
-    }
-    res.json({ token, user });
+    res.json({
+      token,
+      session: sessionInfoFromToken(token),
+      user: await buildAuthUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function me(req, res, next) {
+  try {
+    res.json({ user: await buildAuthUser(req.user) });
   } catch (error) {
     next(error);
   }
@@ -207,6 +245,7 @@ async function changePassword(req, res, next) {
 
 module.exports = {
   login,
+  me,
   requestPasswordReset,
   resetPassword,
   changePassword,

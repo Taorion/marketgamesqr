@@ -13,9 +13,12 @@ async function authRequired(req, _res, next) {
 
     const payload = jwt.verify(token, env.jwtSecret);
     const result = await query(
-      `select id, business_id, email, full_name, role, is_active, can_redeem_cross_business, branch_id
-       from app_users
-       where id = $1`,
+      `select u.id, u.business_id, u.email, u.full_name, u.role, u.is_active,
+              u.can_redeem_cross_business, u.branch_id,
+              b.is_active as business_is_active
+       from app_users u
+       left join businesses b on b.id = u.business_id
+       where u.id = $1`,
       [payload.sub]
     );
 
@@ -23,7 +26,11 @@ async function authRequired(req, _res, next) {
     if (!user || !user.is_active) {
       throw unauthorized("User is inactive or does not exist.");
     }
+    if (!["ADMIN", "ADMIN_MARKET_GAMES"].includes(user.role) && user.business_id && !user.business_is_active) {
+      throw forbidden("El negocio asignado a este usuario no esta activo.");
+    }
 
+    delete user.business_is_active;
     req.user = user;
     next();
   } catch (error) {

@@ -9,6 +9,9 @@ const {
   commandCenterAnalytics,
   businessActivity,
   updateBusinessProfile,
+  listBusinessUsers,
+  createBusinessUser,
+  updateBusinessUser,
   createCustomerAcquisitionSale,
   listCampaigns,
   createCampaign,
@@ -37,6 +40,9 @@ router.get("/tickets/balance", ticketBalance);
 router.get("/tickets/transactions", ticketTransactions);
 router.get("/profile", getBusinessProfile);
 router.patch("/profile", updateBusinessProfile);
+router.get("/users", listBusinessUsers);
+router.post("/users", createBusinessUser);
+router.patch("/users/:userId", updateBusinessUser);
 router.get("/contacts/feed", contactFeed);
 
 router.use(requirePortalAccess);

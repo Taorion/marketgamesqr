@@ -5,7 +5,7 @@ Documento técnico, comercial y estratégico de posicionamiento
 Versión: 2026-06-12
 Dominio oficial: https://marketgamesqr.com
 Portal empresa: https://marketgamesqr.com/empresa/
-Validador: https://marketgamesqr.com/validador/
+Modulo de validacion QR: https://marketgamesqr.com/empresa/?view=validator
 Planes y registro: https://marketgamesqr.com/paquetes/
 
 
@@ -137,7 +137,7 @@ La quinta ventaja es profesionalización. Un negocio que usa RMS se ve y opera c
 
 MarketGamesQR no reemplaza a las agencias ni a los freelancers. Los vuelve más valiosos. Una agencia que vende solo piezas gráficas o publicaciones compite por precio. Una agencia que vende campañas medibles con RMS puede cobrar mejor, retener clientes y demostrar resultados. La plataforma permite convertir creatividad en una operación con datos, lo que aumenta la percepción de profesionalismo.
 
-Para un socio comercial, MarketGamesQR es una oportunidad porque permite vender suscripciones, setups, paquetes de QR, servicios de campaña, consultoría, reportes y acompañamiento. No es una venta de una sola vez. Es un modelo recurrente. El cliente puede empezar con prepago, evolucionar a portal mensual, comprar créditos, activar campañas, sumar afiliados, medir sucursales y solicitar servicios premium. Esto abre oportunidades de upsell y renovación.
+Para un socio comercial, MarketGamesQR es una oportunidad porque permite vender activacion por tickets, suscripciones, setups, paquetes de QR, servicios de campana, consultoria, reportes y acompanamiento. No es una venta de una sola vez. Es un modelo expansible. El cliente puede empezar con Portal Base desde T200, comprar saldo operativo, activar campanas, sumar afiliados en Premium, medir sucursales y solicitar servicios premium. Esto abre oportunidades de upsell y renovacion.
 
 El socio puede vender MarketGamesQR con un argumento fuerte: no vendemos un QR, vendemos una infraestructura comercial medible. Esa frase permite diferenciarse de soluciones baratas o genéricas. Cualquier persona puede generar un QR gratis. No cualquier negocio puede conectar ese QR con validación, redención, ventas, referidos, afiliados, sucursales y revenue. Ahí está la diferencia.
 
@@ -188,15 +188,15 @@ Los QR de recomendación son aún más potentes. El afiliado puede compartir QR 
 La fidelización tradicional muchas veces se queda en puntos sin contexto. MarketGamesQR la conecta con revenue. No se trata solo de acumular puntos, sino de saber qué clientes recompran, quién recomienda, qué referido compra, cuánto revenue genera cada afiliado y cómo se comporta la comunidad. Esta información permite diseñar campañas más inteligentes.
 
 
-16. PREPAGO Y PORTAL MENSUAL: DOS PUERTAS DE ENTRADA
+16. PORTAL BASE, GROWTH TEMPORAL Y PREMIUM
 
-MarketGamesQR puede venderse en dos niveles de acceso: QR Validator prepago y portal mensual. El prepago es una entrada simple para negocios que quieren comprar créditos QR, generar beneficios y validarlos en tienda sin comprometerse todavía con una suscripción completa. Es ideal para microcampañas, promociones de baja escala, ferias pequeñas, tiendas que quieren probar o negocios que solo necesitan controlar beneficios.
+MarketGamesQR se vende con una puerta de entrada principal: Portal Base activado por tickets. El cliente compra T200 o mas, activa el portal sin mensualidad y usa sus tickets como saldo operativo para generar campanas, QR, leads, redenciones y ventas medibles.
 
-El prepago no debe venderse como si fuera el portal completo. Su promesa es directa: compra créditos QR, genera beneficios y valídalos en tienda. Es una forma de empezar con baja fricción. Permite reemplazar cupones genéricos por QR controlados y demostrar valor rápidamente. También sirve como producto de prueba para que un cliente entienda la lógica del sistema antes de pasar a un plan mensual.
+El validador QR deja de venderse como producto separado. Vive dentro del Portal RMS como modulo operativo. La promesa de entrada es directa: compra tus primeros 200 tickets y activa Portal Base sin mensualidad.
 
-El portal mensual es la versión estratégica completa. Incluye dashboard, campañas, leads, redenciones, Sales Tracker, afiliados, sucursales, exportaciones, QR estratégicos, analítica y decisiones basadas en datos. Es ideal para negocios que quieren medir marketing de forma recurrente, comparar canales, registrar revenue, gestionar afiliados y optimizar campañas. Esta versión convierte MarketGamesQR en un RMS pleno.
+Growth temporal permite probar una experiencia mas completa durante 3 meses cuando el cliente compra T200 o mas junto con el servicio de campana gamificada. Premium mensual es la version estrategica continua: multiples campanas, afiliados, referidos, sucursales, exportaciones extendidas, QR estrategicos, analitica avanzada y decisiones basadas en datos.
 
-Tener ambos modelos es una ventaja comercial. El socio puede vender prepago a clientes pequeños o indecisos y luego migrarlos a suscripción cuando necesiten más control. También puede vender planes mensuales a negocios más maduros que ya tienen campañas constantes o varias fuentes de llegada. Esta estructura permite escalar desde una compra simple hasta una relación de largo plazo.
+Esta estructura permite escalar desde una compra inicial de capacidad operativa hasta una relacion de largo plazo. El cliente empieza usando el portal con tickets y crece hacia Growth o Premium cuando necesita mas campanas, mas historial, mas sedes, afiliados, referidos o analitica avanzada.
 
 
 17. MÉTRICAS QUE UN RMS DEBE MEDIR
@@ -229,7 +229,7 @@ La segunda ventaja es su orientación a revenue. Muchas herramientas se enfocan 
 
 La tercera ventaja es su capacidad operativa. El portal no solo muestra resultados. También permite ejecutar acciones: generar QR, validar, redimir, registrar ventas, crear afiliados, sumar puntos, emitir carnets, generar lotes y exportar información. Un RMS debe ser operativo, no solo informativo.
 
-La cuarta ventaja es su modelo comercial flexible. Puede entrar por prepago, por suscripción mensual, por campañas, por créditos QR, por servicios premium, por agencias o por marca blanca. Esto permite atender desde microempresas hasta cadenas y agencias. La flexibilidad facilita adopción y escalamiento.
+La cuarta ventaja es su modelo comercial flexible. Puede entrar por Portal Base activado con tickets, por Growth temporal, por Premium mensual, por servicios de campana, por agencias o por marca blanca. Esto permite atender desde microempresas hasta cadenas y agencias. La flexibilidad facilita adopcion y escalamiento.
 
 La quinta ventaja es la narrativa de categoría. Al presentarse como RMS, MarketGamesQR no compite en la categoría saturada de “generadores QR” o “dashboards”. Crea una conversación nueva: revenue marketing para negocios. Esa narrativa permite educar, diferenciar, cobrar mejor y construir autoridad.
 

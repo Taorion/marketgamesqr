@@ -21,7 +21,7 @@ const env = {
   dbSsl: process.env.DB_SSL !== "false",
   jwtSecret: process.env.JWT_SECRET || "dev-only-change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "12h",
-  publicValidatorUrl: process.env.PUBLIC_VALIDATOR_URL || "http://localhost:3000/validador",
+  publicValidatorUrl: process.env.PUBLIC_VALIDATOR_URL || "http://localhost:3000/empresa/?view=validator",
   publicAppUrl: process.env.PUBLIC_APP_URL || defaultPublicAppUrl,
   corsOrigins: splitList(process.env.CORS_ORIGINS || process.env.PUBLIC_APP_URL || defaultPublicAppUrl),
   enableDemoTools: process.env.ENABLE_DEMO_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEMO_TOOLS !== "false"),

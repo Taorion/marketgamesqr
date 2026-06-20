@@ -13,8 +13,8 @@ http://localhost:3000/
 Demo kit de campanas
 http://localhost:3000/demo
 
-Validador universal
-http://localhost:3000/validador
+Modulo de validacion dentro del portal
+http://localhost:3000/empresa/?view=validator
 
 Portal empresa
 http://localhost:3000/empresa

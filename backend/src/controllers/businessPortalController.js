@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const QRCode = require("qrcode");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
@@ -87,6 +88,17 @@ const businessProfileSchema = z.object({
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
 });
 
+const businessUserSchema = z.object({
+  full_name: z.string().trim().min(2).max(160),
+  email: z.string().trim().email().max(180),
+  password: z.string().min(8).max(120),
+  role: z.enum(["BUSINESS_OWNER", "VALIDATOR"]),
+});
+
+const businessUserPatchSchema = z.object({
+  is_active: z.boolean(),
+});
+
 const acquisitionSourceOptions = [
   "STORE_WALK_IN",
   "FRIEND_REFERRAL",
@@ -122,6 +134,24 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+function requireBusinessOwner(req) {
+  if (!["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(req.user?.role)) {
+    throw forbidden("Solo el owner del negocio puede administrar usuarios.");
+  }
+}
+
+async function activeUserCountsForBusiness(businessId) {
+  const result = await query(
+    `select
+       count(*) filter (where role in ('BUSINESS_OWNER', 'VALIDATOR'))::int as users,
+       count(*) filter (where role = 'VALIDATOR')::int as validators
+     from app_users
+     where business_id = $1 and is_active = true`,
+    [businessId]
+  );
+  return result.rows[0] || { users: 0, validators: 0 };
 }
 
 function referralPointsForSaleAmount(amount) {
@@ -457,6 +487,107 @@ async function updateBusinessProfile(req, res, next) {
         includeLogo,
       }),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listBusinessUsers(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const result = await query(
+      `select id, business_id, email, full_name, role, branch_id,
+              can_redeem_cross_business, is_active, created_at, updated_at
+       from app_users
+       where business_id = $1
+         and role in ('BUSINESS_OWNER', 'VALIDATOR')
+       order by
+         case role when 'BUSINESS_OWNER' then 0 else 1 end,
+         created_at asc`,
+      [businessId]
+    );
+    res.json({ users: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createBusinessUser(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const body = validate(businessUserSchema, req.body);
+
+    const counts = await activeUserCountsForBusiness(businessId);
+    await assertLimitForBusiness(businessId, "users", Number(counts.users || 0), "usuarios");
+    if (body.role === "VALIDATOR") {
+      await assertLimitForBusiness(businessId, "validators", Number(counts.validators || 0), "validadores");
+    }
+
+    const existing = await query(
+      "select id from app_users where lower(email) = lower($1) limit 1",
+      [body.email]
+    );
+    if (existing.rowCount) {
+      throw badRequest("Ya existe un usuario registrado con este correo.");
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, 12);
+    const result = await query(
+      `insert into app_users (business_id, email, password_hash, full_name, role, can_redeem_cross_business, is_active)
+       values ($1, $2, $3, $4, $5::user_role, false, true)
+       returning id, business_id, email, full_name, role, branch_id,
+                 can_redeem_cross_business, is_active, created_at, updated_at`,
+      [businessId, body.email, passwordHash, body.full_name, body.role]
+    );
+    res.status(201).json({ user: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateBusinessUser(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const body = validate(businessUserPatchSchema, req.body);
+    if (req.params.userId === req.user.id && body.is_active === false) {
+      throw badRequest("No puedes desactivar tu propio usuario activo.");
+    }
+
+    if (body.is_active) {
+      const target = await query(
+        "select id, role, is_active from app_users where id = $1 and business_id = $2",
+        [req.params.userId, businessId]
+      );
+      if (!target.rowCount) {
+        throw notFound("Usuario no encontrado para este negocio.");
+      }
+      if (!target.rows[0].is_active) {
+        const counts = await activeUserCountsForBusiness(businessId);
+        await assertLimitForBusiness(businessId, "users", Number(counts.users || 0), "usuarios");
+        if (target.rows[0].role === "VALIDATOR") {
+          await assertLimitForBusiness(businessId, "validators", Number(counts.validators || 0), "validadores");
+        }
+      }
+    }
+
+    const result = await query(
+      `update app_users
+       set is_active = $3,
+           updated_at = now()
+       where id = $1
+         and business_id = $2
+         and role in ('BUSINESS_OWNER', 'VALIDATOR')
+       returning id, business_id, email, full_name, role, branch_id,
+                 can_redeem_cross_business, is_active, created_at, updated_at`,
+      [req.params.userId, businessId, body.is_active]
+    );
+    if (!result.rowCount) {
+      throw notFound("Usuario no encontrado para este negocio.");
+    }
+    res.json({ user: result.rows[0] });
   } catch (error) {
     next(error);
   }
@@ -1396,6 +1527,9 @@ module.exports = {
   commandCenterAnalytics,
   businessActivity,
   updateBusinessProfile,
+  listBusinessUsers,
+  createBusinessUser,
+  updateBusinessUser,
   createCustomerAcquisitionSale,
   listCampaigns,
   createCampaign,

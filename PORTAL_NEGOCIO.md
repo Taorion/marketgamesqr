@@ -343,7 +343,7 @@ El lote queda registrado en el portal para medir:
 
 ### 9. Validador integrado
 
-Ademas del validador publico en `/validador`, el portal empresa tiene una vista de validacion operativa.
+El portal empresa tiene una vista de validacion operativa para escanear y redimir QR sin vender el validador como producto separado.
 
 Permite:
 
@@ -444,7 +444,7 @@ El validador es la app que usa el vendedor.
 URL:
 
 ```text
-/validador
+/empresa/?view=validator
 ```
 
 Funciones:
@@ -473,7 +473,7 @@ El QR no depende de texto visible facil de copiar.
 El QR contiene un token seguro:
 
 ```text
-https://dominio.com/validadortoken=TOKEN_SEGURO
+https://dominio.com/empresa/?view=validator&token=TOKEN_SEGURO
 ```
 
 El backend valida siempre contra la base de datos.
