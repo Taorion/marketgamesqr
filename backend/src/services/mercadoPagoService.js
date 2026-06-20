@@ -52,6 +52,49 @@ function planChargeCop(plan, billingCycle) {
   return Number(plan.monthly_price_cop || 0);
 }
 
+function parseDealDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function monthlyChargeForBusiness(plan, business = {}, effectiveDate = new Date()) {
+  const standardPriceCop = Number(plan.monthly_price_cop || 0);
+  const deal = business.settings?.commercial_deal;
+  const terms = deal?.terms || {};
+  const dealPlanCode = terms.active_plan_code || terms.normal_price_plan_code;
+  const discountedPriceCop = Number(terms.discounted_monthly_price_cop || deal?.discounted_monthly_price_cop || 0);
+  const discountedStartsAt = parseDealDate(deal?.discounted_period_started_at || terms.discounted_period_started_at);
+  const discountedEndsAt = parseDealDate(deal?.discounted_period_ends_at || terms.discounted_period_ends_at);
+  const chargeDate = effectiveDate instanceof Date && !Number.isNaN(effectiveDate.getTime())
+    ? effectiveDate
+    : new Date();
+
+  if (
+    deal?.status
+    && dealPlanCode === plan.code
+    && discountedPriceCop > 0
+    && (!discountedStartsAt || chargeDate >= discountedStartsAt)
+    && (!discountedEndsAt || chargeDate < discountedEndsAt)
+  ) {
+    return {
+      price_cop: discountedPriceCop,
+      standard_price_cop: standardPriceCop,
+      special_pricing_applied: true,
+      special_pricing_label: deal.first_year_price_label || deal.summary || "Precio especial activo",
+      special_pricing_ends_at: discountedEndsAt ? discountedEndsAt.toISOString() : null,
+    };
+  }
+
+  return {
+    price_cop: standardPriceCop,
+    standard_price_cop: standardPriceCop,
+    special_pricing_applied: false,
+    special_pricing_label: null,
+    special_pricing_ends_at: null,
+  };
+}
+
 function isBaseAccessPackage(packageSize) {
   return Number(packageSize || 0) >= BASE_PORTAL_MIN_TICKETS;
 }
@@ -282,7 +325,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
   }
 
   const currentBusiness = await query(
-    `select plan_code
+    `select plan_code, settings, subscription_current_period_ends_at
      from businesses
      where id = $1`,
     [user.business_id]
@@ -293,6 +336,8 @@ async function createSubscriptionRenewalCheckout(user, body) {
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
+  const chargeStartDate = nextSubscriptionChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const order = await query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -304,16 +349,24 @@ async function createSubscriptionRenewalCheckout(user, body) {
       plan.code,
       monthlyQrIncluded,
       `${plan.name} - renovacion mensual`,
-      plan.monthly_price_cop,
+      charge.price_cop,
       {
         source: "business_portal_subscription_renewal",
         requested_by_email: user.email,
+        special_pricing: charge.special_pricing_applied ? {
+          label: charge.special_pricing_label,
+          standard_price_cop: charge.standard_price_cop,
+          charged_price_cop: charge.price_cop,
+          ends_at: charge.special_pricing_ends_at,
+        } : null,
         signup: {
           type: "portal_monthly_subscription",
           business_id: user.business_id,
           user_id: user.id,
           email: user.email,
           plan_code: plan.code,
+          plan_price_cop: charge.price_cop,
+          standard_plan_price_cop: charge.standard_price_cop,
           renewal: true,
         },
       },
@@ -329,7 +382,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
           id: plan.code,
           title: `${plan.name} - renovacion mensual Market Games`,
           quantity: 1,
-          unit_price: Number(plan.monthly_price_cop),
+          unit_price: Number(charge.price_cop),
           currency_id: "COP",
         },
       ],
@@ -349,6 +402,8 @@ async function createSubscriptionRenewalCheckout(user, body) {
         business_id: user.business_id,
         user_id: user.id,
         plan_code: plan.code,
+        plan_price_cop: charge.price_cop,
+        special_pricing_applied: charge.special_pricing_applied,
         signup_type: "portal_monthly_subscription",
         renewal: true,
       },
@@ -391,7 +446,7 @@ async function createSubscriptionAutoRenewal(user, body) {
   }
 
   const currentBusiness = await query(
-    `select plan_code, subscription_current_period_ends_at
+    `select plan_code, settings, subscription_current_period_ends_at
      from businesses
      where id = $1 and is_active = true`,
     [user.business_id]
@@ -403,6 +458,7 @@ async function createSubscriptionAutoRenewal(user, body) {
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
   const chargeStartDate = nextSubscriptionChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const order = await query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -414,16 +470,24 @@ async function createSubscriptionAutoRenewal(user, body) {
       plan.code,
       monthlyQrIncluded,
       `${plan.name} - cobro mensual automatico`,
-      plan.monthly_price_cop,
+      charge.price_cop,
       {
         source: "business_portal_subscription_auto_renewal",
         requested_by_email: user.email,
+        special_pricing: charge.special_pricing_applied ? {
+          label: charge.special_pricing_label,
+          standard_price_cop: charge.standard_price_cop,
+          charged_price_cop: charge.price_cop,
+          ends_at: charge.special_pricing_ends_at,
+        } : null,
         signup: {
           type: "portal_monthly_subscription_auto_renewal",
           business_id: user.business_id,
           user_id: user.id,
           email: user.email,
           plan_code: plan.code,
+          plan_price_cop: charge.price_cop,
+          standard_plan_price_cop: charge.standard_price_cop,
           auto_renew: true,
         },
       },
@@ -442,9 +506,10 @@ async function createSubscriptionAutoRenewal(user, body) {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: Number(plan.monthly_price_cop),
+        transaction_amount: Number(charge.price_cop),
         currency_id: "COP",
         start_date: chargeStartDate.toISOString(),
+        ...(charge.special_pricing_applied && charge.special_pricing_ends_at ? { end_date: charge.special_pricing_ends_at } : {}),
       },
     }),
   });
