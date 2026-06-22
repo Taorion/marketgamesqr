@@ -1467,6 +1467,9 @@ function renderSubscriptionRenewal() {
   const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop);
   const hasMonthlyPlan = ["subscription", "ticket_base", "growth_temporal"].includes(plan.category);
   const autoRenew = plan.auto_renew || {};
+  const dueAt = plan.official_payment_due_at || plan.current_period_ends_at;
+  const renewalDate = dueAt ? new Date(dueAt) : null;
+  const hasFutureRenewalDate = renewalDate && !Number.isNaN(renewalDate.getTime()) && renewalDate > new Date();
 
   subscriptionRenewalPlanSelect.innerHTML = plans.length
     ? plans.map((item) => `
@@ -1478,7 +1481,7 @@ function renderSubscriptionRenewal() {
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
   if (subscriptionAutoRenewButton) {
-    subscriptionAutoRenewButton.disabled = plan.category !== "subscription" || !plans.length || autoRenew.enabled;
+    subscriptionAutoRenewButton.disabled = plan.category !== "subscription" || !plans.length || autoRenew.enabled || !hasFutureRenewalDate;
     subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Activar cobro automatico";
   }
   if (subscriptionAutoRenewStatus) {
@@ -1486,6 +1489,8 @@ function renderSubscriptionRenewal() {
       ? "Cobro automatico autorizado en Mercado Pago."
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
+        : plan.category === "subscription" && !hasFutureRenewalDate
+          ? "Define una fecha de renovacion futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
     subscriptionAutoRenewStatus.textContent = autoRenewLabel;
   }
@@ -1496,7 +1501,10 @@ function renderSubscriptionRenewal() {
   }
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
-      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.`, "info");
+      const autoRenewGuidance = plan.category === "subscription" && !hasFutureRenewalDate
+        ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovacion."
+        : "Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.";
+      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites mas herramientas.", "info");
     }

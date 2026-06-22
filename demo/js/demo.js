@@ -12,7 +12,6 @@ const qrOutput = document.getElementById("qrOutput");
 const qrImage = document.getElementById("qrImage");
 const qrStatus = document.getElementById("qrStatus");
 const qrUrl = document.getElementById("qrUrl");
-const openValidatorLink = document.getElementById("openValidatorLink");
 const copyQrButton = document.getElementById("copyQrButton");
 
 const labels = {
@@ -65,7 +64,6 @@ async function generateQr(event) {
   qrImage.src = data.qr_image_data_url;
   qrStatus.textContent = `${data.campaign_label} listo`;
   qrUrl.textContent = data.validator_url;
-  openValidatorLink.href = data.validator_url;
   qrOutput.classList.remove("hidden");
 }
 

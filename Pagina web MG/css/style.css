@@ -195,6 +195,7 @@ main {
 .site-nav a,
 .nav-cta,
 .header-access-link,
+.header-login-direct,
 .header-login-menu summary,
 .header-login-dropdown a,
 .button-primary,
@@ -290,6 +291,7 @@ main {
   flex: 0 0 auto;
 }
 
+.header-login-direct,
 .header-login-menu summary {
   display: inline-flex;
   align-items: center;
@@ -304,6 +306,7 @@ main {
   font-weight: 900;
   list-style: none;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .header-login-menu summary::-webkit-details-marker {
@@ -355,6 +358,7 @@ main {
 
 .nav-cta:hover,
 .header-access-link:hover,
+.header-login-direct:hover,
 .button-primary:hover,
 .button-secondary:hover,
 .slider-btn:hover,
@@ -1903,6 +1907,7 @@ main {
     font-size: 0.8rem;
   }
 
+  .header-login-direct,
   .header-login-menu summary {
     min-height: 44px;
     padding: 0 14px;
@@ -1919,6 +1924,7 @@ main {
     min-width: 0;
   }
 
+  .header-login-direct,
   .header-login-menu {
     order: 2;
     margin-left: auto;
@@ -1932,6 +1938,7 @@ main {
     order: 4;
   }
 
+  .header-login-direct,
   .header-login-menu summary {
     min-height: 44px;
     padding: 0 14px;

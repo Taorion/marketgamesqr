@@ -41,6 +41,18 @@ function nextSubscriptionChargeDate(currentPeriodEndsAt) {
   return now;
 }
 
+function nextAutoRenewalChargeDate(currentPeriodEndsAt) {
+  const now = new Date();
+  const currentEnd = currentPeriodEndsAt ? new Date(currentPeriodEndsAt) : null;
+  if (!currentEnd || Number.isNaN(currentEnd.getTime())) {
+    throw badRequest("No hay una fecha oficial de renovacion activa. Configura o renueva primero la mensualidad antes de inscribir la tarjeta.");
+  }
+  if (currentEnd <= now) {
+    throw badRequest("La mensualidad ya esta vencida. Renueva el periodo actual antes de activar el cobro automatico.");
+  }
+  return currentEnd;
+}
+
 function normalizeBillingCycle(value) {
   return value === "annual" ? "annual" : "monthly";
 }
@@ -457,7 +469,7 @@ async function createSubscriptionAutoRenewal(user, body) {
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
-  const chargeStartDate = nextSubscriptionChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const chargeStartDate = nextAutoRenewalChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const order = await query(
     `insert into qr_credit_purchase_orders

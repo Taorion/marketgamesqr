@@ -4,7 +4,6 @@ const submitButton = document.getElementById("submitButton");
 const qrResult = document.getElementById("qrResult");
 const qrImage = document.getElementById("qrImage");
 const qrCopy = document.getElementById("qrCopy");
-const validatorLink = document.getElementById("validatorLink");
 const documentId = document.getElementById("documentId");
 const phone = document.getElementById("phone");
 
@@ -47,7 +46,6 @@ async function submitPreferences(event) {
     }
 
     qrImage.src = data.qr_image_data_url;
-    validatorLink.href = data.validator_url;
     qrCopy.textContent = `QR asociado a cedula ${value("documentId")} y telefono ${value("phone")}. Bono valido por 30000 COP en compras desde 50000 COP.`;
     preferenceForm.classList.add("hidden");
     qrResult.classList.remove("hidden");

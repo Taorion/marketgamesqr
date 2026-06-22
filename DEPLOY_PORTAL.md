@@ -5,7 +5,7 @@ Este proyecto se despliega como una sola aplicacion Node/Express:
 - Landing comercial: `/paquetes/`
 - Portal empresa: `/empresa/`
 - Admin: `/admin/`
-- Modulo de validacion QR: `/empresa/?view=validator`
+- Validacion QR: dentro del portal `/empresa/`
 - API: `/api/...`
 
 ## 1. Base de datos
@@ -33,7 +33,7 @@ DB_SSL=true
 JWT_SECRET=un-secreto-largo-y-unico
 JWT_EXPIRES_IN=12h
 PUBLIC_APP_URL=https://TU-DOMINIO
-PUBLIC_VALIDATOR_URL=https://TU-DOMINIO/empresa/?view=validator
+PUBLIC_VALIDATOR_URL=https://TU-DOMINIO/empresa/
 CORS_ORIGINS=https://TU-DOMINIO
 ENABLE_DEMO_TOOLS=false
 MERCADO_PAGO_ACCESS_TOKEN=APP_USR_xxx
@@ -114,7 +114,6 @@ MarketGames2026!
 https://TU-DOMINIO/paquetes/
 https://TU-DOMINIO/empresa/
 https://TU-DOMINIO/admin/
-https://TU-DOMINIO/empresa/?view=validator
 ```
 
 ## 6. Mercado Pago

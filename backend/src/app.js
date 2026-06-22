@@ -133,7 +133,6 @@ app.use("/api/payments", paymentRoutes);
 app.use(express.static(marketGamesWebRoot));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
-  target.searchParams.set("view", "validator");
   if (req.query.token) {
     target.searchParams.set("token", req.query.token);
   }
