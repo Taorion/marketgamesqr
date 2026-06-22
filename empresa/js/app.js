@@ -1494,7 +1494,7 @@ function renderSubscriptionRenewal() {
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
         : isTestingRenewalPlan
-          ? "Plan demo disponible: COP 500 con renovacion automatica cada 3 dias."
+          ? "Plan demo disponible: COP 1.700 con renovacion automatica cada 3 dias."
         : plan.category === "subscription" && !hasFutureRenewalDate
           ? "Define una fecha de renovacion futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
@@ -1508,7 +1508,7 @@ function renderSubscriptionRenewal() {
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
       const autoRenewGuidance = isTestingRenewalPlan
-        ? "El plan demo inscribe tarjeta y programa cobros de COP 500 cada 3 dias para prueba."
+        ? "El plan demo inscribe tarjeta y programa cobros de COP 1.700 cada 3 dias para prueba."
         : plan.category === "subscription" && !hasFutureRenewalDate
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovacion."
         : "Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.";
