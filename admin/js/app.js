@@ -1,4 +1,7 @@
 const SESSION_KEY = "market_games_admin_session_v1";
+const APP_VERSION = "admin-20260622-session-enforced-v1";
+const APP_VERSION_KEY = "market_games_admin_app_version";
+const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 
 const loginPanel = document.getElementById("loginPanel");
 const workspace = document.getElementById("workspace");
@@ -66,11 +69,34 @@ function escapeHtml(value) {
 
 function loadSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY)) || null;
+    const rawSession = localStorage.getItem(SESSION_KEY);
+    const storedVersion = localStorage.getItem(APP_VERSION_KEY);
+    if (rawSession && storedVersion !== APP_VERSION) {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el panel admin. Por seguridad cerramos tu sesion anterior; inicia sesion de nuevo.");
+      localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+      return null;
+    }
+    localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+    return JSON.parse(rawSession) || null;
   } catch {
     localStorage.removeItem(SESSION_KEY);
     return null;
   }
+}
+
+function clearSession(message = "") {
+  session = null;
+  localStorage.removeItem(SESSION_KEY);
+  if (message) {
+    localStorage.setItem(APP_UPDATE_NOTICE_KEY, message);
+  }
+}
+
+function consumeAppUpdateNotice() {
+  const notice = localStorage.getItem(APP_UPDATE_NOTICE_KEY) || "";
+  if (notice) localStorage.removeItem(APP_UPDATE_NOTICE_KEY);
+  return notice;
 }
 
 function money(value) {
@@ -127,7 +153,13 @@ async function api(path, options = {}) {
     },
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error?.message || "Error de API");
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearSession(data.error?.message || "Tu sesion expiro o el panel fue actualizado. Inicia sesion de nuevo.");
+      renderShell();
+    }
+    throw new Error(data.error?.message || "Error de API");
+  }
   return data;
 }
 
@@ -135,6 +167,10 @@ function renderShell() {
   const logged = Boolean(session?.token);
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
+  if (!logged) {
+    const notice = consumeAppUpdateNotice();
+    if (notice) loginMessage.textContent = notice;
+  }
   if (logged) loadWorkspace();
 }
 
@@ -161,6 +197,7 @@ async function login(event) {
       }),
     });
     session = data;
+    localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
     renderShell();
   } catch (error) {
@@ -824,8 +861,7 @@ businessFilter.addEventListener("change", async (event) => {
 markReadyButton.addEventListener("click", markReady);
 userRole.addEventListener("change", syncUserRoleFields);
 logoutButton.addEventListener("click", () => {
-  session = null;
-  localStorage.removeItem(SESSION_KEY);
+  clearSession();
   renderShell();
 });
 

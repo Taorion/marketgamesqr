@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260620-auth-sessions-v2";
+const APP_VERSION = "empresa-20260622-session-enforced-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -973,7 +973,7 @@ async function api(path, options = {}) {
   })() : {};
   if (!response.ok) {
     if (response.status === 401) {
-      forceLoginAfterSessionIssue("Tu sesion expiro o el portal fue actualizado. Inicia sesion de nuevo para continuar.");
+      forceLoginAfterSessionIssue(data.error?.message || "Tu sesion expiro o el portal fue actualizado. Inicia sesion de nuevo para continuar.");
     }
     throw new Error(data.error?.message || httpErrorMessage(response, rawText));
   }

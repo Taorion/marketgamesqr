@@ -12,6 +12,10 @@ async function authRequired(req, _res, next) {
     }
 
     const payload = jwt.verify(token, env.jwtSecret);
+    if (payload.session_version !== env.appSessionVersion) {
+      throw unauthorized("El portal fue actualizado. Inicia sesion de nuevo para cargar la version vigente.");
+    }
+
     const result = await query(
       `select u.id, u.business_id, u.email, u.full_name, u.role, u.is_active,
               u.can_redeem_cross_business, u.branch_id,

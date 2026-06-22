@@ -57,6 +57,7 @@ function sessionInfoFromToken(token) {
   const decoded = jwt.decode(token) || {};
   return {
     token_type: "Bearer",
+    session_version: decoded.session_version || null,
     issued_at: decoded.iat ? new Date(decoded.iat * 1000).toISOString() : null,
     expires_at: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : null,
   };
@@ -95,7 +96,12 @@ async function login(req, res, next) {
     }
 
     const token = jwt.sign(
-      { sub: user.id, role: user.role, business_id: user.business_id },
+      {
+        sub: user.id,
+        role: user.role,
+        business_id: user.business_id,
+        session_version: env.appSessionVersion,
+      },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
     );
