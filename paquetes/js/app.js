@@ -356,11 +356,12 @@ function renderSelectionBox() {
       <strong>${escapeHtml(selectedPlan?.name || "Plan pendiente")}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <div class="summary-lines">
         <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotizacion" : "Sin plan seleccionado"}</b></div>
-        <div><span>Tickets iniciales</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets` : "Elige saldo inicial despues del portal"}</b></div>
+        <div><span>Tickets iniciales</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(totalData.package_cop)}` : "Elige saldo inicial despues del portal"}</b></div>
+        <div><span>Total plan + tickets</span><b>${selectedPlan?.monthly_price_cop && selectedPackage ? copMoney(totalData.total_cop) : "Pendiente"}</b></div>
         <div><span>Autorizacion</span><b>${selectedPlan?.monthly_price_cop ? "Tarjeta en Mercado Pago" : "Pendiente"}</b></div>
         <div><span>Primer cobro del plan</span><b>${selectedPlan?.monthly_price_cop ? planBillingLabel(selectedPlan) : "Pendiente"}</b></div>
       </div>
-      ${selectedPlan?.monthly_price_cop ? `<p>El alta queda activa cuando Mercado Pago autoriza la tarjeta. Los tickets seleccionados se cargan como saldo operativo inicial y no vencen por cierre de mes.</p>` : ""}
+      ${selectedPlan?.monthly_price_cop ? `<p>El alta queda activa cuando Mercado Pago autoriza la tarjeta. El resumen totaliza el plan y los tickets elegidos; los tickets seleccionados se cargan como saldo operativo inicial y no vencen por cierre de mes.</p>` : ""}
       <ul class="summary-list">
         ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
       </ul>
