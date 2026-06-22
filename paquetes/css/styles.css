@@ -494,7 +494,7 @@ label span {
 .request-form .full { grid-column: 1 / -1; }
 .signup-card-security {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   padding: 12px;
   border: 1px solid rgba(25, 184, 123, 0.22);

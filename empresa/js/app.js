@@ -1528,6 +1528,11 @@ function renderSubscriptionRenewal() {
         <small>Mercado Pago lo devuelve enseguida si el banco aprueba.</small>
       </div>
       <div>
+        <span>Cuotas</span>
+        <strong>Continua en un pago</strong>
+        <small>Si Mercado Pago no muestra cuotas, no bloquea la autorizacion recurrente.</small>
+      </div>
+      <div>
         <span>Primer cobro real</span>
         <strong>${escapeHtml(firstChargeLabel)}</strong>
         <small>${escapeHtml(selectedPlanChargeLabel)} ${escapeHtml(selectedRenewalPlan?.billing_label || "mensual")}.</small>
