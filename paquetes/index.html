@@ -25,7 +25,7 @@
   <link rel="shortcut icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="apple-touch-icon" href="/img/MGLogo-01.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="css/styles.css?v=portal-only-validator-20260618">
+  <link rel="stylesheet" href="css/styles.css?v=card-enrollment-signup-20260622">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -120,7 +120,7 @@
       <article>
         <span class="benefit-icon">3</span>
         <h3>Pago confirmado</h3>
-        <p>El portal se habilita solo cuando Mercado Pago confirma la compra de tickets o el upgrade.</p>
+        <p>El portal se habilita solo cuando Mercado Pago confirma el pago de tickets o autoriza la tarjeta del plan mensual.</p>
       </article>
       <article>
         <span class="benefit-icon">4</span>
@@ -132,7 +132,7 @@
     <section class="steps-strip">
       <div><strong>Elige</strong><span>Portal primero; tickets despues</span></div>
       <div><strong>Registra</strong><span>Empresa, documento de facturacion y acceso</span></div>
-      <div><strong>Paga</strong><span>Mercado Pago confirma la activacion</span></div>
+      <div><strong>Autoriza</strong><span>Mercado Pago valida pago o tarjeta</span></div>
       <div><strong>Usa</strong><span>Entra al portal y valida desde el modulo interno</span></div>
     </section>
 
@@ -241,12 +241,29 @@
           <input id="privacyAccepted" type="checkbox" required>
           <span>Acepto la <a href="/privacidad/" target="_blank" rel="noopener">Politica de Datos y Privacidad</a> y autorizo el tratamiento de datos necesario para operar Market Games.</span>
         </label>
-        <button class="primary-button full" id="submitButton" type="submit">Crear cuenta y pagar activacion</button>
+        <div class="signup-card-security full hidden" id="signupCardSecurity" aria-live="polite">
+          <div>
+            <span>Tarjeta segura</span>
+            <strong>Market Games no guarda los datos de tu tarjeta.</strong>
+            <p>La autorizacion ocurre en Mercado Pago. El portal recibe solo el estado de autorizacion para activar tu cuenta.</p>
+          </div>
+          <div>
+            <span>Validacion</span>
+            <strong>Puede aparecer un cargo temporal.</strong>
+            <p>Mercado Pago puede validar la tarjeta y devolver el valor enseguida si el banco aprueba.</p>
+          </div>
+          <div>
+            <span>Cobro real</span>
+            <strong>Queda programado por el plan elegido.</strong>
+            <p>Tu empresa se activa cuando Mercado Pago confirma la tarjeta o el pago correspondiente.</p>
+          </div>
+        </div>
+        <button class="primary-button full" id="submitButton" type="submit">Crear cuenta y continuar</button>
       </form>
       <p class="message" id="requestMessage"></p>
     </section>
   </main>
 
-  <script src="js/app.js?v=portal-only-validator-20260618" defer></script>
+  <script src="js/app.js?v=card-enrollment-signup-20260622" defer></script>
 </body>
 </html>

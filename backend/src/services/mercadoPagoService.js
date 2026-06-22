@@ -721,9 +721,12 @@ async function createPortalSignupCheckout(client, payload) {
 
   const billingCycle = normalizeBillingCycle(payload.billing_cycle);
   const planPriceCop = planChargeCop(plan, billingCycle);
-  const totalPriceCop = planPriceCop + Number(offer.price_cop);
   const subscriptionType = billingCycle === "annual" ? "portal_annual_subscription" : "portal_monthly_subscription";
   const billingLabel = billingCycle === "annual" ? "anualidad" : "mensualidad";
+  const firstChargeDate = new Date(Date.now() + 5 * 60 * 1000);
+  const recurringFrequency = billingCycle === "annual"
+    ? { frequency: 12, frequency_type: "months" }
+    : planBillingFrequency(plan);
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -735,11 +738,13 @@ async function createPortalSignupCheckout(client, payload) {
       plan.code,
       offer.package_size,
       `${plan.name} + ${offer.title}`,
-      totalPriceCop,
+      planPriceCop,
       JSON.stringify({
         source: "public_portal_signup",
         signup: {
           type: subscriptionType,
+          activation_flow: "card_preapproval",
+          requires_card_enrollment: true,
           business_id: payload.business_id,
           user_id: payload.user_id,
           email: payload.email,
@@ -755,46 +760,21 @@ async function createPortalSignupCheckout(client, payload) {
   );
   const purchaseOrder = order.rows[0];
 
-  const preference = await mpRequest("/checkout/preferences", {
+  const preapproval = await mpRequest("/preapproval", {
     method: "POST",
     body: JSON.stringify({
-      items: [
-        {
-          id: plan.code,
-          title: `${plan.name} - ${billingLabel} portal Market Games`,
-          quantity: 1,
-          unit_price: planPriceCop,
-          currency_id: "COP",
-        },
-        {
-          id: offer.code,
-          title: `${offer.title} - tickets iniciales`,
-          quantity: 1,
-          unit_price: Number(offer.price_cop),
-          currency_id: "COP",
-        },
-      ],
-      payer: {
-        email: payload.email,
-        name: payload.full_name || undefined,
-      },
+      reason: `${plan.name} - portal Market Games (${billingLabel})`,
       external_reference: purchaseOrder.external_reference,
+      payer_email: payload.email,
+      back_url: appUrl("/paquetes/?signup=card&mode=portal"),
       notification_url: webhookUrl(),
-      back_urls: {
-        success: appUrl("/paquetes/?signup=success&mode=portal"),
-        failure: appUrl("/paquetes/?signup=failure&mode=portal"),
-        pending: appUrl("/paquetes/?signup=pending&mode=portal"),
+      auto_recurring: {
+        frequency: recurringFrequency.frequency,
+        frequency_type: recurringFrequency.frequency_type,
+        transaction_amount: planPriceCop,
+        currency_id: "COP",
+        start_date: firstChargeDate.toISOString(),
       },
-      metadata: {
-        order_id: purchaseOrder.id,
-        business_id: payload.business_id,
-        user_id: payload.user_id,
-        plan_code: plan.code,
-        package_code: offer.code,
-        billing_cycle: billingCycle,
-        signup_type: subscriptionType,
-      },
-      ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
   });
 
@@ -809,10 +789,10 @@ async function createPortalSignupCheckout(client, payload) {
      returning *`,
     [
       purchaseOrder.id,
-      preference.id || null,
-      preference.init_point || null,
-      preference.sandbox_init_point || null,
-      preference,
+      preapproval.id || null,
+      preapproval.init_point || null,
+      preapproval.sandbox_init_point || null,
+      preapproval,
     ]
   );
 
@@ -885,6 +865,28 @@ async function processPreapprovalWebhook(preapprovalId) {
         preapproval.init_point || preapproval.sandbox_init_point || null,
       ]
     );
+
+    const signup = order.metadata?.signup || {};
+    if (status === "AUTHORIZED" && signup.requires_card_enrollment) {
+      const activation = await finalizeApprovedPortalSubscription(client, order, {
+        id: preapproval.id || preapprovalId,
+        status: "authorized",
+        transaction_amount: Number(order.price_cop || 0),
+        external_reference: order.external_reference,
+        payment_type_id: "preapproval",
+        date_approved: new Date().toISOString(),
+        preapproval,
+      }, signup);
+      return {
+        ...activation,
+        auto_renewal: {
+          business_id: order.business_id,
+          status,
+          enabled: true,
+          mercado_pago_preapproval_id: preapproval.id || preapprovalId,
+        },
+      };
+    }
 
     return {
       auto_renewal: {
@@ -1118,6 +1120,10 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
 }
 
 async function finalizeApprovedPortalSubscription(client, order, payment, signup) {
+  if (order.credited_at) {
+    return { order: mapPurchaseOrder(order), credited: false, duplicate: true };
+  }
+
   const planCode = signup.plan_code || order.package_code;
   const plan = listPlans().find((item) => item.code === planCode) || {};
   const currentPeriod = await client.query(

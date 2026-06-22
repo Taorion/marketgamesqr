@@ -492,6 +492,40 @@ label span {
   gap: 12px;
 }
 .request-form .full { grid-column: 1 / -1; }
+.signup-card-security {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(25, 184, 123, 0.22);
+  border-radius: 8px;
+  background: #f2fbf7;
+}
+.signup-card-security div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #d7eee5;
+  border-radius: 8px;
+  background: #fff;
+}
+.signup-card-security span {
+  color: var(--primary-strong);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.signup-card-security strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+.signup-card-security p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
 label { display: grid; gap: 6px; font-weight: 700; }
 input,
 textarea {
@@ -612,6 +646,9 @@ button:disabled {
   .pricing-logic-grid,
   .plan-comparison-grid,
   .request-form {
+    grid-template-columns: 1fr;
+  }
+  .signup-card-security {
     grid-template-columns: 1fr;
   }
   .checkout-summary {

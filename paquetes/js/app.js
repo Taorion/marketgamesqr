@@ -33,6 +33,7 @@ const billingSwitchPanel = document.getElementById("billingSwitchPanel");
 const billingCycleSwitch = document.getElementById("billingCycleSwitch");
 const billingSwitchTitle = document.getElementById("billingSwitchTitle");
 const billingSwitchCopy = document.getElementById("billingSwitchCopy");
+const signupCardSecurity = document.getElementById("signupCardSecurity");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialMode = urlParams.get("mode");
@@ -284,6 +285,7 @@ function syncMode() {
     formTitle.textContent = "Crea tu acceso al Portal Base";
     formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
     submitButton.textContent = "Crear cuenta y activar portal";
+    if (signupCardSecurity) signupCardSecurity.classList.add("hidden");
     selectedPackage = packages.find((item) => item.base_access_allowed && item.code === selectedPackage?.code) || null;
     selectedPlan = null;
     renderPackages();
@@ -301,9 +303,10 @@ function syncMode() {
   formEyebrow.textContent = "Informacion de activacion";
   formTitle.textContent = "Registro, upgrade y tickets iniciales";
   formCopy.textContent = billingCycle === "annual"
-    ? "El pago inicial suma la anualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje."
-    : "El pago inicial suma la mensualidad del portal mas los tickets iniciales. Luego solo renuevas portal y recargas tickets cuando el saldo baje.";
-  submitButton.textContent = billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets";
+    ? "Inscribes la tarjeta en Mercado Pago para renovar el portal cada 12 meses. Market Games no recibe ni guarda datos de tarjeta."
+    : "Inscribes la tarjeta en Mercado Pago para activar el portal y dejar la renovacion automatica lista. Market Games no recibe ni guarda datos de tarjeta.";
+  submitButton.textContent = "Crear cuenta e inscribir tarjeta";
+  if (signupCardSecurity) signupCardSecurity.classList.remove("hidden");
   syncBillingSwitch();
   selectedPackage = subscriberPackages.find((item) => item.code === selectedPackage?.code) || null;
   packageGrid.classList.toggle("hidden", !selectedPlan?.monthly_price_cop);
@@ -353,10 +356,11 @@ function renderSelectionBox() {
       <strong>${escapeHtml(selectedPlan?.name || "Plan pendiente")}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <div class="summary-lines">
         <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotizacion" : "Sin plan seleccionado"}</b></div>
-        <div><span>Tickets</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(selectedPackage.price_cop)}` : "Elige saldo inicial despues del portal"}</b></div>
-        <div><span>Total hoy</span><b>${selectedPlan?.monthly_price_cop && selectedPackage ? copMoney(totalData.total_cop) : "Pendiente"}</b></div>
+        <div><span>Tickets iniciales</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets` : "Elige saldo inicial despues del portal"}</b></div>
+        <div><span>Autorizacion</span><b>${selectedPlan?.monthly_price_cop ? "Tarjeta en Mercado Pago" : "Pendiente"}</b></div>
+        <div><span>Primer cobro del plan</span><b>${selectedPlan?.monthly_price_cop ? planBillingLabel(selectedPlan) : "Pendiente"}</b></div>
       </div>
-      ${selectedPlan?.monthly_price_cop ? `<p>La renovacion cubre el portal. Los tickets son saldo aparte: se consumen por uso y no vencen por cierre de mes.</p>` : ""}
+      ${selectedPlan?.monthly_price_cop ? `<p>El alta queda activa cuando Mercado Pago autoriza la tarjeta. Los tickets seleccionados se cargan como saldo operativo inicial y no vencen por cierre de mes.</p>` : ""}
       <ul class="summary-list">
         ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
       </ul>
@@ -381,8 +385,8 @@ function renderSelectionBox() {
     <p>${emptyCopy}</p>
     <ul class="summary-list">
       <li>El formulario queda oculto mientras comparas opciones.</li>
-      <li>Puedes cambiar o quitar selecciones antes de pagar.</li>
-      <li>Mercado Pago solo se abre despues del registro confirmado.</li>
+      <li>Puedes cambiar o quitar selecciones antes de continuar.</li>
+      <li>Mercado Pago solo se abre despues del registro confirmado: pago para Portal Base o autorizacion de tarjeta para Growth/Premium.</li>
     </ul>
   `;
   selectedBox.innerHTML = html;
@@ -415,11 +419,11 @@ function selectPlan(code, shouldScroll = true) {
   renderPricingLogic();
   if (mode === "portal") {
     submitButton.textContent = selectedPlan.monthly_price_cop
-      ? billingCycle === "annual" ? "Crear cuenta y pagar anualidad + tickets" : "Crear cuenta y pagar plan + tickets"
+      ? "Crear cuenta e inscribir tarjeta"
       : "Solicitar cotizacion";
     offerTitle.textContent = selectedPlan.monthly_price_cop ? "Ahora escoge tus tickets iniciales" : "Solicita tu portal Global";
     offerCopy.textContent = selectedPlan.monthly_price_cop
-      ? "Ya elegiste el portal. Ahora define el saldo inicial de tickets; se conserva hasta consumirse y no vence con el mes."
+      ? "Ya elegiste el portal. Ahora define el saldo inicial de tickets; se conserva hasta consumirse. La tarjeta se inscribe de forma segura en Mercado Pago."
       : "Global se define por cotizacion para portal, volumen de tickets, sedes, integraciones y soporte.";
     packageGrid.classList.toggle("hidden", !selectedPlan.monthly_price_cop);
     renderPackages();
@@ -469,8 +473,8 @@ function syncBillingSwitch() {
   if (billingSwitchTitle) billingSwitchTitle.textContent = billingCycle === "annual" ? "Anualidad activa" : "Mensual";
   if (billingSwitchCopy) {
     billingSwitchCopy.textContent = billingCycle === "annual"
-      ? "Pagas 12 meses del portal con beneficio anual del 30%. Los tickets iniciales se compran aparte y quedan como saldo."
-      : "La mensualidad renueva el portal. Los tickets no vencen con el mes y se recargan cuando el saldo se agota.";
+      ? "Autorizas la tarjeta para renovar el portal cada 12 meses con beneficio anual. Los tickets iniciales quedan como saldo operativo al activarse la cuenta."
+      : "Autorizas la tarjeta para renovar el portal automaticamente. Los tickets iniciales quedan como saldo operativo al activarse la cuenta.";
   }
 }
 
@@ -550,7 +554,9 @@ async function submitSignup(event) {
   }
 
   submitButton.disabled = true;
-  requestMessage.textContent = mode === "base" ? "Creando cuenta y checkout..." : "Creando cuenta y checkout del portal...";
+  requestMessage.textContent = mode === "base"
+    ? "Creando cuenta y checkout seguro..."
+    : "Creando cuenta y autorizacion segura de tarjeta en Mercado Pago...";
   try {
     const path = mode === "base" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
     const body = mode === "base"
@@ -568,11 +574,13 @@ async function submitSignup(event) {
 
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("La cuenta fue creada, pero Mercado Pago no devolvio link de pago.");
+      throw new Error(mode === "base"
+        ? "La cuenta fue creada, pero Mercado Pago no devolvio link de pago."
+        : "La cuenta fue creada, pero Mercado Pago no devolvio link para inscribir la tarjeta.");
     }
     requestMessage.textContent = mode === "base"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
-      : `Cuenta creada para ${data.plan?.name || "el plan del portal"} en ciclo ${billingCycle === "annual" ? "anual" : "mensual"} con ${selectedPackage.package_size} tickets iniciales como saldo. Te llevamos a Mercado Pago; el portal se activa al aprobarse el pago.`;
+      : `Cuenta creada para ${data.plan?.name || "el plan del portal"}. Te llevamos a Mercado Pago para inscribir la tarjeta con seguridad; el portal se activa cuando la autorizacion quede aprobada.`;
     requestMessage.classList.add("ok");
     window.location.href = checkoutUrl;
   } catch (error) {
@@ -588,6 +596,17 @@ function renderPaymentStatus() {
   if (!signup || !paymentStatusSection) return;
 
   paymentStatusSection.classList.remove("hidden");
+  if (signup === "card") {
+    paymentStatusEyebrow.textContent = "Tarjeta en validacion";
+    paymentStatusTitle.textContent = "Mercado Pago esta confirmando la autorizacion";
+    paymentStatusCopy.textContent = "Tu cuenta queda activa solo cuando Mercado Pago confirma que la tarjeta fue autorizada. Market Games no guarda los datos de tu tarjeta; recibimos un estado seguro de autorizacion.";
+    paymentStatusActionTitle.textContent = "Siguiente paso";
+    paymentStatusActionCopy.textContent = "Si la autorizacion ya fue aprobada por Mercado Pago, entra al portal. Si aun aparece bloqueado, espera unos segundos y vuelve a intentar.";
+    paymentStatusPrimaryLink.href = "/empresa/";
+    paymentStatusPrimaryLink.textContent = "Ingresar al portal";
+    return;
+  }
+
   if (signup === "success") {
     paymentStatusEyebrow.textContent = "Pago aprobado";
     paymentStatusTitle.textContent = "Estamos activando tu cuenta";
@@ -604,7 +623,7 @@ function renderPaymentStatus() {
   if (signup === "pending") {
     paymentStatusEyebrow.textContent = "Pago pendiente";
     paymentStatusTitle.textContent = "Tu cuenta aun no esta activa";
-    paymentStatusCopy.textContent = "Mercado Pago esta revisando la transaccion. La empresa y el usuario se activan automaticamente cuando llegue la aprobacion.";
+    paymentStatusCopy.textContent = "Mercado Pago esta revisando la transaccion o autorizacion. La empresa y el usuario se activan automaticamente cuando llegue la aprobacion.";
     paymentStatusActionTitle.textContent = "Espera confirmacion";
     paymentStatusActionCopy.textContent = "Conserva el comprobante y vuelve a intentar el ingreso cuando el pago figure aprobado.";
     paymentStatusPrimaryLink.href = "/paquetes/";
@@ -615,9 +634,9 @@ function renderPaymentStatus() {
   if (signup === "failure") {
     paymentStatusEyebrow.textContent = "Pago no aprobado";
     paymentStatusTitle.textContent = "No se activo la cuenta";
-    paymentStatusCopy.textContent = "El acceso sigue bloqueado porque el pago no fue aprobado. Puedes registrar una nueva compra o reintentar con otro medio.";
+    paymentStatusCopy.textContent = "El acceso sigue bloqueado porque Mercado Pago no aprobo el pago o la autorizacion de tarjeta. Puedes reintentar con otro medio.";
     paymentStatusActionTitle.textContent = "Reintentar pago";
-    paymentStatusActionCopy.textContent = "Selecciona de nuevo el paquete o plan y completa el checkout.";
+    paymentStatusActionCopy.textContent = "Selecciona de nuevo el paquete o plan y completa el pago o la autorizacion de tarjeta.";
     paymentStatusPrimaryLink.href = mode === "portal" ? "/paquetes/?mode=portal" : "/paquetes/?mode=base";
     paymentStatusPrimaryLink.textContent = "Reintentar";
   }
