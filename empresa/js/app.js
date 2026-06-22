@@ -1470,18 +1470,22 @@ function renderSubscriptionRenewal() {
   const dueAt = plan.official_payment_due_at || plan.current_period_ends_at;
   const renewalDate = dueAt ? new Date(dueAt) : null;
   const hasFutureRenewalDate = renewalDate && !Number.isNaN(renewalDate.getTime()) && renewalDate > new Date();
+  const selectedPlanCode = subscriptionRenewalPlanSelect.value || plan.code;
 
   subscriptionRenewalPlanSelect.innerHTML = plans.length
     ? plans.map((item) => `
-      <option value="${escapeHtml(item.code)}" ${item.code === plan.code ? "selected" : ""}>
+      <option value="${escapeHtml(item.code)}" ${item.code === selectedPlanCode ? "selected" : ""}>
         ${escapeHtml(item.name)} · ${planMonthlyLabel(item)}
       </option>
     `).join("")
     : '<option value="">No hay planes disponibles</option>';
 
+  const selectedRenewalPlan = plans.find((item) => item.code === subscriptionRenewalPlanSelect.value) || plans[0] || null;
+  const isTestingRenewalPlan = Boolean(selectedRenewalPlan?.testing_plan);
+
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
   if (subscriptionAutoRenewButton) {
-    subscriptionAutoRenewButton.disabled = plan.category !== "subscription" || !plans.length || autoRenew.enabled || !hasFutureRenewalDate;
+    subscriptionAutoRenewButton.disabled = !plans.length || autoRenew.enabled || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
     subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Activar cobro automatico";
   }
   if (subscriptionAutoRenewStatus) {
@@ -1489,6 +1493,8 @@ function renderSubscriptionRenewal() {
       ? "Cobro automatico autorizado en Mercado Pago."
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
+        : isTestingRenewalPlan
+          ? "Plan demo disponible: COP 500 con renovacion automatica cada 3 dias."
         : plan.category === "subscription" && !hasFutureRenewalDate
           ? "Define una fecha de renovacion futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
@@ -1501,7 +1507,9 @@ function renderSubscriptionRenewal() {
   }
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
-      const autoRenewGuidance = plan.category === "subscription" && !hasFutureRenewalDate
+      const autoRenewGuidance = isTestingRenewalPlan
+        ? "El plan demo inscribe tarjeta y programa cobros de COP 500 cada 3 dias para prueba."
+        : plan.category === "subscription" && !hasFutureRenewalDate
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovacion."
         : "Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.";
       setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
@@ -8804,6 +8812,7 @@ qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
+subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
 refreshAdminWorkspaceButton.addEventListener("click", loadWorkspace);
 newAdminCampaignButton.addEventListener("click", startNewAdminCampaign);

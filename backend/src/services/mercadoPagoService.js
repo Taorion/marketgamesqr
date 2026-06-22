@@ -501,7 +501,7 @@ async function createSubscriptionAutoRenewal(user, body) {
     [user.business_id]
   );
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
-  if (currentPlan?.category !== "subscription") {
+  if (currentPlan?.category !== "subscription" && !plan.testing_plan) {
     throw badRequest("Este negocio no tiene una mensualidad del portal para activar cobro automatico.");
   }
 
