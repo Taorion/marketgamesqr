@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=demo-auto-1700-20260622">
+  <link rel="stylesheet" href="css/styles.css?v=auto-renew-clarity-20260622">
 </head>
 <body>
   <main class="portal-shell">
@@ -523,8 +523,22 @@
                       <span>Plan a renovar</span>
                       <select id="subscriptionRenewalPlanSelect" required></select>
                     </label>
+                    <div class="auto-renew-clarity" id="subscriptionAutoRenewClarity" aria-live="polite">
+                      <div>
+                        <span>Hoy</span>
+                        <strong>No se cobra el plan</strong>
+                      </div>
+                      <div>
+                        <span>Validacion Mercado Pago</span>
+                        <strong>$1.600 temporal</strong>
+                      </div>
+                      <div>
+                        <span>Primer cobro real</span>
+                        <strong>Proxima renovacion</strong>
+                      </div>
+                    </div>
                     <button class="solid-button" id="subscriptionRenewalButton" type="submit">Renovar mensualidad</button>
-                    <button class="ghost-button" id="subscriptionAutoRenewButton" type="button">Activar cobro automatico</button>
+                    <button class="ghost-button" id="subscriptionAutoRenewButton" type="button">Inscribir tarjeta para cobro automatico</button>
                     <span class="table-secondary" id="subscriptionAutoRenewStatus">Cobro automatico no configurado.</span>
                   </form>
                 </div>
@@ -2052,7 +2066,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=demo-auto-1700-20260622" defer></script>
+  <script src="js/app.js?v=auto-renew-clarity-20260622" defer></script>
 </body>
 </html>
 

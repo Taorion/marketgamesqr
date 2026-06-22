@@ -321,6 +321,7 @@ const subscriptionRenewalPlanSelect = document.getElementById("subscriptionRenew
 const subscriptionRenewalButton = document.getElementById("subscriptionRenewalButton");
 const subscriptionAutoRenewButton = document.getElementById("subscriptionAutoRenewButton");
 const subscriptionAutoRenewStatus = document.getElementById("subscriptionAutoRenewStatus");
+const subscriptionAutoRenewClarity = document.getElementById("subscriptionAutoRenewClarity");
 const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalMessage");
 const subscriptionTiming = document.getElementById("subscriptionTiming");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
@@ -1103,6 +1104,27 @@ function planMonthlyLabel(plan) {
   return `${copMoney(plan.monthly_price_cop)} / ${plan.billing_label || "mes"}`;
 }
 
+function addPlanBillingPeriod(date, plan) {
+  const next = new Date(date.getTime());
+  const frequency = Number(plan?.billing_frequency || 1);
+  if (plan?.billing_frequency_type === "days") {
+    next.setDate(next.getDate() + frequency);
+    return next;
+  }
+  next.setMonth(next.getMonth() + frequency);
+  return next;
+}
+
+function autoRenewFirstChargeDate(plan, hasFutureRenewalDate, renewalDate) {
+  if (plan?.testing_plan && plan.billing_frequency_type === "days") {
+    return addPlanBillingPeriod(new Date(), plan);
+  }
+  if (hasFutureRenewalDate) {
+    return renewalDate;
+  }
+  return null;
+}
+
 function ratioLabel(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
   return `${Number(value).toFixed(2)}x`;
@@ -1482,11 +1504,35 @@ function renderSubscriptionRenewal() {
 
   const selectedRenewalPlan = plans.find((item) => item.code === subscriptionRenewalPlanSelect.value) || plans[0] || null;
   const isTestingRenewalPlan = Boolean(selectedRenewalPlan?.testing_plan);
+  const firstChargeDate = selectedRenewalPlan
+    ? autoRenewFirstChargeDate(selectedRenewalPlan, hasFutureRenewalDate, renewalDate)
+    : null;
+  const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "proxima renovacion";
+  const selectedPlanChargeLabel = selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
   if (subscriptionAutoRenewButton) {
     subscriptionAutoRenewButton.disabled = !plans.length || autoRenew.enabled || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
-    subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Activar cobro automatico";
+    subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Inscribir tarjeta para cobro automatico";
+  }
+  if (subscriptionAutoRenewClarity) {
+    subscriptionAutoRenewClarity.innerHTML = `
+      <div>
+        <span>Hoy</span>
+        <strong>No se cobra el plan</strong>
+        <small>Solo se autoriza la tarjeta.</small>
+      </div>
+      <div>
+        <span>Validacion Mercado Pago</span>
+        <strong>$1.600 temporal</strong>
+        <small>Mercado Pago lo devuelve enseguida si el banco aprueba.</small>
+      </div>
+      <div>
+        <span>Primer cobro real</span>
+        <strong>${escapeHtml(firstChargeLabel)}</strong>
+        <small>${escapeHtml(selectedPlanChargeLabel)} ${escapeHtml(selectedRenewalPlan?.billing_label || "mensual")}.</small>
+      </div>
+    `;
   }
   if (subscriptionAutoRenewStatus) {
     const autoRenewLabel = autoRenew.enabled
@@ -1494,7 +1540,7 @@ function renderSubscriptionRenewal() {
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
         : isTestingRenewalPlan
-          ? "Plan demo disponible: COP 1.700 con renovacion automatica cada 3 dias."
+          ? `Plan demo: Mercado Pago puede hacer una validacion temporal de $1.600; el cobro real sera ${selectedPlanChargeLabel} ${selectedRenewalPlan?.billing_label || "mensual"}.`
         : plan.category === "subscription" && !hasFutureRenewalDate
           ? "Define una fecha de renovacion futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
@@ -1508,10 +1554,10 @@ function renderSubscriptionRenewal() {
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
       const autoRenewGuidance = isTestingRenewalPlan
-        ? "El plan demo inscribe tarjeta y programa cobros de COP 1.700 cada 3 dias para prueba."
+        ? "En Mercado Pago veras una validacion temporal de $1.600. No es el cobro del plan; el primer cobro real queda programado para la fecha indicada."
         : plan.category === "subscription" && !hasFutureRenewalDate
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovacion."
-        : "Activar cobro automatico solo inscribe la tarjeta y el primer cobro queda programado para la siguiente fecha de renovacion.";
+        : "Inscribir tarjeta solo crea la autorizacion; el primer cobro queda programado para la siguiente fecha de renovacion.";
       setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites mas herramientas.", "info");
@@ -5111,9 +5157,9 @@ async function submitSubscriptionAutoRenewal() {
     return;
   }
 
-  setButtonLoading(subscriptionAutoRenewButton, true, "Autorizando...");
-  setInlineMessage(subscriptionRenewalMessage, "Creando autorizacion de tarjeta para renovaciones futuras. No se recobra la mensualidad vigente.", "info");
-  showFeedback("Preparando autorizacion de cobro automatico mensual sin recobrar el periodo activo.", "loading", { title: "Cobro automatico", timeout: 0 });
+  setButtonLoading(subscriptionAutoRenewButton, true, "Abriendo autorizacion...");
+  setInlineMessage(subscriptionRenewalMessage, "Te llevaremos a Mercado Pago para inscribir la tarjeta. Puede aparecer una validacion temporal; el plan se cobra desde la fecha programada.", "info");
+  showFeedback("Preparando inscripcion de tarjeta para cobros futuros. El plan no se cobra hoy.", "loading", { title: "Cobro automatico", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/auto-renewal", {
       method: "POST",
@@ -5128,8 +5174,8 @@ async function submitSubscriptionAutoRenewal() {
       throw new Error("Mercado Pago no devolvio un link para autorizar el cobro automatico.");
     }
     const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : "la proxima renovacion";
-    setInlineMessage(subscriptionRenewalMessage, `Autorizacion creada. Primer cobro programado para ${firstCharge}. Redirigiendo a Mercado Pago...`, "success");
-    showFeedback(`Autoriza la tarjeta en Mercado Pago. El primer cobro queda programado para ${firstCharge}.`, "success", { title: "Autorizacion lista" });
+    setInlineMessage(subscriptionRenewalMessage, `Autorizacion creada. Mercado Pago puede validar la tarjeta temporalmente. Primer cobro real programado para ${firstCharge}.`, "success");
+    showFeedback(`Inscribe la tarjeta en Mercado Pago. Primer cobro real: ${firstCharge}.`, "success", { title: "Autorizacion lista" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
