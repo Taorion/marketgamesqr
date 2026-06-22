@@ -302,7 +302,7 @@ function initContactForm() {
       ].join("\n")
     );
 
-    window.location.href = `mailto:c.botero92@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:contacto@marketgamesqr.com?subject=${subject}&body=${body}`;
   });
 }
 
