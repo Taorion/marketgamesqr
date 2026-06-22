@@ -199,7 +199,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
     res.json({
       prepaid_plan: null,
       portal_base_plan: plans.find((plan) => plan.code === PLAN_CODES.TICKET_BASE),
-      plans: plans.filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code)),
+      plans: plans.filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code) || plan.testing_plan),
       base_access_packages: QR_PACKAGE_OFFERS.filter((offer) => offer.base_access_allowed),
       legacy_prepaid_reference: [],
       subscriber_packages: subscriberPackageOffers(),
@@ -309,7 +309,7 @@ async function createPortalSignup(req, res, next) {
   try {
     const body = validate(portalSignupSchema, req.body);
     const planCode = normalizePlanCode(body.plan_code);
-    const plan = listPlans().find((item) => item.code === planCode && item.category === "subscription" && item.monthly_price_cop);
+    const plan = listPlans().find((item) => item.code === planCode && item.category === "subscription" && item.monthly_price_cop && item.public_signup_available !== false);
     if (!plan) {
       throw badRequest("Selecciona un plan mensual valido para el portal.");
     }

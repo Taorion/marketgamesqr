@@ -1100,7 +1100,7 @@ function packagePriceLabel(offer) {
 
 function planMonthlyLabel(plan) {
   if (!plan?.monthly_price_cop) return plan?.price_label || "Cotizacion";
-  return `${copMoney(plan.monthly_price_cop)} / mes`;
+  return `${copMoney(plan.monthly_price_cop)} / ${plan.billing_label || "mes"}`;
 }
 
 function ratioLabel(value) {

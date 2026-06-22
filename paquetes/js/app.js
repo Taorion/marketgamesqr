@@ -632,7 +632,7 @@ async function init() {
     packages = packageData.packages || [];
     pricing = planData.pricing || packageData.pricing || pricing;
     basePlan = planData.portal_base_plan || planData.prepaid_plan || null;
-    plans = planData.plans || [];
+    plans = (planData.plans || []).filter((plan) => plan.public_signup_available !== false);
     subscriberPackages = planData.subscriber_packages || packages.filter((item) => item.subscriber_allowed);
     selectedPackage = packages.find((item) => item.code === initialPackageCode) || null;
     selectedPlan = plans.find((item) => item.code === initialPlanCode) || null;

@@ -57,11 +57,44 @@ function normalizeBillingCycle(value) {
   return value === "annual" ? "annual" : "monthly";
 }
 
+function planBillingFrequency(plan) {
+  return {
+    frequency: Number(plan.billing_frequency || 1),
+    frequency_type: plan.billing_frequency_type || "months",
+  };
+}
+
+function billingPeriodLabel(plan, fallback = "mensualidad") {
+  return plan.billing_label || (plan.billing_period === "3_days" ? "cada 3 dias" : fallback);
+}
+
 function planChargeCop(plan, billingCycle) {
   if (billingCycle === "annual") {
     return Number(plan.annual_price_cop || (Number(plan.monthly_price_cop || 0) * 12 * 0.7));
   }
   return Number(plan.monthly_price_cop || 0);
+}
+
+function addPlanBillingPeriod(date, plan, billingCycle = "monthly") {
+  const next = new Date(date.getTime());
+  const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan || {});
+  if (billingCycle === "annual") {
+    next.setUTCMonth(next.getUTCMonth() + 12);
+    return next;
+  }
+  if (frequencyType === "days") {
+    next.setUTCDate(next.getUTCDate() + frequency);
+    return next;
+  }
+  next.setUTCMonth(next.getUTCMonth() + frequency);
+  return next;
+}
+
+function firstAutoRenewalChargeDate(plan, currentPeriodEndsAt) {
+  if (plan.testing_plan && plan.billing_frequency_type === "days") {
+    return addPlanBillingPeriod(new Date(), plan);
+  }
+  return nextAutoRenewalChargeDate(currentPeriodEndsAt);
 }
 
 function parseDealDate(value) {
@@ -350,6 +383,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
   const chargeStartDate = nextSubscriptionChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
+  const periodLabel = billingPeriodLabel(plan);
   const order = await query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -360,7 +394,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
       user.id,
       plan.code,
       monthlyQrIncluded,
-      `${plan.name} - renovacion mensual`,
+      `${plan.name} - renovacion ${periodLabel}`,
       charge.price_cop,
       {
         source: "business_portal_subscription_renewal",
@@ -379,6 +413,9 @@ async function createSubscriptionRenewalCheckout(user, body) {
           plan_code: plan.code,
           plan_price_cop: charge.price_cop,
           standard_plan_price_cop: charge.standard_price_cop,
+          billing_period: plan.billing_period || "monthly",
+          billing_frequency: plan.billing_frequency || 1,
+          billing_frequency_type: plan.billing_frequency_type || "months",
           renewal: true,
         },
       },
@@ -392,7 +429,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
       items: [
         {
           id: plan.code,
-          title: `${plan.name} - renovacion mensual Market Games`,
+          title: `${plan.name} - renovacion ${periodLabel} Market Games`,
           quantity: 1,
           unit_price: Number(charge.price_cop),
           currency_id: "COP",
@@ -469,8 +506,10 @@ async function createSubscriptionAutoRenewal(user, body) {
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
-  const chargeStartDate = nextAutoRenewalChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const chargeStartDate = firstAutoRenewalChargeDate(plan, currentBusiness.rows[0]?.subscription_current_period_ends_at);
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
+  const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan);
+  const periodLabel = billingPeriodLabel(plan);
   const order = await query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -481,7 +520,7 @@ async function createSubscriptionAutoRenewal(user, body) {
       user.id,
       plan.code,
       monthlyQrIncluded,
-      `${plan.name} - cobro mensual automatico`,
+      `${plan.name} - cobro automatico ${periodLabel}`,
       charge.price_cop,
       {
         source: "business_portal_subscription_auto_renewal",
@@ -500,6 +539,9 @@ async function createSubscriptionAutoRenewal(user, body) {
           plan_code: plan.code,
           plan_price_cop: charge.price_cop,
           standard_plan_price_cop: charge.standard_price_cop,
+          billing_period: plan.billing_period || "monthly",
+          billing_frequency: frequency,
+          billing_frequency_type: frequencyType,
           auto_renew: true,
         },
       },
@@ -510,14 +552,14 @@ async function createSubscriptionAutoRenewal(user, body) {
   const preapproval = await mpRequest("/preapproval", {
     method: "POST",
     body: JSON.stringify({
-      reason: `${plan.name} - mensualidad portal Market Games`,
+      reason: `${plan.name} - portal Market Games (${periodLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: user.email,
       back_url: appUrl("/empresa/?subscription=automatic"),
       status: "pending",
       auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
+        frequency,
+        frequency_type: frequencyType,
         transaction_amount: Number(charge.price_cop),
         currency_id: "COP",
         start_date: chargeStartDate.toISOString(),
@@ -1077,6 +1119,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
 
 async function finalizeApprovedPortalSubscription(client, order, payment, signup) {
   const planCode = signup.plan_code || order.package_code;
+  const plan = listPlans().find((item) => item.code === planCode) || {};
   const currentPeriod = await client.query(
     `select subscription_current_period_ends_at
      from businesses
@@ -1090,7 +1133,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   const now = new Date();
   const periodEnd = currentEnd && currentEnd > now ? currentEnd : now;
   const billingCycle = normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
-  periodEnd.setUTCMonth(periodEnd.getUTCMonth() + (billingCycle === "annual" ? 12 : 1));
+  const nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
 
   await ensureCreditAccount(client, order.business_id);
   let account = null;
@@ -1134,7 +1177,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
          ),
          updated_at = now()
      where id = $1`,
-    [order.business_id, planCode, periodEnd.toISOString(), billingCycle]
+    [order.business_id, planCode, nextPeriodEnd.toISOString(), billingCycle]
   );
 
   if (order.created_by_user_id) {
@@ -1154,7 +1197,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       plan_code: planCode,
       status: "ACTIVE",
       billing_cycle: billingCycle,
-      current_period_ends_at: periodEnd.toISOString(),
+      current_period_ends_at: nextPeriodEnd.toISOString(),
     },
     credit_account: account ? mapPublicCreditAccount(account) : null,
     credited: Boolean(account),
