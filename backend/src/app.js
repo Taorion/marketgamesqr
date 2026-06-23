@@ -19,6 +19,7 @@ const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
+const packageJson = require("../../package.json");
 
 const app = express();
 const projectRoot = path.join(__dirname, "../..");
@@ -91,6 +92,17 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, database_configured: env.databaseConfigured });
+});
+
+app.get("/api/version", (_req, res) => {
+  res.json({
+    ok: true,
+    name: packageJson.name,
+    version: packageJson.version,
+    node_env: env.nodeEnv,
+    session_version: env.appSessionVersion,
+    render_git_commit: process.env.RENDER_GIT_COMMIT || null,
+  });
 });
 
 app.use((req, res, next) => {
