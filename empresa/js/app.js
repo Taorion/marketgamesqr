@@ -8716,6 +8716,7 @@ async function renderAffiliatesView() {
 
 function rewardPassStatusLabel(status) {
   const labels = {
+    pending_claim: "Pendiente activacion",
     active: "Activo",
     partially_redeemed: "Parcial",
     fully_redeemed: "Redimido",
@@ -8728,6 +8729,7 @@ function rewardPassStatusLabel(status) {
 
 function rewardPassStatusClass(status) {
   if (["active", "extended"].includes(status)) return "ok";
+  if (status === "pending_claim") return "pending";
   if (status === "partially_redeemed") return "pending";
   return "danger";
 }
@@ -8812,14 +8814,14 @@ function renderRewardPassMetrics() {
 }
 
 function renderRewardPassPreview(pass = state.selectedRewardPass) {
-  const value = pass?.initial_value_cop ?? rewardPassValueInput?.value ?? 0;
-  const beneficiary = pass?.beneficiary_name || rewardPassBeneficiaryNameInput?.value || "Beneficiario";
+  const isPending = !pass || pass.status === "pending_claim";
+  const beneficiary = pass?.beneficiary_name || rewardPassBeneficiaryNameInput?.value || "Beneficiario por activar";
   if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = pass ? pass.public_code : "Vista previa";
-  if (rewardPassPreviewValue) rewardPassPreviewValue.textContent = money(value || 0);
-  if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = beneficiary;
+  if (rewardPassPreviewValue) rewardPassPreviewValue.textContent = isPending ? "ACTIVACION" : "GIFT CARD OFICIAL";
+  if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = isPending ? "Escanea para completar tus datos" : beneficiary;
   if (rewardPassPreviewMeta) {
     rewardPassPreviewMeta.textContent = pass
-      ? `Link publico: ${pass.public_url}. QR privado listo para validador.`
+      ? (isPending ? `Link de activacion: ${pass.public_url}. El beneficiario debe completar sus datos.` : `Link publico: ${pass.public_url}. QR redimible listo para validador.`)
       : "El QR y los datos completos apareceran despues de emitir o seleccionar un Reward Pass.";
   }
   [rewardPassDownloadImageButton, rewardPassDownloadPdfButton, rewardPassReceiptButton].forEach((button) => {
@@ -9085,11 +9087,11 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.fillText(pass.company?.name || "Empresa emisora", 94, 248);
   ctx.fillStyle = "#ffd783";
   ctx.font = "800 62px Inter, sans-serif";
-  ctx.fillText(money(pass.initial_value_cop), 94, 338);
+  ctx.fillText(pass.status === "pending_claim" ? "ACTIVAR GIFT CARD" : "GIFT CARD OFICIAL", 94, 338);
   ctx.fillStyle = "#d7e2eb";
   ctx.font = "500 28px Inter, sans-serif";
-  ctx.fillText(`Beneficiario: ${pass.beneficiary_name}`, 94, 406);
-  ctx.fillText(`Documento: ${pass.beneficiary_document}`, 94, 448);
+  ctx.fillText(`Beneficiario: ${pass.beneficiary_name || "Pendiente de activacion"}`, 94, 406);
+  ctx.fillText(`Documento: ${pass.beneficiary_document || "Se solicita al activar"}`, 94, 448);
   ctx.fillText(`Codigo: ${pass.public_code}`, 94, 490);
   ctx.fillText(`Vigencia: ${formatDate(pass.expires_at)}`, 94, 532);
   ctx.font = "500 22px Inter, sans-serif";

@@ -77,6 +77,7 @@ function maskDocument(value) {
 
 function statusMessage(status) {
   const messages = {
+    pending_claim: "Este Reward Pass debe ser activado por el beneficiario antes de redimirse.",
     active: "Reward Pass valido. Confirma documento de identidad antes de registrar la redencion.",
     partially_redeemed: "Reward Pass valido con saldo parcial disponible.",
     fully_redeemed: "Este Reward Pass ya fue redimido totalmente.",
@@ -93,6 +94,7 @@ function effectiveStatus(row) {
   if (balance <= 0) return "fully_redeemed";
   if (row.status === "cancelled") return "cancelled";
   if (row.expires_at && new Date(row.expires_at) < new Date()) return "expired";
+  if (!cleanText(row.beneficiary_name) || !cleanText(row.beneficiary_document)) return "pending_claim";
   if (row.valid_from && new Date(row.valid_from) > new Date()) return "active";
   if (row.status === "partially_redeemed") return "partially_redeemed";
   if (row.status === "extended") return "extended";
@@ -237,6 +239,7 @@ function mapRewardPass(row, options = {}) {
     digital_card_pdf_path: row.digital_card_pdf_path,
     acquisition_receipt_pdf_path: row.acquisition_receipt_pdf_path,
     payment_method_received: row.payment_method_received,
+    claimed_at: row.claimed_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
     company,
@@ -247,6 +250,14 @@ function mapRewardPass(row, options = {}) {
 
 async function getRewardPassQrDataUrl(pass) {
   return QRCode.toDataURL(buildValidatorUrl(pass.qr_token), {
+    margin: 1,
+    width: 520,
+    errorCorrectionLevel: "M",
+  });
+}
+
+async function getQrDataUrlForUrl(url) {
+  return QRCode.toDataURL(url, {
     margin: 1,
     width: 520,
     errorCorrectionLevel: "M",
@@ -431,6 +442,9 @@ async function createRewardPass(user, payload) {
     const publicCode = await uniquePublicCode(client);
     const terms = cleanText(payload.terms, DEFAULT_TERMS.replace("[Nombre de la Empresa]", business.name));
     const securityPin = payload.security_pin || crypto.randomInt(100000, 999999).toString();
+    const beneficiaryName = cleanText(payload.beneficiary_name);
+    const beneficiaryDocument = cleanText(payload.beneficiary_document);
+    const initialStatus = beneficiaryName && beneficiaryDocument ? "active" : "pending_claim";
     const passResult = await client.query(
       `insert into reward_passes (
          company_id, user_id, campaign_id, buyer_name, buyer_document, buyer_email, buyer_phone,
@@ -442,9 +456,9 @@ async function createRewardPass(user, payload) {
        values (
          $1, $2, $3, $4, $5, $6, $7,
          $8, $9, $10, $11,
-         $12, $12, $13, $14, $15, 'active',
-         $16, $17, $18, $19, $20,
-         $21, $22, $23, $24
+         $12, $12, $13, $14, $15, $16,
+         $17, $18, $19, $20, $21,
+         $22, $23, $24, $25
        )
        returning *`,
       [
@@ -455,14 +469,15 @@ async function createRewardPass(user, payload) {
         payload.buyer_document || null,
         payload.buyer_email || null,
         payload.buyer_phone || null,
-        payload.beneficiary_name,
-        payload.beneficiary_document,
+        beneficiaryName || null,
+        beneficiaryDocument || null,
         payload.beneficiary_email || null,
         payload.beneficiary_phone || null,
         initialValue,
         issuedAt.toISOString(),
         payload.valid_from || null,
         expiresAt.toISOString(),
+        initialStatus,
         qrToken,
         publicCode,
         securityPin,
@@ -587,12 +602,74 @@ async function getPublicRewardPass(publicCode) {
   let pass = result.rows[0];
   if (!pass) throw notFound("Reward Pass no encontrado.");
   pass = await syncEffectiveStatus(query, pass);
-  const mapped = mapRewardPass(pass, { publicView: true, includeToken: true });
+  const status = effectiveStatus(pass);
+  const mapped = mapRewardPass(pass, { publicView: true, includeToken: status !== "pending_claim" });
   delete mapped.qr_token;
-  mapped.qr_image_data_url = await getRewardPassQrDataUrl(pass);
-  mapped.instructions = "Presenta este QR junto con tu documento de identidad en el negocio emisor.";
+  mapped.claim_required = status === "pending_claim";
+  mapped.qr_image_data_url = status === "pending_claim"
+    ? await getQrDataUrlForUrl(mapped.public_url)
+    : await getRewardPassQrDataUrl(pass);
+  mapped.instructions = status === "pending_claim"
+    ? "Escanea este QR, completa tus datos y activa tu Gift Card Digital oficial."
+    : "Presenta este QR junto con tu documento de identidad en el negocio emisor.";
   mapped.can_redeem_publicly = false;
   return mapped;
+}
+
+async function claimRewardPass(publicCode, payload) {
+  const beneficiaryName = cleanText(payload.beneficiary_name);
+  const beneficiaryDocument = cleanText(payload.beneficiary_document);
+  if (!beneficiaryName || !beneficiaryDocument) {
+    throw badRequest("Nombre y documento del beneficiario son obligatorios para activar la Gift Card oficial.");
+  }
+
+  const claimedPublicCode = await withTransaction(async (client) => {
+    const result = await client.query(
+      `select *
+       from reward_passes
+       where lower(public_code) = lower($1)
+       for update`,
+      [publicCode]
+    );
+    let pass = result.rows[0];
+    if (!pass) throw notFound("Reward Pass no encontrado.");
+    pass = await syncEffectiveStatus(client, pass);
+    const status = effectiveStatus(pass);
+    if (status === "cancelled" || status === "expired" || status === "fully_redeemed") {
+      throw badRequest(statusMessage(status));
+    }
+    if (status !== "pending_claim" && pass.claimed_at) {
+      throw badRequest("Este Reward Pass ya fue activado.");
+    }
+    const updated = await client.query(
+      `update reward_passes
+       set beneficiary_name = $2,
+           beneficiary_document = $3,
+           beneficiary_email = $4,
+           beneficiary_phone = $5,
+           status = 'active',
+           claimed_at = now(),
+           updated_at = now()
+       where id = $1
+       returning *`,
+      [
+        pass.id,
+        beneficiaryName,
+        beneficiaryDocument,
+        payload.beneficiary_email || null,
+        payload.beneficiary_phone || null,
+      ]
+    );
+    await logQrEvent(client, {
+      business_id: pass.company_id,
+      campaign_id: pass.campaign_id || null,
+      event_type: "REWARD_PASS_CLAIMED",
+      message: `Reward Pass ${pass.public_code} activado por beneficiario.`,
+      metadata: { reward_pass_id: pass.id, public_code: pass.public_code },
+    });
+    return updated.rows[0].public_code;
+  });
+  return getPublicRewardPass(claimedPublicCode);
 }
 
 async function validateRewardPassToken(user, rawToken) {
@@ -636,7 +713,7 @@ async function validateRewardPassToken(user, rawToken) {
     business: mapped.company,
     reward: {
       name: "Reward Pass",
-      display: `Saldo disponible ${moneyNumber(pass.current_balance_cop).toLocaleString("es-CO")} COP`,
+      display: status === "pending_claim" ? "Pendiente de activacion por beneficiario" : "Gift Card Digital Propia",
     },
     player: {
       name: pass.beneficiary_name,
@@ -862,7 +939,9 @@ async function buildRewardPassPdf(pass, kind = "card") {
   const page = pdf.addPage([900, 520]);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const qrPng = await pdf.embedPng(Buffer.from((await getRewardPassQrDataUrl(pass)).split(",")[1], "base64"));
+  const isPendingClaim = pass.status === "pending_claim" || !cleanText(pass.beneficiary_name) || !cleanText(pass.beneficiary_document);
+  const qrDataUrl = isPendingClaim ? await getQrDataUrlForUrl(pass.public_url || buildPublicUrl(pass.public_code)) : await getRewardPassQrDataUrl(pass);
+  const qrPng = await pdf.embedPng(Buffer.from(qrDataUrl.split(",")[1], "base64"));
   page.drawRectangle({ x: 0, y: 0, width: 900, height: 520, color: rgb(0.03, 0.08, 0.12) });
   page.drawRectangle({ x: 28, y: 28, width: 844, height: 464, borderColor: rgb(0.95, 0.72, 0.27), borderWidth: 3 });
   page.drawText(kind === "receipt" ? "COMPROBANTE DE ADQUISICION" : "REWARD PASS", {
@@ -874,13 +953,13 @@ async function buildRewardPassPdf(pass, kind = "card") {
   });
   page.drawText("Gift Card Digital", { x: 60, y: 410, size: 18, font, color: rgb(0.95, 0.72, 0.27) });
   page.drawText(pass.company_name || pass.company?.name || "Empresa emisora", { x: 60, y: 372, size: 22, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(`Valor: $${moneyNumber(pass.initial_value_cop).toLocaleString("es-CO")} COP`, { x: 60, y: 332, size: 30, font: bold, color: rgb(0.95, 0.72, 0.27) });
-  page.drawText(`Beneficiario: ${pass.beneficiary_name}`, { x: 60, y: 292, size: 17, font, color: rgb(1, 1, 1) });
-  page.drawText(`Documento: ${pass.beneficiary_document}`, { x: 60, y: 266, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
+  page.drawText(isPendingClaim ? "Activacion requerida" : "Gift Card oficial", { x: 60, y: 332, size: 30, font: bold, color: rgb(0.95, 0.72, 0.27) });
+  page.drawText(`Beneficiario: ${pass.beneficiary_name || "Pendiente de activacion"}`, { x: 60, y: 292, size: 17, font, color: rgb(1, 1, 1) });
+  page.drawText(`Documento: ${pass.beneficiary_document || "Se solicita al activar"}`, { x: 60, y: 266, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
   page.drawText(`Codigo: ${pass.public_code}`, { x: 60, y: 240, size: 16, font: bold, color: rgb(1, 1, 1) });
   page.drawText(`Vigencia: ${new Date(pass.expires_at).toLocaleDateString("es-CO")}`, { x: 60, y: 214, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
   page.drawImage(qrPng, { x: 642, y: 178, width: 188, height: 188 });
-  page.drawText("Presenta este QR junto con tu documento de identidad.", { x: 594, y: 148, size: 12, font, color: rgb(1, 1, 1) });
+  page.drawText(isPendingClaim ? "Escanea para activar la gift card oficial." : "Presenta este QR junto con tu documento de identidad.", { x: 594, y: 148, size: 12, font, color: rgb(1, 1, 1) });
   page.drawText("Redimible unicamente en el negocio emisor. No canjeable por efectivo salvo autorizacion del emisor.", {
     x: 60,
     y: 116,
@@ -932,6 +1011,7 @@ module.exports = {
   buildPublicUrl,
   buildValidatorUrl,
   cancelRewardPass,
+  claimRewardPass,
   createRewardPass,
   defaultExpiresAt,
   extendRewardPass,

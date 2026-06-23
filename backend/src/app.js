@@ -18,7 +18,10 @@ const publicQrRoutes = require("./routes/publicQrRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rewardPassRoutes = require("./routes/rewardPassRoutes");
-const { publicGet: publicRewardPassGet } = require("./controllers/rewardPassController");
+const {
+  publicGet: publicRewardPassGet,
+  publicClaim: publicRewardPassClaim,
+} = require("./controllers/rewardPassController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const packageJson = require("../../package.json");
@@ -144,6 +147,7 @@ app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
+app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
 app.use(express.static(marketGamesWebRoot));

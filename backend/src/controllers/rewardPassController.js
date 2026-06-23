@@ -4,6 +4,7 @@ const {
   DEFAULT_TERMS,
   buildRewardPassPdf,
   cancelRewardPass,
+  claimRewardPass,
   createRewardPass,
   defaultExpiresAt,
   extendRewardPass,
@@ -25,8 +26,8 @@ const createRewardPassSchema = z.object({
   buyer_document: optionalString,
   buyer_email: optionalEmail,
   buyer_phone: z.string().trim().max(40).optional().nullable(),
-  beneficiary_name: z.string().trim().min(2).max(160),
-  beneficiary_document: z.string().trim().min(3).max(80),
+  beneficiary_name: z.string().trim().max(160).optional().nullable(),
+  beneficiary_document: z.string().trim().max(80).optional().nullable(),
   beneficiary_email: optionalEmail,
   beneficiary_phone: z.string().trim().max(40).optional().nullable(),
   initial_value_cop: z.number().positive(),
@@ -59,6 +60,13 @@ const cancelRewardPassSchema = z.object({
 const extendRewardPassSchema = z.object({
   expires_at: z.string().datetime(),
   notes: z.string().trim().max(2000).optional().nullable(),
+});
+
+const claimRewardPassSchema = z.object({
+  beneficiary_name: z.string().trim().min(2).max(160),
+  beneficiary_document: z.string().trim().min(3).max(80),
+  beneficiary_email: optionalEmail,
+  beneficiary_phone: z.string().trim().max(40).optional().nullable(),
 });
 
 function parseBoolean(value) {
@@ -168,6 +176,18 @@ async function publicGet(req, res, next) {
   }
 }
 
+async function publicClaim(req, res, next) {
+  try {
+    const body = validate(claimRewardPassSchema, req.body || {});
+    res.json({
+      message: "Gift Card Digital oficial activada correctamente. Ahora puedes presentar el QR redimible en el negocio emisor.",
+      reward_pass: await claimRewardPass(req.params.publicCode, body),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function downloadPdf(req, res, next) {
   try {
     const rewardPass = await getRewardPassById(req.user, req.params.id);
@@ -202,6 +222,7 @@ module.exports = {
   list,
   metrics,
   publicGet,
+  publicClaim,
   redeemToken,
   rewardPassContext,
   validateToken,
