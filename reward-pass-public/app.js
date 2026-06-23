@@ -22,6 +22,21 @@ function date(value) {
   return new Date(value).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "2-digit" });
 }
 
+function apiErrorMessage(data, fallback) {
+  const baseMessage = data?.error?.message || fallback;
+  const fieldErrors = data?.error?.details?.fieldErrors || {};
+  const firstField = Object.keys(fieldErrors)[0];
+  const firstMessage = firstField ? fieldErrors[firstField]?.[0] : "";
+  if (firstField && firstMessage) {
+    return `${baseMessage} ${firstField}: ${firstMessage}`;
+  }
+  const formErrors = data?.error?.details?.formErrors || [];
+  if (formErrors.length) {
+    return `${baseMessage} ${formErrors[0]}`;
+  }
+  return baseMessage;
+}
+
 function statusLabel(status) {
   const labels = {
     pending_claim: "Pendiente de activacion",
@@ -77,7 +92,7 @@ async function render() {
           <div class="rp-detail"><span>Beneficiario</span><strong>${escapeHtml(pass.beneficiary_name || "Pendiente de activacion")}</strong></div>
           <div class="rp-detail"><span>Documento</span><strong>${escapeHtml(pass.beneficiary_document || "Se solicita al activar")}</strong></div>
           <div class="rp-detail"><span>Codigo</span><strong class="rp-code">${escapeHtml(pass.public_code)}</strong></div>
-          <div class="rp-detail"><span>Valor</span><strong>Reservado para validacion en tienda</strong></div>
+          <div class="rp-detail"><span>Validacion</span><strong>Monto reservado para tienda</strong></div>
           <div class="rp-detail"><span>Vigencia</span><strong>${escapeHtml(date(pass.expires_at))}</strong></div>
           <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Segun condiciones del emisor")}</strong></div>
         </section>
@@ -116,7 +131,7 @@ async function render() {
         });
         const claimData = await claimResponse.json().catch(() => ({}));
         if (!claimResponse.ok) {
-          throw new Error(claimData?.error?.message || "No se pudo activar la Gift Card.");
+          throw new Error(apiErrorMessage(claimData, "No se pudo activar la Gift Card."));
         }
         message.textContent = claimData.message || "Gift Card oficial activada.";
         setTimeout(render, 600);

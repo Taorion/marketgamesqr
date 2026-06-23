@@ -17,39 +17,51 @@ const {
   validateRewardPassToken,
 } = require("../services/rewardPassService");
 
-const optionalString = z.string().trim().max(500).optional().nullable();
-const optionalEmail = z.string().trim().email().max(180).optional().nullable();
+function emptyToNull(value) {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  return text ? text : null;
+}
+
+const optionalString = z.preprocess(emptyToNull, z.string().max(500).nullable().optional());
+const optionalShortString = z.preprocess(emptyToNull, z.string().max(180).nullable().optional());
+const optionalPhone = z.preprocess(emptyToNull, z.string().max(40).nullable().optional());
+const optionalEmail = z.preprocess(emptyToNull, z.string().email().max(180).nullable().optional());
+const optionalDateTime = z.preprocess(emptyToNull, z.string().datetime().nullable().optional());
+const optionalUuid = z.preprocess(emptyToNull, z.string().uuid().nullable().optional());
+const moneyValue = z.coerce.number().positive();
+const nonNegativeMoneyValue = z.coerce.number().min(0);
 
 const createRewardPassSchema = z.object({
-  campaign_id: z.string().uuid().optional().nullable(),
+  campaign_id: optionalUuid,
   buyer_name: z.string().trim().min(2).max(160),
   buyer_document: optionalString,
   buyer_email: optionalEmail,
-  buyer_phone: z.string().trim().max(40).optional().nullable(),
-  beneficiary_name: z.string().trim().max(160).optional().nullable(),
-  beneficiary_document: z.string().trim().max(80).optional().nullable(),
+  buyer_phone: optionalPhone,
+  beneficiary_name: optionalShortString,
+  beneficiary_document: z.preprocess(emptyToNull, z.string().max(80).nullable().optional()),
   beneficiary_email: optionalEmail,
-  beneficiary_phone: z.string().trim().max(40).optional().nullable(),
-  initial_value_cop: z.number().positive(),
-  issued_at: z.string().datetime().optional().nullable(),
-  valid_from: z.string().datetime().optional().nullable(),
-  expires_at: z.string().datetime().optional().nullable(),
+  beneficiary_phone: optionalPhone,
+  initial_value_cop: moneyValue,
+  issued_at: optionalDateTime,
+  valid_from: optionalDateTime,
+  expires_at: optionalDateTime,
   transferable: z.boolean().default(false),
   partial_redemption_allowed: z.boolean().default(true),
-  authorized_branch: z.string().trim().max(180).optional().nullable(),
-  terms: z.string().trim().max(6000).optional().nullable(),
-  internal_notes: z.string().trim().max(2000).optional().nullable(),
-  payment_method_received: z.string().trim().max(120).optional().nullable(),
+  authorized_branch: optionalShortString,
+  terms: z.preprocess(emptyToNull, z.string().max(8000).nullable().optional()),
+  internal_notes: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
+  payment_method_received: z.preprocess(emptyToNull, z.string().max(120).nullable().optional()),
 });
 
 const redeemRewardPassSchema = z.object({
   invoice_number: z.string().trim().min(2).max(120),
-  invoice_file_path: z.string().trim().max(500).optional().nullable(),
-  purchase_value_cop: z.number().min(0).optional().default(0),
-  redeemed_value_cop: z.number().positive(),
-  branch: z.string().trim().max(180).optional().nullable(),
-  observations: z.string().trim().max(2000).optional().nullable(),
-  document_checked: z.string().trim().max(80).optional().nullable(),
+  invoice_file_path: optionalString,
+  purchase_value_cop: nonNegativeMoneyValue.optional().default(0),
+  redeemed_value_cop: moneyValue,
+  branch: optionalShortString,
+  observations: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
+  document_checked: z.preprocess(emptyToNull, z.string().max(80).nullable().optional()),
   confirm_full_consumption: z.boolean().optional().default(false),
 });
 
@@ -59,14 +71,14 @@ const cancelRewardPassSchema = z.object({
 
 const extendRewardPassSchema = z.object({
   expires_at: z.string().datetime(),
-  notes: z.string().trim().max(2000).optional().nullable(),
+  notes: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
 });
 
 const claimRewardPassSchema = z.object({
   beneficiary_name: z.string().trim().min(2).max(160),
   beneficiary_document: z.string().trim().min(3).max(80),
   beneficiary_email: optionalEmail,
-  beneficiary_phone: z.string().trim().max(40).optional().nullable(),
+  beneficiary_phone: optionalPhone,
 });
 
 function parseBoolean(value) {

@@ -1022,9 +1022,24 @@ async function api(path, options = {}) {
     if (response.status === 401) {
       forceLoginAfterSessionIssue(data.error?.message || "Tu sesion expiro o el portal fue actualizado. Inicia sesion de nuevo para continuar.");
     }
-    throw new Error(data.error?.message || httpErrorMessage(response, rawText));
+    throw new Error(apiErrorMessage(data, response, rawText));
   }
   return data;
+}
+
+function apiErrorMessage(data, response, rawText = "") {
+  const baseMessage = data.error?.message || httpErrorMessage(response, rawText);
+  const fieldErrors = data.error?.details?.fieldErrors || {};
+  const firstField = Object.keys(fieldErrors)[0];
+  const firstMessage = firstField ? fieldErrors[firstField]?.[0] : "";
+  if (firstField && firstMessage) {
+    return `${baseMessage} ${firstField}: ${firstMessage}`;
+  }
+  const formErrors = data.error?.details?.formErrors || [];
+  if (formErrors.length) {
+    return `${baseMessage} ${formErrors[0]}`;
+  }
+  return baseMessage;
 }
 
 function httpErrorMessage(response, rawText = "") {
@@ -8979,8 +8994,8 @@ function rewardPassPayload() {
     buyer_document: rewardPassBuyerDocumentInput?.value.trim() || null,
     buyer_phone: rewardPassBuyerPhoneInput?.value.trim() || null,
     buyer_email: rewardPassBuyerEmailInput?.value.trim() || null,
-    beneficiary_name: rewardPassBeneficiaryNameInput?.value.trim(),
-    beneficiary_document: rewardPassBeneficiaryDocumentInput?.value.trim(),
+    beneficiary_name: rewardPassBeneficiaryNameInput?.value.trim() || null,
+    beneficiary_document: rewardPassBeneficiaryDocumentInput?.value.trim() || null,
     beneficiary_phone: rewardPassBeneficiaryPhoneInput?.value.trim() || null,
     beneficiary_email: rewardPassBeneficiaryEmailInput?.value.trim() || null,
     issued_at: rewardPassIssuedAtInput?.value ? new Date(rewardPassIssuedAtInput.value).toISOString() : null,
@@ -9031,7 +9046,8 @@ function openRewardPassWhatsapp(id) {
   const pass = state.rewardPasses.find((item) => item.id === id) || state.selectedRewardPass;
   if (!pass) return;
   const phone = String(pass.beneficiary_phone || pass.buyer_phone || "").replace(/\D/g, "");
-  const message = encodeURIComponent(`Hola ${pass.beneficiary_name}, tienes un Reward Pass de ${pass.company?.name || "nuestro negocio"} por ${money(pass.initial_value_cop)}. Consulta tu Gift Card Digital: ${pass.public_url}`);
+  const greeting = pass.beneficiary_name ? `Hola ${pass.beneficiary_name},` : "Hola,";
+  const message = encodeURIComponent(`${greeting} te comparto un Reward Pass de ${pass.company?.name || "nuestro negocio"}. Escanea el QR o abre este enlace para activar tu Gift Card Digital oficial: ${pass.public_url}`);
   window.open(`https://wa.me/${phone || ""}?text=${message}`, "_blank", "noopener");
 }
 
