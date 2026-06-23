@@ -85,7 +85,7 @@ async function render() {
           </div>
           <div class="rp-qr">
             <img src="${escapeHtml(pass.qr_image_data_url || "")}" alt="Codigo QR Reward Pass">
-            <p>${isClaim ? "Escanea este QR para activar la gift card oficial." : "Presenta este QR junto con tu documento en el negocio emisor."}</p>
+            <p>${isClaim ? "Escanea este QR para completar tus datos y reclamar el QR definitivo." : "Presenta este QR junto con tu documento en el negocio emisor."}</p>
           </div>
         </section>
         <section class="rp-details">
@@ -100,6 +100,7 @@ async function render() {
           <p><strong>Instrucciones:</strong> ${escapeHtml(pass.instructions)}</p>
           ${isClaim ? `
           <form class="rp-claim-form" id="rpClaimForm">
+            <p class="rp-claim-note">Este es el QR de reclamo. Al completar tus datos se activa la Gift Card oficial con el QR redimible en el punto de venta.</p>
             <label>Nombre completo<input id="rpClaimName" type="text" required></label>
             <label>Documento de identidad<input id="rpClaimDocument" type="text" required></label>
             <label>Celular<input id="rpClaimPhone" type="tel"></label>

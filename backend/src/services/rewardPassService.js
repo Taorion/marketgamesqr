@@ -610,7 +610,7 @@ async function getPublicRewardPass(publicCode) {
     ? await getQrDataUrlForUrl(mapped.public_url)
     : await getRewardPassQrDataUrl(pass);
   mapped.instructions = status === "pending_claim"
-    ? "Escanea este QR, completa tus datos y activa tu Gift Card Digital oficial."
+    ? "Escanea este QR, completa tus datos y reclama el QR definitivo de tu Gift Card Digital para presentarlo en el punto de venta."
     : "Presenta este QR junto con tu documento de identidad en el negocio emisor.";
   mapped.can_redeem_publicly = false;
   return mapped;
@@ -959,7 +959,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
   page.drawText(`Codigo: ${pass.public_code}`, { x: 60, y: 240, size: 16, font: bold, color: rgb(1, 1, 1) });
   page.drawText(`Vigencia: ${new Date(pass.expires_at).toLocaleDateString("es-CO")}`, { x: 60, y: 214, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
   page.drawImage(qrPng, { x: 642, y: 178, width: 188, height: 188 });
-  page.drawText(isPendingClaim ? "Escanea para activar la gift card oficial." : "Presenta este QR junto con tu documento de identidad.", { x: 594, y: 148, size: 12, font, color: rgb(1, 1, 1) });
+  page.drawText(isPendingClaim ? "Escanea para reclamar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad.", { x: 594, y: 148, size: 12, font, color: rgb(1, 1, 1) });
   page.drawText("Redimible unicamente en el negocio emisor. No canjeable por efectivo salvo autorizacion del emisor.", {
     x: 60,
     y: 116,

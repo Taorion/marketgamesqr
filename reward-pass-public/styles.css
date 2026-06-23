@@ -172,6 +172,12 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.rp-claim-note {
+  grid-column: 1 / -1;
+  color: #f3d48e;
+  font-weight: 700;
+}
+
 .rp-claim-form label {
   display: grid;
   gap: 7px;

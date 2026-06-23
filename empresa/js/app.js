@@ -8833,10 +8833,10 @@ function renderRewardPassPreview(pass = state.selectedRewardPass) {
   const beneficiary = pass?.beneficiary_name || rewardPassBeneficiaryNameInput?.value || "Beneficiario por activar";
   if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = pass ? pass.public_code : "Vista previa";
   if (rewardPassPreviewValue) rewardPassPreviewValue.textContent = isPending ? "ACTIVACION" : "GIFT CARD OFICIAL";
-  if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = isPending ? "Escanea para completar tus datos" : beneficiary;
+  if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = isPending ? "Escanea para reclamar el QR definitivo" : beneficiary;
   if (rewardPassPreviewMeta) {
     rewardPassPreviewMeta.textContent = pass
-      ? (isPending ? `Link de activacion: ${pass.public_url}. El beneficiario debe completar sus datos.` : `Link publico: ${pass.public_url}. QR redimible listo para validador.`)
+      ? (isPending ? `Link de reclamo: ${pass.public_url}. El beneficiario escanea este QR, completa sus datos y recibe el QR definitivo redimible.` : `Link publico: ${pass.public_url}. QR redimible listo para validador.`)
       : "El QR y los datos completos apareceran despues de emitir o seleccionar un Reward Pass.";
   }
   [rewardPassDownloadImageButton, rewardPassDownloadPdfButton, rewardPassReceiptButton].forEach((button) => {
@@ -8987,17 +8987,17 @@ async function renderRewardPassesView() {
 }
 
 function rewardPassPayload() {
-  return {
+  const beneficiaryName = rewardPassBeneficiaryNameInput?.value.trim();
+  const beneficiaryDocument = rewardPassBeneficiaryDocumentInput?.value.trim();
+  const beneficiaryPhone = rewardPassBeneficiaryPhoneInput?.value.trim();
+  const beneficiaryEmail = rewardPassBeneficiaryEmailInput?.value.trim();
+  const payload = {
     campaign_id: rewardPassCampaignInput?.value || null,
     initial_value_cop: Number(rewardPassValueInput?.value || 0),
     buyer_name: rewardPassBuyerNameInput?.value.trim(),
     buyer_document: rewardPassBuyerDocumentInput?.value.trim() || null,
     buyer_phone: rewardPassBuyerPhoneInput?.value.trim() || null,
     buyer_email: rewardPassBuyerEmailInput?.value.trim() || null,
-    beneficiary_name: rewardPassBeneficiaryNameInput?.value.trim() || null,
-    beneficiary_document: rewardPassBeneficiaryDocumentInput?.value.trim() || null,
-    beneficiary_phone: rewardPassBeneficiaryPhoneInput?.value.trim() || null,
-    beneficiary_email: rewardPassBeneficiaryEmailInput?.value.trim() || null,
     issued_at: rewardPassIssuedAtInput?.value ? new Date(rewardPassIssuedAtInput.value).toISOString() : null,
     expires_at: rewardPassExpiresAtInput?.value ? new Date(rewardPassExpiresAtInput.value).toISOString() : null,
     authorized_branch: rewardPassBranchInput?.value.trim() || null,
@@ -9007,6 +9007,11 @@ function rewardPassPayload() {
     terms: rewardPassTermsInput?.value.trim() || null,
     internal_notes: rewardPassNotesInput?.value.trim() || null,
   };
+  if (beneficiaryName) payload.beneficiary_name = beneficiaryName;
+  if (beneficiaryDocument) payload.beneficiary_document = beneficiaryDocument;
+  if (beneficiaryPhone) payload.beneficiary_phone = beneficiaryPhone;
+  if (beneficiaryEmail) payload.beneficiary_email = beneficiaryEmail;
+  return payload;
 }
 
 async function submitRewardPass(event) {
@@ -9111,7 +9116,8 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.fillText(`Codigo: ${pass.public_code}`, 94, 490);
   ctx.fillText(`Vigencia: ${formatDate(pass.expires_at)}`, 94, 532);
   ctx.font = "500 22px Inter, sans-serif";
-  ctx.fillText("Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
+  const pending = pass.status === "pending_claim";
+  ctx.fillText(pending ? "Escanea este QR para reclamar y activar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
   ctx.fillText("Administrado por MarketGames QR Portal.", 94, 642);
   if (pass.qr_image_data_url) {
     const qrImage = await new Promise((resolve, reject) => {

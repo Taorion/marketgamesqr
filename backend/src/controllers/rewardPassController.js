@@ -126,7 +126,13 @@ async function metrics(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    const body = validate(createRewardPassSchema, req.body);
+    const payload = { ...(req.body || {}) };
+    ["beneficiary_name", "beneficiary_document", "beneficiary_email", "beneficiary_phone"].forEach((field) => {
+      if (!emptyToNull(payload[field])) {
+        delete payload[field];
+      }
+    });
+    const body = validate(createRewardPassSchema, payload);
     const rewardPass = await createRewardPass(req.user, body);
     res.status(201).json({
       message: "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo MarketGames.",
