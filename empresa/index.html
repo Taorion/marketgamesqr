@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=installments-feedback-20260622">
+  <link rel="stylesheet" href="css/styles.css?v=reward-pass-20260623">
 </head>
 <body>
   <main class="portal-shell">
@@ -112,6 +112,10 @@
           <button class="nav-item" data-view="affiliates" type="button">
             <span class="material-symbols-outlined">card_membership</span>
             <span>Afiliados</span>
+          </button>
+          <button class="nav-item" data-view="reward-passes" type="button">
+            <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
+            <span>Reward Pass</span>
           </button>
           <button class="nav-item" data-view="redemptions" type="button">
             <span class="material-symbols-outlined">redeem</span>
@@ -1496,6 +1500,22 @@
                     <input id="validatorSaleAmountInput" type="number" min="0" step="1000" placeholder="Ej: 45000">
                   </label>
                   <label>
+                    <span>Factura electronica</span>
+                    <input id="validatorRewardPassInvoiceInput" type="text" placeholder="Obligatorio para Reward Pass">
+                  </label>
+                  <label>
+                    <span>Valor a redimir</span>
+                    <input id="validatorRewardPassRedeemInput" type="number" min="0" step="1000" placeholder="Saldo a descontar">
+                  </label>
+                  <label>
+                    <span>Sede</span>
+                    <input id="validatorRewardPassBranchInput" type="text" placeholder="Sede o caja">
+                  </label>
+                  <label>
+                    <span>Documento presentado</span>
+                    <input id="validatorRewardPassDocumentInput" type="text" placeholder="Confirmar cedula">
+                  </label>
+                  <label>
                     <span>Metodo de pago</span>
                     <input id="validatorPaymentMethodInput" type="text" placeholder="Efectivo, tarjeta, transferencia">
                   </label>
@@ -1717,6 +1737,205 @@
             <article class="surface-card placeholder-card" id="adminPanelCard">
               <span class="mono-label">Acceso interno</span>
               <p id="adminPanelMessage">Usa el panel `/admin` para la operacion interna de Market Games.</p>
+            </article>
+          </section>
+
+          <section class="view-section" data-view="reward-passes">
+            <div class="view-head">
+              <div>
+                <span class="mono-label">Gift Card Digital Propia</span>
+                <h2>Reward Pass</h2>
+                <p>Emite gift cards digitales redimibles en tu propio negocio con QR, saldo, cedula y trazabilidad.</p>
+              </div>
+              <div class="view-head-actions">
+                <button class="ghost-button" id="refreshRewardPassesButton" type="button">Actualizar</button>
+              </div>
+            </div>
+
+            <section class="kpi-grid reward-pass-kpis" id="rewardPassKpiGrid"></section>
+
+            <section class="reward-pass-layout">
+              <article class="surface-card reward-pass-form-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Nuevo Reward Pass</span>
+                  <strong>Emitir Gift Card Digital</strong>
+                </div>
+                <div class="reward-pass-ticket-context" id="rewardPassTicketContext">Costo: 1 ticket. Cargando saldo...</div>
+                <form class="modal-form reward-pass-form" id="rewardPassCreateForm">
+                  <label>
+                    <span>Valor en COP</span>
+                    <input id="rewardPassValueInput" type="number" min="1000" step="1000" required>
+                  </label>
+                  <label>
+                    <span>Campana asociada</span>
+                    <select id="rewardPassCampaignInput"></select>
+                  </label>
+                  <label>
+                    <span>Comprador</span>
+                    <input id="rewardPassBuyerNameInput" type="text" required>
+                  </label>
+                  <label>
+                    <span>Documento comprador</span>
+                    <input id="rewardPassBuyerDocumentInput" type="text">
+                  </label>
+                  <label>
+                    <span>Celular comprador</span>
+                    <input id="rewardPassBuyerPhoneInput" type="tel">
+                  </label>
+                  <label>
+                    <span>Email comprador</span>
+                    <input id="rewardPassBuyerEmailInput" type="email">
+                  </label>
+                  <label>
+                    <span>Beneficiario</span>
+                    <input id="rewardPassBeneficiaryNameInput" type="text" required>
+                  </label>
+                  <label>
+                    <span>Documento beneficiario</span>
+                    <input id="rewardPassBeneficiaryDocumentInput" type="text" required>
+                  </label>
+                  <label>
+                    <span>Celular beneficiario</span>
+                    <input id="rewardPassBeneficiaryPhoneInput" type="tel">
+                  </label>
+                  <label>
+                    <span>Email beneficiario</span>
+                    <input id="rewardPassBeneficiaryEmailInput" type="email">
+                  </label>
+                  <label>
+                    <span>Fecha emision</span>
+                    <input id="rewardPassIssuedAtInput" type="datetime-local">
+                  </label>
+                  <label>
+                    <span>Fecha vencimiento</span>
+                    <input id="rewardPassExpiresAtInput" type="datetime-local" required>
+                  </label>
+                  <label>
+                    <span>Sede autorizada</span>
+                    <input id="rewardPassBranchInput" type="text">
+                  </label>
+                  <label>
+                    <span>Medio de pago recibido</span>
+                    <input id="rewardPassPaymentMethodInput" type="text" placeholder="Ej: transferencia, efectivo, dataphone">
+                  </label>
+                  <label class="validator-checkline">
+                    <input id="rewardPassPartialInput" type="checkbox" checked>
+                    <span>Permitir redenciones parciales</span>
+                  </label>
+                  <label class="validator-checkline">
+                    <input id="rewardPassTransferableInput" type="checkbox">
+                    <span>Transferible</span>
+                  </label>
+                  <label class="span-2">
+                    <span>Condiciones</span>
+                    <textarea id="rewardPassTermsInput" rows="5"></textarea>
+                  </label>
+                  <label class="span-2">
+                    <span>Notas internas</span>
+                    <textarea id="rewardPassNotesInput" rows="3"></textarea>
+                  </label>
+                  <div class="modal-actions span-2">
+                    <p class="error-line" id="rewardPassCreateMessage"></p>
+                    <div class="modal-button-row">
+                      <button class="solid-button" id="rewardPassCreateButton" type="submit">Emitir Reward Pass</button>
+                    </div>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card reward-pass-preview-card">
+                <div class="table-card-head">
+                  <span class="mono-label">Pieza digital</span>
+                  <strong id="rewardPassPreviewTitle">Vista previa</strong>
+                </div>
+                <div class="reward-pass-card-preview" id="rewardPassCardPreview">
+                  <div class="reward-pass-card-inner">
+                    <span>REWARD PASS</span>
+                    <strong id="rewardPassPreviewValue">$0 COP</strong>
+                    <p id="rewardPassPreviewBeneficiary">Beneficiario</p>
+                    <small>Administrado por MarketGames QR Portal</small>
+                  </div>
+                </div>
+                <div class="affiliate-card-actions">
+                  <button class="ghost-button" id="rewardPassDownloadImageButton" type="button" disabled>Descargar imagen</button>
+                  <button class="ghost-button" id="rewardPassDownloadPdfButton" type="button" disabled>Descargar PDF</button>
+                  <button class="ghost-button" id="rewardPassReceiptButton" type="button" disabled>Comprobante</button>
+                </div>
+                <p class="affiliate-card-note" id="rewardPassPreviewMeta">El QR y los datos completos apareceran despues de emitir o seleccionar un Reward Pass.</p>
+              </article>
+            </section>
+
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Reward Passes emitidos</span>
+                <div class="inline-selects">
+                  <select id="rewardPassStatusFilter">
+                    <option value="">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="partially_redeemed">Parcialmente redimidos</option>
+                    <option value="fully_redeemed">Redimidos</option>
+                    <option value="expired">Vencidos</option>
+                    <option value="cancelled">Anulados</option>
+                    <option value="extended">Prorrogados</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Codigo</th>
+                      <th>Beneficiario</th>
+                      <th>Documento</th>
+                      <th>Valor</th>
+                      <th>Saldo</th>
+                      <th>Estado</th>
+                      <th>Emision</th>
+                      <th>Vence</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rewardPassTable"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="surface-card reward-pass-detail-card" id="rewardPassDetailCard">
+              <div class="table-card-head">
+                <span class="mono-label">Detalle</span>
+                <strong id="rewardPassDetailTitle">Sin Reward Pass seleccionado</strong>
+              </div>
+              <div class="reward-pass-detail-grid" id="rewardPassDetailGrid"></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Factura</th>
+                      <th>Valor</th>
+                      <th>Saldo anterior</th>
+                      <th>Saldo nuevo</th>
+                      <th>Sede</th>
+                      <th>Vendedor</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rewardPassRedemptionTable"></tbody>
+                </table>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Tickets</th>
+                      <th>Antes</th>
+                      <th>Despues</th>
+                      <th>Tipo</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rewardPassTicketLedgerTable"></tbody>
+                </table>
+              </div>
             </article>
           </section>
 
@@ -2070,7 +2289,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=installments-feedback-20260622" defer></script>
+  <script src="js/app.js?v=reward-pass-20260623" defer></script>
 </body>
 </html>
 

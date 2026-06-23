@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260622-session-enforced-v1";
+const APP_VERSION = "empresa-20260623-reward-pass-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -171,6 +171,44 @@ const refreshAffiliatesButton = document.getElementById("refreshAffiliatesButton
 const affiliateTable = document.getElementById("affiliateTable");
 const affiliateLedgerTable = document.getElementById("affiliateLedgerTable");
 const affiliateLedgerTitle = document.getElementById("affiliateLedgerTitle");
+const refreshRewardPassesButton = document.getElementById("refreshRewardPassesButton");
+const rewardPassKpiGrid = document.getElementById("rewardPassKpiGrid");
+const rewardPassTicketContext = document.getElementById("rewardPassTicketContext");
+const rewardPassCreateForm = document.getElementById("rewardPassCreateForm");
+const rewardPassValueInput = document.getElementById("rewardPassValueInput");
+const rewardPassCampaignInput = document.getElementById("rewardPassCampaignInput");
+const rewardPassBuyerNameInput = document.getElementById("rewardPassBuyerNameInput");
+const rewardPassBuyerDocumentInput = document.getElementById("rewardPassBuyerDocumentInput");
+const rewardPassBuyerPhoneInput = document.getElementById("rewardPassBuyerPhoneInput");
+const rewardPassBuyerEmailInput = document.getElementById("rewardPassBuyerEmailInput");
+const rewardPassBeneficiaryNameInput = document.getElementById("rewardPassBeneficiaryNameInput");
+const rewardPassBeneficiaryDocumentInput = document.getElementById("rewardPassBeneficiaryDocumentInput");
+const rewardPassBeneficiaryPhoneInput = document.getElementById("rewardPassBeneficiaryPhoneInput");
+const rewardPassBeneficiaryEmailInput = document.getElementById("rewardPassBeneficiaryEmailInput");
+const rewardPassIssuedAtInput = document.getElementById("rewardPassIssuedAtInput");
+const rewardPassExpiresAtInput = document.getElementById("rewardPassExpiresAtInput");
+const rewardPassBranchInput = document.getElementById("rewardPassBranchInput");
+const rewardPassPaymentMethodInput = document.getElementById("rewardPassPaymentMethodInput");
+const rewardPassPartialInput = document.getElementById("rewardPassPartialInput");
+const rewardPassTransferableInput = document.getElementById("rewardPassTransferableInput");
+const rewardPassTermsInput = document.getElementById("rewardPassTermsInput");
+const rewardPassNotesInput = document.getElementById("rewardPassNotesInput");
+const rewardPassCreateMessage = document.getElementById("rewardPassCreateMessage");
+const rewardPassCreateButton = document.getElementById("rewardPassCreateButton");
+const rewardPassPreviewTitle = document.getElementById("rewardPassPreviewTitle");
+const rewardPassPreviewValue = document.getElementById("rewardPassPreviewValue");
+const rewardPassPreviewBeneficiary = document.getElementById("rewardPassPreviewBeneficiary");
+const rewardPassPreviewMeta = document.getElementById("rewardPassPreviewMeta");
+const rewardPassCardPreview = document.getElementById("rewardPassCardPreview");
+const rewardPassDownloadImageButton = document.getElementById("rewardPassDownloadImageButton");
+const rewardPassDownloadPdfButton = document.getElementById("rewardPassDownloadPdfButton");
+const rewardPassReceiptButton = document.getElementById("rewardPassReceiptButton");
+const rewardPassStatusFilter = document.getElementById("rewardPassStatusFilter");
+const rewardPassTable = document.getElementById("rewardPassTable");
+const rewardPassDetailTitle = document.getElementById("rewardPassDetailTitle");
+const rewardPassDetailGrid = document.getElementById("rewardPassDetailGrid");
+const rewardPassRedemptionTable = document.getElementById("rewardPassRedemptionTable");
+const rewardPassTicketLedgerTable = document.getElementById("rewardPassTicketLedgerTable");
 const affiliateStatTotal = document.getElementById("affiliateStatTotal");
 const affiliateStatActive = document.getElementById("affiliateStatActive");
 const affiliateStatPoints = document.getElementById("affiliateStatPoints");
@@ -239,6 +277,10 @@ const validatorRedeemButton = document.getElementById("validatorRedeemButton");
 const validatorSaleForm = document.getElementById("validatorSaleForm");
 const validatorHadSaleInput = document.getElementById("validatorHadSaleInput");
 const validatorSaleAmountInput = document.getElementById("validatorSaleAmountInput");
+const validatorRewardPassInvoiceInput = document.getElementById("validatorRewardPassInvoiceInput");
+const validatorRewardPassRedeemInput = document.getElementById("validatorRewardPassRedeemInput");
+const validatorRewardPassBranchInput = document.getElementById("validatorRewardPassBranchInput");
+const validatorRewardPassDocumentInput = document.getElementById("validatorRewardPassDocumentInput");
 const validatorPaymentMethodInput = document.getElementById("validatorPaymentMethodInput");
 const validatorProductServiceInput = document.getElementById("validatorProductServiceInput");
 const validatorSaleNotesInput = document.getElementById("validatorSaleNotesInput");
@@ -429,6 +471,11 @@ let state = {
   campaigns: [],
   adminCampaigns: [],
   affiliates: [],
+  rewardPasses: [],
+  rewardPassMetrics: null,
+  rewardPassContext: null,
+  selectedRewardPassId: null,
+  selectedRewardPass: null,
   selectedCampaignId: null,
   selectedCampaign: null,
   selectedReport: null,
@@ -1328,6 +1375,7 @@ const viewFeatureMap = {
   campaigns: "portal_access",
   leads: "leads_view",
   affiliates: "affiliates",
+  "reward-passes": "portal_access",
   redemptions: "portal_access",
   sales: "portal_access",
   "strategic-qr": "qr_batch_generator",
@@ -1768,6 +1816,7 @@ function setView(view) {
     }
   }
   if (view === "validator") renderValidatorView();
+  if (view === "reward-passes") renderRewardPassesView();
   if (view === "branches") renderBranchesView();
   if (view === "admin") renderAdminView();
 }
@@ -4728,16 +4777,26 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorContactValue.textContent = [
     data?.player?.email,
     data?.player?.phone,
+    data?.reward_pass ? `Saldo: ${money(data.reward_pass.current_balance_cop)}` : "",
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
   ].filter(Boolean).join(" | ") || "-";
   validatorExpiresValue.textContent = formatDate(data?.qr_code?.expires_at);
   validatorRedeemButton.disabled = !data?.allowed;
+  if (data?.kind === "reward_pass") {
+    if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = data.reward_pass?.current_balance_cop || "";
+    if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = data.reward_pass?.beneficiary_document || "";
+    if (validatorSaleAmountInput) validatorSaleAmountInput.value = data.reward_pass?.current_balance_cop || "";
+  }
 }
 
 function resetValidatorSaleForm() {
   validatorHadSaleInput.checked = true;
   validatorSaleAmountInput.value = "";
+  if (validatorRewardPassInvoiceInput) validatorRewardPassInvoiceInput.value = "";
+  if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
+  if (validatorRewardPassBranchInput) validatorRewardPassBranchInput.value = "";
+  if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = "";
   validatorPaymentMethodInput.value = "";
   validatorProductServiceInput.value = "";
   validatorSaleNotesInput.value = "";
@@ -5495,16 +5554,19 @@ async function validateValidatorToken(rawValue) {
   showFeedback("Validando ticket contra la base de datos.", "loading", { title: "Validando ticket", timeout: 0 });
 
   try {
-    const data = await api(`/api/qr/validate/${encodeURIComponent(token)}`, {
+    const isRewardPass = token.startsWith("rp_");
+    const data = await api(isRewardPass
+      ? `/api/business/reward-passes/validator/${encodeURIComponent(token)}`
+      : `/api/qr/validate/${encodeURIComponent(token)}`, {
       method: "GET",
       headers: authHeaders(),
     });
     state.validatorLastValidation = data;
     state.validatorLastRedemption = null;
     if (data.allowed) {
-      setValidatorResult("ok", "Ticket valido", data.message, data);
-      setInlineMessage(validatorManualStatus, "Ticket valido. Puedes redimir el beneficio.", "success");
-      showFeedback("Ticket valido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
+      setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass valido" : "Ticket valido", data.message, data);
+      setInlineMessage(validatorManualStatus, data.kind === "reward_pass" ? "Reward Pass valido. Confirma cedula, factura y valor a redimir." : "Ticket valido. Puedes redimir el beneficio.", "success");
+      showFeedback(data.kind === "reward_pass" ? "Reward Pass valido. Confirma documento antes de registrar redencion." : "Ticket valido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
       setInlineMessage(validatorManualStatus, data.message || "Este ticket no puede redimirse.", "error");
@@ -5530,9 +5592,21 @@ async function redeemValidatorToken() {
   setButtonLoading(validatorRedeemButton, true, "Redimiendo...");
   showFeedback("Registrando redencion y bloqueando el ticket para evitar doble uso.", "loading", { title: "Redimiendo beneficio", timeout: 0 });
   try {
-    const data = await api(`/api/qr/redeem/${encodeURIComponent(state.validatorLastToken)}`, {
+    const isRewardPass = state.validatorLastValidation?.kind === "reward_pass";
+    const data = await api(isRewardPass
+      ? `/api/business/reward-passes/validator/${encodeURIComponent(state.validatorLastToken)}/redeem`
+      : `/api/qr/redeem/${encodeURIComponent(state.validatorLastToken)}`, {
       method: "POST",
       headers: authHeaders(),
+      body: isRewardPass ? JSON.stringify({
+        invoice_number: validatorRewardPassInvoiceInput?.value.trim(),
+        purchase_value_cop: Number(validatorSaleAmountInput?.value || 0),
+        redeemed_value_cop: Number(validatorRewardPassRedeemInput?.value || 0),
+        branch: validatorRewardPassBranchInput?.value.trim() || null,
+        observations: validatorSaleNotesInput?.value.trim() || null,
+        document_checked: validatorRewardPassDocumentInput?.value.trim() || null,
+        confirm_full_consumption: window.confirm("Confirma que el valor y factura son correctos para registrar la redencion."),
+      }) : undefined,
     });
     state.validatorLastRedemption = data.redemption;
     state.validatorLastValidation = {
@@ -8640,6 +8714,412 @@ async function renderAffiliatesView() {
   }
 }
 
+function rewardPassStatusLabel(status) {
+  const labels = {
+    active: "Activo",
+    partially_redeemed: "Parcial",
+    fully_redeemed: "Redimido",
+    expired: "Vencido",
+    cancelled: "Anulado",
+    extended: "Prorrogado",
+  };
+  return labels[status] || status || "-";
+}
+
+function rewardPassStatusClass(status) {
+  if (["active", "extended"].includes(status)) return "ok";
+  if (status === "partially_redeemed") return "pending";
+  return "danger";
+}
+
+function rewardPassDefaultExpiry() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 12);
+  return formatInputDateTime(date.toISOString());
+}
+
+function setRewardPassDefaults() {
+  if (rewardPassIssuedAtInput && !rewardPassIssuedAtInput.value) {
+    rewardPassIssuedAtInput.value = formatInputDateTime(new Date().toISOString());
+  }
+  if (rewardPassExpiresAtInput && !rewardPassExpiresAtInput.value) {
+    rewardPassExpiresAtInput.value = rewardPassDefaultExpiry();
+  }
+  if (rewardPassTermsInput && !rewardPassTermsInput.value && state.rewardPassContext?.default_terms) {
+    rewardPassTermsInput.value = state.rewardPassContext.default_terms;
+  }
+  renderRewardPassCampaignOptions();
+}
+
+function renderRewardPassCampaignOptions() {
+  if (!rewardPassCampaignInput) return;
+  const options = ['<option value="">Sin campana asociada</option>']
+    .concat((state.campaigns || []).map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`));
+  rewardPassCampaignInput.innerHTML = options.join("");
+}
+
+function renderRewardPassContext() {
+  const context = state.rewardPassContext?.context || state.rewardPassContext || {};
+  const cost = toNumber(context.reward_pass_ticket_cost || 1);
+  const balance = toNumber(context.ticket_balance || context.qr_balance || 0);
+  if (rewardPassTicketContext) {
+    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} MarketGames. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+  }
+}
+
+async function loadRewardPasses() {
+  const queryParams = new URLSearchParams();
+  if (rewardPassStatusFilter?.value) queryParams.set("status", rewardPassStatusFilter.value);
+  if (state.filter) queryParams.set("search", state.filter);
+  const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, { headers: authHeaders() });
+  state.rewardPasses = data.reward_passes || [];
+  state.rewardPassMetrics = data.metrics || null;
+  state.rewardPassContext = {
+    ...(state.rewardPassContext || {}),
+    context: data.context || data.reward_pass_context || data.context,
+  };
+  if (!state.selectedRewardPassId && state.rewardPasses[0]) {
+    state.selectedRewardPassId = state.rewardPasses[0].id;
+  }
+}
+
+async function loadRewardPassContext() {
+  const data = await api("/api/business/reward-passes/context", { headers: authHeaders() });
+  state.rewardPassContext = data || {};
+  renderRewardPassContext();
+  setRewardPassDefaults();
+}
+
+function renderRewardPassMetrics() {
+  const metrics = state.rewardPassMetrics || {};
+  const cards = [
+    ["Emitidos", toNumber(metrics.issued_count || 0), `${toNumber(metrics.active_count || 0)} activos`],
+    ["Valor emitido", money(metrics.total_issued_cop || 0), "Obligacion comercial del emisor"],
+    ["Valor redimido", money(metrics.total_redeemed_cop || 0), `${toNumber(metrics.redemption_count || 0)} redenciones`],
+    ["Saldo pendiente", money(metrics.pending_balance_cop || 0), `${toNumber(metrics.partially_redeemed_count || 0)} parciales`],
+    ["Saldo vencido", money(metrics.expired_balance_cop || 0), `${toNumber(metrics.expired_count || 0)} vencidos`],
+    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico MarketGames"],
+  ];
+  if (rewardPassKpiGrid) {
+    rewardPassKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
+      <article class="kpi-card">
+        <span class="mono-label">${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+        <div class="kpi-meta">${escapeHtml(meta)}</div>
+      </article>
+    `).join("");
+  }
+}
+
+function renderRewardPassPreview(pass = state.selectedRewardPass) {
+  const value = pass?.initial_value_cop ?? rewardPassValueInput?.value ?? 0;
+  const beneficiary = pass?.beneficiary_name || rewardPassBeneficiaryNameInput?.value || "Beneficiario";
+  if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = pass ? pass.public_code : "Vista previa";
+  if (rewardPassPreviewValue) rewardPassPreviewValue.textContent = money(value || 0);
+  if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = beneficiary;
+  if (rewardPassPreviewMeta) {
+    rewardPassPreviewMeta.textContent = pass
+      ? `Link publico: ${pass.public_url}. QR privado listo para validador.`
+      : "El QR y los datos completos apareceran despues de emitir o seleccionar un Reward Pass.";
+  }
+  [rewardPassDownloadImageButton, rewardPassDownloadPdfButton, rewardPassReceiptButton].forEach((button) => {
+    if (button) button.disabled = !pass;
+  });
+}
+
+function renderRewardPassTable() {
+  if (!rewardPassTable) return;
+  const rows = filterRows(state.rewardPasses || [], ["public_code", "beneficiary_name", "beneficiary_document", "buyer_name", "status"]);
+  rewardPassTable.innerHTML = rows.map((item) => `
+    <tr class="${item.id === state.selectedRewardPassId ? "active" : ""}">
+      <td><strong>${escapeHtml(item.public_code)}</strong></td>
+      <td>${escapeHtml(item.beneficiary_name || "-")}</td>
+      <td>${escapeHtml(item.beneficiary_document || "-")}</td>
+      <td>${escapeHtml(money(item.initial_value_cop || 0))}</td>
+      <td>${escapeHtml(money(item.current_balance_cop || 0))}</td>
+      <td><span class="status-chip ${rewardPassStatusClass(item.status)}">${escapeHtml(rewardPassStatusLabel(item.status))}</span></td>
+      <td>${escapeHtml(formatDateShort(item.issued_at))}</td>
+      <td>${escapeHtml(formatDateShort(item.expires_at))}</td>
+      <td>
+        <button class="ghost-button" type="button" data-rp-view="${escapeHtml(item.id)}">Ver</button>
+        <button class="ghost-button" type="button" data-rp-pdf="${escapeHtml(item.id)}">Descargar</button>
+        <button class="ghost-button" type="button" data-rp-copy="${escapeHtml(item.public_url || "")}">Copiar link</button>
+        <button class="ghost-button" type="button" data-rp-wa="${escapeHtml(item.id)}">WhatsApp</button>
+        ${item.current_balance_cop >= item.initial_value_cop && item.status !== "cancelled" ? `<button class="ghost-button danger-button" type="button" data-rp-cancel="${escapeHtml(item.id)}">Anular</button>` : ""}
+      </td>
+    </tr>
+  `).join("") || '<tr><td colspan="9">Todavia no hay Reward Pass emitidos.</td></tr>';
+
+  rewardPassTable.querySelectorAll("[data-rp-view]").forEach((button) => {
+    button.addEventListener("click", () => selectRewardPass(button.dataset.rpView));
+  });
+  rewardPassTable.querySelectorAll("[data-rp-copy]").forEach((button) => {
+    button.addEventListener("click", () => copyRewardPassLink(button.dataset.rpCopy));
+  });
+  rewardPassTable.querySelectorAll("[data-rp-pdf]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await selectRewardPass(button.dataset.rpPdf);
+        await downloadSelectedRewardPassPdf("pdf");
+      } catch (error) {
+        showFeedback(error.message, "error");
+      }
+    });
+  });
+  rewardPassTable.querySelectorAll("[data-rp-wa]").forEach((button) => {
+    button.addEventListener("click", () => openRewardPassWhatsapp(button.dataset.rpWa));
+  });
+  rewardPassTable.querySelectorAll("[data-rp-cancel]").forEach((button) => {
+    button.addEventListener("click", () => cancelSelectedRewardPass(button.dataset.rpCancel));
+  });
+}
+
+function renderRewardPassDetail() {
+  const pass = state.selectedRewardPass;
+  if (!pass) {
+    if (rewardPassDetailTitle) rewardPassDetailTitle.textContent = "Sin Reward Pass seleccionado";
+    if (rewardPassDetailGrid) rewardPassDetailGrid.innerHTML = '<p class="table-secondary">Selecciona un Reward Pass del listado.</p>';
+    if (rewardPassRedemptionTable) rewardPassRedemptionTable.innerHTML = '<tr><td colspan="7">Sin historial.</td></tr>';
+    if (rewardPassTicketLedgerTable) rewardPassTicketLedgerTable.innerHTML = '<tr><td colspan="5">Sin movimientos.</td></tr>';
+    renderRewardPassPreview(null);
+    return;
+  }
+  if (rewardPassDetailTitle) rewardPassDetailTitle.textContent = `${pass.public_code} - ${pass.beneficiary_name}`;
+  if (rewardPassDetailGrid) {
+    const details = [
+      ["Empresa emisora", pass.company?.name || "-"],
+      ["Comprador", `${pass.buyer_name || "-"} / ${pass.buyer_document || "-"}`],
+      ["Beneficiario", `${pass.beneficiary_name || "-"} / ${pass.beneficiary_document || "-"}`],
+      ["Valor inicial", money(pass.initial_value_cop)],
+      ["Saldo disponible", money(pass.current_balance_cop)],
+      ["Estado", rewardPassStatusLabel(pass.status)],
+      ["Vigencia", formatDate(pass.expires_at)],
+      ["Sede autorizada", pass.authorized_branch || "-"],
+      ["Condiciones", pass.partial_redemption_allowed ? "Permite redenciones parciales" : "De un solo uso"],
+      ["Link publico", pass.public_url || "-"],
+    ];
+    rewardPassDetailGrid.innerHTML = details.map(([label, value]) => `
+      <div class="reward-pass-detail-item">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+    `).join("");
+  }
+  if (rewardPassRedemptionTable) {
+    rewardPassRedemptionTable.innerHTML = (pass.redemptions || []).map((item) => `
+      <tr>
+        <td>${escapeHtml(item.invoice_number || "-")}</td>
+        <td>${escapeHtml(money(item.redeemed_value_cop || 0))}</td>
+        <td>${escapeHtml(money(item.balance_before_cop || 0))}</td>
+        <td>${escapeHtml(money(item.balance_after_cop || 0))}</td>
+        <td>${escapeHtml(item.branch || "-")}</td>
+        <td>${escapeHtml(item.cashier_name || "-")}</td>
+        <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="7">Sin redenciones registradas.</td></tr>';
+  }
+  if (rewardPassTicketLedgerTable) {
+    rewardPassTicketLedgerTable.innerHTML = (pass.ticket_transactions || []).map((item) => `
+      <tr>
+        <td>${escapeHtml(item.tickets_debited)}</td>
+        <td>${escapeHtml(item.balance_before)}</td>
+        <td>${escapeHtml(item.balance_after)}</td>
+        <td>${escapeHtml(item.transaction_type)}</td>
+        <td>${escapeHtml(formatDate(item.created_at))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="5">Sin movimientos de tickets.</td></tr>';
+  }
+  renderRewardPassPreview(pass);
+}
+
+async function selectRewardPass(id) {
+  if (!id) return;
+  state.selectedRewardPassId = id;
+  showFeedback("Cargando detalle del Reward Pass.", "loading", { title: "Reward Pass", timeout: 0 });
+  try {
+    const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}`, { headers: authHeaders() });
+    state.selectedRewardPass = data.reward_pass;
+    renderRewardPassTable();
+    renderRewardPassDetail();
+    showFeedback("Detalle de Reward Pass cargado.");
+  } catch (error) {
+    showFeedback(error.message, "error");
+  }
+}
+
+async function renderRewardPassesView() {
+  renderRewardPassContext();
+  setRewardPassDefaults();
+  try {
+    if (!state.rewardPassContext?.default_terms) {
+      await loadRewardPassContext();
+    }
+    await loadRewardPasses();
+    renderRewardPassMetrics();
+    renderRewardPassTable();
+    const selected = state.rewardPasses.find((item) => item.id === state.selectedRewardPassId);
+    if (selected) {
+      await selectRewardPass(selected.id);
+    } else {
+      state.selectedRewardPass = null;
+      renderRewardPassDetail();
+    }
+  } catch (error) {
+    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="9">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+function rewardPassPayload() {
+  return {
+    campaign_id: rewardPassCampaignInput?.value || null,
+    initial_value_cop: Number(rewardPassValueInput?.value || 0),
+    buyer_name: rewardPassBuyerNameInput?.value.trim(),
+    buyer_document: rewardPassBuyerDocumentInput?.value.trim() || null,
+    buyer_phone: rewardPassBuyerPhoneInput?.value.trim() || null,
+    buyer_email: rewardPassBuyerEmailInput?.value.trim() || null,
+    beneficiary_name: rewardPassBeneficiaryNameInput?.value.trim(),
+    beneficiary_document: rewardPassBeneficiaryDocumentInput?.value.trim(),
+    beneficiary_phone: rewardPassBeneficiaryPhoneInput?.value.trim() || null,
+    beneficiary_email: rewardPassBeneficiaryEmailInput?.value.trim() || null,
+    issued_at: rewardPassIssuedAtInput?.value ? new Date(rewardPassIssuedAtInput.value).toISOString() : null,
+    expires_at: rewardPassExpiresAtInput?.value ? new Date(rewardPassExpiresAtInput.value).toISOString() : null,
+    authorized_branch: rewardPassBranchInput?.value.trim() || null,
+    payment_method_received: rewardPassPaymentMethodInput?.value.trim() || null,
+    partial_redemption_allowed: Boolean(rewardPassPartialInput?.checked),
+    transferable: Boolean(rewardPassTransferableInput?.checked),
+    terms: rewardPassTermsInput?.value.trim() || null,
+    internal_notes: rewardPassNotesInput?.value.trim() || null,
+  };
+}
+
+async function submitRewardPass(event) {
+  event.preventDefault();
+  setInlineMessage(rewardPassCreateMessage, "Emitiendo Reward Pass y descontando tickets...", "info");
+  setButtonLoading(rewardPassCreateButton, true, "Emitiendo...");
+  showFeedback("Emitiendo Reward Pass con transaccion atomica de tickets.", "loading", { title: "Reward Pass", timeout: 0 });
+  try {
+    const data = await api("/api/business/reward-passes", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(rewardPassPayload()),
+    });
+    state.selectedRewardPassId = data.reward_pass?.id;
+    state.selectedRewardPass = data.reward_pass;
+    rewardPassCreateForm?.reset();
+    setRewardPassDefaults();
+    await loadRewardPassContext();
+    await renderRewardPassesView();
+    setInlineMessage(rewardPassCreateMessage, data.message || "Reward Pass emitido correctamente.", "success");
+    showFeedback(data.message || "Reward Pass emitido correctamente.", "success", { title: "Reward Pass emitido" });
+  } catch (error) {
+    setInlineMessage(rewardPassCreateMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo emitir" });
+  } finally {
+    setButtonLoading(rewardPassCreateButton, false);
+  }
+}
+
+async function copyRewardPassLink(link) {
+  if (!link) return;
+  await navigator.clipboard?.writeText(link);
+  showFeedback("Link publico del Reward Pass copiado.");
+}
+
+function openRewardPassWhatsapp(id) {
+  const pass = state.rewardPasses.find((item) => item.id === id) || state.selectedRewardPass;
+  if (!pass) return;
+  const phone = String(pass.beneficiary_phone || pass.buyer_phone || "").replace(/\D/g, "");
+  const message = encodeURIComponent(`Hola ${pass.beneficiary_name}, tienes un Reward Pass de ${pass.company?.name || "nuestro negocio"} por ${money(pass.initial_value_cop)}. Consulta tu Gift Card Digital: ${pass.public_url}`);
+  window.open(`https://wa.me/${phone || ""}?text=${message}`, "_blank", "noopener");
+}
+
+async function cancelSelectedRewardPass(id) {
+  if (!window.confirm("Solo puedes anular Reward Pass sin redenciones. Deseas continuar?")) return;
+  try {
+    await api(`/api/business/reward-passes/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ notes: "Anulado desde portal empresa." }),
+    });
+    await renderRewardPassesView();
+    showFeedback("Reward Pass anulado correctamente.");
+  } catch (error) {
+    showFeedback(error.message, "error");
+  }
+}
+
+async function downloadSelectedRewardPassPdf(kind = "pdf") {
+  const pass = state.selectedRewardPass;
+  if (!pass) return;
+  const endpoint = kind === "receipt"
+    ? `/api/business/reward-passes/${encodeURIComponent(pass.id)}/acquisition-receipt.pdf`
+    : `/api/business/reward-passes/${encodeURIComponent(pass.id)}/pdf`;
+  const response = await fetch(endpoint, { headers: authHeaders() });
+  const blob = await response.blob();
+  if (!response.ok) {
+    const text = await blob.text().catch(() => "");
+    throw new Error(text || "No se pudo descargar el PDF.");
+  }
+  triggerBlobDownload(blob, kind === "receipt" ? `comprobante-${pass.public_code}.pdf` : `${pass.public_code}.pdf`);
+}
+
+async function buildRewardPassImageDataUrl(pass) {
+  if (!pass) return "";
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 720;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#071017";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "#e8c170";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(42, 42, 1116, 636);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 74px Inter, sans-serif";
+  ctx.fillText("REWARD PASS", 90, 140);
+  ctx.fillStyle = "#e8c170";
+  ctx.font = "500 30px Inter, sans-serif";
+  ctx.fillText("Gift Card Digital", 94, 184);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 42px Inter, sans-serif";
+  ctx.fillText(pass.company?.name || "Empresa emisora", 94, 248);
+  ctx.fillStyle = "#ffd783";
+  ctx.font = "800 62px Inter, sans-serif";
+  ctx.fillText(money(pass.initial_value_cop), 94, 338);
+  ctx.fillStyle = "#d7e2eb";
+  ctx.font = "500 28px Inter, sans-serif";
+  ctx.fillText(`Beneficiario: ${pass.beneficiary_name}`, 94, 406);
+  ctx.fillText(`Documento: ${pass.beneficiary_document}`, 94, 448);
+  ctx.fillText(`Codigo: ${pass.public_code}`, 94, 490);
+  ctx.fillText(`Vigencia: ${formatDate(pass.expires_at)}`, 94, 532);
+  ctx.font = "500 22px Inter, sans-serif";
+  ctx.fillText("Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
+  ctx.fillText("Administrado por MarketGames QR Portal.", 94, 642);
+  if (pass.qr_image_data_url) {
+    const qrImage = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = pass.qr_image_data_url;
+    });
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(795, 198, 330, 330);
+    ctx.drawImage(qrImage, 805, 208, 310, 310);
+  }
+  ctx.fillStyle = "#d7e2eb";
+  ctx.font = "500 22px Inter, sans-serif";
+  ctx.fillText(pass.partial_redemption_allowed ? "Permite redenciones parciales." : "De un solo uso.", 790, 575);
+  return canvas.toDataURL("image/png");
+}
+
+async function downloadSelectedRewardPassImage() {
+  const pass = state.selectedRewardPass;
+  if (!pass) return;
+  const dataUrl = await buildRewardPassImageDataUrl(pass);
+  downloadDataUrl(`${pass.public_code}.png`, dataUrl);
+  showFeedback("Reward Pass descargado como imagen PNG.");
+}
+
 function renderRedemptionsView() {
   const rows = withFilters(
     state.selectedRedemptions || [],
@@ -8835,6 +9315,7 @@ searchInput.addEventListener("input", (event) => {
   renderRedemptionsView();
   renderSalesView();
   if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
+  if (state.currentView === "reward-passes") renderRewardPassesView();
   if (state.currentView === "validator") {
     loadValidatorHistory();
   }
@@ -8943,6 +9424,14 @@ affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
+refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
+rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
+rewardPassCreateForm?.addEventListener("submit", submitRewardPass);
+rewardPassValueInput?.addEventListener("input", () => renderRewardPassPreview(state.selectedRewardPass));
+rewardPassBeneficiaryNameInput?.addEventListener("input", () => renderRewardPassPreview(state.selectedRewardPass));
+rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardPassImage);
+rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("pdf").catch((error) => showFeedback(error.message, "error")));
+rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);

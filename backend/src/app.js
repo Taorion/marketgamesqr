@@ -17,6 +17,8 @@ const publicGameRoutes = require("./routes/publicGameRoutes");
 const publicQrRoutes = require("./routes/publicQrRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const rewardPassRoutes = require("./routes/rewardPassRoutes");
+const { publicGet: publicRewardPassGet } = require("./controllers/rewardPassController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const packageJson = require("../../package.json");
@@ -135,11 +137,13 @@ app.use("/api/portal", portalRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/business", businessPortalRoutes);
 app.use("/api/business/qr", businessQrRoutes);
+app.use("/api/business/reward-passes", rewardPassRoutes);
 app.use("/api/portal", affiliateRoutes);
 app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
 app.use("/api/public", packageSalesRoutes);
+app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.use("/api/payments", paymentRoutes);
 
 app.use(express.static(marketGamesWebRoot));
@@ -160,9 +164,13 @@ app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos")));
 app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad")));
 app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos")));
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
+app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
+});
+app.get("/rp/:publicCode", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../..", "reward-pass-public", "index.html"));
 });
 app.get("/", (_req, res) => {
   res.sendFile(path.join(marketGamesWebRoot, "index.html"));
