@@ -281,6 +281,12 @@ const validatorRewardPassInvoiceInput = document.getElementById("validatorReward
 const validatorRewardPassRedeemInput = document.getElementById("validatorRewardPassRedeemInput");
 const validatorRewardPassBranchInput = document.getElementById("validatorRewardPassBranchInput");
 const validatorRewardPassDocumentInput = document.getElementById("validatorRewardPassDocumentInput");
+const validatorRewardPassBalancePanel = document.getElementById("validatorRewardPassBalancePanel");
+const validatorRewardPassAvailableValue = document.getElementById("validatorRewardPassAvailableValue");
+const validatorRewardPassCoverageValue = document.getElementById("validatorRewardPassCoverageValue");
+const validatorRewardPassRemainingValue = document.getElementById("validatorRewardPassRemainingValue");
+const validatorRewardPassOverageValue = document.getElementById("validatorRewardPassOverageValue");
+const validatorRewardPassBalanceMessage = document.getElementById("validatorRewardPassBalanceMessage");
 const validatorPaymentMethodInput = document.getElementById("validatorPaymentMethodInput");
 const validatorProductServiceInput = document.getElementById("validatorProductServiceInput");
 const validatorSaleNotesInput = document.getElementById("validatorSaleNotesInput");
@@ -4756,6 +4762,49 @@ function validatorCanUseCameraScanner() {
   return window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia) && (validatorCanUseBarcodeDetector() || validatorCanUseJsQr());
 }
 
+function currentRewardPassValidation() {
+  return state.validatorLastValidation?.kind === "reward_pass"
+    ? state.validatorLastValidation.reward_pass
+    : null;
+}
+
+function rewardPassBalancePreview(syncRedeemInput = false) {
+  const pass = currentRewardPassValidation();
+  const invoiceValue = Math.max(0, Number(validatorSaleAmountInput?.value || 0));
+  const available = Math.max(0, Number(pass?.current_balance_cop || 0));
+  const coverage = invoiceValue > 0 ? Math.min(invoiceValue, available) : 0;
+  const remaining = Math.max(available - coverage, 0);
+  const overage = Math.max(invoiceValue - available, 0);
+  const partialAllowed = pass?.partial_redemption_allowed !== false;
+
+  if (syncRedeemInput && validatorRewardPassRedeemInput) {
+    validatorRewardPassRedeemInput.value = coverage || "";
+  }
+  if (validatorRewardPassAvailableValue) validatorRewardPassAvailableValue.textContent = money(available);
+  if (validatorRewardPassCoverageValue) validatorRewardPassCoverageValue.textContent = money(coverage);
+  if (validatorRewardPassRemainingValue) validatorRewardPassRemainingValue.textContent = money(remaining);
+  if (validatorRewardPassOverageValue) validatorRewardPassOverageValue.textContent = money(overage);
+  if (validatorRewardPassBalancePanel) {
+    validatorRewardPassBalancePanel.dataset.state = overage > 0 ? "overage" : remaining > 0 ? "remaining" : coverage > 0 ? "exact" : "idle";
+  }
+  if (validatorRewardPassBalanceMessage) {
+    if (!pass) {
+      validatorRewardPassBalanceMessage.textContent = "Escanea un Reward Pass y registra el total de la factura para calcular saldo o excedente.";
+    } else if (!invoiceValue) {
+      validatorRewardPassBalanceMessage.textContent = "Ingresa el total de la factura electronica para calcular cuanto cubre el Reward Pass.";
+    } else if (!partialAllowed && remaining > 0) {
+      validatorRewardPassBalanceMessage.textContent = "Este Reward Pass esta configurado de un solo uso. La factura no consume todo el saldo; confirma condiciones aceptadas antes de redimir.";
+    } else if (overage > 0) {
+      validatorRewardPassBalanceMessage.textContent = `El Reward Pass cubre ${money(coverage)} y el cliente debe pagar la diferencia de ${money(overage)} en la factura.`;
+    } else if (remaining > 0) {
+      validatorRewardPassBalanceMessage.textContent = `La factura consume ${money(coverage)} y queda un saldo disponible de ${money(remaining)}.`;
+    } else {
+      validatorRewardPassBalanceMessage.textContent = "La factura consume exactamente el saldo disponible del Reward Pass.";
+    }
+  }
+  return { available, coverage, invoiceValue, overage, partialAllowed, remaining };
+}
+
 async function validatorCameraDiagnostic() {
   const parts = [];
   parts.push(window.isSecureContext ? "contexto seguro ok" : "contexto no seguro");
@@ -4799,9 +4848,12 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorExpiresValue.textContent = formatDate(data?.qr_code?.expires_at);
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
-    if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = data.reward_pass?.current_balance_cop || "";
+    if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
     if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = data.reward_pass?.beneficiary_document || "";
-    if (validatorSaleAmountInput) validatorSaleAmountInput.value = data.reward_pass?.current_balance_cop || "";
+    if (validatorSaleAmountInput) validatorSaleAmountInput.value = "";
+    rewardPassBalancePreview(true);
+  } else {
+    rewardPassBalancePreview(false);
   }
 }
 
@@ -4816,6 +4868,7 @@ function resetValidatorSaleForm() {
   validatorProductServiceInput.value = "";
   validatorSaleNotesInput.value = "";
   validatorSaleStatus.textContent = "";
+  rewardPassBalancePreview(false);
 }
 
 function extractValidatorToken(rawValue) {
@@ -5608,6 +5661,26 @@ async function redeemValidatorToken() {
   showFeedback("Registrando redencion y bloqueando el ticket para evitar doble uso.", "loading", { title: "Redimiendo beneficio", timeout: 0 });
   try {
     const isRewardPass = state.validatorLastValidation?.kind === "reward_pass";
+    const rewardPassPreview = isRewardPass ? rewardPassBalancePreview(true) : null;
+    if (isRewardPass) {
+      const invoiceNumber = validatorRewardPassInvoiceInput?.value.trim() || "";
+      if (invoiceNumber.length < 2) {
+        validatorRewardPassInvoiceInput?.focus();
+        throw new Error("Ingresa el numero de factura electronica antes de redimir el Reward Pass.");
+      }
+      if (!rewardPassPreview.invoiceValue) {
+        throw new Error("Ingresa el total de la factura electronica para calcular el saldo.");
+      }
+      if (!rewardPassPreview.coverage) {
+        throw new Error("No hay saldo disponible para cubrir esta factura.");
+      }
+      if (!rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0) {
+        const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redencion.");
+        if (!acceptsSingleUse) {
+          throw new Error("Redencion cancelada. Ajusta la factura o confirma las condiciones con el consumidor.");
+        }
+      }
+    }
     const data = await api(isRewardPass
       ? `/api/business/reward-passes/validator/${encodeURIComponent(state.validatorLastToken)}/redeem`
       : `/api/qr/redeem/${encodeURIComponent(state.validatorLastToken)}`, {
@@ -5615,12 +5688,12 @@ async function redeemValidatorToken() {
       headers: authHeaders(),
       body: isRewardPass ? JSON.stringify({
         invoice_number: validatorRewardPassInvoiceInput?.value.trim(),
-        purchase_value_cop: Number(validatorSaleAmountInput?.value || 0),
-        redeemed_value_cop: Number(validatorRewardPassRedeemInput?.value || 0),
+        purchase_value_cop: rewardPassPreview.invoiceValue,
+        redeemed_value_cop: rewardPassPreview.coverage,
         branch: validatorRewardPassBranchInput?.value.trim() || null,
         observations: validatorSaleNotesInput?.value.trim() || null,
         document_checked: validatorRewardPassDocumentInput?.value.trim() || null,
-        confirm_full_consumption: window.confirm("Confirma que el valor y factura son correctos para registrar la redencion."),
+        confirm_full_consumption: !rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0,
       }) : undefined,
     });
     state.validatorLastRedemption = data.redemption;
@@ -8896,7 +8969,7 @@ function renderRewardPassDetail() {
   if (!pass) {
     if (rewardPassDetailTitle) rewardPassDetailTitle.textContent = "Sin Reward Pass seleccionado";
     if (rewardPassDetailGrid) rewardPassDetailGrid.innerHTML = '<p class="table-secondary">Selecciona un Reward Pass del listado.</p>';
-    if (rewardPassRedemptionTable) rewardPassRedemptionTable.innerHTML = '<tr><td colspan="7">Sin historial.</td></tr>';
+    if (rewardPassRedemptionTable) rewardPassRedemptionTable.innerHTML = '<tr><td colspan="9">Sin historial.</td></tr>';
     if (rewardPassTicketLedgerTable) rewardPassTicketLedgerTable.innerHTML = '<tr><td colspan="5">Sin movimientos.</td></tr>';
     renderRewardPassPreview(null);
     return;
@@ -8923,17 +8996,24 @@ function renderRewardPassDetail() {
     `).join("");
   }
   if (rewardPassRedemptionTable) {
-    rewardPassRedemptionTable.innerHTML = (pass.redemptions || []).map((item) => `
-      <tr>
-        <td>${escapeHtml(item.invoice_number || "-")}</td>
-        <td>${escapeHtml(money(item.redeemed_value_cop || 0))}</td>
-        <td>${escapeHtml(money(item.balance_before_cop || 0))}</td>
-        <td>${escapeHtml(money(item.balance_after_cop || 0))}</td>
-        <td>${escapeHtml(item.branch || "-")}</td>
-        <td>${escapeHtml(item.cashier_name || "-")}</td>
-        <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
-      </tr>
-    `).join("") || '<tr><td colspan="7">Sin redenciones registradas.</td></tr>';
+    rewardPassRedemptionTable.innerHTML = (pass.redemptions || []).map((item) => {
+      const purchaseValue = Number(item.purchase_value_cop || 0);
+      const redeemedValue = Number(item.redeemed_value_cop || 0);
+      const customerDifference = Math.max(purchaseValue - redeemedValue, 0);
+      return `
+        <tr>
+          <td>${escapeHtml(item.invoice_number || "-")}</td>
+          <td>${escapeHtml(purchaseValue ? money(purchaseValue) : "-")}</td>
+          <td>${escapeHtml(money(redeemedValue))}</td>
+          <td>${escapeHtml(customerDifference ? money(customerDifference) : "-")}</td>
+          <td>${escapeHtml(money(item.balance_before_cop || 0))}</td>
+          <td>${escapeHtml(money(item.balance_after_cop || 0))}</td>
+          <td>${escapeHtml(item.branch || "-")}</td>
+          <td>${escapeHtml(item.cashier_name || "-")}</td>
+          <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
+        </tr>
+      `;
+    }).join("") || '<tr><td colspan="9">Sin redenciones registradas.</td></tr>';
   }
   if (rewardPassTicketLedgerTable) {
     rewardPassTicketLedgerTable.innerHTML = (pass.ticket_transactions || []).map((item) => `
@@ -9396,6 +9476,8 @@ stopValidatorScannerButton.addEventListener("click", stopValidatorScanner);
 validateValidatorManualButton.addEventListener("click", () => validateValidatorToken(validatorQrTokenInput.value));
 validatorRedeemButton.addEventListener("click", redeemValidatorToken);
 validatorSaleForm.addEventListener("submit", saveValidatorAttributedSale);
+validatorSaleAmountInput?.addEventListener("input", () => rewardPassBalancePreview(true));
+validatorRewardPassRedeemInput?.addEventListener("input", () => rewardPassBalancePreview(false));
 notificationsButton.addEventListener("click", () => {
   const pending = (state.selectedRedemptions || []).filter((item) => !item.sale_amount).length;
   showFeedback(

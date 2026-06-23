@@ -2274,6 +2274,57 @@ td {
   font-weight: 600;
 }
 
+.reward-pass-balance-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.reward-pass-balance-panel div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reward-pass-balance-panel span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reward-pass-balance-panel strong {
+  color: var(--text-main);
+  font-size: 15px;
+}
+
+.reward-pass-balance-panel p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.reward-pass-balance-panel[data-state="overage"] {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(254, 242, 242, 0.86);
+}
+
+.reward-pass-balance-panel[data-state="remaining"] {
+  border-color: rgba(217, 119, 6, 0.35);
+  background: rgba(255, 251, 235, 0.86);
+}
+
+.reward-pass-balance-panel[data-state="exact"] {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: rgba(240, 253, 244, 0.86);
+}
+
 .validator-checkline {
   display: flex !important;
   align-items: center;
@@ -2848,6 +2899,10 @@ td {
   }
 
   .validator-manual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reward-pass-balance-panel {
     grid-template-columns: 1fr;
   }
 

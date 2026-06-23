@@ -70,29 +70,37 @@ async function render() {
     const pass = data.reward_pass;
     const blocked = ["fully_redeemed", "expired", "cancelled"].includes(pass.status);
     const isClaim = Boolean(pass.claim_required);
+    const officialValue = Number(pass.current_balance_cop ?? pass.initial_value_cop ?? 0);
     root.innerHTML = `
       <article class="rp-pass">
-        <section class="rp-hero">
+        <section class="rp-hero ${isClaim ? "is-claim" : ""}">
           <div>
             <div class="rp-eyebrow">Gift Card Digital Propia</div>
-            <h1 class="rp-title">REWARD PASS</h1>
+            <h1 class="rp-title">${isClaim ? "ACTIVA TU GIFT CARD" : "REWARD PASS"}</h1>
             <p class="rp-subtitle">Emitido por ${escapeHtml(pass.company?.name || "Empresa emisora")}. Administrado tecnologicamente por MarketGames QR Portal.</p>
             <div class="rp-value">
-              <span>${isClaim ? "Paso requerido" : "Gift Card Digital"}</span>
-              <strong>${isClaim ? "ACTIVAR" : "OFICIAL"}</strong>
+              <span>${isClaim ? "Paso requerido" : "Saldo disponible"}</span>
+              <strong>${isClaim ? "ACTIVAR" : money(officialValue)}</strong>
             </div>
             <div class="rp-status ${blocked ? "is-blocked" : ""}">${escapeHtml(statusLabel(pass.status))}</div>
           </div>
+          ${isClaim ? `
+          <div class="rp-activation-panel">
+            <span>Validacion previa</span>
+            <strong>Completa tus datos para recibir la Gift Card oficial.</strong>
+            <p>Por seguridad, el QR redimible y el valor se muestran solo despues de activar la gift card con tu informacion.</p>
+          </div>` : `
           <div class="rp-qr">
             <img src="${escapeHtml(pass.qr_image_data_url || "")}" alt="Codigo QR Reward Pass">
-            <p>${isClaim ? "Escanea este QR para completar tus datos y reclamar el QR definitivo." : "Presenta este QR junto con tu documento en el negocio emisor."}</p>
-          </div>
+            <p>Presenta este QR junto con tu documento en el negocio emisor.</p>
+          </div>`}
         </section>
         <section class="rp-details">
-          <div class="rp-detail"><span>Beneficiario</span><strong>${escapeHtml(pass.beneficiary_name || "Pendiente de activacion")}</strong></div>
-          <div class="rp-detail"><span>Documento</span><strong>${escapeHtml(pass.beneficiary_document || "Se solicita al activar")}</strong></div>
+          <div class="rp-detail"><span>Beneficiario</span><strong>${escapeHtml(isClaim ? "Se registra al activar" : pass.beneficiary_name || "-")}</strong></div>
+          <div class="rp-detail"><span>Documento</span><strong>${escapeHtml(isClaim ? "Se solicita al activar" : pass.beneficiary_document || "-")}</strong></div>
           <div class="rp-detail"><span>Codigo</span><strong class="rp-code">${escapeHtml(pass.public_code)}</strong></div>
-          <div class="rp-detail"><span>Validacion</span><strong>Monto reservado para tienda</strong></div>
+          <div class="rp-detail"><span>${isClaim ? "Valor" : "Valor inicial"}</span><strong>${escapeHtml(isClaim ? "Disponible despues de activar" : money(pass.initial_value_cop))}</strong></div>
+          <div class="rp-detail"><span>Saldo</span><strong>${escapeHtml(isClaim ? "Disponible despues de activar" : money(pass.current_balance_cop))}</strong></div>
           <div class="rp-detail"><span>Vigencia</span><strong>${escapeHtml(date(pass.expires_at))}</strong></div>
           <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Segun condiciones del emisor")}</strong></div>
         </section>
@@ -100,7 +108,7 @@ async function render() {
           <p><strong>Instrucciones:</strong> ${escapeHtml(pass.instructions)}</p>
           ${isClaim ? `
           <form class="rp-claim-form" id="rpClaimForm">
-            <p class="rp-claim-note">Este es el QR de reclamo. Al completar tus datos se activa la Gift Card oficial con el QR redimible en el punto de venta.</p>
+            <p class="rp-claim-note">Completa tus datos. Al activar, veras la Gift Card oficial con su valor y el QR redimible en punto de venta.</p>
             <label>Nombre completo<input id="rpClaimName" type="text" required></label>
             <label>Documento de identidad<input id="rpClaimDocument" type="text" required></label>
             <label>Celular<input id="rpClaimPhone" type="tel"></label>

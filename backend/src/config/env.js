@@ -5,7 +5,11 @@ dotenv.config();
 const isProduction = process.env.NODE_ENV === "production";
 const productionPublicAppUrl = process.env.RENDER_EXTERNAL_URL || "https://market-games-portal.onrender.com";
 const defaultPublicAppUrl = isProduction ? productionPublicAppUrl : "http://localhost:3000";
-const defaultPublicValidatorUrl = `${defaultPublicAppUrl.replace(/\/$/, "")}/empresa/`;
+const configuredPublicAppUrl = process.env.PUBLIC_APP_URL || "";
+const publicAppUrl = isProduction && /marketgamesqr\.com/i.test(configuredPublicAppUrl)
+  ? productionPublicAppUrl
+  : configuredPublicAppUrl || defaultPublicAppUrl;
+const defaultPublicValidatorUrl = `${publicAppUrl.replace(/\/$/, "")}/empresa/`;
 
 function splitList(value) {
   return String(value || "")
@@ -25,8 +29,8 @@ const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "12h",
   appSessionVersion: process.env.APP_SESSION_VERSION || process.env.RENDER_GIT_COMMIT || (isProduction ? "production" : "development"),
   publicValidatorUrl: process.env.PUBLIC_VALIDATOR_URL || defaultPublicValidatorUrl,
-  publicAppUrl: process.env.PUBLIC_APP_URL || defaultPublicAppUrl,
-  corsOrigins: splitList(process.env.CORS_ORIGINS || process.env.PUBLIC_APP_URL || defaultPublicAppUrl),
+  publicAppUrl,
+  corsOrigins: splitList(process.env.CORS_ORIGINS || publicAppUrl || defaultPublicAppUrl),
   enableDemoTools: process.env.ENABLE_DEMO_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEMO_TOOLS !== "false"),
   mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || "",
   mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET || "",

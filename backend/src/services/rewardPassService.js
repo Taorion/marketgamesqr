@@ -212,16 +212,16 @@ function mapRewardPass(row, options = {}) {
     user_id: row.user_id,
     campaign_id: row.campaign_id,
     campaign_name: row.campaign_name || null,
-    buyer_name: row.buyer_name,
-    buyer_document: row.buyer_document,
-    buyer_email: row.buyer_email,
-    buyer_phone: row.buyer_phone,
+    buyer_name: options.publicView ? undefined : row.buyer_name,
+    buyer_document: options.publicView ? undefined : row.buyer_document,
+    buyer_email: options.publicView ? undefined : row.buyer_email,
+    buyer_phone: options.publicView ? undefined : row.buyer_phone,
     beneficiary_name: row.beneficiary_name,
     beneficiary_document: options.publicView ? maskDocument(row.beneficiary_document) : row.beneficiary_document,
     beneficiary_email: options.publicView ? null : row.beneficiary_email,
     beneficiary_phone: options.publicView ? null : row.beneficiary_phone,
-    initial_value_cop: options.publicView ? undefined : moneyNumber(row.initial_value_cop),
-    current_balance_cop: options.publicView ? undefined : moneyNumber(row.current_balance_cop),
+    initial_value_cop: options.publicView && !options.revealPublicValue ? undefined : moneyNumber(row.initial_value_cop),
+    current_balance_cop: options.publicView && !options.revealPublicValue ? undefined : moneyNumber(row.current_balance_cop),
     issued_at: row.issued_at,
     valid_from: row.valid_from,
     expires_at: row.expires_at,
@@ -603,14 +603,17 @@ async function getPublicRewardPass(publicCode) {
   if (!pass) throw notFound("Reward Pass no encontrado.");
   pass = await syncEffectiveStatus(query, pass);
   const status = effectiveStatus(pass);
-  const mapped = mapRewardPass(pass, { publicView: true, includeToken: status !== "pending_claim" });
+  const isPendingClaim = status === "pending_claim";
+  const mapped = mapRewardPass(pass, {
+    publicView: true,
+    includeToken: !isPendingClaim,
+    revealPublicValue: !isPendingClaim,
+  });
   delete mapped.qr_token;
-  mapped.claim_required = status === "pending_claim";
-  mapped.qr_image_data_url = status === "pending_claim"
-    ? await getQrDataUrlForUrl(mapped.public_url)
-    : await getRewardPassQrDataUrl(pass);
-  mapped.instructions = status === "pending_claim"
-    ? "Escanea este QR, completa tus datos y reclama el QR definitivo de tu Gift Card Digital para presentarlo en el punto de venta."
+  mapped.claim_required = isPendingClaim;
+  mapped.qr_image_data_url = isPendingClaim ? "" : await getRewardPassQrDataUrl(pass);
+  mapped.instructions = isPendingClaim
+    ? "Completa tus datos para activar la Gift Card oficial. Despues de activarla veras el QR redimible y el valor disponible."
     : "Presenta este QR junto con tu documento de identidad en el negocio emisor.";
   mapped.can_redeem_publicly = false;
   return mapped;
@@ -769,16 +772,20 @@ async function redeemRewardPass(user, rawToken, payload) {
     if (redeemValue > balanceBefore) {
       throw badRequest("No puedes redimir mas que el saldo disponible.");
     }
+    if (purchaseValue > 0 && redeemValue > purchaseValue) {
+      throw badRequest("El valor a redimir no puede superar el total de la factura electronica.");
+    }
     if (purchaseValue > 0 && purchaseValue > balanceBefore && redeemValue !== balanceBefore) {
       throw badRequest("Si la compra supera el saldo, redime el saldo total disponible.");
     }
+    let forceFullConsumption = false;
     if (!pass.partial_redemption_allowed && redeemValue < balanceBefore) {
       if (!payload.confirm_full_consumption) {
-        throw badRequest("Este Reward Pass es de un solo uso. Confirma que se consumira todo el saldo.");
+        throw badRequest("Este Reward Pass es de un solo uso. Confirma las condiciones aceptadas por el consumidor antes de consumir el saldo restante.");
       }
-      redeemValue = balanceBefore;
+      forceFullConsumption = true;
     }
-    const balanceAfter = moneyNumber(balanceBefore - redeemValue);
+    const balanceAfter = forceFullConsumption ? 0 : moneyNumber(balanceBefore - redeemValue);
     const nextStatus = balanceAfter <= 0 ? "fully_redeemed" : "partially_redeemed";
     const documentChecked = cleanText(payload.document_checked || "");
     const documentMatch = documentChecked
@@ -835,7 +842,9 @@ async function redeemRewardPass(user, rawToken, payload) {
       },
     });
     return {
-      message: `Redencion registrada correctamente. Nuevo saldo disponible: $${balanceAfter.toLocaleString("es-CO")} COP.`,
+      message: forceFullConsumption
+        ? `Redencion registrada correctamente. Se aplicaron $${redeemValue.toLocaleString("es-CO")} COP a la factura y el saldo restante quedo consumido por condicion de un solo uso.`
+        : `Redencion registrada correctamente. Nuevo saldo disponible: $${balanceAfter.toLocaleString("es-CO")} COP.`,
       redemption: redemption.rows[0],
       reward_pass: mapRewardPass(updated.rows[0], { includeToken: true, includePrivate: true }),
     };

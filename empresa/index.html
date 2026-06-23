@@ -1496,17 +1496,36 @@
                     <span>Hubo venta</span>
                   </label>
                   <label>
-                    <span>Valor pagado</span>
-                    <input id="validatorSaleAmountInput" type="number" min="0" step="1000" placeholder="Ej: 45000">
+                    <span>Total factura</span>
+                    <input id="validatorSaleAmountInput" type="number" min="0" step="1000" placeholder="Valor total facturado">
                   </label>
                   <label>
                     <span>Factura electronica</span>
-                    <input id="validatorRewardPassInvoiceInput" type="text" placeholder="Obligatorio para Reward Pass">
+                    <input id="validatorRewardPassInvoiceInput" type="text" minlength="2" maxlength="120" placeholder="Ej: FE-12345" required>
                   </label>
                   <label>
                     <span>Valor a redimir</span>
-                    <input id="validatorRewardPassRedeemInput" type="number" min="0" step="1000" placeholder="Saldo a descontar">
+                    <input id="validatorRewardPassRedeemInput" type="number" min="0" step="1000" placeholder="Calculado con el saldo" readonly>
                   </label>
+                  <div class="reward-pass-balance-panel span-2" id="validatorRewardPassBalancePanel">
+                    <div>
+                      <span>Saldo disponible</span>
+                      <strong id="validatorRewardPassAvailableValue">$0</strong>
+                    </div>
+                    <div>
+                      <span>Cubre Reward Pass</span>
+                      <strong id="validatorRewardPassCoverageValue">$0</strong>
+                    </div>
+                    <div>
+                      <span>Saldo posterior</span>
+                      <strong id="validatorRewardPassRemainingValue">$0</strong>
+                    </div>
+                    <div>
+                      <span>Diferencia cliente</span>
+                      <strong id="validatorRewardPassOverageValue">$0</strong>
+                    </div>
+                    <p id="validatorRewardPassBalanceMessage">Escanea un Reward Pass y registra el total de la factura para calcular saldo o excedente.</p>
+                  </div>
                   <label>
                     <span>Sede</span>
                     <input id="validatorRewardPassBranchInput" type="text" placeholder="Sede o caja">
@@ -1911,7 +1930,9 @@
                   <thead>
                     <tr>
                       <th>Factura</th>
-                      <th>Valor</th>
+                      <th>Total factura</th>
+                      <th>Aplicado</th>
+                      <th>Diferencia cliente</th>
                       <th>Saldo anterior</th>
                       <th>Saldo nuevo</th>
                       <th>Sede</th>
