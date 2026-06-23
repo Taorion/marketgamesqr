@@ -77,7 +77,7 @@ function maskDocument(value) {
 
 function statusMessage(status) {
   const messages = {
-    pending_claim: "Este Reward Pass debe ser activado por el beneficiario antes de redimirse.",
+    pending_claim: "Estas a un paso de descubrir y activar tu Gift Card.",
     active: "Reward Pass valido. Confirma documento de identidad antes de registrar la redencion.",
     partially_redeemed: "Reward Pass valido con saldo parcial disponible.",
     fully_redeemed: "Este Reward Pass ya fue redimido totalmente.",
@@ -613,7 +613,7 @@ async function getPublicRewardPass(publicCode) {
   mapped.claim_required = isPendingClaim;
   mapped.qr_image_data_url = isPendingClaim ? "" : await getRewardPassQrDataUrl(pass);
   mapped.instructions = isPendingClaim
-    ? "Completa tus datos para activar la Gift Card oficial. Despues de activarla veras el QR redimible y el valor disponible."
+    ? "Completa tus datos para descubrir el valor disponible y obtener el QR final de tu Gift Card. Ese QR sera el que presentes en el negocio para redimirla."
     : "Presenta este QR junto con tu documento de identidad en el negocio emisor.";
   mapped.can_redeem_publicly = false;
   return mapped;
@@ -1085,8 +1085,8 @@ async function buildRewardPassPdf(pass, kind = "card") {
   });
 
   page.drawRectangle({ x: leftX, y: 274, width: leftW, height: 58, color: rgb(0.09, 0.14, 0.17), borderColor: rgb(0.35, 0.29, 0.16), borderWidth: 1 });
-  page.drawText(isPendingClaim ? "ACTIVACION REQUERIDA" : "GIFT CARD OFICIAL", { x: leftX + 18, y: 310, size: 20, font: bold, color: gold });
-  drawWrappedText(page, isPendingClaim ? "Completa los datos del beneficiario para activar el QR redimible." : `Saldo disponible: $${moneyNumber(pass.current_balance_cop || pass.initial_value_cop).toLocaleString("es-CO")} COP`, {
+  page.drawText(isPendingClaim ? "ESTAS A UN PASO" : "GIFT CARD OFICIAL", { x: leftX + 18, y: 310, size: 20, font: bold, color: gold });
+  drawWrappedText(page, isPendingClaim ? "Completa tus datos para descubrir el valor y obtener el QR final." : `Saldo disponible: $${moneyNumber(pass.current_balance_cop || pass.initial_value_cop).toLocaleString("es-CO")} COP`, {
     x: leftX + 18,
     y: 292,
     maxWidth: leftW - 36,
@@ -1107,7 +1107,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
 
   page.drawRectangle({ x: rightX + 8, y: 196, width: 200, height: 200, color: white });
   page.drawImage(qrPng, { x: rightX + 18, y: 206, width: 180, height: 180 });
-  drawWrappedText(page, isPendingClaim ? "Escanea para activar y obtener la Gift Card oficial." : "Presenta este QR junto con tu documento de identidad.", {
+  drawWrappedText(page, isPendingClaim ? "Escanea, activa y recibe tu QR final redimible." : "Presenta este QR junto con tu documento de identidad.", {
     x: rightX,
     y: 168,
     maxWidth: rightW,

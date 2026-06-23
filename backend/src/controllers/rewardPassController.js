@@ -206,7 +206,7 @@ async function publicClaim(req, res, next) {
   try {
     const body = validate(claimRewardPassSchema, req.body || {});
     res.json({
-      message: "Gift Card Digital oficial activada correctamente. Ahora puedes presentar el QR redimible en el negocio emisor.",
+      message: "Gift Card Digital activada. Ya puedes ver el valor disponible, descargar tu PDF y presentar el QR final en el negocio emisor.",
       reward_pass: await claimRewardPass(req.params.publicCode, body),
     });
   } catch (error) {

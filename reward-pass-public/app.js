@@ -39,7 +39,7 @@ function apiErrorMessage(data, fallback) {
 
 function statusLabel(status) {
   const labels = {
-    pending_claim: "Pendiente de activacion",
+    pending_claim: "Estas a un paso",
     active: "Activo",
     partially_redeemed: "Parcialmente redimido",
     fully_redeemed: "Redimido totalmente",
@@ -86,19 +86,19 @@ async function render() {
         <section class="rp-hero ${isClaim ? "is-claim" : ""}">
           <div>
             <div class="rp-eyebrow">Gift Card Digital Propia</div>
-            <h1 class="rp-title">${isClaim ? "ACTIVA TU GIFT CARD" : "REWARD PASS"}</h1>
-            <p class="rp-subtitle">Emitido por ${escapeHtml(pass.company?.name || "Empresa emisora")}. Administrado tecnologicamente por MarketGames QR Portal.</p>
+            <h1 class="rp-title">${isClaim ? "DESCUBRE TU GIFT CARD" : "REWARD PASS"}</h1>
+            <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por MarketGames QR Portal.</p>
             <div class="rp-value">
-              <span>${isClaim ? "Paso requerido" : "Saldo disponible"}</span>
+              <span>${isClaim ? "Solo falta este paso" : "Saldo disponible"}</span>
               <strong>${isClaim ? "ACTIVAR" : money(officialValue)}</strong>
             </div>
             <div class="rp-status ${blocked ? "is-blocked" : ""}">${escapeHtml(statusLabel(pass.status))}</div>
           </div>
           ${isClaim ? `
           <div class="rp-activation-panel">
-            <span>Validacion previa</span>
-            <strong>Completa tus datos para recibir la Gift Card oficial.</strong>
-            <p>Por seguridad, el QR redimible y el valor se muestran solo despues de activar la gift card con tu informacion.</p>
+            <span>Tu premio esta reservado</span>
+            <strong>Completa tus datos y desbloquea el valor de tu Gift Card.</strong>
+            <p>Al activar, veras el monto disponible y recibiras el QR final que debes presentar en el negocio para redimirla.</p>
           </div>` : `
           <div class="rp-qr">
             <img src="${escapeHtml(pass.qr_image_data_url || "")}" alt="Codigo QR Reward Pass">
@@ -109,21 +109,21 @@ async function render() {
           <div class="rp-detail"><span>Beneficiario</span><strong>${escapeHtml(isClaim ? "Se registra al activar" : pass.beneficiary_name || "-")}</strong></div>
           <div class="rp-detail"><span>Documento</span><strong>${escapeHtml(isClaim ? "Se solicita al activar" : pass.beneficiary_document || "-")}</strong></div>
           <div class="rp-detail"><span>Codigo</span><strong class="rp-code">${escapeHtml(pass.public_code)}</strong></div>
-          <div class="rp-detail"><span>${isClaim ? "Valor" : "Valor inicial"}</span><strong>${escapeHtml(isClaim ? "Disponible despues de activar" : money(pass.initial_value_cop))}</strong></div>
-          <div class="rp-detail"><span>Saldo</span><strong>${escapeHtml(isClaim ? "Disponible despues de activar" : money(pass.current_balance_cop))}</strong></div>
+          <div class="rp-detail"><span>${isClaim ? "Valor" : "Valor inicial"}</span><strong>${escapeHtml(isClaim ? "Lo veras al activar" : money(pass.initial_value_cop))}</strong></div>
+          <div class="rp-detail"><span>QR final</span><strong>${escapeHtml(isClaim ? "Se genera despues de tus datos" : "Listo para redimir")}</strong></div>
           <div class="rp-detail"><span>Vigencia</span><strong>${escapeHtml(date(pass.expires_at))}</strong></div>
           <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Segun condiciones del emisor")}</strong></div>
         </section>
         <footer class="rp-footer">
-          <p><strong>Instrucciones:</strong> ${escapeHtml(pass.instructions)}</p>
+          <p><strong>Como funciona:</strong> ${escapeHtml(pass.instructions)}</p>
           ${isClaim ? `
           <form class="rp-claim-form" id="rpClaimForm">
-            <p class="rp-claim-note">Completa tus datos. Al activar, veras la Gift Card oficial con su valor y el QR redimible en punto de venta.</p>
+            <p class="rp-claim-note">Estas a un paso: escribe tus datos, activa tu Gift Card y descubre el valor disponible junto con tu QR final.</p>
             <label>Nombre completo<input id="rpClaimName" type="text" required></label>
             <label>Documento de identidad<input id="rpClaimDocument" type="text" required></label>
             <label>Celular<input id="rpClaimPhone" type="tel"></label>
             <label>Email<input id="rpClaimEmail" type="email"></label>
-            <button type="submit">Activar Gift Card Oficial</button>
+            <button type="submit">Activar y ver mi Gift Card</button>
             <p id="rpClaimMessage"></p>
           </form>` : `
           <section class="rp-share-panel">
@@ -152,7 +152,7 @@ async function render() {
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const message = document.getElementById("rpClaimMessage");
-      message.textContent = "Activando gift card oficial...";
+        message.textContent = "Activando tu Gift Card oficial...";
       try {
         const claimResponse = await fetch(`/api/public/reward-passes/${encodeURIComponent(publicCode)}/claim`, {
           method: "POST",
@@ -168,7 +168,7 @@ async function render() {
         if (!claimResponse.ok) {
           throw new Error(apiErrorMessage(claimData, "No se pudo activar la Gift Card."));
         }
-        message.textContent = claimData.message || "Gift Card oficial activada.";
+        message.textContent = claimData.message || "Gift Card oficial activada. Cargando tu QR final...";
         setTimeout(render, 600);
       } catch (claimError) {
         message.textContent = claimError.message;
