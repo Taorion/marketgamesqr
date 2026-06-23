@@ -5167,8 +5167,7 @@ function renderStrategicQrView() {
 }
 
 function renderQrCreditShop() {
-  const isSubscription = currentPlan().category === "subscription";
-  const offers = (state.qrPackageOffers || []).filter((offer) => isSubscription ? offer.subscriber_allowed : offer.base_access_allowed);
+  const offers = (state.qrPackageOffers || []).filter((offer) => offer.subscriber_allowed || offer.base_access_allowed);
   qrCreditPackageSelect.innerHTML = offers.length
     ? offers.map((offer) => `
       <option value="${escapeHtml(offer.code)}">
@@ -5184,9 +5183,7 @@ function renderQrCreditShop() {
   if (qrCreditCheckoutMessage) {
     const account = state.qrCreditAccount || {};
     const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
-    const rechargeCopy = isSubscription
-      ? "Como suscriptor puedes comprar paquetes superiores en COP."
-      : "T200 o superior activa Portal Base. Los paquetes se muestran en COP.";
+    const rechargeCopy = "Puedes recargar desde T50. T200 o superior activa Portal Base para cuentas nuevas.";
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
 

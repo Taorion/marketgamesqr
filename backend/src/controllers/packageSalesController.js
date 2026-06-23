@@ -200,7 +200,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
       prepaid_plan: null,
       portal_base_plan: plans.find((plan) => plan.code === PLAN_CODES.TICKET_BASE),
       plans: plans.filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code) || plan.testing_plan),
-      base_access_packages: QR_PACKAGE_OFFERS.filter((offer) => offer.base_access_allowed),
+      base_access_packages: QR_PACKAGE_OFFERS,
       legacy_prepaid_reference: [],
       subscriber_packages: subscriberPackageOffers(),
       pricing: {

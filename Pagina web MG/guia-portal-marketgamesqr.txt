@@ -932,7 +932,7 @@ El acceso de entrada al ecosistema MarketGamesQR se presenta como Portal Base ac
 
 La promesa correcta es:
 
-"Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad. Tus tickets son saldo operativo para generar campanas, QR, leads, redenciones y ventas medibles."
+"Compra tickets desde T50 como saldo operativo. Desde T200 activas tu Portal RMS sin mensualidad para generar campanas, QR, leads, redenciones y ventas medibles."
 
 Que obtiene el negocio con Portal Base:
 
@@ -971,10 +971,11 @@ Que queda reservado para Growth o Premium:
 
 Paquetes de tickets operativos:
 
-- T200: activa Portal Base y deja saldo operativo.
-- T500: suma mas capacidad para campanas y QR.
-- T1000: recomendado para negocios con activaciones recurrentes.
-- T2000, T5000 y T10000: para operaciones con mayor volumen.
+- T50: paquete de entrada como saldo operativo a COP 1.500 por ticket.
+- T200: activa Portal Base y deja saldo operativo a COP 1.425 por ticket.
+- T600: suma mas capacidad para campanas y QR a COP 1.350 por ticket.
+- T2000: recomendado para negocios con activaciones recurrentes a COP 1.275 por ticket.
+- T6000: volumen empresarial con mejor valor unitario a COP 1.200 por ticket.
 
 Los tickets no son mensualidad. Son capacidad operativa. El cliente no paga por mirar un dashboard: compra capacidad para generar acciones medibles.
 
@@ -992,7 +993,7 @@ No decir:
 "Compra un validador QR separado."
 
 Si decir:
-"Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad. Dentro del portal tienes dashboard, QR, leads, redenciones, Sales Tracker y modulo de validacion. Cuando necesites mas campanas, afiliados, referidos o historial, activas Growth o Premium."
+"Compra tickets desde T50 como saldo operativo. Desde T200 activas tu Portal RMS sin mensualidad con dashboard, QR, leads, redenciones, Sales Tracker y modulo de validacion. Cuando necesites mas campanas, afiliados, referidos o historial, activas Growth o Premium."
 
 Casos ideales para Portal Base:
 

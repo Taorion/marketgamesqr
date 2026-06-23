@@ -114,7 +114,11 @@ function planBillingLabel(plan) {
 }
 
 function visiblePackages() {
-  return packages.filter((item) => mode === "base" ? item.base_access_allowed : item.subscriber_allowed);
+  return packages.filter((item) => mode === "base" ? true : item.subscriber_allowed);
+}
+
+function activatesBasePortal(item) {
+  return Boolean(item?.base_access_allowed && Number(item?.package_size || 0) >= 200);
 }
 
 function selectedTotal() {
@@ -191,8 +195,8 @@ function renderPackages() {
       <div class="price">${priceLabel(item)}</div>
       <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
       <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
-      <p class="ticket-balance-note">${Number(item.package_size || 0) >= 200 ? "Activa Portal Base sin mensualidad y suma saldo operativo RMS." : "Saldo operativo para generar QR."}</p>
-      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "base" ? "Activar Portal Base" : "Sumar tickets"}</button>
+      <p class="ticket-balance-note">${activatesBasePortal(item) ? "Activa Portal Base sin mensualidad y suma saldo operativo RMS." : "Paquete T50: saldo operativo para generar QR; el Portal Base se activa desde T200."}</p>
+      <button type="button" data-package-code="${escapeHtml(item.code)}" ${mode === "base" && !activatesBasePortal(item) ? "disabled" : ""}>${mode === "base" ? activatesBasePortal(item) ? "Activar Portal Base" : "Recarga T50" : "Sumar tickets"}</button>
     </article>
   `).join("");
 
@@ -236,7 +240,7 @@ function renderPlanComparison() {
         <p>${escapeHtml(plan.best_for || plan.access_summary || "")}</p>
         <div class="price">${price}</div>
         ${plan.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Anualidad activa con beneficio del 30%." : "Anualidad disponible con beneficio del 30%."}</p>` : ""}
-        <p>${plan.category === "ticket_base" || plan.code === "TICKET_BASE" ? "Portal Base incluido desde T200. Sin mensualidad; tickets como saldo operativo." : "Mensualidad del portal; tickets aparte como saldo sin vencimiento mensual"}</p>
+        <p>${plan.category === "ticket_base" || plan.code === "TICKET_BASE" ? "Paquetes desde T50. Portal Base incluido desde T200; tickets como saldo operativo." : "Mensualidad del portal; tickets aparte como saldo sin vencimiento mensual"}</p>
         <ul class="plan-access-list">
           ${(plan.included || []).map((benefit) => `
             <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
@@ -255,7 +259,7 @@ function renderPricingLogic() {
   const visible = visiblePackages();
   if (pricingLogicCopy) {
     pricingLogicCopy.textContent = mode === "base"
-      ? "T200 o superior activa Portal Base sin mensualidad. Los tickets son saldo operativo para generar QR, leads, redenciones y ventas medibles."
+      ? "T50 esta disponible como saldo operativo. T200 o superior activa Portal Base sin mensualidad para generar QR, leads, redenciones y ventas medibles."
       : billingCycle === "annual"
         ? "La anualidad renueva 12 meses de acceso al portal con beneficio del 30%. Los tickets iniciales se cobran aparte, quedan como saldo y no vencen con el mes."
         : "La mensualidad escala cuando necesitas mas poder: mas campanas, mas historial, afiliados, referidos, sedes, usuarios y analitica avanzada.";
@@ -280,13 +284,13 @@ function syncMode() {
     packageGrid.classList.remove("hidden");
     offerEyebrow.textContent = "Activacion inicial";
     offerTitle.textContent = "Compra tickets y activa tu Portal RMS";
-    offerCopy.textContent = "Desde T200 desbloqueas Portal Base sin mensualidad: dashboard, validador interno, QR preventa/postventa, leads, redenciones y Sales Tracker basico.";
+    offerCopy.textContent = "Puedes ver paquetes desde T50. Desde T200 desbloqueas Portal Base sin mensualidad: dashboard, validador interno, QR preventa/postventa, leads, redenciones y Sales Tracker basico.";
     formEyebrow.textContent = "Informacion de activacion";
     formTitle.textContent = "Crea tu acceso al Portal Base";
     formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
     submitButton.textContent = "Crear cuenta y activar portal";
     if (signupCardSecurity) signupCardSecurity.classList.add("hidden");
-    selectedPackage = packages.find((item) => item.base_access_allowed && item.code === selectedPackage?.code) || null;
+    selectedPackage = packages.find((item) => activatesBasePortal(item) && item.code === selectedPackage?.code) || null;
     selectedPlan = null;
     renderPackages();
     renderPlans();
@@ -379,7 +383,7 @@ function renderSelectionBox() {
 
   const emptyCopy = mode === "portal"
     ? "Elige primero un plan del portal. Despues te mostramos los paquetes para definir con cuantos tickets quieres empezar."
-    : "Elige T200 o superior para activar tu Portal RMS sin mensualidad. El registro se habilita cuando confirmes esa seleccion.";
+    : "Elige un paquete. T50 aparece como saldo operativo; T200 o superior activa tu Portal RMS sin mensualidad y habilita el registro.";
   const html = `
     <span>Resumen de compra</span>
     <strong>Seleccion pendiente</strong>
@@ -523,7 +527,7 @@ async function submitSignup(event) {
   requestMessage.textContent = "";
 
   if (mode === "base" && !selectedPackage) {
-    requestMessage.textContent = "Selecciona T200 o superior para activar el Portal Base.";
+    requestMessage.textContent = "Selecciona T200 o superior para activar el Portal Base. T50 queda disponible como recarga de tickets.";
     requestMessage.classList.add("error");
     return;
   }

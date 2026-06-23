@@ -53,12 +53,12 @@ const PLAN_CATALOG = {
     name: "Portal Base",
     category: "ticket_base",
     monthly_price_cop: null,
-    price_label: "Incluido desde T200",
+    price_label: "Tickets desde T50; Portal desde T200",
     billing_period: "ticket_access",
     portal_value_cop: 0,
     recommended_start_package: "QR200",
     best_for: "Negocios que quieren activar su Portal RMS comprando capacidad operativa, sin mensualidad inicial.",
-    access_summary: "Compra tus primeros 200 tickets y activa dashboard base, QR preventa/postventa, validador, leads, redenciones y Sales Tracker basico.",
+    access_summary: "Compra tickets desde T50 como saldo operativo. Desde T200 activas dashboard base, QR preventa/postventa, validador, leads, redenciones y Sales Tracker basico.",
     pricing_note: "No pagas mensualidad por mirar un dashboard. Tus tickets son saldo operativo para generar QR, campanas, leads, redenciones y ventas medibles.",
     included: [
       "Portal RMS Base sin mensualidad desde T200",
@@ -871,9 +871,9 @@ function featurePrompts(plan = {}) {
   return {
     portal_locked: {
       title: "Activa tu Portal RMS",
-      message: "Compra tus primeros 200 tickets y activa tu Portal RMS sin mensualidad.",
-      cta: "Comprar T200",
-      url: "/paquetes/?package=QR200",
+      message: "Compra tickets desde T50. Desde T200 activas tu Portal RMS sin mensualidad.",
+      cta: "Ver paquetes",
+      url: "/paquetes/?mode=base",
     },
     tickets_empty: {
       title: "Tickets insuficientes",
