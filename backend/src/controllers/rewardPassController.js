@@ -23,12 +23,19 @@ function emptyToNull(value) {
   return text ? text : null;
 }
 
-const optionalString = z.preprocess(emptyToNull, z.string().max(500).nullable().optional());
-const optionalShortString = z.preprocess(emptyToNull, z.string().max(180).nullable().optional());
-const optionalPhone = z.preprocess(emptyToNull, z.string().max(40).nullable().optional());
-const optionalEmail = z.preprocess(emptyToNull, z.string().email().max(180).nullable().optional());
-const optionalDateTime = z.preprocess(emptyToNull, z.string().datetime().nullable().optional());
-const optionalUuid = z.preprocess(emptyToNull, z.string().uuid().nullable().optional());
+const optionalText = (max) => z.union([z.string().trim().max(max), z.null()]).optional().transform(emptyToNull);
+const requiredText = (min, max, label) => z.any()
+  .optional()
+  .transform(emptyToNull)
+  .refine((value) => typeof value === "string" && value.length >= min, `${label} es obligatorio.`)
+  .refine((value) => value === null || String(value).length <= max, `${label} es demasiado largo.`);
+
+const optionalString = optionalText(500);
+const optionalShortString = optionalText(180);
+const optionalPhone = optionalText(40);
+const optionalEmail = z.union([z.string().trim().email().max(180), z.literal(""), z.null()]).optional().transform(emptyToNull);
+const optionalDateTime = z.union([z.string().datetime(), z.literal(""), z.null()]).optional().transform(emptyToNull);
+const optionalUuid = z.union([z.string().uuid(), z.literal(""), z.null()]).optional().transform(emptyToNull);
 const moneyValue = z.coerce.number().positive();
 const nonNegativeMoneyValue = z.coerce.number().min(0);
 
@@ -39,7 +46,7 @@ const createRewardPassSchema = z.object({
   buyer_email: optionalEmail,
   buyer_phone: optionalPhone,
   beneficiary_name: optionalShortString,
-  beneficiary_document: z.preprocess(emptyToNull, z.string().max(80).nullable().optional()),
+  beneficiary_document: optionalText(80),
   beneficiary_email: optionalEmail,
   beneficiary_phone: optionalPhone,
   initial_value_cop: moneyValue,
@@ -49,9 +56,9 @@ const createRewardPassSchema = z.object({
   transferable: z.boolean().default(false),
   partial_redemption_allowed: z.boolean().default(true),
   authorized_branch: optionalShortString,
-  terms: z.preprocess(emptyToNull, z.string().max(8000).nullable().optional()),
-  internal_notes: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
-  payment_method_received: z.preprocess(emptyToNull, z.string().max(120).nullable().optional()),
+  terms: optionalText(8000),
+  internal_notes: optionalText(2000),
+  payment_method_received: optionalText(120),
 });
 
 const redeemRewardPassSchema = z.object({
@@ -60,8 +67,8 @@ const redeemRewardPassSchema = z.object({
   purchase_value_cop: nonNegativeMoneyValue.optional().default(0),
   redeemed_value_cop: moneyValue,
   branch: optionalShortString,
-  observations: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
-  document_checked: z.preprocess(emptyToNull, z.string().max(80).nullable().optional()),
+  observations: optionalText(2000),
+  document_checked: optionalText(80),
   confirm_full_consumption: z.boolean().optional().default(false),
 });
 
@@ -71,12 +78,12 @@ const cancelRewardPassSchema = z.object({
 
 const extendRewardPassSchema = z.object({
   expires_at: z.string().datetime(),
-  notes: z.preprocess(emptyToNull, z.string().max(2000).nullable().optional()),
+  notes: optionalText(2000),
 });
 
 const claimRewardPassSchema = z.object({
-  beneficiary_name: z.string().trim().min(2).max(160),
-  beneficiary_document: z.string().trim().min(3).max(80),
+  beneficiary_name: requiredText(2, 160, "El nombre del beneficiario"),
+  beneficiary_document: requiredText(3, 80, "El documento del beneficiario"),
   beneficiary_email: optionalEmail,
   beneficiary_phone: optionalPhone,
 });
