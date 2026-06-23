@@ -1,6 +1,6 @@
 const { badRequest } = require("../utils/http");
 
-const QR_PACKAGES = [50, 200, 500, 1000, 2000, 5000, 10000];
+const QR_PACKAGES = [50, 200, 600, 2000, 6000];
 const INTERNAL_UNIT_PRICE_COP = 1000;
 
 function assertValidPackage(packageSize) {

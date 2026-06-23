@@ -48,7 +48,7 @@ const DEMO_COMPANIES = [
     validator: "Validador Base",
     validator_email: "validator.base@demo.local",
     branches: ["Mostrador principal"],
-    prepaid: { package_size: 100, purchased: 100, used: 18, balance: 82 },
+    prepaid: { package_size: 50, purchased: 50, used: 18, balance: 32 },
     monthly_used: 0,
     campaigns: 1,
     affiliates: 0,
