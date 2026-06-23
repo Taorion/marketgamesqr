@@ -619,6 +619,30 @@ async function getPublicRewardPass(publicCode) {
   return mapped;
 }
 
+async function getPublicRewardPassPdf(publicCode) {
+  const result = await query(
+    `select rp.*, b.name as company_name, b.slug as company_slug,
+            (b.settings - 'logo_data_url') as company_settings,
+            c.name as campaign_name
+     from reward_passes rp
+     join businesses b on b.id = rp.company_id
+     left join campaigns c on c.id = rp.campaign_id
+     where lower(rp.public_code) = lower($1)`,
+    [publicCode]
+  );
+  let pass = result.rows[0];
+  if (!pass) throw notFound("Reward Pass no encontrado.");
+  pass = await syncEffectiveStatus(query, pass);
+  const status = effectiveStatus(pass);
+  if (status === "pending_claim") {
+    throw badRequest("Activa la Gift Card con tus datos antes de descargar el PDF oficial.");
+  }
+  if (status === "cancelled") {
+    throw badRequest("Este Reward Pass fue anulado por el emisor.");
+  }
+  return buildRewardPassPdf(pass, "card");
+}
+
 async function claimRewardPass(publicCode, payload) {
   const beneficiaryName = cleanText(payload.beneficiary_name);
   const beneficiaryDocument = cleanText(payload.beneficiary_document);
@@ -943,6 +967,79 @@ function wrapText(text, maxChars) {
   return lines;
 }
 
+function truncateTextToWidth(text, font, size, maxWidth) {
+  const clean = cleanText(text);
+  if (!clean) return "";
+  if (font.widthOfTextAtSize(clean, size) <= maxWidth) return clean;
+  const suffix = "...";
+  let output = clean;
+  while (output.length > 0 && font.widthOfTextAtSize(`${output}${suffix}`, size) > maxWidth) {
+    output = output.slice(0, -1);
+  }
+  return `${output.trimEnd()}${suffix}`;
+}
+
+function wrapTextByWidth(text, font, size, maxWidth, maxLines = Infinity) {
+  const words = cleanText(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  words.forEach((word) => {
+    const next = `${current} ${word}`.trim();
+    if (font.widthOfTextAtSize(next, size) <= maxWidth) {
+      current = next;
+      return;
+    }
+    if (current) {
+      lines.push(current);
+      current = "";
+    }
+    current = font.widthOfTextAtSize(word, size) <= maxWidth
+      ? word
+      : truncateTextToWidth(word, font, size, maxWidth);
+  });
+  if (current) lines.push(current);
+  if (lines.length <= maxLines) return lines;
+  const visible = lines.slice(0, maxLines);
+  visible[maxLines - 1] = truncateTextToWidth(visible[maxLines - 1], font, size, maxWidth);
+  return visible;
+}
+
+function drawWrappedText(page, text, options) {
+  const {
+    x,
+    y,
+    maxWidth,
+    size,
+    font,
+    color,
+    lineHeight = Math.round(size * 1.25),
+    maxLines = Infinity,
+    align = "left",
+  } = options;
+  const lines = wrapTextByWidth(text, font, size, maxWidth, maxLines);
+  lines.forEach((line, index) => {
+    const lineWidth = font.widthOfTextAtSize(line, size);
+    const offset = align === "center" ? Math.max(0, (maxWidth - lineWidth) / 2) : 0;
+    page.drawText(line, { x: x + offset, y: y - (index * lineHeight), size, font, color });
+  });
+  return y - (lines.length * lineHeight);
+}
+
+function drawCardField(page, label, value, options) {
+  const { x, y, maxWidth, font, bold, color, mutedColor } = options;
+  page.drawText(label, { x, y, size: 9, font: bold, color: mutedColor });
+  return drawWrappedText(page, value || "-", {
+    x,
+    y: y - 15,
+    maxWidth,
+    size: 12,
+    font,
+    color,
+    lineHeight: 15,
+    maxLines: 2,
+  }) - 8;
+}
+
 async function buildRewardPassPdf(pass, kind = "card") {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([900, 520]);
@@ -951,41 +1048,100 @@ async function buildRewardPassPdf(pass, kind = "card") {
   const isPendingClaim = pass.status === "pending_claim" || !cleanText(pass.beneficiary_name) || !cleanText(pass.beneficiary_document);
   const qrDataUrl = isPendingClaim ? await getQrDataUrlForUrl(pass.public_url || buildPublicUrl(pass.public_code)) : await getRewardPassQrDataUrl(pass);
   const qrPng = await pdf.embedPng(Buffer.from(qrDataUrl.split(",")[1], "base64"));
-  page.drawRectangle({ x: 0, y: 0, width: 900, height: 520, color: rgb(0.03, 0.08, 0.12) });
-  page.drawRectangle({ x: 28, y: 28, width: 844, height: 464, borderColor: rgb(0.95, 0.72, 0.27), borderWidth: 3 });
-  page.drawText(kind === "receipt" ? "COMPROBANTE DE ADQUISICION" : "REWARD PASS", {
-    x: 58,
+  const white = rgb(1, 1, 1);
+  const gold = rgb(0.95, 0.72, 0.27);
+  const muted = rgb(0.7, 0.78, 0.86);
+  const soft = rgb(0.86, 0.9, 0.94);
+  const dark = rgb(0.03, 0.08, 0.12);
+  const panel = rgb(0.05, 0.12, 0.17);
+  const leftX = 58;
+  const leftW = 520;
+  const rightX = 626;
+  const rightW = 216;
+
+  page.drawRectangle({ x: 0, y: 0, width: 900, height: 520, color: dark });
+  page.drawRectangle({ x: 28, y: 28, width: 844, height: 464, borderColor: gold, borderWidth: 2 });
+  page.drawRectangle({ x: rightX - 18, y: 78, width: rightW + 36, height: 360, color: panel, borderColor: rgb(0.16, 0.24, 0.31), borderWidth: 1 });
+
+  const title = kind === "receipt" ? "COMPROBANTE DE ADQUISICION" : "REWARD PASS";
+  page.drawText(title, {
+    x: leftX,
     y: 438,
-    size: kind === "receipt" ? 27 : 46,
+    size: kind === "receipt" ? 25 : 42,
     font: bold,
-    color: rgb(1, 1, 1),
+    color: white,
   });
-  page.drawText("Gift Card Digital", { x: 60, y: 410, size: 18, font, color: rgb(0.95, 0.72, 0.27) });
-  page.drawText(pass.company_name || pass.company?.name || "Empresa emisora", { x: 60, y: 372, size: 22, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(isPendingClaim ? "Activacion requerida" : "Gift Card oficial", { x: 60, y: 332, size: 30, font: bold, color: rgb(0.95, 0.72, 0.27) });
-  page.drawText(`Beneficiario: ${pass.beneficiary_name || "Pendiente de activacion"}`, { x: 60, y: 292, size: 17, font, color: rgb(1, 1, 1) });
-  page.drawText(`Documento: ${pass.beneficiary_document || "Se solicita al activar"}`, { x: 60, y: 266, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
-  page.drawText(`Codigo: ${pass.public_code}`, { x: 60, y: 240, size: 16, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(`Vigencia: ${new Date(pass.expires_at).toLocaleDateString("es-CO")}`, { x: 60, y: 214, size: 14, font, color: rgb(0.86, 0.9, 0.94) });
-  page.drawImage(qrPng, { x: 642, y: 178, width: 188, height: 188 });
-  page.drawText(isPendingClaim ? "Escanea para reclamar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad.", { x: 594, y: 148, size: 12, font, color: rgb(1, 1, 1) });
-  page.drawText("Redimible unicamente en el negocio emisor. No canjeable por efectivo salvo autorizacion del emisor.", {
-    x: 60,
-    y: 116,
-    size: 11,
+  page.drawText("Gift Card Digital", { x: leftX, y: 410, size: 16, font, color: gold });
+
+  drawWrappedText(page, pass.company_name || pass.company?.name || "Empresa emisora", {
+    x: leftX,
+    y: 374,
+    maxWidth: leftW,
+    size: 20,
+    font: bold,
+    color: white,
+    lineHeight: 24,
+    maxLines: 2,
+  });
+
+  page.drawRectangle({ x: leftX, y: 274, width: leftW, height: 58, color: rgb(0.09, 0.14, 0.17), borderColor: rgb(0.35, 0.29, 0.16), borderWidth: 1 });
+  page.drawText(isPendingClaim ? "ACTIVACION REQUERIDA" : "GIFT CARD OFICIAL", { x: leftX + 18, y: 310, size: 20, font: bold, color: gold });
+  drawWrappedText(page, isPendingClaim ? "Completa los datos del beneficiario para activar el QR redimible." : `Saldo disponible: $${moneyNumber(pass.current_balance_cop || pass.initial_value_cop).toLocaleString("es-CO")} COP`, {
+    x: leftX + 18,
+    y: 292,
+    maxWidth: leftW - 36,
+    size: 12,
     font,
-    color: rgb(0.86, 0.9, 0.94),
+    color: soft,
+    lineHeight: 15,
+    maxLines: 2,
+  });
+
+  let detailsY = 244;
+  detailsY = drawCardField(page, "BENEFICIARIO", isPendingClaim ? "Pendiente de activacion" : pass.beneficiary_name, { x: leftX, y: detailsY, maxWidth: 250, font, bold, color: white, mutedColor: gold });
+  detailsY = drawCardField(page, "DOCUMENTO", isPendingClaim ? "Se solicita al activar" : pass.beneficiary_document, { x: leftX, y: detailsY, maxWidth: 250, font, bold, color: soft, mutedColor: gold });
+  const rightDetailsX = leftX + 292;
+  drawCardField(page, "CODIGO", pass.public_code, { x: rightDetailsX, y: 244, maxWidth: 220, font: bold, bold, color: white, mutedColor: gold });
+  drawCardField(page, "VIGENCIA", new Date(pass.expires_at).toLocaleDateString("es-CO"), { x: rightDetailsX, y: 190, maxWidth: 220, font, bold, color: soft, mutedColor: gold });
+  drawCardField(page, "SEDE AUTORIZADA", pass.authorized_branch || "Segun condiciones del emisor", { x: rightDetailsX, y: 136, maxWidth: 220, font, bold, color: soft, mutedColor: gold });
+
+  page.drawRectangle({ x: rightX + 8, y: 196, width: 200, height: 200, color: white });
+  page.drawImage(qrPng, { x: rightX + 18, y: 206, width: 180, height: 180 });
+  drawWrappedText(page, isPendingClaim ? "Escanea para activar y obtener la Gift Card oficial." : "Presenta este QR junto con tu documento de identidad.", {
+    x: rightX,
+    y: 168,
+    maxWidth: rightW,
+    size: 11,
+    font: bold,
+    color: white,
+    lineHeight: 14,
+    maxLines: 3,
+    align: "center",
+  });
+
+  drawWrappedText(page, "Redimible unicamente en el negocio emisor. No canjeable por efectivo salvo autorizacion del emisor.", {
+    x: leftX,
+    y: 104,
+    maxWidth: 520,
+    size: 10,
+    font,
+    color: soft,
+    lineHeight: 13,
+    maxLines: 2,
   });
   const partialText = pass.partial_redemption_allowed
     ? "Permite redenciones parciales hasta agotar saldo o hasta la fecha de vencimiento."
     : "De un solo uso segun condiciones del emisor.";
-  page.drawText(partialText, { x: 60, y: 94, size: 11, font, color: rgb(0.86, 0.9, 0.94) });
-  page.drawText(`Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por MarketGames QR Portal.`, {
-    x: 60,
-    y: 58,
-    size: 10,
+  drawWrappedText(page, partialText, { x: leftX, y: 78, maxWidth: 520, size: 10, font, color: soft, lineHeight: 13, maxLines: 2 });
+  drawWrappedText(page, `Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por MarketGames QR Portal.`, {
+    x: leftX,
+    y: 52,
+    maxWidth: 760,
+    size: 9,
     font,
-    color: rgb(0.7, 0.78, 0.86),
+    color: muted,
+    lineHeight: 12,
+    maxLines: 2,
   });
   if (kind === "receipt") {
     const receiptPage = pdf.addPage([612, 792]);
@@ -1025,6 +1181,7 @@ module.exports = {
   defaultExpiresAt,
   extendRewardPass,
   getPublicRewardPass,
+  getPublicRewardPassPdf,
   getRewardPassById,
   getTicketContext,
   listRewardPasses,

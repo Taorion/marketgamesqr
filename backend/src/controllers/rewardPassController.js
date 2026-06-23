@@ -9,6 +9,7 @@ const {
   defaultExpiresAt,
   extendRewardPass,
   getPublicRewardPass,
+  getPublicRewardPassPdf,
   getRewardPassById,
   getTicketContext,
   listRewardPasses,
@@ -213,6 +214,17 @@ async function publicClaim(req, res, next) {
   }
 }
 
+async function publicDownloadPdf(req, res, next) {
+  try {
+    const pdf = await getPublicRewardPassPdf(req.params.publicCode);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${req.params.publicCode}.pdf"`);
+    res.send(pdf);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function downloadPdf(req, res, next) {
   try {
     const rewardPass = await getRewardPassById(req.user, req.params.id);
@@ -248,6 +260,7 @@ module.exports = {
   metrics,
   publicGet,
   publicClaim,
+  publicDownloadPdf,
   redeemToken,
   rewardPassContext,
   validateToken,

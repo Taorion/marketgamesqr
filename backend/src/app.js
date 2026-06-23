@@ -21,6 +21,7 @@ const rewardPassRoutes = require("./routes/rewardPassRoutes");
 const {
   publicGet: publicRewardPassGet,
   publicClaim: publicRewardPassClaim,
+  publicDownloadPdf: publicRewardPassDownloadPdf,
 } = require("./controllers/rewardPassController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
@@ -146,6 +147,7 @@ app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
 app.use("/api/public", packageSalesRoutes);
+app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);

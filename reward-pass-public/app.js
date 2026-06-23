@@ -54,6 +54,16 @@ function publicCodeFromPath() {
   return decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
 }
 
+function shareUrlForPass(pass) {
+  return pass.public_url || window.location.href;
+}
+
+function normalizeWhatsappNumber(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.startsWith("57") ? digits : `57${digits}`;
+}
+
 async function render() {
   const publicCode = publicCodeFromPath();
   if (!publicCode) {
@@ -115,7 +125,23 @@ async function render() {
             <label>Email<input id="rpClaimEmail" type="email"></label>
             <button type="submit">Activar Gift Card Oficial</button>
             <p id="rpClaimMessage"></p>
-          </form>` : ""}
+          </form>` : `
+          <section class="rp-share-panel">
+            <div>
+              <span>Conserva tu Gift Card</span>
+              <strong>Descarga o comparte tu QR oficial</strong>
+              <p>Usa estas opciones para enviartela a tu WhatsApp, compartir el enlace o guardar el PDF.</p>
+            </div>
+            <div class="rp-share-actions">
+              <a class="rp-action-button" href="/api/public/reward-passes/${encodeURIComponent(pass.public_code)}/pdf" download>Descargar PDF</a>
+              <button class="rp-action-button" id="rpShareButton" type="button">Compartir enlace</button>
+            </div>
+            <div class="rp-whatsapp-row">
+              <input id="rpWhatsappInput" type="tel" inputmode="tel" placeholder="Celular WhatsApp. Ej: 3001234567">
+              <button class="rp-action-button" id="rpWhatsappButton" type="button">Enviar a WhatsApp</button>
+            </div>
+            <p id="rpShareMessage"></p>
+          </section>`}
           <p><strong>Condiciones:</strong> Redimible unicamente en el negocio emisor. No es canjeable por efectivo salvo autorizacion del emisor.</p>
           <p>${pass.partial_redemption_allowed ? "Permite redenciones parciales hasta agotar saldo o hasta la fecha de vencimiento." : "De un solo uso segun condiciones del emisor."}</p>
           <p>${escapeHtml(pass.status_message)}</p>
@@ -148,6 +174,37 @@ async function render() {
         message.textContent = claimError.message;
       }
     });
+    if (!isClaim) {
+      const shareMessage = document.getElementById("rpShareMessage");
+      const shareUrl = shareUrlForPass(pass);
+      document.getElementById("rpShareButton")?.addEventListener("click", async () => {
+        const shareData = {
+          title: "Mi Gift Card Digital",
+          text: `Mi Reward Pass de ${pass.company?.name || "MarketGames QR"}: ${money(officialValue)} COP disponibles.`,
+          url: shareUrl,
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            if (shareMessage) shareMessage.textContent = "Enlace compartido.";
+            return;
+          }
+          await navigator.clipboard.writeText(shareUrl);
+          if (shareMessage) shareMessage.textContent = "Enlace copiado al portapapeles.";
+        } catch (shareError) {
+          if (shareMessage) shareMessage.textContent = "No se pudo compartir. Copia el enlace desde la barra del navegador.";
+        }
+      });
+      document.getElementById("rpWhatsappButton")?.addEventListener("click", () => {
+        const phone = normalizeWhatsappNumber(document.getElementById("rpWhatsappInput")?.value);
+        if (!phone) {
+          if (shareMessage) shareMessage.textContent = "Ingresa un numero de WhatsApp valido.";
+          return;
+        }
+        const text = encodeURIComponent(`Te comparto mi Gift Card Digital de ${pass.company?.name || "MarketGames QR"} por ${money(officialValue)} COP. Link oficial: ${shareUrl}`);
+        window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener");
+      });
+    }
   } catch (error) {
     root.innerHTML = `<div class="rp-error">${escapeHtml(error.message)}</div>`;
   }
