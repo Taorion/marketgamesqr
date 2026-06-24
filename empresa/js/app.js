@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260623-reward-pass-flow-v2";
+const APP_VERSION = "empresa-20260624-business-campaign-flow-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1402,6 +1402,7 @@ const viewFeatureMap = {
   "strategic-qr": "qr_batch_generator",
   validator: "qr_validator",
   branches: "multi_branch",
+  admin: "admin_workspace",
 };
 
 function planFeatures() {
@@ -1414,6 +1415,7 @@ function planLimits() {
 
 function hasPlanFeature(feature) {
   if (!feature) return true;
+  if (feature === "admin_workspace") return isAdmin();
   if (isAdmin()) return true;
   if (feature === "leads_view" && isPrepaidValidatorOnly()) return true;
   const plan = currentPlan();
@@ -1776,6 +1778,8 @@ function renderAccountView() {
 function applyPlanNavigation() {
   navButtons.forEach((button) => {
     const feature = viewFeatureMap[button.dataset.view];
+    const adminOnly = button.dataset.view === "admin";
+    button.classList.toggle("hidden", adminOnly && !isAdmin());
     const locked = !hasPlanFeature(feature);
     button.classList.toggle("plan-locked", locked);
     button.disabled = locked;
@@ -1789,6 +1793,12 @@ function applyPlanNavigation() {
 }
 
 function setView(view) {
+  if (view === "admin" && !isAdmin()) {
+    const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
+    showFeedback("Ese modulo es interno de Market Games. La gestion de tus campanas esta en el portal del negocio.", "info", { title: "Modulo interno" });
+    if (view !== fallbackView) setView(fallbackView);
+    return;
+  }
   if (!hasPlanFeature(viewFeatureMap[view])) {
     showFeedback("Tu plan actual no incluye este modulo. Puedes solicitar un upgrade para activarlo.", "info", { title: "Modulo bloqueado" });
     return;
@@ -2237,7 +2247,7 @@ async function loadWorkspace() {
     renderCampaignStateGrid();
     renderCampaignList();
     renderCampaignAssociationInputs();
-    renderAdminView();
+    if (isAdmin()) renderAdminView();
 
     const selectedCampaignId = state.campaigns.some((item) => item.id === state.selectedCampaignId)
       ? state.selectedCampaignId
@@ -6029,6 +6039,9 @@ async function submitCampaignModal(event) {
     if (state.currentView === "strategic-qr" || state.strategicQrLoaded) {
       renderStrategicQrView();
     }
+    if (!isAdmin()) {
+      setView("campaigns");
+    }
   } catch (error) {
     campaignModalMessage.textContent = error.message;
   }
@@ -9395,7 +9408,7 @@ function handleRangeToggle() {
   if (state.currentView === "validator") {
     loadValidatorHistory();
   }
-  renderAdminView();
+  if (isAdmin()) renderAdminView();
 }
 
 loginForm.addEventListener("submit", login);
