@@ -2240,10 +2240,20 @@
           <span>Fecha cierre</span>
           <input id="campaignFormEndsAt" type="datetime-local">
         </label>
-        <label class="span-2">
+        <div class="campaign-channel-field span-2">
           <span>Canales</span>
-          <input id="campaignFormLaunchChannels" type="text" placeholder="Instagram, WhatsApp, Punto de venta">
-        </label>
+          <div class="channel-grid" id="campaignFormLaunchChannels">
+            <label class="channel-option"><input type="checkbox" value="Instagram"> <span>Instagram</span></label>
+            <label class="channel-option"><input type="checkbox" value="Facebook"> <span>Facebook</span></label>
+            <label class="channel-option"><input type="checkbox" value="TikTok"> <span>TikTok</span></label>
+            <label class="channel-option"><input type="checkbox" value="Volantes"> <span>Volantes</span></label>
+            <label class="channel-option"><input type="checkbox" value="Influencer"> <span>Influencer</span></label>
+            <label class="channel-option"><input type="checkbox" value="Evento fisico"> <span>Evento fisico</span></label>
+            <label class="channel-option"><input type="checkbox" value="WhatsApp"> <span>WhatsApp</span></label>
+            <label class="channel-option"><input type="checkbox" value="Punto de venta"> <span>Punto de venta</span></label>
+            <label class="channel-option"><input type="checkbox" value="Otro"> <span>Otro</span></label>
+          </div>
+        </div>
         <label class="span-2">
           <span>Notas del cliente</span>
           <textarea id="campaignFormClientNotes" rows="2"></textarea>
@@ -2334,7 +2344,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=business-campaign-edit-20260624" defer></script>
+  <script src="js/app.js?v=campaign-channel-checks-20260624" defer></script>
 </body>
 </html>
 

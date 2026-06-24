@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260624-business-campaign-edit-v1";
+const APP_VERSION = "empresa-20260624-campaign-channel-checks-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1291,11 +1291,15 @@ function formatInputDateTime(value) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function parseCampaignChannels(value) {
-  return String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+function selectedCheckedValues(container) {
+  return Array.from(container.querySelectorAll("input[type='checkbox']:checked")).map((input) => input.value);
+}
+
+function setCheckedValues(container, values = []) {
+  const selected = new Set(Array.isArray(values) ? values : []);
+  Array.from(container.querySelectorAll("input[type='checkbox']")).forEach((input) => {
+    input.checked = selected.has(input.value);
+  });
 }
 
 function statusLabel(status) {
@@ -6009,7 +6013,7 @@ function openCampaignModal(mode) {
   campaignFormRedemptionsGoal.value = campaign?.expected_redemptions_goal || "";
   campaignFormStartsAt.value = formatInputDateTime(campaign?.starts_at);
   campaignFormEndsAt.value = formatInputDateTime(campaign?.ends_at);
-  campaignFormLaunchChannels.value = Array.isArray(campaign?.launch_channels) ? campaign.launch_channels.join(", ") : "";
+  setCheckedValues(campaignFormLaunchChannels, campaign?.launch_channels || []);
   campaignFormClientNotes.value = campaign?.client_notes || "";
   campaignFormLandingUrl.value = campaign?.delivered_assets?.landing_url || "";
   campaignFormValidatorUrl.value = campaign?.delivered_assets?.validator_url || "";
@@ -6049,6 +6053,13 @@ async function submitCampaignModal(event) {
     return;
   }
 
+  const campaignChannels = selectedCheckedValues(campaignFormLaunchChannels);
+  if (!campaignChannels.length) {
+    campaignModalMessage.textContent = "Selecciona al menos una red o canal antes de guardar.";
+    campaignFormLaunchChannels.scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
+  }
+
   const payload = {
     name: campaignFormName.value.trim(),
     slug: normalizedSlug,
@@ -6062,7 +6073,7 @@ async function submitCampaignModal(event) {
     expected_redemptions_goal: campaignFormRedemptionsGoal.value ? Number(campaignFormRedemptionsGoal.value) : null,
     starts_at: campaignFormStartsAt.value ? new Date(campaignFormStartsAt.value).toISOString() : null,
     ends_at: campaignFormEndsAt.value ? new Date(campaignFormEndsAt.value).toISOString() : null,
-    launch_channels: parseCampaignChannels(campaignFormLaunchChannels.value),
+    launch_channels: campaignChannels,
     client_notes: campaignFormClientNotes.value.trim() || null,
     delivered_assets: {
       landing_url: campaignFormLandingUrl.value.trim() || null,
@@ -8463,12 +8474,18 @@ function exportSales() {
 }
 
 function selectedLaunchChannels() {
-  return Array.from(launchChannelGrid.querySelectorAll("input[type='checkbox']:checked")).map((input) => input.value);
+  return selectedCheckedValues(launchChannelGrid);
 }
 
 async function saveClientLaunchSetup(event) {
   event.preventDefault();
   if (!state.selectedCampaignId) return;
+  const launchChannels = selectedLaunchChannels();
+  if (!launchChannels.length) {
+    launchSetupMessage.textContent = "Selecciona al menos una red o canal para guardar la preparacion.";
+    launchChannelGrid.scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
+  }
   launchSetupMessage.textContent = "Guardando...";
 
   try {
@@ -8481,7 +8498,7 @@ async function saveClientLaunchSetup(event) {
         starts_at: new Date(launchStartsAtInput.value).toISOString(),
         ends_at: new Date(launchEndsAtInput.value).toISOString(),
         objective: launchObjectiveInput.value.trim() || null,
-        launch_channels: selectedLaunchChannels(),
+        launch_channels: launchChannels,
         expected_sales_goal: launchSalesGoalInput.value ? Number(launchSalesGoalInput.value) : null,
         expected_leads_goal: launchLeadsGoalInput.value ? Number(launchLeadsGoalInput.value) : null,
         expected_redemptions_goal: launchRedemptionsGoalInput.value ? Number(launchRedemptionsGoalInput.value) : null,

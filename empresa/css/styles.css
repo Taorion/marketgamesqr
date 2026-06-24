@@ -2419,8 +2419,35 @@ td {
 }
 
 #campaignModal .modal-form label.span-2,
+#campaignModal .campaign-channel-field,
 #campaignModal .modal-actions {
   grid-column: 1 / -1;
+}
+
+#campaignModal .campaign-channel-field {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#campaignModal .campaign-channel-field .channel-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#campaignModal .campaign-channel-field .channel-option {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+#campaignModal .campaign-channel-field .channel-option input {
+  min-height: auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
 }
 
 #campaignModal .campaign-url-field {
@@ -3125,6 +3152,7 @@ td {
 
   #campaignModal .modal-form label,
   #campaignModal .campaign-compact-field,
+  #campaignModal .campaign-channel-field,
   #campaignModal .campaign-url-field,
   #campaignModal .modal-actions {
     grid-column: 1 / -1;
