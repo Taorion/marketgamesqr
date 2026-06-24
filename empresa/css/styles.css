@@ -2385,10 +2385,78 @@ td {
 }
 
 .modal-shell .modal-form {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 4px;
+}
+
+#campaignModal .modal-card {
+  width: min(96vw, 760px);
+  max-height: min(860px, calc(100dvh - 32px));
+  padding: 18px;
+}
+
+#campaignModal .modal-head {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+#campaignModal .modal-head h3 {
+  font-size: 24px;
+}
+
+#campaignModal .modal-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#campaignModal .modal-form label {
+  grid-column: span 2;
+  gap: 5px;
+  font-size: 12px;
+}
+
+#campaignModal .modal-form label.span-2,
+#campaignModal .modal-actions {
+  grid-column: 1 / -1;
+}
+
+#campaignModal .campaign-url-field {
+  grid-column: span 2;
+}
+
+#campaignModal .modal-form input,
+#campaignModal .modal-form select {
+  min-height: 38px;
+  padding: 0 11px;
+}
+
+#campaignModal .modal-form textarea {
+  min-height: 72px;
+  padding: 10px 11px;
+}
+
+#campaignModal #campaignFormStrategy {
+  min-height: 82px;
+}
+
+#campaignModal #campaignFormAssetNotes {
+  min-height: 64px;
+}
+
+#campaignModal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 4px -4px 0;
+  padding: 10px 4px 0;
+  background: linear-gradient(180deg, transparent, rgba(3, 7, 18, 0.94) 18%);
+}
+
+:root[data-theme="light"] #campaignModal .modal-actions {
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.96) 18%) !important;
 }
 
 .modal-form label {
@@ -3038,6 +3106,27 @@ td {
 
   .modal-head h3 {
     font-size: 22px;
+  }
+
+  #campaignModal .modal-card {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 14px;
+  }
+
+  #campaignModal .modal-form {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  #campaignModal .modal-form label,
+  #campaignModal .campaign-url-field,
+  #campaignModal .modal-actions {
+    grid-column: 1 / -1;
+  }
+
+  #campaignModal .modal-actions {
+    margin-inline: -2px;
   }
 
   .span-2 {
