@@ -22,9 +22,24 @@ const {
 const campaignTypeEnum = z.enum(["GAME", "FORM", "LANDING", "INFLUENCER", "EVENT", "FLYER", "SOCIAL", "MIXED"]);
 const campaignStatusEnum = z.enum(["DRAFT", "READY_FOR_CLIENT_SETUP", "SCHEDULED", "ACTIVE", "PAUSED", "FINISHED", "ARCHIVED"]);
 
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+const slugSchema = z.preprocess(
+  (value) => slugify(value),
+  z.string().min(2).max(120).regex(/^[a-z0-9-]+$/)
+);
+
 const businessSchema = z.object({
   name: z.string().trim().min(2).max(160),
-  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  slug: slugSchema,
   owner_email: z.string().email().optional(),
   owner_password: z.string().min(8).optional(),
   owner_name: z.string().trim().min(2).optional(),
@@ -49,7 +64,7 @@ const campaignSchema = z.object({
   game_id: z.string().uuid().optional().nullable(),
   reward_id: z.string().uuid().optional().nullable(),
   name: z.string().trim().min(2).max(160),
-  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  slug: slugSchema,
   type: campaignTypeEnum.default("FORM"),
   objective: z.string().trim().max(500).optional().nullable(),
   strategy_summary: z.string().trim().max(2000).optional().nullable(),
@@ -304,7 +319,10 @@ async function listUsers(req, res, next) {
 async function createCampaign(req, res, next) {
   try {
     requireMarketAdmin(req.user);
-    const body = validate(campaignSchema, req.body);
+    const body = validate(campaignSchema, {
+      ...req.body,
+      slug: req.body.slug || req.body.name,
+    });
     if (!["FINISHED", "ARCHIVED"].includes(body.status)) {
       const activeCount = await query(
         `select count(*)::int as total

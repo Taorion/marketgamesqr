@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260624-business-campaign-flow-v1";
+const APP_VERSION = "empresa-20260624-business-campaign-flow-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1388,6 +1388,29 @@ function currentCampaignRows() {
     return filtered;
   }
   return filtered.filter((campaign) => campaign.status === campaignStatusFilter.value);
+}
+
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+function syncCampaignSlugFromName({ force = false } = {}) {
+  if (!campaignFormSlug || !campaignFormName) return;
+  const currentSlug = slugify(campaignFormSlug.value);
+  const shouldReplace = force || !currentSlug || currentSlug === slugify(campaignFormSlug.dataset.generatedFrom || "");
+  if (!shouldReplace) {
+    campaignFormSlug.value = currentSlug;
+    return;
+  }
+  const nextSlug = slugify(campaignFormName.value);
+  campaignFormSlug.value = nextSlug;
+  campaignFormSlug.dataset.generatedFrom = campaignFormName.value;
 }
 
 const viewFeatureMap = {
@@ -5951,7 +5974,8 @@ function openCampaignModal(mode) {
 
   const campaign = mode === "edit" ? state.selectedCampaign : null;
   campaignFormName.value = campaign?.name || "";
-  campaignFormSlug.value = campaign?.slug || campaign?.public_slug || "";
+  campaignFormSlug.value = slugify(campaign?.slug || campaign?.public_slug || campaign?.name || "");
+  campaignFormSlug.dataset.generatedFrom = campaignFormName.value;
   campaignFormType.value = campaign?.type || "FORM";
   campaignFormStatus.value = campaign?.status || "DRAFT";
   campaignFormObjective.value = campaign?.objective || "";
@@ -5987,10 +6011,18 @@ function closeSnapshotModal() {
 async function submitCampaignModal(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
+  syncCampaignSlugFromName();
+  const normalizedSlug = slugify(campaignFormSlug.value || campaignFormName.value);
+  campaignFormSlug.value = normalizedSlug;
+  if (!normalizedSlug) {
+    campaignModalMessage.textContent = "Escribe un nombre de campana para generar el slug.";
+    campaignFormName.focus();
+    return;
+  }
 
   const payload = {
     name: campaignFormName.value.trim(),
-    slug: campaignFormSlug.value.trim(),
+    slug: normalizedSlug,
     type: campaignFormType.value,
     status: campaignFormStatus.value,
     objective: campaignFormObjective.value.trim() || null,
@@ -8516,11 +8548,18 @@ async function saveAdminCampaign(event) {
   event.preventDefault();
   if (!isAdmin()) return;
   adminCampaignMessage.textContent = "Guardando...";
+  const adminSlug = slugify(adminCampaignSlugInput.value || adminCampaignNameInput.value);
+  adminCampaignSlugInput.value = adminSlug;
+  if (!adminSlug) {
+    adminCampaignMessage.textContent = "Escribe un nombre de campana para generar el slug.";
+    adminCampaignNameInput.focus();
+    return;
+  }
 
   const payload = {
     business_id: state.adminSelectedCampaign?.business_id || state.adminSelectedReport?.business?.id || session.user.business_id,
     name: adminCampaignNameInput.value.trim(),
-    slug: adminCampaignSlugInput.value.trim(),
+    slug: adminSlug,
     type: adminCampaignTypeInput.value,
     status: adminCampaignStatusInput.value,
     objective: adminCampaignObjectiveInput.value.trim() || null,
@@ -9437,6 +9476,19 @@ searchInput.addEventListener("input", (event) => {
   if (isAdmin()) renderAdminView();
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
+campaignFormName?.addEventListener("input", () => syncCampaignSlugFromName());
+campaignFormSlug?.addEventListener("input", () => {
+  campaignFormSlug.value = slugify(campaignFormSlug.value);
+  campaignFormSlug.dataset.generatedFrom = "";
+});
+adminCampaignNameInput?.addEventListener("input", () => {
+  if (!adminCampaignSlugInput.value.trim()) {
+    adminCampaignSlugInput.value = slugify(adminCampaignNameInput.value);
+  }
+});
+adminCampaignSlugInput?.addEventListener("input", () => {
+  adminCampaignSlugInput.value = slugify(adminCampaignSlugInput.value);
+});
 navButtons.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
 });

@@ -34,6 +34,21 @@ const launchChannelOptions = [
   "Otro",
 ];
 
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+const slugSchema = z.preprocess(
+  (value) => slugify(value),
+  z.string().min(2).max(120).regex(/^[a-z0-9-]+$/)
+);
+
 const clientSetupSchema = z.object({
   budget_total: z.number().min(0),
   starts_at: z.string().datetime(),
@@ -49,7 +64,7 @@ const clientSetupSchema = z.object({
 
 const ownerCampaignSchema = z.object({
   name: z.string().trim().min(2).max(160),
-  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  slug: slugSchema,
   type: z.enum(["GAME", "FORM", "LANDING", "INFLUENCER", "EVENT", "FLYER", "SOCIAL", "MIXED"]).default("FORM"),
   status: z.enum(["DRAFT", "READY_FOR_CLIENT_SETUP", "SCHEDULED", "ACTIVE", "PAUSED", "FINISHED", "ARCHIVED"]).default("DRAFT"),
   objective: z.string().trim().max(500).optional().nullable(),
@@ -722,7 +737,10 @@ async function createCampaign(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "campaign_reports");
-    const body = validate(ownerCampaignSchema, req.body);
+    const body = validate(ownerCampaignSchema, {
+      ...req.body,
+      slug: req.body.slug || req.body.name,
+    });
 
     const activeCount = await query(
       `select count(*)::int as total
