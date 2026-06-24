@@ -2427,6 +2427,10 @@ td {
   grid-column: span 2;
 }
 
+#campaignModal .campaign-compact-field {
+  grid-column: span 1;
+}
+
 #campaignModal .modal-form input,
 #campaignModal .modal-form select {
   min-height: 38px;
@@ -3120,6 +3124,7 @@ td {
   }
 
   #campaignModal .modal-form label,
+  #campaignModal .campaign-compact-field,
   #campaignModal .campaign-url-field,
   #campaignModal .modal-actions {
     grid-column: 1 / -1;

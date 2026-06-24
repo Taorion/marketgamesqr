@@ -2216,13 +2216,37 @@
           <span>Estrategia</span>
           <textarea id="campaignFormStrategy" rows="4"></textarea>
         </label>
-        <label>
+        <label class="campaign-compact-field">
           <span>Presupuesto</span>
           <input id="campaignFormBudget" type="number" min="0" step="1000">
         </label>
-        <label>
+        <label class="campaign-compact-field">
           <span>Meta comercial</span>
           <input id="campaignFormGoal" type="number" min="0" step="1000">
+        </label>
+        <label class="campaign-compact-field">
+          <span>Meta leads</span>
+          <input id="campaignFormLeadsGoal" type="number" min="0" step="1">
+        </label>
+        <label class="campaign-compact-field">
+          <span>Meta redenciones</span>
+          <input id="campaignFormRedemptionsGoal" type="number" min="0" step="1">
+        </label>
+        <label class="campaign-compact-field">
+          <span>Fecha inicio</span>
+          <input id="campaignFormStartsAt" type="datetime-local">
+        </label>
+        <label class="campaign-compact-field">
+          <span>Fecha cierre</span>
+          <input id="campaignFormEndsAt" type="datetime-local">
+        </label>
+        <label class="span-2">
+          <span>Canales</span>
+          <input id="campaignFormLaunchChannels" type="text" placeholder="Instagram, WhatsApp, Punto de venta">
+        </label>
+        <label class="span-2">
+          <span>Notas del cliente</span>
+          <textarea id="campaignFormClientNotes" rows="2"></textarea>
         </label>
         <label class="campaign-url-field">
           <span>Landing URL</span>
@@ -2310,7 +2334,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=reward-pass-flow-20260623" defer></script>
+  <script src="js/app.js?v=business-campaign-edit-20260624" defer></script>
 </body>
 </html>
 

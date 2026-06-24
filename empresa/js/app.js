@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260624-campaign-modal-ux-v1";
+const APP_VERSION = "empresa-20260624-business-campaign-edit-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -410,6 +410,12 @@ const campaignFormObjective = document.getElementById("campaignFormObjective");
 const campaignFormStrategy = document.getElementById("campaignFormStrategy");
 const campaignFormBudget = document.getElementById("campaignFormBudget");
 const campaignFormGoal = document.getElementById("campaignFormGoal");
+const campaignFormLeadsGoal = document.getElementById("campaignFormLeadsGoal");
+const campaignFormRedemptionsGoal = document.getElementById("campaignFormRedemptionsGoal");
+const campaignFormStartsAt = document.getElementById("campaignFormStartsAt");
+const campaignFormEndsAt = document.getElementById("campaignFormEndsAt");
+const campaignFormLaunchChannels = document.getElementById("campaignFormLaunchChannels");
+const campaignFormClientNotes = document.getElementById("campaignFormClientNotes");
 const campaignFormLandingUrl = document.getElementById("campaignFormLandingUrl");
 const campaignFormValidatorUrl = document.getElementById("campaignFormValidatorUrl");
 const campaignFormGameUrl = document.getElementById("campaignFormGameUrl");
@@ -1285,6 +1291,13 @@ function formatInputDateTime(value) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function parseCampaignChannels(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function statusLabel(status) {
   const labels = {
     DRAFT: "Borrador interno",
@@ -1711,6 +1724,10 @@ function renderCommercialDeal() {
 
 function isBusinessOwnerUser() {
   return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
+function canManageCampaigns() {
+  return isAdmin() || (Boolean(session?.user?.business_id) && hasPlanFeature("campaign_reports"));
 }
 
 function accountRoleLabel(role) {
@@ -4410,7 +4427,7 @@ function renderCampaignView() {
 
   const setupEditable = ["READY_FOR_CLIENT_SETUP", "SCHEDULED"].includes(campaign.status) && !isAdmin();
   const setupReady = campaign.status === "READY_FOR_CLIENT_SETUP";
-  editCampaignButton.classList.toggle("hidden", !isAdmin());
+  editCampaignButton.classList.toggle("hidden", !canManageCampaigns());
   markReadyCampaignButton.classList.toggle("hidden", !(isAdmin() && campaign.status === "DRAFT"));
   launchSetupTitle.textContent = setupReady ? "Preparar lanzamiento" : "Configuracion del cliente";
   launchSetupStatus.textContent = statusLabel(campaign.status);
@@ -5890,6 +5907,7 @@ function renderNoCampaignState() {
   campaignBreadcrumb.textContent = "Sin campana";
   campaignHeroTitle.textContent = "Campana";
   campaignHeroSubtitle.textContent = "Analisis de rendimiento multicanal y tasa de conversion.";
+  editCampaignButton.classList.add("hidden");
   markReadyCampaignButton.classList.add("hidden");
   campaignInsightText.textContent = "No hay campanas registradas para este negocio.";
   campaignObjectiveValue.textContent = "-";
@@ -5961,6 +5979,11 @@ function openCampaignModal(mode) {
     return;
   }
 
+  if (!canManageCampaigns()) {
+    showFeedback("Tu plan actual no permite crear o editar campanas desde el portal.", "info", { title: "Campanas bloqueadas" });
+    return;
+  }
+
   if (mode === "create" && !session?.user?.business_id) {
     setView("admin");
     showFeedback("El admin global necesita un negocio objetivo para crear campanas. Usa `/admin` o entra con un negocio asignado.", "error");
@@ -5982,6 +6005,12 @@ function openCampaignModal(mode) {
   campaignFormStrategy.value = campaign?.strategy_summary || "";
   campaignFormBudget.value = campaign?.budget_total || 0;
   campaignFormGoal.value = campaign?.expected_sales_goal || 0;
+  campaignFormLeadsGoal.value = campaign?.expected_leads_goal || "";
+  campaignFormRedemptionsGoal.value = campaign?.expected_redemptions_goal || "";
+  campaignFormStartsAt.value = formatInputDateTime(campaign?.starts_at);
+  campaignFormEndsAt.value = formatInputDateTime(campaign?.ends_at);
+  campaignFormLaunchChannels.value = Array.isArray(campaign?.launch_channels) ? campaign.launch_channels.join(", ") : "";
+  campaignFormClientNotes.value = campaign?.client_notes || "";
   campaignFormLandingUrl.value = campaign?.delivered_assets?.landing_url || "";
   campaignFormValidatorUrl.value = campaign?.delivered_assets?.validator_url || "";
   campaignFormGameUrl.value = campaign?.delivered_assets?.game_url || campaign?.delivered_assets?.form_url || "";
@@ -6029,6 +6058,12 @@ async function submitCampaignModal(event) {
     strategy_summary: campaignFormStrategy.value.trim() || null,
     budget_total: Number(campaignFormBudget.value || 0),
     expected_sales_goal: Number(campaignFormGoal.value || 0),
+    expected_leads_goal: campaignFormLeadsGoal.value ? Number(campaignFormLeadsGoal.value) : null,
+    expected_redemptions_goal: campaignFormRedemptionsGoal.value ? Number(campaignFormRedemptionsGoal.value) : null,
+    starts_at: campaignFormStartsAt.value ? new Date(campaignFormStartsAt.value).toISOString() : null,
+    ends_at: campaignFormEndsAt.value ? new Date(campaignFormEndsAt.value).toISOString() : null,
+    launch_channels: parseCampaignChannels(campaignFormLaunchChannels.value),
+    client_notes: campaignFormClientNotes.value.trim() || null,
     delivered_assets: {
       landing_url: campaignFormLandingUrl.value.trim() || null,
       validator_url: campaignFormValidatorUrl.value.trim() || null,
