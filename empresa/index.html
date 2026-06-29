@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=reward-pass-flow-20260623">
+  <link rel="stylesheet" href="css/styles.css?v=ticket-center-20260629">
 </head>
 <body>
   <main class="portal-shell">
@@ -127,7 +127,7 @@
           </button>
           <button class="nav-item" data-view="strategic-qr" type="button">
             <span class="material-symbols-outlined">qr_code_2</span>
-            <span>Generar tickets</span>
+            <span>Ticket Center</span>
           </button>
           <button class="nav-item" data-view="validator" type="button">
             <span class="material-symbols-outlined">qr_code_scanner</span>
@@ -693,13 +693,54 @@
           <section class="view-section" data-view="strategic-qr">
             <div class="view-head">
               <div>
-                <h2>Motor de tickets estrategicos</h2>
-                <p>Crea tickets postventa y paquetes unicos siempre conectados a una campana o activacion medible.</p>
+                <span class="mono-label">RMS fisico basado en tickets</span>
+                <h2>Ticket Center</h2>
+                <p>Crea, emite, valida y mide tickets para que cada cliente llegue a tienda con ticket y se vaya con el proximo motivo para volver.</p>
               </div>
             </div>
 
             <section class="kpi-grid" id="strategicQrKpiGrid"></section>
 
+            <nav class="ticket-center-menu" aria-label="Secciones de Ticket Center">
+              <button class="ticket-center-tab active" data-ticket-tab="center" type="button">
+                <span class="material-symbols-outlined">confirmation_number</span>
+                <span>Ticket Center</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="flow" type="button">
+                <span class="material-symbols-outlined">storefront</span>
+                <span>Flujo Fisico</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="loop" type="button">
+                <span class="material-symbols-outlined">sync</span>
+                <span>Ticket Loop</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="revenue" type="button">
+                <span class="material-symbols-outlined">monitoring</span>
+                <span>Revenue</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="channels" type="button">
+                <span class="material-symbols-outlined">share_location</span>
+                <span>Canal</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="branches" type="button">
+                <span class="material-symbols-outlined">store</span>
+                <span>Sucursal</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="sellers" type="button">
+                <span class="material-symbols-outlined">badge</span>
+                <span>Vendedor</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="shield" type="button">
+                <span class="material-symbols-outlined">shield_lock</span>
+                <span>Shield</span>
+              </button>
+              <button class="ticket-center-tab" data-ticket-tab="next" type="button">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <span>Next Ticket</span>
+              </button>
+            </nav>
+
+            <div class="ticket-center-panel active" data-ticket-panel="center">
             <article class="surface-card qr-workflow-card" id="qrWorkflowCard">
               <div class="qr-workflow-head">
                 <div>
@@ -952,10 +993,158 @@
                       </tr>
                     </thead>
                     <tbody id="strategicQrHistoryTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="flow">
+              <section class="kpi-grid ticket-module-kpis" id="ticketFlowKpiGrid"></section>
+              <article class="surface-card ticket-module-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Flujo Fisico</span>
+                    <h3>Del ticket de llegada al ticket de salida</h3>
+                  </div>
+                  <button class="ghost-button" data-ticket-open-view="validator" type="button">Abrir validador</button>
+                </div>
+                <div class="ticket-flow-track" id="ticketPhysicalFlowTrack"></div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Etapa</th>
+                        <th>Senal medida</th>
+                        <th>Volumen</th>
+                        <th>Lectura RMS</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ticketPhysicalFlowTable"></tbody>
                   </table>
                 </div>
               </article>
-            </section>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="loop">
+              <section class="kpi-grid ticket-module-kpis" id="ticketLoopKpiGrid"></section>
+              <section class="ticket-module-grid" id="ticketLoopBoard"></section>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="revenue">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Revenue por Ticket</span>
+                    <h3>Que tipo de ticket produce dinero real</h3>
+                  </div>
+                  <button class="ghost-button" data-ticket-open-view="sales" type="button">Registrar venta</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Tipo de ticket</th>
+                        <th>Emitidos</th>
+                        <th>Redimidos</th>
+                        <th>Ventas</th>
+                        <th>Revenue</th>
+                        <th>Lectura</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ticketRevenueTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="channels">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Tickets por Canal</span>
+                    <h3>Volante, empaque, vitrina, feria, referido, influencer y mostrador</h3>
+                  </div>
+                  <button class="ghost-button" data-ticket-open-view="sales" type="button">Medir llegada</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Canal fisico</th>
+                        <th>Tickets</th>
+                        <th>Redenciones</th>
+                        <th>Ventas</th>
+                        <th>Revenue</th>
+                        <th>Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ticketChannelTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="branches">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Tickets por Sucursal</span>
+                    <h3>Que tienda convierte mejor la llegada fisica</h3>
+                  </div>
+                  <button class="ghost-button" data-ticket-open-view="branches" type="button">Ver sucursales</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Sucursal</th>
+                        <th>Redenciones</th>
+                        <th>Ventas</th>
+                        <th>Revenue</th>
+                        <th>Lectura</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ticketBranchTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="sellers">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Tickets por Vendedor</span>
+                    <h3>Quien valida, vende y reactiva mejor</h3>
+                  </div>
+                  <button class="ghost-button" data-ticket-open-view="validator" type="button">Operar tickets</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Vendedor</th>
+                        <th>Validaciones</th>
+                        <th>Ventas atribuidas</th>
+                        <th>Revenue</th>
+                        <th>Siguiente accion</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ticketSellerTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="shield">
+              <section class="kpi-grid ticket-module-kpis" id="ticketShieldKpiGrid"></section>
+              <section class="ticket-module-grid" id="ticketShieldBoard"></section>
+            </div>
+
+            <div class="ticket-center-panel" data-ticket-panel="next">
+              <section class="ticket-module-grid next-ticket-grid" id="nextTicketBoard"></section>
+            </div>
           </section>
 
           <section class="view-section" data-view="campaigns">
@@ -2344,7 +2533,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=campaign-channel-checks-20260624" defer></script>
+  <script src="js/app.js?v=ticket-center-20260629" defer></script>
 </body>
 </html>
 

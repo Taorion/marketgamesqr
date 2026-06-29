@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260624-campaign-channel-checks-v1";
+const APP_VERSION = "empresa-20260629-ticket-center-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -293,6 +293,20 @@ const validatorSaleNotesInput = document.getElementById("validatorSaleNotesInput
 const validatorSaleStatus = document.getElementById("validatorSaleStatus");
 const validatorHistoryTable = document.getElementById("validatorHistoryTable");
 const strategicQrKpiGrid = document.getElementById("strategicQrKpiGrid");
+const ticketCenterTabs = Array.from(document.querySelectorAll("[data-ticket-tab]"));
+const ticketCenterPanels = Array.from(document.querySelectorAll("[data-ticket-panel]"));
+const ticketFlowKpiGrid = document.getElementById("ticketFlowKpiGrid");
+const ticketPhysicalFlowTrack = document.getElementById("ticketPhysicalFlowTrack");
+const ticketPhysicalFlowTable = document.getElementById("ticketPhysicalFlowTable");
+const ticketLoopKpiGrid = document.getElementById("ticketLoopKpiGrid");
+const ticketLoopBoard = document.getElementById("ticketLoopBoard");
+const ticketRevenueTable = document.getElementById("ticketRevenueTable");
+const ticketChannelTable = document.getElementById("ticketChannelTable");
+const ticketBranchTable = document.getElementById("ticketBranchTable");
+const ticketSellerTable = document.getElementById("ticketSellerTable");
+const ticketShieldKpiGrid = document.getElementById("ticketShieldKpiGrid");
+const ticketShieldBoard = document.getElementById("ticketShieldBoard");
+const nextTicketBoard = document.getElementById("nextTicketBoard");
 const qrWorkflowContext = document.getElementById("qrWorkflowContext");
 const qrWorkflowCampaignButton = document.getElementById("qrWorkflowCampaignButton");
 const postSaleQrForm = document.getElementById("postSaleQrForm");
@@ -437,6 +451,7 @@ const snapshotModalMessage = document.getElementById("snapshotModalMessage");
 let session = loadSession();
 let state = {
   currentView: "dashboard",
+  ticketCenterTab: "center",
   filter: "",
   dashboard: null,
   activityVersion: "",
@@ -5015,6 +5030,390 @@ function strategicBatchStatusClass(status) {
   return ["ACTIVE", "REDEEMED"].includes(String(status || "").toUpperCase()) ? "ok" : "pending";
 }
 
+function setTicketCenterTab(tab) {
+  const nextTab = tab || "center";
+  state.ticketCenterTab = nextTab;
+  ticketCenterTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.ticketTab === nextTab);
+  });
+  ticketCenterPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.ticketPanel === nextTab);
+  });
+  if (state.currentView === "strategic-qr") {
+    renderTicketCenterModules();
+  }
+}
+
+function ticketChannelLabel(value) {
+  const key = String(value || "").trim();
+  const labels = {
+    etiqueta: "Etiqueta",
+    empaque: "Empaque",
+    volante: "Volante",
+    evento: "Evento",
+    feria: "Feria",
+    influencer: "Influencer",
+    whatsapp: "WhatsApp",
+    "redes-sociales": "Redes sociales",
+    pauta: "Pauta",
+    alianza: "Alianza",
+    referido: "Referido",
+    mostrador: "Mostrador",
+    "punto-de-venta": "Punto de venta",
+    STORE_WALK_IN: "Vitrina / llegada directa",
+    FRIEND_REFERRAL: "Referido",
+    FAIR_EVENT: "Feria o evento",
+    INTERNET_SEARCH: "Internet / buscador",
+    SOCIAL_MEDIA: "Redes sociales",
+    PAID_ADS: "Pauta",
+    QR_SCAN: "Ticket / pieza impresa",
+    OTHER: "Otro",
+  };
+  return labels[key] || key || "Sin canal";
+}
+
+function ticketCenterStats() {
+  const metrics = state.strategicQrMetrics?.totals || {};
+  const batches = state.strategicQrBatches || [];
+  const history = state.strategicQrHistory || [];
+  const redemptions = state.selectedRedemptions || [];
+  const sales = state.selectedSales || [];
+  const batchIssued = batches.reduce((sum, item) => sum + toNumber(item.quantity || item.generated_count), 0);
+  const historyIssued = history.length;
+  const postSaleGenerated = toNumber(metrics.post_sale_generated || 0);
+  const ticketsIssued = Math.max(
+    batchIssued + postSaleGenerated,
+    historyIssued,
+    toNumber(metrics.strategic_generated || metrics.total_generated || metrics.qr_generated || 0)
+  );
+  const activeTickets = history.filter((item) => ["ACTIVE", "UNCLAIMED", "CLAIMED"].includes(String(item.status || "").toUpperCase())).length
+    + batches.reduce((sum, item) => sum + toNumber(item.active_count) + toNumber(item.unclaimed_count), 0);
+  const redeemedTickets = Math.max(
+    redemptions.length,
+    toNumber(metrics.post_sale_redeemed || 0) + toNumber(metrics.strategic_redeemed || 0),
+    history.filter((item) => String(item.status || "").toUpperCase() === "REDEEMED").length
+  );
+  const revenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount || item.amount || item.total), 0);
+  const salesWithTicket = sales.length;
+  const averageTicket = salesWithTicket ? revenue / salesWithTicket : 0;
+  const missingSales = redemptions.filter((item) => !toNumber(item.sale_amount)).length;
+  const expiredTickets = toNumber(metrics.expired_without_redeem || 0)
+    + history.filter((item) => ["EXPIRED", "VOID", "CANCELLED"].includes(String(item.status || "").toUpperCase())).length;
+  const repeatedIds = new Map();
+  redemptions.forEach((item) => {
+    const key = item.document_id || item.phone || item.player_name;
+    if (!key) return;
+    repeatedIds.set(key, (repeatedIds.get(key) || 0) + 1);
+  });
+  const repeatRisk = Array.from(repeatedIds.values()).filter((count) => count > 1).length;
+  const postSaleRedeemed = toNumber(metrics.post_sale_redeemed || 0);
+  const loopRate = postSaleGenerated ? (postSaleRedeemed / postSaleGenerated) * 100 : 0;
+  return {
+    metrics,
+    batches,
+    history,
+    redemptions,
+    sales,
+    ticketsIssued,
+    activeTickets,
+    redeemedTickets,
+    revenue,
+    salesWithTicket,
+    averageTicket,
+    missingSales,
+    expiredTickets,
+    repeatRisk,
+    postSaleGenerated,
+    postSaleRedeemed,
+    loopRate,
+  };
+}
+
+function renderTicketMetricGrid(target, items) {
+  if (!target) return;
+  target.innerHTML = items.map(([label, value, meta, accent]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong class="kpi-value ${escapeHtml(accent || "")}">${escapeHtml(value)}</strong>
+      <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+    </article>
+  `).join("");
+}
+
+function renderTicketPhysicalFlow(stats) {
+  renderTicketMetricGrid(ticketFlowKpiGrid, [
+    ["Tickets emitidos", stats.ticketsIssued.toLocaleString("es-CO"), "Inventario fisico/digital en circulacion", "highlight"],
+    ["Llegadas medidas", stats.redeemedTickets.toLocaleString("es-CO"), "Redenciones o validaciones en tienda"],
+    ["Ventas con ticket", stats.salesWithTicket.toLocaleString("es-CO"), money(stats.revenue)],
+    ["Ticket promedio", money(stats.averageTicket), "Venta promedio registrada"],
+  ]);
+
+  const flow = [
+    ["Atraccion", "El cliente recibe ticket en volante, empaque, feria, vitrina o referido.", stats.ticketsIssued],
+    ["Llegada", "El ticket aparece fisicamente en tienda o caja.", stats.activeTickets + stats.redeemedTickets],
+    ["Redencion", "El vendedor valida identidad, beneficio y estado.", stats.redeemedTickets],
+    ["Venta", "La caja registra valor, producto, sede y contexto.", stats.salesWithTicket],
+    ["Salida", "El cliente recibe proximo ticket para volver o recomendar.", stats.postSaleGenerated],
+  ];
+
+  if (ticketPhysicalFlowTrack) {
+    ticketPhysicalFlowTrack.innerHTML = flow.map(([title, copy, value], index) => `
+      <article>
+        <span>${index + 1}</span>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(copy)}</p>
+        <b>${escapeHtml(Number(value || 0).toLocaleString("es-CO"))}</b>
+      </article>
+    `).join("");
+  }
+
+  if (ticketPhysicalFlowTable) {
+    ticketPhysicalFlowTable.innerHTML = flow.map(([title, signal, value]) => `
+      <tr>
+        <td>${escapeHtml(title)}</td>
+        <td>${escapeHtml(signal)}</td>
+        <td>${escapeHtml(Number(value || 0).toLocaleString("es-CO"))}</td>
+        <td>${escapeHtml(value ? "Hay senal operativa para medir y comparar." : "Activa esta etapa para cerrar el ciclo fisico.")}</td>
+      </tr>
+    `).join("");
+  }
+}
+
+function renderTicketLoop(stats) {
+  renderTicketMetricGrid(ticketLoopKpiGrid, [
+    ["Tickets de salida", stats.postSaleGenerated.toLocaleString("es-CO"), "Postventa emitida despues de compra", "highlight"],
+    ["Vueltas medidas", stats.postSaleRedeemed.toLocaleString("es-CO"), "Tickets postventa redimidos"],
+    ["Loop rate", `${stats.loopRate.toFixed(1)}%`, "Recompra medida"],
+    ["Afiliados activos", (state.affiliates || []).length.toLocaleString("es-CO"), "Clientes con ticket permanente"],
+  ]);
+  if (!ticketLoopBoard) return;
+  const cards = [
+    ["Llegar con ticket", "Toda campana fisica debe entregar una razon verificable para entrar a tienda.", "Generar paquetes"],
+    ["Comprar con ticket", "Caja o vendedor asocia la venta al ticket, canal, beneficio y sucursal.", "Registrar venta"],
+    ["Salir con ticket", "Cada compra debe terminar con un nuevo ticket de recompra, referido o afiliado.", "Crear postventa"],
+  ];
+  ticketLoopBoard.innerHTML = cards.map(([title, copy, action], index) => `
+    <article class="surface-card ticket-action-card">
+      <span class="ticket-action-number">${index + 1}</span>
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(copy)}</p>
+      <button class="ghost-button" data-ticket-open-view="${index === 1 ? "sales" : "strategic-qr"}" type="button">${escapeHtml(action)}</button>
+    </article>
+  `).join("");
+}
+
+function renderTicketRevenue(stats) {
+  if (!ticketRevenueTable) return;
+  const rows = [
+    {
+      type: "Ticket postventa",
+      issued: stats.postSaleGenerated,
+      redeemed: stats.postSaleRedeemed,
+      sales: stats.salesWithTicket,
+      revenue: stats.revenue,
+      reading: stats.postSaleGenerated ? "Mide si cada compra esta creando la proxima visita." : "Aun falta convertir ventas en tickets de salida.",
+    },
+    {
+      type: "Paquetes fisicos",
+      issued: stats.batches.reduce((sum, item) => sum + toNumber(item.quantity || item.generated_count), 0),
+      redeemed: stats.batches.reduce((sum, item) => sum + toNumber(item.redeemed_count), 0),
+      sales: stats.sales.filter((item) => item.acquisition_source === "QR_SCAN").length,
+      revenue: stats.sales.filter((item) => item.acquisition_source === "QR_SCAN").reduce((sum, item) => sum + toNumber(item.sale_amount), 0),
+      reading: "Compara empaque, volante, feria, vitrina y mostrador por revenue real.",
+    },
+    {
+      type: "Referidos / afiliados",
+      issued: (state.affiliates || []).length,
+      redeemed: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).length,
+      sales: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).length,
+      revenue: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).reduce((sum, item) => sum + toNumber(item.sale_amount), 0),
+      reading: "Premia solo recomendaciones que terminan en compra registrada.",
+    },
+  ];
+  ticketRevenueTable.innerHTML = rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.type)}</td>
+      <td>${escapeHtml(Number(row.issued || 0).toLocaleString("es-CO"))}</td>
+      <td>${escapeHtml(Number(row.redeemed || 0).toLocaleString("es-CO"))}</td>
+      <td>${escapeHtml(Number(row.sales || 0).toLocaleString("es-CO"))}</td>
+      <td>${escapeHtml(money(row.revenue || 0))}</td>
+      <td>${escapeHtml(row.reading)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderTicketChannels(stats) {
+  if (!ticketChannelTable) return;
+  const channelMap = new Map();
+  const ensure = (key) => {
+    const label = ticketChannelLabel(key);
+    if (!channelMap.has(label)) channelMap.set(label, { channel: label, tickets: 0, redemptions: 0, sales: 0, revenue: 0 });
+    return channelMap.get(label);
+  };
+  stats.batches.forEach((item) => {
+    const row = ensure(item.channel_use || item.qr_origin_type);
+    row.tickets += toNumber(item.quantity || item.generated_count);
+    row.redemptions += toNumber(item.redeemed_count);
+  });
+  stats.sales.forEach((item) => {
+    const row = ensure(item.acquisition_source || item.payment_method || item.branch_name);
+    row.sales += 1;
+    row.revenue += toNumber(item.sale_amount);
+  });
+  const rows = Array.from(channelMap.values()).sort((a, b) => b.revenue - a.revenue || b.tickets - a.tickets);
+  ticketChannelTable.innerHTML = rows.length
+    ? rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.channel)}</td>
+        <td>${escapeHtml(row.tickets.toLocaleString("es-CO"))}</td>
+        <td>${escapeHtml(row.redemptions.toLocaleString("es-CO"))}</td>
+        <td>${escapeHtml(row.sales.toLocaleString("es-CO"))}</td>
+        <td>${escapeHtml(money(row.revenue))}</td>
+        <td>${escapeHtml(row.revenue ? "Escalar con mas tickets y mismo beneficio." : "Medir venta en caja para saber si este canal paga.")}</td>
+      </tr>
+    `).join("")
+    : '<tr><td colspan="6">Crea paquetes de tickets o registra ventas con medio de llegada.</td></tr>';
+}
+
+function renderTicketBranches(stats) {
+  if (!ticketBranchTable) return;
+  const summary = new Map();
+  stats.redemptions.forEach((item) => {
+    const key = item.branch_name || "Sin sucursal";
+    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
+    summary.get(key).redemptions += 1;
+  });
+  stats.sales.forEach((item) => {
+    const key = item.branch_name || "Sin sucursal";
+    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
+    summary.get(key).sales += 1;
+    summary.get(key).revenue += toNumber(item.sale_amount);
+  });
+  const rows = Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue || b.redemptions - a.redemptions);
+  ticketBranchTable.innerHTML = rows.length
+    ? rows.map((row, index) => `
+      <tr>
+        <td>${escapeHtml(row.branch)}</td>
+        <td>${escapeHtml(row.redemptions)}</td>
+        <td>${escapeHtml(row.sales)}</td>
+        <td>${escapeHtml(money(row.revenue))}</td>
+        <td>${escapeHtml(index === 0 && row.revenue ? "Sucursal lider: replicar guion, horario y beneficio." : row.redemptions && !row.sales ? "Tiene llegada fisica, falta registrar venta." : "Mantener medicion por sede.")}</td>
+      </tr>
+    `).join("")
+    : '<tr><td colspan="5">Asocia redenciones y ventas a una sucursal para comparar tiendas.</td></tr>';
+}
+
+function renderTicketSellers(stats) {
+  if (!ticketSellerTable) return;
+  const sellerMap = new Map();
+  const ensure = (key) => {
+    const seller = key || "Sin vendedor";
+    if (!sellerMap.has(seller)) sellerMap.set(seller, { seller, validations: 0, sales: 0, revenue: 0 });
+    return sellerMap.get(seller);
+  };
+  stats.redemptions.forEach((item) => {
+    ensure(item.validator_name || item.created_by_name).validations += 1;
+  });
+  stats.sales.forEach((item) => {
+    const row = ensure(item.validator_name || item.seller_name || item.created_by_name);
+    row.sales += 1;
+    row.revenue += toNumber(item.sale_amount);
+  });
+  const rows = Array.from(sellerMap.values()).sort((a, b) => b.revenue - a.revenue || b.validations - a.validations);
+  ticketSellerTable.innerHTML = rows.length
+    ? rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.seller)}</td>
+        <td>${escapeHtml(row.validations)}</td>
+        <td>${escapeHtml(row.sales)}</td>
+        <td>${escapeHtml(money(row.revenue))}</td>
+        <td>${escapeHtml(row.validations && !row.sales ? "Entrenar cierre y registro de venta." : "Usar como referencia operativa.")}</td>
+      </tr>
+    `).join("")
+    : '<tr><td colspan="5">Cuando el equipo valide tickets, aqui se medira quien convierte mejor.</td></tr>';
+}
+
+function renderTicketShield(stats) {
+  renderTicketMetricGrid(ticketShieldKpiGrid, [
+    ["Doble uso bloqueado", stats.redemptions.filter((item) => String(item.qr_status || item.status || "").toUpperCase() === "REDEEMED").length.toLocaleString("es-CO"), "Tickets ya consumidos"],
+    ["Vencidos sin redimir", stats.expiredTickets.toLocaleString("es-CO"), "Beneficios que perdieron vigencia", stats.expiredTickets ? "warning" : ""],
+    ["Redenciones sin venta", stats.missingSales.toLocaleString("es-CO"), "Falta cierre comercial", stats.missingSales ? "warning" : ""],
+    ["Riesgo repetidos", stats.repeatRisk.toLocaleString("es-CO"), "Documento/telefono repetido", stats.repeatRisk ? "warning" : ""],
+  ]);
+  if (!ticketShieldBoard) return;
+  const cards = [
+    ["Ticket vencido", stats.expiredTickets, "Reducir vigencia o activar recordatorio antes de vencer."],
+    ["Redimido sin venta", stats.missingSales, "Obligar registro de resultado comercial despues de redimir."],
+    ["Identidad repetida", stats.repeatRisk, "Revisar reglas por cedula, telefono y beneficio."],
+  ];
+  ticketShieldBoard.innerHTML = cards.map(([title, value, copy]) => `
+    <article class="surface-card ticket-action-card ${value ? "ticket-risk-card" : ""}">
+      <span class="material-symbols-outlined">${value ? "warning" : "verified_user"}</span>
+      <h3>${escapeHtml(title)}</h3>
+      <strong>${escapeHtml(Number(value || 0).toLocaleString("es-CO"))}</strong>
+      <p>${escapeHtml(copy)}</p>
+    </article>
+  `).join("");
+}
+
+function renderNextTicketEngine(stats) {
+  if (!nextTicketBoard) return;
+  const lowLoop = stats.postSaleGenerated === 0 || stats.loopRate < 15;
+  const missingSale = stats.missingSales > 0;
+  const bestChannel = stats.batches
+    .map((item) => ({ label: ticketChannelLabel(item.channel_use || item.qr_origin_type), value: toNumber(item.redeemed_count) }))
+    .sort((a, b) => b.value - a.value)[0];
+  const cards = [
+    {
+      title: lowLoop ? "Emitir ticket postventa" : "Subir ticket postventa",
+      copy: lowLoop
+        ? "Cada compra debe cerrar con un ticket de regreso. Empieza con 7 o 15 dias de vigencia."
+        : `El loop ya mide ${stats.loopRate.toFixed(1)}%. Prueba beneficios por ticket promedio.`,
+      action: "Generar postventa",
+      view: "strategic-qr",
+      icon: "sync",
+    },
+    {
+      title: missingSale ? "Cerrar redenciones sin venta" : "Mantener venta atribuida",
+      copy: missingSale
+        ? `${stats.missingSales} redenciones no tienen venta. Pide a caja registrar resultado antes de terminar.`
+        : "Las redenciones estan conectadas a resultado comercial.",
+      action: "Ir a ventas",
+      view: "sales",
+      icon: "payments",
+    },
+    {
+      title: bestChannel?.value ? `Duplicar ${bestChannel.label}` : "Probar canal fisico",
+      copy: bestChannel?.value
+        ? "Ese canal ya produjo redenciones. Crea otro lote con mejor beneficio o vencimiento mas corto."
+        : "Crea lotes para volante, empaque, feria, mostrador o referido y mide cual trae tienda.",
+      action: "Crear paquete",
+      view: "strategic-qr",
+      icon: "auto_awesome",
+    },
+  ];
+  nextTicketBoard.innerHTML = cards.map((card) => `
+    <article class="surface-card ticket-action-card next-ticket-card">
+      <span class="material-symbols-outlined">${escapeHtml(card.icon)}</span>
+      <h3>${escapeHtml(card.title)}</h3>
+      <p>${escapeHtml(card.copy)}</p>
+      <button class="solid-button" data-ticket-open-view="${escapeHtml(card.view)}" type="button">${escapeHtml(card.action)}</button>
+    </article>
+  `).join("");
+}
+
+function renderTicketCenterModules() {
+  const stats = ticketCenterStats();
+  renderTicketPhysicalFlow(stats);
+  renderTicketLoop(stats);
+  renderTicketRevenue(stats);
+  renderTicketChannels(stats);
+  renderTicketBranches(stats);
+  renderTicketSellers(stats);
+  renderTicketShield(stats);
+  renderNextTicketEngine(stats);
+}
+
 function renderQrBatchResultCard(batch, options = {}) {
   if (!batch) {
     qrBatchResult.classList.add("hidden");
@@ -5218,6 +5617,7 @@ function renderStrategicQrView() {
   qrBatchTable.querySelectorAll("[data-open-batch]").forEach((button) => {
     button.addEventListener("click", () => inspectQrBatch(button.dataset.openBatch));
   });
+  renderTicketCenterModules();
 }
 
 function renderQrCreditShop() {
@@ -5297,6 +5697,7 @@ async function submitQrCreditCheckout(event) {
 
 function openQrCreditShopFromAccount() {
   setView("strategic-qr");
+  setTicketCenterTab("center");
   window.setTimeout(() => {
     document.querySelector(".qr-credit-shop-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 80);
@@ -9544,6 +9945,9 @@ adminCampaignSlugInput?.addEventListener("input", () => {
 navButtons.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
 });
+ticketCenterTabs.forEach((button) => {
+  button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
+});
 segmentTabs.forEach((tab, index) => {
   tab.addEventListener("click", () => setView(index === 0 ? "redemptions" : "sales"));
 });
@@ -9607,6 +10011,16 @@ settingsButton.addEventListener("click", () => {
 themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
 document.addEventListener("click", (event) => {
+  const clickedElement = event.target instanceof Element ? event.target : event.target?.parentElement;
+  const ticketViewButton = clickedElement?.closest("[data-ticket-open-view]");
+  if (ticketViewButton) {
+    const targetView = ticketViewButton.dataset.ticketOpenView;
+    setView(targetView);
+    if (targetView === "strategic-qr") {
+      setTicketCenterTab("center");
+    }
+    return;
+  }
   if (!workspace?.classList.contains("sidebar-open")) return;
   const target = event.target;
   if (sidebar?.contains(target) || menuToggleButton?.contains(target)) return;
