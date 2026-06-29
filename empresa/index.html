@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=light-contrast-20260629">
+  <link rel="stylesheet" href="css/styles.css?v=ticket-field-help-20260629">
 </head>
 <body>
   <main class="portal-shell">
@@ -893,15 +893,15 @@
                 </div>
                 <form class="modal-form" id="qrBatchForm">
                   <label class="full association-field">
-                    <span>Campana / activacion que recibira este paquete</span>
+                    <span class="field-label">Campana / activacion que recibira este paquete <button class="field-help" type="button" aria-label="Ayuda sobre campana" data-help="Elige la campana que medira estos tickets desde el primer escaneo. Ejemplo: Feria Julio - Volantes tienda norte."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchCampaignInput"></select>
                     <small id="qrBatchCampaignHelp">Cada ticket del paquete quedara asociado a la campana seleccionada.</small>
                   </label>
-                  <label><span>Origen / referido</span><input id="qrBatchAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, pauta"></label>
-                  <label><span>Asunto / canal</span><input id="qrBatchAttributionSubjectInput" type="text" placeholder="Nombre del influencer, stand o lote"></label>
-                  <label><span>Nombre del paquete</span><input id="qrBatchNameInput" type="text" required></label>
-                  <label><span>Cantidad de tickets</span><input id="qrBatchQuantityInput" type="number" min="1" max="5000" value="50" required></label>
-                  <label><span>Uso del paquete</span>
+                  <label><span class="field-label">Origen / referido <button class="field-help" type="button" aria-label="Ayuda sobre origen" data-help="Escribe de donde viene el lead o quien reparte el QR. Ejemplo: Influencer Maria Lopez, feria ExpoModa o volante centro."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchAttributionSourceInput" type="text" placeholder="Influencer, feria, volante, pauta"></label>
+                  <label><span class="field-label">Asunto / canal <button class="field-help" type="button" aria-label="Ayuda sobre canal" data-help="Especifica el nombre exacto del lote, stand, pieza o persona para comparar resultados. Ejemplo: Stand 12, empaque linea premium, mostrador principal."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchAttributionSubjectInput" type="text" placeholder="Nombre del influencer, stand o lote"></label>
+                  <label><span class="field-label">Nombre del paquete <button class="field-help" type="button" aria-label="Ayuda sobre nombre del paquete" data-help="Pon un nombre interno claro para reconocer esta descarga. Ejemplo: Volantes apertura sede norte - julio."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchNameInput" type="text" required></label>
+                  <label><span class="field-label">Cantidad de tickets <button class="field-help" type="button" aria-label="Ayuda sobre cantidad" data-help="Indica cuantos QR unicos quieres generar en este paquete. Ejemplo: 50 para mostrador, 500 para volantes, 2000 para empaques."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchQuantityInput" type="number" min="1" max="5000" value="50" required></label>
+                  <label><span class="field-label">Uso del paquete <button class="field-help" type="button" aria-label="Ayuda sobre uso del paquete" data-help="Selecciona donde se entregaran fisicamente estos QR. Ejemplo: volante si se imprime para calle, empaque si va dentro del producto, mostrador si lo entrega caja."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchChannelInput">
                       <option value="etiqueta">Etiquetas de producto</option>
                       <option value="empaque">Empaque</option>
@@ -921,7 +921,7 @@
                       <option value="punto-de-venta">Punto de venta</option>
                     </select>
                   </label>
-                  <label><span>Tipo de ticket</span>
+                  <label><span class="field-label">Tipo de ticket <button class="field-help" type="button" aria-label="Ayuda sobre tipo de ticket" data-help="Define la naturaleza del QR inicial. Ejemplo: Product label para etiqueta, Bulk package para lote masivo, Surprise reward para beneficio sorpresa."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchOriginTypeInput">
                       <option value="PRODUCT_LABEL">Product label</option>
                       <option value="BULK_PACKAGE">Bulk package</option>
@@ -930,8 +930,8 @@
                       <option value="SURPRISE_REWARD">Surprise reward</option>
                     </select>
                   </label>
-                  <label><span>Beneficio</span><input id="qrBatchBenefitLabelInput" type="text" required></label>
-                  <label><span>Tipo de beneficio</span>
+                  <label><span class="field-label">Beneficio <button class="field-help" type="button" aria-label="Ayuda sobre beneficio" data-help="Escribe lo que el cliente recibira cuando reclame el ticket final. Ejemplo: 15% de descuento, regalo sorpresa o segunda unidad al 50%."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitLabelInput" type="text" required></label>
+                  <label><span class="field-label">Tipo de beneficio <button class="field-help" type="button" aria-label="Ayuda sobre tipo de beneficio" data-help="Clasifica el beneficio para medir ingresos por tipo de ticket. Ejemplo: descuento porcentual para 15%, regalo para muestra gratis, personalizado para una mecanica propia."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchBenefitTypeInput">
                       <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
                       <option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option>
@@ -944,13 +944,13 @@
                       <option value="CUSTOM">Personalizado</option>
                     </select>
                   </label>
-                  <label><span>Valor del beneficio</span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
-                  <label><span>Flujo del paquete</span>
+                  <label><span class="field-label">Valor del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre valor del beneficio" data-help="Opcional: escribe datos estructurados del beneficio en JSON. Ejemplo para dinero: {'amount':10000}. Ejemplo para porcentaje: {'percent':15}."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
+                  <label><span class="field-label">Flujo del paquete <button class="field-help" type="button" aria-label="Ayuda sobre flujo del paquete" data-help="Este flujo queda fijo: el QR impreso captura datos del lead y luego emite el ticket QR final que si se valida en tienda."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchClaimRequiredInput" disabled>
                       <option value="true">QR inicial captura datos y emite ticket final</option>
                     </select>
                   </label>
-                  <label><span>Expiracion</span>
+                  <label><span class="field-label">Expiracion <button class="field-help" type="button" aria-label="Ayuda sobre expiracion" data-help="Define hasta cuando el lead puede reclamar el beneficio. Ejemplo: 7 dias para activacion relampago, 30 dias para empaques, sin expiracion para fidelizacion."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchExpiresModeInput">
                       <option value="NONE">Sin expiracion</option>
                       <option value="7_DAYS">7 dias</option>
@@ -959,8 +959,8 @@
                       <option value="CUSTOM_DATE">Fecha personalizada</option>
                     </select>
                   </label>
-                  <label><span>Fecha personalizada</span><input id="qrBatchExpiresAtInput" type="datetime-local"></label>
-                  <label><span>Notas</span><textarea id="qrBatchNotesInput" rows="3"></textarea></label>
+                  <label><span class="field-label">Fecha personalizada <button class="field-help" type="button" aria-label="Ayuda sobre fecha personalizada" data-help="Usa este campo solo si elegiste fecha personalizada. Ejemplo: 2026-07-31 11:59 p. m. para cerrar la campana ese dia."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchExpiresAtInput" type="datetime-local"></label>
+                  <label><span class="field-label">Notas <button class="field-help" type="button" aria-label="Ayuda sobre notas" data-help="Agrega instrucciones internas para el equipo. Ejemplo: entregar solo a compradores de vitrina, no acumulable con otras promociones."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><textarea id="qrBatchNotesInput" rows="3"></textarea></label>
                   <button class="solid-button" type="submit">Generar paquete</button>
                   <p class="error-line" id="qrBatchMessage"></p>
                 </form>

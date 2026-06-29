@@ -2682,6 +2682,87 @@ td {
   font-weight: 600;
 }
 
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: inherit;
+}
+
+.field-help {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(124, 251, 255, 0.22);
+  border-radius: 999px;
+  color: #7cfbff;
+  background: rgba(124, 251, 255, 0.08);
+  cursor: help;
+  padding: 0;
+  z-index: 10;
+}
+
+.field-help .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.field-help::after {
+  content: attr(data-help);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  width: min(300px, 72vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 251, 255, 0.24);
+  border-radius: 10px;
+  background: #061225;
+  color: #eef7ff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: normal;
+}
+
+.field-help::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  width: 10px;
+  height: 10px;
+  background: #061225;
+  border-right: 1px solid rgba(124, 251, 255, 0.24);
+  border-bottom: 1px solid rgba(124, 251, 255, 0.24);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px) rotate(45deg);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.field-help:hover::after,
+.field-help:focus-visible::after,
+.field-help:hover::before,
+.field-help:focus-visible::before {
+  opacity: 1;
+  transform: translate(-50%, 0) rotate(0deg);
+}
+
+.field-help:hover::before,
+.field-help:focus-visible::before {
+  transform: translate(-50%, 0) rotate(45deg);
+}
+
 .modal-form input,
 .modal-form select,
 .modal-form textarea {
@@ -7787,6 +7868,24 @@ textarea {
 :root[data-theme="light"] .password-reveal-button:hover {
   color: #06372e !important;
   background: #eef8f3 !important;
+}
+
+:root[data-theme="light"] .field-help {
+  background: #eef8f3 !important;
+  border-color: #9fc5b8 !important;
+  color: #06372e !important;
+}
+
+:root[data-theme="light"] .field-help::after {
+  background: #ffffff !important;
+  border-color: #9fc5b8 !important;
+  color: #09201a !important;
+  box-shadow: 0 16px 34px rgba(9, 32, 26, 0.16) !important;
+}
+
+:root[data-theme="light"] .field-help::before {
+  background: #ffffff !important;
+  border-color: #9fc5b8 !important;
 }
 
 :root[data-theme="light"] .login-card .solid-button,
