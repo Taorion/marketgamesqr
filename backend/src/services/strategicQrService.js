@@ -658,14 +658,9 @@ async function getIndividualQrDownload(businessId, qrId) {
   const links = buildPublicQrLinks(qr);
   const brand = getBrandStyle(qr.business_settings || {});
   const hasFrame = Boolean(brand.ticketFrameUrl);
-  const label = qr.benefit_value?.label || qr.benefit_type || "Beneficio";
   const qrImageDataUrl = hasFrame
     ? await buildBrandedTicketSvgDataUrl({
         scanUrl: links.scan_url,
-        label,
-        batchName: qr.batch_name,
-        businessName: qr.business_name,
-        row: qr,
         brand,
       })
     : await QRCode.toDataURL(links.scan_url);
@@ -889,7 +884,7 @@ function svgEscape(value) {
   return escapeHtml(value).replace(/\n/g, " ");
 }
 
-async function buildBrandedTicketSvgDataUrl({ scanUrl, label, batchName, businessName, row, brand }) {
+async function buildBrandedTicketSvgDataUrl({ scanUrl, brand }) {
   const qrImage = await QRCode.toDataURL(scanUrl, {
     type: "image/png",
     width: 560,
@@ -907,10 +902,6 @@ async function buildBrandedTicketSvgDataUrl({ scanUrl, label, batchName, busines
   ${frame ? `<image href="${svgEscape(frame)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${width}" height="${height}" rx="48" fill="${svgEscape(brand.primary)}"/><rect x="42" y="42" width="996" height="1266" rx="40" fill="#ffffff"/>`}
   <rect x="${qrX - 28}" y="${qrY - 28}" width="${qrSize + 56}" height="${qrSize + 56}" rx="36" fill="#ffffff"/>
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
-  <text x="${width / 2}" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="${svgEscape(brand.primary)}">${svgEscape(businessName || "Negocio")}</text>
-  <text x="${width / 2}" y="1015" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#111111">${svgEscape(label || "Beneficio")}</text>
-  <text x="${width / 2}" y="1078" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#404854">${svgEscape(batchName || "Paquete de tickets")}</text>
-  <text x="${width / 2}" y="1140" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#667085">${svgEscape(row?.origin_type || "")} | ${svgEscape(row?.status || "")}</text>
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -932,10 +923,12 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
       return `
         <article class="label-card${brand.ticketFrameUrl ? " has-brand-frame" : ""}">
           <div class="qr-pad"><img src="${qrImage}" alt="QR ${row.id}"></div>
-          <h2>${escapeHtml(label)}</h2>
-          <p>${escapeHtml(batch.name)}</p>
-          ${affiliateLine ? `<p class="affiliate-line">${escapeHtml(affiliateLine)}</p>` : ""}
-          <small>${escapeHtml(row.origin_type)} | ${escapeHtml(row.status)}</small>
+          ${brand.ticketFrameUrl ? "" : `
+            <h2>${escapeHtml(label)}</h2>
+            <p>${escapeHtml(batch.name)}</p>
+            ${affiliateLine ? `<p class="affiliate-line">${escapeHtml(affiliateLine)}</p>` : ""}
+            <small>${escapeHtml(row.origin_type)} | ${escapeHtml(row.status)}</small>
+          `}
         </article>
       `;
     })
@@ -1002,10 +995,6 @@ async function getBatchZipDownload(businessId, batchId) {
     if (brand.ticketFrameUrl) {
       const svgDataUrl = await buildBrandedTicketSvgDataUrl({
         scanUrl: row.scan_url || buildClaimUrl(row.token),
-        label: row.benefit_value?.label || row.benefit_type || "Beneficio",
-        batchName: batch.name,
-        businessName: batch.business_name,
-        row,
         brand,
       });
       const svg = decodeURIComponent(svgDataUrl.replace(/^data:image\/svg\+xml;charset=utf-8,/, ""));
@@ -1069,35 +1058,37 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
     const slot = index % (columns * rowsPerPage);
     if (slot === 0) {
       page = pdf.addPage([pageWidth, pageHeight]);
-      if (embeddedLogo) {
-        page.drawImage(embeddedLogo, {
+      if (!embeddedFrame) {
+        if (embeddedLogo) {
+          page.drawImage(embeddedLogo, {
+            x: margin,
+            y: pageHeight - 36,
+            width: 72,
+            height: 24,
+          });
+        }
+        page.drawText(batch.business_name || "Negocio", {
+          x: embeddedLogo ? margin + 82 : margin,
+          y: pageHeight - 18,
+          size: 9,
+          font,
+          color: secondaryColor,
+        });
+        page.drawText(batch.name, {
           x: margin,
           y: pageHeight - 36,
-          width: 72,
-          height: 24,
+          size: 18,
+          font: bold,
+          color: primaryColor,
+        });
+        page.drawText(`${batch.qr_origin_type} | ${batch.channel_use || "-"} | ${batch.benefit_value?.label || batch.benefit_type || "Beneficio"} | plantilla ${layout.id} | hoja ${paperSpec.id.toUpperCase()}`, {
+          x: margin,
+          y: pageHeight - 54,
+          size: 9,
+          font,
+          color: rgb(0.4, 0.43, 0.47),
         });
       }
-      page.drawText(batch.business_name || "Negocio", {
-        x: embeddedLogo ? margin + 82 : margin,
-        y: pageHeight - 18,
-        size: 9,
-        font,
-        color: secondaryColor,
-      });
-      page.drawText(batch.name, {
-        x: margin,
-        y: pageHeight - 36,
-        size: 18,
-        font: bold,
-        color: primaryColor,
-      });
-      page.drawText(`${batch.qr_origin_type} | ${batch.channel_use || "-"} | ${batch.benefit_value?.label || batch.benefit_type || "Beneficio"} | plantilla ${layout.id} | hoja ${paperSpec.id.toUpperCase()}`, {
-        x: margin,
-        y: pageHeight - 54,
-        size: 9,
-        font,
-        color: rgb(0.4, 0.43, 0.47),
-      });
     }
 
     const col = slot % columns;
@@ -1152,46 +1143,48 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
     });
 
     const title = row.benefit_value?.label || row.benefit_type || "Beneficio";
-    page.drawText(title.slice(0, 36), {
-      x: x + 10,
-      y: y + 44,
-      size: layout.titleSize,
-      font: bold,
-      color: primaryColor,
-      maxWidth: cardWidth - 20,
-    });
-    if (row.affiliate_name) {
-      const affiliateLine = `Afiliado: ${row.affiliate_name}${row.affiliate_document_id ? ` - ${row.affiliate_document_id}` : ""}`;
-      page.drawText(affiliateLine.slice(0, 42), {
+    if (!embeddedFrame) {
+      page.drawText(title.slice(0, 36), {
         x: x + 10,
-        y: y + 32,
+        y: y + 44,
+        size: layout.titleSize,
+        font: bold,
+        color: primaryColor,
+        maxWidth: cardWidth - 20,
+      });
+      if (row.affiliate_name) {
+        const affiliateLine = `Afiliado: ${row.affiliate_name}${row.affiliate_document_id ? ` - ${row.affiliate_document_id}` : ""}`;
+        page.drawText(affiliateLine.slice(0, 42), {
+          x: x + 10,
+          y: y + 32,
+          size: 8,
+          font: bold,
+          color: rgb(0.08, 0.13, 0.17),
+          maxWidth: cardWidth - 20,
+        });
+      }
+      page.drawText((row.origin_type || "").slice(0, 30), {
+        x: x + 10,
+        y: y + (row.affiliate_name ? 21 : 30),
+        size: 8,
+        font,
+        color: rgb(0.36, 0.4, 0.44),
+      });
+      page.drawText(String(row.id).slice(0, 8), {
+        x: x + 10,
+        y: y + (row.affiliate_name ? 12 : 20),
+        size: 8,
+        font,
+        color: rgb(0.36, 0.4, 0.44),
+      });
+      page.drawText(row.status, {
+        x: x + cardWidth - 52,
+        y: y + (row.affiliate_name ? 12 : 20),
         size: 8,
         font: bold,
         color: rgb(0.08, 0.13, 0.17),
-        maxWidth: cardWidth - 20,
       });
     }
-    page.drawText((row.origin_type || "").slice(0, 30), {
-      x: x + 10,
-      y: y + (row.affiliate_name ? 21 : 30),
-      size: 8,
-      font,
-      color: rgb(0.36, 0.4, 0.44),
-    });
-    page.drawText(String(row.id).slice(0, 8), {
-      x: x + 10,
-      y: y + (row.affiliate_name ? 12 : 20),
-      size: 8,
-      font,
-      color: rgb(0.36, 0.4, 0.44),
-    });
-    page.drawText(row.status, {
-      x: x + cardWidth - 52,
-      y: y + (row.affiliate_name ? 12 : 20),
-      size: 8,
-      font: bold,
-      color: rgb(0.08, 0.13, 0.17),
-    });
   }
 
   return {
