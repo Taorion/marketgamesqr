@@ -600,6 +600,32 @@
               <article class="surface-card account-settings-card">
                 <div class="table-card-head">
                   <div>
+                    <span class="mono-label">Brand tickets</span>
+                    <h3>Marco para tickets QR</h3>
+                  </div>
+                </div>
+                <p class="table-secondary">Este marco se usa automaticamente en paquetes de tickets. Formato recomendado: PNG vertical 1080 x 1350 px, proporcion 4:5, menos de 1.5 MB.</p>
+                <div class="business-logo-profile-slot">
+                  <div class="ticket-frame-preview" id="accountTicketFramePreview">
+                    <span class="material-symbols-outlined">crop_free</span>
+                  </div>
+                  <div>
+                    <strong id="accountTicketFrameTitle">Sin marco cargado</strong>
+                    <p class="table-secondary">Deja libre el centro para el QR: reserva un area limpia aproximada de 560 x 560 px. Usa logo, colores y mensaje de campana en bordes, parte superior o parte inferior.</p>
+                    <p class="table-secondary">Evita texto pequeno, fondos muy cargados detras del QR e informacion pegada al borde. El QR se dibuja sobre fondo blanco para mantener escaneabilidad.</p>
+                    <div class="inline-actions">
+                      <input class="hidden-file-input" id="accountTicketFrameInput" type="file" accept="image/png,image/jpeg,image/webp">
+                      <button class="ghost-button" id="accountTicketFrameUploadButton" type="button">Subir marco</button>
+                      <button class="ghost-button" id="accountTicketFrameRemoveButton" type="button">Quitar</button>
+                    </div>
+                    <p class="error-line" id="accountTicketFrameMessage"></p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="surface-card account-settings-card">
+                <div class="table-card-head">
+                  <div>
                     <span class="mono-label">Seguridad</span>
                     <h3>Cambiar password</h3>
                   </div>
@@ -919,10 +945,9 @@
                     </select>
                   </label>
                   <label><span>Valor del beneficio</span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
-                  <label><span>Requiere captura de datos</span>
-                    <select id="qrBatchClaimRequiredInput">
-                      <option value="true">Si</option>
-                      <option value="false">No</option>
+                  <label><span>Flujo del paquete</span>
+                    <select id="qrBatchClaimRequiredInput" disabled>
+                      <option value="true">QR inicial captura datos y emite ticket final</option>
                     </select>
                   </label>
                   <label><span>Expiracion</span>

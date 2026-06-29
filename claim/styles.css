@@ -90,6 +90,50 @@ h1 {
   color: #fff;
 }
 
+.final-ticket {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  padding: 18px;
+  border: 1px solid #d0dbe3;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+}
+
+.final-ticket span {
+  display: block;
+  margin-bottom: 4px;
+  color: #945d20;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.final-ticket strong {
+  font-size: 18px;
+}
+
+.final-ticket img {
+  width: min(260px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.final-ticket a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #13212c;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .hidden {
   display: none;
 }

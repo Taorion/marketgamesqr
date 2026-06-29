@@ -108,6 +108,12 @@ const DEMO_COMPANIES = [
     campaigns: 2,
     affiliates: 12,
     subscription_months: 3,
+    affiliate_points: {
+      point_amount_cop: 2220000,
+      referral_rate: 1,
+      referral_rounding: "floor",
+      visibility: "internal_business_only",
+    },
     commercial_deal: {
       title: "Acuerdo Premium El Paño Ingles",
       status: "Activo",
@@ -209,6 +215,7 @@ function subscriptionSettings(company, plan) {
       access_summary: plan.access_summary,
     },
     ...(company.commercial_deal ? { commercial_deal: company.commercial_deal } : {}),
+    ...(company.affiliate_points ? { affiliate_points: company.affiliate_points } : {}),
   };
 }
 

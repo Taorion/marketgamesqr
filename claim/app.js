@@ -11,6 +11,9 @@ const nameInput = document.getElementById("nameInput");
 const phoneInput = document.getElementById("phoneInput");
 const emailInput = document.getElementById("emailInput");
 const documentInput = document.getElementById("documentInput");
+const finalTicketBlock = document.getElementById("finalTicketBlock");
+const finalTicketQrImage = document.getElementById("finalTicketQrImage");
+const finalTicketLink = document.getElementById("finalTicketLink");
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -41,8 +44,18 @@ function renderStatus(data) {
   benefitSummary.textContent = data.benefit?.value?.label || data.benefit?.type || "Beneficio";
   expiresAt.textContent = formatDate(data.qr_code?.expires_at);
   claimForm.classList.toggle("hidden", !data.allowed);
-  resultBlock.classList.toggle("hidden", data.allowed);
-  if (!data.allowed) {
+  const hasFinalTicket = Boolean(data.final_ticket?.qr_image_data_url && data.final_ticket?.validator_url);
+  resultBlock.classList.toggle("hidden", data.allowed || hasFinalTicket);
+  finalTicketBlock.classList.toggle("hidden", !hasFinalTicket);
+  if (hasFinalTicket) {
+    finalTicketQrImage.src = data.final_ticket.qr_image_data_url;
+    finalTicketLink.href = data.final_ticket.validator_url;
+    resultBlock.textContent = "";
+  } else {
+    finalTicketQrImage.removeAttribute("src");
+    finalTicketLink.href = "#";
+  }
+  if (!data.allowed && !hasFinalTicket) {
     resultBlock.textContent = data.message || "Este QR no puede activarse.";
   }
 }

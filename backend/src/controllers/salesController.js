@@ -3,9 +3,11 @@ const { query, withTransaction } = require("../config/db");
 const { canAccessBusiness } = require("../middleware/auth");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { validate } = require("../utils/validators");
-
-const AFFILIATE_POINTS_PER_PESO = 1000;
-const REFERRAL_POINTS_RATE = 0.2;
+const {
+  affiliatePointRuleMetadata,
+  getAffiliatePointRules,
+  referralPointsForAmount,
+} = require("../services/affiliatePointRulesService");
 
 const attributedSaleSchema = z.object({
   had_sale: z.boolean().default(true),
@@ -16,14 +18,6 @@ const attributedSaleSchema = z.object({
   product_or_service: z.string().trim().max(200).optional().nullable(),
   notes: z.string().trim().max(1000).optional().nullable(),
 });
-
-function calculateReferralPoints(amount) {
-  const value = Number(amount || 0);
-  if (!Number.isFinite(value) || value <= 0) {
-    return 0;
-  }
-  return Math.ceil((value / AFFILIATE_POINTS_PER_PESO) * REFERRAL_POINTS_RATE);
-}
 
 async function createAttributedSale(req, res, next) {
   try {
@@ -93,7 +87,9 @@ async function createAttributedSale(req, res, next) {
       let referral = null;
 
       if (row.origin_type === "AFFILIATE_REFERRAL" && row.affiliate_id) {
-        const referralPoints = calculateReferralPoints(body.sale_amount);
+        const affiliatePointRules = await getAffiliatePointRules(row.business_id, client);
+        const referralPoints = referralPointsForAmount(body.sale_amount, affiliatePointRules);
+        const pointRuleMetadata = affiliatePointRuleMetadata(affiliatePointRules);
         const existingResult = await client.query(
           `select *
            from business_sales
@@ -148,6 +144,7 @@ async function createAttributedSale(req, res, next) {
                 source: "affiliate_referral_qr",
                 redemption_id: row.id,
                 attributed_sale_id: attributedSale.id,
+                ...pointRuleMetadata,
               }),
             ]
           );
@@ -182,6 +179,7 @@ async function createAttributedSale(req, res, next) {
                 source: "affiliate_referral_qr",
                 redemption_id: row.id,
                 attributed_sale_id: attributedSale.id,
+                ...pointRuleMetadata,
               },
             ]
           );
@@ -213,6 +211,7 @@ async function createAttributedSale(req, res, next) {
                 previous_points: previousPoints,
                 referral_points: referralPoints,
                 referred_customer: row.player_name || row.player_phone || row.player_document_id || null,
+                ...pointRuleMetadata,
               },
             ]
           );

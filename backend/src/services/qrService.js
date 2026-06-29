@@ -475,7 +475,7 @@ function buildStatusMessage(status) {
     return "Este QR aun no ha sido activado por un cliente.";
   }
   if (status === "CLAIMED") {
-    return "Este QR ya fue reclamado y espera activacion final.";
+    return "Este QR inicial ya fue reclamado. Valida el ticket final emitido al cliente.";
   }
   if (status === "REDEEMED") {
     return "Este QR ya fue usado.";

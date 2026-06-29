@@ -3,8 +3,12 @@ const { query, withTransaction } = require("../config/db");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { canAccessBusiness } = require("../middleware/auth");
+const {
+  affiliatePointRuleMetadata,
+  affiliatePointsForAmount,
+  getAffiliatePointRules,
+} = require("./affiliatePointRulesService");
 
-const POINTS_PER_PESO = 1000;
 const BUSINESS_CARD_SETTINGS_SQL = `
   jsonb_strip_nulls(jsonb_build_object(
     'slogan', b.settings->>'slogan',
@@ -147,11 +151,12 @@ async function awardAffiliatePoints(businessId, affiliateId, user, body) {
     throw badRequest("El monto debe ser mayor a 0.");
   }
 
-  const points = Math.floor(amount / POINTS_PER_PESO);
+  const pointRules = await getAffiliatePointRules(businessId);
+  const points = affiliatePointsForAmount(amount, pointRules);
   if (points < 1) {
     return {
       awarded: 0,
-      message: "El monto no genera puntos porque es menor a 1000 pesos.",
+      message: `El monto no genera puntos porque es menor a ${pointRules.point_amount_cop.toLocaleString("es-CO")} pesos.`,
       affiliate: await getAffiliate(businessId, affiliateId, user),
     };
   }
@@ -180,7 +185,10 @@ async function awardAffiliatePoints(businessId, affiliateId, user, body) {
         amount,
         points,
         body.reason || "PURCHASE",
-        body.metadata || {},
+        {
+          ...(body.metadata || {}),
+          ...affiliatePointRuleMetadata(pointRules),
+        },
       ]
     );
 

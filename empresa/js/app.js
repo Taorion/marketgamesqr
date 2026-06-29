@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-ticket-center-v1";
+const APP_VERSION = "empresa-20260629-ticket-frame-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -135,6 +135,12 @@ const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
 const accountLogoTitle = document.getElementById("accountLogoTitle");
+const accountTicketFramePreview = document.getElementById("accountTicketFramePreview");
+const accountTicketFrameTitle = document.getElementById("accountTicketFrameTitle");
+const accountTicketFrameInput = document.getElementById("accountTicketFrameInput");
+const accountTicketFrameUploadButton = document.getElementById("accountTicketFrameUploadButton");
+const accountTicketFrameRemoveButton = document.getElementById("accountTicketFrameRemoveButton");
+const accountTicketFrameMessage = document.getElementById("accountTicketFrameMessage");
 const accountPasswordForm = document.getElementById("accountPasswordForm");
 const accountCurrentPasswordInput = document.getElementById("accountCurrentPasswordInput");
 const accountNewPasswordInput = document.getElementById("accountNewPasswordInput");
@@ -561,6 +567,10 @@ function mergeBusinessProfile(nextProfile) {
     || session?.user?.business?.logo_data_url
     || session?.user?.business?.settings?.logo_data_url
     || "";
+  const existingTicketFrame = state.businessProfile?.ticket_frame_data_url
+    || session?.user?.business?.ticket_frame_data_url
+    || session?.user?.business?.settings?.ticket_frame_data_url
+    || "";
   const merged = {
     ...(state.businessProfile || {}),
     ...nextProfile,
@@ -568,15 +578,20 @@ function mergeBusinessProfile(nextProfile) {
   if (!merged.logo_data_url && existingLogo && merged.has_logo_data_url !== false) {
     merged.logo_data_url = existingLogo;
   }
+  if (!merged.ticket_frame_data_url && existingTicketFrame && merged.has_ticket_frame_data_url !== false) {
+    merged.ticket_frame_data_url = existingTicketFrame;
+  }
   state.businessProfile = merged;
   if (session?.user?.business) {
     session.user.business = {
       ...session.user.business,
       name: merged.name || session.user.business.name,
       logo_data_url: merged.logo_data_url || "",
+      ticket_frame_data_url: merged.ticket_frame_data_url || "",
       settings: {
         ...(session.user.business.settings || {}),
         logo_data_url: merged.logo_data_url || "",
+        ticket_frame_data_url: merged.ticket_frame_data_url || "",
       },
     };
   }
@@ -1832,6 +1847,19 @@ function renderAccountView() {
   if (accountLogoTitle) {
     accountLogoTitle.textContent = logo ? "Logo cargado" : "Sin logo cargado";
   }
+
+  const ticketFrame = business.ticket_frame_data_url || business.settings?.ticket_frame_data_url || "";
+  if (accountTicketFramePreview) {
+    accountTicketFramePreview.innerHTML = ticketFrame
+      ? `<img src="${escapeHtml(ticketFrame)}" alt="Marco de tickets QR">`
+      : '<span class="material-symbols-outlined">crop_free</span>';
+  }
+  if (accountTicketFrameTitle) {
+    accountTicketFrameTitle.textContent = ticketFrame ? "Marco cargado" : "Sin marco cargado";
+  }
+  if (accountTicketFrameRemoveButton) {
+    accountTicketFrameRemoveButton.disabled = !ticketFrame;
+  }
 }
 
 function applyPlanNavigation() {
@@ -2250,7 +2278,10 @@ async function loadWorkspace() {
 
   const needsLogoPayload = !(state.businessProfile?.logo_data_url
     || session?.user?.business?.logo_data_url
-    || session?.user?.business?.settings?.logo_data_url);
+    || session?.user?.business?.settings?.logo_data_url)
+    || !(state.businessProfile?.ticket_frame_data_url
+      || session?.user?.business?.ticket_frame_data_url
+      || session?.user?.business?.settings?.ticket_frame_data_url);
   const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
   const requests = [
     apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
@@ -2431,7 +2462,10 @@ async function loadPrepaidValidatorWorkspace() {
   try {
     const needsLogoPayload = !(state.businessProfile?.logo_data_url
       || session?.user?.business?.logo_data_url
-      || session?.user?.business?.settings?.logo_data_url);
+      || session?.user?.business?.settings?.logo_data_url)
+      || !(state.businessProfile?.ticket_frame_data_url
+        || session?.user?.business?.ticket_frame_data_url
+        || session?.user?.business?.settings?.ticket_frame_data_url);
     const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
     const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData, businessUsersData] = await Promise.all([
       apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
@@ -5898,7 +5932,7 @@ async function submitQrBatch(event) {
         quantity: Number(qrBatchQuantityInput.value || 0),
         channel_use: qrBatchChannelInput.value,
         qr_origin_type: qrBatchOriginTypeInput.value,
-        claim_required: qrBatchClaimRequiredInput.value === "true",
+        claim_required: true,
         expires_mode: qrBatchExpiresModeInput.value,
         expires_at: qrBatchExpiresAtInput.value ? new Date(qrBatchExpiresAtInput.value).toISOString() : null,
         notes: qrBatchNotesInput.value.trim() || null,
@@ -8093,6 +8127,30 @@ async function updateBusinessLogo(logoDataUrl) {
   if (businessLogoMessage) businessLogoMessage.textContent = logoDataUrl ? "Logo guardado." : "Logo eliminado.";
 }
 
+async function updateTicketFrame(frameDataUrl) {
+  if (!session?.user?.business_id) return;
+  if (accountTicketFrameMessage) {
+    accountTicketFrameMessage.textContent = frameDataUrl ? "Guardando marco..." : "Quitando marco...";
+  }
+  const data = await api("/api/business/profile?includeLogo=1", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ ticket_frame_data_url: frameDataUrl || "" }),
+  });
+  mergeBusinessProfile(data.business || null);
+  if (session?.user?.business) {
+    session.user.business.ticket_frame_data_url = data.business?.ticket_frame_data_url || "";
+    session.user.business.settings = {
+      ...(session.user.business.settings || {}),
+      ticket_frame_data_url: data.business?.ticket_frame_data_url || "",
+    };
+  }
+  renderAccountView();
+  if (accountTicketFrameMessage) {
+    accountTicketFrameMessage.textContent = frameDataUrl ? "Marco guardado. Los proximos paquetes saldran brandeados." : "Marco eliminado.";
+  }
+}
+
 function optionalInputValue(input) {
   const value = String(input?.value || "").trim();
   return value || null;
@@ -8239,6 +8297,31 @@ async function handleBusinessLogoFile(file) {
     if (businessLogoMessage) businessLogoMessage.textContent = error.message || "No se pudo guardar el logo.";
   } finally {
     if (businessLogoInput) businessLogoInput.value = "";
+  }
+}
+
+async function handleTicketFrameFile(file) {
+  if (!file) return;
+  try {
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type || "")) {
+      throw new Error("Usa una imagen PNG, JPG o WebP.");
+    }
+    if (accountTicketFrameMessage) accountTicketFrameMessage.textContent = "Procesando marco...";
+    const keepPng = /^image\/png$/i.test(file.type || "");
+    const frameDataUrl = await normalizeAffiliatePhotoDataUrl(file, {
+      maxWidth: 1080,
+      maxHeight: 1350,
+      quality: 0.88,
+      mimeType: keepPng ? "image/png" : "image/jpeg",
+    });
+    if (!frameDataUrl) throw new Error("No se pudo procesar el marco.");
+    await updateTicketFrame(frameDataUrl);
+  } catch (error) {
+    if (accountTicketFrameMessage) {
+      accountTicketFrameMessage.textContent = error.message || "No se pudo guardar el marco.";
+    }
+  } finally {
+    if (accountTicketFrameInput) accountTicketFrameInput.value = "";
   }
 }
 
@@ -10078,6 +10161,9 @@ accountUsersTable?.addEventListener("click", (event) => {
 businessLogoUploadButton?.addEventListener("click", () => businessLogoInput?.click());
 businessLogoInput?.addEventListener("change", () => handleBusinessLogoFile(businessLogoInput.files?.[0]));
 businessLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo(""));
+accountTicketFrameUploadButton?.addEventListener("click", () => accountTicketFrameInput?.click());
+accountTicketFrameInput?.addEventListener("change", () => handleTicketFrameFile(accountTicketFrameInput.files?.[0]));
+accountTicketFrameRemoveButton?.addEventListener("click", () => updateTicketFrame(""));
 
 rangeButton.textContent = `Ultimos ${state.rangeDays} dias`;
 applyPortalTheme(readPreferredTheme());

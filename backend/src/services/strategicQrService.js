@@ -12,7 +12,10 @@ const BUSINESS_BRAND_SETTINGS_SQL = `
   jsonb_strip_nulls(jsonb_build_object(
     'brand_primary', b.settings->>'brand_primary',
     'brand_secondary', b.settings->>'brand_secondary',
-    'logo_url', b.settings->>'logo_url'
+    'logo_url', b.settings->>'logo_url',
+    'logo_data_url', b.settings->>'logo_data_url',
+    'ticket_frame_url', b.settings->>'ticket_frame_url',
+    'ticket_frame_data_url', b.settings->>'ticket_frame_data_url'
   ))
 `;
 
@@ -34,6 +37,17 @@ function buildValidatorUrl(token) {
 
 function buildClaimUrl(token) {
   return `${publicAppBaseUrl()}/claim/${encodeURIComponent(token)}`;
+}
+
+function buildPublicQrLinks(qr) {
+  const requiresClaim = Boolean(qr.claim_required) && ["UNCLAIMED", "CLAIMED"].includes(qr.status);
+  const claimUrl = buildClaimUrl(qr.token);
+  const validatorUrl = buildValidatorUrl(qr.token);
+  return {
+    scan_url: requiresClaim ? claimUrl : validatorUrl,
+    validator_url: requiresClaim ? null : validatorUrl,
+    claim_url: claimUrl,
+  };
 }
 
 function resolveExpiration({ expires_mode, expires_at, expiration_days }) {
@@ -310,11 +324,15 @@ function buildBatchInsert(rows) {
 
 async function createQrBatch(businessId, user, body) {
   return withTransaction(async (client) => {
+    if (!body.campaign_id) {
+      throw badRequest("Selecciona una campana antes de generar un paquete de tickets.");
+    }
     const reward = await assertReward(client, businessId, body.benefit.reward_id);
     const campaign = await assertCampaign(client, businessId, body.campaign_id);
     const affiliate = await assertAffiliate(client, businessId, body.affiliate_id);
     const expiresAt = resolveExpiration(body);
     const benefitPayload = buildBenefitPayload(body.benefit, reward);
+    const claimRequired = true;
 
     const batchResult = await client.query(
       `insert into qr_batches
@@ -339,7 +357,8 @@ async function createQrBatch(businessId, user, body) {
           notes: body.notes || null,
           campaign_id: campaign?.id || null,
           campaign_name: campaign?.name || null,
-          claim_required: body.claim_required,
+          claim_required: claimRequired,
+          package_ticket_role: "initial_claim_qr",
           affiliate_id: affiliate?.id || null,
           affiliate_name: affiliate?.full_name || null,
           ...body.metadata,
@@ -355,9 +374,10 @@ async function createQrBatch(businessId, user, body) {
         campaign_id: body.campaign_id || null,
         reward_id: body.benefit.reward_id || null,
         token,
-        status: body.claim_required ? "UNCLAIMED" : "ACTIVE",
+        status: "UNCLAIMED",
         metadata: {
           strategic_qr: true,
+          package_ticket_role: "initial_claim_qr",
           origin_label: body.qr_origin_type === "AFFILIATE_REFERRAL" ? "QR recomendacion afiliado" : "Paquete QR",
           campaign_id: campaign?.id || null,
           campaign_name: campaign?.name || null,
@@ -372,7 +392,7 @@ async function createQrBatch(businessId, user, body) {
         origin_type: body.qr_origin_type,
         benefit_type: body.benefit.benefit_type,
         benefit_value: benefitPayload,
-        claim_required: body.claim_required,
+        claim_required: claimRequired,
         claimed_at: null,
         claimed_by_player_id: null,
         affiliate_id: affiliate?.id || null,
@@ -412,8 +432,7 @@ async function createQrBatch(businessId, user, body) {
       credit_account: mapPublicCreditAccount(creditAccount),
       qr_codes: qrCodes.map((qr) => ({
         ...qr,
-        validator_url: buildValidatorUrl(qr.token),
-        claim_url: buildClaimUrl(qr.token),
+        ...buildPublicQrLinks({ ...qr, claim_required: claimRequired }),
       })),
     };
   });
@@ -545,8 +564,7 @@ async function getQrHistory(businessId) {
   );
   return result.rows.map((qr) => ({
     ...qr,
-    validator_url: buildValidatorUrl(qr.token),
-    claim_url: buildClaimUrl(qr.token),
+    ...buildPublicQrLinks(qr),
   }));
 }
 
@@ -557,13 +575,13 @@ async function getQrMetrics(businessId) {
          count(*) filter (where origin_type = 'POST_SALE')::int as post_sale_generated,
          count(*) filter (where origin_type = 'POST_SALE' and status = 'REDEEMED')::int as post_sale_redeemed,
          count(distinct batch_id)::int as qr_batches_generated,
-         count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as label_qr_claimed_or_active,
+         count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as label_qr_claimed_or_active,
          count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status = 'REDEEMED')::int as label_qr_redeemed,
-         count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and status = 'UNCLAIMED')::int as label_qr_unclaimed,
-         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL')::int as affiliate_referral_generated,
-         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status in ('ACTIVE', 'REDEEMED'))::int as affiliate_referral_claimed_or_active,
+         count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as label_qr_unclaimed,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr')::int as affiliate_referral_generated,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as affiliate_referral_claimed_or_active,
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'REDEEMED')::int as affiliate_referral_redeemed,
-         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'UNCLAIMED')::int as affiliate_referral_unclaimed,
+         count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as affiliate_referral_unclaimed,
          count(*) filter (where status = 'EXPIRED')::int as expired_without_redeem
        from qr_codes
        where business_id = $1`,
@@ -574,6 +592,7 @@ async function getQrMetrics(businessId) {
        from qr_codes
        where business_id = $1
          and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL')
+         and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr'
        group by benefit_type
        order by total desc`,
       [businessId]
@@ -615,28 +634,55 @@ async function getQrMetrics(businessId) {
 
 async function getIndividualQrDownload(businessId, qrId) {
   const result = await query(
-    `select id, token, status
-     from qr_codes
-     where id = $1 and business_id = $2`,
+    `select
+       q.id,
+       q.token,
+       q.status,
+       q.claim_required,
+       q.origin_type,
+       q.benefit_type,
+       q.benefit_value,
+       qb.name as batch_name,
+       b.name as business_name,
+       ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
+     from qr_codes q
+     join businesses b on b.id = q.business_id
+     left join qr_batches qb on qb.id = q.batch_id
+     where q.id = $1 and q.business_id = $2`,
     [qrId, businessId]
   );
   const qr = result.rows[0];
   if (!qr) {
     throw notFound("QR not found.");
   }
-  const validatorUrl = buildValidatorUrl(qr.token);
+  const links = buildPublicQrLinks(qr);
+  const brand = getBrandStyle(qr.business_settings || {});
+  const hasFrame = Boolean(brand.ticketFrameUrl);
+  const label = qr.benefit_value?.label || qr.benefit_type || "Beneficio";
+  const qrImageDataUrl = hasFrame
+    ? await buildBrandedTicketSvgDataUrl({
+        scanUrl: links.scan_url,
+        label,
+        batchName: qr.batch_name,
+        businessName: qr.business_name,
+        row: qr,
+        brand,
+      })
+    : await QRCode.toDataURL(links.scan_url);
   return {
     qr_code_id: qr.id,
     status: qr.status,
-    validator_url: validatorUrl,
-    filename: `strategic-qr-${String(qr.id).slice(0, 8)}.png`,
-    qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+    validator_url: links.validator_url,
+    claim_url: links.claim_url,
+    scan_url: links.scan_url,
+    filename: `strategic-qr-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
+    qr_image_data_url: qrImageDataUrl,
   };
 }
 
 async function getBatchCsvDownload(businessId, batchId) {
   const result = await query(
-    `select id, token, status, created_at, expires_at
+    `select id, token, status, claim_required, created_at, expires_at
      from qr_codes
      where batch_id = $1 and business_id = $2
      order by created_at asc`,
@@ -646,20 +692,22 @@ async function getBatchCsvDownload(businessId, batchId) {
     throw notFound("QR batch not found.");
   }
   const lines = [
-    ["qr_code_id", "token", "status", "validator_url", "claim_url", "created_at", "expires_at"].join(","),
-    ...result.rows.map((row) =>
-      [
+    ["qr_code_id", "token", "status", "scan_url", "validator_url", "claim_url", "created_at", "expires_at"].join(","),
+    ...result.rows.map((row) => {
+      const links = buildPublicQrLinks(row);
+      return [
         row.id,
         row.token,
         row.status,
-        buildValidatorUrl(row.token),
-        buildClaimUrl(row.token),
+        links.scan_url,
+        links.validator_url || "",
+        links.claim_url,
         row.created_at,
         row.expires_at || "",
       ]
         .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
-        .join(",")
-    ),
+        .join(",");
+    }),
   ];
   return lines.join("\n");
 }
@@ -673,6 +721,7 @@ async function getBatchJsonDownload(businessId, batchId) {
        q.created_at,
        q.expires_at,
        q.origin_type,
+       q.claim_required,
        q.benefit_type,
        q.benefit_value,
        q.affiliate_id,
@@ -689,8 +738,7 @@ async function getBatchJsonDownload(businessId, batchId) {
   }
   return result.rows.map((row) => ({
     ...row,
-    validator_url: buildValidatorUrl(row.token),
-    claim_url: buildClaimUrl(row.token),
+    ...buildPublicQrLinks(row),
   }));
 }
 
@@ -777,10 +825,17 @@ function resolvePaperSize(paper = "a4") {
 }
 
 function getBrandStyle(settings = {}) {
+  const logoUrl = typeof settings.logo_data_url === "string" && settings.logo_data_url
+    ? settings.logo_data_url
+    : typeof settings.logo_url === "string" ? settings.logo_url : "";
+  const ticketFrameUrl = typeof settings.ticket_frame_data_url === "string" && settings.ticket_frame_data_url
+    ? settings.ticket_frame_data_url
+    : typeof settings.ticket_frame_url === "string" ? settings.ticket_frame_url : "";
   return {
     primary: typeof settings.brand_primary === "string" ? settings.brand_primary : "#13212c",
     secondary: typeof settings.brand_secondary === "string" ? settings.brand_secondary : "#945d20",
-    logoUrl: typeof settings.logo_url === "string" ? settings.logo_url : "",
+    logoUrl,
+    ticketFrameUrl,
   };
 }
 
@@ -830,6 +885,36 @@ async function fetchLogoBytes(logoUrl) {
   }
 }
 
+function svgEscape(value) {
+  return escapeHtml(value).replace(/\n/g, " ");
+}
+
+async function buildBrandedTicketSvgDataUrl({ scanUrl, label, batchName, businessName, row, brand }) {
+  const qrImage = await QRCode.toDataURL(scanUrl, {
+    type: "image/png",
+    width: 560,
+    margin: 1,
+    errorCorrectionLevel: "M",
+  });
+  const frame = String(brand.ticketFrameUrl || "").trim();
+  const width = 1080;
+  const height = 1350;
+  const qrSize = 500;
+  const qrX = Math.round((width - qrSize) / 2);
+  const qrY = 450;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" rx="48" fill="#ffffff"/>
+  ${frame ? `<image href="${svgEscape(frame)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${width}" height="${height}" rx="48" fill="${svgEscape(brand.primary)}"/><rect x="42" y="42" width="996" height="1266" rx="40" fill="#ffffff"/>`}
+  <rect x="${qrX - 28}" y="${qrY - 28}" width="${qrSize + 56}" height="${qrSize + 56}" rx="36" fill="#ffffff"/>
+  <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
+  <text x="${width / 2}" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="${svgEscape(brand.primary)}">${svgEscape(businessName || "Negocio")}</text>
+  <text x="${width / 2}" y="1015" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#111111">${svgEscape(label || "Beneficio")}</text>
+  <text x="${width / 2}" y="1078" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#404854">${svgEscape(batchName || "Paquete de tickets")}</text>
+  <text x="${width / 2}" y="1140" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#667085">${svgEscape(row?.origin_type || "")} | ${svgEscape(row?.status || "")}</text>
+</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 async function getBatchPrintableHtml(businessId, batchId, template = "sticker", paper = "a4") {
   const batch = await getBatchContext(businessId, batchId);
   const layout = resolvePrintTemplate(template);
@@ -839,14 +924,14 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
   const qrRows = await getBatchJsonDownload(businessId, batchId);
   const cards = await Promise.all(
     qrRows.map(async (row) => {
-      const qrImage = await QRCode.toDataURL(buildClaimUrl(row.token));
+      const qrImage = await QRCode.toDataURL(row.scan_url || buildClaimUrl(row.token));
       const label = row.benefit_value?.label || row.benefit_type || "Beneficio";
       const affiliateLine = row.affiliate_name
         ? `Afiliado asignado: ${row.affiliate_name}${row.affiliate_document_id ? ` · ${row.affiliate_document_id}` : ""}`
         : "";
       return `
-        <article class="label-card">
-          <img src="${qrImage}" alt="QR ${row.id}">
+        <article class="label-card${brand.ticketFrameUrl ? " has-brand-frame" : ""}">
+          <div class="qr-pad"><img src="${qrImage}" alt="QR ${row.id}"></div>
           <h2>${escapeHtml(label)}</h2>
           <p>${escapeHtml(batch.name)}</p>
           ${affiliateLine ? `<p class="affiliate-line">${escapeHtml(affiliateLine)}</p>` : ""}
@@ -872,8 +957,10 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
     .brand { color: ${brand.secondary}; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; display:flex; align-items:center; gap:12px; }
     .brand-logo { max-height: 38px; max-width: 120px; object-fit: contain; }
     .grid { display: grid; grid-template-columns: repeat(${layout.htmlColumns}, 1fr); gap: 16px; }
-    .label-card { background: #fff; border: 1px solid #ddd; border-top: 4px solid ${brand.primary}; border-radius: 14px; padding: ${layout.htmlCardPadding}px; text-align: center; break-inside: avoid; }
-    .label-card img { width: ${layout.qrSize + 30}px; height: ${layout.qrSize + 30}px; object-fit: contain; }
+    .label-card { background: #fff; border: 1px solid #ddd; border-top: 4px solid ${brand.primary}; border-radius: 14px; padding: ${layout.htmlCardPadding}px; text-align: center; break-inside: avoid; background-size: cover; background-position: center; }
+    .label-card.has-brand-frame { background-image: url("${escapeHtml(brand.ticketFrameUrl)}"); border: 0; min-height: ${layout.cardHeight}px; }
+    .qr-pad { display: inline-grid; place-items: center; padding: 10px; border-radius: 18px; background: #fff; }
+    .label-card img { width: ${layout.qrSize + 30}px; height: ${layout.qrSize + 30}px; object-fit: contain; display: block; }
     .label-card h2 { margin: 10px 0 6px; font-size: ${layout.titleSize + 5}px; }
     .label-card p { margin: 0 0 6px; font-size: 13px; color: #444; }
     .label-card .affiliate-line { font-weight: 700; color: #111; }
@@ -908,15 +995,29 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
 async function getBatchZipDownload(businessId, batchId) {
   const batch = await getBatchContext(businessId, batchId);
   const qrRows = await getBatchJsonDownload(businessId, batchId);
+  const brand = getBrandStyle(batch.business_settings || {});
   const zip = new JSZip();
 
   for (const row of qrRows) {
-    const png = await QRCode.toBuffer(buildClaimUrl(row.token), {
-      type: "png",
-      width: 900,
-      margin: 1,
-    });
-    zip.file(`qr-${String(row.id).slice(0, 8)}.png`, png);
+    if (brand.ticketFrameUrl) {
+      const svgDataUrl = await buildBrandedTicketSvgDataUrl({
+        scanUrl: row.scan_url || buildClaimUrl(row.token),
+        label: row.benefit_value?.label || row.benefit_type || "Beneficio",
+        batchName: batch.name,
+        businessName: batch.business_name,
+        row,
+        brand,
+      });
+      const svg = decodeURIComponent(svgDataUrl.replace(/^data:image\/svg\+xml;charset=utf-8,/, ""));
+      zip.file(`ticket-${String(row.id).slice(0, 8)}.svg`, svg);
+    } else {
+      const png = await QRCode.toBuffer(row.scan_url || buildClaimUrl(row.token), {
+        type: "png",
+        width: 900,
+        margin: 1,
+      });
+      zip.file(`qr-${String(row.id).slice(0, 8)}.png`, png);
+    }
   }
 
   zip.file("manifest.json", JSON.stringify(qrRows, null, 2));
@@ -943,6 +1044,13 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
     embeddedLogo = await pdf.embedPng(logo.bytes);
   } else if (logo?.mimeType?.includes("jpeg") || logo?.mimeType?.includes("jpg")) {
     embeddedLogo = await pdf.embedJpg(logo.bytes);
+  }
+  const frame = await fetchLogoBytes(brand.ticketFrameUrl);
+  let embeddedFrame = null;
+  if (frame?.mimeType?.includes("png")) {
+    embeddedFrame = await pdf.embedPng(frame.bytes);
+  } else if (frame?.mimeType?.includes("jpeg") || frame?.mimeType?.includes("jpg")) {
+    embeddedFrame = await pdf.embedJpg(frame.bytes);
   }
 
   const pageWidth = paperSpec.width;
@@ -997,29 +1105,45 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
     const x = margin + col * (cardWidth + cardGap);
     const y = pageHeight - 92 - rowIndex * (cardHeight + cardGap) - cardHeight;
 
-    page.drawRectangle({
-      x,
-      y,
-      width: cardWidth,
-      height: cardHeight,
-      borderWidth: 1,
-      borderColor: rgb(0.86, 0.88, 0.9),
-    });
-    page.drawRectangle({
-      x,
-      y: y + cardHeight - 6,
-      width: cardWidth,
-      height: 6,
-      color: primaryColor,
-    });
+    if (embeddedFrame) {
+      page.drawImage(embeddedFrame, {
+        x,
+        y,
+        width: cardWidth,
+        height: cardHeight,
+      });
+    } else {
+      page.drawRectangle({
+        x,
+        y,
+        width: cardWidth,
+        height: cardHeight,
+        borderWidth: 1,
+        borderColor: rgb(0.86, 0.88, 0.9),
+      });
+      page.drawRectangle({
+        x,
+        y: y + cardHeight - 6,
+        width: cardWidth,
+        height: 6,
+        color: primaryColor,
+      });
+    }
 
-    const png = await QRCode.toBuffer(buildClaimUrl(row.token), {
+    const png = await QRCode.toBuffer(row.scan_url || buildClaimUrl(row.token), {
       type: "png",
       width: 900,
       margin: 1,
     });
     const image = await pdf.embedPng(png);
     const imageSize = layout.qrSize;
+    page.drawRectangle({
+      x: x + (cardWidth - imageSize) / 2 - 6,
+      y: y + Math.max(60, cardHeight - imageSize - 30) - 6,
+      width: imageSize + 12,
+      height: imageSize + 12,
+      color: rgb(1, 1, 1),
+    });
     page.drawImage(image, {
       x: x + (cardWidth - imageSize) / 2,
       y: y + Math.max(60, cardHeight - imageSize - 30),
@@ -1106,6 +1230,12 @@ async function getClaimDetails(tokenInput) {
        q.expires_at,
        q.benefit_type,
        q.benefit_value,
+       qc.metadata as claim_metadata,
+       fq.id as final_qr_code_id,
+       fq.token as final_qr_token,
+       fq.status as final_qr_status,
+       fq.created_at as final_qr_created_at,
+       fq.expires_at as final_qr_expires_at,
        b.name as business_name,
        c.name as campaign_name,
        p.name as player_name,
@@ -1119,6 +1249,13 @@ async function getClaimDetails(tokenInput) {
      join businesses b on b.id = q.business_id
      left join campaigns c on c.id = q.campaign_id
      left join players p on p.id = q.player_id
+     left join qr_claims qc on qc.qr_code_id = q.id
+     left join qr_codes fq on fq.id =
+       case
+         when (qc.metadata->>'final_qr_code_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+         then (qc.metadata->>'final_qr_code_id')::uuid
+         else null
+       end
      left join affiliates a on a.id = q.affiliate_id
      where q.token = $1`,
     [token]
@@ -1155,6 +1292,16 @@ async function getClaimDetails(tokenInput) {
       type: qr.benefit_type,
       value: qr.benefit_value || {},
     },
+    final_ticket: qr.final_qr_code_id
+      ? {
+          id: qr.final_qr_code_id,
+          status: qr.final_qr_status,
+          validator_url: buildValidatorUrl(qr.final_qr_token),
+          qr_image_data_url: await QRCode.toDataURL(buildValidatorUrl(qr.final_qr_token)),
+          created_at: qr.final_qr_created_at,
+          expires_at: qr.final_qr_expires_at,
+        }
+      : null,
     player: qr.player_id
       ? {
           id: qr.player_id,
@@ -1235,6 +1382,42 @@ async function claimQr(tokenInput, body) {
       ]
     );
     const player = playerResult.rows[0];
+    const finalToken = createSecureToken();
+    const finalMetadata = {
+      ...(qr.metadata || {}),
+      strategic_qr: true,
+      package_ticket_role: "final_validable_qr",
+      issued_from_claim_qr_id: qr.id,
+      source_batch_id: qr.batch_id || null,
+      source_origin_type: qr.origin_type,
+      source_token_preview: token.slice(0, 10),
+      campaign_id: qr.campaign_id || null,
+      lead_player_id: player.id,
+      affiliate_id: qr.affiliate_id || null,
+      affiliate_name: qr.affiliate_name || null,
+    };
+
+    const finalQrResult = await client.query(
+      `insert into qr_codes
+        (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id, affiliate_id)
+       values ($1, $2, $3, $4, $5, $6, 'ACTIVE', $7, $8, null, $9, $10, $11, null, false, now(), $4, $12)
+       returning *`,
+      [
+        qr.business_id,
+        qr.campaign_id || null,
+        qr.game_id || null,
+        player.id,
+        qr.reward_id || null,
+        finalToken,
+        finalMetadata,
+        qr.expires_at || null,
+        qr.origin_type,
+        qr.benefit_type,
+        qr.benefit_value || {},
+        qr.affiliate_id || null,
+      ]
+    );
+    const finalQr = finalQrResult.rows[0];
 
     await client.query(
       `insert into qr_claims (business_id, qr_code_id, player_id, source, metadata)
@@ -1247,6 +1430,10 @@ async function claimQr(tokenInput, body) {
         {
           affiliate_id: qr.affiliate_id || null,
           affiliate_name: qr.affiliate_name || null,
+          campaign_id: qr.campaign_id || null,
+          source_batch_id: qr.batch_id || null,
+          final_qr_code_id: finalQr.id,
+          final_token_preview: finalToken.slice(0, 10),
           ...(body.metadata || {}),
         },
       ]
@@ -1257,9 +1444,19 @@ async function claimQr(tokenInput, body) {
        set player_id = $2,
            claimed_by_player_id = $2,
            claimed_at = now(),
-           status = 'ACTIVE'
+           status = 'CLAIMED',
+           metadata = metadata || $3::jsonb
        where id = $1`,
-      [qr.id, player.id]
+      [
+        qr.id,
+        player.id,
+        {
+          package_ticket_role: "initial_claim_qr",
+          final_qr_code_id: finalQr.id,
+          final_token_preview: finalToken.slice(0, 10),
+          claimed_player_id: player.id,
+        },
+      ]
     );
 
     await logQrEvent(client, {
@@ -1271,6 +1468,24 @@ async function claimQr(tokenInput, body) {
       message: "Pre-created QR claimed by customer.",
       metadata: {
         source: body.source || "claim",
+        affiliate_id: qr.affiliate_id || null,
+        affiliate_name: qr.affiliate_name || null,
+        final_qr_code_id: finalQr.id,
+      },
+    });
+
+    await logQrEvent(client, {
+      business_id: qr.business_id,
+      campaign_id: qr.campaign_id,
+      qr_code_id: finalQr.id,
+      batch_id: qr.batch_id || null,
+      player_id: player.id,
+      event_type: "QR_FINAL_TICKET_ISSUED",
+      message: "Final validable QR issued after lead claim.",
+      metadata: {
+        source_qr_code_id: qr.id,
+        source: body.source || "claim",
+        origin_type: qr.origin_type,
         affiliate_id: qr.affiliate_id || null,
         affiliate_name: qr.affiliate_name || null,
       },
@@ -1299,6 +1514,14 @@ async function claimQr(tokenInput, body) {
         type: qr.benefit_type,
         value: qr.benefit_value || {},
       },
+      final_ticket: {
+        id: finalQr.id,
+        status: finalQr.status,
+        validator_url: buildValidatorUrl(finalToken),
+        qr_image_data_url: await QRCode.toDataURL(buildValidatorUrl(finalToken)),
+        created_at: finalQr.created_at,
+        expires_at: finalQr.expires_at,
+      },
       player: {
         id: player.id,
         name: player.name,
@@ -1325,7 +1548,7 @@ function buildClaimMessage(status) {
     return "Tu beneficio ya esta activo y listo para redimir.";
   }
   if (status === "CLAIMED") {
-    return "Este QR ya fue reclamado.";
+    return "Este QR inicial ya emitio un ticket final.";
   }
   if (status === "REDEEMED") {
     return "Este QR ya fue redimido.";

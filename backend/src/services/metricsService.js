@@ -84,7 +84,7 @@ const campaignMetricsSelect = `
     c.delivered_assets,
     c.metadata,
     coalesce((select count(*)::int from players p where p.campaign_id = c.id), 0) as total_leads,
-    coalesce((select count(*)::int from qr_codes q where q.campaign_id = c.id), 0) as total_qr_generated,
+    coalesce((select count(*)::int from qr_codes q where q.campaign_id = c.id and coalesce(q.metadata->>'package_ticket_role', '') <> 'final_validable_qr'), 0) as total_qr_generated,
     coalesce((select count(*)::int from qr_codes q where q.campaign_id = c.id and q.status = 'REDEEMED'), 0) as total_qr_redeemed,
     coalesce((
       select count(*)::int
@@ -169,9 +169,9 @@ async function getBusinessSummary(businessId) {
     `select
        count(*) filter (where origin_type = 'POST_SALE')::int as post_sale_generated,
        count(*) filter (where origin_type = 'POST_SALE' and status = 'REDEEMED')::int as post_sale_redeemed,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD'))::int as strategic_generated,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and status = 'UNCLAIMED')::int as strategic_unclaimed,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as strategic_claimed_or_active,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr')::int as strategic_generated,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as strategic_unclaimed,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as strategic_claimed_or_active,
        count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and status = 'REDEEMED')::int as strategic_redeemed,
        count(distinct batch_id)::int as strategic_batches
      from qr_codes

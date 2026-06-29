@@ -21,6 +21,11 @@ const {
   recordUsage,
 } = require("../services/subscriptionService");
 const { mapPublicCreditAccount } = require("../services/qrCreditService");
+const {
+  affiliatePointRuleMetadata,
+  getAffiliatePointRules,
+  referralPointsForAmount,
+} = require("../services/affiliatePointRulesService");
 
 const launchChannelOptions = [
   "Instagram",
@@ -101,6 +106,7 @@ const businessProfileSchema = z.object({
   city: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(220).optional().nullable(),
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
+  ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
 });
 
 const businessUserSchema = z.object({
@@ -140,8 +146,6 @@ const customerAcquisitionSaleSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
-const AFFILIATE_POINTS_PER_PESO = 1000;
-const REFERRAL_POINTS_RATE = 0.2;
 const PREPAID_LEAD_SAMPLE_LIMIT = 20;
 
 function businessIdFor(req) {
@@ -167,11 +171,6 @@ async function activeUserCountsForBusiness(businessId) {
     [businessId]
   );
   return result.rows[0] || { users: 0, validators: 0 };
-}
-
-function referralPointsForSaleAmount(amount) {
-  const basePoints = Number(amount || 0) / AFFILIATE_POINTS_PER_PESO;
-  return Math.max(0, Math.ceil(basePoints * REFERRAL_POINTS_RATE));
 }
 
 async function requireCampaignForBusiness(campaignId, businessId) {
@@ -344,6 +343,9 @@ function businessProfileFromRow(row, user = null, options = {}) {
     logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
     has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
     logo_url: settings.logo_url || "",
+    ticket_frame_data_url: includeLogo ? (settings.ticket_frame_data_url || "") : "",
+    has_ticket_frame_data_url: Boolean(row.has_ticket_frame_data_url ?? settings.ticket_frame_data_url),
+    ticket_frame_url: settings.ticket_frame_url || "",
     current_user: user ? {
       id: user.id,
       business_id: user.business_id,
@@ -360,10 +362,11 @@ async function getBusinessProfile(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const includeLogo = wantsLogoPayload(req);
-    const settingsSelect = includeLogo ? "settings" : "settings - 'logo_data_url'";
+    const settingsSelect = includeLogo ? "settings" : "settings - 'logo_data_url' - 'ticket_frame_data_url'";
     const result = await query(
       `select id, name, slug, ${settingsSelect} as settings,
-              nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url
+              nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url,
+              nullif(settings->>'ticket_frame_data_url', '') is not null as has_ticket_frame_data_url
        from businesses
        where id = $1 and is_active = true`,
       [businessId]
@@ -478,14 +481,17 @@ async function updateBusinessProfile(req, res, next) {
       "city",
       "address",
       "logo_data_url",
+      "ticket_frame_data_url",
     ].forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(body, key)) {
         settingsPatch[key] = cleanSetting(body[key]);
       }
     });
 
-    const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url") || wantsLogoPayload(req);
-    const returningSettings = includeLogo ? "settings" : "settings - 'logo_data_url'";
+    const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url")
+      || Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url")
+      || wantsLogoPayload(req);
+    const returningSettings = includeLogo ? "settings" : "settings - 'logo_data_url' - 'ticket_frame_data_url'";
     const result = await query(
       `update businesses
        set name = $2,
@@ -493,7 +499,8 @@ async function updateBusinessProfile(req, res, next) {
            updated_at = now()
        where id = $1 and is_active = true
        returning id, name, slug, ${returningSettings} as settings,
-                 nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url`,
+                 nullif(settings->>'logo_data_url', '') is not null as has_logo_data_url,
+                 nullif(settings->>'ticket_frame_data_url', '') is not null as has_ticket_frame_data_url`,
       [businessId, body.name || current.name, JSON.stringify(settingsPatch)]
     );
     const business = result.rows[0];
@@ -612,8 +619,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const body = validate(customerAcquisitionSaleSchema, req.body);
-    const referralPoints = body.referred_affiliate_id
-      ? referralPointsForSaleAmount(body.sale_amount)
+    const affiliatePointRules = body.referred_affiliate_id
+      ? await getAffiliatePointRules(businessId)
+      : null;
+    const referralPoints = affiliatePointRules
+      ? referralPointsForAmount(body.sale_amount, affiliatePointRules)
       : 0;
 
     const result = await withTransaction(async (client) => {
@@ -658,8 +668,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
           {
             ...body.metadata,
             capture_source: "customer_acquisition",
-            referral_points_rate: body.referred_affiliate_id ? REFERRAL_POINTS_RATE : 0,
-            points_base_amount: AFFILIATE_POINTS_PER_PESO,
+            ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
           },
         ]
       );
@@ -680,6 +689,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
               acquisition_source: body.acquisition_source,
               acquisition_channel: body.acquisition_channel || null,
               referred_customer: body.customer_name || null,
+              ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
             },
           ]
         );

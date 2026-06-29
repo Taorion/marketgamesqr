@@ -650,6 +650,37 @@ textarea {
   min-width: 92px;
 }
 
+.ticket-frame-preview {
+  width: 96px;
+  min-width: 96px;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed var(--surface-border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+.ticket-frame-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .nav-item.plan-locked {
   opacity: 0.45;
 }
