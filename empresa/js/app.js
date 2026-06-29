@@ -356,6 +356,7 @@ const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput
 const triviaExpiresModeInput = document.getElementById("triviaExpiresModeInput");
 const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
 const triviaQuestionCountInput = document.getElementById("triviaQuestionCountInput");
+const triviaBuilderHint = document.getElementById("triviaBuilderHint");
 const triviaQuestionBuilder = document.getElementById("triviaQuestionBuilder");
 const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
 const triviaLauncherResult = document.getElementById("triviaLauncherResult");
@@ -5892,13 +5893,25 @@ async function submitCustomerAcquisitionSale(event) {
 function updateTriviaQuestionVisibility() {
   const count = Math.max(1, Math.min(5, Number(triviaQuestionCountInput?.value || 1)));
   if (triviaQuestionCountInput) triviaQuestionCountInput.value = String(count);
+  let completed = 0;
   triviaQuestionBuilder?.querySelectorAll("[data-trivia-question]").forEach((card) => {
     const index = Number(card.dataset.triviaQuestion || 0);
-    card.classList.toggle("hidden", index > count);
+    const active = index <= count;
+    const question = card.querySelector('[data-trivia-field="question"]')?.value.trim() || "";
+    const options = ["A", "B", "C", "D"].map((key) => card.querySelector(`[data-trivia-option="${key}"]`)?.value.trim() || "");
+    const ready = active && question.length >= 4 && options.every(Boolean);
+    const status = card.querySelector("[data-trivia-card-status]");
+    card.classList.toggle("hidden", !active);
+    card.classList.toggle("is-complete", ready);
+    if (status) status.textContent = ready ? "Lista" : "Incompleta";
+    if (ready) completed += 1;
     card.querySelectorAll("input, select").forEach((field) => {
-      field.required = index <= count;
+      field.required = active;
     });
   });
+  if (triviaBuilderHint) {
+    triviaBuilderHint.textContent = `${completed} de ${count} preguntas listas. El ganador debe acertar todas.`;
+  }
 }
 
 function collectTriviaQuestions() {
@@ -5915,6 +5928,37 @@ function collectTriviaQuestions() {
       },
       correct_answer: card.querySelector('[data-trivia-field="correct"]')?.value || "A",
     }));
+}
+
+function updateTriviaExpiryMode() {
+  if (!triviaExpiresModeInput || !triviaExpiresAtInput) return;
+  const custom = triviaExpiresModeInput.value === "CUSTOM_DATE";
+  triviaExpiresAtInput.disabled = !custom;
+  triviaExpiresAtInput.required = custom;
+  if (!custom) triviaExpiresAtInput.value = "";
+}
+
+function validateTriviaLauncherForm() {
+  updateTriviaQuestionVisibility();
+  updateTriviaExpiryMode();
+  const questions = collectTriviaQuestions();
+  const invalidQuestionIndex = questions.findIndex((question) => (
+    question.question.length < 4 || ["A", "B", "C", "D"].some((key) => !question.options[key])
+  ));
+  if (invalidQuestionIndex >= 0) {
+    const card = Array.from(triviaQuestionBuilder?.querySelectorAll("[data-trivia-question]") || [])
+      .find((item) => Number(item.dataset.triviaQuestion || 0) === invalidQuestionIndex + 1);
+    setInlineMessage(triviaLauncherMessage, `Completa la pregunta ${invalidQuestionIndex + 1} y sus cuatro opciones.`, "error");
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    card?.querySelector("input")?.focus();
+    return null;
+  }
+  if (triviaExpiresModeInput?.value === "CUSTOM_DATE" && !triviaExpiresAtInput?.value) {
+    setInlineMessage(triviaLauncherMessage, "Selecciona la fecha personalizada de expiracion.", "error");
+    triviaExpiresAtInput?.focus();
+    return null;
+  }
+  return questions;
 }
 
 function renderTriviaLaunchers() {
@@ -5947,6 +5991,12 @@ async function submitTriviaLauncher(event) {
   if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una trivia")) {
     return;
   }
+  if (!triviaLauncherForm.reportValidity()) {
+    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la trivia.", "error");
+    return;
+  }
+  const questions = validateTriviaLauncherForm();
+  if (!questions) return;
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Lanzando...");
   setInlineMessage(triviaLauncherMessage, "Creando landing publica de trivia.", "info");
@@ -5961,7 +6011,7 @@ async function submitTriviaLauncher(event) {
         max_winners: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
         expires_mode: triviaExpiresModeInput.value,
         expires_at: triviaExpiresAtInput.value ? new Date(triviaExpiresAtInput.value).toISOString() : null,
-        questions: collectTriviaQuestions(),
+        questions,
         metadata: {
           source: "ticket_center_trivia_launcher",
           campaign_id: triviaCampaignInput.value || null,
@@ -10495,6 +10545,9 @@ customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSal
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
 triviaQuestionCountInput?.addEventListener("input", updateTriviaQuestionVisibility);
+triviaExpiresModeInput?.addEventListener("change", updateTriviaExpiryMode);
+triviaQuestionBuilder?.addEventListener("input", updateTriviaQuestionVisibility);
+triviaQuestionBuilder?.addEventListener("change", updateTriviaQuestionVisibility);
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
@@ -10631,6 +10684,8 @@ applyPortalTheme(readPreferredTheme());
 setView("dashboard");
 initPasswordResetFromUrl();
 setupPasswordRevealButtons();
+updateTriviaQuestionVisibility();
+updateTriviaExpiryMode();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

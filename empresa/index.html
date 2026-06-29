@@ -1038,14 +1038,14 @@
                     </div>
                     <span class="status-chip ok">1 ticket por ganador</span>
                   </div>
-                  <form class="modal-form" id="triviaLauncherForm">
+                  <form class="modal-form trivia-launcher-form" id="triviaLauncherForm">
                     <label class="full association-field">
                       <span>Campana que medira esta trivia</span>
                       <select id="triviaCampaignInput"></select>
                       <small id="triviaCampaignHelp">La trivia, los leads ganadores y los tickets emitidos quedaran asociados a esta campana.</small>
                     </label>
-                    <label><span>Titulo de la trivia</span><input id="triviaTitleInput" type="text" placeholder="Trivia Mundialista 98" required></label>
-                    <label><span>Maximo de ganadores</span><input id="triviaMaxWinnersInput" type="number" min="1" step="1" placeholder="Opcional"></label>
+                    <label><span>Titulo de la trivia</span><input id="triviaTitleInput" type="text" minlength="4" maxlength="160" placeholder="Trivia Mundialista 98" required></label>
+                    <label><span>Maximo de ganadores</span><input id="triviaMaxWinnersInput" type="number" min="1" max="100000" step="1" placeholder="Sin limite"></label>
                     <label class="full"><span>Descripcion para la landing</span><textarea id="triviaDescriptionInput" rows="3" placeholder="Responde bien y recibe tu ticket para redimir en tienda."></textarea></label>
                     <label><span>Beneficio del ticket ganador</span><input id="triviaBenefitLabelInput" type="text" placeholder="15% de descuento por responder bien" required></label>
                     <label><span>Tipo de beneficio</span>
@@ -1061,7 +1061,7 @@
                         <option value="CUSTOM">Personalizado</option>
                       </select>
                     </label>
-                    <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder="{'percent':15}"></label>
+                    <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder='{"percent":15}'></label>
                     <label><span>Expiracion</span>
                       <select id="triviaExpiresModeInput">
                         <option value="NONE">Sin expiracion</option>
@@ -1072,16 +1072,20 @@
                       </select>
                     </label>
                     <label><span>Fecha personalizada</span><input id="triviaExpiresAtInput" type="datetime-local"></label>
-                    <label><span>Numero de preguntas</span><input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required></label>
+                    <label>
+                      <span>Numero de preguntas</span>
+                      <input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required>
+                      <small id="triviaBuilderHint">1 pregunta activa. El ganador debe acertar todas.</small>
+                    </label>
                     <div class="full trivia-question-builder" id="triviaQuestionBuilder">
                       <article class="trivia-question-editor" data-trivia-question="1">
-                        <strong>Pregunta 1</strong>
-                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" placeholder="Quien fue el goleador del Mundial 98?"></label>
+                        <div class="trivia-question-head"><strong>Pregunta 1</strong><span data-trivia-card-status>Incompleta</span></div>
+                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240" placeholder="Quien fue el goleador del Mundial 98?"></label>
                         <div class="trivia-options-grid">
-                          <label><span>A</span><input data-trivia-option="A" type="text"></label>
-                          <label><span>B</span><input data-trivia-option="B" type="text"></label>
-                          <label><span>C</span><input data-trivia-option="C" type="text"></label>
-                          <label><span>D</span><input data-trivia-option="D" type="text"></label>
+                          <label><span>A</span><input data-trivia-option="A" type="text" maxlength="160" placeholder="Opcion A"></label>
+                          <label><span>B</span><input data-trivia-option="B" type="text" maxlength="160" placeholder="Opcion B"></label>
+                          <label><span>C</span><input data-trivia-option="C" type="text" maxlength="160" placeholder="Opcion C"></label>
+                          <label><span>D</span><input data-trivia-option="D" type="text" maxlength="160" placeholder="Opcion D"></label>
                         </div>
                         <label><span>Respuesta correcta</span>
                           <select data-trivia-field="correct">
@@ -1093,46 +1097,46 @@
                         </label>
                       </article>
                       <article class="trivia-question-editor hidden" data-trivia-question="2">
-                        <strong>Pregunta 2</strong>
-                        <label><span>Pregunta</span><input data-trivia-field="question" type="text"></label>
+                        <div class="trivia-question-head"><strong>Pregunta 2</strong><span data-trivia-card-status>Incompleta</span></div>
+                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240"></label>
                         <div class="trivia-options-grid">
-                          <label><span>A</span><input data-trivia-option="A" type="text"></label>
-                          <label><span>B</span><input data-trivia-option="B" type="text"></label>
-                          <label><span>C</span><input data-trivia-option="C" type="text"></label>
-                          <label><span>D</span><input data-trivia-option="D" type="text"></label>
+                          <label><span>A</span><input data-trivia-option="A" type="text" maxlength="160" placeholder="Opcion A"></label>
+                          <label><span>B</span><input data-trivia-option="B" type="text" maxlength="160" placeholder="Opcion B"></label>
+                          <label><span>C</span><input data-trivia-option="C" type="text" maxlength="160" placeholder="Opcion C"></label>
+                          <label><span>D</span><input data-trivia-option="D" type="text" maxlength="160" placeholder="Opcion D"></label>
                         </div>
                         <label><span>Respuesta correcta</span><select data-trivia-field="correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></label>
                       </article>
                       <article class="trivia-question-editor hidden" data-trivia-question="3">
-                        <strong>Pregunta 3</strong>
-                        <label><span>Pregunta</span><input data-trivia-field="question" type="text"></label>
+                        <div class="trivia-question-head"><strong>Pregunta 3</strong><span data-trivia-card-status>Incompleta</span></div>
+                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240"></label>
                         <div class="trivia-options-grid">
-                          <label><span>A</span><input data-trivia-option="A" type="text"></label>
-                          <label><span>B</span><input data-trivia-option="B" type="text"></label>
-                          <label><span>C</span><input data-trivia-option="C" type="text"></label>
-                          <label><span>D</span><input data-trivia-option="D" type="text"></label>
+                          <label><span>A</span><input data-trivia-option="A" type="text" maxlength="160" placeholder="Opcion A"></label>
+                          <label><span>B</span><input data-trivia-option="B" type="text" maxlength="160" placeholder="Opcion B"></label>
+                          <label><span>C</span><input data-trivia-option="C" type="text" maxlength="160" placeholder="Opcion C"></label>
+                          <label><span>D</span><input data-trivia-option="D" type="text" maxlength="160" placeholder="Opcion D"></label>
                         </div>
                         <label><span>Respuesta correcta</span><select data-trivia-field="correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></label>
                       </article>
                       <article class="trivia-question-editor hidden" data-trivia-question="4">
-                        <strong>Pregunta 4</strong>
-                        <label><span>Pregunta</span><input data-trivia-field="question" type="text"></label>
+                        <div class="trivia-question-head"><strong>Pregunta 4</strong><span data-trivia-card-status>Incompleta</span></div>
+                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240"></label>
                         <div class="trivia-options-grid">
-                          <label><span>A</span><input data-trivia-option="A" type="text"></label>
-                          <label><span>B</span><input data-trivia-option="B" type="text"></label>
-                          <label><span>C</span><input data-trivia-option="C" type="text"></label>
-                          <label><span>D</span><input data-trivia-option="D" type="text"></label>
+                          <label><span>A</span><input data-trivia-option="A" type="text" maxlength="160" placeholder="Opcion A"></label>
+                          <label><span>B</span><input data-trivia-option="B" type="text" maxlength="160" placeholder="Opcion B"></label>
+                          <label><span>C</span><input data-trivia-option="C" type="text" maxlength="160" placeholder="Opcion C"></label>
+                          <label><span>D</span><input data-trivia-option="D" type="text" maxlength="160" placeholder="Opcion D"></label>
                         </div>
                         <label><span>Respuesta correcta</span><select data-trivia-field="correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></label>
                       </article>
                       <article class="trivia-question-editor hidden" data-trivia-question="5">
-                        <strong>Pregunta 5</strong>
-                        <label><span>Pregunta</span><input data-trivia-field="question" type="text"></label>
+                        <div class="trivia-question-head"><strong>Pregunta 5</strong><span data-trivia-card-status>Incompleta</span></div>
+                        <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240"></label>
                         <div class="trivia-options-grid">
-                          <label><span>A</span><input data-trivia-option="A" type="text"></label>
-                          <label><span>B</span><input data-trivia-option="B" type="text"></label>
-                          <label><span>C</span><input data-trivia-option="C" type="text"></label>
-                          <label><span>D</span><input data-trivia-option="D" type="text"></label>
+                          <label><span>A</span><input data-trivia-option="A" type="text" maxlength="160" placeholder="Opcion A"></label>
+                          <label><span>B</span><input data-trivia-option="B" type="text" maxlength="160" placeholder="Opcion B"></label>
+                          <label><span>C</span><input data-trivia-option="C" type="text" maxlength="160" placeholder="Opcion C"></label>
+                          <label><span>D</span><input data-trivia-option="D" type="text" maxlength="160" placeholder="Opcion D"></label>
                         </div>
                         <label><span>Respuesta correcta</span><select data-trivia-field="correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></label>
                       </article>
@@ -1140,7 +1144,7 @@
                     <button class="solid-button" type="submit">Lanzar trivia</button>
                     <p class="error-line" id="triviaLauncherMessage"></p>
                   </form>
-                  <div class="surface-card hidden" id="triviaLauncherResult"></div>
+                  <div class="trivia-launcher-result hidden" id="triviaLauncherResult"></div>
                 </article>
 
                 <article class="surface-card data-table-card">

@@ -6,8 +6,8 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: Inter, Arial, sans-serif;
-  color: #172026;
-  background: #eef4f7;
+  color: #18242b;
+  background: #edf4f2;
 }
 
 .trivia-shell {
@@ -16,16 +16,17 @@ body {
   place-items: center;
   padding: 24px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(238, 244, 247, .72)),
-    url("/img/MGLogo-01.png") center 8% / 220px auto no-repeat;
+    radial-gradient(circle at 12% 10%, rgba(255, 205, 87, .24), transparent 28%),
+    linear-gradient(135deg, rgba(248, 252, 250, .96), rgba(225, 237, 235, .84)),
+    url("/img/MGLogo-01.png") center 7% / 190px auto no-repeat;
 }
 
 .trivia-card {
-  width: min(100%, 860px);
-  border: 1px solid #d3dde4;
+  width: min(100%, 920px);
+  border: 1px solid #cfdbd8;
   border-radius: 8px;
   background: rgba(255, 255, 255, .96);
-  box-shadow: 0 24px 80px rgba(14, 29, 38, .16);
+  box-shadow: 0 24px 80px rgba(13, 42, 37, .16);
   overflow: hidden;
 }
 
@@ -33,9 +34,11 @@ body {
   display: flex;
   gap: 16px;
   align-items: center;
-  padding: 24px;
+  padding: 26px;
   color: #fff;
-  background: #0b3d4a;
+  background:
+    linear-gradient(135deg, rgba(12, 81, 67, .96), rgba(19, 115, 86, .92)),
+    #0c5143;
 }
 
 .trivia-head img {
@@ -53,28 +56,30 @@ body {
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: #9ee8da;
+  color: #ffe08a;
 }
 
 .trivia-head h1 {
   margin: 0;
-  font-size: clamp(28px, 6vw, 48px);
+  font-size: clamp(28px, 5vw, 44px);
   letter-spacing: 0;
+  line-height: 1.03;
 }
 
 .trivia-head p {
   margin: 8px 0 0;
-  color: #dbe9ee;
+  max-width: 62ch;
+  color: #e6f4ef;
 }
 
 .status-panel,
 .ticket-result {
   margin: 20px 24px;
   padding: 16px;
-  border: 1px solid #d8e1e7;
+  border: 1px solid #d7e2df;
   border-radius: 8px;
-  background: #f8fbfc;
-  color: #30414a;
+  background: #f8fbfa;
+  color: #30423d;
   font-weight: 700;
 }
 
@@ -97,6 +102,75 @@ body {
   padding: 0 24px 24px;
 }
 
+.trivia-progress {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #d7e2df;
+  border-radius: 8px;
+  background: #fbfdfc;
+}
+
+.trivia-progress > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 900;
+  color: #243831;
+}
+
+.trivia-progress strong {
+  color: #0d6b52;
+}
+
+.progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfeae6;
+}
+
+.progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #118568, #f2b84b);
+  transition: width .2s ease;
+}
+
+.form-block {
+  display: grid;
+  gap: 14px;
+}
+
+.section-head {
+  display: grid;
+  gap: 4px;
+}
+
+.section-head span {
+  color: #0d6b52;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.section-head h2 {
+  margin: 0;
+  color: #172b25;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.section-head p {
+  margin: 0;
+  color: #60716c;
+  font-size: 14px;
+}
+
 .participant-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -112,13 +186,19 @@ label {
 
 input {
   width: 100%;
-  min-height: 44px;
-  border: 1px solid #b9c8d2;
+  min-height: 48px;
+  border: 1px solid #bacac5;
   border-radius: 8px;
-  padding: 10px 12px;
-  color: #172026;
+  padding: 11px 12px;
+  color: #18242b;
   background: #fff;
   font: inherit;
+}
+
+input:focus-visible {
+  border-color: #118568;
+  box-shadow: 0 0 0 3px rgba(17, 133, 104, .16);
+  outline: none;
 }
 
 .question-list {
@@ -127,16 +207,40 @@ input {
 }
 
 .question-card {
-  border: 1px solid #d8e1e7;
+  border: 1px solid #d7e2df;
   border-radius: 8px;
   padding: 16px;
   background: #ffffff;
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
 
-.question-card strong {
-  display: block;
-  margin-bottom: 12px;
+.question-card.is-complete {
+  border-color: #92d6bf;
+  box-shadow: 0 10px 28px rgba(17, 133, 104, .08);
+}
+
+.question-title {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.question-title > span {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #0d6b52;
+  font-weight: 900;
+}
+
+.question-title strong {
   font-size: 17px;
+  line-height: 1.35;
 }
 
 .answer-grid {
@@ -148,13 +252,27 @@ input {
 .answer-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  border: 1px solid #cdd8df;
+  gap: 10px;
+  min-height: 52px;
+  border: 1px solid #cbd9d5;
   border-radius: 8px;
-  padding: 10px;
+  padding: 11px;
   font-weight: 700;
-  background: #f8fbfc;
+  background: #f8fbfa;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.answer-option:hover,
+.answer-option:focus-within {
+  border-color: #118568;
+  background: #f0fbf6;
+}
+
+.answer-option.is-selected {
+  border-color: #118568;
+  background: #eaf9f2;
+  box-shadow: inset 0 0 0 1px rgba(17, 133, 104, .14);
 }
 
 .answer-option input {
@@ -163,19 +281,38 @@ input {
   min-height: 18px;
 }
 
+.answer-key {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  color: #0d6b52;
+  background: #e0f3eb;
+  font-weight: 900;
+}
+
 .submit-button,
 .ticket-result a {
-  min-height: 46px;
+  min-height: 50px;
   border: 0;
   border-radius: 8px;
   padding: 12px 18px;
   color: #fff;
-  background: #117a65;
+  background: #0d6b52;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
   text-decoration: none;
   text-align: center;
+  transition: background-color .18s ease, transform .18s ease;
+}
+
+.submit-button:hover,
+.ticket-result a:hover {
+  background: #095842;
+  transform: translateY(-1px);
 }
 
 .submit-button:disabled {
@@ -185,7 +322,34 @@ input {
 
 .ticket-result {
   display: grid;
+  justify-items: start;
   gap: 12px;
+}
+
+.ticket-result[data-tone="error"] {
+  border-color: #f2c1a9;
+  background: #fff7f1;
+  color: #7b321c;
+}
+
+.result-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.result-copy span {
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.result-copy strong {
+  font-size: 22px;
+}
+
+.result-copy p {
+  margin: 0;
+  font-weight: 600;
 }
 
 .ticket-result img {
@@ -201,16 +365,36 @@ input {
 
 @media (max-width: 680px) {
   .trivia-shell {
-    padding: 12px;
+    display: block;
+    padding: 10px;
   }
 
-  .trivia-head,
+  .trivia-card {
+    width: 100%;
+  }
+
+  .trivia-head {
+    align-items: flex-start;
+    padding: 20px;
+  }
+
   .participant-grid,
   .answer-grid {
     grid-template-columns: 1fr;
   }
 
-  .trivia-head {
+  .status-panel,
+  .ticket-result {
+    margin: 16px;
+  }
+
+  .trivia-form {
+    padding: 0 16px 18px;
+  }
+
+  .trivia-progress > div:first-child {
     align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 }

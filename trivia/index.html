@@ -26,6 +26,20 @@
       <div class="status-panel" id="statusPanel">Cargando landing...</div>
 
       <form class="trivia-form hidden" id="triviaForm">
+        <section class="trivia-progress" aria-label="Progreso de respuestas">
+          <div>
+            <span id="progressLabel">0 de 0 respondidas</span>
+            <strong id="progressPercent">0%</strong>
+          </div>
+          <div class="progress-track"><span id="progressBar"></span></div>
+        </section>
+
+        <section class="form-block">
+          <div class="section-head">
+            <span>Paso 1</span>
+            <h2>Tus datos</h2>
+            <p>Usaremos esta informacion para asociar el intento y entregar el ticket si ganas.</p>
+          </div>
         <section class="participant-grid">
           <label>
             <span>Nombre</span>
@@ -44,8 +58,16 @@
             <input id="participantDocument" type="text" autocomplete="off" placeholder="Opcional">
           </label>
         </section>
+        </section>
 
+        <section class="form-block">
+          <div class="section-head">
+            <span>Paso 2</span>
+            <h2>Responde la trivia</h2>
+            <p>Debes responder todas las preguntas antes de enviar.</p>
+          </div>
         <section class="question-list" id="questionList"></section>
+        </section>
 
         <button class="submit-button" type="submit">Enviar respuestas</button>
       </form>
