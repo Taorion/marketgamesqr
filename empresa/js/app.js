@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-ticket-frame-v1";
+const APP_VERSION = "empresa-20260629-branded-postsale-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -5851,7 +5851,7 @@ async function submitPostSaleQr(event) {
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando...");
   setInlineMessage(postSaleQrMessage, "Generando ticket postventa y descontando 1 ticket...", "info");
-  showFeedback("Creando token unico, registrando venta y preparando el PNG del ticket.", "loading", { title: "Generando ticket postventa", timeout: 0 });
+  showFeedback("Creando token unico, registrando venta y preparando el ticket.", "loading", { title: "Generando ticket postventa", timeout: 0 });
   showBusyOverlay("Generando ticket postventa", "Registrando venta, creando ticket y actualizando saldo.");
   try {
     const attributionSource = postSaleAttributionSourceInput?.value.trim() || "post-sale";
@@ -5884,20 +5884,20 @@ async function submitPostSaleQr(event) {
         },
       }),
     });
-    setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y el PNG esta listo.", "success");
+    setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
       <img src="${escapeHtml(data.qr_image_data_url)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
-      <p><button class="solid-button" type="button" id="downloadPostSaleQrButton">Descargar PNG</button></p>
+      <p><button class="solid-button" type="button" id="downloadPostSaleQrButton">Descargar ticket</button></p>
     `;
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
-      downloadDataUrl(`post-sale-${data.qr_code.id}.png`, data.qr_image_data_url);
+      downloadDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, data.qr_image_data_url);
     });
     await loadWorkspace();
     setView("strategic-qr");
-    showFeedback("ticket postventa listo. Descarga el PNG o abre el link para validar.", "success", { title: "Ticket generado" });
+    showFeedback("Ticket postventa listo. Descargalo o abre el link para validar.", "success", { title: "Ticket generado" });
   } catch (error) {
     setInlineMessage(postSaleQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo generar el ticket" });

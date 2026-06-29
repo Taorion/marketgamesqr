@@ -169,6 +169,46 @@ function buildBenefitPayload(benefit, reward) {
   };
 }
 
+function formatTicketDate(value) {
+  if (!value) {
+    return "Sin vencimiento";
+  }
+  try {
+    return new Intl.DateTimeFormat("es-CO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return String(value);
+  }
+}
+
+function shortTicketCode(qr) {
+  return String(qr?.id || qr?.token || "")
+    .replace(/-/g, "")
+    .slice(0, 10)
+    .toUpperCase();
+}
+
+function truncateTicketLine(value, maxLength = 44) {
+  const text = String(value || "").trim();
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength - 1)}...`;
+}
+
+function buildTicketDetailLines({ label, expiresAt, code }) {
+  return [
+    `Beneficio: ${truncateTicketLine(label || "Beneficio")}`,
+    `Vence: ${formatTicketDate(expiresAt)}`,
+    `Codigo: ${String(code || "").trim() || "N/A"}`,
+  ];
+}
+
 async function createPostSaleQr(businessId, user, body) {
   return withTransaction(async (client) => {
     const [reward, campaign] = await Promise.all([
@@ -274,16 +314,36 @@ async function createPostSaleQr(businessId, user, body) {
     });
 
     const validatorUrl = buildValidatorUrl(token);
-    const businessResult = await client.query("select id, name from businesses where id = $1", [businessId]);
+    const businessResult = await client.query(
+      `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
+       from businesses b
+       where id = $1`,
+      [businessId]
+    );
+    const business = businessResult.rows[0] || null;
+    const brand = getBrandStyle(business?.business_settings || {});
+    const hasFrame = Boolean(brand.ticketFrameUrl);
+    const postSaleTicketImage = hasFrame
+      ? await buildBrandedTicketSvgDataUrl({
+          scanUrl: validatorUrl,
+          brand,
+          detailLines: buildTicketDetailLines({
+            label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio postventa",
+            expiresAt,
+            code: shortTicketCode(qr),
+          }),
+        })
+      : await QRCode.toDataURL(validatorUrl);
 
     return {
       sale,
       qr_code: qr,
-      business: businessResult.rows[0] || null,
+      business,
       credit_account: mapPublicCreditAccount(creditAccount),
       validator_url: validatorUrl,
       qr_content: validatorUrl,
-      qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+      qr_image_data_url: postSaleTicketImage,
+      filename: `post-sale-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
       benefit: benefitPayload,
     };
   });
@@ -658,10 +718,17 @@ async function getIndividualQrDownload(businessId, qrId) {
   const links = buildPublicQrLinks(qr);
   const brand = getBrandStyle(qr.business_settings || {});
   const hasFrame = Boolean(brand.ticketFrameUrl);
+  const ticketLabel = qr.benefit_value?.label || qr.benefit_type || "Beneficio";
+  const detailLines = buildTicketDetailLines({
+    label: ticketLabel,
+    expiresAt: qr.expires_at,
+    code: shortTicketCode(qr),
+  });
   const qrImageDataUrl = hasFrame
     ? await buildBrandedTicketSvgDataUrl({
         scanUrl: links.scan_url,
         brand,
+        detailLines,
       })
     : await QRCode.toDataURL(links.scan_url);
   return {
@@ -884,7 +951,7 @@ function svgEscape(value) {
   return escapeHtml(value).replace(/\n/g, " ");
 }
 
-async function buildBrandedTicketSvgDataUrl({ scanUrl, brand }) {
+async function buildBrandedTicketSvgDataUrl({ scanUrl, brand, detailLines = [] }) {
   const qrImage = await QRCode.toDataURL(scanUrl, {
     type: "image/png",
     width: 560,
@@ -897,11 +964,15 @@ async function buildBrandedTicketSvgDataUrl({ scanUrl, brand }) {
   const qrSize = 500;
   const qrX = Math.round((width - qrSize) / 2);
   const qrY = 450;
+  const normalizedLines = detailLines.slice(0, 3).map((line) => svgEscape(line));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="${width}" height="${height}" rx="48" fill="#ffffff"/>
   ${frame ? `<image href="${svgEscape(frame)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${width}" height="${height}" rx="48" fill="${svgEscape(brand.primary)}"/><rect x="42" y="42" width="996" height="1266" rx="40" fill="#ffffff"/>`}
   <rect x="${qrX - 28}" y="${qrY - 28}" width="${qrSize + 56}" height="${qrSize + 56}" rx="36" fill="#ffffff"/>
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
+  ${normalizedLines.length ? `<rect x="190" y="995" width="700" height="132" rx="28" fill="#ffffff" opacity="0.94"/>
+  ${normalizedLines.map((line, index) => `<text x="${width / 2}" y="${1038 + index * 34}" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="${index === 0 ? "800" : "700"}" fill="#111827">${line}</text>`).join("\n  ")}
+  ` : ""}
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -917,13 +988,22 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
     qrRows.map(async (row) => {
       const qrImage = await QRCode.toDataURL(row.scan_url || buildClaimUrl(row.token));
       const label = row.benefit_value?.label || row.benefit_type || "Beneficio";
+      const detailLines = buildTicketDetailLines({
+        label,
+        expiresAt: row.expires_at,
+        code: shortTicketCode(row),
+      });
       const affiliateLine = row.affiliate_name
         ? `Afiliado asignado: ${row.affiliate_name}${row.affiliate_document_id ? ` · ${row.affiliate_document_id}` : ""}`
         : "";
       return `
         <article class="label-card${brand.ticketFrameUrl ? " has-brand-frame" : ""}">
           <div class="qr-pad"><img src="${qrImage}" alt="QR ${row.id}"></div>
-          ${brand.ticketFrameUrl ? "" : `
+          ${brand.ticketFrameUrl ? `
+            <div class="ticket-meta">
+              ${detailLines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
+            </div>
+          ` : `
             <h2>${escapeHtml(label)}</h2>
             <p>${escapeHtml(batch.name)}</p>
             ${affiliateLine ? `<p class="affiliate-line">${escapeHtml(affiliateLine)}</p>` : ""}
@@ -954,6 +1034,9 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
     .label-card.has-brand-frame { background-image: url("${escapeHtml(brand.ticketFrameUrl)}"); border: 0; min-height: ${layout.cardHeight}px; }
     .qr-pad { display: inline-grid; place-items: center; padding: 10px; border-radius: 18px; background: #fff; }
     .label-card img { width: ${layout.qrSize + 30}px; height: ${layout.qrSize + 30}px; object-fit: contain; display: block; }
+    .ticket-meta { display: grid; gap: 4px; width: min(100%, 260px); margin: 10px auto 0; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .94); color: #111827; }
+    .ticket-meta span { display: block; color: #111827; font-size: 11px; font-weight: 700; line-height: 1.25; }
+    .ticket-meta span:first-child { font-weight: 800; }
     .label-card h2 { margin: 10px 0 6px; font-size: ${layout.titleSize + 5}px; }
     .label-card p { margin: 0 0 6px; font-size: 13px; color: #444; }
     .label-card .affiliate-line { font-weight: 700; color: #111; }
@@ -996,6 +1079,11 @@ async function getBatchZipDownload(businessId, batchId) {
       const svgDataUrl = await buildBrandedTicketSvgDataUrl({
         scanUrl: row.scan_url || buildClaimUrl(row.token),
         brand,
+        detailLines: buildTicketDetailLines({
+          label: row.benefit_value?.label || row.benefit_type || "Beneficio",
+          expiresAt: row.expires_at,
+          code: shortTicketCode(row),
+        }),
       });
       const svg = decodeURIComponent(svgDataUrl.replace(/^data:image\/svg\+xml;charset=utf-8,/, ""));
       zip.file(`ticket-${String(row.id).slice(0, 8)}.svg`, svg);
@@ -1128,22 +1216,51 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
     });
     const image = await pdf.embedPng(png);
     const imageSize = layout.qrSize;
+    const qrDrawX = x + (cardWidth - imageSize) / 2;
+    const qrDrawY = y + Math.max(60, cardHeight - imageSize - 30);
     page.drawRectangle({
-      x: x + (cardWidth - imageSize) / 2 - 6,
-      y: y + Math.max(60, cardHeight - imageSize - 30) - 6,
+      x: qrDrawX - 6,
+      y: qrDrawY - 6,
       width: imageSize + 12,
       height: imageSize + 12,
       color: rgb(1, 1, 1),
     });
     page.drawImage(image, {
-      x: x + (cardWidth - imageSize) / 2,
-      y: y + Math.max(60, cardHeight - imageSize - 30),
+      x: qrDrawX,
+      y: qrDrawY,
       width: imageSize,
       height: imageSize,
     });
 
     const title = row.benefit_value?.label || row.benefit_type || "Beneficio";
-    if (!embeddedFrame) {
+    if (embeddedFrame) {
+      const detailLines = buildTicketDetailLines({
+        label: title,
+        expiresAt: row.expires_at,
+        code: shortTicketCode(row),
+      });
+      const panelWidth = Math.min(cardWidth - 18, 150);
+      const panelHeight = 44;
+      const panelX = x + (cardWidth - panelWidth) / 2;
+      const panelY = Math.max(y + 8, qrDrawY - panelHeight - 10);
+      page.drawRectangle({
+        x: panelX,
+        y: panelY,
+        width: panelWidth,
+        height: panelHeight,
+        color: rgb(1, 1, 1),
+      });
+      detailLines.forEach((line, lineIndex) => {
+        page.drawText(line.slice(0, 38), {
+          x: panelX + 6,
+          y: panelY + panelHeight - 13 - lineIndex * 12,
+          size: lineIndex === 0 ? 6.5 : 6,
+          font: lineIndex === 0 ? bold : font,
+          color: rgb(0.07, 0.09, 0.12),
+          maxWidth: panelWidth - 12,
+        });
+      });
+    } else {
       page.drawText(title.slice(0, 36), {
         x: x + 10,
         y: y + 44,
@@ -1230,6 +1347,7 @@ async function getClaimDetails(tokenInput) {
        fq.created_at as final_qr_created_at,
        fq.expires_at as final_qr_expires_at,
        b.name as business_name,
+       ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings,
        c.name as campaign_name,
        p.name as player_name,
        p.phone as player_phone,
@@ -1267,6 +1385,22 @@ async function getClaimDetails(tokenInput) {
     qr.status = "EXPIRED";
   }
 
+  const brand = getBrandStyle(qr.business_settings || {});
+  const finalTicketUrl = qr.final_qr_token ? buildValidatorUrl(qr.final_qr_token) : null;
+  const finalTicketImageDataUrl = qr.final_qr_code_id && finalTicketUrl
+    ? brand.ticketFrameUrl
+      ? await buildBrandedTicketSvgDataUrl({
+          scanUrl: finalTicketUrl,
+          brand,
+          detailLines: buildTicketDetailLines({
+            label: qr.benefit_value?.label || qr.benefit_type || "Beneficio",
+            expiresAt: qr.final_qr_expires_at,
+            code: shortTicketCode({ id: qr.final_qr_code_id, token: qr.final_qr_token }),
+          }),
+        })
+      : await QRCode.toDataURL(finalTicketUrl)
+    : null;
+
   return {
     status: qr.status,
     allowed: qr.status === "UNCLAIMED",
@@ -1289,8 +1423,8 @@ async function getClaimDetails(tokenInput) {
       ? {
           id: qr.final_qr_code_id,
           status: qr.final_qr_status,
-          validator_url: buildValidatorUrl(qr.final_qr_token),
-          qr_image_data_url: await QRCode.toDataURL(buildValidatorUrl(qr.final_qr_token)),
+          validator_url: finalTicketUrl,
+          qr_image_data_url: finalTicketImageDataUrl,
           created_at: qr.final_qr_created_at,
           expires_at: qr.final_qr_expires_at,
         }
@@ -1484,16 +1618,35 @@ async function claimQr(tokenInput, body) {
       },
     });
 
-    const businessResult = await client.query("select name from businesses where id = $1", [qr.business_id]);
+    const businessResult = await client.query(
+      `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
+       from businesses b
+       where id = $1`,
+      [qr.business_id]
+    );
     const campaignResult = qr.campaign_id
       ? await client.query("select name from campaigns where id = $1", [qr.campaign_id])
       : { rows: [] };
+    const business = businessResult.rows[0] || null;
+    const brand = getBrandStyle(business?.business_settings || {});
+    const finalTicketUrl = buildValidatorUrl(finalToken);
+    const finalTicketImageDataUrl = brand.ticketFrameUrl
+      ? await buildBrandedTicketSvgDataUrl({
+          scanUrl: finalTicketUrl,
+          brand,
+          detailLines: buildTicketDetailLines({
+            label: qr.benefit_value?.label || qr.benefit_type || "Beneficio",
+            expiresAt: finalQr.expires_at,
+            code: shortTicketCode(finalQr),
+          }),
+        })
+      : await QRCode.toDataURL(finalTicketUrl);
 
     return {
       status: "ACTIVE",
       allowed: false,
       message: "Tu beneficio ya esta activo y listo para redimir.",
-      business: { id: qr.business_id, name: businessResult.rows[0]?.name || null },
+      business: { id: qr.business_id, name: business?.name || null },
       campaign: qr.campaign_id ? { id: qr.campaign_id, name: campaignResult.rows[0]?.name || null } : null,
       qr_code: {
         id: qr.id,
@@ -1510,8 +1663,8 @@ async function claimQr(tokenInput, body) {
       final_ticket: {
         id: finalQr.id,
         status: finalQr.status,
-        validator_url: buildValidatorUrl(finalToken),
-        qr_image_data_url: await QRCode.toDataURL(buildValidatorUrl(finalToken)),
+        validator_url: finalTicketUrl,
+        qr_image_data_url: finalTicketImageDataUrl,
         created_at: finalQr.created_at,
         expires_at: finalQr.expires_at,
       },
