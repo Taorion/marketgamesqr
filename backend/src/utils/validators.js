@@ -42,6 +42,7 @@ const qrOriginTypes = [
   "LOYALTY",
   "SURPRISE_REWARD",
   "AFFILIATE_REFERRAL",
+  "TRIVIA_LAUNCHER",
 ];
 
 const benefitTypes = [
@@ -90,7 +91,7 @@ const qrBatchSchema = z.object({
   description: z.string().trim().max(1000).optional().nullable(),
   quantity: z.number().int().min(1).max(5000),
   campaign_id: z.string().uuid().optional().nullable(),
-  qr_origin_type: z.enum(qrOriginTypes).refine((value) => value !== "POST_SALE", "POST_SALE is not valid for batches."),
+  qr_origin_type: z.enum(qrOriginTypes).refine((value) => !["POST_SALE", "TRIVIA_LAUNCHER"].includes(value), "This origin type is not valid for batches."),
   channel_use: z.enum([
     "etiqueta",
     "empaque",
@@ -133,6 +134,41 @@ const affiliateReferralQrBatchSchema = z.object({
   }),
 });
 
+const triviaAnswerKeys = ["A", "B", "C", "D"];
+
+const triviaQuestionSchema = z.object({
+  question: z.string().trim().min(4).max(240),
+  options: z.object({
+    A: z.string().trim().min(1).max(160),
+    B: z.string().trim().min(1).max(160),
+    C: z.string().trim().min(1).max(160),
+    D: z.string().trim().min(1).max(160),
+  }),
+  correct_answer: z.enum(triviaAnswerKeys),
+});
+
+const triviaLaunchSchema = z.object({
+  title: z.string().trim().min(4).max(160),
+  description: z.string().trim().max(1000).optional().nullable(),
+  campaign_id: z.string().uuid().optional().nullable(),
+  questions: z.array(triviaQuestionSchema).min(1).max(5),
+  expires_mode: z.enum(expirationPresets).default("NONE"),
+  expires_at: z.string().datetime().optional().nullable(),
+  expiration_days: z.number().int().min(1).max(365).optional().nullable(),
+  max_winners: z.number().int().min(1).max(100000).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  benefit: strategicBenefitSchema,
+});
+
+const publicTriviaSubmitSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  phone: z.string().trim().min(5).max(40),
+  email: z.string().email().max(160).optional().nullable(),
+  document_id: z.string().trim().max(40).optional().nullable(),
+  answers: z.record(z.string(), z.enum(triviaAnswerKeys)),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 const qrClaimSchema = z.object({
   name: z.string().trim().min(2).max(160),
   phone: z.string().trim().max(40).optional().nullable(),
@@ -151,5 +187,7 @@ module.exports = {
   postSaleQrSchema,
   qrBatchSchema,
   affiliateReferralQrBatchSchema,
+  triviaLaunchSchema,
+  publicTriviaSubmitSchema,
   qrClaimSchema,
 };

@@ -9290,3 +9290,33 @@ body.chart-focus-open .command-center {
   line-height: 1;
 }
 
+.trivia-question-builder {
+  display: grid;
+  gap: 14px;
+}
+
+.trivia-question-editor {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.trivia-question-editor > strong {
+  color: var(--text-primary);
+}
+
+.trivia-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .trivia-options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

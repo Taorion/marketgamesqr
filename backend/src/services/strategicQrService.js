@@ -617,7 +617,7 @@ async function getQrHistory(businessId) {
      left join players p on p.id = q.player_id
      left join affiliates a on a.id = q.affiliate_id
      where q.business_id = $1
-       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL')
+       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER')
      order by q.created_at desc
      limit 500`,
     [businessId]
@@ -642,6 +642,8 @@ async function getQrMetrics(businessId) {
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as affiliate_referral_claimed_or_active,
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'REDEEMED')::int as affiliate_referral_redeemed,
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as affiliate_referral_unclaimed,
+         count(*) filter (where origin_type = 'TRIVIA_LAUNCHER')::int as trivia_generated,
+         count(*) filter (where origin_type = 'TRIVIA_LAUNCHER' and status = 'REDEEMED')::int as trivia_redeemed,
          count(*) filter (where status = 'EXPIRED')::int as expired_without_redeem
        from qr_codes
        where business_id = $1`,
@@ -651,7 +653,7 @@ async function getQrMetrics(businessId) {
       `select benefit_type, count(*)::int as total
        from qr_codes
        where business_id = $1
-         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL')
+         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER')
          and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr'
        group by benefit_type
        order by total desc`,
@@ -685,6 +687,8 @@ async function getQrMetrics(businessId) {
       affiliate_referral_claimed_or_active: Number(top.affiliate_referral_claimed_or_active || 0),
       affiliate_referral_redeemed: Number(top.affiliate_referral_redeemed || 0),
       affiliate_referral_unclaimed: Number(top.affiliate_referral_unclaimed || 0),
+      trivia_generated: Number(top.trivia_generated || 0),
+      trivia_redeemed: Number(top.trivia_redeemed || 0),
       expired_without_redeem: Number(top.expired_without_redeem || 0),
     },
     benefits: benefitUsage.rows,

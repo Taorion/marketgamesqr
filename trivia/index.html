@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivia MarketGames</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/trivia/styles.css?v=trivia-launcher-20260629">
+</head>
+<body>
+  <main class="trivia-shell">
+    <section class="trivia-card">
+      <header class="trivia-head">
+        <img src="/img/MGLogo-01.png" alt="MarketGames">
+        <div>
+          <span id="businessName">MarketGames RMS</span>
+          <h1 id="triviaTitle">Cargando trivia...</h1>
+          <p id="triviaDescription">Preparando preguntas y ticket.</p>
+        </div>
+      </header>
+
+      <div class="status-panel" id="statusPanel">Cargando landing...</div>
+
+      <form class="trivia-form hidden" id="triviaForm">
+        <section class="participant-grid">
+          <label>
+            <span>Nombre</span>
+            <input id="participantName" type="text" autocomplete="name" required>
+          </label>
+          <label>
+            <span>Telefono</span>
+            <input id="participantPhone" type="tel" autocomplete="tel" required>
+          </label>
+          <label>
+            <span>Correo</span>
+            <input id="participantEmail" type="email" autocomplete="email" placeholder="Opcional">
+          </label>
+          <label>
+            <span>Documento</span>
+            <input id="participantDocument" type="text" autocomplete="off" placeholder="Opcional">
+          </label>
+        </section>
+
+        <section class="question-list" id="questionList"></section>
+
+        <button class="submit-button" type="submit">Enviar respuestas</button>
+      </form>
+
+      <section class="ticket-result hidden" id="ticketResult"></section>
+    </section>
+  </main>
+  <script src="/trivia/trivia.js?v=trivia-launcher-20260629" defer></script>
+</body>
+</html>

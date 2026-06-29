@@ -1,6 +1,10 @@
 const express = require("express");
 const { authRequired, requireRoles } = require("../middleware/auth");
 const {
+  createTrivia,
+  listTrivias,
+} = require("../controllers/triviaController");
+const {
   createPostSale,
   createBatch,
   createAffiliateReferralBatch,
@@ -19,6 +23,8 @@ router.use(authRequired);
 router.use(requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"));
 
 router.post("/post-sale", createPostSale);
+router.post("/trivias", createTrivia);
+router.get("/trivias", listTrivias);
 router.post("/batches", createBatch);
 router.post("/affiliates/referral-batches", createAffiliateReferralBatch);
 router.get("/batches", listBatches);

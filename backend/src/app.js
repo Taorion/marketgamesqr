@@ -171,12 +171,16 @@ app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad"
 app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos")));
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
 app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
+app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
 });
 app.get("/rp/:publicCode", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "reward-pass-public", "index.html"));
+});
+app.get("/trivia/:slug", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../..", "trivia", "index.html"));
 });
 app.get("/", (_req, res) => {
   res.sendFile(path.join(marketGamesWebRoot, "index.html"));

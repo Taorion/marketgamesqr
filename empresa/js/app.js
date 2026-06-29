@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-ticket-download-png-v1";
+const APP_VERSION = "empresa-20260629-trivia-launcher-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -335,6 +335,22 @@ const postSaleExpiresAtInput = document.getElementById("postSaleExpiresAtInput")
 const postSaleNotesInput = document.getElementById("postSaleNotesInput");
 const postSaleQrMessage = document.getElementById("postSaleQrMessage");
 const postSaleQrResult = document.getElementById("postSaleQrResult");
+const triviaLauncherForm = document.getElementById("triviaLauncherForm");
+const triviaCampaignInput = document.getElementById("triviaCampaignInput");
+const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
+const triviaTitleInput = document.getElementById("triviaTitleInput");
+const triviaDescriptionInput = document.getElementById("triviaDescriptionInput");
+const triviaMaxWinnersInput = document.getElementById("triviaMaxWinnersInput");
+const triviaBenefitLabelInput = document.getElementById("triviaBenefitLabelInput");
+const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput");
+const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput");
+const triviaExpiresModeInput = document.getElementById("triviaExpiresModeInput");
+const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
+const triviaQuestionCountInput = document.getElementById("triviaQuestionCountInput");
+const triviaQuestionBuilder = document.getElementById("triviaQuestionBuilder");
+const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
+const triviaLauncherResult = document.getElementById("triviaLauncherResult");
+const triviaLauncherTable = document.getElementById("triviaLauncherTable");
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
@@ -551,6 +567,7 @@ let state = {
   qrCreditOrders: [],
   strategicQrBatches: [],
   strategicQrHistory: [],
+  triviaLaunchers: [],
   affiliatesLoaded: false,
   strategicQrLoaded: false,
   strategicQrRecentBatchId: null,
@@ -1132,12 +1149,13 @@ async function loadStrategicQrData() {
     return;
   }
   showFeedback("Cargando paquetes, saldos e historial de tickets.", "loading", { title: "Sincronizando tickets", timeout: 0 });
-  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory, affiliatesData] = await Promise.all([
+  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory, triviaData, affiliatesData] = await Promise.all([
     apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] }),
     apiSafe("/api/public/packages", {}, { packages: [] }),
     apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
     apiSafe("/api/business/qr/batches", { headers: authHeaders() }, { batches: [] }),
     apiSafe("/api/business/qr/history", { headers: authHeaders() }, { history: [] }),
+    apiSafe("/api/business/qr/trivias", { headers: authHeaders() }, { trivias: [] }),
     hasPlanFeature("affiliates")
       ? apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] })
       : Promise.resolve({ affiliates: [] }),
@@ -1148,6 +1166,7 @@ async function loadStrategicQrData() {
   state.qrCreditOrders = creditOrdersData.orders || [];
   state.strategicQrBatches = strategicBatches.batches || [];
   state.strategicQrHistory = strategicHistory.history || [];
+  state.triviaLaunchers = triviaData.trivias || [];
   state.affiliates = affiliatesData.affiliates || [];
   state.affiliatesLoaded = true;
   state.strategicQrLoaded = true;
@@ -2146,6 +2165,7 @@ function renderCampaignAssociationInputs() {
   [
     [postSaleCampaignInput, true],
     [qrBatchCampaignInput, true],
+    [triviaCampaignInput, true],
     [affiliateReferralQrCampaignInput, false],
   ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
@@ -2170,6 +2190,9 @@ function renderCampaignAssociationInputs() {
   if (qrBatchCampaignHelp) qrBatchCampaignHelp.textContent = campaigns.length
     ? "El lote completo descontara tickets y cada ticket quedara asociado a la campana seleccionada."
     : "Primero crea una campana para medir el lote por activacion.";
+  if (triviaCampaignHelp) triviaCampaignHelp.textContent = campaigns.length
+    ? "La trivia emitira tickets solo a ganadores y los asociara a la campana seleccionada."
+    : "Primero crea una campana para medir la trivia por leads, tickets y redenciones.";
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -2325,6 +2348,7 @@ async function loadWorkspace() {
     state.qrCreditOrders = [];
     state.strategicQrBatches = [];
     state.strategicQrHistory = [];
+    state.triviaLaunchers = [];
     state.affiliatesLoaded = false;
     state.strategicQrLoaded = false;
     state.adminCampaigns = adminCampaignData?.campaigns || [];
@@ -2452,6 +2476,7 @@ async function loadPrepaidValidatorWorkspace() {
   state.strategicQrMetrics = null;
   state.strategicQrBatches = [];
   state.strategicQrHistory = [];
+  state.triviaLaunchers = [];
   state.adminCampaigns = [];
   state.businessProfile = {
     id: session.user.business_id,
@@ -5560,6 +5585,7 @@ function renderStrategicQrView() {
     strategicMetricCard("ticket postventa", String(metrics.post_sale_generated || 0)),
     strategicMetricCard("Redimidos postventa", String(metrics.post_sale_redeemed || 0)),
     strategicMetricCard("Tasa recompra", `${Number((metrics.repurchase_rate || 0) * 100).toFixed(1)}%`),
+    strategicMetricCard("Tickets trivia", String(metrics.trivia_generated || 0), "highlight"),
     strategicMetricCard("Paquetes", String(metrics.qr_batches_generated || 0)),
     strategicMetricCard("ticket etiqueta reclamados", String(metrics.label_qr_claimed_or_active || 0)),
     strategicMetricCard("Vencidos", String(metrics.expired_without_redeem || 0), "warning"),
@@ -5576,6 +5602,8 @@ function renderStrategicQrView() {
   }
   renderQrCreditShop();
   renderSubscriptionPricing();
+  updateTriviaQuestionVisibility();
+  renderTriviaLaunchers();
   renderCustomerAcquisitionAffiliateOptions();
 
   qrBatchTable.innerHTML = (state.strategicQrBatches || []).length
@@ -5838,6 +5866,116 @@ async function submitCustomerAcquisitionSale(event) {
   } catch (error) {
     setInlineMessage(customerAcquisitionMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo registrar" });
+  } finally {
+    setButtonLoading(submitButton, false);
+  }
+}
+
+function updateTriviaQuestionVisibility() {
+  const count = Math.max(1, Math.min(5, Number(triviaQuestionCountInput?.value || 1)));
+  if (triviaQuestionCountInput) triviaQuestionCountInput.value = String(count);
+  triviaQuestionBuilder?.querySelectorAll("[data-trivia-question]").forEach((card) => {
+    const index = Number(card.dataset.triviaQuestion || 0);
+    card.classList.toggle("hidden", index > count);
+    card.querySelectorAll("input, select").forEach((field) => {
+      field.required = index <= count;
+    });
+  });
+}
+
+function collectTriviaQuestions() {
+  const count = Math.max(1, Math.min(5, Number(triviaQuestionCountInput?.value || 1)));
+  return Array.from(triviaQuestionBuilder?.querySelectorAll("[data-trivia-question]") || [])
+    .filter((card) => Number(card.dataset.triviaQuestion || 0) <= count)
+    .map((card) => ({
+      question: card.querySelector('[data-trivia-field="question"]')?.value.trim() || "",
+      options: {
+        A: card.querySelector('[data-trivia-option="A"]')?.value.trim() || "",
+        B: card.querySelector('[data-trivia-option="B"]')?.value.trim() || "",
+        C: card.querySelector('[data-trivia-option="C"]')?.value.trim() || "",
+        D: card.querySelector('[data-trivia-option="D"]')?.value.trim() || "",
+      },
+      correct_answer: card.querySelector('[data-trivia-field="correct"]')?.value || "A",
+    }));
+}
+
+function renderTriviaLaunchers() {
+  if (!triviaLauncherTable) return;
+  triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
+    ? state.triviaLaunchers.map((item) => `
+      <tr>
+        <td>${escapeHtml(item.title)}<br><span class="table-secondary">${escapeHtml(formatDate(item.created_at))}</span></td>
+        <td>${escapeHtml(item.campaign_name || "-")}</td>
+        <td>${escapeHtml(item.attempts_count || 0)}</td>
+        <td>${escapeHtml(item.winners_count || 0)}${item.max_winners ? `/${escapeHtml(item.max_winners)}` : ""}</td>
+        <td>
+          <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
+          <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
+        </td>
+      </tr>
+    `).join("")
+    : '<tr><td colspan="5">Sin trivias lanzadas todavia.</td></tr>';
+
+  triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
+      showFeedback("Link publico de trivia copiado.");
+    });
+  });
+}
+
+async function submitTriviaLauncher(event) {
+  event.preventDefault();
+  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una trivia")) {
+    return;
+  }
+  const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
+  setButtonLoading(submitButton, true, "Lanzando...");
+  setInlineMessage(triviaLauncherMessage, "Creando landing publica de trivia.", "info");
+  try {
+    const data = await api("/api/business/qr/trivias", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        campaign_id: triviaCampaignInput.value || null,
+        title: triviaTitleInput.value.trim(),
+        description: triviaDescriptionInput.value.trim() || null,
+        max_winners: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
+        expires_mode: triviaExpiresModeInput.value,
+        expires_at: triviaExpiresAtInput.value ? new Date(triviaExpiresAtInput.value).toISOString() : null,
+        questions: collectTriviaQuestions(),
+        metadata: {
+          source: "ticket_center_trivia_launcher",
+          campaign_id: triviaCampaignInput.value || null,
+        },
+        benefit: {
+          benefit_type: triviaBenefitTypeInput.value,
+          benefit_label: triviaBenefitLabelInput.value.trim(),
+          benefit_value: parseJsonObject(triviaBenefitValueInput.value),
+        },
+      }),
+    });
+
+    state.triviaLaunchers = [data.trivia, ...(state.triviaLaunchers || []).filter((item) => item.id !== data.trivia.id)];
+    renderTriviaLaunchers();
+    triviaLauncherResult.classList.remove("hidden");
+    triviaLauncherResult.innerHTML = `
+      <strong>Trivia lanzada</strong>
+      <p class="table-secondary">Comparte este link con clientes. Solo quien responda todo bien recibe ticket y consume saldo.</p>
+      <p><a href="${escapeHtml(data.trivia.public_url)}" target="_blank" rel="noopener">${escapeHtml(data.trivia.public_url)}</a></p>
+      <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
+    `;
+    document.getElementById("copyTriviaLauncherResultButton")?.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(data.trivia.public_url);
+      showFeedback("Link de trivia copiado.");
+    });
+    setInlineMessage(triviaLauncherMessage, "Trivia lista para compartir.", "success");
+    showFeedback("Trivia lanzada. El link publico ya esta listo.", "success", { title: "Trivia Launcher" });
+    await loadStrategicQrData();
+    renderStrategicQrView();
+  } catch (error) {
+    setInlineMessage(triviaLauncherMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo lanzar la trivia" });
   } finally {
     setButtonLoading(submitButton, false);
   }
@@ -10142,6 +10280,8 @@ saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
+triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
+triviaQuestionCountInput?.addEventListener("input", updateTriviaQuestionVisibility);
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
