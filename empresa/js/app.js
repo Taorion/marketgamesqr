@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-trivia-launcher-v1";
+const APP_VERSION = "empresa-20260629-postsale-direct-download-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -6023,19 +6023,21 @@ async function submitPostSaleQr(event) {
       }),
     });
     const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
+    const ticketFilename = filenameForDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, browserTicketDataUrl);
+    const ticketDownloadUrl = URL.createObjectURL(dataUrlToBlob(browserTicketDataUrl));
+    await loadWorkspace();
+    setView("strategic-qr");
     setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
-      <p><button class="solid-button" type="button" id="downloadPostSaleQrButton">Descargar ticket</button></p>
+      <p><a class="solid-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a></p>
     `;
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
-      downloadDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, browserTicketDataUrl);
+      window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
     });
-    await loadWorkspace();
-    setView("strategic-qr");
     showFeedback("Ticket postventa listo. Descargalo o abre el link para validar.", "success", { title: "Ticket generado" });
   } catch (error) {
     setInlineMessage(postSaleQrMessage, error.message, "error");
