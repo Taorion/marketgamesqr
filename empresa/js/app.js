@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-branded-postsale-v1";
+const APP_VERSION = "empresa-20260629-ticket-download-png-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -5884,16 +5884,17 @@ async function submitPostSaleQr(event) {
         },
       }),
     });
+    const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
     setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
-      <img src="${escapeHtml(data.qr_image_data_url)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
+      <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
       <p><button class="solid-button" type="button" id="downloadPostSaleQrButton">Descargar ticket</button></p>
     `;
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
-      downloadDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, data.qr_image_data_url);
+      downloadDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, browserTicketDataUrl);
     });
     await loadWorkspace();
     setView("strategic-qr");
@@ -7213,13 +7214,109 @@ function downloadCsv(name, rows) {
   URL.revokeObjectURL(url);
 }
 
-function downloadDataUrl(filename, dataUrl) {
+function dataUrlToBlob(dataUrl) {
+  const [header = "", body = ""] = String(dataUrl || "").split(",");
+  const mimeMatch = header.match(/^data:([^;]+)(;base64)?/i);
+  const mimeType = mimeMatch?.[1] || "application/octet-stream";
+  const isBase64 = Boolean(mimeMatch?.[2]);
+  const binary = isBase64 ? atob(body) : decodeURIComponent(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
+function triggerBlobDownload(filename, blob) {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = dataUrl;
+  link.href = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function filenameForDataUrl(filename, dataUrl) {
+  const value = String(dataUrl || "");
+  if (value.startsWith("data:image/png")) {
+    return filename.replace(/\.[^.]+$/, "") + ".png";
+  }
+  if (value.startsWith("data:image/jpeg") || value.startsWith("data:image/jpg")) {
+    return filename.replace(/\.[^.]+$/, "") + ".jpg";
+  }
+  if (value.startsWith("data:image/svg+xml")) {
+    return filename.replace(/\.[^.]+$/, "") + ".svg";
+  }
+  return filename;
+}
+
+async function convertSvgDataUrlToPngBlob(dataUrl) {
+  const image = await loadImageDataUrl(dataUrl);
+  if (!image) {
+    throw new Error("No se pudo preparar el ticket como imagen.");
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || image.width || 1080;
+  canvas.height = image.naturalHeight || image.height || 1350;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("No se pudo convertir el ticket a PNG."));
+      }
+    }, "image/png", 0.96);
+  });
+}
+
+async function ticketImageDataUrlForBrowser(dataUrl) {
+  const value = String(dataUrl || "");
+  if (!value.startsWith("data:image/svg+xml")) {
+    return value;
+  }
+  try {
+    const pngBlob = await convertSvgDataUrlToPngBlob(value);
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(pngBlob);
+    });
+  } catch (error) {
+    console.warn("No se pudo preparar vista PNG del ticket.", error);
+    return value;
+  }
+}
+
+async function downloadDataUrl(filename, dataUrl) {
+  const value = String(dataUrl || "");
+  if (!value.startsWith("data:")) {
+    const link = document.createElement("a");
+    link.href = value;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    return;
+  }
+
+  if (value.startsWith("data:image/svg+xml")) {
+    try {
+      const pngBlob = await convertSvgDataUrlToPngBlob(value);
+      triggerBlobDownload(filename.replace(/\.[^.]+$/, "") + ".png", pngBlob);
+      return;
+    } catch (error) {
+      console.warn("No se pudo convertir SVG a PNG; descargando SVG original.", error);
+    }
+  }
+
+  triggerBlobDownload(filenameForDataUrl(filename, value), dataUrlToBlob(value));
 }
 
 function loadImageDataUrl(src) {
