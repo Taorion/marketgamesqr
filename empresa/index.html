@@ -2353,6 +2353,31 @@
               </article>
             </section>
 
+            <article class="surface-card affiliate-finder-panel">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Buscar afiliado</span>
+                  <strong>Documento, nombre o carnet QR</strong>
+                </div>
+                <span class="status-chip pending" id="affiliateFinderStatus">Listo</span>
+              </div>
+              <div class="affiliate-finder-grid">
+                <label>
+                  <span>Dato del afiliado</span>
+                  <input id="affiliateFinderInput" type="text" placeholder="Ej: 102030, Maria Lopez o token del carnet">
+                </label>
+                <button class="solid-button" id="affiliateFinderSearchButton" type="button">Buscar</button>
+                <button class="ghost-button" id="affiliateFinderScanButton" type="button">Escanear carnet</button>
+                <button class="ghost-button" id="affiliateFinderStopScanButton" type="button">Detener</button>
+              </div>
+              <div class="affiliate-finder-scanner hidden" id="affiliateFinderScanner">
+                <video id="affiliateFinderVideo" autoplay playsinline muted></video>
+                <div class="affiliate-finder-overlay"><div></div></div>
+              </div>
+              <p class="affiliate-card-note" id="affiliateFinderMessage">Busca o escanea el carnet del afiliado para abrir su ficha y sumar puntos.</p>
+              <div class="affiliate-finder-results" id="affiliateFinderResults"></div>
+            </article>
+
             <article class="surface-card affiliate-logo-panel">
               <div class="table-card-head">
                 <span class="mono-label">Logo del negocio</span>
@@ -2702,7 +2727,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=post-sale-direct-download-20260629" defer></script>
+  <script src="js/app.js?v=affiliate-finder-20260629" defer></script>
 </body>
 </html>
 

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-postsale-direct-download-v1";
+const APP_VERSION = "empresa-20260629-affiliate-finder-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -95,6 +95,15 @@ const affiliateEmailInput = document.getElementById("affiliateEmailInput");
 const affiliatePhotoInput = document.getElementById("affiliatePhotoInput");
 const affiliateNotesInput = document.getElementById("affiliateNotesInput");
 const affiliateCreateMessage = document.getElementById("affiliateCreateMessage");
+const affiliateFinderInput = document.getElementById("affiliateFinderInput");
+const affiliateFinderSearchButton = document.getElementById("affiliateFinderSearchButton");
+const affiliateFinderScanButton = document.getElementById("affiliateFinderScanButton");
+const affiliateFinderStopScanButton = document.getElementById("affiliateFinderStopScanButton");
+const affiliateFinderStatus = document.getElementById("affiliateFinderStatus");
+const affiliateFinderScanner = document.getElementById("affiliateFinderScanner");
+const affiliateFinderVideo = document.getElementById("affiliateFinderVideo");
+const affiliateFinderMessage = document.getElementById("affiliateFinderMessage");
+const affiliateFinderResults = document.getElementById("affiliateFinderResults");
 const businessLogoTitle = document.getElementById("businessLogoTitle");
 const businessLogoPreview = document.getElementById("businessLogoPreview");
 const businessLogoInput = document.getElementById("businessLogoInput");
@@ -537,6 +546,12 @@ let state = {
   selectedAffiliateId: null,
   selectedAffiliate: null,
   selectedAffiliateLedger: [],
+  affiliateScannerStream: null,
+  affiliateScannerLoopHandle: 0,
+  affiliateScannerCanvas: document.createElement("canvas"),
+  affiliateScannerContext: null,
+  affiliateScannerLastValue: "",
+  affiliateScannerLastAt: 0,
   campaignModalMode: "edit",
   rangeDays: 30,
   validatorDetector: null,
@@ -1911,6 +1926,9 @@ function setView(view) {
   }
   if (state.currentView === "validator" && view !== "validator") {
     stopValidatorScanner();
+  }
+  if (state.currentView === "affiliates" && view !== "affiliates") {
+    stopAffiliateFinderScanner();
   }
   state.currentView = view;
   navButtons.forEach((button) => {
@@ -9517,6 +9535,199 @@ function renderAffiliateDashboard() {
   }
 }
 
+function normalizeAffiliateFinderValue(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function extractAffiliateFinderToken(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    return url.searchParams.get("affiliate")
+      || url.searchParams.get("affiliate_token")
+      || url.searchParams.get("token")
+      || url.pathname.split("/").filter(Boolean).pop()
+      || value;
+  } catch {
+    return value;
+  }
+}
+
+function affiliateFinderSearchBlob(affiliate) {
+  return [
+    affiliate.full_name,
+    affiliate.document_id,
+    affiliate.phone,
+    affiliate.email,
+    affiliate.qr_token,
+    affiliate.id,
+    affiliate.notes,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function findAffiliatesForPoints(query) {
+  const normalized = normalizeAffiliateFinderValue(extractAffiliateFinderToken(query));
+  if (!normalized) return [];
+  return (state.affiliates || []).filter((affiliate) => {
+    const token = String(affiliate.qr_token || "").toLowerCase();
+    const documentId = String(affiliate.document_id || "").toLowerCase();
+    const name = String(affiliate.full_name || "").toLowerCase();
+    const phone = String(affiliate.phone || "").toLowerCase();
+    const email = String(affiliate.email || "").toLowerCase();
+    return token === normalized
+      || documentId === normalized
+      || phone === normalized
+      || email === normalized
+      || name.includes(normalized)
+      || affiliateFinderSearchBlob(affiliate).includes(normalized);
+  }).slice(0, 8);
+}
+
+function setAffiliateFinderMessage(message, mode = "info") {
+  if (affiliateFinderMessage) {
+    affiliateFinderMessage.textContent = message || "";
+    affiliateFinderMessage.className = `affiliate-card-note ${mode === "error" ? "error-line" : ""}`.trim();
+  }
+  if (affiliateFinderStatus) {
+    affiliateFinderStatus.className = `status-chip ${mode === "success" ? "ok" : mode === "error" ? "danger" : "pending"}`;
+    affiliateFinderStatus.textContent = mode === "success" ? "Encontrado" : mode === "error" ? "Revisar" : "Listo";
+  }
+}
+
+function renderAffiliateFinderResults(rows = []) {
+  if (!affiliateFinderResults) return;
+  affiliateFinderResults.innerHTML = rows.map((item) => `
+    <button class="affiliate-finder-result" type="button" data-affiliate-finder-select="${escapeHtml(item.id)}">
+      <strong>${escapeHtml(item.full_name || "Afiliado")}</strong>
+      <span>${escapeHtml(item.document_id || "Sin documento")} · ${escapeHtml(item.phone || item.email || "Sin contacto")}</span>
+      <small>${escapeHtml(toNumber(item.points_total || item.ledger_points || 0))} puntos · ${escapeHtml(String(item.qr_token || "").slice(0, 10))}</small>
+    </button>
+  `).join("");
+  affiliateFinderResults.querySelectorAll("[data-affiliate-finder-select]").forEach((button) => {
+    button.addEventListener("click", () => openAffiliateForPoints(button.dataset.affiliateFinderSelect));
+  });
+}
+
+async function openAffiliateForPoints(affiliateId) {
+  if (!affiliateId) return;
+  if (!state.affiliatesLoaded && session?.user?.business_id) {
+    await loadAffiliatesData();
+  }
+  state.selectedAffiliateId = affiliateId;
+  state.filter = "";
+  if (searchInput) searchInput.value = "";
+  if (state.currentView !== "affiliates") {
+    setView("affiliates");
+  }
+  await renderAffiliatesView();
+  const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
+  renderAffiliateFinderResults([]);
+  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Ingresa el monto de compra y suma puntos.`, "success");
+  affiliatePurchaseAmountInput?.focus();
+  affiliatePurchaseAmountInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function searchAffiliateForPoints(value = affiliateFinderInput?.value) {
+  const query = String(value || "").trim();
+  renderAffiliateFinderResults([]);
+  if (!query) {
+    setAffiliateFinderMessage("Escribe documento, nombre, telefono, email o escanea el QR del carnet.", "error");
+    affiliateFinderInput?.focus();
+    return;
+  }
+  if (!state.affiliatesLoaded && session?.user?.business_id) {
+    await loadAffiliatesData();
+  }
+  const matches = findAffiliatesForPoints(query);
+  if (!matches.length) {
+    setAffiliateFinderMessage("No encontramos un afiliado con ese dato. Revisa documento, nombre o carnet QR.", "error");
+    return;
+  }
+  if (matches.length === 1) {
+    await openAffiliateForPoints(matches[0].id);
+    return;
+  }
+  renderAffiliateFinderResults(matches);
+  setAffiliateFinderMessage(`Encontramos ${matches.length} afiliados. Elige el correcto para sumar puntos.`, "success");
+}
+
+function stopAffiliateFinderScanner() {
+  if (state.affiliateScannerLoopHandle) {
+    cancelAnimationFrame(state.affiliateScannerLoopHandle);
+    state.affiliateScannerLoopHandle = 0;
+  }
+  if (state.affiliateScannerStream) {
+    state.affiliateScannerStream.getTracks().forEach((track) => track.stop());
+    state.affiliateScannerStream = null;
+  }
+  if (affiliateFinderVideo) affiliateFinderVideo.srcObject = null;
+  affiliateFinderScanner?.classList.add("hidden");
+  if (affiliateFinderStatus) {
+    affiliateFinderStatus.className = "status-chip pending";
+    affiliateFinderStatus.textContent = "Listo";
+  }
+}
+
+async function scanAffiliateFinderFrame() {
+  if (!state.affiliateScannerStream || !affiliateFinderVideo) return;
+  try {
+    if (affiliateFinderVideo.readyState >= 2 && state.affiliateScannerContext && validatorCanUseJsQr()) {
+      const width = affiliateFinderVideo.videoWidth || 0;
+      const height = affiliateFinderVideo.videoHeight || 0;
+      if (width && height) {
+        state.affiliateScannerCanvas.width = width;
+        state.affiliateScannerCanvas.height = height;
+        state.affiliateScannerContext.drawImage(affiliateFinderVideo, 0, 0, width, height);
+        const frame = state.affiliateScannerContext.getImageData(0, 0, width, height);
+        const code = window.jsQR(frame.data, width, height, { inversionAttempts: "dontInvert" });
+        const rawValue = code?.data || "";
+        const now = Date.now();
+        if (rawValue && (rawValue !== state.affiliateScannerLastValue || now - state.affiliateScannerLastAt > 3000)) {
+          state.affiliateScannerLastValue = rawValue;
+          state.affiliateScannerLastAt = now;
+          if (affiliateFinderInput) affiliateFinderInput.value = rawValue;
+          stopAffiliateFinderScanner();
+          await searchAffiliateForPoints(rawValue);
+          return;
+        }
+      }
+    }
+  } catch {}
+  state.affiliateScannerLoopHandle = requestAnimationFrame(scanAffiliateFinderFrame);
+}
+
+async function startAffiliateFinderScanner() {
+  if (!window.isSecureContext) {
+    setAffiliateFinderMessage("La camara solo funciona en HTTPS o localhost. Puedes buscar manualmente por documento o nombre.", "error");
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || !validatorCanUseJsQr()) {
+    setAffiliateFinderMessage("Este navegador no permite escanear el carnet aqui. Usa la busqueda manual.", "error");
+    return;
+  }
+  try {
+    stopAffiliateFinderScanner();
+    state.affiliateScannerContext = state.affiliateScannerCanvas.getContext("2d", { willReadFrequently: true });
+    state.affiliateScannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false,
+    });
+    affiliateFinderScanner?.classList.remove("hidden");
+    affiliateFinderVideo.srcObject = state.affiliateScannerStream;
+    await affiliateFinderVideo.play();
+    setAffiliateFinderMessage("Apunta la camara al QR del carnet del afiliado.", "info");
+    if (affiliateFinderStatus) {
+      affiliateFinderStatus.className = "status-chip ok";
+      affiliateFinderStatus.textContent = "Escaneando";
+    }
+    state.affiliateScannerLoopHandle = requestAnimationFrame(scanAffiliateFinderFrame);
+  } catch (error) {
+    stopAffiliateFinderScanner();
+    setAffiliateFinderMessage(`No se pudo abrir la camara: ${error?.message || "permiso bloqueado"}. Usa la busqueda manual.`, "error");
+  }
+}
+
 async function renderAffiliatesView() {
   setupAffiliatePhotoCaptureUi();
   renderAffiliateDashboard();
@@ -10373,13 +10584,24 @@ window.addEventListener("resize", () => {
   if (state.selectedCampaign) renderCampaignView();
   if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
 });
-window.addEventListener("beforeunload", stopValidatorScanner);
+window.addEventListener("beforeunload", () => {
+  stopValidatorScanner();
+  stopAffiliateFinderScanner();
+});
 affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);
 resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
+affiliateFinderSearchButton?.addEventListener("click", () => searchAffiliateForPoints());
+affiliateFinderInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  searchAffiliateForPoints();
+});
+affiliateFinderScanButton?.addEventListener("click", startAffiliateFinderScanner);
+affiliateFinderStopScanButton?.addEventListener("click", stopAffiliateFinderScanner);
 refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
 rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
 rewardPassCreateForm?.addEventListener("submit", submitRewardPass);
