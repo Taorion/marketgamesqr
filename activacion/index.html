@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activacion MarketGames</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/activacion/styles.css?v=minigame-lock-20260630">
+</head>
+<body>
+  <main class="activation-shell">
+    <section class="activation-card" id="activationCard">
+      <header class="activation-head">
+        <img src="/img/MGLogo-01.png" alt="MarketGames">
+        <div>
+          <span id="businessName">MarketGames RMS</span>
+          <h1 id="activationTitle">Cargando activacion...</h1>
+          <p id="activationDescription">Preparando experiencia y beneficio.</p>
+        </div>
+      </header>
+
+      <div class="status-panel" id="statusPanel">Cargando landing...</div>
+
+      <section class="progress-panel hidden" id="progressPanel">
+        <div>
+          <span id="progressLabel">0 de 0 pasos completados</span>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track"><span id="progressBar"></span></div>
+      </section>
+
+      <form class="participant-form hidden" id="participantForm">
+        <div class="section-head">
+          <span>Paso 1</span>
+          <h2>Tus datos</h2>
+          <p>Se usan para asociar tu beneficio QR unico y medir la redencion en tienda.</p>
+        </div>
+        <section class="participant-grid">
+          <label><span>Nombre</span><input id="participantName" type="text" autocomplete="name" required></label>
+          <label><span>Telefono</span><input id="participantPhone" type="tel" autocomplete="tel" required></label>
+          <label><span>Correo</span><input id="participantEmail" type="email" autocomplete="email" placeholder="Opcional"></label>
+          <label><span>Documento</span><input id="participantDocument" type="text" autocomplete="off" placeholder="Opcional"></label>
+        </section>
+        <button class="submit-button" type="submit">Continuar</button>
+      </form>
+
+      <section class="experience-stage hidden" id="experienceStage">
+        <div class="section-head">
+          <span>Paso 2</span>
+          <h2 id="experienceTitle">Completa la experiencia</h2>
+          <p id="experienceCopy">Al completar, el sistema genera un QR unico si hay beneficio disponible.</p>
+        </div>
+        <div class="experience-body" id="experienceBody"></div>
+      </section>
+
+      <section class="ticket-result hidden" id="ticketResult"></section>
+    </section>
+  </main>
+  <script src="/activacion/activation.js?v=minigame-capture-lock-20260630" defer></script>
+</body>
+</html>

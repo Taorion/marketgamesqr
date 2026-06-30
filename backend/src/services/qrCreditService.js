@@ -132,13 +132,14 @@ async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, u
     throw badRequest("La cantidad de tickets QR a consumir debe ser mayor a 0.");
   }
 
-  const accountResult = await client.query(
+  let accountResult = await client.query(
     "select * from business_qr_credit_accounts where business_id = $1 for update",
     [businessId]
   );
 
   if (!accountResult.rowCount) {
-    return null;
+    const created = await ensureCreditAccount(client, businessId);
+    accountResult = { rows: [created], rowCount: 1 };
   }
 
   const account = accountResult.rows[0];

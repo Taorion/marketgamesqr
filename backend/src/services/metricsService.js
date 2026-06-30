@@ -169,10 +169,12 @@ async function getBusinessSummary(businessId) {
     `select
        count(*) filter (where origin_type = 'POST_SALE')::int as post_sale_generated,
        count(*) filter (where origin_type = 'POST_SALE' and status = 'REDEEMED')::int as post_sale_redeemed,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr')::int as strategic_generated,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as strategic_unclaimed,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as strategic_claimed_or_active,
-       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD') and status = 'REDEEMED')::int as strategic_redeemed,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'INTERACTIVE_ACTIVATION') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr')::int as strategic_generated,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'INTERACTIVE_ACTIVATION') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as strategic_unclaimed,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'INTERACTIVE_ACTIVATION') and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as strategic_claimed_or_active,
+       count(*) filter (where origin_type in ('PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'INTERACTIVE_ACTIVATION') and status = 'REDEEMED')::int as strategic_redeemed,
+       count(*) filter (where origin_type = 'INTERACTIVE_ACTIVATION')::int as interactive_activation_generated,
+       count(*) filter (where origin_type = 'INTERACTIVE_ACTIVATION' and status = 'REDEEMED')::int as interactive_activation_redeemed,
        count(distinct batch_id)::int as strategic_batches
      from qr_codes
      where business_id = $1`,
@@ -187,6 +189,8 @@ async function getBusinessSummary(businessId) {
   totals.strategic_claimed_or_active = Number(strategic.strategic_claimed_or_active || 0);
   totals.strategic_redeemed = Number(strategic.strategic_redeemed || 0);
   totals.strategic_batches = Number(strategic.strategic_batches || 0);
+  totals.interactive_activation_generated = Number(strategic.interactive_activation_generated || 0);
+  totals.interactive_activation_redeemed = Number(strategic.interactive_activation_redeemed || 0);
 
   const observedSalesResult = await query(
     `select

@@ -32,11 +32,11 @@ function userBusinessId(user) {
 }
 
 function canManageRewardPass(user) {
-  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(user?.role);
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(user?.role);
 }
 
 function canValidateRewardPass(user) {
-  return ["BUSINESS_OWNER", "VALIDATOR", "ADMIN", "ADMIN_MARKET_GAMES"].includes(user?.role);
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR", "ADMIN", "ADMIN_MARKET_GAMES"].includes(user?.role);
 }
 
 function assertManager(user) {

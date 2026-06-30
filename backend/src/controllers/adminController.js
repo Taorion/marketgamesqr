@@ -97,7 +97,7 @@ const adminUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   full_name: z.string().trim().min(2).max(160),
-  role: z.enum(["ADMIN_MARKET_GAMES", "BUSINESS_OWNER", "VALIDATOR"]),
+  role: z.enum(["ADMIN_MARKET_GAMES", "BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"]),
   can_redeem_cross_business: z.boolean().optional(),
 });
 
@@ -245,8 +245,8 @@ async function createUser(req, res, next) {
     if (body.role === "ADMIN_MARKET_GAMES" && body.business_id) {
       throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");
     }
-    if (["BUSINESS_OWNER", "VALIDATOR"].includes(body.role) && !body.business_id) {
-      throw badRequest("Selecciona un cliente para usuarios owner o validador.");
+    if (["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"].includes(body.role) && !body.business_id) {
+      throw badRequest("Selecciona un cliente para usuarios owner, manager o validador.");
     }
 
     if (body.business_id) {
@@ -256,7 +256,7 @@ async function createUser(req, res, next) {
       }
       const usersCount = await query(
         `select
-           count(*) filter (where role in ('BUSINESS_OWNER', 'VALIDATOR'))::int as users,
+           count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users,
            count(*) filter (where role = 'VALIDATOR')::int as validators
          from app_users
          where business_id = $1 and is_active = true`,
@@ -497,7 +497,7 @@ async function listBusinesses(req, res, next) {
          qa.internal_unit_price_cop,
          qa.public_label,
          qa.last_purchase_at,
-         count(distinct u.id) filter (where u.role in ('BUSINESS_OWNER', 'VALIDATOR'))::int as users_count,
+         count(distinct u.id) filter (where u.role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users_count,
          count(distinct u.id) filter (where u.role = 'VALIDATOR')::int as validators_count,
          count(distinct c.id)::int as campaigns_count,
          count(distinct c.id) filter (where c.status = 'READY_FOR_CLIENT_SETUP')::int as ready_campaigns_count,
@@ -545,7 +545,7 @@ async function updateBusinessSubscription(req, res, next) {
          set is_active = true,
              updated_at = now()
          where business_id = $1
-           and role in ('BUSINESS_OWNER', 'VALIDATOR')`,
+           and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')`,
         [req.params.id]
       );
     }

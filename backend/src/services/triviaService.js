@@ -52,7 +52,11 @@ function resolveExpiration(body) {
   return days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() : null;
 }
 
-function normalizeQuestions(questions) {
+function activationTypeFor(rowOrBody = {}) {
+  return rowOrBody.activation_type || rowOrBody.metadata?.activation_type || "TRIVIA";
+}
+
+function normalizeQuestions(questions = []) {
   return questions.map((item, index) => ({
     id: `q${index + 1}`,
     question: item.question,
@@ -66,6 +70,32 @@ function normalizeQuestions(questions) {
   }));
 }
 
+function normalizeSurveyQuestions(questions = []) {
+  return questions.map((item, index) => ({
+    id: item.id || `s${index + 1}`,
+    question: item.question,
+    type: item.type,
+    options: item.options || [],
+    required: item.required !== false,
+  }));
+}
+
+function normalizeActivationConfig(body) {
+  const type = activationTypeFor(body);
+  const base = {
+    activation_type: type,
+    open_question: body.open_question || null,
+    survey_questions: normalizeSurveyQuestions(body.survey_questions || []),
+    reveal_cards: body.reveal_cards || [],
+    spin_rewards: body.spin_rewards || body.reveal_cards || [],
+    thermometer_discounts: body.thermometer_discounts || [],
+  };
+  if (type === "TRIVIA") {
+    base.questions = normalizeQuestions(body.questions || []);
+  }
+  return base;
+}
+
 function publicQuestions(questions) {
   return (questions || []).map((item) => ({
     id: item.id,
@@ -74,7 +104,7 @@ function publicQuestions(questions) {
   }));
 }
 
-function scoreTrivia(questions, answers) {
+function scoreTrivia(questions = [], answers) {
   const normalizedAnswers = answers || {};
   const score = questions.reduce((total, question) => (
     String(normalizedAnswers[question.id] || "").toUpperCase() === question.correct_answer ? total + 1 : total
@@ -83,6 +113,67 @@ function scoreTrivia(questions, answers) {
     score,
     total: questions.length,
     passed: score === questions.length,
+  };
+}
+
+function hasActivationAnswer(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object") return Object.keys(value).length > 0;
+  return String(value || "").trim().length > 0;
+}
+
+function evaluateActivation(trivia, answers = {}) {
+  const type = activationTypeFor(trivia);
+  if (type === "TRIVIA") {
+    return scoreTrivia(trivia.questions || [], answers);
+  }
+  if (type === "OPEN_QUESTION") {
+    const passed = hasActivationAnswer(answers.open_question);
+    return { score: passed ? 1 : 0, total: 1, passed };
+  }
+  if (type === "SPIN_DISCOVER") {
+    const passed = hasActivationAnswer(answers.selected_card);
+    return { score: passed ? 1 : 0, total: 1, passed };
+  }
+  if (type === "THERMOMETER") {
+    const passed = hasActivationAnswer(answers.thermometer);
+    return { score: passed ? 1 : 0, total: 1, passed };
+  }
+  if (type === "SURVEY") {
+    const questions = trivia.metadata?.activation_config?.survey_questions || [];
+    const required = questions.filter((question) => question.required !== false);
+    const answered = required.filter((question) => hasActivationAnswer(answers[question.id])).length;
+    const total = required.length || 1;
+    return {
+      score: answered,
+      total,
+      passed: answered === total,
+    };
+  }
+  const total = type === "SURVEY"
+    ? Number(trivia.metadata?.activation_config?.survey_questions?.length || 1)
+    : 1;
+  return {
+    score: total,
+    total,
+    passed: true,
+  };
+}
+
+function selectedBenefitFromAttempt(trivia, body = {}) {
+  const metadata = body.metadata || {};
+  const selected = metadata.selected_benefit && typeof metadata.selected_benefit === "object"
+    ? metadata.selected_benefit
+    : {};
+  const baseValue = trivia.benefit_value || {};
+  return {
+    benefit_type: selected.benefit_type || trivia.benefit_type,
+    benefit_value: {
+      ...baseValue,
+      ...(selected.benefit_value || {}),
+      label: selected.benefit_label || selected.label || baseValue.label || "Beneficio de activacion",
+      selected_discount: metadata.selected_discount ?? selected.selected_discount ?? baseValue.selected_discount ?? null,
+    },
   };
 }
 
@@ -120,6 +211,9 @@ async function defaultGameId(client, businessId, campaign = null) {
 
 function mapTrivia(row) {
   const publicUrl = buildTriviaUrl(row.public_slug);
+  const metadata = row.metadata || {};
+  const activationType = activationTypeFor(row);
+  const activationConfig = metadata.activation_config || {};
   return {
     id: row.id,
     business_id: row.business_id,
@@ -129,6 +223,15 @@ function mapTrivia(row) {
     description: row.description,
     public_slug: row.public_slug,
     public_url: publicUrl,
+    activation_type: activationType,
+    activation_config: {
+      activation_type: activationType,
+      open_question: activationConfig.open_question || null,
+      survey_questions: activationConfig.survey_questions || [],
+      reveal_cards: activationConfig.reveal_cards || [],
+      spin_rewards: activationConfig.spin_rewards || [],
+      thermometer_discounts: activationConfig.thermometer_discounts || [],
+    },
     questions: publicQuestions(row.questions || []),
     question_count: Array.isArray(row.questions) ? row.questions.length : Number(row.question_count || 0),
     benefit_type: row.benefit_type,
@@ -146,7 +249,8 @@ function mapTrivia(row) {
 async function createTriviaLauncher(businessId, user, body) {
   return withTransaction(async (client) => {
     const campaign = await assertCampaign(client, businessId, body.campaign_id || null);
-    const questions = normalizeQuestions(body.questions);
+    const activationConfig = normalizeActivationConfig(body);
+    const questions = activationConfig.questions || [];
     const publicSlug = `${slugify(body.title)}-${createSecureToken().slice(0, 8).toLowerCase()}`;
     const benefitValue = {
       ...(body.benefit.benefit_value || {}),
@@ -174,6 +278,8 @@ async function createTriviaLauncher(businessId, user, body) {
         body.max_winners || null,
         {
           ...(body.metadata || {}),
+          activation_type: activationConfig.activation_type,
+          activation_config: activationConfig,
           qr_creation_context: "trivia_launcher",
           campaign_id: body.campaign_id || null,
         },
@@ -278,14 +384,15 @@ async function submitPublicTrivia(slug, body) {
     );
     const trivia = result.rows[0];
     if (!trivia) {
-      throw notFound("Trivia no encontrada.");
+      throw notFound("Activacion no encontrada.");
     }
     if (trivia.status !== "ACTIVE") {
-      throw badRequest("Esta trivia no esta activa.");
+      throw badRequest("Esta activacion no esta activa.");
     }
     if (trivia.expires_at && new Date(trivia.expires_at) <= new Date()) {
-      throw badRequest("Esta trivia ya finalizo.");
+      throw badRequest("Esta activacion ya finalizo.");
     }
+    const activationType = activationTypeFor(trivia);
 
     const participantKey = [
       body.document_id ? `document:${body.document_id}` : "",
@@ -307,19 +414,19 @@ async function submitPublicTrivia(slug, body) {
         [trivia.id, body.document_id || null, body.email || null, body.phone || null]
       );
       if (duplicate.rowCount) {
-        throw badRequest("Esta persona ya participo en esta trivia.");
+        throw badRequest("Esta persona ya participo en esta activacion.");
       }
     }
 
     const questions = trivia.questions || [];
-    const score = scoreTrivia(questions, body.answers);
+    const score = evaluateActivation(trivia, body.answers);
     if (score.passed && trivia.max_winners) {
       const winners = await client.query(
         "select count(*)::int as total from business_trivia_attempts where trivia_id = $1 and passed = true",
         [trivia.id]
       );
       if (Number(winners.rows[0]?.total || 0) >= Number(trivia.max_winners)) {
-        throw badRequest("La trivia ya entrego todos los tickets disponibles.");
+        throw badRequest("Esta activacion ya entrego todos los tickets disponibles.");
       }
     }
 
@@ -338,6 +445,7 @@ async function submitPublicTrivia(slug, body) {
         body.document_id || null,
         {
           source: "trivia_launcher",
+          activation_type: activationType,
           trivia_id: trivia.id,
           trivia_title: trivia.title,
           score: score.score,
@@ -361,6 +469,7 @@ async function submitPublicTrivia(slug, body) {
         {
           trivia_id: trivia.id,
           trivia_title: trivia.title,
+          activation_type: activationType,
           answers: body.answers,
           score: score.score,
           total_questions: score.total,
@@ -375,6 +484,7 @@ async function submitPublicTrivia(slug, body) {
     if (score.passed) {
       const token = createSecureToken();
       validatorUrl = buildValidatorUrl(token);
+      const selectedBenefit = selectedBenefitFromAttempt(trivia, body);
       const qrResult = await client.query(
         `insert into qr_codes
           (business_id, campaign_id, game_id, player_id, reward_id, questionnaire_id, token,
@@ -393,14 +503,16 @@ async function submitPublicTrivia(slug, body) {
             source: "trivia_launcher",
             trivia_id: trivia.id,
             trivia_title: trivia.title,
+            activation_type: activationType,
             campaign_id: trivia.campaign_id || null,
             score: score.score,
             total_questions: score.total,
+            selected_benefit: selectedBenefit.benefit_value,
             qr_creation_context: "public_trivia_winner",
           },
           trivia.expires_at || null,
-          trivia.benefit_type,
-          trivia.benefit_value || {},
+          selectedBenefit.benefit_type,
+          selectedBenefit.benefit_value,
         ]
       );
       qr = qrResult.rows[0];
@@ -414,6 +526,7 @@ async function submitPublicTrivia(slug, body) {
         message: "Trivia winner QR issued.",
         metadata: {
           trivia_id: trivia.id,
+          activation_type: activationType,
           score: score.score,
           total_questions: score.total,
         },
@@ -444,6 +557,7 @@ async function submitPublicTrivia(slug, body) {
         score.passed,
         {
           source: "trivia_launcher",
+          activation_type: activationType,
           participant_key: participantKey,
           ...(body.metadata || {}),
         },
@@ -458,7 +572,9 @@ async function submitPublicTrivia(slug, body) {
         passed: score.passed,
       },
       message: score.passed
-        ? "Respuesta correcta. Tu ticket esta listo para redimir en tienda."
+        ? (activationType === "TRIVIA"
+          ? "Respuesta correcta. Tu ticket esta listo para redimir en tienda."
+          : "Activacion completada. Tu ticket esta listo para redimir en tienda.")
         : "No alcanzaste el puntaje para recibir ticket.",
       qr_code: qr ? {
         id: qr.id,

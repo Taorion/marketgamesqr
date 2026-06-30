@@ -9,6 +9,11 @@ const {
   publicGetTrivia,
   publicSubmitTrivia,
 } = require("../controllers/triviaController");
+const {
+  publicComplete: publicCompleteInteractiveActivation,
+  publicGet: publicGetInteractiveActivation,
+  publicStart: publicStartInteractiveActivation,
+} = require("../controllers/interactiveActivationController");
 
 const router = express.Router();
 
@@ -18,5 +23,8 @@ router.post("/product-preferences/qr", createProductPreferenceQr);
 router.post("/campaigns/:businessSlug/:campaignSlug/lead-qr", createPublicCampaignLeadQr);
 router.get("/trivias/:slug", publicGetTrivia);
 router.post("/trivias/:slug/attempts", publicSubmitTrivia);
+router.get("/activations/:slug", publicGetInteractiveActivation);
+router.post("/activations/:slug/participants", publicStartInteractiveActivation);
+router.post("/activations/:slug/complete", publicCompleteInteractiveActivation);
 
 module.exports = router;

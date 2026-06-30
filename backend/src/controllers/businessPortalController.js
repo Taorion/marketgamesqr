@@ -109,11 +109,21 @@ const businessProfileSchema = z.object({
   ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
 });
 
+function boundedLimit(value, fallback, max) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
+}
+
+function wantsTotalCount(req) {
+  return ["1", "true", "yes"].includes(String(req.query.includeTotal || "").toLowerCase());
+}
+
 const businessUserSchema = z.object({
   full_name: z.string().trim().min(2).max(160),
   email: z.string().trim().email().max(180),
   password: z.string().min(8).max(120),
-  role: z.enum(["BUSINESS_OWNER", "VALIDATOR"]),
+  role: z.enum(["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"]),
 });
 
 const businessUserPatchSchema = z.object({
@@ -156,15 +166,15 @@ function businessIdFor(req) {
 }
 
 function requireBusinessOwner(req) {
-  if (!["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(req.user?.role)) {
-    throw forbidden("Solo el owner del negocio puede administrar usuarios.");
+  if (!["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(req.user?.role)) {
+    throw forbidden("Tu rol no puede administrar usuarios de este negocio.");
   }
 }
 
 async function activeUserCountsForBusiness(businessId) {
   const result = await query(
     `select
-       count(*) filter (where role in ('BUSINESS_OWNER', 'VALIDATOR'))::int as users,
+       count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users,
        count(*) filter (where role = 'VALIDATOR')::int as validators
      from app_users
      where business_id = $1 and is_active = true`,
@@ -238,7 +248,9 @@ async function ticketTransactions(req, res, next) {
   }
 }
 
-async function getCampaignLeadRows(businessId, campaignId) {
+async function getCampaignLeadRows(businessId, campaignId, limit = null) {
+  const limitClause = limit ? "limit $3" : "";
+  const params = limit ? [businessId, campaignId, limit] : [businessId, campaignId];
   const result = await query(
     `select p.id, p.name, p.document_id, p.phone, p.email, p.created_at,
             coalesce(qn.answers->>'source', p.metadata->>'source', '-') as lead_source,
@@ -263,8 +275,9 @@ async function getCampaignLeadRows(businessId, campaignId) {
      ) qn on true
      left join rewards r on r.id = q.reward_id
      where p.business_id = $1 and p.campaign_id = $2
-     order by p.created_at desc`,
-    [businessId, campaignId]
+     order by p.created_at desc
+     ${limitClause}`,
+    params
   );
   return result.rows;
 }
@@ -404,53 +417,29 @@ async function businessActivity(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const result = await query(
-      `with activity as (
-         select created_at as happened_at, 'QR_CREATED' as event_type
-         from qr_codes
-         where business_id = $1
-         union all
-         select created_at as happened_at, event_type
-         from qr_event_logs
-         where business_id = $1
-         union all
-         select created_at as happened_at, result as event_type
-         from validation_logs
-         where business_id = $1
-         union all
-         select claimed_at as happened_at, 'QR_CLAIMED' as event_type
-         from qr_claims
-         where business_id = $1
-         union all
-         select redeemed_at as happened_at, 'QR_REDEEMED' as event_type
-         from redemptions
-         where business_id = $1
-         union all
-         select created_at as happened_at, 'SALE_RECORDED' as event_type
-         from business_sales
-         where business_id = $1
-       )
-       select
-         coalesce(sum(event_count), 0)::int as total_events,
-         max(latest) as last_event_at,
-         jsonb_object_agg(event_type, event_count) as event_counts
-       from (
-         select event_type, count(*)::int as event_count, max(happened_at) as latest
-         from activity
-         where happened_at is not null
-         group by event_type
-       ) grouped`,
+      `select greatest(
+         coalesce((select max(created_at) from qr_codes where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from qr_event_logs where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from validation_logs where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(claimed_at) from qr_claims where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(redeemed_at) from redemptions where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from business_sales where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from campaigns where business_id = $1), '-infinity'::timestamptz)
+       ) as last_event_at`,
       [businessId]
     );
 
     const row = result.rows[0] || {};
-    const lastEventAt = row.last_event_at ? new Date(row.last_event_at).toISOString() : null;
+    const lastEventAt = row.last_event_at && Number.isFinite(new Date(row.last_event_at).getTime())
+      ? new Date(row.last_event_at).toISOString()
+      : null;
     res.json({
       activity: {
         business_id: businessId,
-        total_events: Number(row.total_events || 0),
+        total_events: null,
         last_event_at: lastEventAt,
-        event_counts: row.event_counts || {},
-        version: `${lastEventAt || "none"}:${Number(row.total_events || 0)}`,
+        event_counts: {},
+        version: lastEventAt || "none",
       },
     });
   } catch (error) {
@@ -523,9 +512,9 @@ async function listBusinessUsers(req, res, next) {
               can_redeem_cross_business, is_active, created_at, updated_at
        from app_users
        where business_id = $1
-         and role in ('BUSINESS_OWNER', 'VALIDATOR')
+         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
        order by
-         case role when 'BUSINESS_OWNER' then 0 else 1 end,
+         case role when 'BUSINESS_OWNER' then 0 when 'BUSINESS_MANAGER' then 1 else 2 end,
          created_at asc`,
       [businessId]
     );
@@ -574,6 +563,9 @@ async function updateBusinessUser(req, res, next) {
     const businessId = businessIdFor(req);
     requireBusinessOwner(req);
     const body = validate(businessUserPatchSchema, req.body);
+    if (req.user?.role === "BUSINESS_MANAGER" && body.is_active === false) {
+      throw forbidden("Tu rol puede agregar usuarios y operar el portal, pero no desactivar usuarios.");
+    }
     if (req.params.userId === req.user.id && body.is_active === false) {
       throw badRequest("No puedes desactivar tu propio usuario activo.");
     }
@@ -601,7 +593,7 @@ async function updateBusinessUser(req, res, next) {
            updated_at = now()
        where id = $1
          and business_id = $2
-         and role in ('BUSINESS_OWNER', 'VALIDATOR')
+         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
        returning id, business_id, email, full_name, role, branch_id,
                  can_redeem_cross_business, is_active, created_at, updated_at`,
       [req.params.userId, businessId, body.is_active]
@@ -1011,7 +1003,8 @@ async function campaignLeads(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "leads_view");
-    res.json({ leads: await getCampaignLeadRows(businessId, req.params.id) });
+    const limit = boundedLimit(req.query.limit, 150, 500);
+    res.json({ leads: await getCampaignLeadRows(businessId, req.params.id, limit) });
   } catch (error) {
     next(error);
   }
@@ -1241,32 +1234,44 @@ async function contactFeed(req, res, next) {
     const isPrepaid = subscription.plan.category === "prepaid";
     const planRetentionDays = subscription.plan.limits.history_days ?? null;
     const retentionDays = isPrepaid ? null : planRetentionDays;
-    const limit = isPrepaid ? PREPAID_LEAD_SAMPLE_LIMIT : 1000;
+    const planRowLimit = subscription.plan.limits.lead_view_rows ?? null;
+    const limit = isPrepaid
+      ? PREPAID_LEAD_SAMPLE_LIMIT
+      : Math.min(
+          boundedLimit(req.query.limit, 120, 1000),
+          planRowLimit === null ? 1000 : Math.max(1, Number(planRowLimit || 120))
+        );
+    const includeTotal = isPrepaid || wantsTotalCount(req);
     const [contacts, totalContacts] = await Promise.all([
       getContactFeedRows(businessId, retentionDays, limit),
-      countContactFeedRows(businessId, retentionDays),
+      includeTotal ? countContactFeedRows(businessId, retentionDays) : Promise.resolve(null),
     ]);
+    const totalAvailable = totalContacts === null ? null : totalContacts;
     res.json({
       retention: {
         plan_code: subscription.plan.code,
         history_days: isPrepaid ? null : retentionDays,
         label: isPrepaid ? `Muestra de ${PREPAID_LEAD_SAMPLE_LIMIT} leads` : (retentionDays === null ? "Ilimitado" : `${retentionDays} dias`),
+        row_limit: isPrepaid ? PREPAID_LEAD_SAMPLE_LIMIT : planRowLimit,
       },
       lead_gate: isPrepaid
         ? {
             locked: true,
             sample_limit: PREPAID_LEAD_SAMPLE_LIMIT,
-            total_available: totalContacts,
-            hidden_count: Math.max(0, totalContacts - contacts.length),
+            total_available: totalAvailable,
+            hidden_count: Math.max(0, Number(totalAvailable || 0) - contacts.length),
             upgrade_url: "/paquetes/?mode=portal&plan=STARTER",
             title: "Ya tienes leads reales. Ahora necesitas el portal.",
             message: `El acceso legacy solo muestra ${PREPAID_LEAD_SAMPLE_LIMIT} contactos de muestra. Compra T200 para activar Portal Base o sube a Growth/Premium para ver mas historial, exportar y medir revenue.`,
           }
         : {
-            locked: false,
-            sample_limit: null,
-            total_available: totalContacts,
-            hidden_count: 0,
+            locked: planRowLimit !== null,
+            sample_limit: planRowLimit,
+            total_available: totalAvailable,
+            hidden_count: totalAvailable === null ? null : Math.max(0, Number(totalAvailable || 0) - contacts.length),
+            upgrade_url: "/paquetes/?mode=portal",
+            title: "Tu plan muestra una parte del historial",
+            message: "El portal conserva el dato segun tu plan. Sube de plan para ver mas contactos, exportar mas filas y analizar mas historial.",
           },
       contacts,
     });
@@ -1410,6 +1415,7 @@ async function downloadActiveLeadQr(req, res, next) {
 async function campaignRedemptions(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 150, 500);
     const result = await query(
       `select rd.*, p.name as player_name, p.document_id, p.phone, rw.name as reward_name,
               u.full_name as validator_name, br.name as branch_name,
@@ -1421,8 +1427,9 @@ async function campaignRedemptions(req, res, next) {
        left join branches br on br.id = rd.branch_id
        left join attributed_sales s on s.redemption_id = rd.id
        where rd.business_id = $1 and rd.campaign_id = $2
-       order by rd.redeemed_at desc`,
-      [businessId, req.params.id]
+       order by rd.redeemed_at desc
+       limit $3`,
+      [businessId, req.params.id, limit]
     );
     res.json({ redemptions: result.rows });
   } catch (error) {
@@ -1433,6 +1440,7 @@ async function campaignRedemptions(req, res, next) {
 async function campaignSales(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 150, 500);
     const result = await query(
       `select s.*, p.name as player_name, p.document_id, p.phone, br.name as branch_name,
               u.full_name as confirmed_by
@@ -1441,8 +1449,9 @@ async function campaignSales(req, res, next) {
        left join branches br on br.id = s.branch_id
        left join app_users u on u.id = s.sale_confirmed_by_user_id
        where s.business_id = $1 and s.campaign_id = $2
-       order by s.created_at desc`,
-      [businessId, req.params.id]
+       order by s.created_at desc
+       limit $3`,
+      [businessId, req.params.id, limit]
     );
     res.json({ sales: result.rows });
   } catch (error) {

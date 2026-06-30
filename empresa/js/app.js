@@ -345,6 +345,8 @@ const postSaleNotesInput = document.getElementById("postSaleNotesInput");
 const postSaleQrMessage = document.getElementById("postSaleQrMessage");
 const postSaleQrResult = document.getElementById("postSaleQrResult");
 const triviaLauncherForm = document.getElementById("triviaLauncherForm");
+const activationTypeInput = document.getElementById("activationTypeInput");
+const activationTypePicker = document.getElementById("activationTypePicker");
 const triviaCampaignInput = document.getElementById("triviaCampaignInput");
 const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
 const triviaTitleInput = document.getElementById("triviaTitleInput");
@@ -358,9 +360,22 @@ const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
 const triviaQuestionCountInput = document.getElementById("triviaQuestionCountInput");
 const triviaBuilderHint = document.getElementById("triviaBuilderHint");
 const triviaQuestionBuilder = document.getElementById("triviaQuestionBuilder");
+const openQuestionInput = document.getElementById("openQuestionInput");
+const openQuestionPlaceholderInput = document.getElementById("openQuestionPlaceholderInput");
+const thermometerDiscountsInput = document.getElementById("thermometerDiscountsInput");
+const minigameDurationInput = document.getElementById("minigameDurationInput");
+const minigameMinScoreInput = document.getElementById("minigameMinScoreInput");
+const minigameMaxScoreInput = document.getElementById("minigameMaxScoreInput");
+const minigamePointsInput = document.getElementById("minigamePointsInput");
+const minigamePenaltyInput = document.getElementById("minigamePenaltyInput");
+const minigameLivesInput = document.getElementById("minigameLivesInput");
+const minigameFireIntervalInput = document.getElementById("minigameFireIntervalInput");
+const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
+const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
 const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
 const triviaLauncherResult = document.getElementById("triviaLauncherResult");
 const triviaLauncherTable = document.getElementById("triviaLauncherTable");
+const productVoteImages = {};
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
@@ -479,6 +494,31 @@ const snapshotEndDateInput = document.getElementById("snapshotEndDateInput");
 const snapshotOrdersInput = document.getElementById("snapshotOrdersInput");
 const snapshotNotesInput = document.getElementById("snapshotNotesInput");
 const snapshotModalMessage = document.getElementById("snapshotModalMessage");
+const routeParams = new URLSearchParams(window.location.search);
+const LIGHT_MODE_KEY = "marketgames_portal_light_mode";
+const routeLightMode = ["1", "true", "yes"].includes(String(routeParams.get("lite") || "").toLowerCase());
+const routeDisableLightMode = ["0", "false", "no", "off"].includes(String(routeParams.get("lite") || "").toLowerCase());
+if (routeLightMode) {
+  try {
+    window.localStorage.setItem(LIGHT_MODE_KEY, "1");
+  } catch {
+    // Ignore storage failures; the query param still activates light mode for this load.
+  }
+} else if (routeDisableLightMode) {
+  try {
+    window.localStorage.removeItem(LIGHT_MODE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+const lightTestMode = routeLightMode || (() => {
+  if (routeDisableLightMode) return false;
+  try {
+    return window.localStorage.getItem(LIGHT_MODE_KEY) === "1";
+  } catch {
+    return false;
+  }
+})();
 
 let session = loadSession();
 let state = {
@@ -542,6 +582,7 @@ let state = {
   contactFeed: [],
   contactFeedRetention: null,
   contactFeedGate: null,
+  contactFeedLoaded: false,
   selectedRedemptions: [],
   selectedSales: [],
   selectedAffiliateId: null,
@@ -554,6 +595,7 @@ let state = {
   affiliateScannerLastValue: "",
   affiliateScannerLastAt: 0,
   campaignModalMode: "edit",
+  campaignModalInitialSnapshot: null,
   rangeDays: 30,
   validatorDetector: null,
   validatorStream: null,
@@ -586,10 +628,27 @@ let state = {
   triviaLaunchers: [],
   affiliatesLoaded: false,
   strategicQrLoaded: false,
+  ticketCenterLoadedAt: {},
+  ticketCenterLoading: false,
   strategicQrRecentBatchId: null,
   qrBatchProgressTimer: null,
   feedbackTimer: 0,
   busyDepth: 0,
+};
+
+const TICKET_CENTER_CACHE_TTL_MS = 60 * 1000;
+const TICKET_CENTER_GROUPS = ["core", "metrics", "batches", "history", "activations", "affiliates"];
+const TICKET_CENTER_TAB_GROUPS = {
+  center: ["core", "metrics", "batches", "history"],
+  trivia: ["activations"],
+  flow: ["metrics", "batches", "history"],
+  loop: ["metrics", "batches", "history"],
+  revenue: ["metrics", "batches", "history"],
+  channels: ["metrics", "batches", "history"],
+  branches: ["metrics", "batches", "history"],
+  sellers: ["metrics", "batches", "history"],
+  shield: ["metrics", "batches", "history"],
+  next: ["metrics", "batches", "history"],
 };
 
 function mergeBusinessProfile(nextProfile) {
@@ -1013,6 +1072,9 @@ function setInlineMessage(element, message, kind = "info") {
   if (!element) return;
   element.textContent = message || "";
   element.dataset.kind = kind;
+  if (message && element.id === "triviaLauncherMessage" && kind === "error") {
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 function renderSkeletonCards(container, count = 4) {
@@ -1159,34 +1221,138 @@ async function loadAffiliatesData() {
   hideFeedback();
 }
 
-async function loadStrategicQrData() {
+async function loadContactFeedData(options = {}) {
+  if (!session?.user?.business_id) {
+    state.contactFeedLoaded = true;
+    state.contactFeed = [];
+    return;
+  }
+  if (state.contactFeedLoaded && !options.force) return;
+  if (!options.quiet) {
+    showFeedback("Cargando leads visibles bajo demanda.", "loading", { title: "Leads", timeout: 0 });
+  }
+  const data = await apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null });
+  state.contactFeed = data.contacts || [];
+  state.contactFeedRetention = data.retention || null;
+  state.contactFeedGate = data.lead_gate || null;
+  state.contactFeedLoaded = true;
+  if (!options.quiet) hideFeedback();
+}
+
+function isTicketCenterGroupFresh(group, ttl = TICKET_CENTER_CACHE_TTL_MS) {
+  const loadedAt = Number(state.ticketCenterLoadedAt?.[group] || 0);
+  return loadedAt && Date.now() - loadedAt < ttl;
+}
+
+function markTicketCenterDataStale(groups = TICKET_CENTER_GROUPS) {
+  const nextGroups = Array.isArray(groups) ? groups : [groups];
+  state.ticketCenterLoadedAt = { ...(state.ticketCenterLoadedAt || {}) };
+  nextGroups.forEach((group) => {
+    delete state.ticketCenterLoadedAt[group];
+  });
+  state.strategicQrLoaded = false;
+}
+
+function ticketCenterGroupsForTab(tab = state.ticketCenterTab) {
+  return TICKET_CENTER_TAB_GROUPS[tab] || TICKET_CENTER_TAB_GROUPS.center;
+}
+
+function setTicketCenterLoadingRows(groups = []) {
+  if (groups.includes("batches") && qrBatchTable && !(state.strategicQrBatches || []).length) {
+    qrBatchTable.innerHTML = '<tr><td colspan="5">Cargando paquetes recientes...</td></tr>';
+  }
+  if (groups.includes("history") && strategicQrHistoryTable && !(state.strategicQrHistory || []).length) {
+    strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial reciente...</td></tr>';
+  }
+  if (groups.includes("core") && qrCreditOrdersTable && !(state.qrCreditOrders || []).length) {
+    qrCreditOrdersTable.innerHTML = '<tr><td colspan="4">Cargando compras recientes...</td></tr>';
+  }
+}
+
+async function loadStrategicQrData(options = {}) {
   if (!session?.user?.business_id) {
     state.strategicQrLoaded = true;
     return;
   }
-  showFeedback("Cargando paquetes, saldos e historial de tickets.", "loading", { title: "Sincronizando tickets", timeout: 0 });
-  const [strategicMetrics, packageData, creditOrdersData, strategicBatches, strategicHistory, triviaData, affiliatesData] = await Promise.all([
-    apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] }),
-    apiSafe("/api/public/packages", {}, { packages: [] }),
-    apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
-    apiSafe("/api/business/qr/batches", { headers: authHeaders() }, { batches: [] }),
-    apiSafe("/api/business/qr/history", { headers: authHeaders() }, { history: [] }),
-    apiSafe("/api/business/qr/trivias", { headers: authHeaders() }, { trivias: [] }),
-    hasPlanFeature("affiliates")
-      ? apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] })
-      : Promise.resolve({ affiliates: [] }),
-  ]);
-  state.strategicQrMetrics = strategicMetrics || null;
-  state.qrPackageOffers = packageData.packages || [];
-  state.pricing = packageData.pricing || state.pricing;
-  state.qrCreditOrders = creditOrdersData.orders || [];
-  state.strategicQrBatches = strategicBatches.batches || [];
-  state.strategicQrHistory = strategicHistory.history || [];
-  state.triviaLaunchers = triviaData.trivias || [];
-  state.affiliates = affiliatesData.affiliates || [];
-  state.affiliatesLoaded = true;
+  const requestedGroups = [...new Set(options.groups || TICKET_CENTER_GROUPS)];
+  const groupsToLoad = requestedGroups.filter((group) => options.force || !isTicketCenterGroupFresh(group));
+  if (!groupsToLoad.length) {
+    state.strategicQrLoaded = true;
+    return;
+  }
+
+  const quiet = options.quiet === true;
+  state.ticketCenterLoading = true;
+  setTicketCenterLoadingRows(groupsToLoad);
+  if (!quiet) {
+    showFeedback(
+      lightTestMode ? "Cargando solo los datos necesarios para probar." : "Cargando datos visibles de Ticket Center.",
+      "loading",
+      { title: lightTestMode ? "Prueba ligera" : "Sincronizando tickets", timeout: 0 }
+    );
+  }
+
+  const loaders = groupsToLoad.map(async (group) => {
+    if (group === "metrics") {
+      const data = lightTestMode
+        ? { totals: {}, benefits: [], redemptions_by_seller: [] }
+        : await apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] });
+      state.strategicQrMetrics = data || null;
+    }
+    if (group === "core") {
+      const [packageData, creditData, creditOrdersData] = await Promise.all([
+        apiSafe("/api/public/packages", {}, { packages: [] }),
+        apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }),
+        lightTestMode ? Promise.resolve({ orders: [] }) : apiSafe("/api/payments/qr-credits/orders?limit=20", { headers: authHeaders() }, { orders: [] }),
+      ]);
+      state.qrPackageOffers = packageData.packages || [];
+      state.pricing = packageData.pricing || state.pricing;
+      state.qrCreditAccount = creditData.credit_account || state.qrCreditAccount || null;
+      state.qrCreditOrders = creditOrdersData.orders || [];
+    }
+    if (group === "batches") {
+      const data = lightTestMode
+        ? { batches: [] }
+        : await apiSafe("/api/business/qr/batches?limit=80", { headers: authHeaders() }, { batches: [] });
+      state.strategicQrBatches = data.batches || [];
+    }
+    if (group === "history") {
+      const data = lightTestMode
+        ? { history: [] }
+        : await apiSafe("/api/business/qr/history?limit=120", { headers: authHeaders() }, { history: [] });
+      state.strategicQrHistory = data.history || [];
+    }
+    if (group === "activations") {
+      const data = await apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [], trivias: [] });
+      state.triviaLaunchers = data.activations || data.trivias || [];
+    }
+    if (group === "affiliates") {
+      const data = !lightTestMode && hasPlanFeature("affiliates")
+        ? await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] })
+        : { affiliates: [] };
+      state.affiliates = data.affiliates || [];
+      state.affiliatesLoaded = true;
+    }
+    state.ticketCenterLoadedAt = {
+      ...(state.ticketCenterLoadedAt || {}),
+      [group]: Date.now(),
+    };
+  });
+
+  await Promise.all(loaders);
   state.strategicQrLoaded = true;
-  hideFeedback();
+  state.ticketCenterLoading = false;
+  if (!quiet) hideFeedback();
+}
+
+async function loadTicketCenterForCurrentTab(options = {}) {
+  await loadStrategicQrData({
+    groups: ticketCenterGroupsForTab(state.ticketCenterTab),
+    ...options,
+  });
+  if (state.currentView === "strategic-qr") {
+    renderStrategicQrView();
+  }
 }
 
 function authHeaders() {
@@ -1300,6 +1466,9 @@ function subscriptionAccessLabel(plan = {}) {
 function subscriptionTimingText(plan = {}) {
   if (plan.category !== "subscription") {
     return "Portal Base: no tiene fecha mensual de renovacion.";
+  }
+  if (plan.lifetime_access || plan.monthly_payment_required === false) {
+    return "Plan vitalicio activo: no requiere pago mensual ni fecha de renovacion.";
   }
   if (!plan.official_payment_due_at) {
     return "Mensualidad activa sin fecha oficial de renovacion configurada.";
@@ -1589,6 +1758,9 @@ function renderSubscriptionBanner() {
 }
 
 function planBenefitList(plan) {
+  if (Array.isArray(plan?.included) && plan.included.length) {
+    return plan.included.slice(0, plan.code === "GLOBAL" ? 8 : 7);
+  }
   const limits = plan.limits || {};
   const features = plan.features || {};
   const benefits = [
@@ -1616,19 +1788,22 @@ function planBenefitList(plan) {
 
 function renderSubscriptionPricing() {
   if (!subscriptionPlansGrid) return;
-  const plans = (state.subscriptionPlans || []).filter((plan) => ["STARTER", "GROWTH", "GLOBAL"].includes(plan.code));
+  const displayOrder = ["TICKET_BASE", "STARTER", "GROWTH", "PRO", "GLOBAL"];
+  const plans = (state.subscriptionPlans || [])
+    .filter((plan) => displayOrder.includes(plan.code) && !plan.testing_plan && plan.public_signup_available !== false)
+    .sort((a, b) => displayOrder.indexOf(a.code) - displayOrder.indexOf(b.code));
   const currentCode = state.subscription?.plan?.code;
   if (!plans.length) {
     subscriptionPlansGrid.innerHTML = '<p class="table-secondary">No se pudieron cargar los planes del portal.</p>';
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Portal Base se activa desde T200 sin mensualidad. Growth y Premium agregan mas campanas, historial, exportaciones, sedes, afiliados, referidos y analitica avanzada.";
+    subscriptionPricingNote.textContent = "Cada plan muestra una parte del siguiente: Base prueba valor con tickets, Growth activa operacion mensual, Premium desbloquea RMS completo y Enterprise escala sedes, API y soporte.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotizacion" : "tickets por recarga";
     const recommendedPackage = plan.recommended_start_package || "QR200";
-    const portalValue = plan.monthly_price_cop ? planMonthlyLabel(plan) : "Incluido";
+    const portalValue = plan.monthly_price_cop ? planMonthlyLabel(plan) : plan.price_label || "Incluido";
     const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotizacion");
     const isCurrent = plan.code === currentCode;
     return `
@@ -1662,7 +1837,7 @@ function renderSubscriptionPricing() {
 function renderSubscriptionRenewal() {
   if (!subscriptionRenewalPlanSelect || !subscriptionRenewalButton) return;
   const plan = state.subscription?.plan || {};
-  const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop);
+  const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop && !item.testing_plan && item.public_signup_available !== false);
   const hasMonthlyPlan = ["subscription", "ticket_base", "growth_temporal"].includes(plan.category);
   const autoRenew = plan.auto_renew || {};
   const dueAt = plan.official_payment_due_at || plan.current_period_ends_at;
@@ -1792,6 +1967,10 @@ function renderCommercialDeal() {
 }
 
 function isBusinessOwnerUser() {
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
+function canDeactivateBusinessUsers() {
   return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
 }
 
@@ -1801,6 +1980,7 @@ function canManageCampaigns() {
 
 function accountRoleLabel(role) {
   if (role === "BUSINESS_OWNER") return "Owner";
+  if (role === "BUSINESS_MANAGER") return "Manager operativo";
   if (role === "VALIDATOR") return "Validador";
   return role || "-";
 }
@@ -1808,6 +1988,7 @@ function accountRoleLabel(role) {
 function renderBusinessUsers() {
   if (!accountUsersTable) return;
   const canManage = isBusinessOwnerUser();
+  const canDeactivate = canDeactivateBusinessUsers();
   const users = state.businessUsers || [];
   if (accountUserForm) {
     accountUserForm.classList.toggle("hidden", !canManage);
@@ -1826,7 +2007,7 @@ function renderBusinessUsers() {
         <td><span class="status-chip ${active ? "ok" : "danger"}">${active ? "Activo" : "Inactivo"}</span></td>
         <td>${escapeHtml(formatDate(user.created_at))}</td>
         <td>
-          <button class="ghost-button" type="button" data-account-user-toggle="${escapeHtml(user.id)}" data-active="${active ? "0" : "1"}" ${!canManage || isSelf ? "disabled" : ""}>
+          <button class="ghost-button" type="button" data-account-user-toggle="${escapeHtml(user.id)}" data-active="${active ? "0" : "1"}" ${!canManage || !canDeactivate || isSelf ? "disabled" : ""}>
             ${active ? "Desactivar" : "Activar"}
           </button>
         </td>
@@ -1914,6 +2095,25 @@ function applyPlanNavigation() {
   requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
 }
 
+function viewNeedsCampaignData(view) {
+  return ["campaigns", "leads", "redemptions", "sales", "branches"].includes(view);
+}
+
+function setSelectedCampaignFromList(campaignId) {
+  state.selectedCampaignId = campaignId || null;
+  state.selectedCampaign = (state.campaigns || []).find((item) => item.id === campaignId) || null;
+  state.selectedReport = null;
+  state.selectedLeads = [];
+  state.selectedRedemptions = [];
+  state.selectedSales = [];
+}
+
+async function ensureSelectedCampaignLoaded(options = {}) {
+  if (!state.selectedCampaignId) return;
+  if (state.selectedReport && !options.force) return;
+  await selectCampaign(state.selectedCampaignId);
+}
+
 function setView(view) {
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
@@ -1948,7 +2148,17 @@ function setView(view) {
   if (view === "dashboard" && state.dashboard) renderDashboard();
   if (view === "account") renderAccountView();
   if (view === "campaigns" && state.selectedCampaign) renderCampaignView();
-  if (view === "leads") renderLeadsView();
+  if (viewNeedsCampaignData(view) && state.selectedCampaignId && !state.selectedReport) {
+    ensureSelectedCampaignLoaded({ quiet: true }).catch((error) => {
+      showFeedback(error.message, "error", { title: "No se pudo cargar la campana" });
+    });
+  }
+  if (view === "leads") {
+    if (!state.contactFeedLoaded) {
+      loadContactFeedData({ quiet: true }).then(renderLeadsView);
+    }
+    renderLeadsView();
+  }
   if (view === "affiliates") {
     if (!state.affiliatesLoaded) {
       loadAffiliatesData().then(renderAffiliatesView);
@@ -1965,11 +2175,10 @@ function setView(view) {
     }
   }
   if (view === "strategic-qr") {
-    if (!state.strategicQrLoaded) {
-      loadStrategicQrData().then(renderStrategicQrView);
-    } else {
-      renderStrategicQrView();
-    }
+    renderStrategicQrView();
+    loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
+      showFeedback(error.message, "error", { title: "No se pudo cargar Ticket Center" });
+    });
   }
   if (view === "validator") renderValidatorView();
   if (view === "reward-passes") renderRewardPassesView();
@@ -2210,8 +2419,8 @@ function renderCampaignAssociationInputs() {
     ? "El lote completo descontara tickets y cada ticket quedara asociado a la campana seleccionada."
     : "Primero crea una campana para medir el lote por activacion.";
   if (triviaCampaignHelp) triviaCampaignHelp.textContent = campaigns.length
-    ? "La trivia emitira tickets solo a ganadores y los asociara a la campana seleccionada."
-    : "Primero crea una campana para medir la trivia por leads, tickets y redenciones.";
+    ? "La activacion emitira tickets segun la dinamica y los asociara a la campana seleccionada."
+    : "Primero crea una campana para medir la activacion por leads, tickets y redenciones.";
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -2272,8 +2481,15 @@ async function loadWorkspace() {
     return;
   }
 
-  showFeedback("Actualizando dashboard, tickets, campanas e historial.", "loading", { title: "Sincronizando portal", timeout: 0 });
-  showBusyOverlay("Sincronizando portal", "Cargando metricas, cartera de tickets y ultimos movimientos.");
+  showFeedback(
+    lightTestMode ? "Modo prueba ligero activo. Evitando cargas pesadas de Supabase." : "Actualizando dashboard, tickets, campanas e historial.",
+    "loading",
+    { title: lightTestMode ? "Prueba ligera" : "Sincronizando portal", timeout: 0 }
+  );
+  showBusyOverlay(
+    lightTestMode ? "Prueba ligera" : "Sincronizando portal",
+    lightTestMode ? "Cargando solo lo necesario para probar activaciones y tickets." : "Cargando metricas, cartera de tickets y ultimos movimientos."
+  );
   refreshButton.disabled = true;
   if (!session?.user?.business_id) {
     if (isAdmin()) {
@@ -2311,31 +2527,34 @@ async function loadWorkspace() {
     return;
   }
 
-  renderSkeletonCards(businessKpiGrid, 6);
-  renderSkeletonCards(strategicQrKpiGrid, 5);
-  recentRedemptionsTable.innerHTML = '<tr><td colspan="5">Cargando redenciones recientes...</td></tr>';
-  recentLeadsTable.innerHTML = '<tr><td colspan="5">Cargando leads recientes...</td></tr>';
-  qrBatchTable.innerHTML = '<tr><td colspan="5">Cargando paquetes de tickets...</td></tr>';
-  strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial de tickets...</td></tr>';
+  if (!lightTestMode) {
+    renderSkeletonCards(businessKpiGrid, 6);
+    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Ticket Center</span><strong class="kpi-value">Bajo demanda</strong><p class="kpi-meta">Las metricas se cargan al abrir esta seccion para reducir egresos.</p></article>';
+    recentRedemptionsTable.innerHTML = '<tr><td colspan="5">Cargando redenciones recientes...</td></tr>';
+    recentLeadsTable.innerHTML = '<tr><td colspan="5">Cargando leads recientes...</td></tr>';
+    qrBatchTable.innerHTML = '<tr><td colspan="5">Abre Ticket Center para cargar paquetes recientes.</td></tr>';
+    strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Abre Ticket Center para cargar historial reciente.</td></tr>';
+  }
 
-  const needsLogoPayload = !(state.businessProfile?.logo_data_url
+  const needsLogoPayload = !lightTestMode && (!(state.businessProfile?.logo_data_url
     || session?.user?.business?.logo_data_url
     || session?.user?.business?.settings?.logo_data_url)
     || !(state.businessProfile?.ticket_frame_data_url
       || session?.user?.business?.ticket_frame_data_url
-      || session?.user?.business?.settings?.ticket_frame_data_url);
+      || session?.user?.business?.settings?.ticket_frame_data_url));
   const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
+  const shouldLoadDashboardData = !lightTestMode && (state.currentView === "dashboard" || !state.dashboard);
   const requests = [
     apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
-    api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
-    apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null),
+    shouldLoadDashboardData ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard || {}),
+    shouldLoadDashboardData ? apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null) : Promise.resolve(state.commandCenter || null),
     api("/api/business/campaigns", { headers: authHeaders() }),
     apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
-    apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null }),
-    apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
-    apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
+    Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention || null, lead_gate: state.contactFeedGate || null }),
+    lightTestMode ? Promise.resolve({ users: [] }) : apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
+    lightTestMode ? Promise.resolve({ activity: null }) : apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
   ];
 
   if (isAdmin()) {
@@ -2360,6 +2579,7 @@ async function loadWorkspace() {
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
+    state.contactFeedLoaded = false;
     state.businessUsers = businessUsersData.users || [];
     state.affiliates = [];
     state.strategicQrMetrics = null;
@@ -2370,12 +2590,17 @@ async function loadWorkspace() {
     state.triviaLaunchers = [];
     state.affiliatesLoaded = false;
     state.strategicQrLoaded = false;
+    state.ticketCenterLoadedAt = {};
     state.adminCampaigns = adminCampaignData?.campaigns || [];
     renderSubscriptionBanner();
     applyPlanNavigation();
 
     renderAccountView();
-    renderDashboard();
+    if (lightTestMode) {
+      businessKpiGrid.innerHTML = '<article class="surface-card">Modo prueba ligero activo. Se omitieron dashboard, analytics y feed para reducir egress de Supabase.</article>';
+    } else if (state.dashboard) {
+      renderDashboard();
+    }
     renderBusinessLogoPanel();
     renderCampaignStateGrid();
     renderCampaignList();
@@ -2386,13 +2611,27 @@ async function loadWorkspace() {
       ? state.selectedCampaignId
       : state.campaigns[0]?.id || null;
 
-    if (selectedCampaignId) {
-      await selectCampaign(selectedCampaignId);
+    if (selectedCampaignId && !lightTestMode) {
+      setSelectedCampaignFromList(selectedCampaignId);
+      renderCampaignList();
+      renderCampaignAssociationInputs();
+      if (viewNeedsCampaignData(state.currentView)) {
+        await selectCampaign(selectedCampaignId);
+      }
     } else {
       renderNoCampaignState();
     }
-    startActivityPolling();
-    showFeedback("Datos actualizados. Ya puedes revisar saldos, tickets y ventas.", "success", { title: "Portal actualizado" });
+    if (!lightTestMode) startActivityPolling();
+    if (lightTestMode) {
+      await loadStrategicQrData({ groups: ["core", "activations"], force: true });
+      renderStrategicQrView();
+      setView("strategic-qr");
+    }
+    showFeedback(
+      lightTestMode ? "Modo ligero listo. Prueba activaciones sin cargar dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
+      "success",
+      { title: lightTestMode ? "Prueba ligera" : "Portal actualizado" }
+    );
   } catch (error) {
     if (
       currentPlan().access_status === "LOCKED"
@@ -2418,11 +2657,14 @@ function stopActivityPolling() {
 
 function startActivityPolling() {
   stopActivityPolling();
+  if (lightTestMode) return;
   if (!session?.user?.business_id || isPrepaidValidatorOnly()) return;
-  state.activityPollingTimer = window.setInterval(checkBusinessActivity, 8000);
+  state.activityPollingTimer = window.setInterval(checkBusinessActivity, 30000);
 }
 
 async function checkBusinessActivity() {
+  if (lightTestMode) return;
+  if (document.hidden) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
   try {
     const data = await apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null });
@@ -2436,14 +2678,19 @@ async function checkBusinessActivity() {
 }
 
 async function refreshLiveBusinessData() {
+  if (lightTestMode) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
   state.activityRefreshInFlight = true;
   try {
+    const shouldRefreshDashboard = state.currentView === "dashboard";
+    const shouldRefreshContacts = state.currentView === "leads" || state.contactFeedLoaded;
     const [dashboardData, commandCenterData, campaignData, contactFeedData, activityData] = await Promise.all([
-      api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
-      apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter),
+      shouldRefreshDashboard ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard),
+      shouldRefreshDashboard ? apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter) : Promise.resolve(state.commandCenter),
       api("/api/business/campaigns", { headers: authHeaders() }),
-      apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: state.contactFeed || [], retention: state.contactFeedRetention }),
+      shouldRefreshContacts
+        ? apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: state.contactFeed || [], retention: state.contactFeedRetention })
+        : Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention, lead_gate: state.contactFeedGate }),
       apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
     ]);
 
@@ -2455,21 +2702,24 @@ async function refreshLiveBusinessData() {
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
+    state.contactFeedLoaded = shouldRefreshContacts ? true : state.contactFeedLoaded;
     state.activityVersion = activityData.activity?.version || state.activityVersion;
 
-    renderDashboard();
+    if (shouldRefreshDashboard) renderDashboard();
     renderCampaignStateGrid();
     renderCampaignList();
     renderCampaignAssociationInputs();
     if (state.currentView === "leads") renderLeadsView();
-    renderCommandCenter();
+    if (shouldRefreshDashboard) renderCommandCenter();
 
-    if (state.selectedCampaignId && state.campaigns.some((item) => item.id === state.selectedCampaignId)) {
+    if (state.selectedCampaignId && state.campaigns.some((item) => item.id === state.selectedCampaignId) && viewNeedsCampaignData(state.currentView)) {
       await selectCampaign(state.selectedCampaignId);
     }
     if (state.strategicQrLoaded || state.currentView === "strategic-qr") {
-      await loadStrategicQrData();
-      renderStrategicQrView();
+      markTicketCenterDataStale(["metrics", "batches", "history", "activations"]);
+      if (state.currentView === "strategic-qr") {
+        await loadTicketCenterForCurrentTab({ quiet: true });
+      }
     }
     showFeedback("Graficas actualizadas con la ultima actividad de tickets.", "success", { title: "Datos en vivo", timeout: 2500 });
   } catch (error) {
@@ -2516,9 +2766,9 @@ async function loadPrepaidValidatorWorkspace() {
       apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
       apiSafe("/api/public/packages", {}, { packages: [] }),
       apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
-      apiSafe("/api/payments/qr-credits/orders", { headers: authHeaders() }, { orders: [] }),
+      apiSafe("/api/payments/qr-credits/orders?limit=20", { headers: authHeaders() }, { orders: [] }),
       apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null, subscription: session.user?.subscription || null }),
-      apiSafe("/api/business/contacts/feed", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null }),
+      apiSafe("/api/business/contacts/feed?limit=40", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null }),
       apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
     ]);
 
@@ -2534,6 +2784,7 @@ async function loadPrepaidValidatorWorkspace() {
     state.contactFeed = contactFeedData.contacts || [];
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
+    state.contactFeedLoaded = true;
     state.businessUsers = businessUsersData.users || [];
 
     renderSubscriptionBanner();
@@ -4463,9 +4714,9 @@ async function selectCampaign(campaignId) {
     const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
-      api(`/api/business/campaigns/${campaignId}/leads`, { headers: authHeaders() }),
-      api(`/api/business/campaigns/${campaignId}/redemptions`, { headers: authHeaders() }),
-      api(`/api/business/campaigns/${campaignId}/sales`, { headers: authHeaders() }),
+      api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
+      api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
+      api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
     ]);
 
     state.selectedCampaign = campaignData.campaign || null;
@@ -5119,6 +5370,9 @@ function setTicketCenterTab(tab) {
   });
   if (state.currentView === "strategic-qr") {
     renderTicketCenterModules();
+    loadTicketCenterForCurrentTab({ quiet: true }).catch((error) => {
+      showFeedback(error.message, "error", { title: "No se pudo cargar Ticket Center" });
+    });
   }
 }
 
@@ -5604,7 +5858,7 @@ function renderStrategicQrView() {
     strategicMetricCard("ticket postventa", String(metrics.post_sale_generated || 0)),
     strategicMetricCard("Redimidos postventa", String(metrics.post_sale_redeemed || 0)),
     strategicMetricCard("Tasa recompra", `${Number((metrics.repurchase_rate || 0) * 100).toFixed(1)}%`),
-    strategicMetricCard("Tickets trivia", String(metrics.trivia_generated || 0), "highlight"),
+    strategicMetricCard("Tickets activacion", String(metrics.trivia_generated || 0), "highlight"),
     strategicMetricCard("Paquetes", String(metrics.qr_batches_generated || 0)),
     strategicMetricCard("ticket etiqueta reclamados", String(metrics.label_qr_claimed_or_active || 0)),
     strategicMetricCard("Vencidos", String(metrics.expired_without_redeem || 0), "warning"),
@@ -5879,7 +6133,7 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     customerAcquisitionCurrencyInput.value = "COP";
-    await loadWorkspace();
+    await refreshLiveBusinessData();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
   } catch (error) {
@@ -5914,6 +6168,133 @@ function updateTriviaQuestionVisibility() {
   }
 }
 
+function activationTypeLabel(type) {
+  return {
+    TRIVIA: "Trivia",
+    TRIVIA_QUIZ: "Trivia",
+    OPEN_QUESTION: "Pregunta abierta",
+    SURVEY: "Encuesta",
+    FLEX_SURVEY: "Encuesta",
+    SPIN_DISCOVER: "Gira y descubre",
+    THERMOMETER: "Termometro",
+    DISCOUNT_THERMOMETER: "Termometro",
+    PRODUCT_VOTE: "Votacion de producto",
+    QUICK_VOTE: "Votacion de producto",
+    STYLE_SELECTOR: "Selector de estilo",
+    GIFT_CURATOR: "Curador de regalo",
+    NEED_DIAGNOSTIC: "Diagnostico de necesidad",
+    PREMIUM_NEED_DIAGNOSTIC: "Diagnostico de necesidad",
+    WAITLIST: "Lista de espera",
+    REWARD_RESERVATION: "Reserva con Reward Pass",
+    EXPERIENCE_RESERVATION: "Reserva de experiencia",
+    SEALED_LETTER: "Carta sellada",
+    PRIVATE_INVITATION: "Invitacion privada",
+    SCRATCH_DIGITAL: "Raspa digital",
+    SCRATCH_WIN: "Raspa digital",
+    TAP_REVEAL: "Toca y revela",
+    SPACE_SHOOTER: "Marcianitos",
+    BREAKOUT: "Breakout",
+    SNAKE: "Culebrita",
+    CATCH_PRIZE: "Atrapa el premio",
+    MEMORY_PAIRS: "Memoria de pares",
+    FAST_TAP: "Tap rapido",
+    MINI_MAZE: "Mini laberinto",
+  }[type] || "Activacion";
+}
+
+function interactiveTypeForLegacyType(type) {
+  return {
+    TRIVIA: "TRIVIA_QUIZ",
+    OPEN_QUESTION: "OPEN_QUESTION",
+    SURVEY: "FLEX_SURVEY",
+    SPIN_DISCOVER: "SPIN_DISCOVER",
+    THERMOMETER: "DISCOUNT_THERMOMETER",
+    PRODUCT_VOTE: "QUICK_VOTE",
+    STYLE_SELECTOR: "STYLE_PROFILE",
+    GIFT_CURATOR: "GIFT_CURATOR",
+    NEED_DIAGNOSTIC: "PREMIUM_NEED_DIAGNOSTIC",
+    WAITLIST: "WAITLIST",
+    REWARD_RESERVATION: "EXPERIENCE_RESERVATION",
+    SEALED_LETTER: "SEALED_LETTER",
+    PRIVATE_INVITATION: "PRIVATE_INVITATION",
+    SCRATCH_DIGITAL: "SCRATCH_WIN",
+    TAP_REVEAL: "TAP_REVEAL",
+  }[type] || type;
+}
+
+function interactiveCategoryForType(type) {
+  return {
+    TRIVIA: "commercial",
+    OPEN_QUESTION: "commercial",
+    SURVEY: "survey",
+    SPIN_DISCOVER: "touch",
+    THERMOMETER: "touch",
+    PRODUCT_VOTE: "commercial",
+    STYLE_SELECTOR: "premium",
+    GIFT_CURATOR: "premium",
+    NEED_DIAGNOSTIC: "premium",
+    WAITLIST: "intent",
+    REWARD_RESERVATION: "premium",
+    SEALED_LETTER: "premium",
+    PRIVATE_INVITATION: "premium",
+    SCRATCH_DIGITAL: "touch",
+    TAP_REVEAL: "touch",
+    SPACE_SHOOTER: "minigame",
+    BREAKOUT: "minigame",
+    SNAKE: "minigame",
+    CATCH_PRIZE: "minigame",
+    MEMORY_PAIRS: "minigame",
+    FAST_TAP: "minigame",
+    MINI_MAZE: "minigame",
+  }[type] || "commercial";
+}
+
+function currentActivationType() {
+  return activationTypeInput?.value || "TRIVIA";
+}
+
+function setActivationType(type) {
+  const nextType = type || "TRIVIA";
+  if (activationTypeInput) activationTypeInput.value = nextType;
+  activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
+    const active = button.dataset.activationType === nextType;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  document.querySelectorAll("[data-activation-config]").forEach((panel) => {
+    const configs = String(panel.dataset.activationConfig || "").split(/\s+/).filter(Boolean);
+    const active = configs.includes(nextType);
+    panel.classList.toggle("hidden", !active);
+    panel.classList.toggle("active", active);
+  });
+  if (nextType === "TRIVIA") {
+    if (triviaQuestionCountInput) {
+      triviaQuestionCountInput.disabled = false;
+      triviaQuestionCountInput.required = true;
+    }
+    updateTriviaQuestionVisibility();
+  } else {
+    if (triviaQuestionCountInput) {
+      triviaQuestionCountInput.required = false;
+      triviaQuestionCountInput.disabled = true;
+    }
+    triviaQuestionBuilder?.querySelectorAll("input, select").forEach((field) => {
+      field.required = false;
+    });
+  }
+  updateActivationQuestionCountControls();
+  if (triviaBuilderHint) {
+    triviaBuilderHint.textContent = nextType === "TRIVIA"
+      ? triviaBuilderHint.textContent
+      : `${activationTypeLabel(nextType)} activa. El participante recibe QR al completar la dinamica.`;
+  }
+  if (triviaLauncherMessage && nextType !== "TRIVIA") {
+    setInlineMessage(triviaLauncherMessage, `${activationTypeLabel(nextType)} seleccionado. Configura los campos y lanza la landing cuando este lista.`, "info");
+  } else if (triviaLauncherMessage) {
+    setInlineMessage(triviaLauncherMessage, "Trivia seleccionada. Completa las preguntas y define el beneficio antes de lanzar.", "info");
+  }
+}
+
 function collectTriviaQuestions() {
   const count = Math.max(1, Math.min(5, Number(triviaQuestionCountInput?.value || 1)));
   return Array.from(triviaQuestionBuilder?.querySelectorAll("[data-trivia-question]") || [])
@@ -5930,6 +6311,462 @@ function collectTriviaQuestions() {
     }));
 }
 
+function splitOptionList(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function collectSurveyQuestions() {
+  const count = getActivationQuestionCount("SURVEY", 1);
+  return Array.from(document.querySelectorAll("[data-survey-question]"))
+    .filter((card) => Number(card.dataset.surveyQuestion || 0) <= count)
+    .map((card, index) => {
+      const question = card.querySelector('[data-survey-field="question"]')?.value.trim() || "";
+      const type = card.querySelector('[data-survey-field="type"]')?.value || "SINGLE_CHOICE";
+      const options = splitOptionList(card.querySelector('[data-survey-field="options"]')?.value);
+      return {
+        id: `s${index + 1}`,
+        question,
+        type,
+        options,
+        required: true,
+      };
+    })
+    .filter((item) => item.question);
+}
+
+function updateSurveyQuestionEditors() {
+  const count = getActivationQuestionCount("SURVEY", 1);
+  document.querySelectorAll("[data-survey-question]").forEach((card) => {
+    const index = Number(card.dataset.surveyQuestion || 0);
+    const active = index <= count;
+    const type = card.querySelector('[data-survey-field="type"]')?.value || "SINGLE_CHOICE";
+    const optionsField = card.querySelector(".survey-options-field");
+    card.classList.toggle("hidden", !active);
+    card.querySelectorAll("input, select, textarea").forEach((field) => {
+      field.disabled = !active;
+    });
+    optionsField?.classList.toggle("hidden", !["SINGLE_CHOICE", "MULTIPLE_CHOICE"].includes(type));
+  });
+}
+
+function getActivationQuestionCount(type, fallback = 1) {
+  const input = document.querySelector(`[data-question-count-for="${type}"]`);
+  if (!input) return fallback;
+  const min = Number(input.min || 1);
+  const max = Number(input.max || 5);
+  const value = Math.max(min, Math.min(max, Number(input.value || fallback)));
+  input.value = String(value);
+  return value;
+}
+
+function updateActivationQuestionCountControls() {
+  const openQuestionCount = getActivationQuestionCount("OPEN_QUESTION", 1);
+  document.querySelectorAll("[data-open-question]").forEach((input) => {
+    const active = Number(input.dataset.openQuestion || 0) <= openQuestionCount;
+    const row = input.closest("label") || input;
+    row.classList.toggle("hidden", !active);
+    input.disabled = !active;
+  });
+  updateSurveyQuestionEditors();
+  document.querySelectorAll("[data-flat-form]").forEach((panel) => {
+    const type = panel.dataset.flatForm;
+    const questions = Array.from(panel.querySelectorAll("[data-flat-question]"));
+    const count = getActivationQuestionCount(type, questions.length || 1);
+    questions.forEach((input, index) => {
+      const active = index < count;
+      const row = input.closest("label") || input;
+      row.classList.toggle("hidden", !active);
+      input.disabled = !active;
+    });
+  });
+}
+
+function collectOpenQuestions() {
+  const count = getActivationQuestionCount("OPEN_QUESTION", 1);
+  return Array.from(document.querySelectorAll("[data-open-question]"))
+    .filter((input) => Number(input.dataset.openQuestion || 0) <= count && !input.disabled)
+    .map((input, index) => ({
+      id: `open_question_${index + 1}`,
+      question_text: input.value.trim(),
+      question_type: "OPEN",
+      options: [],
+      required: true,
+      scoring_rules: null,
+    }))
+    .filter((question) => question.question_text);
+}
+
+function collectRevealCards() {
+  return Array.from(document.querySelectorAll("[data-reveal-card]"))
+    .map((input) => ({
+      label: input.dataset.revealCard || "Card",
+      benefit_label: input.value.trim(),
+      benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
+      benefit_value: parseJsonObject(triviaBenefitValueInput?.value || "{}"),
+    }))
+    .filter((item) => item.benefit_label);
+}
+
+function collectThermometerDiscounts() {
+  return splitOptionList(thermometerDiscountsInput?.value)
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0 && value <= 100);
+}
+
+function collectFlatChoiceOptions(type) {
+  return Array.from(document.querySelectorAll(`[data-flat-choice="${type}"] [data-flat-option]`))
+    .map((input) => {
+      const key = input.dataset.flatOption || input.value.trim();
+      const imageDataUrl = type === "PRODUCT_VOTE"
+        ? (input.dataset.imageDataUrl || productVoteImages[key] || "")
+        : "";
+      return {
+        value: key,
+        label: input.value.trim(),
+        image_data_url: imageDataUrl || null,
+        reward_type: triviaBenefitTypeInput.value,
+        reward_label: triviaBenefitLabelInput.value.trim(),
+        reward_value: parseJsonObject(triviaBenefitValueInput.value),
+      };
+    })
+    .filter((item) => item.label);
+}
+
+function syncProductVoteImagePreview(key, dataUrl = "") {
+  const preview = document.querySelector(`[data-product-vote-preview="${key}"]`);
+  if (!preview) return;
+  preview.src = dataUrl || "";
+  preview.classList.toggle("hidden", !dataUrl);
+}
+
+async function handleProductVoteImageFile(key, file) {
+  if (!key || !file) return;
+  try {
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type || "")) {
+      throw new Error("Usa una imagen PNG, JPG o WebP.");
+    }
+    const dataUrl = await normalizeAffiliatePhotoDataUrl(file, {
+      maxWidth: 720,
+      maxHeight: 540,
+      quality: 0.78,
+      mimeType: "image/webp",
+    });
+    if (!dataUrl) throw new Error("No se pudo procesar la imagen.");
+    productVoteImages[key] = dataUrl;
+    const optionInput = document.querySelector(`[data-flat-choice="PRODUCT_VOTE"] [data-flat-option="${key}"]`);
+    if (optionInput) optionInput.dataset.imageDataUrl = dataUrl;
+    syncProductVoteImagePreview(key, dataUrl);
+    showFeedback("Imagen de opcion cargada.", "success", { title: "Votacion de producto" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo cargar la imagen.", "error");
+  } finally {
+    const fileInput = document.querySelector(`[data-flat-option-image="${key}"]`);
+    if (fileInput) fileInput.value = "";
+  }
+}
+
+function collectFlatFormQuestions(type) {
+  const count = getActivationQuestionCount(type, 5);
+  return Array.from(document.querySelectorAll(`[data-flat-form="${type}"] [data-flat-question]`))
+    .filter((input, index) => index < count && !input.disabled)
+    .map((input, index) => ({
+      id: input.dataset.flatQuestion || `q${index + 1}`,
+      question_text: input.value.trim(),
+      question_type: input.dataset.flatQuestionType || "OPEN",
+      options: defaultOptionsForFlatQuestion(input.dataset.flatQuestion || "", input.dataset.flatQuestionType || "OPEN"),
+      required: true,
+      order_index: index,
+    }))
+    .filter((question) => question.question_text);
+}
+
+function defaultOptionsForFlatQuestion(key, type) {
+  if (!["SINGLE_CHOICE", "PRODUCT_CATEGORY"].includes(type)) return [];
+  const presets = {
+    recipient: ["Pareja", "Familiar", "Amigo", "Cliente"],
+    occasion: ["Cumpleanos", "Aniversario", "Agradecimiento", "Sorpresa"],
+    budget: ["Bajo", "Medio", "Premium"],
+    style: ["Clasico", "Moderno", "Artesanal", "Lujo"],
+    urgency: ["Hoy", "Esta semana", "Este mes"],
+    purchase_window: ["Lanzamiento", "Esta semana", "Este mes"],
+  };
+  return presets[key] || ["Opcion A", "Opcion B", "Opcion C"];
+}
+
+function isFlatChoiceActivation(type) {
+  return ["PRODUCT_VOTE", "STYLE_SELECTOR", "SCRATCH_DIGITAL", "TAP_REVEAL"].includes(type);
+}
+
+function isFlatFormActivation(type) {
+  return ["GIFT_CURATOR", "NEED_DIAGNOSTIC", "WAITLIST", "REWARD_RESERVATION"].includes(type);
+}
+
+function isFixedPremiumActivation(type) {
+  return ["SEALED_LETTER", "PRIVATE_INVITATION"].includes(type);
+}
+
+function isMinigameActivation(type) {
+  return ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE"].includes(type);
+}
+
+function minigameInstructionForType(type) {
+  return {
+    SPACE_SHOOTER: "Arrastra el dedo a izquierda o derecha. La nave no salta al touch, se mueve lateralmente, recibe dano y dispara con cadencia controlada.",
+    BREAKOUT: "Rompe tantos bloques como puedas antes de que termine el tiempo.",
+    SNAKE: "Captura elementos, evita errores y supera el score minimo.",
+    CATCH_PRIZE: "Mueve la canasta, arma combos, atrapa bonus especiales y evita bombas. Hay iman, escudo, tiempo extra y dificultad progresiva.",
+    MEMORY_PAIRS: "Encuentra pares y gana puntos por rapidez.",
+    FAST_TAP: "Toca los objetivos correctos tan rapido como puedas.",
+    MINI_MAZE: "Avanza hacia la meta sin tocar zonas de penalizacion.",
+  }[type] || "Completa la partida y supera el score minimo para recibir QR.";
+}
+
+function buildInteractiveActivationPayload(type, activationPayload) {
+  const benefit = {
+    reward_type: triviaBenefitTypeInput.value,
+    reward_label: triviaBenefitLabelInput.value.trim(),
+    reward_value: parseJsonObject(triviaBenefitValueInput.value),
+  };
+  const base = {
+    campaign_id: triviaCampaignInput.value || null,
+    title: triviaTitleInput.value.trim(),
+    description: triviaDescriptionInput.value.trim() || null,
+    max_rewards: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
+    ends_at: triviaExpiresAtInput.value ? new Date(triviaExpiresAtInput.value).toISOString() : null,
+    activation_type: interactiveTypeForLegacyType(type),
+    category: interactiveCategoryForType(type),
+    reward_ticket_cost: 1,
+    reward_config: benefit,
+    capture_config: {
+      required_fields: ["name", "phone"],
+      optional_fields: ["email", "document"],
+    },
+    visual_config: {
+      source: "ticket_center_activation_builder",
+    },
+    benefit: {
+      benefit_type: triviaBenefitTypeInput.value,
+      benefit_label: triviaBenefitLabelInput.value.trim(),
+      benefit_value: parseJsonObject(triviaBenefitValueInput.value),
+    },
+  };
+
+  if (type === "TRIVIA") {
+    const questions = (activationPayload.questions || []).map((question, index) => ({
+      id: `q${index + 1}`,
+      question_text: question.question,
+      question_type: "SINGLE_CHOICE",
+      options: Object.entries(question.options || {}).map(([value, label]) => ({ value, label })),
+      required: true,
+      order_index: index,
+      scoring_rules: {
+        correct_answer: question.correct_answer,
+        points: 1,
+      },
+    }));
+    return {
+      ...base,
+      reward_mode: "by_score",
+      questions,
+      interaction_config: {},
+      score_rewards: [{
+        min_score: questions.length,
+        max_score: null,
+        reward_type: benefit.reward_type,
+        reward_label: benefit.reward_label,
+        reward_value: benefit.reward_value,
+      }],
+      game_config: {
+        min_score_for_reward: questions.length,
+      },
+    };
+  }
+
+  if (type === "OPEN_QUESTION") {
+    const openQuestions = collectOpenQuestions();
+    return {
+      ...base,
+      reward_mode: "fixed",
+      questions: openQuestions.length ? openQuestions : [{
+        id: "open_question_1",
+        question_text: activationPayload.open_question?.question || "Pregunta abierta",
+        question_type: "OPEN",
+        options: [],
+        required: true,
+        scoring_rules: null,
+      }],
+      interaction_config: {
+        placeholder: activationPayload.open_question?.placeholder || null,
+      },
+    };
+  }
+
+  if (type === "SURVEY") {
+    return {
+      ...base,
+      reward_mode: "fixed",
+      questions: (activationPayload.survey_questions || []).map((question, index) => ({
+        id: question.id || `s${index + 1}`,
+        question_text: question.question,
+        question_type: question.type === "SCALE" ? "SCALE_1_5" : question.type,
+        options: question.options || [],
+        required: question.required !== false,
+        order_index: index,
+      })),
+    };
+  }
+
+  if (type === "SPIN_DISCOVER") {
+    const choices = (activationPayload.reveal_cards || []).map((card) => ({
+      value: card.label,
+      label: card.label,
+      reward_type: card.benefit_type || benefit.reward_type,
+      reward_label: card.benefit_label,
+      reward_value: card.benefit_value || benefit.reward_value,
+    }));
+    return {
+      ...base,
+      reward_mode: "by_choice",
+      reward_config: {
+        ...benefit,
+        choices,
+      },
+      interaction_config: {
+        mode: "cards",
+      },
+    };
+  }
+
+  if (type === "THERMOMETER") {
+    const discounts = activationPayload.thermometer_discounts || [];
+    const step = discounts.length > 1 ? 100 / (discounts.length - 1) : 100;
+    return {
+      ...base,
+      reward_mode: "by_position",
+      interaction_config: {
+        mode: "moving_indicator",
+        orientation: "horizontal",
+      },
+      touch_zones: discounts.map((discount, index) => ({
+        label: `${discount}%`,
+        position_percent: Number((index * step).toFixed(2)),
+        reward_type: "discount_percentage",
+        reward_label: `${discount}% de descuento`,
+        reward_value: { percent: discount },
+      })),
+    };
+  }
+
+  if (isFlatChoiceActivation(type)) {
+    const choices = collectFlatChoiceOptions(type);
+    return {
+      ...base,
+      reward_mode: "by_choice",
+      reward_config: {
+        ...benefit,
+        choices,
+      },
+      interaction_config: {
+        mode: type === "SCRATCH_DIGITAL" ? "scratch" : "choice",
+      },
+    };
+  }
+
+  if (isFlatFormActivation(type)) {
+    return {
+      ...base,
+      reward_mode: "fixed",
+      questions: collectFlatFormQuestions(type),
+      interaction_config: {
+        template: type,
+      },
+    };
+  }
+
+  if (isFixedPremiumActivation(type)) {
+    const message = type === "SEALED_LETTER"
+      ? document.getElementById("sealedLetterMessageInput")?.value.trim()
+      : document.getElementById("privateInvitationMessageInput")?.value.trim();
+    return {
+      ...base,
+      reward_mode: "fixed",
+      visual_config: {
+        ...base.visual_config,
+        premium_template: type,
+        message: message || null,
+      },
+      interaction_config: {
+        template: type,
+      },
+    };
+  }
+
+  if (isMinigameActivation(type)) {
+    const durationSeconds = Math.max(10, Math.min(180, Number(minigameDurationInput?.value || 30)));
+    const minScore = Math.max(1, Number(minigameMinScoreInput?.value || 100));
+    const maxScore = Math.max(minScore, Number(minigameMaxScoreInput?.value || 2500));
+    const pointsPerTarget = Math.max(1, Number(minigamePointsInput?.value || 50));
+    const penalty = Math.max(0, Number(minigamePenaltyInput?.value || 10));
+    const lives = Math.max(1, Math.min(10, Number(minigameLivesInput?.value || 3)));
+    const fireIntervalMs = Math.max(250, Math.min(1200, Number(minigameFireIntervalInput?.value || 480)));
+    const cooldownDays = Math.max(0, Math.min(365, Number(minigameParticipantCooldownInput?.value || 7)));
+    const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
+    const participantLock = {
+      scope: "activation",
+      cooldown_days: cooldownDays,
+      winner_policy: winnerPolicy,
+      label: `${cooldownDays} dias de espera entre intentos`,
+    };
+    return {
+      ...base,
+      category: "minigame",
+      reward_mode: "by_score",
+      capture_config: {
+        ...base.capture_config,
+        required_fields: ["name", "phone", "email", "document"],
+        optional_fields: [],
+        participant_lock: participantLock,
+      },
+      score_rewards: [{
+        min_score: minScore,
+        max_score: null,
+        reward_type: benefit.reward_type,
+        reward_label: benefit.reward_label,
+        reward_value: benefit.reward_value,
+      }],
+      game_config: {
+        game_type: type,
+        duration_seconds: durationSeconds,
+        min_duration_ms: 3000,
+        max_duration_ms: (durationSeconds + 10) * 1000,
+        max_score: maxScore,
+        points_per_target: pointsPerTarget,
+        penalty,
+        lives,
+        fire_interval_ms: fireIntervalMs,
+        instruction: minigameInstructionForType(type),
+      },
+      interaction_config: {
+        minigame: type,
+        commercial_goal: "redemption_in_store",
+      },
+      visual_config: {
+        ...base.visual_config,
+        minigame_skin: type,
+      },
+    };
+  }
+
+  return {
+    ...base,
+    reward_mode: "fixed",
+  };
+}
+
 function updateTriviaExpiryMode() {
   if (!triviaExpiresModeInput || !triviaExpiresAtInput) return;
   const custom = triviaExpiresModeInput.value === "CUSTOM_DATE";
@@ -5939,8 +6776,108 @@ function updateTriviaExpiryMode() {
 }
 
 function validateTriviaLauncherForm() {
-  updateTriviaQuestionVisibility();
   updateTriviaExpiryMode();
+  const type = currentActivationType();
+  if (type === "TRIVIA") {
+    updateTriviaQuestionVisibility();
+  }
+  if (type === "OPEN_QUESTION") {
+    const openQuestions = collectOpenQuestions();
+    const expectedOpenQuestions = getActivationQuestionCount("OPEN_QUESTION", 1);
+    if (openQuestions.length < expectedOpenQuestions) {
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedOpenQuestions} preguntas abiertas activas.`, "error");
+      openQuestionInput?.focus();
+      return null;
+    }
+    return { open_questions: openQuestions, open_question: { question: openQuestions[0]?.question_text || "", placeholder: openQuestionPlaceholderInput?.value.trim() || null } };
+  }
+  if (type === "SURVEY") {
+    const surveyQuestions = collectSurveyQuestions();
+    const expectedSurveyQuestions = getActivationQuestionCount("SURVEY", 1);
+    const invalidSurvey = surveyQuestions.find((question) => ["SINGLE_CHOICE", "MULTIPLE_CHOICE"].includes(question.type) && question.options.length < 2);
+    if (surveyQuestions.length < expectedSurveyQuestions || invalidSurvey) {
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedSurveyQuestions} preguntas activas de la encuesta. Las preguntas de opcion necesitan minimo 2 opciones.`, "error");
+      return null;
+    }
+    return { survey_questions: surveyQuestions };
+  }
+  if (type === "SPIN_DISCOVER") {
+    const revealCards = collectRevealCards();
+    if (revealCards.length < 2) {
+      setInlineMessage(triviaLauncherMessage, "Configura al menos dos cards de beneficio para gira y descubre.", "error");
+      return null;
+    }
+    return { reveal_cards: revealCards, spin_rewards: revealCards };
+  }
+  if (type === "THERMOMETER") {
+    const thermometerDiscounts = collectThermometerDiscounts();
+    if (thermometerDiscounts.length < 3) {
+      setInlineMessage(triviaLauncherMessage, "Configura al menos tres descuentos validos para el termometro.", "error");
+      thermometerDiscountsInput?.focus();
+      return null;
+    }
+    return { thermometer_discounts: thermometerDiscounts };
+  }
+  if (isFlatChoiceActivation(type)) {
+    const choices = collectFlatChoiceOptions(type);
+    if (choices.length < 2) {
+      setInlineMessage(triviaLauncherMessage, "Configura al menos dos opciones para esta activacion.", "error");
+      return null;
+    }
+    return { choices };
+  }
+  if (isFlatFormActivation(type)) {
+    const questions = collectFlatFormQuestions(type);
+    const expectedQuestions = getActivationQuestionCount(type, 1);
+    if (questions.length < expectedQuestions) {
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedQuestions} preguntas activas para esta activacion.`, "error");
+      return null;
+    }
+    return { questions };
+  }
+  if (isFixedPremiumActivation(type)) {
+    return { message: true };
+  }
+  if (isMinigameActivation(type)) {
+    const durationSeconds = Number(minigameDurationInput?.value || 30);
+    const minScore = Number(minigameMinScoreInput?.value || 100);
+    const maxScore = Number(minigameMaxScoreInput?.value || 2500);
+    const lives = Number(minigameLivesInput?.value || 3);
+    const fireIntervalMs = Number(minigameFireIntervalInput?.value || 480);
+    const cooldownDays = Number(minigameParticipantCooldownInput?.value || 0);
+    const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
+    if (!Number.isFinite(durationSeconds) || durationSeconds < 10 || durationSeconds > 180) {
+      setInlineMessage(triviaLauncherMessage, "Configura una duracion de minijuego entre 10 y 180 segundos.", "error");
+      minigameDurationInput?.focus();
+      return null;
+    }
+    if (!Number.isFinite(minScore) || minScore < 1 || !Number.isFinite(maxScore) || maxScore < minScore) {
+      setInlineMessage(triviaLauncherMessage, "Configura un score minimo valido y un maximo antiabuso mayor o igual.", "error");
+      minigameMinScoreInput?.focus();
+      return null;
+    }
+    if (!Number.isFinite(lives) || lives < 1 || lives > 10) {
+      setInlineMessage(triviaLauncherMessage, "Configura vidas de nave entre 1 y 10.", "error");
+      minigameLivesInput?.focus();
+      return null;
+    }
+    if (!Number.isFinite(fireIntervalMs) || fireIntervalMs < 250 || fireIntervalMs > 1200) {
+      setInlineMessage(triviaLauncherMessage, "Configura la cadencia de disparo entre 250 y 1200 ms.", "error");
+      minigameFireIntervalInput?.focus();
+      return null;
+    }
+    if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
+      setInlineMessage(triviaLauncherMessage, "Configura los dias de espera entre 0 y 365.", "error");
+      minigameParticipantCooldownInput?.focus();
+      return null;
+    }
+    if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
+      setInlineMessage(triviaLauncherMessage, "Selecciona que pasa si el beneficiario ya gano.", "error");
+      minigameWinnerPolicyInput?.focus();
+      return null;
+    }
+    return { minigame: true };
+  }
   const questions = collectTriviaQuestions();
   const invalidQuestionIndex = questions.findIndex((question) => (
     question.question.length < 4 || ["A", "B", "C", "D"].some((key) => !question.options[key])
@@ -5958,7 +6895,7 @@ function validateTriviaLauncherForm() {
     triviaExpiresAtInput?.focus();
     return null;
   }
-  return questions;
+  return { questions };
 }
 
 function renderTriviaLaunchers() {
@@ -5966,84 +6903,245 @@ function renderTriviaLaunchers() {
   triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
     ? state.triviaLaunchers.map((item) => `
       <tr>
-        <td>${escapeHtml(item.title)}<br><span class="table-secondary">${escapeHtml(formatDate(item.created_at))}</span></td>
-        <td>${escapeHtml(item.campaign_name || "-")}</td>
-        <td>${escapeHtml(item.attempts_count || 0)}</td>
-        <td>${escapeHtml(item.winners_count || 0)}${item.max_winners ? `/${escapeHtml(item.max_winners)}` : ""}</td>
         <td>
-          <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
-          <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
+          <strong>${escapeHtml(item.title)}</strong><br>
+          <span class="table-secondary">${escapeHtml(activationTypeLabel(item.activation_type))} · ${escapeHtml(item.campaign_name || "Sin campana")} · Creada ${escapeHtml(formatDate(item.created_at))}</span>
+        </td>
+        <td>
+          <span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span>
+          <br><span class="table-secondary">${item.ends_at ? `Vence ${escapeHtml(formatDate(item.ends_at))}` : "Sin vencimiento"}</span>
+        </td>
+        <td>
+          <strong>${escapeHtml(item.attempts_count || 0)}</strong> intentos<br>
+          <span class="table-secondary">${escapeHtml(item.winners_count || 0)} QR generados${item.max_winners ? ` / cupo ${escapeHtml(item.max_winners)}` : ""}</span>
+        </td>
+        <td>
+          <a class="table-link" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || item.public_url)}</a>
+          <div class="activation-row-actions">
+            <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
+            <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
+          </div>
+        </td>
+        <td>
+          <div class="activation-row-actions">
+            <button class="ghost-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
+            <button class="ghost-button" type="button" data-activation-data="${escapeHtml(item.id)}">Datos</button>
+            ${item.status === "active"
+              ? `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="paused">Pausar</button>`
+              : `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="active">Activar</button>`}
+            <button class="ghost-button" type="button" data-recycle-activation="${escapeHtml(item.id)}">Reciclar</button>
+            <button class="ghost-button danger-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="archived">Anular</button>
+            <button class="ghost-button danger-button" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
+          </div>
         </td>
       </tr>
     `).join("")
-    : '<tr><td colspan="5">Sin trivias lanzadas todavia.</td></tr>';
+    : '<tr><td colspan="5">Sin activaciones lanzadas todavia.</td></tr>';
 
   triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
     button.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
-      showFeedback("Link publico de trivia copiado.");
+      showFeedback("Link publico de activacion copiado.");
     });
   });
+  triviaLauncherTable.querySelectorAll("[data-activation-status]").forEach((button) => {
+    button.addEventListener("click", () => updateActivationStatus(button.dataset.activationStatus, button.dataset.nextStatus));
+  });
+  triviaLauncherTable.querySelectorAll("[data-edit-activation]").forEach((button) => {
+    button.addEventListener("click", () => editInteractiveActivation(button.dataset.editActivation));
+  });
+  triviaLauncherTable.querySelectorAll("[data-activation-data]").forEach((button) => {
+    button.addEventListener("click", () => showInteractiveActivationData(button.dataset.activationData));
+  });
+  triviaLauncherTable.querySelectorAll("[data-recycle-activation]").forEach((button) => {
+    button.addEventListener("click", () => recycleInteractiveActivation(button.dataset.recycleActivation));
+  });
+  triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
+    button.addEventListener("click", () => deleteInteractiveActivation(button.dataset.deleteActivation));
+  });
+}
+
+async function showInteractiveActivationData(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  const summary = [
+    `Titulo: ${activation.title}`,
+    `Tipo: ${activationTypeLabel(activation.activation_type)}`,
+    `Estado: ${activationStatusLabel(activation.status)}`,
+    `Campana: ${activation.campaign_name || "Sin campana"}`,
+    `Intentos: ${activation.attempts_count || 0}`,
+    `QR generados: ${activation.winners_count || 0}${activation.max_winners ? ` / ${activation.max_winners}` : ""}`,
+    `Vence: ${activation.ends_at ? formatDate(activation.ends_at) : "Sin vencimiento"}`,
+    `Link: ${activation.public_url}`,
+  ].join("\n");
+  try {
+    await navigator.clipboard?.writeText(summary);
+    showFeedback("Datos de la activacion copiados al portapapeles.", "success", { title: "Ficha copiada" });
+  } catch {
+    window.alert(summary);
+  }
+}
+
+function activationStatusLabel(status) {
+  return {
+    draft: "Borrador",
+    active: "Activa",
+    paused: "Pausada",
+    closed: "Cerrada",
+    archived: "Anulada",
+  }[status] || status || "-";
+}
+
+function activationStatusClass(status) {
+  return {
+    draft: "pending",
+    active: "ok",
+    paused: "pending",
+    closed: "danger",
+    archived: "danger",
+  }[status] || "pending";
+}
+
+function activationById(id) {
+  return (state.triviaLaunchers || []).find((item) => String(item.id) === String(id));
+}
+
+async function patchInteractiveActivation(id, payload, successMessage) {
+  const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const activation = data.activation;
+  state.triviaLaunchers = payload.status === "archived"
+    ? (state.triviaLaunchers || []).filter((item) => String(item.id) !== String(id))
+    : (state.triviaLaunchers || []).map((item) => String(item.id) === String(id) ? { ...item, ...activation } : item);
+  renderTriviaLaunchers();
+  if (successMessage) showFeedback(successMessage, "success", { title: "Activacion actualizada" });
+  return activation;
+}
+
+async function deleteInteractiveActivation(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  const hasHistory = Number(activation.attempts_count || 0) > 0 || Number(activation.winners_count || 0) > 0;
+  const copy = hasHistory
+    ? `Esta activacion ya tiene historial. Se retirara de la lista y quedara archivada para no romper tickets/redenciones. Deseas continuar?`
+    : `Vas a eliminar definitivamente "${activation.title}". Esta accion no se puede deshacer. Deseas continuar?`;
+  if (!window.confirm(copy)) return;
+  try {
+    const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => String(item.id) !== String(id));
+    renderTriviaLaunchers();
+    showFeedback(data.message || "Activacion eliminada.", "success", { title: data.deleted ? "Eliminada" : "Archivada" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo eliminar" });
+  }
+}
+
+async function updateActivationStatus(id, status) {
+  const activation = activationById(id);
+  if (!activation || !status) return;
+  if (status === "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedara inactivo y no recibira nuevas participaciones. Deseas continuar?`)) {
+    return;
+  }
+  try {
+    await patchInteractiveActivation(id, { status }, `Estado cambiado a ${activationStatusLabel(status)}.`);
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo actualizar" });
+  }
+}
+
+async function editInteractiveActivation(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  const title = window.prompt("Titulo de la activacion", activation.title || "");
+  if (title === null) return;
+  const description = window.prompt("Descripcion para la landing", activation.description || "");
+  if (description === null) return;
+  const maxRewardsText = window.prompt("Cupo maximo de QR/beneficios. Deja vacio para sin limite.", activation.max_rewards || "");
+  if (maxRewardsText === null) return;
+  const maxRewards = String(maxRewardsText).trim() ? Number(maxRewardsText) : null;
+  if (maxRewards !== null && (!Number.isFinite(maxRewards) || maxRewards < 1)) {
+    showFeedback("El cupo maximo debe ser un numero mayor a cero o quedar vacio.", "error", { title: "Dato invalido" });
+    return;
+  }
+  try {
+    await patchInteractiveActivation(id, {
+      title: title.trim(),
+      description: description.trim() || null,
+      max_rewards: maxRewards,
+    }, "Datos basicos actualizados.");
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo editar" });
+  }
+}
+
+async function recycleInteractiveActivation(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  if (!window.confirm(`Crear una copia borrador de "${activation.title}" con sus preguntas, reglas y configuracion?`)) return;
+  try {
+    const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}/recycle`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({}),
+    });
+    state.triviaLaunchers = [data.activation, ...(state.triviaLaunchers || [])];
+    renderTriviaLaunchers();
+    showFeedback("Activacion reciclada como borrador. Puedes editarla y activarla cuando este lista.", "success", { title: "Copia creada" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo reciclar" });
+  }
 }
 
 async function submitTriviaLauncher(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una trivia")) {
+  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una activacion")) {
     return;
   }
   if (!triviaLauncherForm.reportValidity()) {
-    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la trivia.", "error");
+    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la activacion.", "error");
     return;
   }
-  const questions = validateTriviaLauncherForm();
-  if (!questions) return;
+  const activationPayload = validateTriviaLauncherForm();
+  if (!activationPayload) return;
+  const type = currentActivationType();
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Lanzando...");
-  setInlineMessage(triviaLauncherMessage, "Creando landing publica de trivia.", "info");
+  setInlineMessage(triviaLauncherMessage, `Creando landing publica de ${activationTypeLabel(type).toLowerCase()}.`, "info");
   try {
-    const data = await api("/api/business/qr/trivias", {
+    const data = await api("/api/business/interactive-activations", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({
-        campaign_id: triviaCampaignInput.value || null,
-        title: triviaTitleInput.value.trim(),
-        description: triviaDescriptionInput.value.trim() || null,
-        max_winners: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
-        expires_mode: triviaExpiresModeInput.value,
-        expires_at: triviaExpiresAtInput.value ? new Date(triviaExpiresAtInput.value).toISOString() : null,
-        questions,
-        metadata: {
-          source: "ticket_center_trivia_launcher",
-          campaign_id: triviaCampaignInput.value || null,
-        },
-        benefit: {
-          benefit_type: triviaBenefitTypeInput.value,
-          benefit_label: triviaBenefitLabelInput.value.trim(),
-          benefit_value: parseJsonObject(triviaBenefitValueInput.value),
-        },
-      }),
+      body: JSON.stringify(buildInteractiveActivationPayload(type, activationPayload)),
     });
 
-    state.triviaLaunchers = [data.trivia, ...(state.triviaLaunchers || []).filter((item) => item.id !== data.trivia.id)];
+    const activation = data.activation || data.trivia;
+    state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => item.id !== activation.id)];
     renderTriviaLaunchers();
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
-      <strong>Trivia lanzada</strong>
-      <p class="table-secondary">Comparte este link con clientes. Solo quien responda todo bien recibe ticket y consume saldo.</p>
-      <p><a href="${escapeHtml(data.trivia.public_url)}" target="_blank" rel="noopener">${escapeHtml(data.trivia.public_url)}</a></p>
+      <strong>Activacion lanzada</strong>
+      <p class="table-secondary">Comparte este link con clientes. Primero dejan sus datos, luego completan la dinamica y el sistema emite el ticket segun la regla configurada.</p>
+      <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
     `;
     document.getElementById("copyTriviaLauncherResultButton")?.addEventListener("click", async () => {
-      await navigator.clipboard?.writeText(data.trivia.public_url);
-      showFeedback("Link de trivia copiado.");
+      await navigator.clipboard?.writeText(activation.public_url);
+      showFeedback("Link de activacion copiado.");
     });
-    setInlineMessage(triviaLauncherMessage, "Trivia lista para compartir.", "success");
-    showFeedback("Trivia lanzada. El link publico ya esta listo.", "success", { title: "Trivia Launcher" });
-    await loadStrategicQrData();
+    setInlineMessage(triviaLauncherMessage, "Activacion lista para compartir.", "success");
+    showFeedback("Activacion lanzada. El link publico ya esta listo.", "success", { title: "Constructor de activaciones" });
+    markTicketCenterDataStale(["activations", "metrics"]);
+    await loadStrategicQrData({ groups: ["activations", "metrics"], force: true, quiet: true });
     renderStrategicQrView();
   } catch (error) {
     setInlineMessage(triviaLauncherMessage, error.message, "error");
-    showFeedback(error.message, "error", { title: "No se pudo lanzar la trivia" });
+    showFeedback(error.message, "error", { title: "No se pudo lanzar la activacion" });
   } finally {
     setButtonLoading(submitButton, false);
   }
@@ -6093,7 +7191,9 @@ async function submitPostSaleQr(event) {
     const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
     const ticketFilename = filenameForDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, browserTicketDataUrl);
     const ticketDownloadUrl = URL.createObjectURL(dataUrlToBlob(browserTicketDataUrl));
-    await loadWorkspace();
+    state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
+    markTicketCenterDataStale(["core", "metrics", "history"]);
+    await loadStrategicQrData({ groups: ["core", "metrics", "history"], force: true, quiet: true });
     setView("strategic-qr");
     setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
     postSaleQrResult.classList.remove("hidden");
@@ -6185,7 +7285,9 @@ async function submitQrBatch(event) {
         firstQrId: data.qr_codes?.[0]?.id || null,
       }
     );
-    await loadWorkspace();
+    state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
+    markTicketCenterDataStale(["core", "metrics", "batches", "history"]);
+    await loadStrategicQrData({ groups: ["core", "metrics", "batches", "history"], force: true, quiet: true });
     setView("strategic-qr");
     qrBatchForm.reset();
     qrBatchQuantityInput.value = "50";
@@ -6665,6 +7767,7 @@ function openCampaignModal(mode) {
   campaignFormPrimaryLink.value = campaign?.delivered_assets?.primary_link || "";
   campaignFormQrLandingUrl.value = campaign?.delivered_assets?.qr_landing_url || "";
   campaignFormAssetNotes.value = campaign?.delivered_assets?.creative_notes || "";
+  state.campaignModalInitialSnapshot = campaignModalSnapshot();
 
   campaignModal.classList.remove("hidden");
 }
@@ -6672,6 +7775,61 @@ function openCampaignModal(mode) {
 function closeCampaignModal() {
   campaignModal.classList.add("hidden");
   campaignModalMessage.textContent = "";
+  state.campaignModalInitialSnapshot = null;
+}
+
+function campaignModalSnapshot() {
+  if (!campaignModalForm) return "";
+  const data = new FormData(campaignModalForm);
+  const channels = selectedCheckedValues(campaignFormLaunchChannels).sort();
+  return JSON.stringify({
+    name: campaignFormName.value,
+    slug: campaignFormSlug.value,
+    type: campaignFormType.value,
+    status: campaignFormStatus.value,
+    objective: campaignFormObjective.value,
+    strategy: campaignFormStrategy.value,
+    budget: campaignFormBudget.value,
+    goal: campaignFormGoal.value,
+    leads_goal: campaignFormLeadsGoal.value,
+    redemptions_goal: campaignFormRedemptionsGoal.value,
+    starts_at: campaignFormStartsAt.value,
+    ends_at: campaignFormEndsAt.value,
+    channels,
+    client_notes: campaignFormClientNotes.value,
+    landing_url: campaignFormLandingUrl.value,
+    validator_url: campaignFormValidatorUrl.value,
+    game_url: campaignFormGameUrl.value,
+    primary_link: campaignFormPrimaryLink.value,
+    qr_landing_url: campaignFormQrLandingUrl.value,
+    asset_notes: campaignFormAssetNotes.value,
+    form_size: Array.from(data.keys()).length,
+  });
+}
+
+function isCampaignModalDirty() {
+  return !campaignModal.classList.contains("hidden")
+    && state.campaignModalInitialSnapshot
+    && campaignModalSnapshot() !== state.campaignModalInitialSnapshot;
+}
+
+function requestCloseCampaignModal() {
+  if (isCampaignModalDirty()) {
+    const discard = window.confirm("Tienes cambios sin guardar en esta campana. Si cierras ahora se perdera el progreso. Deseas cerrar de todos modos?");
+    if (!discard) {
+      setInlineMessage(campaignModalMessage, "No cerramos el formulario. Tus datos siguen ahi; guarda la campana o cancela cuando estes seguro.", "info");
+      return;
+    }
+  }
+  closeCampaignModal();
+}
+
+function notifyCampaignBackdropLocked() {
+  if (campaignModal.classList.contains("hidden")) return;
+  setInlineMessage(campaignModalMessage, "El formulario no se cierra al tocar afuera para no perder tu progreso. Usa Guardar o Cancelar.", "info");
+  const card = campaignModal.querySelector(".modal-card");
+  card?.classList.remove("modal-card-attention");
+  window.requestAnimationFrame(() => card?.classList.add("modal-card-attention"));
 }
 
 function openSnapshotModal() {
@@ -8569,7 +9727,7 @@ async function submitAccountUser(event) {
 }
 
 async function toggleBusinessUser(userId, isActive) {
-  if (!isBusinessOwnerUser() || !userId) return;
+  if (!isBusinessOwnerUser() || !canDeactivateBusinessUsers() || !userId) return;
   try {
     const data = await api(`/api/business/users/${encodeURIComponent(userId)}`, {
       method: "PATCH",
@@ -9060,12 +10218,14 @@ async function generateSelectedAffiliateReferralQr() {
     );
     renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
     await downloadBatchByFormat(data.batch.id, "pdf", "card", "a4", { silentSuccess: true });
-    state.strategicQrLoaded = false;
-    await loadWorkspace();
+    state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
+    markTicketCenterDataStale(["core", "metrics", "batches", "history", "affiliates"]);
     if (state.currentView === "affiliates") {
       await loadAffiliatesData();
       await renderAffiliatesView();
       renderAffiliateReferralQrResult(data.batch, data.qr_codes || [], referralAffiliate);
+    } else if (state.currentView === "strategic-qr") {
+      await loadTicketCenterForCurrentTab({ force: true, quiet: true });
     }
     showFeedback(`tickets de recomendacion creados para ${referralAffiliate.full_name || "el afiliado"}. La descarga PDF fue iniciada.`, "success", { title: "Tickets listos" });
   } catch (error) {
@@ -9500,13 +10660,16 @@ function renderLeadsView() {
       ["name", "document_id", "phone", "email", "qr_status", "campaign_name", "attribution_source", "attribution_subject", "preferred_channel"],
       ["created_at", "redeemed_at", "sale_created_at"]
     );
+    const totalCopy = gate.total_available === null || gate.total_available === undefined
+      ? `Estas viendo la muestra permitida por tu plan (${escapeHtml(sampleRows.length)} contactos cargados).`
+      : `Estas viendo ${escapeHtml(sampleRows.length)} de ${escapeHtml(gate.total_available || sampleRows.length)} contactos. ${escapeHtml(gate.hidden_count || 0)} quedan reservados para un plan superior.`;
     const gateRow = `
       <tr>
         <td colspan="9">
           <div class="empty-state">
             <strong>${escapeHtml(gate.title || "Ya tienes leads reales. Ahora necesitas el portal.")}</strong>
             <p>${escapeHtml(gate.message || "Portal Base muestra el historial permitido. Growth/Premium desbloquea historial completo y mas exportaciones.")}</p>
-            <p>Estas viendo ${escapeHtml(sampleRows.length)} de ${escapeHtml(gate.total_available || sampleRows.length)} contactos. ${escapeHtml(gate.hidden_count || 0)} quedan reservados para Portal RMS.</p>
+            <p>${totalCopy}</p>
             <a class="primary-button compact" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
           </div>
         </td>
@@ -10544,10 +11707,20 @@ snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
+activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
+  button.addEventListener("click", () => setActivationType(button.dataset.activationType));
+});
 triviaQuestionCountInput?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaExpiresModeInput?.addEventListener("change", updateTriviaExpiryMode);
 triviaQuestionBuilder?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaQuestionBuilder?.addEventListener("change", updateTriviaQuestionVisibility);
+document.querySelectorAll('[data-survey-field="type"]').forEach((field) => {
+  field.addEventListener("change", updateSurveyQuestionEditors);
+});
+document.querySelectorAll("[data-question-count-for]").forEach((field) => {
+  field.addEventListener("input", updateActivationQuestionCountControls);
+  field.addEventListener("change", updateActivationQuestionCountControls);
+});
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
@@ -10620,13 +11793,13 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closePortalMenu();
 });
 rangeButton.addEventListener("click", handleRangeToggle);
-closeCampaignModalButton.addEventListener("click", closeCampaignModal);
-cancelCampaignModalButton.addEventListener("click", closeCampaignModal);
+closeCampaignModalButton.addEventListener("click", requestCloseCampaignModal);
+cancelCampaignModalButton.addEventListener("click", requestCloseCampaignModal);
 closeSnapshotModalButton.addEventListener("click", closeSnapshotModal);
 cancelSnapshotModalButton.addEventListener("click", closeSnapshotModal);
 campaignModalForm.addEventListener("submit", submitCampaignModal);
 campaignModal.addEventListener("click", (event) => {
-  if (event.target === campaignModal) closeCampaignModal();
+  if (event.target === campaignModal) notifyCampaignBackdropLocked();
 });
 snapshotModal.addEventListener("click", (event) => {
   if (event.target === snapshotModal) closeSnapshotModal();
@@ -10678,14 +11851,27 @@ businessLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo("")
 accountTicketFrameUploadButton?.addEventListener("click", () => accountTicketFrameInput?.click());
 accountTicketFrameInput?.addEventListener("change", () => handleTicketFrameFile(accountTicketFrameInput.files?.[0]));
 accountTicketFrameRemoveButton?.addEventListener("click", () => updateTicketFrame(""));
+document.querySelectorAll("[data-product-vote-upload]").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const key = button.dataset.productVoteUpload;
+    document.querySelector(`[data-flat-option-image="${key}"]`)?.click();
+  });
+});
+document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
+  input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
+});
 
 rangeButton.textContent = `Ultimos ${state.rangeDays} dias`;
 applyPortalTheme(readPreferredTheme());
 setView("dashboard");
 initPasswordResetFromUrl();
 setupPasswordRevealButtons();
+setActivationType(currentActivationType());
 updateTriviaQuestionVisibility();
 updateTriviaExpiryMode();
+updateSurveyQuestionEditors();
+updateActivationQuestionCountControls();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

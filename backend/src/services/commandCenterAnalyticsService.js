@@ -311,7 +311,7 @@ async function getOptions(businessId) {
        where u.business_id = $1
          and u.is_active = true
          and (
-           u.role in ('VALIDATOR', 'BUSINESS_OWNER')
+           u.role in ('VALIDATOR', 'BUSINESS_MANAGER', 'BUSINESS_OWNER')
            or exists (select 1 from redemptions rd where rd.redeemed_by_user_id = u.id)
            or exists (select 1 from attributed_sales s where s.sale_confirmed_by_user_id = u.id)
            or exists (select 1 from business_sales bs where bs.seller_user_id = u.id)

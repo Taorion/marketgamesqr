@@ -20,7 +20,7 @@ const {
 const router = express.Router();
 
 router.use(authRequired);
-router.use(requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"));
+router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 
 router.post("/post-sale", createPostSale);
 router.post("/trivias", createTrivia);

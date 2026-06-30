@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trivia MarketGames</title>
+  <title>Activacion MarketGames</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/trivia/styles.css?v=trivia-launcher-20260629">
+  <link rel="stylesheet" href="/trivia/styles.css?v=activation-launcher-20260630">
 </head>
 <body>
   <main class="trivia-shell">
@@ -18,8 +18,8 @@
         <img src="/img/MGLogo-01.png" alt="MarketGames">
         <div>
           <span id="businessName">MarketGames RMS</span>
-          <h1 id="triviaTitle">Cargando trivia...</h1>
-          <p id="triviaDescription">Preparando preguntas y ticket.</p>
+          <h1 id="triviaTitle">Cargando activacion...</h1>
+          <p id="triviaDescription">Preparando dinamica y ticket.</p>
         </div>
       </header>
 
@@ -28,7 +28,7 @@
       <form class="trivia-form hidden" id="triviaForm">
         <section class="trivia-progress" aria-label="Progreso de respuestas">
           <div>
-            <span id="progressLabel">0 de 0 respondidas</span>
+            <span id="progressLabel">0 de 0 pasos completados</span>
             <strong id="progressPercent">0%</strong>
           </div>
           <div class="progress-track"><span id="progressBar"></span></div>
@@ -38,7 +38,7 @@
           <div class="section-head">
             <span>Paso 1</span>
             <h2>Tus datos</h2>
-            <p>Usaremos esta informacion para asociar el intento y entregar el ticket si ganas.</p>
+            <p>Usaremos esta informacion para asociar tu participacion y entregar el ticket si desbloqueas el beneficio.</p>
           </div>
         <section class="participant-grid">
           <label>
@@ -63,18 +63,18 @@
         <section class="form-block">
           <div class="section-head">
             <span>Paso 2</span>
-            <h2>Responde la trivia</h2>
-            <p>Debes responder todas las preguntas antes de enviar.</p>
+            <h2 id="activationStepTitle">Completa la dinamica</h2>
+            <p id="activationStepCopy">Primero deja tus datos y luego interactua para desbloquear el QR.</p>
           </div>
         <section class="question-list" id="questionList"></section>
         </section>
 
-        <button class="submit-button" type="submit">Enviar respuestas</button>
+        <button class="submit-button" type="submit">Generar mi ticket QR</button>
       </form>
 
       <section class="ticket-result hidden" id="ticketResult"></section>
     </section>
   </main>
-  <script src="/trivia/trivia.js?v=trivia-launcher-20260629" defer></script>
+  <script src="/trivia/trivia.js?v=activation-launcher-20260630" defer></script>
 </body>
 </html>

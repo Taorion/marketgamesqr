@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=trivia-launcher-20260629">
+  <link rel="stylesheet" href="css/styles.css?v=activation-delete-20260630">
 </head>
 <body>
   <main class="portal-shell">
@@ -680,6 +680,7 @@
                     <span>Rol</span>
                     <select id="accountUserRoleInput" required>
                       <option value="VALIDATOR">Validador</option>
+                      <option value="BUSINESS_MANAGER">Manager operativo</option>
                       <option value="BUSINESS_OWNER">Owner</option>
                     </select>
                   </label>
@@ -725,6 +726,14 @@
               </div>
             </div>
 
+            <div class="ticket-data-mode">
+              <span class="material-symbols-outlined">database</span>
+              <div>
+                <strong>Modo ahorro de datos activo</strong>
+                <p>Las tablas pesadas se cargan por pestaña y se reutilizan por un minuto para reducir egresos de Supabase sin perder operacion.</p>
+              </div>
+            </div>
+
             <section class="kpi-grid" id="strategicQrKpiGrid"></section>
 
             <nav class="ticket-center-menu" aria-label="Secciones de Ticket Center">
@@ -734,7 +743,7 @@
               </button>
               <button class="ticket-center-tab" data-ticket-tab="trivia" type="button">
                 <span class="material-symbols-outlined">quiz</span>
-                <span>Trivia</span>
+                <span>Activaciones</span>
               </button>
               <button class="ticket-center-tab" data-ticket-tab="flow" type="button">
                 <span class="material-symbols-outlined">storefront</span>
@@ -1033,21 +1042,149 @@
                 <article class="surface-card data-table-card">
                   <div class="table-card-head">
                     <div>
-                      <span class="mono-label">Trivia Launcher</span>
-                      <h3>Crear landing de trivia con ticket para ganadores</h3>
+                      <span class="mono-label">Activaciones Interactivas MarketGames</span>
+                      <h3>Crear experiencia fisico-digital con beneficio QR unico</h3>
                     </div>
-                    <span class="status-chip ok">1 ticket por ganador</span>
+                    <span class="status-chip ok">Participacion + QR + redencion + venta</span>
+                  </div>
+                  <div class="full interactive-activation-nav" aria-label="Catalogo de activaciones">
+                    <span>Comerciales rapidas</span>
+                    <span>Encuestas y formularios inteligentes</span>
+                    <span>Experiencias tactiles</span>
+                    <span>Minijuegos con score</span>
+                    <span>Experiencias premium / lujo</span>
+                    <span>Todas las activaciones</span>
+                    <span>Participaciones</span>
+                    <span>Beneficios generados</span>
+                    <span>Reportes</span>
+                  </div>
+                  <div class="full interactive-catalog-note">
+                    <strong>Catalogo extendido activo en backend</strong>
+                    <p>El sistema soporta 50 tipos: votacion de producto, selector de estilo, curador de regalo, diagnosticos, lista de espera, reserva, carta sellada, invitacion privada, raspa digital, toca y revela, termometro, minijuegos y experiencias premium. Este constructor rapido crea las dinamicas base; todas emiten QR unico solo al generar beneficio y consumen tickets del saldo.</p>
                   </div>
                   <form class="modal-form trivia-launcher-form" id="triviaLauncherForm">
                     <label class="full association-field">
-                      <span>Campana que medira esta trivia</span>
+                      <span>Campana que medira esta activacion</span>
                       <select id="triviaCampaignInput"></select>
-                      <small id="triviaCampaignHelp">La trivia, los leads ganadores y los tickets emitidos quedaran asociados a esta campana.</small>
+                      <small id="triviaCampaignHelp">Los leads, respuestas, tickets emitidos y redenciones quedaran asociados a esta campana.</small>
                     </label>
-                    <label><span>Titulo de la trivia</span><input id="triviaTitleInput" type="text" minlength="4" maxlength="160" placeholder="Trivia Mundialista 98" required></label>
-                    <label><span>Maximo de ganadores</span><input id="triviaMaxWinnersInput" type="number" min="1" max="100000" step="1" placeholder="Sin limite"></label>
+                    <div class="full activation-type-picker" id="activationTypePicker" aria-label="Tipo de activacion">
+                      <button class="activation-type-option active" type="button" data-activation-type="TRIVIA" aria-pressed="true">
+                        <span class="material-symbols-outlined">quiz</span>
+                        <strong>Trivia</strong>
+                        <small>QR solo si acierta.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="OPEN_QUESTION">
+                        <span class="material-symbols-outlined">chat</span>
+                        <strong>Pregunta abierta</strong>
+                        <small>Responde y recibe QR.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SURVEY">
+                        <span class="material-symbols-outlined">fact_check</span>
+                        <strong>Encuesta</strong>
+                        <small>Varios tipos de pregunta.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SPIN_DISCOVER">
+                        <span class="material-symbols-outlined">style</span>
+                        <strong>Gira y descubre</strong>
+                        <small>Cards o premio sorpresa.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="THERMOMETER">
+                        <span class="material-symbols-outlined">speed</span>
+                        <strong>Termometro</strong>
+                        <small>Detener cerca del mejor descuento.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="PRODUCT_VOTE">
+                        <span class="material-symbols-outlined">how_to_vote</span>
+                        <strong>Votacion producto</strong>
+                        <small>Vota y recibe QR.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="STYLE_SELECTOR">
+                        <span class="material-symbols-outlined">checkroom</span>
+                        <strong>Selector de estilo</strong>
+                        <small>Moda, joyeria y lujo.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="GIFT_CURATOR">
+                        <span class="material-symbols-outlined">redeem</span>
+                        <strong>Curador de regalo</strong>
+                        <small>Recomendacion + QR.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="NEED_DIAGNOSTIC">
+                        <span class="material-symbols-outlined">psychology</span>
+                        <strong>Diagnostico</strong>
+                        <small>Perfil de necesidad.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="WAITLIST">
+                        <span class="material-symbols-outlined">pending_actions</span>
+                        <strong>Lista de espera</strong>
+                        <small>Lanzamiento o preventa.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="REWARD_RESERVATION">
+                        <span class="material-symbols-outlined">event_available</span>
+                        <strong>Reserva + Reward</strong>
+                        <small>Agenda y pase QR.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SEALED_LETTER">
+                        <span class="material-symbols-outlined">mail</span>
+                        <strong>Carta sellada</strong>
+                        <small>Premium y sobria.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="PRIVATE_INVITATION">
+                        <span class="material-symbols-outlined">workspace_premium</span>
+                        <strong>Invitacion privada</strong>
+                        <small>Evento o cita VIP.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SCRATCH_DIGITAL">
+                        <span class="material-symbols-outlined">gesture</span>
+                        <strong>Raspa digital</strong>
+                        <small>Touch simple.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="TAP_REVEAL">
+                        <span class="material-symbols-outlined">touch_app</span>
+                        <strong>Toca y revela</strong>
+                        <small>Rapido para ferias.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SPACE_SHOOTER">
+                        <span class="material-symbols-outlined">rocket_launch</span>
+                        <strong>Marcianitos</strong>
+                        <small>Dispara y suma score.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="BREAKOUT">
+                        <span class="material-symbols-outlined">view_module</span>
+                        <strong>Breakout</strong>
+                        <small>Rompe bloques.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="SNAKE">
+                        <span class="material-symbols-outlined">timeline</span>
+                        <strong>Culebrita</strong>
+                        <small>Captura objetivos.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="CATCH_PRIZE">
+                        <span class="material-symbols-outlined">shopping_basket</span>
+                        <strong>Atrapa premio</strong>
+                        <small>Suma y evita penalizar.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="MEMORY_PAIRS">
+                        <span class="material-symbols-outlined">grid_view</span>
+                        <strong>Memoria pares</strong>
+                        <small>Pares y rapidez.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="FAST_TAP">
+                        <span class="material-symbols-outlined">touch_app</span>
+                        <strong>Tap rapido</strong>
+                        <small>Reflejos con score.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="MINI_MAZE">
+                        <span class="material-symbols-outlined">route</span>
+                        <strong>Mini laberinto</strong>
+                        <small>Llega a la meta.</small>
+                      </button>
+                      <input id="activationTypeInput" type="hidden" value="TRIVIA">
+                    </div>
+                    <label><span>Titulo de la landing</span><input id="triviaTitleInput" type="text" minlength="4" maxlength="160" placeholder="Descubre tu beneficio de la semana" required></label>
+                    <label><span>Maximo de tickets</span><input id="triviaMaxWinnersInput" type="number" min="1" max="100000" step="1" placeholder="Sin limite"></label>
                     <label class="full"><span>Descripcion para la landing</span><textarea id="triviaDescriptionInput" rows="3" placeholder="Responde bien y recibe tu ticket para redimir en tienda."></textarea></label>
-                    <label><span>Beneficio del ticket ganador</span><input id="triviaBenefitLabelInput" type="text" placeholder="15% de descuento por responder bien" required></label>
+                    <label><span>Beneficio base del ticket</span><input id="triviaBenefitLabelInput" type="text" placeholder="Beneficio desbloqueado por participar" required></label>
                     <label><span>Tipo de beneficio</span>
                       <select id="triviaBenefitTypeInput">
                         <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
@@ -1072,12 +1209,18 @@
                       </select>
                     </label>
                     <label><span>Fecha personalizada</span><input id="triviaExpiresAtInput" type="datetime-local"></label>
-                    <label>
+                    <label data-activation-config="TRIVIA">
                       <span>Numero de preguntas</span>
                       <input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required>
                       <small id="triviaBuilderHint">1 pregunta activa. El ganador debe acertar todas.</small>
                     </label>
-                    <div class="full trivia-question-builder" id="triviaQuestionBuilder">
+                    <div class="full activation-config-panel active" data-activation-config="TRIVIA">
+                      <div class="activation-config-head">
+                        <strong>Trivia con respuesta correcta</strong>
+                        <span>El participante solo recibe QR si contesta todas correctamente.</span>
+                      </div>
+                    </div>
+                    <div class="full trivia-question-builder" id="triviaQuestionBuilder" data-activation-config="TRIVIA">
                       <article class="trivia-question-editor" data-trivia-question="1">
                         <div class="trivia-question-head"><strong>Pregunta 1</strong><span data-trivia-card-status>Incompleta</span></div>
                         <label><span>Pregunta</span><input data-trivia-field="question" type="text" minlength="4" maxlength="240" placeholder="Quien fue el goleador del Mundial 98?"></label>
@@ -1141,8 +1284,242 @@
                         <label><span>Respuesta correcta</span><select data-trivia-field="correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></label>
                       </article>
                     </div>
-                    <button class="solid-button" type="submit">Lanzar trivia</button>
-                    <p class="error-line" id="triviaLauncherMessage"></p>
+                    <div class="full activation-config-panel hidden" data-activation-config="OPEN_QUESTION">
+                      <div class="activation-config-head">
+                        <strong>Pregunta abierta</strong>
+                        <span>No tiene respuesta correcta. El usuario deja sus datos, responde libremente y recibe un QR unico al completar.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="OPEN_QUESTION" type="number" min="1" max="5" value="1"><small>Activa de 1 a 5 preguntas abiertas.</small></label>
+                      <label><span>Pregunta 1</span><input id="openQuestionInput" data-open-question="1" type="text" maxlength="300" placeholder="Que producto te gustaria probar esta semana?"></label>
+                      <label class="hidden"><span>Pregunta 2</span><input data-open-question="2" type="text" maxlength="300" placeholder="Que beneficio te motivaria a visitar la tienda?"></label>
+                      <label class="hidden"><span>Pregunta 3</span><input data-open-question="3" type="text" maxlength="300" placeholder="Que necesidad quieres resolver hoy?"></label>
+                      <label class="hidden"><span>Pregunta 4</span><input data-open-question="4" type="text" maxlength="300" placeholder="Que producto o servicio quisieras conocer mejor?"></label>
+                      <label class="hidden"><span>Pregunta 5</span><input data-open-question="5" type="text" maxlength="300" placeholder="Quieres dejarnos algun comentario adicional?"></label>
+                      <label><span>Placeholder de respuesta</span><input id="openQuestionPlaceholderInput" type="text" maxlength="160" placeholder="Escribe tu respuesta aqui"></label>
+                      <small class="activation-help">Usala para opinion, testimonio, necesidad, deseo o intencion de compra. No se evalua como trivia.</small>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SURVEY">
+                      <div class="activation-config-head">
+                        <strong>Encuesta con beneficio</strong>
+                        <span>Configura la cantidad de preguntas. Todas las respuestas quedan como data comercial antes de emitir el QR.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="SURVEY" type="number" min="1" max="5" value="1"><small>Activa de 1 a 5 preguntas para esta encuesta.</small></label>
+                      <div class="survey-builder-grid">
+                        <article class="survey-question-editor" data-survey-question="1">
+                          <label><span>Pregunta 1</span><input data-survey-field="question" type="text" maxlength="300" placeholder="Que categoria te interesa mas?"></label>
+                          <label><span>Tipo</span><select data-survey-field="type"><option value="SINGLE_CHOICE">Opcion unica</option><option value="MULTIPLE_CHOICE">Seleccion multiple</option><option value="SHORT_TEXT">Texto corto</option><option value="SCALE">Escala 1 a 5</option></select></label>
+                          <label class="survey-options-field"><span>Opciones separadas por coma</span><input data-survey-field="options" type="text" placeholder="Cafe, postres, almuerzo, regalos"></label>
+                        </article>
+                        <article class="survey-question-editor" data-survey-question="2">
+                          <label><span>Pregunta 2</span><input data-survey-field="question" type="text" maxlength="300" placeholder="Cuando comprarias?"></label>
+                          <label><span>Tipo</span><select data-survey-field="type"><option value="SINGLE_CHOICE">Opcion unica</option><option value="MULTIPLE_CHOICE">Seleccion multiple</option><option value="SHORT_TEXT">Texto corto</option><option value="SCALE">Escala 1 a 5</option></select></label>
+                          <label class="survey-options-field"><span>Opciones separadas por coma</span><input data-survey-field="options" type="text" placeholder="Hoy, esta semana, este mes"></label>
+                        </article>
+                        <article class="survey-question-editor" data-survey-question="3">
+                          <label><span>Pregunta 3</span><input data-survey-field="question" type="text" maxlength="300" placeholder="Como prefieres que te contactemos?"></label>
+                          <label><span>Tipo</span><select data-survey-field="type"><option value="SINGLE_CHOICE">Opcion unica</option><option value="MULTIPLE_CHOICE">Seleccion multiple</option><option value="SHORT_TEXT">Texto corto</option><option value="SCALE">Escala 1 a 5</option></select></label>
+                          <label class="survey-options-field"><span>Opciones separadas por coma</span><input data-survey-field="options" type="text" placeholder="WhatsApp, llamada, email"></label>
+                        </article>
+                        <article class="survey-question-editor hidden" data-survey-question="4">
+                          <label><span>Pregunta 4</span><input data-survey-field="question" type="text" maxlength="300" placeholder="Que beneficio te motivaria a visitar la tienda?"></label>
+                          <label><span>Tipo</span><select data-survey-field="type"><option value="SINGLE_CHOICE">Opcion unica</option><option value="MULTIPLE_CHOICE">Seleccion multiple</option><option value="SHORT_TEXT">Texto corto</option><option value="SCALE">Escala 1 a 5</option></select></label>
+                          <label class="survey-options-field"><span>Opciones separadas por coma</span><input data-survey-field="options" type="text" placeholder="Descuento, regalo, puntos, asesoria"></label>
+                        </article>
+                        <article class="survey-question-editor hidden" data-survey-question="5">
+                          <label><span>Pregunta 5</span><input data-survey-field="question" type="text" maxlength="300" placeholder="Que producto quisieras encontrar en tu proxima visita?"></label>
+                          <label><span>Tipo</span><select data-survey-field="type"><option value="SINGLE_CHOICE">Opcion unica</option><option value="MULTIPLE_CHOICE">Seleccion multiple</option><option value="SHORT_TEXT">Texto corto</option><option value="SCALE">Escala 1 a 5</option></select></label>
+                          <label class="survey-options-field"><span>Opciones separadas por coma</span><input data-survey-field="options" type="text" placeholder="Producto A, producto B, producto C"></label>
+                        </article>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SPIN_DISCOVER">
+                      <div class="activation-config-head">
+                        <strong>Gira y descubre</strong>
+                        <span>El usuario registra sus datos y elige una card para revelar el beneficio asignado.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label><span>Card A</span><input data-reveal-card="A" type="text" placeholder="10% descuento"></label>
+                        <label><span>Card B</span><input data-reveal-card="B" type="text" placeholder="Cafe gratis"></label>
+                        <label><span>Card C</span><input data-reveal-card="C" type="text" placeholder="2x1 seleccionado"></label>
+                        <label><span>Card D</span><input data-reveal-card="D" type="text" placeholder="20% sorpresa"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="THERMOMETER">
+                      <div class="activation-config-head">
+                        <strong>Termometro de descuento</strong>
+                        <span>El mayor descuento queda en el centro. El usuario toca/detiene y gana el valor mas cercano.</span>
+                      </div>
+                      <label><span>Descuentos del termometro</span><input id="thermometerDiscountsInput" type="text" value="5, 10, 25, 40, 25, 10, 5" placeholder="5, 10, 25, 40, 25, 10, 5"></label>
+                      <small class="activation-help">Ordena los valores de izquierda a derecha. Recomendado: bajo, medio, maximo, medio, bajo.</small>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="PRODUCT_VOTE" data-flat-choice="PRODUCT_VOTE">
+                      <div class="activation-config-head">
+                        <strong>Votacion de producto</strong>
+                        <span>El cliente vota por coleccion, sabor, color, producto o lanzamiento y recibe QR unico.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label class="product-vote-option">
+                          <span>Opcion A</span>
+                          <input data-flat-option="A" type="text" placeholder="Coleccion Aurora">
+                          <input class="hidden-file-input" data-flat-option-image="A" type="file" accept="image/png,image/jpeg,image/webp">
+                          <button class="ghost-button" type="button" data-product-vote-upload="A">Subir imagen</button>
+                          <img class="product-vote-preview hidden" data-product-vote-preview="A" alt="">
+                        </label>
+                        <label class="product-vote-option">
+                          <span>Opcion B</span>
+                          <input data-flat-option="B" type="text" placeholder="Coleccion Nocturna">
+                          <input class="hidden-file-input" data-flat-option-image="B" type="file" accept="image/png,image/jpeg,image/webp">
+                          <button class="ghost-button" type="button" data-product-vote-upload="B">Subir imagen</button>
+                          <img class="product-vote-preview hidden" data-product-vote-preview="B" alt="">
+                        </label>
+                        <label class="product-vote-option">
+                          <span>Opcion C</span>
+                          <input data-flat-option="C" type="text" placeholder="Coleccion Urbana">
+                          <input class="hidden-file-input" data-flat-option-image="C" type="file" accept="image/png,image/jpeg,image/webp">
+                          <button class="ghost-button" type="button" data-product-vote-upload="C">Subir imagen</button>
+                          <img class="product-vote-preview hidden" data-product-vote-preview="C" alt="">
+                        </label>
+                        <label class="product-vote-option">
+                          <span>Opcion D</span>
+                          <input data-flat-option="D" type="text" placeholder="Coleccion Clasica">
+                          <input class="hidden-file-input" data-flat-option-image="D" type="file" accept="image/png,image/jpeg,image/webp">
+                          <button class="ghost-button" type="button" data-product-vote-upload="D">Subir imagen</button>
+                          <img class="product-vote-preview hidden" data-product-vote-preview="D" alt="">
+                        </label>
+                      </div>
+                      <small class="activation-help">Opcional: sube imagenes de producto para que la landing sea visual. Se comprimen antes de guardar la activacion.</small>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="STYLE_SELECTOR" data-flat-choice="STYLE_SELECTOR">
+                      <div class="activation-config-head">
+                        <strong>Selector de estilo</strong>
+                        <span>Experiencia sobria para moda, joyeria, marroquineria, boutiques y marcas premium.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label><span>Estilo A</span><input data-flat-option="CLASSIC" type="text" value="Clasico"></label>
+                        <label><span>Estilo B</span><input data-flat-option="MODERN" type="text" value="Moderno"></label>
+                        <label><span>Estilo C</span><input data-flat-option="MINIMAL" type="text" value="Minimalista"></label>
+                        <label><span>Estilo D</span><input data-flat-option="BOLD" type="text" value="Audaz"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="GIFT_CURATOR" data-flat-form="GIFT_CURATOR">
+                      <div class="activation-config-head">
+                        <strong>Curador de regalo</strong>
+                        <span>El cliente responde para quien compra, ocasion, presupuesto y estilo. El QR incentiva compra o asesoria.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="GIFT_CURATOR" type="number" min="1" max="5" value="4"><small>Activa de 1 a 5 preguntas para esta experiencia.</small></label>
+                      <div class="survey-builder-grid">
+                        <label><span>Pregunta 1</span><input data-flat-question="recipient" data-flat-question-type="SINGLE_CHOICE" type="text" value="Para quien es el regalo?"><small>Opciones sugeridas: pareja, familiar, amigo, cliente</small></label>
+                        <label><span>Pregunta 2</span><input data-flat-question="occasion" data-flat-question-type="SINGLE_CHOICE" type="text" value="Cual es la ocasion?"><small>Opciones sugeridas: cumpleanos, aniversario, agradecimiento, sorpresa</small></label>
+                        <label><span>Pregunta 3</span><input data-flat-question="budget" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que rango de presupuesto tienes?"><small>Opciones sugeridas: bajo, medio, premium</small></label>
+                        <label><span>Pregunta 4</span><input data-flat-question="style" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que estilo prefieres?"><small>Opciones sugeridas: clasico, moderno, artesanal, lujo</small></label>
+                        <label class="hidden"><span>Pregunta 5</span><input data-flat-question="message" data-flat-question-type="OPEN" type="text" value="Quieres agregar algun detalle especial para el regalo?"><small>Texto libre para personalizar la recomendacion.</small></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="NEED_DIAGNOSTIC" data-flat-form="NEED_DIAGNOSTIC">
+                      <div class="activation-config-head">
+                        <strong>Diagnostico de necesidad</strong>
+                        <span>Ideal para servicios profesionales, clinicas, academias, gimnasios y asesorias.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="NEED_DIAGNOSTIC" type="number" min="1" max="5" value="3"><small>Activa de 1 a 5 preguntas para perfilar mejor al cliente.</small></label>
+                      <div class="survey-builder-grid">
+                        <label><span>Pregunta 1</span><input data-flat-question="need" data-flat-question-type="OPEN" type="text" value="Que necesidad quieres resolver?"></label>
+                        <label><span>Pregunta 2</span><input data-flat-question="urgency" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que tan urgente es para ti?"></label>
+                        <label><span>Pregunta 3</span><input data-flat-question="goal" data-flat-question-type="OPEN" type="text" value="Que resultado esperas lograr?"></label>
+                        <label class="hidden"><span>Pregunta 4</span><input data-flat-question="budget" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que presupuesto tienes estimado?"></label>
+                        <label class="hidden"><span>Pregunta 5</span><input data-flat-question="contact_preference" data-flat-question-type="SINGLE_CHOICE" type="text" value="Como prefieres recibir asesoria?"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="WAITLIST" data-flat-form="WAITLIST">
+                      <div class="activation-config-head">
+                        <strong>Lista de espera con beneficio</strong>
+                        <span>Captura demanda para lanzamientos, preventas o productos agotados y entrega QR de prioridad.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="WAITLIST" type="number" min="1" max="5" value="2"><small>Activa de 1 a 5 preguntas para medir intencion de compra.</small></label>
+                      <div class="survey-builder-grid">
+                        <label><span>Pregunta 1</span><input data-flat-question="product" data-flat-question-type="OPEN" type="text" value="Que producto o lanzamiento te interesa?"></label>
+                        <label><span>Pregunta 2</span><input data-flat-question="purchase_window" data-flat-question-type="SINGLE_CHOICE" type="text" value="Cuando quisieras comprarlo?"></label>
+                        <label class="hidden"><span>Pregunta 3</span><input data-flat-question="quantity" data-flat-question-type="NUMBER" type="text" value="Cuantas unidades te interesarian?"></label>
+                        <label class="hidden"><span>Pregunta 4</span><input data-flat-question="budget" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que rango de precio esperas?"></label>
+                        <label class="hidden"><span>Pregunta 5</span><input data-flat-question="notes" data-flat-question-type="OPEN" type="text" value="Quieres dejar algun comentario adicional?"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="REWARD_RESERVATION" data-flat-form="REWARD_RESERVATION">
+                      <div class="activation-config-head">
+                        <strong>Reserva con Reward Pass</strong>
+                        <span>El cliente solicita fecha o agenda y recibe QR de atencion, reserva o beneficio.</span>
+                      </div>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="REWARD_RESERVATION" type="number" min="1" max="5" value="2"><small>Activa de 1 a 5 preguntas para coordinar la reserva.</small></label>
+                      <div class="survey-builder-grid">
+                        <label><span>Pregunta 1</span><input data-flat-question="date" data-flat-question-type="DATE" type="text" value="Que fecha prefieres?"></label>
+                        <label><span>Pregunta 2</span><input data-flat-question="service" data-flat-question-type="OPEN" type="text" value="Que experiencia o servicio quieres reservar?"></label>
+                        <label class="hidden"><span>Pregunta 3</span><input data-flat-question="time_slot" data-flat-question-type="SINGLE_CHOICE" type="text" value="Que horario prefieres?"></label>
+                        <label class="hidden"><span>Pregunta 4</span><input data-flat-question="people" data-flat-question-type="NUMBER" type="text" value="Para cuantas personas es la reserva?"></label>
+                        <label class="hidden"><span>Pregunta 5</span><input data-flat-question="notes" data-flat-question-type="OPEN" type="text" value="Tienes alguna solicitud especial?"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SEALED_LETTER">
+                      <div class="activation-config-head">
+                        <strong>Carta sellada digital</strong>
+                        <span>Experiencia premium: el cliente abre una invitacion o beneficio personalizado sin sentirse juego de azar.</span>
+                      </div>
+                      <label><span>Mensaje de la carta</span><input id="sealedLetterMessageInput" type="text" maxlength="300" value="Has recibido una invitacion especial de nuestra marca."></label>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="PRIVATE_INVITATION">
+                      <div class="activation-config-head">
+                        <strong>Invitacion privada</strong>
+                        <span>Acceso a evento, coleccion, cita VIP, cata privada, open house o atencion prioritaria.</span>
+                      </div>
+                      <label><span>Mensaje de invitacion</span><input id="privateInvitationMessageInput" type="text" maxlength="300" value="Solicita tu acceso privado y presenta este QR en tienda."></label>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SCRATCH_DIGITAL" data-flat-choice="SCRATCH_DIGITAL">
+                      <div class="activation-config-head">
+                        <strong>Raspa digital</strong>
+                        <span>Experiencia tactil simple para pantalla touch o celular. Configura lo que puede revelar.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label><span>Zona A</span><input data-flat-option="A" type="text" placeholder="10% sorpresa"></label>
+                        <label><span>Zona B</span><input data-flat-option="B" type="text" placeholder="Regalo sorpresa"></label>
+                        <label><span>Zona C</span><input data-flat-option="C" type="text" placeholder="2x1 seleccionado"></label>
+                        <label><span>Zona D</span><input data-flat-option="D" type="text" placeholder="Reward Pass"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="TAP_REVEAL" data-flat-choice="TAP_REVEAL">
+                      <div class="activation-config-head">
+                        <strong>Toca y revela</strong>
+                        <span>Tarjetas, cajas o sobres para ferias, tiendas y activaciones rapidas.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label><span>Elemento A</span><input data-flat-option="A" type="text" placeholder="Sobre dorado"></label>
+                        <label><span>Elemento B</span><input data-flat-option="B" type="text" placeholder="Caja premium"></label>
+                        <label><span>Elemento C</span><input data-flat-option="C" type="text" placeholder="Tarjeta especial"></label>
+                        <label><span>Elemento D</span><input data-flat-option="D" type="text" placeholder="Beneficio oculto"></label>
+                      </div>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SPACE_SHOOTER BREAKOUT SNAKE CATCH_PRIZE MEMORY_PAIRS FAST_TAP MINI_MAZE">
+                      <div class="activation-config-head">
+                        <strong>Minijuego con score</strong>
+                        <span>El participante juega una partida en navegador. El backend valida sesion, duracion y score antes de emitir QR.</span>
+                      </div>
+                      <div class="survey-builder-grid">
+                        <label><span>Duracion (segundos)</span><input id="minigameDurationInput" type="number" min="10" max="180" value="30"></label>
+                        <label><span>Score minimo para QR</span><input id="minigameMinScoreInput" type="number" min="1" max="100000" value="100"></label>
+                        <label><span>Score maximo antiabuso</span><input id="minigameMaxScoreInput" type="number" min="100" max="100000" value="2500"></label>
+                        <label><span>Puntos por objetivo</span><input id="minigamePointsInput" type="number" min="1" max="1000" value="50"></label>
+                        <label><span>Penalizacion</span><input id="minigamePenaltyInput" type="number" min="0" max="1000" value="10"></label>
+                        <label><span>Vidas del juego</span><input id="minigameLivesInput" type="number" min="1" max="10" value="3"></label>
+                        <label><span>Cadencia disparo ms</span><input id="minigameFireIntervalInput" type="number" min="250" max="1200" value="480"></label>
+                        <label><span>Dias de espera entre intentos</span><input id="minigameParticipantCooldownInput" type="number" min="0" max="365" value="7"></label>
+                        <label><span>Si ya gano beneficio</span>
+                          <select id="minigameWinnerPolicyInput">
+                            <option value="block_previous_winners">No puede volver a participar</option>
+                            <option value="allow_after_cooldown">Puede volver despues de la espera</option>
+                          </select>
+                        </label>
+                      </div>
+                      <small class="activation-help">En minijuegos telefono, correo y documento son obligatorios. La espera usa telefono/correo/documento para controlar el proximo intento. Cada QR generado descuenta tickets.</small>
+                    </div>
+                    <button class="solid-button" type="submit">Lanzar activacion</button>
+                    <p class="error-line" id="triviaLauncherMessage" role="status" aria-live="polite"></p>
                   </form>
                   <div class="trivia-launcher-result hidden" id="triviaLauncherResult"></div>
                 </article>
@@ -1150,7 +1527,7 @@
                 <article class="surface-card data-table-card">
                   <div class="table-card-head">
                     <div>
-                      <span class="mono-label">Trivias lanzadas</span>
+                      <span class="mono-label">Activaciones lanzadas</span>
                       <h3>Links para compartir y medir</h3>
                     </div>
                   </div>
@@ -1158,11 +1535,11 @@
                     <table>
                       <thead>
                         <tr>
-                          <th>Trivia</th>
-                          <th>Campana</th>
-                          <th>Intentos</th>
-                          <th>Ganadores</th>
-                          <th>Link</th>
+                          <th>Activacion y datos</th>
+                          <th>Estado</th>
+                          <th>Metricas</th>
+                          <th>Link publico</th>
+                          <th>Acciones</th>
                         </tr>
                       </thead>
                       <tbody id="triviaLauncherTable"></tbody>
@@ -2550,14 +2927,14 @@
     </section>
   </main>
 
-  <div class="modal-shell hidden" id="campaignModal">
+  <div class="modal-shell hidden" id="campaignModal" role="dialog" aria-modal="true" aria-labelledby="campaignModalTitle">
     <div class="modal-card">
       <div class="modal-head">
         <div>
           <span class="mono-label" id="campaignModalMode">Campaign</span>
           <h3 id="campaignModalTitle">Editar campana</h3>
         </div>
-        <button class="icon-button" id="closeCampaignModalButton" type="button">
+        <button class="icon-button" id="closeCampaignModalButton" type="button" aria-label="Cerrar formulario de campana">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -2731,7 +3108,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-finder-20260629" defer></script>
+  <script src="js/app.js?v=activation-delete-20260630" defer></script>
 </body>
 </html>
 

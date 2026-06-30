@@ -48,7 +48,8 @@ async function createSubscriptionAutoRenewalCheckout(req, res, next) {
 
 async function listQrCreditOrders(req, res, next) {
   try {
-    res.json({ orders: await listCreditOrders(req.user) });
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 20, 1), 40);
+    res.json({ orders: await listCreditOrders(req.user, { limit }) });
   } catch (error) {
     next(error);
   }

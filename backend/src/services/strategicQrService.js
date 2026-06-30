@@ -537,21 +537,36 @@ async function createAffiliateReferralQrBatch(businessId, user, body) {
   });
 }
 
-async function listQrBatches(businessId) {
+async function listQrBatches(businessId, options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit || 80), 1), 200);
   const result = await query(
-    `select
+    `with recent_batches as (
+       select *
+       from qr_batches
+       where business_id = $1
+       order by created_at desc
+       limit $2
+     )
+     select
        b.*,
-       count(q.id)::int as generated_count,
-       count(*) filter (where q.status = 'UNCLAIMED')::int as unclaimed_count,
-       count(*) filter (where q.status = 'ACTIVE')::int as active_count,
-       count(*) filter (where q.status = 'REDEEMED')::int as redeemed_count,
-       count(*) filter (where q.status = 'EXPIRED')::int as expired_count
-     from qr_batches b
-     left join qr_codes q on q.batch_id = b.id
-     where b.business_id = $1
-     group by b.id
+       coalesce(q.generated_count, 0)::int as generated_count,
+       coalesce(q.unclaimed_count, 0)::int as unclaimed_count,
+       coalesce(q.active_count, 0)::int as active_count,
+       coalesce(q.redeemed_count, 0)::int as redeemed_count,
+       coalesce(q.expired_count, 0)::int as expired_count
+     from recent_batches b
+     left join lateral (
+       select
+         count(*)::int as generated_count,
+         count(*) filter (where status = 'UNCLAIMED')::int as unclaimed_count,
+         count(*) filter (where status = 'ACTIVE')::int as active_count,
+         count(*) filter (where status = 'REDEEMED')::int as redeemed_count,
+         count(*) filter (where status = 'EXPIRED')::int as expired_count
+       from qr_codes
+       where batch_id = b.id and business_id = b.business_id
+     ) q on true
      order by b.created_at desc`,
-    [businessId]
+    [businessId, limit]
   );
   return result.rows;
 }
@@ -586,7 +601,8 @@ async function getQrBatch(businessId, batchId) {
   };
 }
 
-async function getQrHistory(businessId) {
+async function getQrHistory(businessId, options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit || 120), 1), 300);
   const result = await query(
     `select
        q.id,
@@ -617,10 +633,10 @@ async function getQrHistory(businessId) {
      left join players p on p.id = q.player_id
      left join affiliates a on a.id = q.affiliate_id
      where q.business_id = $1
-       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER')
+       and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER', 'INTERACTIVE_ACTIVATION')
      order by q.created_at desc
-     limit 500`,
-    [businessId]
+     limit $2`,
+    [businessId, limit]
   );
   return result.rows.map((qr) => ({
     ...qr,
@@ -642,8 +658,10 @@ async function getQrMetrics(businessId) {
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status in ('CLAIMED', 'ACTIVE', 'REDEEMED'))::int as affiliate_referral_claimed_or_active,
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and status = 'REDEEMED')::int as affiliate_referral_redeemed,
          count(*) filter (where origin_type = 'AFFILIATE_REFERRAL' and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr' and status = 'UNCLAIMED')::int as affiliate_referral_unclaimed,
-         count(*) filter (where origin_type = 'TRIVIA_LAUNCHER')::int as trivia_generated,
-         count(*) filter (where origin_type = 'TRIVIA_LAUNCHER' and status = 'REDEEMED')::int as trivia_redeemed,
+         count(*) filter (where origin_type in ('TRIVIA_LAUNCHER', 'INTERACTIVE_ACTIVATION'))::int as trivia_generated,
+         count(*) filter (where origin_type in ('TRIVIA_LAUNCHER', 'INTERACTIVE_ACTIVATION') and status = 'REDEEMED')::int as trivia_redeemed,
+         count(*) filter (where origin_type = 'INTERACTIVE_ACTIVATION')::int as interactive_activation_generated,
+         count(*) filter (where origin_type = 'INTERACTIVE_ACTIVATION' and status = 'REDEEMED')::int as interactive_activation_redeemed,
          count(*) filter (where status = 'EXPIRED')::int as expired_without_redeem
        from qr_codes
        where business_id = $1`,
@@ -653,7 +671,7 @@ async function getQrMetrics(businessId) {
       `select benefit_type, count(*)::int as total
        from qr_codes
        where business_id = $1
-         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER')
+         and origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER', 'INTERACTIVE_ACTIVATION')
          and coalesce(metadata->>'package_ticket_role', '') <> 'final_validable_qr'
        group by benefit_type
        order by total desc`,
@@ -689,6 +707,8 @@ async function getQrMetrics(businessId) {
       affiliate_referral_unclaimed: Number(top.affiliate_referral_unclaimed || 0),
       trivia_generated: Number(top.trivia_generated || 0),
       trivia_redeemed: Number(top.trivia_redeemed || 0),
+      interactive_activation_generated: Number(top.interactive_activation_generated || 0),
+      interactive_activation_redeemed: Number(top.interactive_activation_redeemed || 0),
       expired_without_redeem: Number(top.expired_without_redeem || 0),
     },
     benefits: benefitUsage.rows,

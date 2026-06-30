@@ -1,12 +1,17 @@
 create extension if not exists pgcrypto;
 
 do $$ begin
-  create type user_role as enum ('ADMIN', 'BUSINESS_OWNER', 'VALIDATOR');
+  create type user_role as enum ('ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR');
 exception when duplicate_object then null;
 end $$;
 
 do $$ begin
   alter type user_role add value if not exists 'ADMIN_MARKET_GAMES';
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter type user_role add value if not exists 'BUSINESS_MANAGER';
 exception when duplicate_object then null;
 end $$;
 
@@ -588,13 +593,20 @@ create index if not exists idx_subscription_usage_business_type_created on subsc
 create index if not exists idx_app_users_email_lower on app_users(lower(email));
 create index if not exists idx_users_business_id on app_users(business_id);
 create index if not exists idx_players_business_game on players(business_id, game_id);
+create index if not exists idx_portal_players_business_created on players(business_id, created_at desc);
+create index if not exists idx_portal_players_business_campaign_created on players(business_id, campaign_id, created_at desc);
 create index if not exists idx_questionnaires_player on questionnaires(player_id);
+create index if not exists idx_portal_questionnaires_player_created on questionnaires(player_id, created_at desc);
 create index if not exists idx_rewards_business_id on rewards(business_id);
 create index if not exists idx_qr_codes_token on qr_codes(token);
 create index if not exists idx_qr_codes_business_status on qr_codes(business_id, status);
 create index if not exists idx_qr_codes_campaign_status on qr_codes(campaign_id, status);
 create index if not exists idx_qr_codes_origin_status on qr_codes(origin_type, status);
 create index if not exists idx_qr_codes_batch_id on qr_codes(batch_id);
+create index if not exists idx_ticket_center_qr_business_created on qr_codes(business_id, created_at desc);
+create index if not exists idx_ticket_center_qr_business_origin_created on qr_codes(business_id, origin_type, created_at desc);
+create index if not exists idx_ticket_center_qr_business_batch_status on qr_codes(business_id, batch_id, status);
+create index if not exists idx_portal_qr_codes_player_created on qr_codes(player_id, created_at desc);
 create index if not exists idx_qr_codes_affiliate_status on qr_codes(affiliate_id, status, created_at desc);
 create unique index if not exists idx_business_sales_qr_code_unique on business_sales(qr_code_id) where qr_code_id is not null;
 create index if not exists idx_business_qr_credit_ledger_business_created on business_qr_credit_ledger(business_id, created_at desc);
@@ -605,13 +617,16 @@ create index if not exists idx_package_sales_requests_created on package_sales_r
 create index if not exists idx_package_sales_requests_assignment on package_sales_requests(payment_confirmed, service_assigned);
 create index if not exists idx_redemptions_business_date on redemptions(business_id, redeemed_at desc);
 create index if not exists idx_redemptions_campaign_date on redemptions(campaign_id, redeemed_at desc);
+create index if not exists idx_portal_redemptions_business_campaign_redeemed on redemptions(business_id, campaign_id, redeemed_at desc);
 create index if not exists idx_validation_logs_business_date on validation_logs(business_id, created_at desc);
 create index if not exists idx_campaigns_business_status on campaigns(business_id, status);
 create index if not exists idx_campaigns_business_slug on campaigns(business_id, slug);
+create index if not exists idx_portal_campaigns_business_updated on campaigns(business_id, updated_at desc);
 create index if not exists idx_affiliates_business_created on affiliates(business_id, created_at desc);
 create index if not exists idx_affiliate_point_ledger_affiliate_created on affiliate_point_ledger(affiliate_id, created_at desc);
 create index if not exists idx_attributed_sales_business_date on attributed_sales(business_id, created_at desc);
 create index if not exists idx_attributed_sales_campaign_date on attributed_sales(campaign_id, created_at desc);
+create index if not exists idx_portal_attributed_sales_business_campaign_created on attributed_sales(business_id, campaign_id, created_at desc);
 create index if not exists idx_branches_business_active on branches(business_id, is_active);
 create index if not exists idx_campaign_sales_snapshots_campaign_period on campaign_sales_snapshots(campaign_id, period_type, start_date);
 create index if not exists idx_qr_batches_business_created on qr_batches(business_id, created_at desc);
@@ -619,6 +634,9 @@ create index if not exists idx_qr_claims_business_claimed on qr_claims(business_
 create index if not exists idx_business_sales_business_created on business_sales(business_id, created_at desc);
 create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
 create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
+create index if not exists idx_portal_business_sales_document_created on business_sales(business_id, customer_document_id, created_at desc);
+create index if not exists idx_portal_business_sales_phone_created on business_sales(business_id, customer_phone, created_at desc);
+create index if not exists idx_portal_business_sales_email_created on business_sales(business_id, customer_email, created_at desc);
 create index if not exists idx_qr_event_logs_business_created on qr_event_logs(business_id, created_at desc);
 create index if not exists idx_business_trivias_business_created on business_trivias(business_id, created_at desc);
 create index if not exists idx_business_trivias_public_slug on business_trivias(public_slug);

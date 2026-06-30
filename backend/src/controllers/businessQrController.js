@@ -28,6 +28,12 @@ function businessIdFor(req) {
   return req.user.business_id;
 }
 
+function boundedLimit(value, fallback, max) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
+}
+
 async function createPostSale(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -91,7 +97,7 @@ async function createAffiliateReferralBatch(req, res, next) {
 
 async function listBatches(req, res, next) {
   try {
-    res.json({ batches: await listQrBatches(businessIdFor(req)) });
+    res.json({ batches: await listQrBatches(businessIdFor(req), { limit: boundedLimit(req.query.limit, 80, 200) }) });
   } catch (error) {
     next(error);
   }
@@ -107,7 +113,7 @@ async function batchDetail(req, res, next) {
 
 async function qrHistory(req, res, next) {
   try {
-    res.json({ history: await getQrHistory(businessIdFor(req)) });
+    res.json({ history: await getQrHistory(businessIdFor(req), { limit: boundedLimit(req.query.limit, 120, 300) }) });
   } catch (error) {
     next(error);
   }

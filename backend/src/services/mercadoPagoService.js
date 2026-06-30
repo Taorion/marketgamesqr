@@ -364,7 +364,12 @@ async function createSubscriptionRenewalCheckout(user, body) {
     throw forbidden("No puedes renovar la suscripcion de este negocio.");
   }
 
-  const plan = listPlans().find((item) => item.code === body.plan_code && item.category === "subscription");
+  const plan = listPlans().find((item) => (
+    item.code === body.plan_code
+    && item.category === "subscription"
+    && item.public_signup_available !== false
+    && !item.testing_plan
+  ));
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para renovacion automatica.");
   }
@@ -489,7 +494,12 @@ async function createSubscriptionAutoRenewal(user, body) {
     throw forbidden("No puedes configurar cobro automatico para este negocio.");
   }
 
-  const plan = listPlans().find((item) => item.code === body.plan_code && item.category === "subscription");
+  const plan = listPlans().find((item) => (
+    item.code === body.plan_code
+    && item.category === "subscription"
+    && item.public_signup_available !== false
+    && !item.testing_plan
+  ));
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para cobro automatico.");
   }
@@ -710,7 +720,12 @@ async function createPrepaidSignupCheckout(client, payload) {
 }
 
 async function createPortalSignupCheckout(client, payload) {
-  const plan = listPlans().find((item) => item.code === payload.plan_code && item.category === "subscription");
+  const plan = listPlans().find((item) => (
+    item.code === payload.plan_code
+    && item.category === "subscription"
+    && item.public_signup_available !== false
+    && !item.testing_plan
+  ));
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para pago automatico.");
   }
@@ -799,17 +814,18 @@ async function createPortalSignupCheckout(client, payload) {
   return mapPurchaseOrder(updated.rows[0]);
 }
 
-async function listCreditOrders(user) {
+async function listCreditOrders(user, options = {}) {
   if (!user.business_id) {
     return [];
   }
+  const limit = Math.min(Math.max(Number(options.limit || 20), 1), 40);
   const result = await query(
     `select *
      from qr_credit_purchase_orders
      where business_id = $1
      order by created_at desc
-     limit 40`,
-    [user.business_id]
+     limit $2`,
+    [user.business_id, limit]
   );
   return result.rows.map(mapPurchaseOrder);
 }

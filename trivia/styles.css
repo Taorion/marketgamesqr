@@ -184,7 +184,8 @@ label {
   color: #24343d;
 }
 
-input {
+input,
+textarea {
   width: 100%;
   min-height: 48px;
   border: 1px solid #bacac5;
@@ -195,7 +196,12 @@ input {
   font: inherit;
 }
 
-input:focus-visible {
+textarea {
+  resize: vertical;
+}
+
+input:focus-visible,
+textarea:focus-visible {
   border-color: #118568;
   box-shadow: 0 0 0 3px rgba(17, 133, 104, .16);
   outline: none;
@@ -293,6 +299,138 @@ input:focus-visible {
   font-weight: 900;
 }
 
+.open-answer-input {
+  min-height: 132px;
+  line-height: 1.5;
+}
+
+.scale-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.scale-grid .answer-option {
+  justify-content: center;
+}
+
+.reveal-play-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reveal-card {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 138px;
+  border: 1px solid #cbd9d5;
+  border-radius: 8px;
+  padding: 14px;
+  color: #16322a;
+  background:
+    linear-gradient(160deg, #ffffff, #eef7f3 58%, #ffe2a3);
+  font: inherit;
+  font-weight: 900;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.reveal-card:hover,
+.reveal-card:focus-visible {
+  border-color: #118568;
+  box-shadow: 0 12px 26px rgba(17, 133, 104, .14);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.reveal-card strong {
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 999px;
+  padding: 8px;
+  color: #fff;
+  background: #0d6b52;
+  font-size: 24px;
+}
+
+.reveal-card.is-selected {
+  border-color: #0d6b52;
+  background:
+    linear-gradient(160deg, #e8fbf3, #ffffff 58%, #ffd16b);
+}
+
+.reveal-card.is-selected strong {
+  width: auto;
+  min-height: 42px;
+  border-radius: 8px;
+  padding-inline: 12px;
+  font-size: 16px;
+}
+
+.thermometer-game {
+  display: grid;
+  gap: 14px;
+}
+
+.thermometer-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+  gap: 6px;
+  min-height: 92px;
+  border: 1px solid #cbd9d5;
+  border-radius: 8px;
+  padding: 38px 12px 12px;
+  background:
+    linear-gradient(90deg, #d8f1e8, #ffe19a 50%, #d8f1e8);
+}
+
+.thermometer-track::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  right: 12px;
+  left: 12px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #118568, #f2b84b 50%, #118568);
+}
+
+.thermometer-track i {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border-radius: 8px;
+  color: #16322a;
+  background: rgba(255, 255, 255, .74);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.thermometer-pointer {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 2;
+  width: 18px;
+  height: 34px;
+  border-radius: 999px;
+  background: #0a3d31;
+  box-shadow: 0 6px 16px rgba(10, 61, 49, .24);
+  transform: translateX(-50%);
+}
+
+.thermometer-game p {
+  margin: 0;
+  color: #60716c;
+  font-weight: 800;
+}
+
 .submit-button,
 .ticket-result a {
   min-height: 50px;
@@ -379,7 +517,9 @@ input:focus-visible {
   }
 
   .participant-grid,
-  .answer-grid {
+  .answer-grid,
+  .scale-grid,
+  .reveal-play-grid {
     grid-template-columns: 1fr;
   }
 
