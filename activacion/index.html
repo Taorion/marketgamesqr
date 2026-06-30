@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/activacion/styles.css?v=minigame-lock-20260630">
+  <link rel="stylesheet" href="/activacion/styles.css?v=participant-lock-all-20260630">
 </head>
 <body>
   <main class="activation-shell">
@@ -37,13 +37,13 @@
         <div class="section-head">
           <span>Paso 1</span>
           <h2>Tus datos</h2>
-          <p>Se usan para asociar tu beneficio QR unico y medir la redencion en tienda.</p>
+          <p>Se usan para asociar tu beneficio QR unico, controlar intentos y medir la redencion en tienda.</p>
         </div>
         <section class="participant-grid">
           <label><span>Nombre</span><input id="participantName" type="text" autocomplete="name" required></label>
           <label><span>Telefono</span><input id="participantPhone" type="tel" autocomplete="tel" required></label>
-          <label><span>Correo</span><input id="participantEmail" type="email" autocomplete="email" placeholder="Opcional"></label>
-          <label><span>Documento</span><input id="participantDocument" type="text" autocomplete="off" placeholder="Opcional"></label>
+          <label><span>Correo</span><input id="participantEmail" type="email" autocomplete="email" placeholder="Obligatorio" required></label>
+          <label><span>Documento</span><input id="participantDocument" type="text" autocomplete="off" placeholder="Obligatorio" required></label>
         </section>
         <button class="submit-button" type="submit">Continuar</button>
       </form>
@@ -60,6 +60,6 @@
       <section class="ticket-result hidden" id="ticketResult"></section>
     </section>
   </main>
-  <script src="/activacion/activation.js?v=minigame-capture-lock-20260630" defer></script>
+  <script src="/activacion/activation.js?v=participant-lock-all-20260630" defer></script>
 </body>
 </html>

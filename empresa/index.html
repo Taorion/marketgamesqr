@@ -1209,6 +1209,22 @@
                       </select>
                     </label>
                     <label><span>Fecha personalizada</span><input id="triviaExpiresAtInput" type="datetime-local"></label>
+                    <div class="full activation-config-panel always-visible">
+                      <div class="activation-config-head">
+                        <strong>Control de participacion</strong>
+                        <span>Aplica a todas las activaciones: trivias, encuestas, tactiles, premium y minijuegos.</span>
+                      </div>
+                      <div class="survey-builder-grid">
+                        <label><span>Dias de espera entre intentos</span><input id="minigameParticipantCooldownInput" type="number" min="0" max="365" value="7"></label>
+                        <label><span>Si ya gano beneficio</span>
+                          <select id="minigameWinnerPolicyInput">
+                            <option value="block_previous_winners">No puede volver a participar</option>
+                            <option value="allow_after_cooldown">Puede volver despues de la espera</option>
+                          </select>
+                        </label>
+                      </div>
+                      <small class="activation-help">Telefono, correo y documento son obligatorios en la landing para controlar intentos y evitar beneficios duplicados. Cada QR generado descuenta tickets.</small>
+                    </div>
                     <label data-activation-config="TRIVIA">
                       <span>Numero de preguntas</span>
                       <input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required>
@@ -1508,15 +1524,8 @@
                         <label><span>Penalizacion</span><input id="minigamePenaltyInput" type="number" min="0" max="1000" value="10"></label>
                         <label><span>Vidas del juego</span><input id="minigameLivesInput" type="number" min="1" max="10" value="3"></label>
                         <label><span>Cadencia disparo ms</span><input id="minigameFireIntervalInput" type="number" min="250" max="1200" value="480"></label>
-                        <label><span>Dias de espera entre intentos</span><input id="minigameParticipantCooldownInput" type="number" min="0" max="365" value="7"></label>
-                        <label><span>Si ya gano beneficio</span>
-                          <select id="minigameWinnerPolicyInput">
-                            <option value="block_previous_winners">No puede volver a participar</option>
-                            <option value="allow_after_cooldown">Puede volver despues de la espera</option>
-                          </select>
-                        </label>
                       </div>
-                      <small class="activation-help">En minijuegos telefono, correo y documento son obligatorios. La espera usa telefono/correo/documento para controlar el proximo intento. Cada QR generado descuenta tickets.</small>
+                      <small class="activation-help">Los minijuegos agregan validacion de sesion, duracion y score. El control de intentos se configura arriba y aplica igual que en las demas activaciones.</small>
                     </div>
                     <button class="solid-button" type="submit">Lanzar activacion</button>
                     <p class="error-line" id="triviaLauncherMessage" role="status" aria-live="polite"></p>

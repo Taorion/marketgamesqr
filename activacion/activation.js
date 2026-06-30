@@ -130,15 +130,19 @@ function renderActivation(activation) {
 
 function syncCaptureRequirements(activation) {
   const requiredFields = new Set(activation.capture_config?.required_fields || []);
-  const requiresDocument = requiredFields.has("document") || minigameTypes.has(activation.activation_type);
-  const requiresEmail = requiredFields.has("email") || minigameTypes.has(activation.activation_type);
+  requiredFields.add("phone");
+  requiredFields.add("email");
+  requiredFields.add("document");
+  const requiresDocument = requiredFields.has("document");
+  const requiresEmail = requiredFields.has("email");
   participantDocument.required = requiresDocument;
   participantDocument.placeholder = requiresDocument ? "Obligatorio" : "Opcional";
   participantEmail.required = requiresEmail;
   participantEmail.placeholder = requiresEmail ? "Obligatorio" : "Opcional";
   const documentLabel = participantDocument.closest("label")?.querySelector("span");
   if (documentLabel) documentLabel.textContent = requiresDocument ? "Documento" : "Documento";
-  participantPhone.required = requiredFields.has("phone") || minigameTypes.has(activation.activation_type) || participantPhone.required;
+  participantPhone.required = requiredFields.has("phone");
+  participantPhone.placeholder = "Obligatorio";
 }
 
 async function loadActivation() {

@@ -132,7 +132,7 @@ function mapActivation(row, extras = {}) {
     reward_config: row.reward_config || {},
     game_config: row.game_config || {},
     interaction_config: row.interaction_config || {},
-    capture_config: row.capture_config || {},
+    capture_config: normalizeCaptureConfig(row.capture_config || {}),
     visual_config: row.visual_config || {},
     starts_at: row.starts_at,
     ends_at: row.ends_at,
@@ -147,6 +147,32 @@ function mapActivation(row, extras = {}) {
     winners_count: Number(row.rewards_count || row.winners_count || 0),
     max_winners: row.max_rewards,
     ...extras,
+  };
+}
+
+function normalizeParticipantLock(config = {}) {
+  const rawCooldown = config.cooldown_days ?? config.duration_days ?? 7;
+  const cooldownDays = Math.max(0, Math.min(365, Number.isFinite(Number(rawCooldown)) ? Number(rawCooldown) : 7));
+  const winnerPolicy = ["block_previous_winners", "allow_after_cooldown"].includes(config.winner_policy)
+    ? config.winner_policy
+    : (config.block_previous_winners === false ? "allow_after_cooldown" : "block_previous_winners");
+  return {
+    scope: config.scope === "company" ? "company" : "activation",
+    cooldown_days: cooldownDays,
+    winner_policy: winnerPolicy,
+    label: `${cooldownDays} dias de espera entre intentos`,
+  };
+}
+
+function normalizeCaptureConfig(config = {}) {
+  const required = new Set(["name", "phone", "email", "document", ...(Array.isArray(config.required_fields) ? config.required_fields : [])]);
+  return {
+    ...config,
+    required_fields: Array.from(required),
+    optional_fields: Array.isArray(config.optional_fields)
+      ? config.optional_fields.filter((field) => !required.has(field))
+      : [],
+    participant_lock: normalizeParticipantLock(config.participant_lock || {}),
   };
 }
 
@@ -266,6 +292,7 @@ async function createInteractiveActivation(businessId, user, body) {
       reward_conditions: body.reward_config?.reward_conditions || body.terms || null,
       ...(body.reward_config || {}),
     };
+    const captureConfig = normalizeCaptureConfig(body.capture_config || {});
 
     const result = await client.query(
       `insert into interactive_activations
@@ -289,7 +316,7 @@ async function createInteractiveActivation(businessId, user, body) {
         rewardConfig,
         body.game_config || {},
         body.interaction_config || {},
-        body.capture_config || {},
+        captureConfig,
         body.visual_config || {},
         body.starts_at || null,
         body.ends_at || body.expires_at || null,
@@ -405,6 +432,7 @@ async function listInteractiveActivations(businessId, options = {}) {
      )
      select a.id, a.company_id, a.user_id, a.campaign_id, a.title, a.description,
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
+            a.reward_config, a.game_config, a.interaction_config, a.capture_config, a.visual_config,
             a.starts_at, a.ends_at, a.max_participants, a.max_rewards, a.public_slug,
             a.access_qr_token, a.terms, a.created_at, a.updated_at,
             c.name as campaign_name,
@@ -440,7 +468,7 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   ];
   for (const key of allowed) {
     if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
-    values.push(body[key]);
+    values.push(key === "capture_config" ? normalizeCaptureConfig(body[key] || {}) : body[key]);
     fields.push(`${key} = $${values.length}`);
   }
   if (!fields.length) throw badRequest("No hay campos para actualizar.");
@@ -756,88 +784,62 @@ async function assertDuplicateParticipant(client, activation, body) {
   const email = body.email || null;
   const phone = body.phone || null;
   if (!document && !email && !phone) return;
-  const participantLock = activation.capture_config?.participant_lock || {};
-  const hasCustomLock = participantLock.scope
-    || participantLock.cooldown_days !== undefined
-    || participantLock.duration_days !== undefined
-    || participantLock.winner_policy;
-  if (hasCustomLock) {
-    const scope = participantLock.scope === "company" ? "company" : "activation";
-    const scopePredicate = scope === "company" ? "p.company_id = $1" : "p.activation_id = $1";
-    const scopeValue = scope === "company" ? activation.company_id : activation.id;
-    const cooldownDays = Math.max(0, Number(participantLock.cooldown_days ?? participantLock.duration_days ?? 0));
-    const winnerPolicy = participantLock.winner_policy || (participantLock.block_previous_winners ? "block_previous_winners" : "allow_after_cooldown");
+  const participantLock = normalizeParticipantLock(activation.capture_config?.participant_lock || {});
+  const scope = participantLock.scope === "company" ? "company" : "activation";
+  const scopePredicate = scope === "company" ? "p.company_id = $1" : "p.activation_id = $1";
+  const scopeValue = scope === "company" ? activation.company_id : activation.id;
+  const cooldownDays = Math.max(0, Number(participantLock.cooldown_days ?? 0));
+  const winnerPolicy = participantLock.winner_policy;
 
-    if (winnerPolicy === "block_previous_winners") {
-      const previousWinner = await client.query(
-        `select p.id
-         from interactive_activation_participants p
-         where ${scopePredicate}
-           and (
-             ($2::text is not null and p.document = $2)
-             or ($3::text is not null and lower(p.email) = lower($3))
-             or ($4::text is not null and p.phone = $4)
+  if (winnerPolicy === "block_previous_winners") {
+    const previousWinner = await client.query(
+      `select p.id
+       from interactive_activation_participants p
+       where ${scopePredicate}
+         and (
+           ($2::text is not null and p.document = $2)
+           or ($3::text is not null and lower(p.email) = lower($3))
+           or ($4::text is not null and p.phone = $4)
+         )
+         and (
+           p.status = 'rewarded'
+           or exists (
+             select 1
+             from interactive_activation_rewards r
+             where r.participant_id = p.id
+               and r.status <> 'cancelled'
            )
-           and (
-             p.status = 'rewarded'
-             or exists (
-               select 1
-               from interactive_activation_rewards r
-               where r.participant_id = p.id
-                 and r.status <> 'cancelled'
-             )
-           )
-         limit 1`,
-        [scopeValue, document, email, phone]
-      );
-      if (previousWinner.rowCount) {
-        throw badRequest("Esta persona ya obtuvo un beneficio en esta activacion y no puede volver a participar.");
-      }
+         )
+       limit 1`,
+      [scopeValue, document, email, phone]
+    );
+    if (previousWinner.rowCount) {
+      throw badRequest("Esta persona ya obtuvo un beneficio en esta activacion y no puede volver a participar.");
     }
-
-    if (cooldownDays > 0) {
-      const recentAttempt = await client.query(
-        `select p.id
-         from interactive_activation_participants p
-         where ${scopePredicate}
-           and p.created_at >= now() - ($5::int * interval '1 day')
-           and (
-             ($2::text is not null and p.document = $2)
-             or ($3::text is not null and lower(p.email) = lower($3))
-             or ($4::text is not null and p.phone = $4)
-           )
-         limit 1`,
-        [scopeValue, document, email, phone, cooldownDays]
-      );
-      if (recentAttempt.rowCount) {
-        throw badRequest(`Esta persona debe esperar ${cooldownDays} dias para tener su proximo intento.`);
-      }
-    }
-    return;
   }
-  const result = await client.query(
-    `select id from interactive_activation_participants
-     where activation_id = $1
-       and (
-         ($2::text is not null and document = $2)
-         or ($3::text is not null and lower(email) = lower($3))
-         or ($4::text is not null and phone = $4)
-       )
-     limit 1`,
-    [activation.id, document, email, phone]
-  );
-  if (result.rowCount) {
-    throw badRequest("Esta persona ya participo en esta activacion.");
+
+  if (cooldownDays > 0) {
+    const recentAttempt = await client.query(
+      `select p.id
+       from interactive_activation_participants p
+       where ${scopePredicate}
+         and p.created_at >= now() - ($5::int * interval '1 day')
+         and (
+           ($2::text is not null and p.document = $2)
+           or ($3::text is not null and lower(p.email) = lower($3))
+           or ($4::text is not null and p.phone = $4)
+         )
+       limit 1`,
+      [scopeValue, document, email, phone, cooldownDays]
+    );
+    if (recentAttempt.rowCount) {
+      throw badRequest(`Esta persona debe esperar ${cooldownDays} dias para tener su proximo intento.`);
+    }
   }
 }
 
 function assertRequiredCaptureFields(activation, body) {
-  const requiredFields = new Set(activation.capture_config?.required_fields || []);
-  if (activation.category === "minigame") {
-    requiredFields.add("phone");
-    requiredFields.add("email");
-    requiredFields.add("document");
-  }
+  const requiredFields = new Set(["name", "phone", "email", "document", ...(activation.capture_config?.required_fields || [])]);
   const document = body.document || body.document_id || "";
   const values = {
     name: body.name || "",

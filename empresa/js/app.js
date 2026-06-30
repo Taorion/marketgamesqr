@@ -6525,6 +6525,33 @@ function minigameInstructionForType(type) {
   }[type] || "Completa la partida y supera el score minimo para recibir QR.";
 }
 
+function activationParticipantLockFromForm() {
+  const cooldownDays = Math.max(0, Math.min(365, Number(minigameParticipantCooldownInput?.value || 7)));
+  const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
+  return {
+    scope: "activation",
+    cooldown_days: cooldownDays,
+    winner_policy: winnerPolicy,
+    label: `${cooldownDays} dias de espera entre intentos`,
+  };
+}
+
+function validateActivationParticipantLock() {
+  const cooldownDays = Number(minigameParticipantCooldownInput?.value || 0);
+  const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
+  if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
+    setInlineMessage(triviaLauncherMessage, "Configura los dias de espera entre 0 y 365.", "error");
+    minigameParticipantCooldownInput?.focus();
+    return false;
+  }
+  if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
+    setInlineMessage(triviaLauncherMessage, "Selecciona que pasa si el beneficiario ya gano.", "error");
+    minigameWinnerPolicyInput?.focus();
+    return false;
+  }
+  return true;
+}
+
 function buildInteractiveActivationPayload(type, activationPayload) {
   const benefit = {
     reward_type: triviaBenefitTypeInput.value,
@@ -6542,8 +6569,9 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     reward_ticket_cost: 1,
     reward_config: benefit,
     capture_config: {
-      required_fields: ["name", "phone"],
-      optional_fields: ["email", "document"],
+      required_fields: ["name", "phone", "email", "document"],
+      optional_fields: [],
+      participant_lock: activationParticipantLockFromForm(),
     },
     visual_config: {
       source: "ticket_center_activation_builder",
@@ -6713,14 +6741,6 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     const penalty = Math.max(0, Number(minigamePenaltyInput?.value || 10));
     const lives = Math.max(1, Math.min(10, Number(minigameLivesInput?.value || 3)));
     const fireIntervalMs = Math.max(250, Math.min(1200, Number(minigameFireIntervalInput?.value || 480)));
-    const cooldownDays = Math.max(0, Math.min(365, Number(minigameParticipantCooldownInput?.value || 7)));
-    const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
-    const participantLock = {
-      scope: "activation",
-      cooldown_days: cooldownDays,
-      winner_policy: winnerPolicy,
-      label: `${cooldownDays} dias de espera entre intentos`,
-    };
     return {
       ...base,
       category: "minigame",
@@ -6729,7 +6749,6 @@ function buildInteractiveActivationPayload(type, activationPayload) {
         ...base.capture_config,
         required_fields: ["name", "phone", "email", "document"],
         optional_fields: [],
-        participant_lock: participantLock,
       },
       score_rewards: [{
         min_score: minScore,
@@ -6778,6 +6797,7 @@ function updateTriviaExpiryMode() {
 function validateTriviaLauncherForm() {
   updateTriviaExpiryMode();
   const type = currentActivationType();
+  if (!validateActivationParticipantLock()) return null;
   if (type === "TRIVIA") {
     updateTriviaQuestionVisibility();
   }
@@ -6844,8 +6864,6 @@ function validateTriviaLauncherForm() {
     const maxScore = Number(minigameMaxScoreInput?.value || 2500);
     const lives = Number(minigameLivesInput?.value || 3);
     const fireIntervalMs = Number(minigameFireIntervalInput?.value || 480);
-    const cooldownDays = Number(minigameParticipantCooldownInput?.value || 0);
-    const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
     if (!Number.isFinite(durationSeconds) || durationSeconds < 10 || durationSeconds > 180) {
       setInlineMessage(triviaLauncherMessage, "Configura una duracion de minijuego entre 10 y 180 segundos.", "error");
       minigameDurationInput?.focus();
@@ -6864,16 +6882,6 @@ function validateTriviaLauncherForm() {
     if (!Number.isFinite(fireIntervalMs) || fireIntervalMs < 250 || fireIntervalMs > 1200) {
       setInlineMessage(triviaLauncherMessage, "Configura la cadencia de disparo entre 250 y 1200 ms.", "error");
       minigameFireIntervalInput?.focus();
-      return null;
-    }
-    if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
-      setInlineMessage(triviaLauncherMessage, "Configura los dias de espera entre 0 y 365.", "error");
-      minigameParticipantCooldownInput?.focus();
-      return null;
-    }
-    if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
-      setInlineMessage(triviaLauncherMessage, "Selecciona que pasa si el beneficiario ya gano.", "error");
-      minigameWinnerPolicyInput?.focus();
       return null;
     }
     return { minigame: true };
@@ -6906,6 +6914,7 @@ function renderTriviaLaunchers() {
         <td>
           <strong>${escapeHtml(item.title)}</strong><br>
           <span class="table-secondary">${escapeHtml(activationTypeLabel(item.activation_type))} · ${escapeHtml(item.campaign_name || "Sin campana")} · Creada ${escapeHtml(formatDate(item.created_at))}</span>
+          <span class="table-secondary">${escapeHtml(activationParticipantPolicyLabel(item))}</span>
         </td>
         <td>
           <span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span>
@@ -7006,6 +7015,15 @@ function activationById(id) {
   return (state.triviaLaunchers || []).find((item) => String(item.id) === String(id));
 }
 
+function activationParticipantPolicyLabel(activation) {
+  const lock = activation?.capture_config?.participant_lock || {};
+  const days = Number(lock.cooldown_days ?? 7);
+  const winnerText = lock.winner_policy === "allow_after_cooldown"
+    ? "ganadores pueden volver tras la espera"
+    : "ganadores bloqueados";
+  return `${Number.isFinite(days) ? days : 7} dias entre intentos · ${winnerText}`;
+}
+
 async function patchInteractiveActivation(id, payload, successMessage) {
   const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
     method: "PATCH",
@@ -7069,11 +7087,40 @@ async function editInteractiveActivation(id) {
     showFeedback("El cupo maximo debe ser un numero mayor a cero o quedar vacio.", "error", { title: "Dato invalido" });
     return;
   }
+  const currentLock = activation.capture_config?.participant_lock || {};
+  const cooldownText = window.prompt("Dias de espera entre intentos para este beneficiario.", currentLock.cooldown_days ?? 7);
+  if (cooldownText === null) return;
+  const cooldownDays = Number(cooldownText);
+  if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
+    showFeedback("Los dias de espera deben estar entre 0 y 365.", "error", { title: "Dato invalido" });
+    return;
+  }
+  const currentWinnerPolicy = currentLock.winner_policy || "block_previous_winners";
+  const winnerPolicy = window.prompt(
+    "Si ya gano beneficio escribe: block_previous_winners o allow_after_cooldown.",
+    currentWinnerPolicy
+  );
+  if (winnerPolicy === null) return;
+  if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
+    showFeedback("Politica invalida. Usa block_previous_winners o allow_after_cooldown.", "error", { title: "Dato invalido" });
+    return;
+  }
   try {
     await patchInteractiveActivation(id, {
       title: title.trim(),
       description: description.trim() || null,
       max_rewards: maxRewards,
+      capture_config: {
+        ...(activation.capture_config || {}),
+        required_fields: ["name", "phone", "email", "document"],
+        optional_fields: [],
+        participant_lock: {
+          scope: currentLock.scope === "company" ? "company" : "activation",
+          cooldown_days: cooldownDays,
+          winner_policy: winnerPolicy,
+          label: `${cooldownDays} dias de espera entre intentos`,
+        },
+      },
     }, "Datos basicos actualizados.");
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo editar" });
