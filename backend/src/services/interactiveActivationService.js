@@ -60,6 +60,14 @@ const ACTIVATION_CATALOG = [
 ];
 
 const CATALOG_BY_TYPE = new Map(ACTIVATION_CATALOG.map((item) => [item.type, item]));
+const JSONB_ACTIVATION_FIELDS = new Set(["reward_config", "game_config", "interaction_config", "capture_config", "visual_config"]);
+
+function jsonParam(value, fallback) {
+  if (value === undefined || value === null) {
+    return fallback === undefined ? null : JSON.stringify(fallback);
+  }
+  return JSON.stringify(value);
+}
 
 function publicAppBaseUrl() {
   try {
@@ -300,7 +308,7 @@ async function createInteractiveActivation(businessId, user, body) {
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20, $21, $22)
        returning *`,
       [
         businessId,
@@ -313,11 +321,11 @@ async function createInteractiveActivation(businessId, user, body) {
         body.status || "active",
         body.reward_ticket_cost || 1,
         body.reward_mode || "fixed",
-        rewardConfig,
-        body.game_config || {},
-        body.interaction_config || {},
-        captureConfig,
-        body.visual_config || {},
+        jsonParam(rewardConfig, {}),
+        jsonParam(body.game_config, {}),
+        jsonParam(body.interaction_config, {}),
+        jsonParam(captureConfig, {}),
+        jsonParam(body.visual_config, {}),
         body.starts_at || null,
         body.ends_at || body.expires_at || null,
         body.max_participants || null,
@@ -350,16 +358,16 @@ async function insertQuestions(client, activationId, questions) {
     await client.query(
       `insert into interactive_activation_questions
         (activation_id, question_text, question_type, options, required, order_index, scoring_rules, branching_rules)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       values ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8::jsonb)`,
       [
         activationId,
         question.question_text || question.question || "Pregunta",
         question.question_type || question.type || "open",
-        question.options || [],
+        jsonParam(question.options, []),
         question.required !== false,
         question.order_index ?? index,
-        question.scoring_rules || null,
-        question.branching_rules || null,
+        jsonParam(question.scoring_rules),
+        jsonParam(question.branching_rules),
       ]
     );
   }
@@ -371,13 +379,13 @@ async function insertScoreRules(client, activationId, rules) {
     await client.query(
       `insert into interactive_score_reward_rules
         (activation_id, min_score, max_score, reward_type, reward_value, reward_label, reward_conditions, max_awards)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       values ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
       [
         activationId,
         Number(rule.min_score || 0),
         rule.max_score === undefined || rule.max_score === null ? null : Number(rule.max_score),
         normalizeRewardType(rule.reward_type),
-        rule.reward_value || {},
+        jsonParam(rule.reward_value, {}),
         rule.reward_label,
         rule.reward_conditions || null,
         rule.max_awards || null,
@@ -391,7 +399,7 @@ async function insertTouchZones(client, activationId, zones) {
     await client.query(
       `insert into interactive_touch_reward_zones
         (activation_id, label, position_percent, start_percent, end_percent, reward_type, reward_value, reward_label, reward_conditions, max_awards)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+       values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10)`,
       [
         activationId,
         zone.label || zone.reward_label,
@@ -399,7 +407,7 @@ async function insertTouchZones(client, activationId, zones) {
         zone.start_percent ?? null,
         zone.end_percent ?? null,
         normalizeRewardType(zone.reward_type),
-        zone.reward_value || {},
+        jsonParam(zone.reward_value, {}),
         zone.reward_label || zone.label,
         zone.reward_conditions || null,
         zone.max_awards || null,
@@ -468,8 +476,14 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   ];
   for (const key of allowed) {
     if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
-    values.push(key === "capture_config" ? normalizeCaptureConfig(body[key] || {}) : body[key]);
-    fields.push(`${key} = $${values.length}`);
+    const nextValue = key === "capture_config" ? normalizeCaptureConfig(body[key] || {}) : body[key];
+    if (JSONB_ACTIVATION_FIELDS.has(key)) {
+      values.push(jsonParam(nextValue, {}));
+      fields.push(`${key} = $${values.length}::jsonb`);
+    } else {
+      values.push(nextValue);
+      fields.push(`${key} = $${values.length}`);
+    }
   }
   if (!fields.length) throw badRequest("No hay campos para actualizar.");
   values.push(new Date().toISOString());
@@ -501,7 +515,7 @@ async function recycleInteractiveActivation(businessId, user, activationId) {
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
        values ($1, $2, $3, $4, $5, $6, $7, 'draft',
-         $8, $9, $10, $11, $12, $13, $14, null, null, $15, $16, $17, $18, $19)
+         $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, null, null, $15, $16, $17, $18, $19)
        returning *`,
       [
         original.company_id,
@@ -513,11 +527,11 @@ async function recycleInteractiveActivation(businessId, user, activationId) {
         original.activation_type,
         original.reward_ticket_cost || 1,
         original.reward_mode,
-        original.reward_config || {},
-        original.game_config || {},
-        original.interaction_config || {},
-        original.capture_config || {},
-        original.visual_config || {},
+        jsonParam(original.reward_config, {}),
+        jsonParam(original.game_config, {}),
+        jsonParam(original.interaction_config, {}),
+        jsonParam(original.capture_config, {}),
+        jsonParam(original.visual_config, {}),
         original.max_participants || null,
         original.max_rewards || null,
         publicSlug,
@@ -659,7 +673,7 @@ async function startInteractiveParticipant(slug, body) {
       `insert into interactive_activation_participants
         (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
          game_session_token, game_session_started_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, 'started', $9, now())
+       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started', $9, now())
        returning *`,
       [
         activation.id,
@@ -669,7 +683,7 @@ async function startInteractiveParticipant(slug, body) {
         body.document || body.document_id || null,
         body.phone || null,
         body.email || null,
-        body.metadata || {},
+        jsonParam(body.metadata, {}),
         gameSessionToken,
       ]
     );
@@ -723,12 +737,12 @@ async function completeInteractiveParticipant(slug, body) {
         score,
         resultProfile || null,
         status,
-        {
+        jsonParam({
           source_url: body.metadata?.source_url || null,
           user_agent: body.metadata?.user_agent || null,
           ip_hint: body.metadata?.ip_hint || null,
           anti_abuse: antiAbuseSummary(activation, participant, body, score),
-        },
+        }, {}),
       ]
     );
 
@@ -881,7 +895,7 @@ async function createParticipantInsideCompletion(client, activation, body) {
   const result = await client.query(
     `insert into interactive_activation_participants
       (activation_id, company_id, player_id, name, document, phone, email, metadata, status)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 'started')
+     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started')
      returning *`,
     [
       activation.id,
@@ -891,7 +905,7 @@ async function createParticipantInsideCompletion(client, activation, body) {
       body.document || body.document_id || null,
       body.phone || null,
       body.email || null,
-      body.metadata || {},
+      jsonParam(body.metadata, {}),
     ]
   );
   return result.rows[0];
@@ -900,7 +914,7 @@ async function createParticipantInsideCompletion(client, activation, body) {
 async function createPlayer(client, activation, body, metadata = {}) {
   const result = await client.query(
     `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
-     values ($1, $2, $3, $4, $5, $6, $7, $8)
+     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
      returning *`,
     [
       activation.company_id,
@@ -910,12 +924,12 @@ async function createPlayer(client, activation, body, metadata = {}) {
       body.email || null,
       body.phone || null,
       body.document || body.document_id || null,
-      {
+      jsonParam({
         source: "interactive_activation",
         activation_id: activation.id,
         activation_type: activation.activation_type,
         ...metadata,
-      },
+      }, {}),
     ]
   );
   return result.rows[0];
@@ -959,8 +973,8 @@ async function persistAnswers(client, activationId, participantId, answers) {
     await client.query(
       `insert into interactive_activation_answers
         (activation_id, participant_id, question_id, answer)
-       values ($1, $2, $3, $4)`,
-      [activationId, participantId, byId.has(key) ? key : null, { key, value }]
+       values ($1, $2, $3, $4::jsonb)`,
+      [activationId, participantId, byId.has(key) ? key : null, jsonParam({ key, value }, {})]
     );
   }
 }
@@ -1121,20 +1135,20 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
 
   const questionnaireResult = await client.query(
     `insert into questionnaires (business_id, campaign_id, game_id, player_id, answers)
-     values ($1, $2, $3, $4, $5)
+     values ($1, $2, $3, $4, $5::jsonb)
      returning id`,
     [
       activation.company_id,
       activation.campaign_id || null,
       await requiredGameId(client, activation.company_id),
       participant.player_id || null,
-      {
+      jsonParam({
         activation_id: activation.id,
         participant_id: participant.id,
         score: participant.score || null,
         result_profile: participant.result_profile || null,
         reward: rewardPayload,
-      },
+      }, {}),
     ]
   );
 
@@ -1142,7 +1156,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     `insert into qr_codes
       (business_id, campaign_id, game_id, player_id, reward_id, questionnaire_id, token, status,
        metadata, expires_at, origin_type, benefit_type, benefit_value, claim_required, claimed_at, claimed_by_player_id)
-     values ($1, $2, $3, $4, null, $5, $6, 'ACTIVE', $7, $8, 'INTERACTIVE_ACTIVATION', $9, $10, false, now(), $4)
+     values ($1, $2, $3, $4, null, $5, $6, 'ACTIVE', $7::jsonb, $8, 'INTERACTIVE_ACTIVATION', $9, $10::jsonb, false, now(), $4)
      returning *`,
     [
       activation.company_id,
@@ -1151,7 +1165,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
       participant.player_id || null,
       questionnaireResult.rows[0].id,
       token,
-      {
+      jsonParam({
         source: "interactive_activation",
         activation_id: activation.id,
         activation_type: activation.activation_type,
@@ -1162,16 +1176,16 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         result_profile: participant.result_profile || null,
         reward_source: rewardPayload.reward_source,
         selected_benefit: rewardPayload,
-      },
+      }, {}),
       activation.ends_at || null,
       normalizeRewardType(rewardPayload.reward_type),
-      {
+      jsonParam({
         label: rewardPayload.reward_label,
         value: rewardPayload.reward_value || {},
         conditions: rewardPayload.reward_conditions || null,
         public_code: publicCode,
         activation_id: activation.id,
-      },
+      }, {}),
     ]
   );
   const qr = qrResult.rows[0];
@@ -1198,7 +1212,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
       (activation_id, participant_id, company_id, qr_code_id, qr_token, public_code,
        reward_type, reward_value, reward_label, reward_conditions, reward_source,
        source_data, expires_at, ticket_transaction_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, null)
+     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12::jsonb, $13, null)
      returning *`,
     [
       activation.id,
@@ -1208,11 +1222,11 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
       token,
       publicCode,
       normalizeRewardType(rewardPayload.reward_type),
-      rewardPayload.reward_value || {},
+      jsonParam(rewardPayload.reward_value, {}),
       rewardPayload.reward_label,
       rewardPayload.reward_conditions || null,
       rewardPayload.reward_source,
-      rewardPayload.source_data || {},
+      jsonParam(rewardPayload.source_data, {}),
       activation.ends_at || null,
     ]
   );
