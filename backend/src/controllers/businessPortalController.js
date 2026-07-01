@@ -1241,12 +1241,14 @@ async function contactFeed(req, res, next) {
           boundedLimit(req.query.limit, 120, 1000),
           planRowLimit === null ? 1000 : Math.max(1, Number(planRowLimit || 120))
         );
-    const includeTotal = isPrepaid || wantsTotalCount(req);
-    const [contacts, totalContacts] = await Promise.all([
-      getContactFeedRows(businessId, retentionDays, limit),
-      includeTotal ? countContactFeedRows(businessId, retentionDays) : Promise.resolve(null),
-    ]);
+    const contacts = await getContactFeedRows(businessId, retentionDays, limit);
+    const shouldCountTotal = isPrepaid || wantsTotalCount(req) || (planRowLimit !== null && contacts.length >= limit);
+    const totalContacts = shouldCountTotal ? await countContactFeedRows(businessId, retentionDays) : null;
     const totalAvailable = totalContacts === null ? null : totalContacts;
+    const limitedByPlan = planRowLimit !== null && contacts.length >= limit;
+    const hiddenByPlan = limitedByPlan && totalAvailable !== null
+      ? Number(totalAvailable || 0) > contacts.length
+      : limitedByPlan;
     res.json({
       retention: {
         plan_code: subscription.plan.code,
@@ -1265,7 +1267,7 @@ async function contactFeed(req, res, next) {
             message: `El acceso legacy solo muestra ${PREPAID_LEAD_SAMPLE_LIMIT} contactos de muestra. Compra T200 para activar Portal Base o sube a Growth/Premium para ver mas historial, exportar y medir revenue.`,
           }
         : {
-            locked: planRowLimit !== null,
+            locked: hiddenByPlan,
             sample_limit: planRowLimit,
             total_available: totalAvailable,
             hidden_count: totalAvailable === null ? null : Math.max(0, Number(totalAvailable || 0) - contacts.length),

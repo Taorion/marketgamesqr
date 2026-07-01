@@ -721,9 +721,35 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   };
 }
 
+function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_QR]) {
+  const isInternalAccount = Boolean(row.settings?.internal_account || row.settings?.access?.source === "internal_seed");
+  if (!isInternalAccount) return plan;
+  return {
+    ...plan,
+    name: plan.code === PLAN_CODES.PRO ? "Enterprise Operado Interno" : plan.name,
+    access_summary: "Cuenta interna MarketGames QR con acceso completo para operar clientes propios sin bloqueos de plan.",
+    limits: {
+      ...(plan.limits || {}),
+      users: unlimited,
+      validators: unlimited,
+      branches: unlimited,
+      active_campaigns: unlimited,
+      lead_view_rows: unlimited,
+      lead_export_rows_month: unlimited,
+      lead_exports_month: unlimited,
+      metric_exports_month: unlimited,
+      affiliates: unlimited,
+      history_days: unlimited,
+      activation_types_month: unlimited,
+      active_interactive_activations: unlimited,
+      executive_reports_month: unlimited,
+    },
+  };
+}
+
 function planFromBusiness(row = {}) {
   const code = effectivePlanCode(row);
-  const plan = PLAN_CATALOG[code];
+  const plan = internalUnlimitedPlan(row, PLAN_CATALOG[code]);
   const lifecycle = subscriptionLifecycle(row, plan);
   const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
   const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;
