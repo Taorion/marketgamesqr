@@ -25,6 +25,7 @@ const {
   exportContactFeed,
   exportCampaignLeads,
   downloadActiveLeadQr,
+  downloadLeadQrById,
   campaignRedemptions,
   campaignSales,
   createSalesSnapshot,
@@ -57,6 +58,7 @@ router.patch("/campaigns/:id/client-setup", patchClientSetup);
 router.post("/campaigns/:id/confirm-launch", confirmLaunch);
 router.get("/campaigns/:id/report", campaignReport);
 router.get("/contacts/feed/export.csv", exportContactFeed);
+router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/campaigns/:id/leads", campaignLeads);
 router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);

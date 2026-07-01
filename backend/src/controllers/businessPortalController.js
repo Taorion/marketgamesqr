@@ -1438,6 +1438,54 @@ async function downloadActiveLeadQr(req, res, next) {
   }
 }
 
+async function downloadLeadQrById(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `select q.id, q.token, q.status, q.expires_at, p.name as player_name, p.phone as player_phone
+       from qr_codes q
+       left join players p on p.id = q.player_id
+       where q.id = $1 and q.business_id = $2
+       limit 1`,
+      [req.params.qrId, businessId]
+    );
+
+    const qr = result.rows[0];
+    if (!qr) {
+      throw notFound("Ticket activo no encontrado para este negocio.");
+    }
+
+    const isExpired = qr.expires_at && new Date(qr.expires_at) <= new Date();
+    if (qr.status !== "ACTIVE" || isExpired) {
+      if (isExpired && qr.status === "ACTIVE") {
+        await query("update qr_codes set status = 'EXPIRED' where id = $1 and status = 'ACTIVE'", [qr.id]);
+      }
+      throw badRequest("Este contacto no tiene un ticket activo disponible para descargar.");
+    }
+
+    const validatorUrl = buildValidatorUrl(qr.token);
+    const safeName = (qr.player_name || "cliente")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .toLowerCase() || "cliente";
+
+    res.json({
+      qr_code_id: qr.id,
+      status: qr.status,
+      expires_at: qr.expires_at,
+      player_name: qr.player_name,
+      player_phone: qr.player_phone,
+      validator_url: validatorUrl,
+      filename: `qr-${safeName}-${String(qr.id).slice(0, 8)}.png`,
+      qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function campaignRedemptions(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -1606,6 +1654,7 @@ module.exports = {
   exportContactFeed,
   exportCampaignLeads,
   downloadActiveLeadQr,
+  downloadLeadQrById,
   campaignRedemptions,
   campaignSales,
   createSalesSnapshot,

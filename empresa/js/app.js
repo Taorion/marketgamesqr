@@ -10371,13 +10371,34 @@ function setZipDownloadGuidance(filename, stage = "ready") {
 }
 
 async function downloadLeadQr(qrId) {
-  if (!state.selectedCampaignId || !qrId) return;
+  if (!qrId) return;
   try {
-    const data = await api(`/api/business/campaigns/${state.selectedCampaignId}/leads/${encodeURIComponent(qrId)}/active-qr`, {
+    const data = await api(`/api/business/contacts/feed/${encodeURIComponent(qrId)}/active-qr`, {
       headers: authHeaders(),
     });
     downloadDataUrl(data.filename || `qr-${qrId}.png`, data.qr_image_data_url);
     showFeedback(`Ticket descargado para ${data.player_name || "el lead"}. Puedes reenviarlo por el canal que prefieras.`);
+  } catch (error) {
+    showFeedback(error.message, "error");
+  }
+}
+
+async function shareLeadQrWhatsApp(qrId, phone, name) {
+  if (!qrId) return;
+  try {
+    const data = await api(`/api/business/contacts/feed/${encodeURIComponent(qrId)}/active-qr`, {
+      headers: authHeaders(),
+    });
+    const rawPhone = String(phone || data.player_phone || "").replace(/[^\d]/g, "");
+    const text = [
+      `Hola ${name || data.player_name || ""}`.trim(),
+      "este es tu ticket activo de beneficio MarketGames QR para presentar en el punto fisico:",
+      data.validator_url,
+    ].join(" ");
+    const target = rawPhone
+      ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(target, "_blank", "noopener");
   } catch (error) {
     showFeedback(error.message, "error");
   }
@@ -10820,14 +10841,24 @@ function renderLeadsView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(item.qr_status || "-")}</td>
       <td>${escapeHtml(item.reward_name || "-")}<br><span class="table-secondary">${escapeHtml(item.email || "-")}</span></td>
-      <td>${state.selectedCampaignId && item.qr_status === "ACTIVE" && item.qr_code_id
-        ? `<button class="ghost-button" type="button" data-download-qr="${escapeHtml(item.qr_code_id)}">Descargar ticket</button>`
+      <td>${item.qr_status === "ACTIVE" && item.qr_code_id
+        ? `<div class="activation-row-actions">
+            <button class="ghost-button" type="button" data-download-qr="${escapeHtml(item.qr_code_id)}">Descargar</button>
+            <button class="ghost-button" type="button" data-share-qr-wa="${escapeHtml(item.qr_code_id)}" data-lead-phone="${escapeHtml(item.phone || "")}" data-lead-name="${escapeHtml(item.name || "")}">WhatsApp</button>
+          </div>`
         : `<span class="table-secondary">${escapeHtml(item.qr_code_id ? "Ticket activo" : "Sin ticket")}</span>`}</td>
     </tr>
   `).join("") || `<tr><td colspan="9">${state.selectedCampaignId ? "Sin leads para esta campana." : "Sin contactos capturados."}</td></tr>`;
 
   campaignLeadsTable.querySelectorAll("[data-download-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadQr));
+  });
+  campaignLeadsTable.querySelectorAll("[data-share-qr-wa]").forEach((button) => {
+    button.addEventListener("click", () => shareLeadQrWhatsApp(
+      button.dataset.shareQrWa,
+      button.dataset.leadPhone,
+      button.dataset.leadName
+    ));
   });
 }
 
