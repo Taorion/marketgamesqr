@@ -45,7 +45,10 @@ async function createPostSale(req, res, next) {
       user_id: req.user.id,
       event_type: "qr_generated",
       quantity: 1,
-      metadata: { source: "post_sale" },
+      metadata: {
+        source: body.metadata?.qr_creation_context === "business_owner_generic_ticket" ? "generic_ticket" : "post_sale",
+        ticket_use_case: body.metadata?.ticket_use_case || null,
+      },
     });
     res.status(201).json(result);
   } catch (error) {

@@ -331,6 +331,8 @@ const secretFriendActivationButton = document.getElementById("secretFriendActiva
 const postSaleQrForm = document.getElementById("postSaleQrForm");
 const postSaleCampaignInput = document.getElementById("postSaleCampaignInput");
 const postSaleCampaignHelp = document.getElementById("postSaleCampaignHelp");
+const postSaleUseCaseInput = document.getElementById("postSaleUseCaseInput");
+const postSaleOccasionInput = document.getElementById("postSaleOccasionInput");
 const postSaleAttributionSourceInput = document.getElementById("postSaleAttributionSourceInput");
 const postSaleAttributionSubjectInput = document.getElementById("postSaleAttributionSubjectInput");
 const postSaleAmountInput = document.getElementById("postSaleAmountInput");
@@ -709,7 +711,7 @@ const chartHoverRegistry = new WeakMap();
 
 const ACQUISITION_SOURCE_LABELS = {
   STORE_WALK_IN: "Vio el almacen",
-  FRIEND_REFERRAL: "Recomendacion",
+  FRIEND_REFERRAL: "Recomendación",
   FAIR_EVENT: "Feria o evento",
   INTERNET_SEARCH: "Internet / buscador",
   SOCIAL_MEDIA: "Redes sociales",
@@ -720,8 +722,8 @@ const ACQUISITION_SOURCE_LABELS = {
 
 const COMMAND_CENTER_RANGE_LABELS = {
   today: "Hoy",
-  "7d": "7 dias",
-  "30d": "30 dias",
+  "7d": "7 días",
+  "30d": "30 días",
   current_month: "Mes actual",
   previous_month: "Mes anterior",
   custom: "Personalizado",
@@ -745,41 +747,41 @@ const MOTION_TOKENS = {
 };
 
 const DATA_DICTIONARY = {
-  lead: { name: "Lead", description: "Persona capturada por una campana, ticket, formulario o canal comercial.", formula: "Conteo de registros de clientes potenciales asociados al negocio.", example: "Un cliente deja nombre y telefono despues de escanear un ticket.", decision: "Si suben los leads pero no las ventas, refuerza seguimiento y oferta." },
-  qr_generated: { name: "Ticket generado", description: "Codigo creado para activar, reclamar, redimir o rastrear una estrategia RMS.", formula: "Conteo de tickets creados en el periodo filtrado.", example: "50 tickets impresos para una feria o volante.", decision: "Si hay muchos tickets sin redimir, crea urgencia o mejora el beneficio." },
-  active_qr: { name: "Ticket activo", description: "Ticket disponible para uso, reclamo o redencion.", formula: "Ticket con estado activo y vigencia util.", example: "Beneficios listos para validar en tienda.", decision: "Activa recordatorios si se acumulan Ticket activos sin redencion." },
-  redeemed_qr: { name: "Ticket redimido", description: "Ticket usado por un cliente y validado por el negocio.", formula: "Conteo de redenciones confirmadas.", example: "Cliente llega a tienda y valida su beneficio.", decision: "Cruza redenciones con ventas para medir revenue real." },
-  expired_qr: { name: "Ticket vencido", description: "Ticket que ya no puede usarse por fecha o estado.", formula: "Conteo de tickets con estado vencido o fecha expirada.", example: "Beneficio no reclamado antes del limite.", decision: "Reduce vigencia o envia recordatorios antes del vencimiento." },
-  redemption_rate: { name: "Tasa de redencion", description: "Mide cuantos tickets generados terminaron siendo usados.", formula: "Tickets redimidos / tickets generados.", example: "20 redenciones sobre 100 tickets = 20%.", decision: "Si es baja, revisa beneficio, urgencia, canal y entrenamiento del equipo." },
-  conversion_rate: { name: "Tasa de conversion", description: "Mide cuantas oportunidades terminaron en venta registrada.", formula: "Ventas registradas / leads o redenciones, segun el contexto.", example: "10 ventas sobre 100 leads = 10%.", decision: "Si baja, revisa cierre comercial, oferta y seguimiento." },
-  revenue: { name: "Revenue atribuido", description: "Ingreso registrado y conectado a campanas, tickets, canales o ventas RMS.", formula: "Suma de ventas atribuidas al periodo y filtros activos.", example: "$2.500.000 vendidos por una campana de Instagram.", decision: "Escala lo que produce revenue, no solo lo que produce trafico." },
-  avg_ticket: { name: "Ticket promedio", description: "Valor promedio de compra por venta registrada.", formula: "Revenue atribuido / ventas registradas.", example: "$1.000.000 / 5 ventas = $200.000.", decision: "Canales de menor volumen pueden valer mas si traen ticket alto." },
-  cac: { name: "CAC", description: "Costo estimado de adquirir una venta o cliente.", formula: "Inversion atribuida / ventas registradas.", example: "$300.000 de pauta / 10 ventas = $30.000 por venta.", decision: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
-  roi: { name: "ROI", description: "Retorno estimado de la inversion de marketing.", formula: "(Revenue - inversion) / inversion.", example: "$1.200.000 de revenue con $300.000 de inversion = 3x.", decision: "Repite y escala campanas con ROI positivo y datos confiables." },
-  channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificacion de leads, tickets, redenciones o ventas por fuente.", example: "Instagram, referidos, vitrina, feria o ticket fisico.", decision: "Compara canales por revenue, no solo por volumen." },
-  affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con tickets o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendacion.", example: "Un cliente compra por ticket de un afiliado.", decision: "Premia afiliados con alto ticket y entregales mas tickets." },
-  branch: { name: "Sucursal", description: "Punto fisico o sede donde se redime, vende o atiende.", formula: "Agrupacion de redenciones y ventas por branch_id.", example: "Sucursal Norte convierte mejor que Centro.", decision: "Replica practicas de la sede lider y capacita sedes rezagadas." },
-  campaign: { name: "Campana", description: "Estrategia comercial o promocional conectada a tickets, leads y revenue.", formula: "Datos agrupados por campaign_id.", example: "Feria Junio, Lanzamiento postventa o pauta Instagram.", decision: "Escala campanas con conversion y revenue; optimiza las de solo leads." },
-  mg_score: { name: "MG Revenue Score", description: "Score de salud comercial que resume redencion, conversion, revenue, referidos, sucursales y calidad de datos.", formula: "Promedio ponderado de dimensiones RMS normalizadas de 0 a 100.", example: "82/100 indica buena salud con oportunidades puntuales.", decision: "Usa las dimensiones bajas para priorizar la siguiente mejora." },
+  lead: { name: "Lead", description: "Persona capturada por una campaña, ticket, formulario o canal comercial.", formula: "Conteo de registros de clientes potenciales asociados al negocio.", example: "Un cliente deja nombre y teléfono después de escanear un ticket.", decisión: "Si suben los leads pero no las ventas, refuerza seguimiento y oferta." },
+  qr_generated: { name: "Ticket generado", description: "Codigo creado para activar, reclamar, redimir o rastrear una estrategia RMS.", formula: "Conteo de tickets creados en el periodo filtrado.", example: "50 tickets impresos para una feria o volante.", decisión: "Si hay muchos tickets sin redimir, crea urgencia o mejora el beneficio." },
+  active_qr: { name: "Ticket activo", description: "Ticket disponible para uso, reclamo o redención.", formula: "Ticket con estado activo y vigencia util.", example: "Beneficios listos para validar en tienda.", decisión: "Activa recordatorios si se acumulan Ticket activos sin redención." },
+  redeemed_qr: { name: "Ticket redimido", description: "Ticket usado por un cliente y validado por el negocio.", formula: "Conteo de redenciones confirmadas.", example: "Cliente llega a tienda y valida su beneficio.", decisión: "Cruza redenciones con ventas para medir revenue real." },
+  expired_qr: { name: "Ticket vencido", description: "Ticket que ya no puede usarse por fecha o estado.", formula: "Conteo de tickets con estado vencido o fecha expirada.", example: "Beneficio no reclamado antes del limite.", decisión: "Reduce vigencia o envia recordatorios antes del vencimiento." },
+  redemption_rate: { name: "Tasa de redención", description: "Mide cuantos tickets generados terminaron siendo usados.", formula: "Tickets redimidos / tickets generados.", example: "20 redenciones sobre 100 tickets = 20%.", decisión: "Si es baja, revisa beneficio, urgencia, canal y entrenamiento del equipo." },
+  conversion_rate: { name: "Tasa de conversión", description: "Mide cuantas oportunidades terminaron en venta registrada.", formula: "Ventas registradas / leads o redenciones, según el contexto.", example: "10 ventas sobre 100 leads = 10%.", decisión: "Si baja, revisa cierre comercial, oferta y seguimiento." },
+  revenue: { name: "Revenue atribuido", description: "Ingreso registrado y conectado a campañas, tickets, canales o ventas RMS.", formula: "Suma de ventas atribuidas al periodo y filtros activos.", example: "$2.500.000 vendidos por una campaña de Instagram.", decisión: "Escala lo que produce revenue, no solo lo que produce trafico." },
+  avg_ticket: { name: "Ticket promedio", description: "Valor promedio de compra por venta registrada.", formula: "Revenue atribuido / ventas registradas.", example: "$1.000.000 / 5 ventas = $200.000.", decisión: "Canales de menor volumen pueden valer más si traen ticket alto." },
+  cac: { name: "CAC", description: "Costo estimado de adquirir una venta o cliente.", formula: "Inversión atribuida / ventas registradas.", example: "$300.000 de pauta / 10 ventas = $30.000 por venta.", decisión: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
+  roi: { name: "ROI", description: "Retorno estimado de la inversión de marketing.", formula: "(Revenue - inversión) / inversión.", example: "$1.200.000 de revenue con $300.000 de inversión = 3x.", decisión: "Repite y escala campañas con ROI positivo y datos confiables." },
+  channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificación de leads, tickets, redenciones o ventas por fuente.", example: "Instagram, referidos, vitrina, feria o ticket físico.", decisión: "Compara canales por revenue, no solo por volumen." },
+  affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con tickets o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendación.", example: "Un cliente compra por ticket de un afiliado.", decisión: "Premia afiliados con alto ticket y entregales más tickets." },
+  branch: { name: "Sucursal", description: "Punto físico o sede donde se redime, vende o atiende.", formula: "Agrupación de redenciones y ventas por branch_id.", example: "Sucursal Norte convierte mejor que Centro.", decisión: "Replica prácticas de la sede líder y capacita sedes rezagadas." },
+  campaign: { name: "Campaña", description: "Estrategia comercial o promocional conectada a tickets, leads y revenue.", formula: "Datos agrupados por campaign_id.", example: "Feria Junio, Lanzamiento postventa o pauta Instagram.", decisión: "Escala campañas con conversión y revenue; optimiza las de solo leads." },
+  mg_score: { name: "MG Revenue Score", description: "Score de salud comercial que resume redención, conversión, revenue, referidos, sucursales y calidad de datos.", formula: "Promedio ponderado de dimensiones RMS normalizadas de 0 a 100.", example: "82/100 indica buena salud con oportunidades puntuales.", decisión: "Usa las dimensiones bajas para priorizar la siguiente mejora." },
 };
 
 const CHART_FOCUS_REGISTRY = {
-  "executive-summary": { title: "Modo ejecutivo RMS", subtitle: "Resumen para socios y decisiones rapidas", chartType: "summary", primaryMetric: "revenue", description: "Resume revenue, canal ganador, campana ganadora, sucursal lider y riesgo principal.", calculation: "Combina KPIs y rankings del periodo filtrado.", businessMeaning: "Permite explicar en una reunion que estrategia trajo ventas reales.", recommendedActions: ["Presenta este resumen en comite comercial.", "Abre el detalle del canal o campana ganadora.", "Convierte el riesgo principal en tarea operativa."], supportedDrilldowns: ["campaign", "channel", "branch"], relatedMetrics: ["revenue", "conversion_rate", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "campaign", "branch"] },
-  "rms-funnel": { title: "Funnel RMS", subtitle: "De campana a revenue", chartType: "funnel", primaryMetric: "conversion_rate", description: "Muestra como avanzan las personas desde la campana hasta la venta.", calculation: "Cuenta etapas del flujo: leads, tickets generados, reclamados, redimidos, ventas y revenue.", businessMeaning: "Permite detectar donde se pierde valor comercial.", recommendedActions: ["Si hay muchos leads y pocos tickets, revisa captura.", "Si hay muchos tickets y pocas redenciones, crea urgencia.", "Si hay redenciones sin venta, revisa oferta o cierre en tienda."], supportedDrilldowns: ["stage", "campaign", "channel", "branch"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redemption_rate", "conversion_rate", "revenue"] },
-  "revenue-score": { title: "MG Revenue Score", subtitle: "Salud comercial del RMS", chartType: "radar", primaryMetric: "mg_score", description: "Evalua dimensiones comerciales clave en una escala de 0 a 100.", calculation: "Promedia dimensiones normalizadas de captacion, redencion, conversion, revenue, fidelizacion, referidos, sucursales y calidad de datos.", businessMeaning: "Convierte muchos indicadores en una lectura ejecutiva accionable.", recommendedActions: ["Ataca primero la dimension con menor score.", "Usa el radar para explicar fortalezas y riesgos.", "Compara contra el periodo anterior despues de cada ajuste."], supportedDrilldowns: ["dimension"], relatedMetrics: ["mg_score", "redemption_rate", "conversion_rate", "revenue"], dataDictionaryKeys: ["mg_score", "redemption_rate", "conversion_rate", "revenue"] },
-  timeline: { title: "Linea temporal multiserie", subtitle: "Leads, tickets, redenciones, ventas y revenue por fecha", chartType: "line", primaryMetric: "revenue", description: "Muestra la evolucion del ciclo RMS en el tiempo.", calculation: "Agrupa eventos por dia dentro del periodo filtrado.", businessMeaning: "Ayuda a detectar dias fuertes, caidas y anomalias.", recommendedActions: ["Investiga picos y caidas.", "Replica los dias con mayor conversion.", "Cruza con activaciones comerciales o eventos."], supportedDrilldowns: ["date", "metric"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redeemed_qr", "revenue"] },
-  heatmap: { title: "Heatmap horario", subtitle: "Redenciones por dia y hora", chartType: "heatmap", primaryMetric: "redemptions", description: "Muestra cuando se concentran las redenciones.", calculation: "Cuenta redenciones por dia de semana y hora.", businessMeaning: "Sirve para reforzar equipo, horarios y activaciones.", recommendedActions: ["Refuerza vendedores en horas calientes.", "Activa recordatorios antes de los mejores bloques.", "Compara sucursales si una hora convierte mejor."], supportedDrilldowns: ["weekday", "hour"], relatedMetrics: ["redeemed_qr", "branch", "conversion_rate"], dataDictionaryKeys: ["redeemed_qr", "branch", "conversion_rate"] },
-  matrix: { title: "Matriz campana vs canal", subtitle: "Cruce exacto entre estrategia y fuente", chartType: "matrix", primaryMetric: "revenue", description: "Cruza campanas con canales para encontrar combinaciones rentables.", calculation: "Agrupa leads, tickets, redenciones, ventas y revenue por campana y canal.", businessMeaning: "Identifica que combinacion merece repetirse, optimizarse o pausarse.", recommendedActions: ["Escala celdas con revenue alto.", "Optimiza celdas con leads pero baja venta.", "Investiga celdas vacias con gasto o esfuerzo comercial."], supportedDrilldowns: ["campaign", "channel", "metric"], relatedMetrics: ["campaign", "channel", "revenue", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "conversion_rate"] },
-  treemap: { title: "Treemap de revenue por canal", subtitle: "Canales que aportan ingreso real", chartType: "treemap", primaryMetric: "revenue", description: "Dimensiona los canales segun el revenue atribuido.", calculation: "Suma ventas registradas por canal de llegada.", businessMeaning: "Diferencia canales de ruido contra canales que compran.", recommendedActions: ["Escala el canal con mejor revenue y conversion.", "No descartes canales chicos si tienen ticket alto.", "Completa origen de ventas para mejorar la lectura."], supportedDrilldowns: ["channel"], relatedMetrics: ["channel", "revenue", "avg_ticket", "roi"], dataDictionaryKeys: ["channel", "revenue", "avg_ticket", "roi"] },
-  "campaign-comparison": { title: "Campanas comparadas", subtitle: "Leads, tickets, redenciones, ventas y revenue", chartType: "bar", primaryMetric: "revenue", description: "Compara campanas por impacto comercial.", calculation: "Agrupa metricas RMS por campana y las ordena por desempeno.", businessMeaning: "Permite decidir que campana repetir, escalar, optimizar o pausar.", recommendedActions: ["Abre la campana ganadora y replica su canal.", "Optimiza campanas con leads sin ventas.", "Pausa campanas sin revenue ni conversion."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "lead", "redeemed_qr", "revenue"], dataDictionaryKeys: ["campaign", "lead", "redeemed_qr", "revenue", "roi"] },
-  sankey: { title: "Sankey RMS", subtitle: "Flujo de atribucion", chartType: "sankey", primaryMetric: "revenue", description: "Conecta canal, campana, ticket/redencion, venta y revenue.", calculation: "Construye enlaces agregados desde origen hasta venta registrada.", businessMeaning: "Explica como se mueve el valor dentro del RMS.", recommendedActions: ["Haz foco en enlaces con mayor salida a ventas.", "Investiga nodos con mucho volumen y baja continuidad.", "Aplica filtro global sobre el nodo mas rentable."], supportedDrilldowns: ["node", "channel", "campaign"], relatedMetrics: ["channel", "campaign", "revenue"], dataDictionaryKeys: ["channel", "campaign", "redeemed_qr", "revenue"] },
-  "affiliate-network": { title: "Red de afiliados y referidos", subtitle: "Voz a voz medible", chartType: "network", primaryMetric: "revenue", description: "Muestra afiliados como nodos conectados al negocio.", calculation: "Agrupa actividad, puntos, compras y revenue por afiliado.", businessMeaning: "Detecta quienes recomiendan clientes que compran.", recommendedActions: ["Premia afiliados con alto revenue.", "Genera mas tickets para afiliados activos.", "Reactiva afiliados sin ultima actividad."], supportedDrilldowns: ["affiliate"], relatedMetrics: ["affiliate", "revenue", "avg_ticket"], dataDictionaryKeys: ["affiliate", "revenue", "avg_ticket"] },
-  "branch-ranking": { title: "Ranking de sucursales", subtitle: "Redenciones, ventas, revenue y conversion", chartType: "ranking", primaryMetric: "revenue", description: "Compara sedes por ejecucion comercial.", calculation: "Agrupa redenciones y ventas por sucursal.", businessMeaning: "Muestra que sede convierte mejor y donde hay oportunidad operativa.", recommendedActions: ["Replica practicas de la sucursal lider.", "Capacita sedes con redenciones sin ventas.", "Filtra por sucursal para ver detalles."], supportedDrilldowns: ["branch"], relatedMetrics: ["branch", "redeemed_qr", "revenue", "conversion_rate"], dataDictionaryKeys: ["branch", "redeemed_qr", "revenue", "conversion_rate"] },
+  "executive-summary": { title: "Modo ejecutivo RMS", subtitle: "Resumen para socios y decisiones rapidas", chartType: "summary", primaryMetric: "revenue", description: "Resume revenue, canal ganador, campaña ganadora, sucursal líder y riesgo principal.", calculation: "Combina KPIs y rankings del periodo filtrado.", businessMeaning: "Permite explicar en una reunion que estrategia trajo ventas reales.", recommendedActions: ["Presenta este resumen en comite comercial.", "Abre el detalle del canal o campaña ganadora.", "Convierte el riesgo principal en tarea operativa."], supportedDrilldowns: ["campaign", "channel", "branch"], relatedMetrics: ["revenue", "conversion_rate", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "campaign", "branch"] },
+  "rms-funnel": { title: "Funnel RMS", subtitle: "De campaña a revenue", chartType: "funnel", primaryMetric: "conversion_rate", description: "Muestra como avanzan las personas desde la campaña hasta la venta.", calculation: "Cuenta etapas del flujo: leads, tickets generados, reclamados, redimidos, ventas y revenue.", businessMeaning: "Permite detectar donde se pierde valor comercial.", recommendedActions: ["Si hay muchos leads y pocos tickets, revisa captura.", "Si hay muchos tickets y pocas redenciones, crea urgencia.", "Si hay redenciones sin venta, revisa oferta o cierre en tienda."], supportedDrilldowns: ["stage", "campaign", "channel", "branch"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redemption_rate", "conversion_rate", "revenue"] },
+  "revenue-score": { title: "MG Revenue Score", subtitle: "Salud comercial del RMS", chartType: "radar", primaryMetric: "mg_score", description: "Evalúa dimensiones comerciales clave en una escala de 0 a 100.", calculation: "Promedia dimensiones normalizadas de captación, redención, conversión, revenue, fidelización, referidos, sucursales y calidad de datos.", businessMeaning: "Convierte muchos indicadores en una lectura ejecutiva accionable.", recommendedActions: ["Ataca primero la dimensión con menor score.", "Usa el radar para explicar fortalezas y riesgos.", "Compara contra el periodo anterior después de cada ajuste."], supportedDrilldowns: ["dimensión"], relatedMetrics: ["mg_score", "redemption_rate", "conversion_rate", "revenue"], dataDictionaryKeys: ["mg_score", "redemption_rate", "conversion_rate", "revenue"] },
+  timeline: { title: "Línea temporal multiserie", subtitle: "Leads, tickets, redenciones, ventas y revenue por fecha", chartType: "line", primaryMetric: "revenue", description: "Muestra la evolución del ciclo RMS en el tiempo.", calculation: "Agrupa eventos por día dentro del periodo filtrado.", businessMeaning: "Ayuda a detectar días fuertes, caídas y anomalías.", recommendedActions: ["Investiga picos y caídas.", "Replica los días con mayor conversión.", "Cruza con activaciones comerciales o eventos."], supportedDrilldowns: ["date", "metric"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redeemed_qr", "revenue"] },
+  heatmap: { title: "Heatmap horario", subtitle: "Redenciones por día y hora", chartType: "heatmap", primaryMetric: "redemptions", description: "Muestra cuando se concentran las redenciones.", calculation: "Cuenta redenciones por día de semana y hora.", businessMeaning: "Sirve para reforzar equipo, horarios y activaciones.", recommendedActions: ["Refuerza vendedores en horas calientes.", "Activa recordatorios antes de los mejores bloques.", "Compara sucursales si una hora convierte mejor."], supportedDrilldowns: ["weekday", "hour"], relatedMetrics: ["redeemed_qr", "branch", "conversion_rate"], dataDictionaryKeys: ["redeemed_qr", "branch", "conversion_rate"] },
+  matrix: { title: "Matriz campaña vs canal", subtitle: "Cruce exacto entre estrategia y fuente", chartType: "matrix", primaryMetric: "revenue", description: "Cruza campañas con canales para encontrar combinaciones rentables.", calculation: "Agrupa leads, tickets, redenciones, ventas y revenue por campaña y canal.", businessMeaning: "Identifica que combinacion merece repetirse, optimizarse o pausarse.", recommendedActions: ["Escala celdas con revenue alto.", "Optimiza celdas con leads pero baja venta.", "Investiga celdas vacias con gasto o esfuerzo comercial."], supportedDrilldowns: ["campaign", "channel", "metric"], relatedMetrics: ["campaign", "channel", "revenue", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "conversion_rate"] },
+  treemap: { title: "Treemap de revenue por canal", subtitle: "Canales que aportan ingreso real", chartType: "treemap", primaryMetric: "revenue", description: "Dimensiona los canales según el revenue atribuido.", calculation: "Suma ventas registradas por canal de llegada.", businessMeaning: "Diferencia canales de ruido contra canales que compran.", recommendedActions: ["Escala el canal con mejor revenue y conversión.", "No descartes canales chicos si tienen ticket alto.", "Completa origen de ventas para mejorar la lectura."], supportedDrilldowns: ["channel"], relatedMetrics: ["channel", "revenue", "avg_ticket", "roi"], dataDictionaryKeys: ["channel", "revenue", "avg_ticket", "roi"] },
+  "campaign-comparison": { title: "Campañas comparadas", subtitle: "Leads, tickets, redenciones, ventas y revenue", chartType: "bar", primaryMetric: "revenue", description: "Compara campañas por impacto comercial.", calculation: "Agrupa métricas RMS por campaña y las ordena por desempeño.", businessMeaning: "Permite decidir que campaña repetir, escalar, optimizar o pausar.", recommendedActions: ["Abre la campaña ganadora y replica su canal.", "Optimiza campañas con leads sin ventas.", "Pausa campañas sin revenue ni conversión."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "lead", "redeemed_qr", "revenue"], dataDictionaryKeys: ["campaign", "lead", "redeemed_qr", "revenue", "roi"] },
+  sankey: { title: "Sankey RMS", subtitle: "Flujo de atribución", chartType: "sankey", primaryMetric: "revenue", description: "Conecta canal, campaña, ticket/redención, venta y revenue.", calculation: "Construye enlaces agregados desde origen hasta venta registrada.", businessMeaning: "Explica como se mueve el valor dentro del RMS.", recommendedActions: ["Haz foco en enlaces con mayor salida a ventas.", "Investiga nodos con mucho volumen y baja continuidad.", "Aplica filtro global sobre el nodo más rentable."], supportedDrilldowns: ["node", "channel", "campaign"], relatedMetrics: ["channel", "campaign", "revenue"], dataDictionaryKeys: ["channel", "campaign", "redeemed_qr", "revenue"] },
+  "affiliate-network": { title: "Red de afiliados y referidos", subtitle: "Voz a voz medible", chartType: "network", primaryMetric: "revenue", description: "Muestra afiliados como nodos conectados al negocio.", calculation: "Agrupa actividad, puntos, compras y revenue por afiliado.", businessMeaning: "Detecta quienes recomiendan clientes que compran.", recommendedActions: ["Premia afiliados con alto revenue.", "Genera más tickets para afiliados activos.", "Reactiva afiliados sin última actividad."], supportedDrilldowns: ["affiliate"], relatedMetrics: ["affiliate", "revenue", "avg_ticket"], dataDictionaryKeys: ["affiliate", "revenue", "avg_ticket"] },
+  "branch-ranking": { title: "Ranking de sucursales", subtitle: "Redenciones, ventas, revenue y conversión", chartType: "ranking", primaryMetric: "revenue", description: "Compara sedes por ejecución comercial.", calculation: "Agrupa redenciones y ventas por sucursal.", businessMeaning: "Muestra que sede convierte mejor y donde hay oportunidad operativa.", recommendedActions: ["Replica prácticas de la sucursal líder.", "Capacita sedes con redenciones sin ventas.", "Filtra por sucursal para ver detalles."], supportedDrilldowns: ["branch"], relatedMetrics: ["branch", "redeemed_qr", "revenue", "conversion_rate"], dataDictionaryKeys: ["branch", "redeemed_qr", "revenue", "conversion_rate"] },
   "qr-status": { title: "Estados de tickets", subtitle: "Activos, redimidos, vencidos y reclamados", chartType: "donut", primaryMetric: "qr_generated", description: "Muestra la salud operativa del inventario de tickets.", calculation: "Cuenta tickets agrupados por estado.", businessMeaning: "Ayuda a detectar oportunidad perdida o beneficios no usados.", recommendedActions: ["Si hay muchos vencidos, mejora recordatorios.", "Si hay muchos activos, crea urgencia.", "Si hay pocos redimidos, revisa beneficio y canal."], supportedDrilldowns: ["status"], relatedMetrics: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"], dataDictionaryKeys: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"] },
-  scatter: { title: "Scatter de campanas", subtitle: "Inversion o tickets vs revenue", chartType: "scatter", primaryMetric: "roi", description: "Ubica campanas segun esfuerzo y resultado.", calculation: "Eje X usa inversion o tickets generados; eje Y usa revenue o ventas; tamano usa leads.", businessMeaning: "Encuentra campanas sanas, costosas o escalables.", recommendedActions: ["Escala puntos con alto revenue y bajo esfuerzo.", "Optimiza puntos con muchos leads y poco revenue.", "Investiga campanas sin datos completos."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "qr_generated", "revenue", "roi"], dataDictionaryKeys: ["campaign", "qr_generated", "revenue", "roi"] },
+  scatter: { title: "Scatter de campañas", subtitle: "Inversión o tickets vs revenue", chartType: "scatter", primaryMetric: "roi", description: "Ubica campañas según esfuerzo y resultado.", calculation: "Eje X usa inversión o tickets generados; eje Y usa revenue o ventas; tamano usa leads.", businessMeaning: "Encuentra campañas sanas, costosas o escalables.", recommendedActions: ["Escala puntos con alto revenue y bajo esfuerzo.", "Optimiza puntos con muchos leads y poco revenue.", "Investiga campañas sin datos completos."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "qr_generated", "revenue", "roi"], dataDictionaryKeys: ["campaign", "qr_generated", "revenue", "roi"] },
   waterfall: { title: "Waterfall de revenue", subtitle: "Composicion del ingreso", chartType: "waterfall", primaryMetric: "revenue", description: "Muestra como se compone el revenue total por canales principales.", calculation: "Parte de revenue total y desglosa contribuciones por canal.", businessMeaning: "Explica de donde viene el dinero de forma ejecutiva.", recommendedActions: ["Prioriza los canales con mayor contribucion.", "Completa ventas sin origen.", "Compara canales con ticket alto."], supportedDrilldowns: ["channel"], relatedMetrics: ["revenue", "channel", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "avg_ticket"] },
-  cohorts: { title: "Cohort postventa", subtitle: "Recompra y ticket postventa", chartType: "cohort", primaryMetric: "retention", description: "Mide si las ventas generan nuevas visitas o recompras.", calculation: "Agrupa compras por cohorte y cuenta ticket postventa generados y redimidos.", businessMeaning: "Indica si el RMS crea fidelizacion despues de la primera compra.", recommendedActions: ["Crea ticket postventa para compradores recientes.", "Escala beneficios que traen recompra.", "Mide cohortes por mes para ver retencion."], supportedDrilldowns: ["cohort"], relatedMetrics: ["revenue", "redeemed_qr", "avg_ticket"], dataDictionaryKeys: ["revenue", "redeemed_qr", "avg_ticket"] },
-  "power-table": { title: "Tabla PowerBI-style", subtitle: "Drill-down por campana", chartType: "table", primaryMetric: "revenue", description: "Tabla ejecutiva para ordenar, buscar y abrir detalle por campana.", calculation: "Une KPIs de campana con canal dominante, CAC, ROI, conversion y decision sugerida.", businessMeaning: "Convierte la data en una lista de prioridades comerciales.", recommendedActions: ["Ordena por revenue para repetir.", "Ordena por conversion para escalar.", "Ordena por ROI para optimizar inversion."], supportedDrilldowns: ["campaign", "channel"], relatedMetrics: ["campaign", "revenue", "roi", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "cac", "roi", "conversion_rate"] },
+  cohorts: { title: "Cohort postventa", subtitle: "Recompra y ticket postventa", chartType: "cohort", primaryMetric: "retention", description: "Mide si las ventas generan nuevas visitas o recompras.", calculation: "Agrupa compras por cohorte y cuenta ticket postventa generados y redimidos.", businessMeaning: "Indica si el RMS crea fidelización después de la primera compra.", recommendedActions: ["Crea ticket postventa para compradores recientes.", "Escala beneficios que traen recompra.", "Mide cohortes por mes para ver retención."], supportedDrilldowns: ["cohort"], relatedMetrics: ["revenue", "redeemed_qr", "avg_ticket"], dataDictionaryKeys: ["revenue", "redeemed_qr", "avg_ticket"] },
+  "power-table": { title: "Tabla PowerBI-style", subtitle: "Drill-down por campaña", chartType: "table", primaryMetric: "revenue", description: "Tabla ejecutiva para ordenar, buscar y abrir detalle por campaña.", calculation: "Une KPIs de campaña con canal dominante, CAC, ROI, conversión y decisión sugerida.", businessMeaning: "Convierte la data en una lista de prioridades comerciales.", recommendedActions: ["Ordena por revenue para repetir.", "Ordena por conversión para escalar.", "Ordena por ROI para optimizar inversión."], supportedDrilldowns: ["campaign", "channel"], relatedMetrics: ["campaign", "revenue", "roi", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "cac", "roi", "conversion_rate"] },
 };
 
 function commandCenterDateRange(range = state.commandCenterFilters.range) {
@@ -883,7 +885,7 @@ function loadSession() {
     if (rawSession && storedVersion !== APP_VERSION) {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(VALIDATOR_SESSION_KEY);
-      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Por seguridad cerramos tu sesion anterior; inicia sesion de nuevo para cargar la version vigente.");
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Por seguridad cerramos tu sesión anterior; inicia sesión de nuevo para cargar la version vigente.");
       localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
       return null;
     }
@@ -892,7 +894,7 @@ function loadSession() {
     if (parsed && isSessionExpired(parsed, 0)) {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(VALIDATOR_SESSION_KEY);
-      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Tu sesion expiro. Inicia sesion de nuevo para continuar.");
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Tu sesión expiro. Inicia sesión de nuevo para continuar.");
       return null;
     }
     return parsed;
@@ -940,7 +942,7 @@ function consumeAppUpdateNotice() {
 function forceLoginAfterSessionIssue(message) {
   clearSession();
   try {
-    localStorage.setItem(APP_UPDATE_NOTICE_KEY, message || "Tu sesion debe actualizarse. Inicia sesion de nuevo.");
+    localStorage.setItem(APP_UPDATE_NOTICE_KEY, message || "Tu sesión debe actualizarse. Inicia sesión de nuevo.");
   } catch {
     // The login panel still renders even if storage is unavailable.
   }
@@ -949,11 +951,11 @@ function forceLoginAfterSessionIssue(message) {
 
 function assertActiveSession() {
   if (!session?.token) {
-    throw new Error("Debes iniciar sesion.");
+    throw new Error("Debes iniciar sesión.");
   }
   if (isSessionExpired(session)) {
-    forceLoginAfterSessionIssue("Tu sesion expiro. Inicia sesion de nuevo para continuar.");
-    throw new Error("Sesion expirada.");
+    forceLoginAfterSessionIssue("Tu sesión expiro. Inicia sesión de nuevo para continuar.");
+    throw new Error("Sesión expirada.");
   }
 }
 
@@ -1036,7 +1038,7 @@ function showFeedback(message, kind = "success", options = {}) {
       : kind === "loading"
         ? "Procesando"
         : kind === "info"
-          ? "Informacion"
+          ? "Información"
           : "Listo"
   );
   actionFeedback.className = `action-feedback ${kind}`;
@@ -1055,7 +1057,7 @@ function showFeedback(message, kind = "success", options = {}) {
 function showBusyOverlay(title, message) {
   state.busyDepth += 1;
   busyOverlayTitle.textContent = title || "Procesando";
-  busyOverlayMessage.textContent = message || "Estamos sincronizando la informacion.";
+  busyOverlayMessage.textContent = message || "Estamos sincronizando la información.";
   busyOverlay.classList.remove("hidden");
 }
 
@@ -1149,7 +1151,7 @@ function clearBusinessWorkspaceUi() {
     if (element) element.innerHTML = `<tr><td colspan="${colspan}">${message}</td></tr>`;
   });
 
-  if (campaignList) campaignList.innerHTML = '<article class="campaign-item"><p>Cargando campanas de la empresa activa...</p></article>';
+  if (campaignList) campaignList.innerHTML = '<article class="campaign-item"><p>Cargando campañas de la empresa activa...</p></article>';
   if (leadFeedTable) leadFeedTable.innerHTML = '<tr><td colspan="9">Cargando contactos...</td></tr>';
   if (strategicQrKpiGrid) {
     strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Cargando</strong><p class="kpi-meta">Preparando datos de la empresa activa.</p></article>';
@@ -1253,7 +1255,7 @@ function startQrBatchProgress(quantity) {
   state.qrBatchProgressTimer = window.setInterval(() => {
     progress = Math.min(92, progress + speed);
     const stageMessage = progress < 28
-      ? "Validando configuracion del beneficio y preparando el lote."
+      ? "Validando configuración del beneficio y preparando el lote."
       : progress < 52
         ? "Generando tokens unicos y asociandolos al paquete."
         : progress < 76
@@ -1288,7 +1290,7 @@ async function api(path, options = {}) {
   })() : {};
   if (!response.ok) {
     if (response.status === 401) {
-      forceLoginAfterSessionIssue(data.error?.message || "Tu sesion expiro o el portal fue actualizado. Inicia sesion de nuevo para continuar.");
+      forceLoginAfterSessionIssue(data.error?.message || "Tu sesión expiro o el portal fue actualizado. Inicia sesión de nuevo para continuar.");
     }
     throw new Error(apiErrorMessage(data, response, rawText));
   }
@@ -1312,7 +1314,7 @@ function apiErrorMessage(data, response, rawText = "") {
 
 function httpErrorMessage(response, rawText = "") {
   if (response.status === 413) {
-    return "El archivo es demasiado grande. Sube un logo mas liviano.";
+    return "El archivo es demasiado grande. Sube un logo más liviano.";
   }
 
   const text = rawText
@@ -1321,7 +1323,7 @@ function httpErrorMessage(response, rawText = "") {
     .trim();
 
   if (text.includes("Cannot PATCH /api/business/profile")) {
-    return "El servidor activo aun no tiene habilitada la ruta para guardar el logo. Reinicia el backend y vuelve a subirlo.";
+    return "El servidor activo aún no tiene habilitada la ruta para guardar el logo. Reinicia el backend y vuelve a subirlo.";
   }
 
   if (text.includes("Cannot ") && text.includes("/api/")) {
@@ -1536,7 +1538,7 @@ function packagePriceLabel(offer) {
 }
 
 function planMonthlyLabel(plan) {
-  if (!plan?.monthly_price_cop) return plan?.price_label || "Cotizacion";
+  if (!plan?.monthly_price_cop) return plan?.price_label || "Cotización";
   return `${copMoney(plan.monthly_price_cop)} / ${plan.billing_label || "mes"}`;
 }
 
@@ -1596,13 +1598,13 @@ function subscriptionAccessLabel(plan = {}) {
 
 function subscriptionTimingText(plan = {}) {
   if (plan.category !== "subscription") {
-    return "Portal Base: no tiene fecha mensual de renovacion.";
+    return "Portal Base: no tiene fecha mensual de renovación.";
   }
   if (plan.lifetime_access || plan.monthly_payment_required === false) {
-    return "Plan vitalicio activo: no requiere pago mensual ni fecha de renovacion.";
+    return "Plan vitalicio activo: no requiere pago mensual ni fecha de renovación.";
   }
   if (!plan.official_payment_due_at) {
-    return "Mensualidad activa sin fecha oficial de renovacion configurada.";
+    return "Mensualidad activa sin fecha oficial de renovación configurada.";
   }
   const dueDate = formatDateOnly(plan.official_payment_due_at);
   const graceDate = formatDateOnly(plan.grace_period_ends_at);
@@ -1610,12 +1612,12 @@ function subscriptionTimingText(plan = {}) {
     return `Acceso al portal bloqueado. La fecha oficial de pago fue ${dueDate}; la gracia termino el ${graceDate}. Tus datos siguen guardados.`;
   }
   if (plan.access_status === "GRACE") {
-    return `Pago vencido el ${dueDate}. Quedan ${formatLimitValue(plan.days_until_lock)} dia(s) de gracia antes del bloqueo del portal.`;
+    return `Pago vencido el ${dueDate}. Quedan ${formatLimitValue(plan.days_until_lock)} día(s) de gracia antes del bloqueo del portal.`;
   }
   if (plan.days_until_due === 0) {
-    return `La mensualidad vence hoy (${dueDate}). Despues tienes ${formatLimitValue(plan.grace_period_days)} dias de gracia.`;
+    return `La mensualidad vence hoy (${dueDate}). Después tienes ${formatLimitValue(plan.grace_period_days)} días de gracia.`;
   }
-  return `Renovacion oficial: ${dueDate}. Quedan ${formatLimitValue(plan.days_until_due)} dia(s) para pagar; gracia hasta ${graceDate}.`;
+  return `Renovación oficial: ${dueDate}. Quedan ${formatLimitValue(plan.days_until_due)} día(s) para pagar; gracia hasta ${graceDate}.`;
 }
 
 function formatDateTimeLocal(value) {
@@ -1718,7 +1720,7 @@ function leadActionRecommendation(lead) {
   if (windowValue === "solo-explorando") {
     return `Nutrir por ${channel}${contactTime} y reimpactar con contenido.`;
   }
-  return `Seguimiento comercial por ${channel}${contactTime} segun interes principal.`;
+  return `Seguimiento comercial por ${channel}${contactTime} según interés principal.`;
 }
 
 function launchChannelsLabel(channels) {
@@ -1858,9 +1860,9 @@ function renderSubscriptionBanner() {
   const plan = state.subscription?.plan;
   if (!plan) {
     subscriptionPlanName.textContent = "Plan no cargado";
-    subscriptionPlanSummary.textContent = "Sin informacion de permisos.";
+    subscriptionPlanSummary.textContent = "Sin información de permisos.";
     subscriptionLimits.innerHTML = "";
-    if (subscriptionTiming) subscriptionTiming.textContent = "Sin fecha de renovacion cargada.";
+    if (subscriptionTiming) subscriptionTiming.textContent = "Sin fecha de renovación cargada.";
     return;
   }
   const limits = planLimits();
@@ -1869,7 +1871,7 @@ function renderSubscriptionBanner() {
   subscriptionPlanSummary.textContent = plan.category === "ticket_base"
     ? `Portal Base activo sin mensualidad. Saldo operativo: ${formatNumber(access.ticketBalance || state.qrCreditAccount?.qr_balance || 0)} tickets.`
     : plan.category === "growth_temporal"
-      ? `Growth temporal activo${access.daysUntilGrowthExpiration !== null && access.daysUntilGrowthExpiration !== undefined ? `: ${access.daysUntilGrowthExpiration} dias restantes` : ""}. Conservas tus tickets al volver a Base.`
+      ? `Growth temporal activo${access.daysUntilGrowthExpiration !== null && access.daysUntilGrowthExpiration !== undefined ? `: ${access.daysUntilGrowthExpiration} días restantes` : ""}. Conservas tus tickets al volver a Base.`
       : plan.category === "prepaid"
         ? "Acceso legacy: compra T200 para activar Portal Base con dashboard, validador interno y Sales Tracker."
         : `${subscriptionAccessLabel(plan)}: upgrade mensual activo. Los tickets se compran y consumen como saldo operativo.`;
@@ -1882,7 +1884,7 @@ function renderSubscriptionBanner() {
     ["Saldo tickets", access.ticketBalance ?? state.qrCreditAccount?.qr_balance ?? 0],
     ["Usuarios", limits.users],
     ["Sedes", limits.branches],
-    ["Campanas", limits.active_campaigns],
+    ["Campañas", limits.active_campaigns],
     ["Exportaciones", limits.lead_exports_month],
     ["Afiliados", limits.affiliates],
   ].map(([label, value]) => `<span class="subscription-limit-chip">${label}: ${formatLimitValue(value)}</span>`).join("");
@@ -1895,9 +1897,9 @@ function planBenefitList(plan) {
   const limits = plan.limits || {};
   const features = plan.features || {};
   const benefits = [
-    plan.code === "GLOBAL" ? "Tickets por cotizacion segun volumen" : "Tickets por recarga separada",
+    plan.code === "GLOBAL" ? "Tickets por cotización según volumen" : "Tickets por recarga separada",
     `${formatLimitValue(limits.users)} usuarios y ${formatLimitValue(limits.branches)} sede(s)`,
-    `${formatLimitValue(limits.active_campaigns)} campanas activas`,
+    `${formatLimitValue(limits.active_campaigns)} campañas activas`,
   ];
   if (features.leads_export) {
     benefits.push(`${formatLimitValue(limits.lead_exports_month)} exportaciones de leads/mes`);
@@ -1906,7 +1908,7 @@ function planBenefitList(plan) {
     benefits.push(`Afiliados incluidos hasta ${formatLimitValue(limits.affiliates)}`);
   }
   if (features.api_access) {
-    benefits.push("API para integraciones y operacion avanzada");
+    benefits.push("API para integraciones y operación avanzada");
   }
   if (features.branded_portal) {
     benefits.push("Portal brandeable y dominio/subdominio a medida");
@@ -1929,13 +1931,13 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Cada plan muestra una parte del siguiente: Base prueba valor con tickets, Growth activa operacion mensual, Premium desbloquea RMS completo y Enterprise escala sedes, API y soporte.";
+    subscriptionPricingNote.textContent = "Cada plan muestra una parte del siguiente: Base prueba valor con tickets, Growth activa operación mensual, Premium desbloquea RMS completo y Enterprise escala sedes, API y soporte.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
-    const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotizacion" : "tickets por recarga";
+    const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotización" : "tickets por recarga";
     const recommendedPackage = plan.recommended_start_package || "QR200";
     const portalValue = plan.monthly_price_cop ? planMonthlyLabel(plan) : plan.price_label || "Incluido";
-    const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotizacion");
+    const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotización");
     const isCurrent = plan.code === currentCode;
     return `
       <article class="portal-plan-card ${isCurrent ? "is-current" : ""}">
@@ -1948,7 +1950,7 @@ function renderSubscriptionPricing() {
         </div>
         <div class="portal-plan-price">
           <strong>${escapeHtml(monthlyPrice)}</strong>
-          <span>${plan.monthly_price_cop ? "Pago mensual del portal" : "Cotizacion personalizada"}; ${escapeHtml(ticketPolicy)}</span>
+          <span>${plan.monthly_price_cop ? "Pago mensual del portal" : "Cotización personalizada"}; ${escapeHtml(ticketPolicy)}</span>
         </div>
         <div class="portal-plan-economics">
           Valor portal: ${escapeHtml(portalValue)}. Paquete sugerido para iniciar: ${escapeHtml(recommendedPackage)}.
@@ -1989,7 +1991,7 @@ function renderSubscriptionRenewal() {
   const firstChargeDate = selectedRenewalPlan
     ? autoRenewFirstChargeDate(selectedRenewalPlan, hasFutureRenewalDate, renewalDate)
     : null;
-  const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "proxima renovacion";
+  const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "próxima renovación";
   const selectedPlanChargeLabel = selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
@@ -2005,14 +2007,14 @@ function renderSubscriptionRenewal() {
         <small>Solo se autoriza la tarjeta.</small>
       </div>
       <div>
-        <span>Validacion Mercado Pago</span>
+        <span>Validación Mercado Pago</span>
         <strong>$1.600 temporal</strong>
         <small>Mercado Pago lo devuelve enseguida si el banco aprueba.</small>
       </div>
       <div>
         <span>Cuotas</span>
         <strong>Continua en un pago</strong>
-        <small>Si Mercado Pago no muestra cuotas, no bloquea la autorizacion recurrente.</small>
+        <small>Si Mercado Pago no muestra cuotas, no bloquea la autorización recurrente.</small>
       </div>
       <div>
         <span>Primer cobro real</span>
@@ -2027,9 +2029,9 @@ function renderSubscriptionRenewal() {
       : autoRenew.status && autoRenew.status !== "DISABLED"
         ? `Cobro automatico pendiente/estado: ${autoRenew.status}.`
         : isTestingRenewalPlan
-          ? `Plan demo: Mercado Pago puede hacer una validacion temporal de $1.600; el cobro real sera ${selectedPlanChargeLabel} ${selectedRenewalPlan?.billing_label || "mensual"}.`
+          ? `Plan demo: Mercado Pago puede hacer una validación temporal de $1.600; el cobro real sera ${selectedPlanChargeLabel} ${selectedRenewalPlan?.billing_label || "mensual"}.`
         : plan.category === "subscription" && !hasFutureRenewalDate
-          ? "Define una fecha de renovacion futura antes de inscribir la tarjeta."
+          ? "Define una fecha de renovación futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
     subscriptionAutoRenewStatus.textContent = autoRenewLabel;
   }
@@ -2041,13 +2043,13 @@ function renderSubscriptionRenewal() {
   if (subscriptionRenewalMessage) {
     if (hasMonthlyPlan) {
       const autoRenewGuidance = isTestingRenewalPlan
-        ? "En Mercado Pago veras una validacion temporal de $1.600. No es el cobro del plan; el primer cobro real queda programado para la fecha indicada."
+        ? "En Mercado Pago verás una validación temporal de $1.600. No es el cobro del plan; el primer cobro real queda programado para la fecha indicada."
         : plan.category === "subscription" && !hasFutureRenewalDate
-        ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovacion."
-        : "Inscribir tarjeta solo crea la autorizacion; el primer cobro queda programado para la siguiente fecha de renovacion.";
+        ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovación."
+        : "Inscribir tarjeta solo crea la autorización; el primer cobro queda programado para la siguiente fecha de renovación.";
       setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
     } else {
-      setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites mas herramientas.", "info");
+      setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites más herramientas.", "info");
     }
   }
 }
@@ -2083,8 +2085,8 @@ function renderCommercialDeal() {
     const items = [
       ["Premium sin costo", deal.free_period_label],
       ["Primer cobro", deal.first_payment_due_at ? formatDateOnly(deal.first_payment_due_at) : deal.first_payment_label],
-      ["Primer ano", deal.first_year_price_label],
-      ["Desde segundo ano", deal.second_year_price_label],
+      ["Primer año", deal.first_year_price_label],
+      ["Desde segundo año", deal.second_year_price_label],
       ["Tickets incluidos", deal.initial_tickets_label],
       ["Registrado", deal.recorded_at ? formatDateOnly(deal.recorded_at) : ""],
     ].filter(([, value]) => value);
@@ -2132,7 +2134,7 @@ function renderBusinessUsers() {
     const active = Boolean(user.is_active);
     return `
       <tr>
-        <td>${escapeHtml(user.full_name || "-")}${isSelf ? '<br><span class="table-secondary">Sesion actual</span>' : ""}</td>
+        <td>${escapeHtml(user.full_name || "-")}${isSelf ? '<br><span class="table-secondary">Sesión actual</span>' : ""}</td>
         <td>${escapeHtml(user.email || "-")}</td>
         <td>${escapeHtml(accountRoleLabel(user.role))}</td>
         <td><span class="status-chip ${active ? "ok" : "danger"}">${active ? "Activo" : "Inactivo"}</span></td>
@@ -2218,7 +2220,7 @@ function applyPlanNavigation() {
     button.classList.toggle("plan-locked", locked);
     button.disabled = locked;
     if (locked) {
-      button.title = "Tu plan actual no incluye este modulo.";
+      button.title = "Tu plan actual no incluye este módulo.";
     } else {
       button.removeAttribute("title");
     }
@@ -2248,12 +2250,12 @@ async function ensureSelectedCampaignLoaded(options = {}) {
 function setView(view) {
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
-    showFeedback("Ese modulo es interno de Market Games. La gestion de tus campanas esta en el portal del negocio.", "info", { title: "Modulo interno" });
+    showFeedback("Ese módulo es interno de Market Games. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
     if (view !== fallbackView) setView(fallbackView);
     return;
   }
   if (!hasPlanFeature(viewFeatureMap[view])) {
-    showFeedback("Tu plan actual no incluye este modulo. Puedes solicitar un upgrade para activarlo.", "info", { title: "Modulo bloqueado" });
+    showFeedback("Tu plan actual no incluye este módulo. Puedes solicitar un upgrade para activarlo.", "info", { title: "Módulo bloqueado" });
     return;
   }
   if (state.currentView === "validator" && view !== "validator") {
@@ -2281,7 +2283,7 @@ function setView(view) {
   if (view === "campaigns" && state.selectedCampaign) renderCampaignView();
   if (viewNeedsCampaignData(view) && state.selectedCampaignId && !state.selectedReport) {
     ensureSelectedCampaignLoaded({ quiet: true }).catch((error) => {
-      showFeedback(error.message, "error", { title: "No se pudo cargar la campana" });
+      showFeedback(error.message, "error", { title: "No se pudo cargar la campaña" });
     });
   }
   if (view === "leads") {
@@ -2344,7 +2346,7 @@ function renderShell() {
   }
 
   if (isSessionExpired(session)) {
-    forceLoginAfterSessionIssue("Tu sesion expiro. Inicia sesion de nuevo para continuar.");
+    forceLoginAfterSessionIssue("Tu sesión expiro. Inicia sesión de nuevo para continuar.");
     return;
   }
 
@@ -2361,12 +2363,12 @@ function renderShell() {
       profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
       requestCampaignButton.textContent = isAdmin()
         ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
-        : "Nueva campana";
+        : "Nueva campaña";
       return loadWorkspace().then(applyInitialRouteParams);
     })
     .catch((error) => {
       if (session?.token) {
-        showFeedback(error.message || "No se pudo validar la sesion.", "error");
+        showFeedback(error.message || "No se pudo validar la sesión.", "error");
       }
     });
 }
@@ -2395,7 +2397,7 @@ function openGamingCenterEntry() {
   const url = new URL(window.location.href);
   url.searchParams.set("view", "strategic-qr");
   window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-  setInlineMessage(loginError, "Inicia sesion y abriremos Gaming Center como primera pantalla del portal.", "info");
+  setInlineMessage(loginError, "Inicia sesión y abriremos Gaming Center como primera pantalla del portal.", "info");
   emailInput.focus();
 }
 
@@ -2406,7 +2408,7 @@ async function login(event) {
   const submitButton = loginForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Entrando...");
   setInlineMessage(loginError, "Validando credenciales...", "info");
-  showFeedback("Validando credenciales y preparando el portal.", "loading", { title: "Iniciando sesion", timeout: 0 });
+  showFeedback("Validando credenciales y preparando el portal.", "loading", { title: "Iniciando sesión", timeout: 0 });
   try {
     const data = await api("/api/auth/login", {
       method: "POST",
@@ -2419,13 +2421,13 @@ async function login(event) {
     const redirectTo = loginRedirectForSession(data);
     if (redirectTo) {
       saveValidatorSession(data);
-      setInlineMessage(loginError, "Acceso legacy detectado. Abriendo modulo Validador...", "success");
-      showFeedback("Tu acceso usa el modulo Validador. Compra T200 para activar Portal Base.", "success", { title: "Acceso legacy", timeout: 0 });
+      setInlineMessage(loginError, "Acceso legacy detectado. Abriendo módulo Validador...", "success");
+      showFeedback("Tu acceso usa el módulo Validador. Compra T200 para activar Portal Base.", "success", { title: "Acceso legacy", timeout: 0 });
       window.location.assign(redirectTo);
       return;
     }
     setInlineMessage(loginError, "Credenciales correctas. Cargando portal...", "success");
-    showFeedback("Sesion validada. Cargando informacion del negocio.", "loading", { title: "Acceso concedido", timeout: 0 });
+    showFeedback("Sesión validada. Cargando información del negocio.", "loading", { title: "Acceso concedido", timeout: 0 });
     renderShell();
   } catch (error) {
     setInlineMessage(loginError, error.message, "error");
@@ -2437,7 +2439,7 @@ async function login(event) {
 
 async function submitPasswordResetRequest(event) {
   event.preventDefault();
-  setInlineMessage(passwordResetMessage, "Preparando recuperacion...", "info");
+  setInlineMessage(passwordResetMessage, "Preparando recuperación...", "info");
   try {
     const email = passwordResetEmailInput.value.trim() || emailInput.value.trim();
     if (!email) {
@@ -2450,7 +2452,7 @@ async function submitPasswordResetRequest(event) {
     const devUrl = data.reset_url ? ` En desarrollo: ${data.reset_url}` : "";
     setInlineMessage(passwordResetMessage, `${data.message || "Revisa tu correo."}${devUrl}`, "success");
   } catch (error) {
-    setInlineMessage(passwordResetMessage, error.message || "No se pudo solicitar recuperacion.", "error");
+    setInlineMessage(passwordResetMessage, error.message || "No se pudo solicitar recuperación.", "error");
   }
 }
 
@@ -2458,11 +2460,11 @@ async function submitPasswordReset(event) {
   event.preventDefault();
   const resetToken = new URLSearchParams(window.location.search).get("reset_token");
   if (!resetToken) {
-    setInlineMessage(passwordResetMessage, "Token de recuperacion no encontrado.", "error");
+    setInlineMessage(passwordResetMessage, "Token de recuperación no encontrado.", "error");
     return;
   }
   if (passwordResetNewInput.value !== passwordResetConfirmInput.value) {
-    setInlineMessage(passwordResetMessage, "La confirmacion de password no coincide.", "error");
+    setInlineMessage(passwordResetMessage, "La confirmación de password no coincide.", "error");
     return;
   }
   setInlineMessage(passwordResetMessage, "Actualizando password...", "info");
@@ -2504,10 +2506,10 @@ function campaignAssociationOptions(selectedValue = "", options = {}) {
   const allowNoCampaign = options.allowNoCampaign !== false;
   const shouldForceCampaign = allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly();
   const defaultLabel = !campaigns.length
-    ? "Crea una campana antes de asociar tickets"
+    ? "Crea una campaña antes de asociar tickets"
     : shouldForceCampaign || !allowNoCampaign
-      ? "Selecciona campana / activacion"
-      : "Sin campana: activacion por tickets";
+      ? "Selecciona campaña / activación"
+      : "Sin campaña: activación por tickets";
   const defaultOption = `<option value="" ${shouldForceCampaign || !allowNoCampaign ? "disabled" : ""}>${defaultLabel}</option>`;
   return [
     defaultOption,
@@ -2554,18 +2556,18 @@ function renderCampaignAssociationInputs() {
 
   const campaignName = selectedCampaign?.name || "";
   const associationCopy = campaigns.length
-    ? `Campana sugerida: ${campaignName}. Todo Ticket generado con esa seleccion alimenta sus leads, redenciones, ventas y ROI.`
-    : "No hay campanas activas o listas. Crea una campana para que los tickets entren a un reporte medible.";
+    ? `Campaña sugerida: ${campaignName}. Todo Ticket generado con esa selección alimenta sus leads, redenciones, ventas y ROI.`
+    : "No hay campañas activas o listas. Crea una campaña para que los tickets entren a un reporte medible.";
   if (qrWorkflowContext) qrWorkflowContext.textContent = associationCopy;
   if (postSaleCampaignHelp) postSaleCampaignHelp.textContent = campaigns.length
-    ? "Este ticket se guardara dentro de la campana seleccionada y aparecera en su reporte."
-    : "Sin campana, el ticket queda como actividad general del negocio.";
+    ? "Este ticket generico se guardará dentro de la campaña seleccionada y aparecerá en su reporte."
+    : "Sin campaña, el ticket generico queda como actividad general del negocio.";
   if (qrBatchCampaignHelp) qrBatchCampaignHelp.textContent = campaigns.length
-    ? "El lote completo descontara tickets y cada ticket quedara asociado a la campana seleccionada."
-    : "Primero crea una campana para medir el lote por activacion.";
+    ? "El lote completo descontará tickets y cada ticket quedará asociado a la campaña seleccionada."
+    : "Primero crea una campaña para medir el lote por activación.";
   if (triviaCampaignHelp) triviaCampaignHelp.textContent = campaigns.length
-    ? "La activacion emitira tickets segun la dinamica y los asociara a la campana seleccionada."
-    : "Primero crea una campana para medir la activacion por leads, tickets y redenciones.";
+    ? "La activación emitirá tickets según la dinámica y los asociará a la campaña seleccionada."
+    : "Primero crea una campaña para medir la activación por leads, tickets y redenciones.";
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -2573,9 +2575,9 @@ function requireCampaignAssociation(input, messageElement, actionLabel) {
   if (!input || input.value || !campaigns.length || isPrepaidValidatorOnly()) {
     return true;
   }
-  const message = `Selecciona la campana o activacion antes de ${actionLabel}. Asi los tickets no quedan sueltos fuera del reporte.`;
+  const message = `Selecciona la campaña o activación antes de ${actionLabel}. Asi los tickets no quedan sueltos fuera del reporte.`;
   setInlineMessage(messageElement, message, "error");
-  showFeedback(message, "error", { title: "Falta asociar campana" });
+  showFeedback(message, "error", { title: "Falta asociar campaña" });
   input.focus();
   return false;
 }
@@ -2613,7 +2615,7 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   renderNoCampaignState();
   setView("account");
   showFeedback(
-    errorMessage || "La mensualidad supero la gracia de 15 dias. Renueva para recuperar el portal; tus datos siguen guardados.",
+    errorMessage || "La mensualidad superó la gracia de 15 días. Renueva para recuperar el portal; tus datos siguen guardados.",
     "error",
     { title: "Portal bloqueado" }
   );
@@ -2632,13 +2634,13 @@ async function loadWorkspace() {
   }
 
   showFeedback(
-    lightTestMode ? "Modo prueba ligero activo. Evitando cargas pesadas de Supabase." : "Actualizando dashboard, tickets, campanas e historial.",
+    lightTestMode ? "Modo prueba ligero activo. Evitando cargas pesadas de Supabase." : "Actualizando dashboard, tickets, campañas e historial.",
     "loading",
     { title: lightTestMode ? "Prueba ligera" : "Sincronizando portal", timeout: 0 }
   );
   showBusyOverlay(
     lightTestMode ? "Prueba ligera" : "Sincronizando portal",
-    lightTestMode ? "Cargando solo lo necesario para probar activaciones y tickets." : "Cargando metricas, cartera de tickets y ultimos movimientos."
+    lightTestMode ? "Cargando solo lo necesario para probar activaciones y tickets." : "Cargando métricas, cartera de tickets y últimos movimientos."
   );
   refreshButton.disabled = true;
   if (!session?.user?.business_id) {
@@ -2662,7 +2664,7 @@ async function loadWorkspace() {
         state.loadedBusinessId = null;
         renderNoCampaignState();
         setView("admin");
-        showFeedback("Vista admin global cargada. Selecciona una campana o negocio para continuar.", "success", { title: "Sesion lista" });
+        showFeedback("Vista admin global cargada. Selecciona una campaña o negocio para continuar.", "success", { title: "Sesión lista" });
       } catch (error) {
         showFeedback(error.message, "error");
       } finally {
@@ -2683,7 +2685,7 @@ async function loadWorkspace() {
 
   if (!lightTestMode) {
     renderSkeletonCards(businessKpiGrid, 6);
-    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Bajo demanda</strong><p class="kpi-meta">Las metricas de activaciones y tickets se cargan al abrir esta seccion para reducir egresos.</p></article>';
+    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Bajo demanda</strong><p class="kpi-meta">Las métricas de activaciones y tickets se cargan al abrir esta sección para reducir egresos.</p></article>';
     recentRedemptionsTable.innerHTML = '<tr><td colspan="5">Cargando redenciones recientes...</td></tr>';
     recentLeadsTable.innerHTML = '<tr><td colspan="5">Cargando leads recientes...</td></tr>';
     qrBatchTable.innerHTML = '<tr><td colspan="5">Abre Gaming Center para cargar paquetes recientes.</td></tr>';
@@ -2793,7 +2795,7 @@ async function loadWorkspace() {
     if (
       currentPlan().access_status === "LOCKED"
       || currentPlan().portal_access_allowed === false
-      || /mensualidad vencio|15 dias de gracia|portal bloqueado/i.test(error.message || "")
+      || /mensualidad vencio|15 días de gracia|portal bloqueado/i.test(error.message || "")
     ) {
       await loadLockedSubscriptionWorkspace(error.message);
       return;
@@ -2886,7 +2888,7 @@ async function refreshLiveBusinessData() {
         await loadTicketCenterForCurrentTab({ quiet: true });
       }
     }
-    showFeedback("Graficas actualizadas con la ultima actividad de tickets.", "success", { title: "Datos en vivo", timeout: 2500 });
+    showFeedback("Gráficas actualizadas con la última actividad de tickets.", "success", { title: "Datos en vivo", timeout: 2500 });
   } catch (error) {
     console.warn("Live refresh failed:", error.message);
   } finally {
@@ -2963,7 +2965,7 @@ async function loadPrepaidValidatorWorkspace() {
     renderStrategicQrView();
     renderValidatorHistory([]);
     setView("strategic-qr");
-    showFeedback("Crea tickets individuales o paquetes con tu saldo operativo. Portal Base muestra el historial permitido y Growth/Premium desbloquea mas profundidad.", "success", { title: "Herramientas listas" });
+    showFeedback("Crea tickets individuales o paquetes con tu saldo operativo. Portal Base muestra el historial permitido y Growth/Premium desbloquea más profundidad.", "success", { title: "Herramientas listas" });
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
@@ -3020,7 +3022,7 @@ function commandOptions(options = [], selected = "", allLabel = "Todos") {
   ].join("");
 }
 
-function commandEmpty(title = "Aun no hay datos suficientes.", action = "Activa campanas, registra ventas o genera tickets para alimentar esta grafica.") {
+function commandEmpty(title = "Aún no hay datos suficientes.", action = "Activa campañas, registra ventas o genera tickets para alimentar esta grafica.") {
   return `
     <div class="analytics-empty-state">
       <span class="material-symbols-outlined">query_stats</span>
@@ -3070,7 +3072,7 @@ function renderCommandCenterFilters(data) {
         <span>Fin</span>
         <input data-command-filter="endDate" type="date" value="${escapeHtml(dates.endDate)}">
       </label>
-      <label><span>Campana</span><select data-command-filter="campaignId">${commandOptions(options.campaigns, filters.campaignId, "Todas")}</select></label>
+      <label><span>Campaña</span><select data-command-filter="campaignId">${commandOptions(options.campaigns, filters.campaignId, "Todas")}</select></label>
       <label><span>Canal</span><select data-command-filter="channel">${commandOptions(options.channels, filters.channel, "Todos")}</select></label>
       <label><span>Sucursal</span><select data-command-filter="branchId">${commandOptions(options.branches, filters.branchId, "Todas")}</select></label>
       <label><span>Estado del ticket</span><select data-command-filter="qrStatus">${commandOptions(options.qr_statuses, filters.qrStatus, "Todos")}</select></label>
@@ -3116,7 +3118,7 @@ function renderFunnelChart(stages = []) {
           <div class="command-funnel-row" data-command-focus="rms-funnel" data-focus-stage="${escapeHtml(stage.key || stage.label)}" tabindex="0" role="button">
             <div>
               <strong>${escapeHtml(stage.label)}</strong>
-              <span>${stage.conversion_from_previous}% conversion · fuga ${commandValue(stage.loss_from_previous, stage.format)}</span>
+              <span>${stage.conversion_from_previous}% conversión · fuga ${commandValue(stage.loss_from_previous, stage.format)}</span>
             </div>
             <div class="command-funnel-track"><i style="width:${width}%"></i></div>
             <b>${commandValue(stage.value, stage.format)}</b>
@@ -3129,9 +3131,9 @@ function renderHeatmapChart(rows = []) {
   const weekdays = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
   const max = Math.max(1, ...rows.map((row) => toNumber(row.value)));
   const bucket = new Map(rows.map((row) => [`${row.dow}-${row.hour}`, row.value]));
-  if (!rows.length || !rows.some((row) => toNumber(row.value) > 0)) return commandEmpty("Aun no hay redenciones por hora.", "Cuando el equipo redima tickets, veras los mejores dias y horas.");
+  if (!rows.length || !rows.some((row) => toNumber(row.value) > 0)) return commandEmpty("Aún no hay redenciones por hora.", "Cuando el equipo redima tickets, verás los mejores días y horas.");
   return `
-    <div class="command-heatmap" role="img" aria-label="Mapa de calor de redenciones por dia y hora">
+    <div class="command-heatmap" role="img" aria-label="Mapa de calor de redenciones por día y hora">
       <span></span>${Array.from({ length: 24 }, (_, hour) => `<b>${hour}</b>`).join("")}
       ${weekdays.map((label, dow) => `
         <strong>${label}</strong>
@@ -3152,9 +3154,9 @@ function renderMatrixChart(rows = []) {
     redemptions: "Redenciones",
     sales: "Ventas",
     revenue: "Revenue",
-    conversion_rate: "Conversion",
+    conversion_rate: "Conversión",
   };
-  if (!rows.length || !rows.some((row) => toNumber(row[metric] || row.revenue || row.sales || row.leads || row.redemptions) > 0)) return commandEmpty("La matriz aun no tiene cruces medibles.", "Registra leads, tickets, redenciones o ventas con canal para saber que campana funciona en cada medio.");
+  if (!rows.length || !rows.some((row) => toNumber(row[metric] || row.revenue || row.sales || row.leads || row.redemptions) > 0)) return commandEmpty("La matriz aún no tiene cruces medibles.", "Registra leads, tickets, redenciones o ventas con canal para saber que campaña funciona en cada medio.");
   const campaigns = Array.from(new Set(rows.map((row) => row.campaign_name))).slice(0, 8);
   const channels = Array.from(new Set(rows.map((row) => row.channel))).slice(0, 7);
   const max = Math.max(1, ...rows.map((row) => toNumber(row[metric])));
@@ -3166,7 +3168,7 @@ function renderMatrixChart(rows = []) {
     </div>
     <div class="command-matrix-wrap">
       <table class="command-matrix">
-        <thead><tr><th>Campana / Canal</th>${channels.map((channel) => `<th>${escapeHtml(channel)}</th>`).join("")}</tr></thead>
+        <thead><tr><th>Campaña / Canal</th>${channels.map((channel) => `<th>${escapeHtml(channel)}</th>`).join("")}</tr></thead>
         <tbody>
           ${campaigns.map((campaign) => `
             <tr>
@@ -3204,7 +3206,7 @@ function renderTreemapChart(rows = []) {
 function renderSankeyChart(data = {}) {
   const nodes = data.nodes || [];
   const links = data.links || [];
-  if (!nodes.length || !links.length) return commandEmpty("No hay flujo de atribucion suficiente.", "Cuando haya canales, campanas y ventas, se dibujara el flujo RMS.");
+  if (!nodes.length || !links.length) return commandEmpty("No hay flujo de atribución suficiente.", "Cuando haya canales, campañas y ventas, se dibujará el flujo RMS.");
   const max = Math.max(1, ...links.map((link) => toNumber(link.value)));
   const left = nodes.slice(0, Math.ceil(nodes.length / 2));
   const right = nodes.slice(Math.ceil(nodes.length / 2));
@@ -3215,7 +3217,7 @@ function renderSankeyChart(data = {}) {
     return { x: side === "left" ? 70 : 520, y };
   };
   return `
-    <svg class="command-sankey" viewBox="0 0 600 280" role="img" aria-label="Flujo de atribucion RMS">
+    <svg class="command-sankey" viewBox="0 0 600 280" role="img" aria-label="Flujo de atribución RMS">
       ${links.slice(0, 14).map((link) => {
         const sourceSide = left.some((node) => node.name === link.source) ? "left" : "right";
         const targetSide = sourceSide === "left" ? "right" : "left";
@@ -3231,7 +3233,7 @@ function renderSankeyChart(data = {}) {
 
 function renderAffiliateNetwork(data = {}) {
   const nodes = data.nodes || [];
-  if (!nodes.length) return commandEmpty("Aun no hay red de afiliados.", "Crea afiliados y tickets de recomendacion para ver el grafo.");
+  if (!nodes.length) return commandEmpty("Aún no hay red de afiliados.", "Crea afiliados y tickets de recomendación para ver el grafo.");
   const max = Math.max(1, ...nodes.map((node) => toNumber(node.revenue)));
   const centerX = 300;
   const centerY = 170;
@@ -3255,7 +3257,7 @@ function renderAffiliateNetwork(data = {}) {
 
 function renderDecisionMap(map = {}) {
   const config = [
-    ["repeat", "Repetir", "Alto ROI y conversion"],
+    ["repeat", "Repetir", "Alto ROI y conversión"],
     ["optimize", "Optimizar", "Muchos leads, baja venta"],
     ["pause", "Pausar", "Costo alto, bajo revenue"],
     ["scale", "Escalar", "Buen ticket con bajo volumen"],
@@ -3290,7 +3292,7 @@ function renderCohortChart(rows = []) {
 }
 
 function renderPowerTable(rows = []) {
-  if (!rows.length) return commandEmpty("Sin campanas para tabla avanzada.", "Crea campanas y registra ventas para activar drill-down.");
+  if (!rows.length) return commandEmpty("Sin campañas para tabla avanzada.", "Crea campañas y registra ventas para activar drill-down.");
   const search = (state.commandCenterFilters.tableSearch || "").trim().toLowerCase();
   const sortKey = state.commandCenterFilters.tableSort || "revenue";
   const sortedRows = rows
@@ -3300,15 +3302,15 @@ function renderPowerTable(rows = []) {
     <div class="command-table-toolbar">
       <label>
         <span>Buscar</span>
-        <input data-command-table-search type="search" value="${escapeHtml(state.commandCenterFilters.tableSearch || "")}" placeholder="Campana, canal o estado">
+        <input data-command-table-search type="search" value="${escapeHtml(state.commandCenterFilters.tableSearch || "")}" placeholder="Campaña, canal o estado">
       </label>
       <label>
         <span>Ordenar por</span>
         <select data-command-table-sort>
           ${[
             ["revenue", "Revenue"],
-            ["conversion_rate", "Conversion"],
-            ["redemption_rate", "Redencion"],
+            ["conversion_rate", "Conversión"],
+            ["redemption_rate", "Redención"],
             ["sales", "Ventas"],
             ["leads", "Leads"],
             ["roi", "ROI"],
@@ -3320,7 +3322,7 @@ function renderPowerTable(rows = []) {
       <table class="command-table">
         <thead>
           <tr>
-            <th>Campana</th><th>Canal</th><th>Leads</th><th>Tickets</th><th>Redenciones</th><th>Ventas</th><th>Revenue</th><th>CAC</th><th>ROI</th><th>Conversion</th><th>Salud</th><th>Detalle</th>
+            <th>Campaña</th><th>Canal</th><th>Leads</th><th>Tickets</th><th>Redenciones</th><th>Ventas</th><th>Revenue</th><th>CAC</th><th>ROI</th><th>Conversión</th><th>Salud</th><th>Detalle</th>
           </tr>
         </thead>
         <tbody>
@@ -3329,7 +3331,7 @@ function renderPowerTable(rows = []) {
             const isExpanded = state.commandCenterFilters.expandedCampaignId === row.id;
             return `
               <tr class="${isExpanded ? "is-expanded" : ""}">
-                <td><strong>${escapeHtml(row.campaign_name)}</strong><small>${escapeHtml(row.campaign_status || "Campana")}</small></td>
+                <td><strong>${escapeHtml(row.campaign_name)}</strong><small>${escapeHtml(row.campaign_status || "Campaña")}</small></td>
                 <td>${escapeHtml(row.top_channel || "Sin canal")}</td>
                 <td>${row.leads}</td>
                 <td>${row.qr_generated}</td>
@@ -3346,10 +3348,10 @@ function renderPowerTable(rows = []) {
                 <tr class="command-detail-row">
                   <td colspan="12">
                     <div class="command-detail-grid">
-                      <article><span>Redencion</span><strong>${row.redemption_rate}%</strong><small>Tickets redimidos sobre Tickets generados.</small></article>
+                      <article><span>Redención</span><strong>${row.redemption_rate}%</strong><small>Tickets redimidos sobre Tickets generados.</small></article>
                       <article><span>Ticket promedio</span><strong>${money(row.avg_ticket)}</strong><small>Revenue por venta registrada.</small></article>
                       <article><span>Canal dominante</span><strong>${escapeHtml(row.top_channel || "Sin datos")}</strong><small>Origen con mayor revenue o ventas.</small></article>
-                      <article><span>Decision sugerida</span><strong>${escapeHtml(row.decision_hint || "Investigar")}</strong><small>${escapeHtml(row.decision_reason || "Completa datos de canal y ventas para cerrar lectura.")}</small></article>
+                      <article><span>Decisión sugerida</span><strong>${escapeHtml(row.decision_hint || "Investigar")}</strong><small>${escapeHtml(row.decision_reason || "Completa datos de canal y ventas para cerrar lectura.")}</small></article>
                     </div>
                   </td>
                 </tr>` : ""}`;
@@ -3362,7 +3364,7 @@ function renderPowerTable(rows = []) {
 function renderRevenueStories(stories = []) {
   return `
     <section class="revenue-stories-grid">
-      ${(stories.length ? stories : [{ priority: "opportunity", title: "Activa tus historias de revenue", metric: "El RMS necesita ventas, tickets y canales para narrar decisiones.", action: "Registra la proxima venta con origen y sucursal." }]).map((story) => `
+      ${(stories.length ? stories : [{ priority: "opportunity", title: "Activa tus historias de revenue", metric: "El RMS necesita ventas, tickets y canales para narrar decisiones.", action: "Registra la próxima venta con origen y sucursal." }]).map((story) => `
         <article class="revenue-story is-${escapeHtml(story.priority)}">
           <span class="material-symbols-outlined">${story.priority === "risk" ? "warning" : story.priority === "win" ? "trophy" : "auto_graph"}</span>
           <div>
@@ -3380,7 +3382,7 @@ function renderSuggestedDecisions(insights = []) {
     priority: "opportunity",
     title: "Completa el ciclo RMS",
     explanation: "El sistema necesita campañas, tickets, redenciones y ventas para priorizar decisiones.",
-    action: "Registra ventas con canal, sucursal y vendedor para activar recomendaciones mas precisas.",
+    action: "Registra ventas con canal, sucursal y vendedor para activar recomendaciones más precisas.",
   }];
   return `
     <div class="suggested-decisions">
@@ -3425,7 +3427,7 @@ function renderGuidedRevenueFeed(data = {}) {
       eyebrow: "Lectura inicial",
       title: `MG Revenue Score: ${scoreValue}/100`,
       metric: scoreLabel,
-      what: "Es la salud comercial del negocio en el periodo filtrado. Combina redencion, conversion, revenue, afiliados, sucursales y calidad de datos.",
+      what: "Es la salud comercial del negocio en el periodo filtrado. Combina redención, conversión, revenue, afiliados, sucursales y calidad de datos.",
       signal: `El sistema interpreta el negocio como: ${scoreLabel}.`,
       action: scoreAction,
     },
@@ -3434,8 +3436,8 @@ function renderGuidedRevenueFeed(data = {}) {
       eyebrow: "Revenue real",
       title: "Cuanto dinero se puede atribuir",
       metric: money(executive.revenue || totals.revenue || 0),
-      what: "Revenue atribuido es la venta registrada que el RMS puede conectar con una campana, canal, ticket, afiliado o sucursal.",
-      signal: `Canal ganador: ${executive.winning_channel || "Sin datos"} · Campana ganadora: ${executive.winning_campaign || "Sin datos"}.`,
+      what: "Revenue atribuido es la venta registrada que el RMS puede conectar con una campaña, canal, ticket, afiliado o sucursal.",
+      signal: `Canal ganador: ${executive.winning_channel || "Sin datos"} · Campaña ganadora: ${executive.winning_campaign || "Sin datos"}.`,
       action: executive.recommended_action || "Registra cada venta con origen para que el sistema sepa que estrategia repetir.",
     },
     {
@@ -3443,36 +3445,36 @@ function renderGuidedRevenueFeed(data = {}) {
       eyebrow: "Embudo RMS",
       title: leakStage ? `Fuga principal: ${leakStage.label}` : "Embudo listo para lectura",
       metric: leakStage ? commandValue(leakStage.loss_from_previous, leakStage.format) : `${toNumber(totals.redemptions)} redenciones`,
-      what: "El embudo muestra como una persona avanza desde campana hasta venta. Cada salto mide donde se gana o pierde valor.",
-      signal: leakStage ? `Conversion desde la etapa anterior: ${leakStage.conversion_from_previous}%.` : "Aun no hay una fuga dominante en el periodo.",
+      what: "El embudo muestra como una persona avanza desde campaña hasta venta. Cada salto mide donde se gana o pierde valor.",
+      signal: leakStage ? `Conversión desde la etapa anterior: ${leakStage.conversion_from_previous}%.` : "Aún no hay una fuga dominante en el periodo.",
       action: leakStage ? "Revisa beneficio, urgencia, recordatorio o cierre comercial en esta etapa." : "Mantén ventas y redenciones bien registradas para detectar fugas reales.",
     },
     {
       priority: topCampaign.revenue > 0 || topCampaign.sales > 0 ? "win" : "opportunity",
-      eyebrow: "Campana",
-      title: topCampaign.campaign_name || "Campana pendiente de destacar",
+      eyebrow: "Campaña",
+      title: topCampaign.campaign_name || "Campaña pendiente de destacar",
       metric: topCampaign.campaign_name ? `${money(topCampaign.revenue || 0)} · ${toNumber(topCampaign.sales)} ventas` : "Sin datos suficientes",
-      what: "Una campana sana no solo trae leads: tambien produce redenciones, ventas y revenue medible.",
-      signal: topCampaign.campaign_name ? `Decision sugerida: ${topCampaign.decision_hint || "Investigar"}.` : "Crea o activa campanas con tickets y registra el canal de llegada.",
-      action: topCampaign.decision_reason || "Usa la tabla PowerBI-style para abrir el detalle de cada campana.",
+      what: "Una campaña sana no solo trae leads: también produce redenciones, ventas y revenue medible.",
+      signal: topCampaign.campaign_name ? `Decisión sugerida: ${topCampaign.decision_hint || "Investigar"}.` : "Crea o activa campañas con tickets y registra el canal de llegada.",
+      action: topCampaign.decision_reason || "Usa la tabla PowerBI-style para abrir el detalle de cada campaña.",
     },
     {
       priority: topBranch.revenue > 0 || topBranch.sales > 0 ? "win" : "opportunity",
       eyebrow: "Sucursal",
-      title: topBranch.branch_name || executive.leading_branch || "Sucursal sin lider",
+      title: topBranch.branch_name || executive.leading_branch || "Sucursal sin líder",
       metric: topBranch.branch_name ? `${money(topBranch.revenue || 0)} · ${toNumber(topBranch.redemptions)} redenciones` : "Sin datos suficientes",
-      what: "La sucursal lider muestra donde la operacion esta cerrando mejor el ciclo ticket -> visita -> venta.",
-      signal: topBranch.branch_name ? "Compara esta sede contra las demas para replicar horarios, guion o incentivo." : "Asocia redenciones y ventas a una sucursal para activar rankings utiles.",
-      action: "Si una sede convierte mejor, documenta que hizo distinto y pruebalo en las sedes con menor conversion.",
+      what: "La sucursal líder muestra donde la operación esta cerrando mejor el ciclo ticket -> visita -> venta.",
+      signal: topBranch.branch_name ? "Compara esta sede contra las demas para replicar horarios, guion o incentivo." : "Asocia redenciones y ventas a una sucursal para activar rankings útiles.",
+      action: "Si una sede convierte mejor, documenta que hizo distinto y pruebalo en las sedes con menor conversión.",
     },
     ...insights.slice(0, 4).map((item) => ({
       priority: item.priority || "opportunity",
       eyebrow: "Insight automatico",
-      title: item.title || "Decision RMS",
+      title: item.title || "Decisión RMS",
       metric: item.metric || item.explanation || "Senal detectada",
       what: "Este insight sale de reglas del RMS que cruzan leads, tickets, redenciones, ventas, canales y revenue.",
       signal: item.explanation || item.metric || "El sistema encontro una senal relevante en el periodo.",
-      action: item.action || "Revisa el detalle antes de invertir mas presupuesto.",
+      action: item.action || "Revisa el detalle antes de invertir más presupuesto.",
     })),
   ].slice(0, 9);
 
@@ -3482,22 +3484,22 @@ function renderGuidedRevenueFeed(data = {}) {
         <div>
           <span class="mono-label">RMS Live Feed</span>
           <h3>Lectura guiada del negocio</h3>
-          <p>Un feed didactico que explica que estas viendo, por que importa y cual es la siguiente decision comercial.</p>
+          <p>Un feed didactico que explica que estas viendo, por qué importa y cuál es la siguiente decisión comercial.</p>
         </div>
-        <div class="command-feed-guide" aria-label="Como leer el feed RMS">
+        <div class="command-feed-guide" aria-label="Cómo leer el feed RMS">
           <span><strong>1</strong> Lee la senal</span>
           <span><strong>2</strong> Entiende el impacto</span>
-          <span><strong>3</strong> Ejecuta la accion</span>
+          <span><strong>3</strong> Ejecuta la acción</span>
         </div>
       </div>
 
-      <div class="command-feed-glossary" aria-label="Diccionario rapido RMS">
+      <div class="command-feed-glossary" aria-label="Diccionario rápido RMS">
         ${[
-          ["Lead", "Persona capturada por campana o ticket."],
-          ["Ticket reclamado", "Cliente tomo el beneficio, aun no necesariamente compro."],
+          ["Lead", "Persona capturada por campaña o ticket."],
+          ["Ticket reclamado", "Cliente tomo el beneficio, aún no necesariamente compro."],
           ["Ticket redimido", "Beneficio usado en tienda o punto de venta."],
-          ["Venta atribuida", "Compra conectada con canal, campana o ticket."],
-          ["ROI", "Retorno estimado frente a inversion registrada."],
+          ["Venta atribuida", "Compra conectada con canal, campaña o ticket."],
+          ["ROI", "Retorno estimado frente a inversión registrada."],
         ].map(([term, definition]) => `<span title="${escapeHtml(definition)}"><strong>${term}</strong>${definition}</span>`).join("")}
       </div>
 
@@ -3519,15 +3521,15 @@ function renderGuidedRevenueFeed(data = {}) {
               </div>
               <div class="command-feed-explain-grid">
                 <section>
-                  <span>Que es</span>
+                  <span>Qué es</span>
                   <p>${escapeHtml(item.what)}</p>
                 </section>
                 <section>
-                  <span>Que indica</span>
+                  <span>Qué indica</span>
                   <p>${escapeHtml(item.signal)}</p>
                 </section>
                 <section>
-                  <span>Que hacer</span>
+                  <span>Qué hacer</span>
                   <p>${escapeHtml(item.action)}</p>
                 </section>
               </div>
@@ -3554,7 +3556,7 @@ function renderCommandCenter() {
         <div>
           <span class="mono-label">Market Games RMS</span>
           <h2>Centro de comando de revenue marketing</h2>
-          <p>Lectura ejecutiva de campanas, canales, tickets, redenciones, ventas, afiliados, sucursales y revenue real.</p>
+          <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, afiliados, sucursales y revenue real.</p>
           <div class="command-hero-actions">
             <button class="solid-button" data-command-scroll="detail" type="button">Ver detalle</button>
             <button class="ghost-button" data-command-export type="button">Exportar CSV</button>
@@ -3563,9 +3565,9 @@ function renderCommandCenter() {
         <aside class="executive-summary-card">
           <span>Modo ejecutivo</span>
           <strong>${money(executive.revenue)}</strong>
-          <p>Canal: ${escapeHtml(executive.winning_channel)} · Campana: ${escapeHtml(executive.winning_campaign)}</p>
+          <p>Canal: ${escapeHtml(executive.winning_channel)} · Campaña: ${escapeHtml(executive.winning_campaign)}</p>
           <dl>
-            <div><dt>Sucursal lider</dt><dd>${escapeHtml(executive.leading_branch)}</dd></div>
+            <div><dt>Sucursal líder</dt><dd>${escapeHtml(executive.leading_branch)}</dd></div>
             <div><dt>Afiliado destacado</dt><dd>${escapeHtml(executive.top_affiliate)}</dd></div>
             <div><dt>Riesgo</dt><dd>${escapeHtml(executive.main_risk)}</dd></div>
             <div><dt>Accion</dt><dd>${escapeHtml(executive.recommended_action)}</dd></div>
@@ -3588,32 +3590,32 @@ function renderCommandCenter() {
           <ul>${(score.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </article>
         <article class="command-panel" data-command-focus="rms-funnel" tabindex="0" role="button">
-          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campana a revenue</h3><p>Que significa: muestra donde se fuga valor. Decision: optimiza la etapa con mayor perdida.</p></div>${commandPanelActions("rms-funnel")}</div>
+          <div class="command-panel-head"><div><span class="mono-label">Funnel RMS</span><h3>De campaña a revenue</h3><p>Qué significa: muestra donde se fuga valor. Decisión: optimiza la etapa con mayor perdida.</p></div>${commandPanelActions("rms-funnel")}</div>
           ${renderFunnelChart(data.funnel || [])}
         </article>
       </section>
 
       <section class="command-panel">
-        <div class="command-panel-head"><div><span class="mono-label">Historias de Revenue</span><h3>Infografias dinamicas para decidir</h3></div></div>
+        <div class="command-panel-head"><div><span class="mono-label">Historias de Revenue</span><h3>Infografias dinámicas para decidir</h3></div></div>
         ${renderRevenueStories(data.revenue_stories)}
       </section>
 
       <section class="command-panel">
-        <div class="command-panel-head"><div><span class="mono-label">Decisiones sugeridas</span><h3>Insights automaticos del RMS</h3><p>Reglas de negocio que conectan interes, redencion, venta, afiliados y revenue.</p></div></div>
+        <div class="command-panel-head"><div><span class="mono-label">Decisiones sugeridas</span><h3>Insights automaticos del RMS</h3><p>Reglas de negocio que conectan interés, redención, venta, afiliados y revenue.</p></div></div>
         ${renderSuggestedDecisions(data.insights)}
       </section>
 
       <section class="command-chart-grid" id="commandCenterDetail">
-        <article class="command-panel" data-command-focus="timeline" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Linea temporal multiserie</span><h3>Leads, tickets, redenciones, ventas y revenue</h3><p>Decision: detecta dias de activacion y caidas de conversion.</p></div>${commandPanelActions("timeline")}</div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por dia y hora</h3><p>Decision: refuerza vendedores en franjas calientes.</p></div>${commandPanelActions("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
-        <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campana vs canal</h3><p>Decision: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandPanelActions("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
+        <article class="command-panel" data-command-focus="timeline" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Línea temporal multiserie</span><h3>Leads, tickets, redenciones, ventas y revenue</h3><p>Decisión: detecta días de activación y caídas de conversión.</p></div>${commandPanelActions("timeline")}</div><canvas id="commandTimelineChart" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por día y hora</h3><p>Decisión: refuerza vendedores en franjas calientes.</p></div>${commandPanelActions("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
+        <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campaña vs canal</h3><p>Decisión: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandPanelActions("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
         <article class="command-panel" data-command-focus="treemap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div>${commandPanelActions("treemap")}</div>${renderTreemapChart(data.revenue_treemap)}</article>
-        <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campanas comparadas</span><h3>Leads, tickets, redenciones, ventas y revenue</h3></div>${commandPanelActions("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribucion</h3></div>${commandPanelActions("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
+        <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campañas comparadas</span><h3>Leads, tickets, redenciones, ventas y revenue</h3></div>${commandPanelActions("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribución</h3></div>${commandPanelActions("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
         <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandPanelActions("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
         <article class="command-panel" data-command-focus="branch-ranking" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div>${commandPanelActions("branch-ranking")}</div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="qr-status" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Estado de tickets</span><h3>Activos, redimidos, vencidos y reclamados</h3></div>${commandPanelActions("qr-status")}</div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
-        <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversion / tickets vs revenue</h3></div>${commandPanelActions("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
+        <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversión / tickets vs revenue</h3></div>${commandPanelActions("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="waterfall" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Waterfall revenue</span><h3>Composicion del revenue</h3></div>${commandPanelActions("waterfall")}</div><canvas id="commandWaterfall" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="cohorts" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Cohort postventa</span><h3>Recompra y ticket postventa</h3></div>${commandPanelActions("cohorts")}</div>${renderCohortChart(data.cohorts)}</article>
       </section>
@@ -3624,7 +3626,7 @@ function renderCommandCenter() {
       </section>
 
       <section class="command-panel" data-command-focus="power-table" tabindex="0" role="button">
-        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campana</h3><p>Ordena visualmente por revenue, conversion y salud comercial.</p></div>${commandPanelActions("power-table")}</div>
+        <div class="command-panel-head"><div><span class="mono-label">Tabla PowerBI-style</span><h3>Drill-down por campaña</h3><p>Ordena visualmente por revenue, conversión y salud comercial.</p></div>${commandPanelActions("power-table")}</div>
         ${renderPowerTable(data.power_table)}
       </section>
     </div>`;
@@ -3718,7 +3720,7 @@ function bindCommandCenterEvents() {
 function exportCommandCenterCsv() {
   const rows = state.commandCenter?.power_table || [];
   downloadCsv("rms-command-center", [
-    ["Campana", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "CAC", "ROI", "Conversion"],
+    ["Campaña", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "CAC", "ROI", "Conversión"],
     ...rows.map((row) => [
       row.campaign_name,
       row.leads,
@@ -3742,9 +3744,9 @@ function commandFocusButton(chartId, label = "Analizar") {
 function commandChartHelpButton(chartId) {
   const meta = chartFocusMeta(chartId);
   const copy = [
-    `Como leer: ${meta.description}`,
-    `Como se calcula: ${meta.calculation}`,
-    `Decision: ${meta.businessMeaning}`,
+    `Cómo leer: ${meta.description}`,
+    `Cómo se calcula: ${meta.calculation}`,
+    `Decisión: ${meta.businessMeaning}`,
     "Tip: haz clic en la grafica o en Analizar para ver el detalle.",
   ].join(" ");
   return `
@@ -3752,9 +3754,9 @@ function commandChartHelpButton(chartId) {
       <span class="material-symbols-outlined">help</span>
       <span class="command-help-popover">
         <strong>${escapeHtml(meta.title)}</strong>
-        <em>Como leer</em>
+        <em>Cómo leer</em>
         <small>${escapeHtml(meta.description)}</small>
-        <em>Decision</em>
+        <em>Decisión</em>
         <small>${escapeHtml(meta.businessMeaning)}</small>
       </span>
     </button>`;
@@ -3776,8 +3778,8 @@ function chartFocusMeta(chartId) {
       primaryMetric: dictionaryKey,
       description: kpi.help || "Este KPI resume una senal clave del negocio.",
       calculation: DATA_DICTIONARY[dictionaryKey]?.formula || "Se calcula desde los datos filtrados del RMS.",
-      businessMeaning: DATA_DICTIONARY[dictionaryKey]?.decision || "Ayuda a decidir que estrategia repetir, optimizar o investigar.",
-      recommendedActions: [DATA_DICTIONARY[dictionaryKey]?.decision || "Abre el desglose y compara contra el periodo anterior.", "Revisa los filtros activos para entender el contexto.", "Usa la tabla de campanas para llegar al detalle operativo."],
+      businessMeaning: DATA_DICTIONARY[dictionaryKey]?.decisión || "Ayuda a decidir que estrategia repetir, optimizar o investigar.",
+      recommendedActions: [DATA_DICTIONARY[dictionaryKey]?.decisión || "Abre el desglose y compara contra el periodo anterior.", "Revisa los filtros activos para entender el contexto.", "Usa la tabla de campañas para llegar al detalle operativo."],
       supportedDrilldowns: ["campaign", "channel", "branch"],
       relatedMetrics: [dictionaryKey, "revenue", "conversion_rate"],
       dataDictionaryKeys: [dictionaryKey, "revenue", "conversion_rate"],
@@ -3826,7 +3828,7 @@ function chartFocusOriginLabel(chartId, context = {}) {
   if (context.stage) return `Etapa: ${context.stage}`;
   if (context.channel && context.campaign) return `${context.campaign} / ${context.channel}`;
   if (context.channel) return `Canal: ${context.channel}`;
-  if (context.campaign) return `Campana: ${context.campaign}`;
+  if (context.campaign) return `Campaña: ${context.campaign}`;
   if (context.dow || context.hour) return `Bloque horario: ${context.dow || "-"} ${context.hour || "0"}:00`;
   return meta.title;
 }
@@ -3837,7 +3839,7 @@ function activeDataPath(chartId, context = {}) {
   if (context.stage) path.push(context.stage);
   if (context.campaign) path.push(context.campaign);
   if (context.channel) path.push(context.channel);
-  if (context.dow || context.hour) path.push(`${context.dow || "Dia"} ${context.hour || "0"}:00`);
+  if (context.dow || context.hour) path.push(`${context.dow || "Día"} ${context.hour || "0"}:00`);
   if ((state.chartFocus.tab || "summary") !== "summary") path.push(state.chartFocus.tab);
   return path;
 }
@@ -3885,29 +3887,29 @@ function dataJourneySteps(chartId, context = {}) {
       label: stage.label || stage.key || `Etapa ${index + 1}`,
       value: stage.value || 0,
       detail: index === 0
-        ? "Todo empieza con la captacion. Aqui se ve el tamano de la oportunidad."
-        : `Desde aqui se compara contra ${list[index - 1]?.label || "la etapa anterior"} para encontrar fuga o avance.`,
+        ? "Todo empieza con la captación. Aquí se ve el tamano de la oportunidad."
+        : `Desde aquí se compara contra ${list[index - 1]?.label || "la etapa anterior"} para encontrar fuga o avance.`,
     }));
   }
   if (chartId === "treemap") {
     return (data.revenue_treemap || []).slice(0, 5).map((row) => ({
       label: row.label || "Canal",
       value: money(row.value || row.revenue || 0),
-      detail: "Este canal muestra cuanto revenue atribuido aporta frente al resto del mix comercial.",
+      detail: "Este canal muestra cuánto revenue atribuido aporta frente al resto del mix comercial.",
     }));
   }
   if (chartId === "timeline") {
     return (data.timeline || []).slice(-5).map((row) => ({
       label: row.date || "Fecha",
       value: money(row.revenue || 0),
-      detail: "Este punto ayuda a explicar que paso ese dia entre leads, redenciones, ventas y revenue.",
+      detail: "Este punto ayuda a explicar que paso ese día entre leads, redenciones, ventas y revenue.",
     }));
   }
   if (chartId === "sankey") {
     return [
       { label: "Canal", value: "Origen", detail: "El revenue empieza en la fuente que atrajo al cliente." },
-      { label: "Campana", value: "Estrategia", detail: "La campana convierte la atencion en una accion medible." },
-      { label: "Ticket / Redencion", value: "Activacion", detail: "El ticket conecta la promesa con una visita o validacion real." },
+      { label: "Campaña", value: "Estrategia", detail: "La campaña convierte la atencion en una acción medible." },
+      { label: "Ticket / Redención", value: "Activación", detail: "El ticket conecta la promesa con una visita o validación real." },
       { label: "Venta", value: "Cierre", detail: "La venta confirma que el flujo produjo resultado comercial." },
       { label: "Revenue", value: "Dinero", detail: "Este es el valor atribuido que el RMS puede explicar." },
     ];
@@ -3916,7 +3918,7 @@ function dataJourneySteps(chartId, context = {}) {
   return [
     { label: meta.title, value: focusPrimaryMetric(chartId, context).value, detail: meta.description },
     { label: "Desglose", value: "Explorar", detail: meta.businessMeaning },
-    { label: "Decision", value: "Accion", detail: meta.recommendedActions[0] || "Revisa el detalle y aplica filtros." },
+    { label: "Decisión", value: "Accion", detail: meta.recommendedActions[0] || "Revisa el detalle y aplica filtros." },
   ];
 }
 
@@ -3953,7 +3955,7 @@ function renderDataPointFocus(chartId, context = {}) {
       <p>La vista esta enfocada en este punto. Puedes ver el desglose, llevarlo a filtro global o regresar al mapa general.</p>
       <div><strong>${escapeHtml(metric.value)}</strong><small>${escapeHtml(metric.label)}</small></div>
       <button type="button" data-focus-tab-shortcut="records">
-        <span class="material-symbols-outlined">table_rows</span>Ver registros detras del dato
+        <span class="material-symbols-outlined">table_rows</span>Ver registros detrás del dato
       </button>
     </section>`;
 }
@@ -3997,7 +3999,7 @@ function activeCommandFilterChips(extra = {}) {
   const dates = commandCenterDateRange();
   const chips = [{ key: "range", label: "Periodo", value: COMMAND_CENTER_RANGE_LABELS[filters.range] || `${dates.startDate} - ${dates.endDate}` }];
   [
-    ["campaignId", "Campana"],
+    ["campaignId", "Campaña"],
     ["channel", "Canal"],
     ["branchId", "Sucursal"],
     ["qrStatus", "Estado del ticket"],
@@ -4072,20 +4074,20 @@ function chartFocusRecords(chartId, context = {}) {
   const metric = state.commandCenterFilters.matrixMetric || "revenue";
   if (chartId === "rms-funnel") {
     return {
-      columns: ["Etapa", "Valor", "Conversion anterior", "Fuga"],
+      columns: ["Etapa", "Valor", "Conversión anterior", "Fuga"],
       rows: (data.funnel || []).map((row) => [row.label, commandValue(row.value, row.format), `${row.conversion_from_previous || 0}%`, commandValue(row.loss_from_previous || 0, row.format)]),
     };
   }
   if (chartId === "heatmap") {
     const weekdays = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
     return {
-      columns: ["Dia", "Hora", "Redenciones"],
+      columns: ["Día", "Hora", "Redenciones"],
       rows: (data.heatmap || []).sort((a, b) => toNumber(b.value) - toNumber(a.value)).slice(0, 20).map((row) => [weekdays[row.dow] || row.dow, `${row.hour}:00`, row.value]),
     };
   }
   if (chartId === "matrix") {
     return {
-      columns: ["Campana", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue"],
+      columns: ["Campaña", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue"],
       rows: (data.campaign_channel_matrix || [])
         .filter((row) => !context.campaign || row.campaign_name === context.campaign)
         .filter((row) => !context.channel || row.channel === context.channel)
@@ -4096,19 +4098,19 @@ function chartFocusRecords(chartId, context = {}) {
   }
   if (chartId === "treemap" || chartId === "waterfall") {
     return {
-      columns: ["Canal", "Leads", "Ventas", "Revenue", "Conversion"],
+      columns: ["Canal", "Leads", "Ventas", "Revenue", "Conversión"],
       rows: (data.revenue_treemap || []).map((row) => [row.label, row.leads, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`]),
     };
   }
   if (chartId === "affiliate-network") {
     return {
-      columns: ["Afiliado", "Ventas", "Revenue", "Puntos", "Ultima actividad"],
+      columns: ["Afiliado", "Ventas", "Revenue", "Puntos", "Última actividad"],
       rows: (data.affiliate_network?.nodes || []).map((row) => [row.full_name || row.name, row.sales || 0, money(row.revenue || 0), row.points_total || 0, row.last_activity_at ? formatDateShort(row.last_activity_at) : "-"]),
     };
   }
   if (chartId === "branch-ranking") {
     return {
-      columns: ["Sucursal", "Redenciones", "Ventas", "Revenue", "Conversion"],
+      columns: ["Sucursal", "Redenciones", "Ventas", "Revenue", "Conversión"],
       rows: (data.branch_performance || []).map((row) => [row.branch_name || "Sin sucursal", row.redemptions, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`]),
     };
   }
@@ -4126,12 +4128,12 @@ function chartFocusRecords(chartId, context = {}) {
   }
   if (chartId === "cohorts") {
     return {
-      columns: ["Cohorte", "Compras", "ticket postventa", "Redimidos", "Retencion"],
+      columns: ["Cohorte", "Compras", "ticket postventa", "Redimidos", "Retención"],
       rows: (data.cohorts || []).map((row) => [row.cohort, row.purchases, row.post_sale_qr, row.post_sale_redeemed, `${row.retention_rate || 0}%`]),
     };
   }
   return {
-    columns: ["Campana", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Decision"],
+    columns: ["Campaña", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Decisión"],
     rows: (data.power_table || []).slice(0, 25).map((row) => [row.campaign_name, row.top_channel || "-", row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), row.decision_hint || "Investigar"]),
   };
 }
@@ -4150,7 +4152,7 @@ function focusPrimaryMetric(chartId, context = {}) {
   }
   if (chartId === "heatmap") {
     const hot = [...(data.heatmap || [])].sort((a, b) => toNumber(b.value) - toNumber(a.value))[0];
-    return { label: "Bloque mas activo", value: hot ? `${hot.value} redenciones` : "Sin datos", hint: hot ? `Dia ${hot.dow}, ${hot.hour}:00` : "Aun no hay redenciones horarias." };
+    return { label: "Bloque más activo", value: hot ? `${hot.value} redenciones` : "Sin datos", hint: hot ? `Día ${hot.dow}, ${hot.hour}:00` : "Aún no hay redenciones horarias." };
   }
   return { label: meta.primaryMetric === "revenue" ? "Revenue atribuido" : meta.title, value: money(data.totals?.revenue || 0), hint: meta.businessMeaning };
 }
@@ -4163,13 +4165,13 @@ function focusNarrative(chartId, context = {}) {
   if (chartId === "rms-funnel") {
     const stages = data.funnel || [];
     const worst = stages.slice(1).sort((a, b) => toNumber(b.loss_from_previous) - toNumber(a.loss_from_previous))[0];
-    return `Durante el periodo filtrado, el RMS llega hasta ${metric.value}. La mayor fuga visible esta en ${worst?.label || "una etapa pendiente"}, con ${commandValue(worst?.loss_from_previous || 0, worst?.format)} de diferencia frente a la etapa anterior. Recomendacion: enfoca seguimiento, urgencia o cierre comercial en esa etapa.`;
+    return `Durante el periodo filtrado, el RMS llega hasta ${metric.value}. La mayor fuga visible esta en ${worst?.label || "una etapa pendiente"}, con ${commandValue(worst?.loss_from_previous || 0, worst?.format)} de diferencia frente a la etapa anterior. Recomendación: enfoca seguimiento, urgencia o cierre comercial en esa etapa.`;
   }
   if (chartId === "treemap") {
-    return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue. Si este canal tambien convierte bien, conviene escalarlo; si solo trae volumen, revisa ticket y calidad del cierre.`;
+    return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue. Si este canal también convierte bien, conviene escalarlo; si solo trae volumen, revisa ticket y calidad del cierre.`;
   }
   if (chartId === "power-table" || chartId === "campaign-comparison" || chartId === "scatter") {
-    return `${topCampaign?.campaign_name || "La campana principal"} lidera la lectura con ${money(topCampaign?.revenue || 0)}. Su decision sugerida es ${topCampaign?.decision_hint || "Investigar"} porque ${topCampaign?.decision_reason || "faltan datos completos de conversion y revenue"}.`;
+    return `${topCampaign?.campaign_name || "La campaña principal"} lidera la lectura con ${money(topCampaign?.revenue || 0)}. Su decisión sugerida es ${topCampaign?.decision_hint || "Investigar"} porque ${topCampaign?.decision_reason || "faltan datos completos de conversión y revenue"}.`;
   }
   return `${metric.label}: ${metric.value}. Este dato importa porque conecta actividad de marketing con comportamiento comercial real. Usa el desglose y los registros agregados para decidir si repetir, optimizar, pausar, escalar o investigar.`;
 }
@@ -4205,7 +4207,7 @@ function renderFocusVisualization(chartId, context = {}) {
 
 function renderRecordsTable(records) {
   if (!records.rows.length) {
-    return commandEmpty("Aun no hay registros suficientes.", "Activa campanas, registra ventas o valida tickets para alimentar este detalle.");
+    return commandEmpty("Aún no hay registros suficientes.", "Activa campañas, registra ventas o valida tickets para alimentar este detalle.");
   }
   return `
     <div class="drilldown-table-wrap">
@@ -4231,7 +4233,7 @@ function renderDataDictionaryTooltip(keys = []) {
             <dl>
               <dt>Formula</dt><dd>${escapeHtml(item.formula)}</dd>
               <dt>Ejemplo</dt><dd>${escapeHtml(item.example)}</dd>
-              <dt>Decision</dt><dd>${escapeHtml(item.decision)}</dd>
+              <dt>Decisión</dt><dd>${escapeHtml(item.decisión)}</dd>
             </dl>
           </article>`;
       }).join("")}
@@ -4253,7 +4255,7 @@ function renderFocusTabContent(chartId, context = {}) {
         <article><span>Actual</span><strong>${money(current)}</strong></article>
         <article><span>Anterior</span><strong>${money(previous)}</strong></article>
         <article><span>Diferencia</span><strong>${money(diff)}</strong><small>${safeRate(diff, previous || current || 1)}%</small></article>
-        <p>${diff >= 0 ? "El periodo actual supera al anterior. Revisa que canal o campana explica el crecimiento." : "El periodo actual esta por debajo del anterior. Investiga caidas por canal, horario o sucursal."}</p>
+        <p>${diff >= 0 ? "El periodo actual supera al anterior. Revisa que canal o campaña explica el crecimiento." : "El periodo actual esta por debajo del anterior. Investiga caídas por canal, horario o sucursal."}</p>
       </div>`;
   }
   if (tab === "insights") {
@@ -4275,11 +4277,11 @@ function renderFocusTabContent(chartId, context = {}) {
   }
   return `
     <div class="data-explanation-panel">
-      <article><span>Que significa</span><p>${escapeHtml(meta.description)}</p></article>
-      <article><span>Como se calcula</span><p>${escapeHtml(meta.calculation)}</p></article>
-      <article><span>Por que importa</span><p>${escapeHtml(meta.businessMeaning)}</p></article>
-      <article><span>Que mirar</span><p>${escapeHtml(metric.hint || "Busca cambios bruscos, concentraciones y combinaciones con bajo rendimiento.")}</p></article>
-      <article><span>Que hacer</span><p>${escapeHtml(meta.recommendedActions[0] || "Investiga el desglose y aplica un filtro global.")}</p></article>
+      <article><span>Qué significa</span><p>${escapeHtml(meta.description)}</p></article>
+      <article><span>Cómo se calcula</span><p>${escapeHtml(meta.calculation)}</p></article>
+      <article><span>Por qué importa</span><p>${escapeHtml(meta.businessMeaning)}</p></article>
+      <article><span>Qué mirar</span><p>${escapeHtml(metric.hint || "Busca cambios bruscos, concentraciones y combinaciones con bajo rendimiento.")}</p></article>
+      <article><span>Qué hacer</span><p>${escapeHtml(meta.recommendedActions[0] || "Investiga el desglose y aplica un filtro global.")}</p></article>
     </div>`;
 }
 
@@ -4311,7 +4313,7 @@ function renderFocusContextActions(context = {}) {
   if (context.channel) actions.push(`<button type="button" data-focus-apply-filter="channel" data-focus-filter-value="${escapeHtml(context.channel)}"><span class="material-symbols-outlined">filter_alt</span>Aplicar canal: ${escapeHtml(context.channel)}</button>`);
   if (context.campaign) {
     const campaign = (state.commandCenter?.options?.campaigns || []).find((item) => item.name === context.campaign);
-    if (campaign?.id) actions.push(`<button type="button" data-focus-apply-filter="campaignId" data-focus-filter-value="${escapeHtml(campaign.id)}"><span class="material-symbols-outlined">filter_alt</span>Aplicar campana: ${escapeHtml(context.campaign)}</button>`);
+    if (campaign?.id) actions.push(`<button type="button" data-focus-apply-filter="campaignId" data-focus-filter-value="${escapeHtml(campaign.id)}"><span class="material-symbols-outlined">filter_alt</span>Aplicar campaña: ${escapeHtml(context.campaign)}</button>`);
   }
   if (!actions.length) {
     actions.push(`<button type="button" data-focus-tab-shortcut="breakdown"><span class="material-symbols-outlined">account_tree</span>Ver desglose</button>`);
@@ -4382,7 +4384,7 @@ function renderChartFocusMode() {
           </section>
           ${renderDataPointFocus(chartId, context)}
           <section>
-            <span class="mono-label">Decision recomendada</span>
+            <span class="mono-label">Decisión recomendada</span>
             <ul>${meta.recommendedActions.slice(0, 3).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
           </section>
           <section>
@@ -4592,22 +4594,22 @@ function renderDashboard() {
   const strategicRedemptionRate = dashboard.derived?.strategic_redemption_rate || summary.strategic_redemption_rate || 0;
   const postSaleRedemptionRate = dashboard.derived?.post_sale_redemption_rate || summary.post_sale_redemption_rate || 0;
   const items = [
-    ["Listas para lanzar", summary.ready_for_client_setup, `${summary.scheduled_campaigns || 0} programadas`, "", "Campanas que ya estan estructuradas y pendientes de configuracion final o fecha de arranque."],
-    ["Campanas activas", summary.active_campaigns, `${state.campaigns.length || 0} registradas`, "", "Campanas actualmente en ejecucion y generando interacciones medibles."],
-    ["Leads capturados", summary.total_leads, `${summary.redemption_rate || 0}% termina redimiendo`, "", "Personas identificadas que dejaron datos validos en formularios, juegos o landings."],
-    ["Tickets generados", summary.total_qr_generated, `${dashboard.summary?.active_qr || 0} siguen activos`, "", "Beneficios emitidos. Ayuda a medir activacion real despues del lead."],
-    ["Tickets redimidos", summary.total_qr_redeemed, `${summary.redemption_rate || 0}% del total emitido`, "", "Personas que si llegaron a tienda o punto de redencion y usaron el incentivo."],
+    ["Listas para lanzar", summary.ready_for_client_setup, `${summary.scheduled_campaigns || 0} programadas`, "", "Campañas que ya estan estructuradas y pendientes de configuración final o fecha de arranque."],
+    ["Campañas activas", summary.active_campaigns, `${state.campaigns.length || 0} registradas`, "", "Campañas actualmente en ejecución y generando interacciones medibles."],
+    ["Leads capturados", summary.total_leads, `${summary.redemption_rate || 0}% termina redimiendo`, "", "Personas identificadas que dejaron datos válidos en formularios, juegos o landings."],
+    ["Tickets generados", summary.total_qr_generated, `${dashboard.summary?.active_qr || 0} siguen activos`, "", "Beneficios emitidos. Ayuda a medir activación real después del lead."],
+    ["Tickets redimidos", summary.total_qr_redeemed, `${summary.redemption_rate || 0}% del total emitido`, "", "Personas que si llegaron a tienda o punto de redención y usaron el incentivo."],
     ["ticket postventa", summary.post_sale_generated || 0, `${postSaleRedemptionRate}% redimido`, "", "Ticket creados desde una venta real para incentivar recompra o postventa."],
-    ["Paquetes de tickets", summary.strategic_batches || 0, `${summary.strategic_generated || 0} codigos estrategicos`, "", "Lotes de tickets precreados para etiquetas, empaques, volantes o fidelizacion."],
-    ["tickets estrategicos", summary.strategic_generated || 0, `${strategicClaimRate}% activado`, "", "Tickets no nacidos de juego o formulario publico, sino de estrategias internas del negocio."],
-    ["Claims estrategicos", summary.strategic_claimed_or_active || 0, `${strategicRedemptionRate}% redimido`, "", "Clientes que escanearon un ticket precreado, dejaron datos y activaron el beneficio."],
+    ["Paquetes de tickets", summary.strategic_batches || 0, `${summary.strategic_generated || 0} códigos estratégicos`, "", "Lotes de tickets precreados para etiquetas, empaques, volantes o fidelización."],
+    ["tickets estratégicos", summary.strategic_generated || 0, `${strategicClaimRate}% activado`, "", "Tickets no nacidos de juego o formulario público, sino de estrategias internas del negocio."],
+    ["Claims estratégicos", summary.strategic_claimed_or_active || 0, `${strategicRedemptionRate}% redimido`, "", "Clientes que escanearon un ticket precreado, dejaron datos y activaron el beneficio."],
     ["Ventas reales", observedSalesCount, `${money(observedRevenue)} registrado`, "", "Compras reales registradas por caja, ticket postventa o captura manual del medio de llegada."],
     ["Revenue observado", money(observedRevenue), `${money(avgTicket)} ticket promedio`, "", "Dinero real asociado a clientes capturados por los distintos medios de llegada."],
     ["Referidos afiliados", summary.referral_sales_count || 0, `${summary.referral_points_awarded || 0} puntos entregados`, "", "Ventas en las que un afiliado recomendo al cliente y recibio puntos."],
-    ["Inversion total", money(summary.total_investment), `${money(summary.cost_per_lead)} por lead`, "", "Suma total invertida en pauta, creativos y activacion para este periodo de analisis."],
+    ["Inversión total", money(summary.total_investment), `${money(summary.cost_per_lead)} por lead`, "", "Suma total invertida en pauta, creativos y activación para este periodo de analisis."],
     ["Costo por lead", money(summary.cost_per_lead), `${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} por venta`, "", "Cuanto costo captar cada lead, antes de saber si compro o no."],
     ["Costo por venta", money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer), `vs. ticket medio ${money(avgTicket)}`, "", "Cuanto costo traer una venta real observada. Debe compararse contra ticket promedio y margen."],
-    ["ROI estimado", roiLabel, "Retorno sobre ventas reales", "highlight", "Relacion entre ventas observadas e inversion. Un valor mayor a 1x ya recupera la inversion; por encima de eso empieza a devolver ganancia comercial."],
+    ["ROI estimado", roiLabel, "Retorno sobre ventas reales", "highlight", "Relacion entre ventas observadas e inversión. Un valor mayor a 1x ya recupera la inversión; por encima de eso empieza a devolver ganancia comercial."],
   ];
 
   businessKpiGrid.innerHTML = items.map(([label, value, meta, tone, help]) => `
@@ -4621,20 +4623,20 @@ function renderDashboard() {
   dashboardNarrativeTitle.textContent = topAcquisitionSource
     ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera la llegada comercial.`
     : topBranch?.branch_name
-      ? `${topBranch.branch_name} lidera la operacion del periodo.`
+      ? `${topBranch.branch_name} lidera la operación del periodo.`
     : "Esperando datos del negocio.";
   dashboardNarrativeText.textContent = topAcquisitionSource
     ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)}${topAcquisitionSource.acquisition_channel ? ` / ${topAcquisitionSource.acquisition_channel}` : ""} trae ${toNumber(topAcquisitionSource.count)} ventas reales y ${money(topAcquisitionSource.revenue)}. El portal combina esta captura con tickets para medir ventas, no solo likes o comentarios.`
     : topBranch?.branch_name
-      ? `La sucursal ${topBranch.branch_name} concentra ${money(topBranch.revenue)} en revenue atribuido y ${topBranch.redemptions} redenciones. Ademas, el negocio ya suma ${summary.post_sale_generated || 0} ticket postventa y ${summary.strategic_generated || 0} tickets estrategicos fuera del flujo publico.`
-    : "Cuando haya actividad, aqui veras el principal movimiento del periodo sin tener que interpretar todas las tablas.";
-  dashboardFunnelHelp.textContent = `Hoy el embudo combina ${summary.total_leads || 0} leads publicos con ${summary.strategic_claimed_or_active || 0} activaciones estrategicas; de ahi salen ${summary.total_qr_generated || 0} tickets emitidos y ${observedSalesCount} ventas reales observadas.`;
+      ? `La sucursal ${topBranch.branch_name} concentra ${money(topBranch.revenue)} en revenue atribuido y ${topBranch.redemptions} redenciones. Ademas, el negocio ya suma ${summary.post_sale_generated || 0} ticket postventa y ${summary.strategic_generated || 0} tickets estratégicos fuera del flujo público.`
+    : "Cuando haya actividad, aquí verás el principal movimiento del periodo sin tener que interpretar todas las tablas.";
+  dashboardFunnelHelp.textContent = `Hoy el embudo combina ${summary.total_leads || 0} leads publicos con ${summary.strategic_claimed_or_active || 0} activaciones estrategicas; de ahí salen ${summary.total_qr_generated || 0} tickets emitidos y ${observedSalesCount} ventas reales observadas.`;
   dashboardHealthText.textContent = roiLabel === "-"
-    ? "Aun no hay ventas suficientes para evaluar ROI, CPL y CAC con criterio comercial."
-    : `El ROI actual es ${roiLabel}, el costo por venta esta en ${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} y el ticket promedio ronda ${money(avgTicket)}. En tickets estrategicos, postventa redime ${postSaleRedemptionRate}% y los claims convierten ${strategicRedemptionRate}% a redencion.`;
+    ? "Aún no hay ventas suficientes para evaluar ROI, CPL y CAC con criterio comercial."
+    : `El ROI actual es ${roiLabel}, el costo por venta esta en ${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} y el ticket promedio ronda ${money(avgTicket)}. En tickets estratégicos, postventa redime ${postSaleRedemptionRate}% y los claims convierten ${strategicRedemptionRate}% a redención.`;
   cacTrendNote.textContent = avgTicket
     ? `Benchmark visual: CAC sano cuando queda claramente por debajo del ticket promedio de ${money(avgTicket)}.`
-    : "Benchmark visual: compara el CAC contra el ticket promedio y el ROI de cada campana.";
+    : "Benchmark visual: compara el CAC contra el ticket promedio y el ROI de cada campaña.";
 
   recentRedemptionsTable.innerHTML = recentRedemptions.map((item) => `
     <tr>
@@ -4748,7 +4750,7 @@ function renderDashboard() {
     <article class="geo-branch-card">
       <span class="mono-label">Sucursal</span>
       <strong>${escapeHtml(row.branch_name || "Sin sucursal")}</strong>
-      <p>${escapeHtml(row.address || "Sin direccion")}</p>
+      <p>${escapeHtml(row.address || "Sin dirección")}</p>
       <div class="geo-metric"><span>Redenciones</span><span>${escapeHtml(row.redemptions)}</span></div>
       <div class="geo-metric"><span>Ventas</span><span>${escapeHtml(row.sales)}</span></div>
       <div class="geo-metric"><span>Revenue</span><span>${escapeHtml(money(row.revenue))}</span></div>
@@ -4766,14 +4768,14 @@ function renderDashboard() {
   `).join("") || '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
 
   dashboardInsightTitle.textContent = topHour?.count
-    ? `El pico de redenciones ocurre a las ${String(topHour.hour).padStart(2, "0")}:00. ${topAcquisitionSource ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera ventas reales con ${money(topAcquisitionSource.revenue)}.` : `${topBranch?.branch_name || "La sucursal principal"} lidera el revenue del periodo.`} Los tickets estrategicos ya aportan ${summary.strategic_claimed_or_active || 0} activaciones al embudo.`
-    : "Aun no hay suficiente actividad para construir un insight horario.";
+    ? `El pico de redenciones ocurre a las ${String(topHour.hour).padStart(2, "0")}:00. ${topAcquisitionSource ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera ventas reales con ${money(topAcquisitionSource.revenue)}.` : `${topBranch?.branch_name || "La sucursal principal"} lidera el revenue del periodo.`} Los tickets estratégicos ya aportan ${summary.strategic_claimed_or_active || 0} activaciones al embudo.`
+    : "Aún no hay suficiente actividad para construir un insight horario.";
 }
 
 function renderCampaignList() {
   const campaigns = currentCampaignRows();
   if (!campaigns.length) {
-    campaignList.innerHTML = '<article class="campaign-item"><p>Sin campanas para este filtro.</p></article>';
+    campaignList.innerHTML = '<article class="campaign-item"><p>Sin campañas para este filtro.</p></article>';
     return;
   }
 
@@ -4827,7 +4829,7 @@ function renderSnapshotComparisonChart(snapshots) {
 }
 
 function hydrateAdminForm(campaign = null) {
-  adminEditorTitle.textContent = campaign ? campaign.name : "Campana interna";
+  adminEditorTitle.textContent = campaign ? campaign.name : "Campaña interna";
   adminEditorStatus.textContent = campaign ? statusLabel(campaign.status) : "Nueva";
   adminCampaignMessage.textContent = "";
   adminMarkReadyButton.disabled = !campaign || campaign.status !== "DRAFT";
@@ -4874,7 +4876,7 @@ async function loadAdminCampaignWorkspace(campaignId) {
       <td>${escapeHtml(campaign.total_qr_redeemed)}</td>
       <td>${escapeHtml(money(campaign.attributed_revenue))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Sin campanas para este cliente.</td></tr>';
+  `).join("") || '<tr><td colspan="6">Sin campañas para este cliente.</td></tr>';
 }
 
 async function selectCampaign(campaignId) {
@@ -4933,8 +4935,8 @@ function renderCampaignView() {
   }
 
   campaignBreadcrumb.textContent = campaign.name;
-  campaignHeroTitle.textContent = `Campana: ${campaign.name}`;
-  campaignHeroSubtitle.textContent = campaign.strategy_summary || "Campana lista para medicion operativa y comercial.";
+  campaignHeroTitle.textContent = `Campaña: ${campaign.name}`;
+  campaignHeroSubtitle.textContent = campaign.strategy_summary || "Campaña lista para medición operativa y comercial.";
   campaignInsightText.textContent = buildInsight(campaign);
   campaignObjectiveValue.textContent = campaign.objective || "Sin objetivo definido";
   campaignDurationValue.textContent = formatCampaignDuration(campaign);
@@ -4943,16 +4945,16 @@ function renderCampaignView() {
   campaignBudgetMeta.textContent = `${money(campaign.budget_total)} invertidos | ${launchChannelsLabel(campaign.launch_channels)}`;
   campaignBudgetBar.style.width = `${Math.min(100, safeRate(campaign.attributed_revenue, campaign.budget_total || 1))}%`;
   campaignRoiValue.textContent = ratioLabel(campaign.estimated_roi);
-  campaignRoiDelta.textContent = `${campaign.redemption_rate || 0}% redencion`;
+  campaignRoiDelta.textContent = `${campaign.redemption_rate || 0}% redención`;
 
   const setupEditable = ["READY_FOR_CLIENT_SETUP", "SCHEDULED"].includes(campaign.status) && !isAdmin();
   const setupReady = campaign.status === "READY_FOR_CLIENT_SETUP";
   editCampaignButton.classList.toggle("hidden", !canManageCampaigns());
   markReadyCampaignButton.classList.toggle("hidden", !(isAdmin() && campaign.status === "DRAFT"));
-  launchSetupTitle.textContent = setupReady ? "Preparar lanzamiento" : "Configuracion del cliente";
+  launchSetupTitle.textContent = setupReady ? "Preparar lanzamiento" : "Configuración del cliente";
   launchSetupStatus.textContent = statusLabel(campaign.status);
   launchSetupCopy.textContent = setupReady
-    ? "Completa inversion, fechas, metas y canales reales antes de activar la campana."
+    ? "Completa inversión, fechas, metas y canales reales antes de activar la campaña."
     : setupEditable
       ? "Puedes ajustar datos de lanzamiento antes de la fecha programada."
       : "La estructura estrategica sigue bloqueada. Solo se muestran los datos operativos del cliente.";
@@ -5002,7 +5004,7 @@ function renderCampaignView() {
               : `<strong>${escapeHtml(value)}</strong>`}
         </article>
       `).join("")
-    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Market Games aun no ha publicado enlaces o materiales para esta campana.</span></article>';
+    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Market Games aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
   campaignSnapshotsTable.innerHTML = snapshots.map((item) => `
@@ -5034,11 +5036,11 @@ function renderCampaignView() {
   saveSnapshotButton.classList.toggle("hidden", false);
 
   const items = [
-    ["Total leads", campaign.total_leads, `${campaign.expected_leads_goal || 0} meta`, "", "Volumen total de personas identificadas que dejaron datos dentro de esta campana."],
+    ["Total leads", campaign.total_leads, `${campaign.expected_leads_goal || 0} meta`, "", "Volumen total de personas identificadas que dejaron datos dentro de esta campaña."],
     ["tickets emitidos", campaign.total_qr_generated, `${safeRate(campaign.total_qr_generated, campaign.total_leads)}% de los leads activaron ticket`, "", "Mide que tan bien el lead avanza hasta reclamar el beneficio."],
     ["Redenciones", campaign.total_qr_redeemed, `${campaign.expected_redemptions_goal || 0} meta`, campaign.redemption_rate < 10 ? "negative" : "", "Mide la llegada real a tienda o al punto de entrega del incentivo."],
-    ["Tasa de redencion", `${campaign.redemption_rate || 0}%`, `${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)} compras atribuidas`, "", "Porcentaje de tickets emitidos que realmente fueron usados."],
-    ["Clientes adquiridos", campaign.direct_sales_count || campaign.attributed_sales_count, `${money(campaign.cost_per_acquired_customer)} CAC`, "", "Clientes con compra atribuida a la campana. Es la base para leer CAC y ROI."],
+    ["Tasa de redención", `${campaign.redemption_rate || 0}%`, `${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)} compras atribuidas`, "", "Porcentaje de tickets emitidos que realmente fueron usados."],
+    ["Clientes adquiridos", campaign.direct_sales_count || campaign.attributed_sales_count, `${money(campaign.cost_per_acquired_customer)} CAC`, "", "Clientes con compra atribuida a la campaña. Es la base para leer CAC y ROI."],
   ];
 
   campaignKpiGrid.innerHTML = items.map(([label, value, meta, tone, help]) => `
@@ -5053,15 +5055,15 @@ function renderCampaignView() {
     ? toNumber(campaign.attributed_revenue) / toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)
     : 0;
   campaignAnalysisTitle.textContent = campaign.estimated_roi === null
-    ? "La campana aun no tiene suficiente cierre comercial."
+    ? "La campaña aún no tiene suficiente cierre comercial."
     : `${campaign.name} ya muestra una lectura comercial clara.`;
-  campaignAnalysisText.textContent = `Con ${campaign.total_leads} leads, ${campaign.total_qr_redeemed} redenciones y ${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)} compras, la campana convierte interes digital en visitas y ventas medibles.`;
+  campaignAnalysisText.textContent = `Con ${campaign.total_leads} leads, ${campaign.total_qr_redeemed} redenciones y ${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)} compras, la campaña convierte interés digital en visitas y ventas medibles.`;
   campaignEconomicsText.textContent = `ROI actual: ${ratioLabel(campaign.estimated_roi)}. CAC: ${money(campaign.cost_per_acquired_customer)}. Ticket promedio atribuido: ${money(avgTicket)}. La relacion mejora cuando CAC se mantiene bastante por debajo del ticket.`;
   campaignActionText.textContent = campaign.redemption_rate < 30
-    ? "La mayor oportunidad esta en el paso ticket -> redencion. Conviene revisar incentivo, urgencia y seguimiento en tienda."
+    ? "La mayor oportunidad esta en el paso ticket -> redención. Conviene revisar incentivo, urgencia y seguimiento en tienda."
     : campaign.cost_per_acquired_customer > avgTicket * 0.6 && avgTicket > 0
-      ? "La campana vende, pero el CAC esta pesado frente al ticket. Conviene optimizar pauta o subir ticket promedio."
-      : "La campana esta sana. El siguiente paso es escalar el canal con mejor redencion y mantener disciplina de registro en caja.";
+      ? "La campaña vende, pero el CAC esta pesado frente al ticket. Conviene optimizar pauta o subir ticket promedio."
+      : "La campaña está sana. El siguiente paso es escalar el canal con mejor redención y mantener disciplina de registro en caja.";
 
   renderFunnel(campaign);
   drawGroupedBars(
@@ -5144,11 +5146,11 @@ function renderLeadsView() {
 
   if (leadFeedKpiGrid) {
     leadFeedKpiGrid.innerHTML = [
-      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Segun plan"],
+      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Según plan"],
       ["Compradores", buyers, "Con venta registrada"],
       ["Leads calientes", hot, "Prioridad comercial"],
-      ["Exportables", exportable, "Email o telefono"],
-      ["Origen lider", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
+      ["Exportables", exportable, "Email o teléfono"],
+      ["Origen líder", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
     ].map(([label, value, meta]) => `
       <article class="kpi-card">
         <span class="mono-label">${escapeHtml(label)}</span>
@@ -5158,7 +5160,7 @@ function renderLeadsView() {
     `).join("");
   }
   if (leadFeedRetention) {
-    leadFeedRetention.textContent = `Retencion ${state.contactFeedRetention?.label || "segun plan"}`;
+    leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
   }
   if (leadFeedTable) {
     leadFeedTable.innerHTML = feedRows.map((item) => `
@@ -5169,7 +5171,7 @@ function renderLeadsView() {
         </td>
         <td>${escapeHtml(item.attribution_source || "-")}</td>
         <td>
-          ${escapeHtml(item.campaign_name || "Sin campana")}
+          ${escapeHtml(item.campaign_name || "Sin campaña")}
           <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
         </td>
         <td>
@@ -5179,7 +5181,7 @@ function renderLeadsView() {
         <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
         <td>${escapeHtml(item.recommended_action || "-")}</td>
       </tr>
-    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retencion de tu plan.</td></tr>';
+    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retención de tu plan.</td></tr>';
   }
 
   const rows = filterRows(state.selectedLeads || [], ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source"]);
@@ -5195,7 +5197,7 @@ function renderLeadsView() {
       <td>${escapeHtml(item.reward_name || "-")}</td>
       <td>${item.qr_code_id ? `<button class="ghost-button" type="button" data-download-lead-qr="${escapeHtml(item.qr_code_id)}">Ticket</button>` : "-"}</td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin leads para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="9">Sin leads para esta campaña.</td></tr>';
   campaignLeadsTable.querySelectorAll("[data-download-lead-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadActiveLeadQr(button.dataset.downloadLeadQr));
   });
@@ -5212,7 +5214,7 @@ function renderRedemptionsView() {
       <td>${escapeHtml(item.validator_name || "-")}</td>
       <td><span class="status-chip ${item.sale_amount ? "ok" : "pending"}">${item.sale_amount ? "Completado" : "Pendiente"}</span></td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Sin redenciones para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="6">Sin redenciones para esta campaña.</td></tr>';
 
   const rewardCounts = rows.reduce((acc, item) => {
     const key = item.reward_name || "Beneficio";
@@ -5256,7 +5258,7 @@ function renderSalesView() {
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="8">Sin ventas para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="8">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -5301,14 +5303,14 @@ function renderBranchesView() {
 function renderAdminView() {
   if (!isAdmin()) {
     adminKpiGrid.innerHTML = "";
-    adminPanelMessage.textContent = "Tu rol actual es de negocio. La gestion global sigue disponible solo para admins en `/admin`.";
+    adminPanelMessage.textContent = "Tu rol actual es de negocio. La gestión global sigue disponible solo para admins en `/admin`.";
     return;
   }
 
   adminKpiGrid.innerHTML = [
-    ["Campanas globales", state.adminCampaigns.length, "Todas las empresas"],
-    ["Campanas del negocio", state.campaigns.length, session.user.business_id || "-"],
-    ["Rol actual", session.user.role, "Acceso a crear y editar campanas"],
+    ["Campañas globales", state.adminCampaigns.length, "Todas las empresas"],
+    ["Campañas del negocio", state.campaigns.length, session.user.business_id || "-"],
+    ["Rol actual", session.user.role, "Acceso a crear y editar campañas"],
   ].map(([label, value, meta]) => `
     <article class="kpi-card">
       <span class="mono-label">${escapeHtml(label)}</span>
@@ -5317,7 +5319,7 @@ function renderAdminView() {
     </article>
   `).join("");
 
-  adminPanelMessage.textContent = "Este usuario puede crear y editar campanas desde el modal del portal y tambien operar `/admin`.";
+  adminPanelMessage.textContent = "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`.";
 }
 
 function validatorCanUseBarcodeDetector() {
@@ -5361,7 +5363,7 @@ function rewardPassBalancePreview(syncRedeemInput = false) {
     if (!pass) {
       validatorRewardPassBalanceMessage.textContent = "Escanea un Reward Pass y registra el total de la factura para calcular saldo o excedente.";
     } else if (!invoiceValue) {
-      validatorRewardPassBalanceMessage.textContent = "Ingresa el total de la factura electronica para calcular cuanto cubre el Reward Pass.";
+      validatorRewardPassBalanceMessage.textContent = "Ingresa el total de la factura electronica para calcular cuánto cubre el Reward Pass.";
     } else if (!partialAllowed && remaining > 0) {
       validatorRewardPassBalanceMessage.textContent = "Este Reward Pass esta configurado de un solo uso. La factura no consume todo el saldo; confirma condiciones aceptadas antes de redimir.";
     } else if (overage > 0) {
@@ -5400,7 +5402,7 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorResultTitle.textContent = title;
   validatorResultMessage.textContent = message;
   validatorResultChip.className = `result-chip ${mode}`;
-  validatorResultChip.textContent = mode === "ok" ? "Valido" : mode === "danger" ? "Rechazado" : "Pendiente";
+  validatorResultChip.textContent = mode === "ok" ? "Válido" : mode === "danger" ? "Rechazado" : "Pendiente";
 
   validatorBusinessValue.textContent = data?.business?.name || "-";
   validatorCampaignValue.textContent = data?.campaign?.name || data?.batch?.name || "-";
@@ -5512,7 +5514,7 @@ async function renderValidatorView() {
   }
 
   if (!state.validatorLastValidation) {
-    setValidatorResult("neutral", "Sin validacion", "Escanea o pega un ticket para consultar la base de datos.");
+    setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
   }
 
   loadValidatorHistory();
@@ -5727,18 +5729,18 @@ function renderTicketMetricGrid(target, items) {
 
 function renderTicketPhysicalFlow(stats) {
   renderTicketMetricGrid(ticketFlowKpiGrid, [
-    ["Tickets emitidos", stats.ticketsIssued.toLocaleString("es-CO"), "Inventario fisico/digital en circulacion", "highlight"],
+    ["Tickets emitidos", stats.ticketsIssued.toLocaleString("es-CO"), "Inventario físico/digital en circulacion", "highlight"],
     ["Llegadas medidas", stats.redeemedTickets.toLocaleString("es-CO"), "Redenciones o validaciones en tienda"],
     ["Ventas con ticket", stats.salesWithTicket.toLocaleString("es-CO"), money(stats.revenue)],
     ["Ticket promedio", money(stats.averageTicket), "Venta promedio registrada"],
   ]);
 
   const flow = [
-    ["Atraccion", "El cliente recibe ticket en volante, empaque, feria, vitrina o referido.", stats.ticketsIssued],
+    ["Atracción", "El cliente recibe ticket en volante, empaque, feria, vitrina o referido.", stats.ticketsIssued],
     ["Llegada", "El ticket aparece fisicamente en tienda o caja.", stats.activeTickets + stats.redeemedTickets],
-    ["Redencion", "El vendedor valida identidad, beneficio y estado.", stats.redeemedTickets],
+    ["Redención", "El vendedor valida identidad, beneficio y estado.", stats.redeemedTickets],
     ["Venta", "La caja registra valor, producto, sede y contexto.", stats.salesWithTicket],
-    ["Salida", "El cliente recibe proximo ticket para volver o recomendar.", stats.postSaleGenerated],
+    ["Salida", "El cliente recibe próximo ticket para volver o recomendar.", stats.postSaleGenerated],
   ];
 
   if (ticketPhysicalFlowTrack) {
@@ -5758,7 +5760,7 @@ function renderTicketPhysicalFlow(stats) {
         <td>${escapeHtml(title)}</td>
         <td>${escapeHtml(signal)}</td>
         <td>${escapeHtml(Number(value || 0).toLocaleString("es-CO"))}</td>
-        <td>${escapeHtml(value ? "Hay senal operativa para medir y comparar." : "Activa esta etapa para cerrar el ciclo fisico.")}</td>
+        <td>${escapeHtml(value ? "Hay senal operativa para medir y comparar." : "Activa esta etapa para cerrar el ciclo físico.")}</td>
       </tr>
     `).join("");
   }
@@ -5766,14 +5768,14 @@ function renderTicketPhysicalFlow(stats) {
 
 function renderTicketLoop(stats) {
   renderTicketMetricGrid(ticketLoopKpiGrid, [
-    ["Tickets de salida", stats.postSaleGenerated.toLocaleString("es-CO"), "Postventa emitida despues de compra", "highlight"],
+    ["Tickets de salida", stats.postSaleGenerated.toLocaleString("es-CO"), "Postventa emitida después de compra", "highlight"],
     ["Vueltas medidas", stats.postSaleRedeemed.toLocaleString("es-CO"), "Tickets postventa redimidos"],
     ["Loop rate", `${stats.loopRate.toFixed(1)}%`, "Recompra medida"],
     ["Afiliados activos", (state.affiliates || []).length.toLocaleString("es-CO"), "Clientes con ticket permanente"],
   ]);
   if (!ticketLoopBoard) return;
   const cards = [
-    ["Llegar con ticket", "Toda campana fisica debe entregar una razon verificable para entrar a tienda.", "Generar paquetes"],
+    ["Llegar con ticket", "Toda campaña física debe entregar una razon verificable para entrar a tienda.", "Generar paquetes"],
     ["Comprar con ticket", "Caja o vendedor asocia la venta al ticket, canal, beneficio y sucursal.", "Registrar venta"],
     ["Salir con ticket", "Cada compra debe terminar con un nuevo ticket de recompra, referido o afiliado.", "Crear postventa"],
   ];
@@ -5796,7 +5798,7 @@ function renderTicketRevenue(stats) {
       redeemed: stats.postSaleRedeemed,
       sales: stats.salesWithTicket,
       revenue: stats.revenue,
-      reading: stats.postSaleGenerated ? "Mide si cada compra esta creando la proxima visita." : "Aun falta convertir ventas en tickets de salida.",
+      reading: stats.postSaleGenerated ? "Mide si cada compra está creando la próxima visita." : "Aún falta convertir ventas en tickets de salida.",
     },
     {
       type: "Paquetes fisicos",
@@ -5854,7 +5856,7 @@ function renderTicketChannels(stats) {
         <td>${escapeHtml(row.redemptions.toLocaleString("es-CO"))}</td>
         <td>${escapeHtml(row.sales.toLocaleString("es-CO"))}</td>
         <td>${escapeHtml(money(row.revenue))}</td>
-        <td>${escapeHtml(row.revenue ? "Escalar con mas tickets y mismo beneficio." : "Medir venta en caja para saber si este canal paga.")}</td>
+        <td>${escapeHtml(row.revenue ? "Escalar con más tickets y mismo beneficio." : "Medir venta en caja para saber si este canal paga.")}</td>
       </tr>
     `).join("")
     : '<tr><td colspan="6">Crea paquetes de tickets o registra ventas con medio de llegada.</td></tr>';
@@ -5882,7 +5884,7 @@ function renderTicketBranches(stats) {
         <td>${escapeHtml(row.redemptions)}</td>
         <td>${escapeHtml(row.sales)}</td>
         <td>${escapeHtml(money(row.revenue))}</td>
-        <td>${escapeHtml(index === 0 && row.revenue ? "Sucursal lider: replicar guion, horario y beneficio." : row.redemptions && !row.sales ? "Tiene llegada fisica, falta registrar venta." : "Mantener medicion por sede.")}</td>
+        <td>${escapeHtml(index === 0 && row.revenue ? "Sucursal líder: replicar guion, horario y beneficio." : row.redemptions && !row.sales ? "Tiene llegada física, falta registrar venta." : "Mantener medición por sede.")}</td>
       </tr>
     `).join("")
     : '<tr><td colspan="5">Asocia redenciones y ventas a una sucursal para comparar tiendas.</td></tr>';
@@ -5915,7 +5917,7 @@ function renderTicketSellers(stats) {
         <td>${escapeHtml(row.validations && !row.sales ? "Entrenar cierre y registro de venta." : "Usar como referencia operativa.")}</td>
       </tr>
     `).join("")
-    : '<tr><td colspan="5">Cuando el equipo valide tickets, aqui se medira quien convierte mejor.</td></tr>';
+    : '<tr><td colspan="5">Cuando el equipo valide tickets, aquí se medirá quien convierte mejor.</td></tr>';
 }
 
 function renderTicketShield(stats) {
@@ -5923,13 +5925,13 @@ function renderTicketShield(stats) {
     ["Doble uso bloqueado", stats.redemptions.filter((item) => String(item.qr_status || item.status || "").toUpperCase() === "REDEEMED").length.toLocaleString("es-CO"), "Tickets ya consumidos"],
     ["Vencidos sin redimir", stats.expiredTickets.toLocaleString("es-CO"), "Beneficios que perdieron vigencia", stats.expiredTickets ? "warning" : ""],
     ["Redenciones sin venta", stats.missingSales.toLocaleString("es-CO"), "Falta cierre comercial", stats.missingSales ? "warning" : ""],
-    ["Riesgo repetidos", stats.repeatRisk.toLocaleString("es-CO"), "Documento/telefono repetido", stats.repeatRisk ? "warning" : ""],
+    ["Riesgo repetidos", stats.repeatRisk.toLocaleString("es-CO"), "Documento/teléfono repetido", stats.repeatRisk ? "warning" : ""],
   ]);
   if (!ticketShieldBoard) return;
   const cards = [
     ["Ticket vencido", stats.expiredTickets, "Reducir vigencia o activar recordatorio antes de vencer."],
-    ["Redimido sin venta", stats.missingSales, "Obligar registro de resultado comercial despues de redimir."],
-    ["Identidad repetida", stats.repeatRisk, "Revisar reglas por cedula, telefono y beneficio."],
+    ["Redimido sin venta", stats.missingSales, "Obligar registro de resultado comercial después de redimir."],
+    ["Identidad repetida", stats.repeatRisk, "Revisar reglas por cédula, teléfono y beneficio."],
   ];
   ticketShieldBoard.innerHTML = cards.map(([title, value, copy]) => `
     <article class="surface-card ticket-action-card ${value ? "ticket-risk-card" : ""}">
@@ -5952,7 +5954,7 @@ function renderNextTicketEngine(stats) {
     {
       title: lowLoop ? "Emitir ticket postventa" : "Subir ticket postventa",
       copy: lowLoop
-        ? "Cada compra debe cerrar con un ticket de regreso. Empieza con 7 o 15 dias de vigencia."
+        ? "Cada compra debe cerrar con un ticket de regreso. Empieza con 7 o 15 días de vigencia."
         : `El loop ya mide ${stats.loopRate.toFixed(1)}%. Prueba beneficios por ticket promedio.`,
       action: "Generar postventa",
       view: "strategic-qr",
@@ -5968,10 +5970,10 @@ function renderNextTicketEngine(stats) {
       icon: "payments",
     },
     {
-      title: bestChannel?.value ? `Duplicar ${bestChannel.label}` : "Probar canal fisico",
+      title: bestChannel?.value ? `Duplicar ${bestChannel.label}` : "Probar canal físico",
       copy: bestChannel?.value
-        ? "Ese canal ya produjo redenciones. Crea otro lote con mejor beneficio o vencimiento mas corto."
-        : "Crea lotes para volante, empaque, feria, mostrador o referido y mide cual trae tienda.",
+        ? "Ese canal ya produjo redenciones. Crea otro lote con mejor beneficio o vencimiento más corto."
+        : "Crea lotes para volante, empaque, feria, mostrador o referido y mide cuál trae tienda.",
       action: "Crear paquete",
       view: "strategic-qr",
       icon: "auto_awesome",
@@ -6011,7 +6013,7 @@ function renderQrBatchResultCard(batch, options = {}) {
   const activeCount = Number(batch.active_count || 0);
   const unclaimedCount = Number(batch.unclaimed_count || 0);
   const redeemedCount = Number(batch.redeemed_count || 0);
-  const expiresAt = batch.expires_at ? formatDate(batch.expires_at) : "Sin expiracion";
+  const expiresAt = batch.expires_at ? formatDate(batch.expires_at) : "Sin expiración";
 
   qrBatchResult.classList.remove("hidden");
   qrBatchResult.className = "surface-card qr-batch-result-card";
@@ -6108,10 +6110,10 @@ function renderStrategicQrView() {
     strategicMetricCard("Tickets", creditBalance, creditTone),
     strategicMetricCard("Tickets usados", creditUsed, "default"),
     strategicMetricCard("Uso cartera", credits ? `${Number(credits.used_rate || 0).toFixed(1)}%` : "-", credits?.low_balance ? "warning" : "default"),
-    strategicMetricCard("ticket postventa", String(metrics.post_sale_generated || 0)),
-    strategicMetricCard("Redimidos postventa", String(metrics.post_sale_redeemed || 0)),
-    strategicMetricCard("Tasa recompra", `${Number((metrics.repurchase_rate || 0) * 100).toFixed(1)}%`),
-    strategicMetricCard("Tickets activacion", String(metrics.trivia_generated || 0), "highlight"),
+    strategicMetricCard("Tickets genericos", String(metrics.post_sale_generated || 0)),
+    strategicMetricCard("Genericos redimidos", String(metrics.post_sale_redeemed || 0)),
+    strategicMetricCard("Tasa de redención", `${Number((metrics.repurchase_rate || 0) * 100).toFixed(1)}%`),
+    strategicMetricCard("Tickets activación", String(metrics.trivia_generated || 0), "highlight"),
     strategicMetricCard("Paquetes", String(metrics.qr_batches_generated || 0)),
     strategicMetricCard("ticket etiqueta reclamados", String(metrics.label_qr_claimed_or_active || 0)),
     strategicMetricCard("Vencidos", String(metrics.expired_without_redeem || 0), "warning"),
@@ -6188,7 +6190,7 @@ function renderStrategicQrView() {
         </td>
       </tr>
     `).join("")
-    : '<tr><td colspan="5">No hay tickets estrategicos generados.</td></tr>';
+    : '<tr><td colspan="5">No hay tickets estratégicos generados.</td></tr>';
 
   strategicQrHistoryTable.querySelectorAll("[data-download-strategic-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadStrategicQr(button.dataset.downloadStrategicQr));
@@ -6238,7 +6240,7 @@ function renderQrCreditShop() {
         <td><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span></td>
       </tr>
     `).join("")
-    : '<tr><td colspan="4">Aun no hay compras de recarga.</td></tr>';
+    : '<tr><td colspan="4">Aún no hay compras de recarga.</td></tr>';
 }
 
 function paymentStatusLabel(status) {
@@ -6271,10 +6273,10 @@ async function submitQrCreditCheckout(event) {
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("Mercado Pago no devolvio un link de checkout.");
+      throw new Error("Mercado Pago no devolvió un link de checkout.");
     }
     setInlineMessage(qrCreditCheckoutMessage, "Checkout creado. Redirigiendo a Mercado Pago...", "success");
-    showFeedback("Checkout creado. Al aprobarse el pago, el saldo de tickets se recargara automaticamente.", "success", { title: "Pago listo" });
+    showFeedback("Checkout creado. Al aprobarse el pago, el saldo de tickets se recargará automáticamente.", "success", { title: "Pago listo" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(qrCreditCheckoutMessage, error.message, "error");
@@ -6301,7 +6303,7 @@ async function submitSubscriptionRenewal(event) {
 
   setButtonLoading(subscriptionRenewalButton, true, "Abriendo pago...");
   setInlineMessage(subscriptionRenewalMessage, "Creando checkout seguro de mensualidad...", "info");
-  showFeedback("Preparando pago de renovacion mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
+  showFeedback("Preparando pago de renovación mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/checkout", {
       method: "POST",
@@ -6310,10 +6312,10 @@ async function submitSubscriptionRenewal(event) {
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("Mercado Pago no devolvio un link de checkout.");
+      throw new Error("Mercado Pago no devolvió un link de checkout.");
     }
     setInlineMessage(subscriptionRenewalMessage, "Checkout creado. Redirigiendo a Mercado Pago...", "success");
-    showFeedback("Al aprobarse el pago, la mensualidad se renovara automaticamente.", "success", { title: "Pago listo" });
+    showFeedback("Al aprobarse el pago, la mensualidad se renovara automáticamente.", "success", { title: "Pago listo" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
@@ -6329,8 +6331,8 @@ async function submitSubscriptionAutoRenewal() {
     return;
   }
 
-  setButtonLoading(subscriptionAutoRenewButton, true, "Abriendo autorizacion...");
-  setInlineMessage(subscriptionRenewalMessage, "Te llevaremos a Mercado Pago para inscribir la tarjeta. Puede aparecer una validacion temporal; el plan se cobra desde la fecha programada.", "info");
+  setButtonLoading(subscriptionAutoRenewButton, true, "Abriendo autorización...");
+  setInlineMessage(subscriptionRenewalMessage, "Te llevaremos a Mercado Pago para inscribir la tarjeta. Puede aparecer una validación temporal; el plan se cobra desde la fecha programada.", "info");
   showFeedback("Preparando inscripcion de tarjeta para cobros futuros. El plan no se cobra hoy.", "loading", { title: "Cobro automatico", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/auto-renewal", {
@@ -6343,11 +6345,11 @@ async function submitSubscriptionAutoRenewal() {
       || data.order?.checkout_url
       || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("Mercado Pago no devolvio un link para autorizar el cobro automatico.");
+      throw new Error("Mercado Pago no devolvió un link para autorizar el cobro automatico.");
     }
-    const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : "la proxima renovacion";
-    setInlineMessage(subscriptionRenewalMessage, `Autorizacion creada. Mercado Pago puede validar la tarjeta temporalmente. Primer cobro real programado para ${firstCharge}.`, "success");
-    showFeedback(`Inscribe la tarjeta en Mercado Pago. Primer cobro real: ${firstCharge}.`, "success", { title: "Autorizacion lista" });
+    const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : "la próxima renovación";
+    setInlineMessage(subscriptionRenewalMessage, `Autorización creada. Mercado Pago puede validar la tarjeta temporalmente. Primer cobro real programado para ${firstCharge}.`, "success");
+    showFeedback(`Inscribe la tarjeta en Mercado Pago. Primer cobro real: ${firstCharge}.`, "success", { title: "Autorización lista" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
@@ -6381,7 +6383,7 @@ async function submitCustomerAcquisitionSale(event) {
     });
     const awarded = Number(data.referral?.points_awarded || 0);
     const message = awarded
-      ? `Venta registrada. ${data.referral.affiliate_name} recibio ${awarded} puntos por recomendacion.`
+      ? `Venta registrada. ${data.referral.affiliate_name} recibio ${awarded} puntos por recomendación.`
       : "Venta registrada con su medio de llegada.";
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
@@ -6429,19 +6431,19 @@ function activationTypeLabel(type) {
     SURVEY: "Encuesta",
     FLEX_SURVEY: "Encuesta",
     SPIN_DISCOVER: "Gira y descubre",
-    THERMOMETER: "Termometro",
-    DISCOUNT_THERMOMETER: "Termometro",
-    PRODUCT_VOTE: "Votacion de producto",
-    QUICK_VOTE: "Votacion de producto",
+    THERMOMETER: "Termómetro",
+    DISCOUNT_THERMOMETER: "Termómetro",
+    PRODUCT_VOTE: "Votación de producto",
+    QUICK_VOTE: "Votación de producto",
     STYLE_SELECTOR: "Selector de estilo",
     GIFT_CURATOR: "Curador de regalo",
-    NEED_DIAGNOSTIC: "Diagnostico de necesidad",
-    PREMIUM_NEED_DIAGNOSTIC: "Diagnostico de necesidad",
+    NEED_DIAGNOSTIC: "Diagnóstico de necesidad",
+    PREMIUM_NEED_DIAGNOSTIC: "Diagnóstico de necesidad",
     WAITLIST: "Lista de espera",
     REWARD_RESERVATION: "Reserva con Reward Pass",
     EXPERIENCE_RESERVATION: "Reserva de experiencia",
     SEALED_LETTER: "Carta sellada",
-    PRIVATE_INVITATION: "Invitacion privada",
+    PRIVATE_INVITATION: "Invitación privada",
     SCRATCH_DIGITAL: "Raspa digital",
     SCRATCH_WIN: "Raspa digital",
     TAP_REVEAL: "Toca y revela",
@@ -6450,9 +6452,9 @@ function activationTypeLabel(type) {
     SNAKE: "Culebrita",
     CATCH_PRIZE: "Atrapa el premio",
     MEMORY_PAIRS: "Memoria de pares",
-    FAST_TAP: "Tap rapido",
+    FAST_TAP: "Tap rápido",
     MINI_MAZE: "Mini laberinto",
-  }[type] || "Activacion";
+  }[type] || "Activación";
 }
 
 function interactiveTypeForLegacyType(type) {
@@ -6539,7 +6541,7 @@ function setActivationType(type) {
   if (triviaBuilderHint) {
     triviaBuilderHint.textContent = nextType === "TRIVIA"
       ? triviaBuilderHint.textContent
-      : `${activationTypeLabel(nextType)} activa. El participante recibe QR al completar la dinamica.`;
+      : `${activationTypeLabel(nextType)} activa. El participante recibe QR al completar la dinámica.`;
   }
   if (triviaLauncherMessage && nextType !== "TRIVIA") {
     setInlineMessage(triviaLauncherMessage, `${activationTypeLabel(nextType)} seleccionado. Configura los campos y lanza la landing cuando este lista.`, "info");
@@ -6713,7 +6715,7 @@ async function handleProductVoteImageFile(key, file) {
     const optionInput = document.querySelector(`[data-flat-choice="PRODUCT_VOTE"] [data-flat-option="${key}"]`);
     if (optionInput) optionInput.dataset.imageDataUrl = dataUrl;
     syncProductVoteImagePreview(key, dataUrl);
-    showFeedback("Imagen de opcion cargada.", "success", { title: "Votacion de producto" });
+    showFeedback("Imagen de opción cargada.", "success", { title: "Votación de producto" });
   } catch (error) {
     showFeedback(error.message || "No se pudo cargar la imagen.", "error");
   } finally {
@@ -6747,7 +6749,7 @@ function defaultOptionsForFlatQuestion(key, type) {
     urgency: ["Hoy", "Esta semana", "Este mes"],
     purchase_window: ["Lanzamiento", "Esta semana", "Este mes"],
   };
-  return presets[key] || ["Opcion A", "Opcion B", "Opcion C"];
+  return presets[key] || ["Opción A", "Opción B", "Opción C"];
 }
 
 function isFlatChoiceActivation(type) {
@@ -6770,12 +6772,12 @@ function minigameInstructionForType(type) {
   return {
     SPACE_SHOOTER: "Arrastra el dedo a izquierda o derecha. La nave no salta al touch, se mueve lateralmente, recibe dano y dispara con cadencia controlada.",
     BREAKOUT: "Rompe tantos bloques como puedas antes de que termine el tiempo.",
-    SNAKE: "Captura elementos, evita errores y supera el score minimo.",
+    SNAKE: "Captura elementos, evita errores y supera el score mínimo.",
     CATCH_PRIZE: "Mueve la canasta, arma combos, atrapa bonus especiales y evita bombas. Hay iman, escudo, tiempo extra y dificultad progresiva.",
     MEMORY_PAIRS: "Encuentra pares y gana puntos por rapidez.",
-    FAST_TAP: "Toca los objetivos correctos tan rapido como puedas.",
+    FAST_TAP: "Toca los objetivos correctos tan rápido como puedas.",
     MINI_MAZE: "Avanza hacia la meta sin tocar zonas de penalizacion.",
-  }[type] || "Completa la partida y supera el score minimo para recibir QR.";
+  }[type] || "Completa la partida y supera el score mínimo para recibir QR.";
 }
 
 function activationParticipantLockFromForm() {
@@ -6785,7 +6787,7 @@ function activationParticipantLockFromForm() {
     scope: "activation",
     cooldown_days: cooldownDays,
     winner_policy: winnerPolicy,
-    label: `${cooldownDays} dias de espera entre intentos`,
+    label: `${cooldownDays} días de espera entre intentos`,
   };
 }
 
@@ -6793,7 +6795,7 @@ function validateActivationParticipantLock() {
   const cooldownDays = Number(minigameParticipantCooldownInput?.value || 0);
   const winnerPolicy = minigameWinnerPolicyInput?.value || "block_previous_winners";
   if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
-    setInlineMessage(triviaLauncherMessage, "Configura los dias de espera entre 0 y 365.", "error");
+    setInlineMessage(triviaLauncherMessage, "Configura los días de espera entre 0 y 365.", "error");
     minigameParticipantCooldownInput?.focus();
     return false;
   }
@@ -7069,7 +7071,7 @@ function validateTriviaLauncherForm() {
     const expectedSurveyQuestions = getActivationQuestionCount("SURVEY", 1);
     const invalidSurvey = surveyQuestions.find((question) => ["SINGLE_CHOICE", "MULTIPLE_CHOICE"].includes(question.type) && question.options.length < 2);
     if (surveyQuestions.length < expectedSurveyQuestions || invalidSurvey) {
-      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedSurveyQuestions} preguntas activas de la encuesta. Las preguntas de opcion necesitan minimo 2 opciones.`, "error");
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedSurveyQuestions} preguntas activas de la encuesta. Las preguntas de opción necesitan mínimo 2 opciones.`, "error");
       return null;
     }
     return { survey_questions: surveyQuestions };
@@ -7085,7 +7087,7 @@ function validateTriviaLauncherForm() {
   if (type === "THERMOMETER") {
     const thermometerDiscounts = collectThermometerDiscounts();
     if (thermometerDiscounts.length < 3) {
-      setInlineMessage(triviaLauncherMessage, "Configura al menos tres descuentos validos para el termometro.", "error");
+      setInlineMessage(triviaLauncherMessage, "Configura al menos tres descuentos válidos para el termómetro.", "error");
       thermometerDiscountsInput?.focus();
       return null;
     }
@@ -7094,7 +7096,7 @@ function validateTriviaLauncherForm() {
   if (isFlatChoiceActivation(type)) {
     const choices = collectFlatChoiceOptions(type);
     if (choices.length < 2) {
-      setInlineMessage(triviaLauncherMessage, "Configura al menos dos opciones para esta activacion.", "error");
+      setInlineMessage(triviaLauncherMessage, "Configura al menos dos opciones para esta activación.", "error");
       return null;
     }
     return { choices };
@@ -7103,7 +7105,7 @@ function validateTriviaLauncherForm() {
     const questions = collectFlatFormQuestions(type);
     const expectedQuestions = getActivationQuestionCount(type, 1);
     if (questions.length < expectedQuestions) {
-      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedQuestions} preguntas activas para esta activacion.`, "error");
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedQuestions} preguntas activas para esta activación.`, "error");
       return null;
     }
     return { questions };
@@ -7118,12 +7120,12 @@ function validateTriviaLauncherForm() {
     const lives = Number(minigameLivesInput?.value || 3);
     const fireIntervalMs = Number(minigameFireIntervalInput?.value || 480);
     if (!Number.isFinite(durationSeconds) || durationSeconds < 10 || durationSeconds > 180) {
-      setInlineMessage(triviaLauncherMessage, "Configura una duracion de minijuego entre 10 y 180 segundos.", "error");
+      setInlineMessage(triviaLauncherMessage, "Configura una duración de minijuego entre 10 y 180 segundos.", "error");
       minigameDurationInput?.focus();
       return null;
     }
     if (!Number.isFinite(minScore) || minScore < 1 || !Number.isFinite(maxScore) || maxScore < minScore) {
-      setInlineMessage(triviaLauncherMessage, "Configura un score minimo valido y un maximo antiabuso mayor o igual.", "error");
+      setInlineMessage(triviaLauncherMessage, "Configura un score mínimo válido y un máximo antiabuso mayor o igual.", "error");
       minigameMinScoreInput?.focus();
       return null;
     }
@@ -7152,7 +7154,7 @@ function validateTriviaLauncherForm() {
     return null;
   }
   if (triviaExpiresModeInput?.value === "CUSTOM_DATE" && !triviaExpiresAtInput?.value) {
-    setInlineMessage(triviaLauncherMessage, "Selecciona la fecha personalizada de expiracion.", "error");
+    setInlineMessage(triviaLauncherMessage, "Selecciona la fecha personalizada de expiración.", "error");
     triviaExpiresAtInput?.focus();
     return null;
   }
@@ -7166,7 +7168,7 @@ function renderTriviaLaunchers() {
       <tr>
         <td>
           <strong>${escapeHtml(item.title)}</strong><br>
-          <span class="table-secondary">${escapeHtml(activationTypeLabel(item.activation_type))} · ${escapeHtml(item.campaign_name || "Sin campana")} · Creada ${escapeHtml(formatDate(item.created_at))}</span>
+          <span class="table-secondary">${escapeHtml(activationTypeLabel(item.activation_type))} · ${escapeHtml(item.campaign_name || "Sin campaña")} · Creada ${escapeHtml(formatDate(item.created_at))}</span>
           <span class="table-secondary">${escapeHtml(activationParticipantPolicyLabel(item))}</span>
         </td>
         <td>
@@ -7203,7 +7205,7 @@ function renderTriviaLaunchers() {
   triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
     button.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
-      showFeedback("Link publico de activacion copiado.");
+      showFeedback("Link público de activación copiado.");
     });
   });
   triviaLauncherTable.querySelectorAll("[data-activation-status]").forEach((button) => {
@@ -7230,7 +7232,7 @@ async function showInteractiveActivationData(id) {
     `Titulo: ${activation.title}`,
     `Tipo: ${activationTypeLabel(activation.activation_type)}`,
     `Estado: ${activationStatusLabel(activation.status)}`,
-    `Campana: ${activation.campaign_name || "Sin campana"}`,
+    `Campaña: ${activation.campaign_name || "Sin campaña"}`,
     `Intentos: ${activation.attempts_count || 0}`,
     `QR generados: ${activation.winners_count || 0}${activation.max_winners ? ` / ${activation.max_winners}` : ""}`,
     `Vence: ${activation.ends_at ? formatDate(activation.ends_at) : "Sin vencimiento"}`,
@@ -7238,7 +7240,7 @@ async function showInteractiveActivationData(id) {
   ].join("\n");
   try {
     await navigator.clipboard?.writeText(summary);
-    showFeedback("Datos de la activacion copiados al portapapeles.", "success", { title: "Ficha copiada" });
+    showFeedback("Datos de la activación copiados al portapapeles.", "success", { title: "Ficha copiada" });
   } catch {
     window.alert(summary);
   }
@@ -7274,7 +7276,7 @@ function activationParticipantPolicyLabel(activation) {
   const winnerText = lock.winner_policy === "allow_after_cooldown"
     ? "ganadores pueden volver tras la espera"
     : "ganadores bloqueados";
-  return `${Number.isFinite(days) ? days : 7} dias entre intentos · ${winnerText}`;
+  return `${Number.isFinite(days) ? days : 7} días entre intentos · ${winnerText}`;
 }
 
 async function patchInteractiveActivation(id, payload, successMessage) {
@@ -7288,7 +7290,7 @@ async function patchInteractiveActivation(id, payload, successMessage) {
     ? (state.triviaLaunchers || []).filter((item) => String(item.id) !== String(id))
     : (state.triviaLaunchers || []).map((item) => String(item.id) === String(id) ? { ...item, ...activation } : item);
   renderTriviaLaunchers();
-  if (successMessage) showFeedback(successMessage, "success", { title: "Activacion actualizada" });
+  if (successMessage) showFeedback(successMessage, "success", { title: "Activación actualizada" });
   return activation;
 }
 
@@ -7297,8 +7299,8 @@ async function deleteInteractiveActivation(id) {
   if (!activation) return;
   const hasHistory = Number(activation.attempts_count || 0) > 0 || Number(activation.winners_count || 0) > 0;
   const copy = hasHistory
-    ? `Esta activacion ya tiene historial. Se retirara de la lista y quedara archivada para no romper tickets/redenciones. Deseas continuar?`
-    : `Vas a eliminar definitivamente "${activation.title}". Esta accion no se puede deshacer. Deseas continuar?`;
+    ? `Esta activación ya tiene historial. Se retirará de la lista y quedará archivada para no romper tickets/redenciones. Deseas continuar?`
+    : `Vas a eliminar definitivamente "${activation.title}". Esta acción no se puede deshacer. Deseas continuar?`;
   if (!window.confirm(copy)) return;
   try {
     const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
@@ -7307,7 +7309,7 @@ async function deleteInteractiveActivation(id) {
     });
     state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => String(item.id) !== String(id));
     renderTriviaLaunchers();
-    showFeedback(data.message || "Activacion eliminada.", "success", { title: data.deleted ? "Eliminada" : "Archivada" });
+    showFeedback(data.message || "Activación eliminada.", "success", { title: data.deleted ? "Eliminada" : "Archivada" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo eliminar" });
   }
@@ -7316,7 +7318,7 @@ async function deleteInteractiveActivation(id) {
 async function updateActivationStatus(id, status) {
   const activation = activationById(id);
   if (!activation || !status) return;
-  if (status === "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedara inactivo y no recibira nuevas participaciones. Deseas continuar?`)) {
+  if (status === "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedará inactivo y no recibirá nuevas participaciones. Deseas continuar?`)) {
     return;
   }
   try {
@@ -7329,23 +7331,23 @@ async function updateActivationStatus(id, status) {
 async function editInteractiveActivation(id) {
   const activation = activationById(id);
   if (!activation) return;
-  const title = window.prompt("Titulo de la activacion", activation.title || "");
+  const title = window.prompt("Titulo de la activación", activation.title || "");
   if (title === null) return;
   const description = window.prompt("Descripcion para la landing", activation.description || "");
   if (description === null) return;
-  const maxRewardsText = window.prompt("Cupo maximo de QR/beneficios. Deja vacio para sin limite.", activation.max_rewards || "");
+  const maxRewardsText = window.prompt("Cupo máximo de QR/beneficios. Deja vacío para sin limite.", activation.max_rewards || "");
   if (maxRewardsText === null) return;
   const maxRewards = String(maxRewardsText).trim() ? Number(maxRewardsText) : null;
   if (maxRewards !== null && (!Number.isFinite(maxRewards) || maxRewards < 1)) {
-    showFeedback("El cupo maximo debe ser un numero mayor a cero o quedar vacio.", "error", { title: "Dato invalido" });
+    showFeedback("El cupo máximo debe ser un número mayor a cero o quedar vacío.", "error", { title: "Dato inválido" });
     return;
   }
   const currentLock = activation.capture_config?.participant_lock || {};
-  const cooldownText = window.prompt("Dias de espera entre intentos para este beneficiario.", currentLock.cooldown_days ?? 7);
+  const cooldownText = window.prompt("Días de espera entre intentos para este beneficiario.", currentLock.cooldown_days ?? 7);
   if (cooldownText === null) return;
   const cooldownDays = Number(cooldownText);
   if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
-    showFeedback("Los dias de espera deben estar entre 0 y 365.", "error", { title: "Dato invalido" });
+    showFeedback("Los días de espera deben estar entre 0 y 365.", "error", { title: "Dato inválido" });
     return;
   }
   const currentWinnerPolicy = currentLock.winner_policy || "block_previous_winners";
@@ -7355,7 +7357,7 @@ async function editInteractiveActivation(id) {
   );
   if (winnerPolicy === null) return;
   if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
-    showFeedback("Politica invalida. Usa block_previous_winners o allow_after_cooldown.", "error", { title: "Dato invalido" });
+    showFeedback("Política inválida. Usa block_previous_winners o allow_after_cooldown.", "error", { title: "Dato inválido" });
     return;
   }
   try {
@@ -7371,10 +7373,10 @@ async function editInteractiveActivation(id) {
           scope: currentLock.scope === "company" ? "company" : "activation",
           cooldown_days: cooldownDays,
           winner_policy: winnerPolicy,
-          label: `${cooldownDays} dias de espera entre intentos`,
+          label: `${cooldownDays} días de espera entre intentos`,
         },
       },
-    }, "Datos basicos actualizados.");
+    }, "Datos básicos actualizados.");
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo editar" });
   }
@@ -7383,7 +7385,7 @@ async function editInteractiveActivation(id) {
 async function recycleInteractiveActivation(id) {
   const activation = activationById(id);
   if (!activation) return;
-  if (!window.confirm(`Crear una copia borrador de "${activation.title}" con sus preguntas, reglas y configuracion?`)) return;
+  if (!window.confirm(`Crear una copia borrador de "${activation.title}" con sus preguntas, reglas y configuración?`)) return;
   try {
     const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}/recycle`, {
       method: "POST",
@@ -7392,7 +7394,7 @@ async function recycleInteractiveActivation(id) {
     });
     state.triviaLaunchers = [data.activation, ...(state.triviaLaunchers || [])];
     renderTriviaLaunchers();
-    showFeedback("Activacion reciclada como borrador. Puedes editarla y activarla cuando este lista.", "success", { title: "Copia creada" });
+    showFeedback("Activación reciclada como borrador. Puedes editarla y activarla cuando este lista.", "success", { title: "Copia creada" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo reciclar" });
   }
@@ -7400,11 +7402,11 @@ async function recycleInteractiveActivation(id) {
 
 async function submitTriviaLauncher(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una activacion")) {
+  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una activación")) {
     return;
   }
   if (!triviaLauncherForm.reportValidity()) {
-    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la activacion.", "error");
+    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la activación.", "error");
     return;
   }
   const activationPayload = validateTriviaLauncherForm();
@@ -7412,7 +7414,7 @@ async function submitTriviaLauncher(event) {
   const type = currentActivationType();
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Lanzando...");
-  setInlineMessage(triviaLauncherMessage, `Creando landing publica de ${activationTypeLabel(type).toLowerCase()}.`, "info");
+  setInlineMessage(triviaLauncherMessage, `Creando landing pública de ${activationTypeLabel(type).toLowerCase()}.`, "info");
   try {
     const data = await api("/api/business/interactive-activations", {
       method: "POST",
@@ -7425,104 +7427,175 @@ async function submitTriviaLauncher(event) {
     renderTriviaLaunchers();
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
-      <strong>Activacion lanzada</strong>
-      <p class="table-secondary">Comparte este link con clientes. Primero dejan sus datos, luego completan la dinamica y el sistema emite el ticket segun la regla configurada.</p>
+      <strong>Activación lanzada</strong>
+      <p class="table-secondary">Comparte este link con clientes. Primero dejan sus datos, luego completan la dinámica y el sistema emite el ticket según la regla configurada.</p>
       <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
     `;
     document.getElementById("copyTriviaLauncherResultButton")?.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(activation.public_url);
-      showFeedback("Link de activacion copiado.");
+      showFeedback("Link de activación copiado.");
     });
-    setInlineMessage(triviaLauncherMessage, "Activacion lista para compartir.", "success");
-    showFeedback("Activacion lanzada. El link publico ya esta listo.", "success", { title: "Constructor de activaciones" });
+    setInlineMessage(triviaLauncherMessage, "Activación lista para compartir.", "success");
+    showFeedback("Activación lanzada. El link público ya está listo.", "success", { title: "Constructor de activaciones" });
     markTicketCenterDataStale(["activations", "metrics"]);
     await loadStrategicQrData({ groups: ["activations", "metrics"], force: true, quiet: true });
     renderStrategicQrView();
   } catch (error) {
     setInlineMessage(triviaLauncherMessage, error.message, "error");
-    showFeedback(error.message, "error", { title: "No se pudo lanzar la activacion" });
+    showFeedback(error.message, "error", { title: "No se pudo lanzar la activación" });
   } finally {
     setButtonLoading(submitButton, false);
   }
 }
 
+const GENERIC_TICKET_USE_CASE_LABELS = {
+  gift_product: "Producto regalo",
+  secret_friend: "Amigo secreto",
+  invitation: "Invitación",
+  prospect_benefit: "Beneficio para prospecto",
+  pre_sale: "Preventa",
+  post_sale: "Postventa / recompra",
+  custom: "Uso personalizado",
+};
+
+function genericTicketUseCaseLabel(value) {
+  return GENERIC_TICKET_USE_CASE_LABELS[value] || GENERIC_TICKET_USE_CASE_LABELS.custom;
+}
+
+function whatsappPhoneFromInput(value) {
+  const digits = String(value || "").replace(/[^\d]/g, "");
+  if (digits.length === 10 && digits.startsWith("3")) {
+    return `57${digits}`;
+  }
+  return digits;
+}
+
+function buildGenericTicketShareText({ business, beneficiary, product, benefit, occasion, validatorUrl }) {
+  const businessName = business?.name || "el punto autorizado";
+  const greeting = beneficiary ? `Hola ${beneficiary}.` : "Hola.";
+  const subject = product || benefit || "tu ticket";
+  const occasionLine = occasion ? `Motivo: ${occasion}.` : "";
+  return [
+    greeting,
+    `Recibiste un ticket para reclamar ${subject} en ${businessName}.`,
+    occasionLine,
+    "Presenta este enlace o su QR en el punto de validación:",
+    validatorUrl,
+  ].filter(Boolean).join(" ");
+}
+
 async function submitPostSaleQr(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "generar un ticket postventa")) {
+  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir un ticket generico")) {
     return;
   }
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando...");
-  setInlineMessage(postSaleQrMessage, "Generando ticket postventa y descontando 1 ticket...", "info");
-  showFeedback("Creando token unico, registrando venta y preparando el ticket.", "loading", { title: "Generando ticket postventa", timeout: 0 });
-  showBusyOverlay("Generando ticket postventa", "Registrando venta, creando ticket y actualizando saldo.");
+  setInlineMessage(postSaleQrMessage, "Emitiendo ticket generico y descontando 1 ticket...", "info");
+  showFeedback("Creando token único, preparando el ticket y actualizando saldo.", "loading", { title: "Emitiendo ticket", timeout: 0 });
+  showBusyOverlay("Emitiendo ticket generico", "Creando ticket validable, actualizando saldo y preparando envio.");
   try {
-    const attributionSource = postSaleAttributionSourceInput?.value.trim() || "post-sale";
-    const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || postSaleProductInput.value.trim() || null;
-    const data = await api("/api/business/qr/post-sale", {
+    const ticketUseCase = postSaleUseCaseInput?.value || "gift_product";
+    const ticketUseCaseLabel = genericTicketUseCaseLabel(ticketUseCase);
+    const ticketOccasion = postSaleOccasionInput?.value.trim() || null;
+    const productName = postSaleProductInput.value.trim();
+    const benefitLabel = postSaleBenefitLabelInput.value.trim();
+    const beneficiaryName = postSaleCustomerInput.value.trim();
+    const attributionSource = postSaleAttributionSourceInput?.value.trim() || ticketUseCase;
+    const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || ticketOccasion || productName || benefitLabel || null;
+    const benefitValue = {
+      ...parseJsonObject(postSaleBenefitValueInput.value),
+      product_name: productName || null,
+      ticket_use_case: ticketUseCase,
+      ticket_use_case_label: ticketUseCaseLabel,
+      occasion: ticketOccasion,
+    };
+    const data = await api("/api/business/qr/generic-ticket", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
         campaign_id: postSaleCampaignInput.value || null,
         sale_amount: Number(postSaleAmountInput.value || 0),
         currency: postSaleCurrencyInput.value.trim() || "COP",
-        customer_name: postSaleCustomerInput.value.trim() || null,
+        customer_name: beneficiaryName || null,
         document_id: postSaleDocumentInput.value.trim() || null,
         customer_phone: postSalePhoneInput.value.trim() || null,
         customer_email: postSaleEmailInput.value.trim() || null,
-        product_name: postSaleProductInput.value.trim() || null,
+        product_name: productName || benefitLabel || null,
         notes: postSaleNotesInput.value.trim() || null,
         metadata: {
           attribution_source: attributionSource,
           attribution_subject: attributionSubject,
           campaign_id: postSaleCampaignInput.value || null,
-          qr_creation_context: "business_owner_post_sale",
+          qr_creation_context: "business_owner_generic_ticket",
+          origin_label: `Ticket generico - ${ticketUseCaseLabel}`,
+          ticket_use_case: ticketUseCase,
+          ticket_use_case_label: ticketUseCaseLabel,
+          ticket_occasion: ticketOccasion,
+          intended_recipient_name: beneficiaryName || null,
+          gift_product_name: productName || null,
         },
         expires_mode: postSaleExpiresModeInput.value,
         expires_at: postSaleExpiresAtInput.value ? new Date(postSaleExpiresAtInput.value).toISOString() : null,
         benefit: {
           benefit_type: postSaleBenefitTypeInput.value,
-          benefit_label: postSaleBenefitLabelInput.value.trim(),
-          benefit_value: parseJsonObject(postSaleBenefitValueInput.value),
+          benefit_label: benefitLabel,
+          benefit_value: benefitValue,
         },
       }),
     });
     const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
-    const ticketFilename = filenameForDataUrl(data.filename || `post-sale-${data.qr_code.id}.png`, browserTicketDataUrl);
+    const ticketFilename = filenameForDataUrl(data.filename || `ticket-${slugify(ticketUseCaseLabel)}-${data.qr_code.id}.png`, browserTicketDataUrl);
     const ticketDownloadUrl = URL.createObjectURL(dataUrlToBlob(browserTicketDataUrl));
+    const shareText = buildGenericTicketShareText({
+      business: data.business,
+      beneficiary: beneficiaryName,
+      product: productName,
+      benefit: data.benefit?.label || benefitLabel,
+      occasion: ticketOccasion,
+      validatorUrl: data.validator_url,
+    });
+    const whatsappPhone = whatsappPhoneFromInput(postSalePhoneInput.value);
+    const whatsappUrl = whatsappPhone
+      ? `https://wa.me/${encodeURIComponent(whatsappPhone)}?text=${encodeURIComponent(shareText)}`
+      : `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
     markTicketCenterDataStale(["core", "metrics", "history"]);
     await loadStrategicQrData({ groups: ["core", "metrics", "history"], force: true, quiet: true });
     setView("strategic-qr");
-    setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
-    const recipientPhone = String(postSalePhoneInput.value || "").replace(/[^\d]/g, "");
-    const secretFriendWhatsappText = [
-      "Tu amigo secreto te ha endulzado.",
-      `Tienes un regalo esperando: ${postSaleBenefitLabelInput.value.trim() || "un ticket dulce"}.`,
-      "Te adjunto tu ticket QR. Presenta la imagen QR en tienda para reclamar tu sorpresa.",
-      "No necesitas iniciar sesion ni abrir ningun link.",
-    ].join(" ");
-    const secretFriendWhatsappUrl = recipientPhone
-      ? `https://wa.me/${recipientPhone}?text=${encodeURIComponent(secretFriendWhatsappText)}`
-      : `https://wa.me/?text=${encodeURIComponent(secretFriendWhatsappText)}`;
+    setInlineMessage(postSaleQrMessage, "Ticket emitido. El ticket fue descontado y el envio esta listo.", "success");
+    const genericTicketWhatsappText = [
+      beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
+      `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
+      ticketOccasion ? `Motivo: ${ticketOccasion}.` : "",
+      "Presenta la imagen QR o el enlace del ticket en el punto autorizado.",
+      data.validator_url,
+    ].filter(Boolean).join(" ");
+    const genericTicketWhatsappUrl = whatsappPhone
+      ? `https://wa.me/${encodeURIComponent(whatsappPhone)}?text=${encodeURIComponent(genericTicketWhatsappText)}`
+      : `https://wa.me/?text=${encodeURIComponent(genericTicketWhatsappText)}`;
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
+      <p><strong>Uso:</strong> ${escapeHtml(ticketUseCaseLabel)}${ticketOccasion ? ` | ${escapeHtml(ticketOccasion)}` : ""}</p>
+      <p><strong>Representa:</strong> ${escapeHtml(productName || data.benefit?.label || benefitLabel || "Beneficio")}</p>
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
+      <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
-      <p class="inline-selects">
-        <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir ticket QR</button>
-        <a class="ghost-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar QR</a>
-        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Mensaje WhatsApp</a>
-      </p>
-      <p class="table-secondary">El beneficiario recibe la imagen QR del ticket. No recibe link y no necesita iniciar sesion.</p>
+      <div class="inline-actions">
+        <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir QR</button>
+        <a class="ghost-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a>
+        <a class="ghost-button" href="${escapeHtml(genericTicketWhatsappUrl)}" target="_blank" rel="noopener">Mensaje WhatsApp</a>
+        <button class="ghost-button" id="copyGenericTicketLinkButton" type="button">Copiar link</button>
+      </div>
+      <p class="table-secondary">Puedes enviar la imagen QR o copiar el enlace del ticket. El beneficiario solo debe presentarlo para validacion.</p>
     `;
     document.getElementById("sharePostSaleQrButton")?.addEventListener("click", async () => {
       try {
         await shareTicketQrFile({
           filename: ticketFilename,
           dataUrl: browserTicketDataUrl,
-          text: secretFriendWhatsappText,
+          text: genericTicketWhatsappText,
         });
       } catch (error) {
         if (error?.name === "AbortError") return;
@@ -7532,7 +7605,11 @@ async function submitPostSaleQr(event) {
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
       window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
     });
-    showFeedback("Ticket QR listo. Comparte la imagen QR con el beneficiario.", "success", { title: "Ticket generado" });
+    document.getElementById("copyGenericTicketLinkButton")?.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(data.validator_url);
+      showFeedback("Link del ticket copiado.", "success", { title: "Ticket listo" });
+    });
+    showFeedback("Ticket generico listo. Comparte la imagen QR, descarga el ticket o envia el mensaje al beneficiario.", "success", { title: "Ticket emitido" });
   } catch (error) {
     setInlineMessage(postSaleQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo generar el ticket" });
@@ -7733,8 +7810,8 @@ async function validateValidatorToken(rawValue) {
   const token = extractValidatorToken(rawValue);
   setInlineMessage(validatorManualStatus, "", "info");
   if (!token) {
-    setValidatorResult("danger", "Ticket vacio", "Pega un token o URL valido.");
-    setInlineMessage(validatorManualStatus, "Pega un token o URL valido.", "error");
+    setValidatorResult("danger", "Ticket vacío", "Pega un token o URL válido.");
+    setInlineMessage(validatorManualStatus, "Pega un token o URL válido.", "error");
     return;
   }
 
@@ -7755,9 +7832,9 @@ async function validateValidatorToken(rawValue) {
     state.validatorLastValidation = data;
     state.validatorLastRedemption = null;
     if (data.allowed) {
-      setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass valido" : "Ticket valido", data.message, data);
-      setInlineMessage(validatorManualStatus, data.kind === "reward_pass" ? "Reward Pass valido. Confirma cedula, factura y valor a redimir." : "Ticket valido. Puedes redimir el beneficio.", "success");
-      showFeedback(data.kind === "reward_pass" ? "Reward Pass valido. Confirma documento antes de registrar redencion." : "Ticket valido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
+      setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass válido" : "Ticket válido", data.message, data);
+      setInlineMessage(validatorManualStatus, data.kind === "reward_pass" ? "Reward Pass válido. Confirma cédula, factura y valor a redimir." : "Ticket válido. Puedes redimir el beneficio.", "success");
+      showFeedback(data.kind === "reward_pass" ? "Reward Pass válido. Confirma documento antes de registrar redención." : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
       setInlineMessage(validatorManualStatus, data.message || "Este ticket no puede redimirse.", "error");
@@ -7766,9 +7843,9 @@ async function validateValidatorToken(rawValue) {
   } catch (error) {
     state.validatorLastValidation = null;
     state.validatorLastRedemption = null;
-    setValidatorResult("danger", "Validacion fallida", error.message);
+    setValidatorResult("danger", "Validación fallida", error.message);
     setInlineMessage(validatorManualStatus, error.message, "error");
-    showFeedback(error.message, "error", { title: "Validacion fallida" });
+    showFeedback(error.message, "error", { title: "Validación fallida" });
   } finally {
     setButtonLoading(validateValidatorManualButton, false);
   }
@@ -7781,7 +7858,7 @@ async function redeemValidatorToken() {
 
   validatorRedeemButton.disabled = true;
   setButtonLoading(validatorRedeemButton, true, "Redimiendo...");
-  showFeedback("Registrando redencion y bloqueando el ticket para evitar doble uso.", "loading", { title: "Redimiendo beneficio", timeout: 0 });
+  showFeedback("Registrando redención y bloqueando el ticket para evitar doble uso.", "loading", { title: "Redimiendo beneficio", timeout: 0 });
   try {
     const isRewardPass = state.validatorLastValidation?.kind === "reward_pass";
     const rewardPassPreview = isRewardPass ? rewardPassBalancePreview(true) : null;
@@ -7789,7 +7866,7 @@ async function redeemValidatorToken() {
       const invoiceNumber = validatorRewardPassInvoiceInput?.value.trim() || "";
       if (invoiceNumber.length < 2) {
         validatorRewardPassInvoiceInput?.focus();
-        throw new Error("Ingresa el numero de factura electronica antes de redimir el Reward Pass.");
+        throw new Error("Ingresa el número de factura electronica antes de redimir el Reward Pass.");
       }
       if (!rewardPassPreview.invoiceValue) {
         throw new Error("Ingresa el total de la factura electronica para calcular el saldo.");
@@ -7798,9 +7875,9 @@ async function redeemValidatorToken() {
         throw new Error("No hay saldo disponible para cubrir esta factura.");
       }
       if (!rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0) {
-        const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redencion.");
+        const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redención.");
         if (!acceptsSingleUse) {
-          throw new Error("Redencion cancelada. Ajusta la factura o confirma las condiciones con el consumidor.");
+          throw new Error("Redención cancelada. Ajusta la factura o confirma las condiciones con el consumidor.");
         }
       }
     }
@@ -7824,13 +7901,13 @@ async function redeemValidatorToken() {
       ...state.validatorLastValidation,
       allowed: false,
     };
-    setValidatorResult("ok", "Redencion completada", data.message, {
+    setValidatorResult("ok", "Redención completada", data.message, {
       ...state.validatorLastValidation,
       allowed: false,
     });
     resetValidatorSaleForm();
     await loadValidatorHistory();
-    showFeedback("Beneficio redimido. Si hubo venta, registra el valor para completar el seguimiento.", "success", { title: "Redencion completada" });
+    showFeedback("Beneficio redimido. Si hubo venta, registra el valor para completar el seguimiento.", "success", { title: "Redención completada" });
   } catch (error) {
     setValidatorResult("danger", "No se pudo redimir", error.message, state.validatorLastValidation);
     showFeedback(error.message, "error");
@@ -7849,8 +7926,8 @@ async function saveValidatorAttributedSale(event) {
 
   const submitButton = validatorSaleForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Guardando...");
-  setInlineMessage(validatorSaleStatus, "Guardando resultado comercial de la redencion...", "info");
-  showFeedback("Registrando venta atribuida para actualizar metricas.", "loading", { title: "Guardando venta", timeout: 0 });
+  setInlineMessage(validatorSaleStatus, "Guardando resultado comercial de la redención...", "info");
+  showFeedback("Registrando venta atribuida para actualizar métricas.", "loading", { title: "Guardando venta", timeout: 0 });
   try {
     const data = await api(`/api/redemptions/${state.validatorLastRedemption.id}/attributed-sale`, {
       method: "POST",
@@ -7868,9 +7945,9 @@ async function saveValidatorAttributedSale(event) {
     const referralMessage = data.referral
       ? ` ${referralDelta === 0 ? "Sin cambio de puntos" : `${toNumber(referralDelta)} puntos`} para el afiliado.`
       : "";
-    setInlineMessage(validatorSaleStatus, data.sale ? `Venta atribuida guardada.${referralMessage}` : "Redencion registrada sin venta.", "success");
+    setInlineMessage(validatorSaleStatus, data.sale ? `Venta atribuida guardada.${referralMessage}` : "Redención registrada sin venta.", "success");
     await loadValidatorHistory();
-    showFeedback(data.sale ? `Venta atribuida guardada y metricas actualizadas.${referralMessage}` : "Redencion guardada sin venta atribuida.", "success", { title: "Registro actualizado" });
+    showFeedback(data.sale ? `Venta atribuida guardada y métricas actualizadas.${referralMessage}` : "Redención guardada sin venta atribuida.", "success", { title: "Registro actualizado" });
   } catch (error) {
     setInlineMessage(validatorSaleStatus, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo guardar la venta" });
@@ -7978,14 +8055,14 @@ async function startValidatorScanner() {
 
 function renderNoCampaignState() {
   hideFeedback();
-  campaignList.innerHTML = '<article class="campaign-item"><p>No hay campanas disponibles.</p></article>';
+  campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
   campaignStateGrid.innerHTML = "";
-  campaignBreadcrumb.textContent = "Sin campana";
-  campaignHeroTitle.textContent = "Campana";
-  campaignHeroSubtitle.textContent = "Analisis de rendimiento multicanal y tasa de conversion.";
+  campaignBreadcrumb.textContent = "Sin campaña";
+  campaignHeroTitle.textContent = "Campaña";
+  campaignHeroSubtitle.textContent = "Analisis de rendimiento multicanal y tasa de conversión.";
   editCampaignButton.classList.add("hidden");
   markReadyCampaignButton.classList.add("hidden");
-  campaignInsightText.textContent = "No hay campanas registradas para este negocio.";
+  campaignInsightText.textContent = "No hay campañas registradas para este negocio.";
   campaignObjectiveValue.textContent = "-";
   campaignDurationValue.textContent = "-";
   campaignStatusValue.textContent = "-";
@@ -7994,15 +8071,15 @@ function renderNoCampaignState() {
   campaignBudgetBar.style.width = "0%";
   campaignRoiValue.textContent = "-";
   campaignRoiDelta.textContent = "-";
-  launchSetupTitle.textContent = "Configuracion del cliente";
+  launchSetupTitle.textContent = "Configuración del cliente";
   launchSetupStatus.textContent = "Bloqueado";
-  launchSetupCopy.textContent = "Esta campana aun no esta lista para configuracion por parte del cliente.";
+  launchSetupCopy.textContent = "Esta campaña aún no está lista para configuración por parte del cliente.";
   launchSetupForm.reset();
   Array.from(launchChannelGrid.querySelectorAll("input[type='checkbox']")).forEach((input) => {
     input.checked = false;
     input.disabled = true;
   });
-  campaignAssetsGrid.innerHTML = '<article class="asset-card"><strong>Sin assets cargados</strong><span>Selecciona una campana para ver material entregado.</span></article>';
+  campaignAssetsGrid.innerHTML = '<article class="asset-card"><strong>Sin assets cargados</strong><span>Selecciona una campaña para ver material entregado.</span></article>';
   campaignSnapshotsTable.innerHTML = '<tr><td colspan="6">Sin snapshots cargados.</td></tr>';
   campaignKpiGrid.innerHTML = "";
   funnelStack.innerHTML = "";
@@ -8016,22 +8093,22 @@ function renderNoCampaignState() {
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
   dashboardInsightTitle.textContent = "Esperando datos del negocio.";
   dashboardNarrativeTitle.textContent = "Esperando datos del negocio.";
-  dashboardNarrativeText.textContent = "Cuando haya actividad, aqui veras el principal movimiento del periodo sin tener que interpretar todas las tablas.";
-  dashboardFunnelHelp.textContent = "Leads muestran interes. tickets emitidos muestran activacion. Redenciones muestran visita real. Clientes adquiridos muestran conversion comercial.";
-  dashboardHealthText.textContent = "ROI, CPL y CAC se comparan contra ventas atribuidas para saber si la campana esta comprando clientes a un costo sano.";
-  cacTrendNote.textContent = "Costo por lead por campana";
-  campaignAnalysisTitle.textContent = "Selecciona una campana.";
-  campaignAnalysisText.textContent = "Aqui se resumira la lectura del rendimiento para que el equipo comercial entienda rapido si la campana esta sana.";
-  campaignEconomicsText.textContent = "ROI relaciona ventas atribuidas frente a inversion. CAC muestra cuanto costo cada cliente con compra. Deben leerse juntos.";
-  campaignActionText.textContent = "Aqui veras si conviene escalar pauta, optimizar la landing o reforzar el cierre en tienda.";
-  adminCampaignTable.innerHTML = isAdmin() ? '<tr><td colspan="4">Sin campanas disponibles.</td></tr>' : '<tr><td colspan="4">Sin acceso admin.</td></tr>';
+  dashboardNarrativeText.textContent = "Cuando haya actividad, aquí verás el principal movimiento del periodo sin tener que interpretar todas las tablas.";
+  dashboardFunnelHelp.textContent = "Leads muestran interés. tickets emitidos muestran activación. Redenciones muestran visita real. Clientes adquiridos muestran conversión comercial.";
+  dashboardHealthText.textContent = "ROI, CPL y CAC se comparan contra ventas atribuidas para saber si la campaña está comprando clientes a un costo sano.";
+  cacTrendNote.textContent = "Costo por lead por campaña";
+  campaignAnalysisTitle.textContent = "Selecciona una campaña.";
+  campaignAnalysisText.textContent = "Aquí se resumira la lectura del rendimiento para que el equipo comercial entienda rápido si la campaña está sana.";
+  campaignEconomicsText.textContent = "ROI relaciona ventas atribuidas frente a inversión. CAC muestra cuánto costo cada cliente con compra. Deben leerse juntos.";
+  campaignActionText.textContent = "Aquí verás si conviene escalar pauta, optimizar la landing o reforzar el cierre en tienda.";
+  adminCampaignTable.innerHTML = isAdmin() ? '<tr><td colspan="4">Sin campañas disponibles.</td></tr>' : '<tr><td colspan="4">Sin acceso admin.</td></tr>';
   salesKpiGrid.innerHTML = "";
   branchKpiGrid.innerHTML = "";
   renderAdminView();
   adminPanelMessage.textContent = isAdmin()
-    ? "Este usuario puede crear y editar campanas desde el modal del portal y tambien operar `/admin`."
-    : "Usa el panel `/admin` para la operacion interna de Market Games.";
-  rangeButton.textContent = state.rangeDays ? `Ultimos ${state.rangeDays} dias` : "Todo el historial";
+    ? "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`."
+    : "Usa el panel `/admin` para la operación interna de Market Games.";
+  rangeButton.textContent = state.rangeDays ? `Últimos ${state.rangeDays} días` : "Todo el historial";
   drawDualLineChart(businessTrendChart, [], [], "count", ["Leads", "Redenciones"], [NEON_CHART.cyan, NEON_CHART.magenta]);
   drawSimpleLineChart(cacTrendChart, [], NEON_CHART.yellow, "Costo por lead");
   drawTripleLineChart(hourlyOperationsChart, [], [], [], "count", ["Tickets", "Validaciones", "Redenciones"], [NEON_CHART.cyan, NEON_CHART.yellow, NEON_CHART.magenta]);
@@ -8051,24 +8128,24 @@ function renderNoCampaignState() {
 
 function openCampaignModal(mode) {
   if (mode === "edit" && !state.selectedCampaign) {
-    showFeedback("Selecciona una campana antes de editar.", "error");
+    showFeedback("Selecciona una campaña antes de editar.", "error");
     return;
   }
 
   if (!canManageCampaigns()) {
-    showFeedback("Tu plan actual no permite crear o editar campanas desde el portal.", "info", { title: "Campanas bloqueadas" });
+    showFeedback("Tu plan actual no permite crear o editar campañas desde el portal.", "info", { title: "Campañas bloqueadas" });
     return;
   }
 
   if (mode === "create" && !session?.user?.business_id) {
     setView("admin");
-    showFeedback("El admin global necesita un negocio objetivo para crear campanas. Usa `/admin` o entra con un negocio asignado.", "error");
+    showFeedback("El admin global necesita un negocio objetivo para crear campañas. Usa `/admin` o entra con un negocio asignado.", "error");
     return;
   }
 
   state.campaignModalMode = mode;
   campaignModalMode.textContent = mode === "create" ? "New Campaign" : "Edit Campaign";
-  campaignModalTitle.textContent = mode === "create" ? "Crear campana" : "Editar campana";
+  campaignModalTitle.textContent = mode === "create" ? "Crear campaña" : "Editar campaña";
   campaignModalMessage.textContent = "";
 
   const campaign = mode === "edit" ? state.selectedCampaign : null;
@@ -8141,9 +8218,9 @@ function isCampaignModalDirty() {
 
 function requestCloseCampaignModal() {
   if (isCampaignModalDirty()) {
-    const discard = window.confirm("Tienes cambios sin guardar en esta campana. Si cierras ahora se perdera el progreso. Deseas cerrar de todos modos?");
+    const discard = window.confirm("Tienes cambios sin guardar en esta campaña. Si cierras ahora se perderá el progreso. Deseas cerrar de todos modos?");
     if (!discard) {
-      setInlineMessage(campaignModalMessage, "No cerramos el formulario. Tus datos siguen ahi; guarda la campana o cancela cuando estes seguro.", "info");
+      setInlineMessage(campaignModalMessage, "No cerramos el formulario. Tus datos siguen ahí; guarda la campaña o cancela cuando estes seguro.", "info");
       return;
     }
   }
@@ -8176,7 +8253,7 @@ async function submitCampaignModal(event) {
   const normalizedSlug = slugify(campaignFormSlug.value || campaignFormName.value);
   campaignFormSlug.value = normalizedSlug;
   if (!normalizedSlug) {
-    campaignModalMessage.textContent = "Escribe un nombre de campana para generar el slug.";
+    campaignModalMessage.textContent = "Escribe un nombre de campaña para generar el slug.";
     campaignFormName.focus();
     return;
   }
@@ -8226,14 +8303,14 @@ async function submitCampaignModal(event) {
         }),
       });
       state.selectedCampaignId = result.campaign?.id || state.selectedCampaignId;
-      showFeedback("Campana creada. Ya aparece en el listado y queda disponible para asociar tickets, afiliados y paquetes.", "success", { title: "Campana disponible", timeout: 6500 });
+      showFeedback("Campaña creada. Ya aparece en el listado y queda disponible para asociar tickets, afiliados y paquetes.", "success", { title: "Campaña disponible", timeout: 6500 });
     } else {
       await api(`${isAdmin() ? "/api/admin" : "/api/business"}/campaigns/${state.selectedCampaignId}`, {
         method: "PATCH",
         headers: authHeaders(),
         body: JSON.stringify(payload),
       });
-      showFeedback("Campana actualizada. Los cambios ya se reflejan en el dashboard y en los selectores de tickets.", "success", { title: "Campana sincronizada", timeout: 6500 });
+      showFeedback("Campaña actualizada. Los cambios ya se reflejan en el dashboard y en los selectores de tickets.", "success", { title: "Campaña sincronizada", timeout: 6500 });
     }
 
     closeCampaignModal();
@@ -8660,7 +8737,7 @@ function drawDonutChart(canvas, rows, colors) {
   attachChartHover(canvas, hoverItems, (item) => `
     <div class="chart-tooltip-title">${escapeHtml(item.row.label)}</div>
     ${tooltipRow("Cantidad", item.row.value)}
-    ${tooltipRow("Participacion", `${safeRate(item.row.value, item.total)}%`)}
+    ${tooltipRow("Participación", `${safeRate(item.row.value, item.total)}%`)}
   `);
 }
 
@@ -8842,13 +8919,13 @@ function drawScatterPlot(canvas, rows = []) {
     ctx.shadowBlur = 0;
     hoverItems.push({ type: "circle", x, y, r: r + 4, row });
   });
-  drawLabel(ctx, "Inversion o Tickets generados", margin.left + chartW / 2, height - 10, { align: "center", size: 10 });
+  drawLabel(ctx, "Inversión o Tickets generados", margin.left + chartW / 2, height - 10, { align: "center", size: 10 });
   drawLabel(ctx, "Revenue / ventas", 12, margin.top + chartH / 2, { size: 10 });
   attachChartHover(canvas, hoverItems, (item) => `
     <div class="chart-tooltip-title">${escapeHtml(item.row.campaign_name)}</div>
     ${tooltipRow("Revenue", money(item.row.revenue))}
     ${tooltipRow("Leads", item.row.leads)}
-    ${tooltipRow("Redencion", `${item.row.redemption_rate}%`)}
+    ${tooltipRow("Redención", `${item.row.redemption_rate}%`)}
     ${tooltipRow("ROI", ratioLabel(item.row.roi))}
   `);
 }
@@ -9113,7 +9190,7 @@ function renderAffiliateSelectedSummary(affiliate = null) {
   const rows = [
     ["Afiliado", firstTextValue(affiliate.full_name, affiliate.name, "-")],
     ["Documento", firstTextValue(affiliate.document_id, affiliate.document, "-")],
-    ["Telefono", firstTextValue(affiliate.phone, "-")],
+    ["Teléfono", firstTextValue(affiliate.phone, "-")],
     ["Email", firstTextValue(affiliate.email, "-")],
     ["Puntos", toNumber(affiliate.points_total || affiliate.ledger_points || 0)],
     ["Negocio", firstTextValue(businessProfile.name, affiliate.business_name, "-")],
@@ -9372,7 +9449,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
   const affiliateName = firstTextValue(affiliate.full_name, affiliate.name, affiliate.card_metadata?.full_name, "Afiliado");
   const affiliateDocument = firstTextValue(affiliate.document_id, affiliate.document, affiliate.card_metadata?.document_id, "Sin documento");
-  const affiliatePhone = firstTextValue(affiliate.phone, affiliate.card_metadata?.phone, "Sin telefono");
+  const affiliatePhone = firstTextValue(affiliate.phone, affiliate.card_metadata?.phone, "Sin teléfono");
   const affiliateEmail = firstTextValue(affiliate.email, affiliate.card_metadata?.email, "Sin email");
   const businessProfile = businessCardProfile(affiliate);
   const businessName = businessProfile.name;
@@ -9529,7 +9606,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   };
 
   drawCardField("Documento", affiliateDocument, dataX + 30, dataY + 94, 202, 26);
-  drawCardField("Telefono", affiliatePhone, dataX + 262, dataY + 94, 158, 26);
+  drawCardField("Teléfono", affiliatePhone, dataX + 262, dataY + 94, 158, 26);
   ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
   ctx.beginPath();
   ctx.moveTo(dataX + 30, dataY + 158);
@@ -9741,7 +9818,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   const infoRows = [
     ["Documento", affiliateDocument],
-    ["Telefono", affiliatePhone],
+    ["Teléfono", affiliatePhone],
     ["Email", affiliateEmail],
   ];
   infoRows.forEach(([label, value], index) => {
@@ -9986,7 +10063,7 @@ async function submitAccountProfile(event) {
     renderAccountView();
     renderBusinessLogoPanel();
     setInlineMessage(accountProfileMessage, "Datos guardados.", "success");
-    showFeedback("La informacion basica de la empresa fue actualizada.", "success", { title: "Perfil actualizado" });
+    showFeedback("La información básica de la empresa fue actualizada.", "success", { title: "Perfil actualizado" });
   } catch (error) {
     setInlineMessage(accountProfileMessage, error.message || "No se pudo guardar el perfil.", "error");
     showFeedback(error.message || "No se pudo guardar el perfil.", "error");
@@ -9998,7 +10075,7 @@ async function submitAccountProfile(event) {
 async function submitAccountPassword(event) {
   event.preventDefault();
   if (accountNewPasswordInput.value !== accountNewPasswordConfirmInput.value) {
-    setInlineMessage(accountPasswordMessage, "La confirmacion de password no coincide.", "error");
+    setInlineMessage(accountPasswordMessage, "La confirmación de password no coincide.", "error");
     return;
   }
   setInlineMessage(accountPasswordMessage, "Actualizando password...", "info");
@@ -10432,7 +10509,7 @@ async function awardSelectedAffiliatePoints() {
   if (!state.selectedAffiliateId || !session?.user?.business_id) return;
   const amount = Number(affiliatePurchaseAmountInput.value || 0);
   if (!Number.isFinite(amount) || amount <= 0) {
-    showFeedback("Ingresa un monto valido para sumar puntos.", "error");
+    showFeedback("Ingresa un monto válido para sumar puntos.", "error");
     return;
   }
 
@@ -10496,8 +10573,8 @@ function renderAffiliateReferralQrResult(batch, qrCodes = [], affiliate = state.
   affiliateReferralQrResult.innerHTML = `
     <div class="qr-batch-result-head">
       <div>
-        <span class="mono-label">tickets de recomendacion creados</span>
-        <h4>${escapeHtml(batch.name || "tickets recomendacion afiliado")}</h4>
+        <span class="mono-label">tickets de recomendación creados</span>
+        <h4>${escapeHtml(batch.name || "tickets recomendación afiliado")}</h4>
         <p>${escapeHtml(Number(batch.quantity || qrCodes.length || 0).toLocaleString("es-CO"))} tickets unicos, de un solo uso, listos para entregar al afiliado.</p>
         <p><strong>Afiliado asignado:</strong> ${escapeHtml(affiliateName)} · ${escapeHtml(affiliateDocument)}</p>
       </div>
@@ -10525,7 +10602,7 @@ async function generateSelectedAffiliateReferralQr() {
     return;
   }
   if (!affiliateReferralQrCampaignInput?.value) {
-    setInlineMessage(affiliateReferralQrMessage, "Selecciona la campana que medira estos tickets de recomendacion.", "error");
+    setInlineMessage(affiliateReferralQrMessage, "Selecciona la campaña que medirá estos tickets de recomendación.", "error");
     affiliateReferralQrCampaignInput?.focus();
     return;
   }
@@ -10533,7 +10610,7 @@ async function generateSelectedAffiliateReferralQr() {
   setButtonLoading(affiliateGenerateReferralQrButton, true, "Generando...");
   setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} tickets y descontando tickets disponibles...`, "info");
   renderAffiliateReferralQrResult(null);
-  showFeedback(`Generando tickets de recomendacion para ${state.selectedAffiliate.full_name || "el afiliado"}.`, "loading", { title: "tickets de recomendacion", timeout: 0 });
+  showFeedback(`Generando tickets de recomendación para ${state.selectedAffiliate.full_name || "el afiliado"}.`, "loading", { title: "tickets de recomendación", timeout: 0 });
   const referralAffiliate = { ...state.selectedAffiliate };
 
   try {
@@ -10548,7 +10625,7 @@ async function generateSelectedAffiliateReferralQr() {
         expires_mode: "NONE",
         benefit: {
           benefit_type: "CUSTOM",
-          benefit_label: affiliateReferralQrBenefitInput?.value.trim() || "Recomendacion de afiliado",
+          benefit_label: affiliateReferralQrBenefitInput?.value.trim() || "Recomendación de afiliado",
           benefit_value: {},
         },
       }),
@@ -10570,7 +10647,7 @@ async function generateSelectedAffiliateReferralQr() {
     } else if (state.currentView === "strategic-qr") {
       await loadTicketCenterForCurrentTab({ force: true, quiet: true });
     }
-    showFeedback(`tickets de recomendacion creados para ${referralAffiliate.full_name || "el afiliado"}. La descarga PDF fue iniciada.`, "success", { title: "Tickets listos" });
+    showFeedback(`tickets de recomendación creados para ${referralAffiliate.full_name || "el afiliado"}. La descarga PDF fue iniciada.`, "success", { title: "Tickets listos" });
   } catch (error) {
     setInlineMessage(affiliateReferralQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudieron generar los tickets" });
@@ -10582,7 +10659,7 @@ async function generateSelectedAffiliateReferralQr() {
 async function deleteSelectedAffiliate(affiliateId, affiliateName = "afiliado") {
   if (!affiliateId || !session?.user?.business_id) return;
   const name = affiliateName || "afiliado";
-  const firstConfirm = window.confirm(`Vas a eliminar el afiliado "${name}". Esta accion elimina tambien su historial de puntos. Deseas continuar?`);
+  const firstConfirm = window.confirm(`Vas a eliminar el afiliado "${name}". Esta acción elimina también su historial de puntos. Deseas continuar?`);
   if (!firstConfirm) return;
   const typed = window.prompt('Para reconfirmar, escribe ELIMINAR en mayusculas.');
   if (typed !== "ELIMINAR") {
@@ -10688,7 +10765,7 @@ async function shareLeadQrWhatsApp(qrId, phone, name) {
     const rawPhone = String(phone || data.player_phone || "").replace(/[^\d]/g, "");
     const text = [
       `Hola ${name || data.player_name || ""}`.trim(),
-      "este es tu ticket activo de beneficio MarketGames QR para presentar en el punto fisico:",
+      "este es tu ticket activo de beneficio MarketGames QR para presentar en el punto físico:",
       data.validator_url,
     ].join(" ");
     const target = rawPhone
@@ -10705,7 +10782,7 @@ function exportCampaignReport() {
   if (!campaign) return;
   downloadCsv("campaign-report", [
     ["Campo", "Valor"],
-    ["Campana", campaign.name],
+    ["Campaña", campaign.name],
     ["Tipo", campaign.type],
     ["Objetivo", campaign.objective],
     ["Estado", campaign.status],
@@ -10774,7 +10851,7 @@ function exportRedemptions() {
 
 function exportSales() {
   downloadCsv("campaign-sales", [
-    ["Cliente", "Cedula", "Telefono", "Valor", "Pago", "Producto o servicio", "Sucursal", "Fecha"],
+    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Sucursal", "Fecha"],
     ...state.selectedSales.map((item) => [
       item.player_name,
       item.document_id,
@@ -10892,7 +10969,7 @@ async function markCampaignReady() {
       method: "POST",
       headers: authHeaders(),
     });
-    showFeedback("Campana marcada como READY_FOR_CLIENT_SETUP.");
+    showFeedback("Campaña marcada como READY_FOR_CLIENT_SETUP.");
     await loadWorkspace();
     await selectCampaign(state.selectedCampaignId);
   } catch (error) {
@@ -10907,7 +10984,7 @@ function startNewAdminCampaign() {
   state.adminSelectedReport = null;
   hydrateAdminForm(null);
   adminReportKpiGrid.innerHTML = "";
-  adminReportCampaignTable.innerHTML = '<tr><td colspan="6">Selecciona una campana para ver el reporte del cliente.</td></tr>';
+  adminReportCampaignTable.innerHTML = '<tr><td colspan="6">Selecciona una campaña para ver el reporte del cliente.</td></tr>';
   setView("admin");
 }
 
@@ -10918,7 +10995,7 @@ async function saveAdminCampaign(event) {
   const adminSlug = slugify(adminCampaignSlugInput.value || adminCampaignNameInput.value);
   adminCampaignSlugInput.value = adminSlug;
   if (!adminSlug) {
-    adminCampaignMessage.textContent = "Escribe un nombre de campana para generar el slug.";
+    adminCampaignMessage.textContent = "Escribe un nombre de campaña para generar el slug.";
     adminCampaignNameInput.focus();
     return;
   }
@@ -10954,7 +11031,7 @@ async function saveAdminCampaign(event) {
         body: JSON.stringify(payload),
       }
     );
-    adminCampaignMessage.textContent = "Campana guardada.";
+    adminCampaignMessage.textContent = "Campaña guardada.";
     state.adminSelectedCampaignId = result.campaign?.id || state.adminSelectedCampaignId;
     await loadWorkspace();
     if (state.adminSelectedCampaignId) {
@@ -10974,7 +11051,7 @@ async function markAdminCampaignReady() {
       headers: authHeaders(),
     });
     adminCampaignMessage.textContent = "";
-    showFeedback("Campana marcada como READY_FOR_CLIENT_SETUP.");
+    showFeedback("Campaña marcada como READY_FOR_CLIENT_SETUP.");
     await loadWorkspace();
     await loadAdminCampaignWorkspace(state.adminSelectedCampaignId);
     if (state.selectedCampaignId === state.adminSelectedCampaignId) {
@@ -11041,11 +11118,11 @@ function renderLeadsView() {
 
   if (leadFeedKpiGrid) {
     leadFeedKpiGrid.innerHTML = [
-      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Segun plan"],
+      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Según plan"],
       ["Compradores", buyers, "Con venta registrada"],
       ["Leads calientes", hot, "Prioridad comercial"],
-      ["Exportables", exportable, "Email o telefono"],
-      ["Origen lider", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
+      ["Exportables", exportable, "Email o teléfono"],
+      ["Origen líder", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
     ].map(([label, value, meta]) => `
       <article class="kpi-card">
         <span class="mono-label">${escapeHtml(label)}</span>
@@ -11055,7 +11132,7 @@ function renderLeadsView() {
     `).join("");
   }
   if (leadFeedRetention) {
-    leadFeedRetention.textContent = `Retencion ${state.contactFeedRetention?.label || "segun plan"}`;
+    leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
   }
   if (leadFeedTable) {
     leadFeedTable.innerHTML = feedRows.map((item) => `
@@ -11066,7 +11143,7 @@ function renderLeadsView() {
         </td>
         <td>${escapeHtml(prettyLeadValue(item.attribution_source || "-"))}</td>
         <td>
-          ${escapeHtml(item.campaign_name || "Sin campana")}
+          ${escapeHtml(item.campaign_name || "Sin campaña")}
           <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
         </td>
         <td>
@@ -11076,7 +11153,7 @@ function renderLeadsView() {
         <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
         <td>${escapeHtml(item.recommended_action || "-")}</td>
       </tr>
-    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retencion de tu plan.</td></tr>';
+    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retención de tu plan.</td></tr>';
   }
 
   const gate = state.contactFeedGate;
@@ -11094,7 +11171,7 @@ function renderLeadsView() {
         <td colspan="9">
           <div class="empty-state">
             <strong>${escapeHtml(gate.title || "Ya tienes leads reales. Ahora necesitas el portal.")}</strong>
-            <p>${escapeHtml(gate.message || "Portal Base muestra el historial permitido. Growth/Premium desbloquea historial completo y mas exportaciones.")}</p>
+            <p>${escapeHtml(gate.message || "Portal Base muestra el historial permitido. Growth/Premium desbloquea historial completo y más exportaciones.")}</p>
             <p>${totalCopy}</p>
             <a class="primary-button compact" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
           </div>
@@ -11146,7 +11223,7 @@ function renderLeadsView() {
           </div>`
         : `<span class="table-secondary">${escapeHtml(item.qr_code_id ? "Ticket activo" : "Sin ticket")}</span>`}</td>
     </tr>
-  `).join("") || `<tr><td colspan="9">${state.selectedCampaignId ? "Sin leads para esta campana." : "Sin contactos capturados."}</td></tr>`;
+  `).join("") || `<tr><td colspan="9">${state.selectedCampaignId ? "Sin leads para esta campaña." : "Sin contactos capturados."}</td></tr>`;
 
   campaignLeadsTable.querySelectorAll("[data-download-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadQr));
@@ -11185,7 +11262,7 @@ function renderAffiliateDashboard() {
   if (affiliateStatTopAffiliate) {
     affiliateStatTopAffiliate.textContent = topAffiliate && toNumber(topAffiliate.purchase_total || 0) > 0
       ? `${topAffiliate.full_name || "Afiliado"} - ${money(topAffiliate.purchase_total)}`
-      : "Sin compras aun";
+      : "Sin compras aún";
   }
 }
 
@@ -11286,7 +11363,7 @@ async function searchAffiliateForPoints(value = affiliateFinderInput?.value) {
   const query = String(value || "").trim();
   renderAffiliateFinderResults([]);
   if (!query) {
-    setAffiliateFinderMessage("Escribe documento, nombre, telefono, email o escanea el QR del carnet.", "error");
+    setAffiliateFinderMessage("Escribe documento, nombre, teléfono, email o escanea el QR del carnet.", "error");
     affiliateFinderInput?.focus();
     return;
   }
@@ -11357,7 +11434,7 @@ async function startAffiliateFinderScanner() {
     return;
   }
   if (!navigator.mediaDevices?.getUserMedia || !validatorCanUseJsQr()) {
-    setAffiliateFinderMessage("Este navegador no permite escanear el carnet aqui. Usa la busqueda manual.", "error");
+    setAffiliateFinderMessage("Este navegador no permite escanear el carnet aquí. Usa la busqueda manual.", "error");
     return;
   }
   try {
@@ -11444,7 +11521,7 @@ async function renderAffiliatesView() {
     affiliateAddPointsButton.disabled = true;
     downloadAffiliateCardButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
-    if (affiliateReferralQrSelectedMeta) affiliateReferralQrSelectedMeta.textContent = "Selecciona un afiliado del listado para generar sus tickets de recomendacion.";
+    if (affiliateReferralQrSelectedMeta) affiliateReferralQrSelectedMeta.textContent = "Selecciona un afiliado del listado para generar sus tickets de recomendación.";
     setInlineMessage(affiliateReferralQrMessage, "", "info");
     renderAffiliateReferralQrResult(null);
     affiliateLedgerTitle.textContent = "Movimientos del afiliado";
@@ -11491,7 +11568,7 @@ async function renderAffiliatesView() {
 
 function rewardPassStatusLabel(status) {
   const labels = {
-    pending_claim: "Pendiente activacion",
+    pending_claim: "Pendiente activación",
     active: "Activo",
     partially_redeemed: "Parcial",
     fully_redeemed: "Redimido",
@@ -11530,7 +11607,7 @@ function setRewardPassDefaults() {
 
 function renderRewardPassCampaignOptions() {
   if (!rewardPassCampaignInput) return;
-  const options = ['<option value="">Sin campana asociada</option>']
+  const options = ['<option value="">Sin campaña asociada</option>']
     .concat((state.campaigns || []).map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`));
   rewardPassCampaignInput.innerHTML = options.join("");
 }
@@ -11596,8 +11673,8 @@ function renderRewardPassPreview(pass = state.selectedRewardPass) {
   if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = isPending ? "Escanea para reclamar el QR definitivo" : beneficiary;
   if (rewardPassPreviewMeta) {
     rewardPassPreviewMeta.textContent = pass
-      ? (isPending ? `Link de reclamo: ${pass.public_url}. El beneficiario escanea este QR, completa sus datos y recibe el QR definitivo redimible.` : `Link publico: ${pass.public_url}. QR redimible listo para validador.`)
-      : "El QR y los datos completos apareceran despues de emitir o seleccionar un Reward Pass.";
+      ? (isPending ? `Link de reclamo: ${pass.public_url}. El beneficiario escanea este QR, completa sus datos y recibe el QR definitivo redimible.` : `Link público: ${pass.public_url}. QR redimible listo para validador.`)
+      : "El QR y los datos completos apareceran después de emitir o seleccionar un Reward Pass.";
   }
   [rewardPassDownloadImageButton, rewardPassDownloadPdfButton, rewardPassReceiptButton].forEach((button) => {
     if (button) button.disabled = !pass;
@@ -11673,7 +11750,7 @@ function renderRewardPassDetail() {
       ["Vigencia", formatDate(pass.expires_at)],
       ["Sede autorizada", pass.authorized_branch || "-"],
       ["Condiciones", pass.partial_redemption_allowed ? "Permite redenciones parciales" : "De un solo uso"],
-      ["Link publico", pass.public_url || "-"],
+      ["Link público", pass.public_url || "-"],
     ];
     rewardPassDetailGrid.innerHTML = details.map(([label, value]) => `
       <div class="reward-pass-detail-item">
@@ -11785,7 +11862,7 @@ async function submitRewardPass(event) {
   event.preventDefault();
   setInlineMessage(rewardPassCreateMessage, "Emitiendo Reward Pass y descontando tickets...", "info");
   setButtonLoading(rewardPassCreateButton, true, "Emitiendo...");
-  showFeedback("Emitiendo Reward Pass con transaccion atomica de tickets.", "loading", { title: "Reward Pass", timeout: 0 });
+  showFeedback("Emitiendo Reward Pass con transacción atómica de tickets.", "loading", { title: "Reward Pass", timeout: 0 });
   try {
     const data = await api("/api/business/reward-passes", {
       method: "POST",
@@ -11811,7 +11888,7 @@ async function submitRewardPass(event) {
 async function copyRewardPassLink(link) {
   if (!link) return;
   await navigator.clipboard?.writeText(link);
-  showFeedback("Link publico del Reward Pass copiado.");
+  showFeedback("Link público del Reward Pass copiado.");
 }
 
 function openRewardPassWhatsapp(id) {
@@ -11878,7 +11955,7 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.fillText(pass.status === "pending_claim" ? "ACTIVAR GIFT CARD" : "GIFT CARD OFICIAL", 94, 338);
   ctx.fillStyle = "#d7e2eb";
   ctx.font = "500 28px Inter, sans-serif";
-  ctx.fillText(`Beneficiario: ${pass.beneficiary_name || "Pendiente de activacion"}`, 94, 406);
+  ctx.fillText(`Beneficiario: ${pass.beneficiary_name || "Pendiente de activación"}`, 94, 406);
   ctx.fillText(`Documento: ${pass.beneficiary_document || "Se solicita al activar"}`, 94, 448);
   ctx.fillText(`Codigo: ${pass.public_code}`, 94, 490);
   ctx.fillText(`Vigencia: ${formatDate(pass.expires_at)}`, 94, 532);
@@ -11927,7 +12004,7 @@ function renderRedemptionsView() {
       <td>${escapeHtml(item.validator_name || "-")}</td>
       <td><span class="status-chip ${item.sale_amount ? "ok" : "pending"}">${item.sale_amount ? "Completado" : "Pendiente"}</span></td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Sin redenciones para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="6">Sin redenciones para esta campaña.</td></tr>';
 
   const rewardCounts = rows.reduce((acc, item) => {
     const key = item.reward_name || "Beneficio";
@@ -11975,7 +12052,7 @@ function renderSalesView() {
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="8">Sin ventas para esta campana.</td></tr>';
+  `).join("") || '<tr><td colspan="8">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -12032,15 +12109,15 @@ function renderAdminView() {
     adminCampaignTable.innerHTML = '<tr><td colspan="4">Sin acceso admin.</td></tr>';
     adminReportKpiGrid.innerHTML = "";
     adminReportCampaignTable.innerHTML = '<tr><td colspan="6">Sin acceso admin.</td></tr>';
-    adminPanelMessage.textContent = "Tu rol actual es de negocio. La gestion global sigue disponible solo para admins en `/admin`.";
+    adminPanelMessage.textContent = "Tu rol actual es de negocio. La gestión global sigue disponible solo para admins en `/admin`.";
     return;
   }
 
   const campaigns = filterRows(state.adminCampaigns, ["name", "business_name", "status", "type"]);
   adminKpiGrid.innerHTML = [
-    ["Campanas globales", state.adminCampaigns.length, "Todas las empresas"],
-    ["Campanas visibles", campaigns.length, `Filtro ${state.filter ? "activo" : "general"}`],
-    ["Rol actual", session.user.role, "Acceso a crear y editar campanas"],
+    ["Campañas globales", state.adminCampaigns.length, "Todas las empresas"],
+    ["Campañas visibles", campaigns.length, `Filtro ${state.filter ? "activo" : "general"}`],
+    ["Rol actual", session.user.role, "Acceso a crear y editar campañas"],
   ].map(([label, value, meta]) => `
     <article class="kpi-card">
       <span class="mono-label">${escapeHtml(label)}</span>
@@ -12056,12 +12133,12 @@ function renderAdminView() {
       <td>${escapeHtml(campaign.status || "-")}</td>
       <td>${escapeHtml(campaign.type || "-")}</td>
     </tr>
-  `).join("") || '<tr><td colspan="4">Sin campanas para este filtro.</td></tr>';
+  `).join("") || '<tr><td colspan="4">Sin campañas para este filtro.</td></tr>';
   adminCampaignTable.querySelectorAll("[data-admin-campaign-id]").forEach((row) => {
     row.addEventListener("click", () => loadAdminCampaignWorkspace(row.dataset.adminCampaignId));
   });
 
-  adminPanelMessage.textContent = "Este usuario puede crear y editar campanas desde el modal del portal y tambien operar `/admin`.";
+  adminPanelMessage.textContent = "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`.";
 }
 
 function handleRangeToggle() {
@@ -12073,7 +12150,7 @@ function handleRangeToggle() {
     state.rangeDays = 30;
   }
 
-  rangeButton.textContent = state.rangeDays ? `Ultimos ${state.rangeDays} dias` : "Todo el historial";
+  rangeButton.textContent = state.rangeDays ? `Últimos ${state.rangeDays} días` : "Todo el historial";
   if (state.dashboard) renderDashboard();
   if (state.selectedCampaign) {
     renderCampaignView();
@@ -12181,7 +12258,7 @@ requestCampaignButton.addEventListener("click", () => {
   }
   if (isAdmin() && !session?.user?.business_id) {
     setView("admin");
-    showFeedback("Admin global cargado. Selecciona un negocio en `/admin` para crear una campana.", "error");
+    showFeedback("Admin global cargado. Selecciona un negocio en `/admin` para crear una campaña.", "error");
     return;
   }
   openCampaignModal("create");
@@ -12203,13 +12280,13 @@ notificationsButton.addEventListener("click", () => {
   const pending = (state.selectedRedemptions || []).filter((item) => !item.sale_amount).length;
   showFeedback(
     pending
-      ? `Hay ${pending} redenciones pendientes de venta atribuida en la campana seleccionada.`
-      : "No hay alertas pendientes en la campana seleccionada."
+      ? `Hay ${pending} redenciones pendientes de venta atribuida en la campaña seleccionada.`
+      : "No hay alertas pendientes en la campaña seleccionada."
   );
 });
 settingsButton.addEventListener("click", () => {
   setView("account");
-  showFeedback("Cuenta y configuracion abiertas.", "info");
+  showFeedback("Cuenta y configuración abiertas.", "info");
 });
 themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
@@ -12306,7 +12383,7 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
 
-rangeButton.textContent = `Ultimos ${state.rangeDays} dias`;
+rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
 setView("dashboard");
 initPasswordResetFromUrl();
@@ -12319,9 +12396,9 @@ updateActivationQuestionCountControls();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {
-  showFeedback("Pago aprobado. Si Mercado Pago ya notifico el webhook, los tickets apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
+  showFeedback("Pago aprobado. Si Mercado Pago ya notificó el webhook, los tickets apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
 } else if (paymentResult === "pending") {
-  showFeedback("Pago pendiente. Actualizaremos el saldo cuando Mercado Pago confirme la transaccion.", "info", { title: "Pago en revision", timeout: 8000 });
+  showFeedback("Pago pendiente. Actualizaremos el saldo cuando Mercado Pago confirme la transacción.", "info", { title: "Pago en revision", timeout: 8000 });
 } else if (paymentResult === "failure") {
   showFeedback("El pago no fue aprobado. Puedes intentar nuevamente con otro medio de pago.", "error", { title: "Pago no completado", timeout: 8000 });
 }

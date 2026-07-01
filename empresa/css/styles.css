@@ -10337,3 +10337,71 @@ body.chart-focus-open .command-center {
   }
 }
 
+/* Light theme contrast pass for Gaming Center forms. */
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(.data-table-card, .surface-card, .portal-pricing-card, .qr-credit-shop-card) {
+  background: #ffffff !important;
+  color: #09201a !important;
+  border-color: #bfd6ce !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(.table-card-head h3, .table-card-head strong, h2, h3, h4, label > span, .field-label) {
+  color: #09201a !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(p, small, label, .table-secondary, .pricing-intro, .association-field small, .qr-batch-progress-copy) {
+  color: #314f46 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(.mono-label, th, .kpi-meta) {
+  color: #06634c !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(input, select, textarea, .inline-selects select, .qr-credit-shop-form select) {
+  background: #ffffff !important;
+  color: #09201a !important;
+  border: 1px solid #abc8bd !important;
+  box-shadow: inset 0 1px 0 rgba(9, 32, 26, 0.04) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(select option, select optgroup) {
+  background: #ffffff !important;
+  color: #09201a !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(input, textarea)::placeholder {
+  color: #5b736b !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] :where(input, select, textarea):focus {
+  border-color: #087a5e !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(8, 122, 94, 0.16) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .modal-form label {
+  background: #f7fffb;
+  border: 1px solid #d6e7e0;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .modal-form label.full,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .modal-form label.span-2 {
+  grid-column: 1 / -1;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .solid-button {
+  background: linear-gradient(135deg, #087a5e, #075985) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .ghost-button {
+  background: #ffffff !important;
+  color: #06372e !important;
+  border-color: #abc8bd !important;
+}
+

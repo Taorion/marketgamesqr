@@ -22,6 +22,7 @@ const router = express.Router();
 router.use(authRequired);
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 
+router.post("/generic-ticket", createPostSale);
 router.post("/post-sale", createPostSale);
 router.post("/trivias", createTrivia);
 router.get("/trivias", listTrivias);

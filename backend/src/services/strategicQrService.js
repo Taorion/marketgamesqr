@@ -209,6 +209,16 @@ function buildTicketDetailLines({ label, expiresAt, code }) {
   ];
 }
 
+function safeFilenamePart(value, fallback = "ticket") {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || fallback;
+}
+
 async function createPostSaleQr(businessId, user, body) {
   return withTransaction(async (client) => {
     const [reward, campaign] = await Promise.all([
@@ -216,6 +226,7 @@ async function createPostSaleQr(businessId, user, body) {
       assertCampaign(client, businessId, body.campaign_id),
       assertBranch(client, businessId, body.branch_id),
     ]);
+    const isGenericTicket = body.metadata?.qr_creation_context === "business_owner_generic_ticket" || Boolean(body.metadata?.ticket_use_case);
 
     const player = await createOptionalPlayer(
       client,
@@ -228,8 +239,10 @@ async function createPostSaleQr(businessId, user, body) {
         document_id: body.document_id,
       },
       {
-        source: "post-sale",
+        source: isGenericTicket ? (body.metadata?.ticket_use_case || "generic-ticket") : (body.metadata?.qr_creation_context || "post-sale"),
         product_name: body.product_name || null,
+        ticket_use_case: body.metadata?.ticket_use_case || null,
+        ticket_occasion: body.metadata?.ticket_occasion || null,
       }
     );
 
@@ -263,6 +276,8 @@ async function createPostSaleQr(businessId, user, body) {
     const token = createSecureToken();
     const expiresAt = resolveExpiration(body);
     const benefitPayload = buildBenefitPayload(body.benefit, reward);
+    const ticketUseCaseLabel = body.metadata?.ticket_use_case_label || (isGenericTicket ? "Ticket generico" : "Beneficio postventa");
+    const ticketOriginLabel = body.metadata?.origin_label || (isGenericTicket ? `Ticket generico - ${ticketUseCaseLabel}` : "QR postventa");
 
     const qrResult = await client.query(
       `insert into qr_codes
@@ -277,7 +292,7 @@ async function createPostSaleQr(businessId, user, body) {
         token,
         {
           strategic_qr: true,
-          origin_label: "QR postventa",
+          origin_label: ticketOriginLabel,
           campaign_id: campaign?.id || null,
           campaign_name: campaign?.name || null,
           notes: body.notes || null,
@@ -305,11 +320,12 @@ async function createPostSaleQr(businessId, user, body) {
       player_id: player?.id || null,
       user_id: user.id,
       event_type: "QR_CREATED",
-      message: "Post-sale QR created.",
+      message: "Generic benefit ticket created.",
       metadata: {
         origin_type: "POST_SALE",
         sale_id: sale.id,
         benefit_type: body.benefit.benefit_type,
+        ticket_use_case: body.metadata?.ticket_use_case || null,
       },
     });
 
@@ -328,7 +344,7 @@ async function createPostSaleQr(businessId, user, body) {
           scanUrl: validatorUrl,
           brand,
           detailLines: buildTicketDetailLines({
-            label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio postventa",
+            label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio",
             expiresAt,
             code: shortTicketCode(qr),
           }),
@@ -343,7 +359,7 @@ async function createPostSaleQr(businessId, user, body) {
       validator_url: validatorUrl,
       qr_content: validatorUrl,
       qr_image_data_url: postSaleTicketImage,
-      filename: `post-sale-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
+      filename: `${isGenericTicket ? safeFilenamePart(ticketUseCaseLabel) : "post-sale"}-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
       benefit: benefitPayload,
     };
   });

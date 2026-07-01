@@ -91,11 +91,11 @@ function priceLabel(item) {
   if (Number.isFinite(Number(item.price_cop))) {
     return copMoney(item.price_cop);
   }
-  return escapeHtml(item.price_label || "Cotizacion");
+  return escapeHtml(item.price_label || "Cotización");
 }
 
 function monthlyPlanLabel(plan) {
-  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
+  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotización");
   return `${copMoney(plan.monthly_price_cop)} / mes`;
 }
 
@@ -109,8 +109,8 @@ function planBillingAmountCop(plan) {
 }
 
 function planBillingLabel(plan) {
-  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
-  return billingCycle === "annual" ? `${copMoney(annualPlanCop(plan))} / ano` : monthlyPlanLabel(plan);
+  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotización");
+  return billingCycle === "annual" ? `${copMoney(annualPlanCop(plan))} / año` : monthlyPlanLabel(plan);
 }
 
 function visiblePackages() {
@@ -149,9 +149,9 @@ function selectedBenefits() {
   if (mode === "base") {
     return [
       "Portal RMS Base sin mensualidad",
-      "Dashboard base, validador interno y Sales Tracker basico",
+      "Dashboard base, validador interno y Sales Tracker básico",
       "QR preventa y postventa usando saldo operativo",
-      "1 campana activa, leads 30 dias y 10 exportaciones al mes",
+      "1 campaña activa, leads 30 días y 10 exportaciones al mes",
     ];
   }
   if (selectedPlan && !selectedPlan.monthly_price_cop) {
@@ -176,7 +176,7 @@ async function fetchJson(path) {
   const response = await fetch(path);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error?.message || "No se pudo cargar la informacion.");
+    throw new Error(data.error?.message || "No se pudo cargar la información.");
   }
   return data;
 }
@@ -216,9 +216,9 @@ function renderPlans() {
           <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
         `).join("")}
       </ul>
-      <div class="price">${item.monthly_price_cop ? planBillingLabel(item) : escapeHtml(item.price_label || "Cotizacion")}</div>
+      <div class="price">${item.monthly_price_cop ? planBillingLabel(item) : escapeHtml(item.price_label || "Cotización")}</div>
       ${item.monthly_price_cop ? `<p>${billingCycle === "annual" ? "Renueva 12 meses de portal con beneficio del 30%. Los tickets van aparte." : "Mensualidad del portal. Los tickets se recargan aparte y no vencen con el mes."}</p>` : ""}
-      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir portal" : "Solicitar cotizacion"}</button>
+      <button type="button" data-plan-code="${escapeHtml(item.code)}">${item.monthly_price_cop ? "Elegir portal" : "Solicitar cotización"}</button>
     </article>
   `).join("");
 
@@ -262,14 +262,14 @@ function renderPricingLogic() {
       ? "T50 esta disponible como saldo operativo. T200 o superior activa Portal Base sin mensualidad para generar QR, leads, redenciones y ventas medibles."
       : billingCycle === "annual"
         ? "La anualidad renueva 12 meses de acceso al portal con beneficio del 30%. Los tickets iniciales se cobran aparte, quedan como saldo y no vencen con el mes."
-        : "La mensualidad escala cuando necesitas mas poder: mas campanas, mas historial, afiliados, referidos, sedes, usuarios y analitica avanzada.";
+        : "La mensualidad escala cuando necesitas más poder: más campañas, más historial, afiliados, referidos, sedes, usuarios y analítica avanzada.";
   }
   pricingLogicGrid.innerHTML = visible.map((offer) => {
     return `
       <article>
         <span>${escapeHtml(offer.display_code || offer.public_code || offer.code)}</span>
         <strong>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets</strong>
-        <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets para operar campanas, beneficios, redenciones y medicion de revenue con trazabilidad RMS.</p>
+        <p>${Number(offer.package_size || 0).toLocaleString("es-CO")} tickets para operar campañas, beneficios, redenciones y medición de revenue con trazabilidad RMS.</p>
       </article>
     `;
   }).join("");
@@ -282,10 +282,10 @@ function syncMode() {
 
   if (mode === "base") {
     packageGrid.classList.remove("hidden");
-    offerEyebrow.textContent = "Activacion inicial";
+    offerEyebrow.textContent = "Activación inicial";
     offerTitle.textContent = "Compra tickets y activa tu Portal RMS";
-    offerCopy.textContent = "Puedes ver paquetes desde T50. Desde T200 desbloqueas Portal Base sin mensualidad: dashboard, validador interno, QR preventa/postventa, leads, redenciones y Sales Tracker basico.";
-    formEyebrow.textContent = "Informacion de activacion";
+    offerCopy.textContent = "Puedes ver paquetes desde T50. Desde T200 desbloqueas Portal Base sin mensualidad: dashboard, validador interno, QR preventa/postventa, leads, redenciones y Sales Tracker básico.";
+    formEyebrow.textContent = "Información de activación";
     formTitle.textContent = "Crea tu acceso al Portal Base";
     formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
     submitButton.textContent = "Crear cuenta y activar portal";
@@ -302,13 +302,13 @@ function syncMode() {
   offerEyebrow.textContent = "Upgrades mensuales";
   offerTitle.textContent = selectedPlan ? "Ahora escoge tus tickets iniciales" : "Primero escoge tu Portal RMS";
   offerCopy.textContent = billingCycle === "annual"
-    ? "La anualidad paga el acceso al portal por 12 meses. Despues eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
-    : "La mensualidad paga el acceso al portal. Despues eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga segun uso.";
-  formEyebrow.textContent = "Informacion de activacion";
+    ? "La anualidad paga el acceso al portal por 12 meses. Después eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
+    : "La mensualidad paga el acceso al portal. Después eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga según uso.";
+  formEyebrow.textContent = "Información de activación";
   formTitle.textContent = "Registro, upgrade y tickets iniciales";
   formCopy.textContent = billingCycle === "annual"
     ? "Inscribes la tarjeta en Mercado Pago para renovar el portal cada 12 meses. Market Games no recibe ni guarda datos de tarjeta."
-    : "Inscribes la tarjeta en Mercado Pago para activar el portal y dejar la renovacion automatica lista. Market Games no recibe ni guarda datos de tarjeta.";
+    : "Inscribes la tarjeta en Mercado Pago para activar el portal y dejar la renovación automatica lista. Market Games no recibe ni guarda datos de tarjeta.";
   submitButton.textContent = "Crear cuenta e inscribir tarjeta";
   if (signupCardSecurity) signupCardSecurity.classList.remove("hidden");
   syncBillingSwitch();
@@ -359,10 +359,10 @@ function renderSelectionBox() {
       <span>Resumen de compra</span>
       <strong>${escapeHtml(selectedPlan?.name || "Plan pendiente")}${selectedPackage ? ` + ${escapeHtml(selectedPackage.title)}` : ""}</strong>
       <div class="summary-lines">
-        <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotizacion" : "Sin plan seleccionado"}</b></div>
-        <div><span>Tickets iniciales</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(totalData.package_cop)}` : "Elige saldo inicial despues del portal"}</b></div>
+        <div><span>Plan</span><b>${selectedPlan ? selectedPlan.monthly_price_cop ? planBillingLabel(selectedPlan) : "Cotización" : "Sin plan seleccionado"}</b></div>
+        <div><span>Tickets iniciales</span><b>${selectedPackage ? `${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets - ${copMoney(totalData.package_cop)}` : "Elige saldo inicial después del portal"}</b></div>
         <div><span>Total plan + tickets</span><b>${selectedPlan?.monthly_price_cop && selectedPackage ? copMoney(totalData.total_cop) : "Pendiente"}</b></div>
-        <div><span>Autorizacion</span><b>${selectedPlan?.monthly_price_cop ? "Tarjeta en Mercado Pago" : "Pendiente"}</b></div>
+        <div><span>Autorización</span><b>${selectedPlan?.monthly_price_cop ? "Tarjeta en Mercado Pago" : "Pendiente"}</b></div>
         <div><span>Primer cobro del plan</span><b>${selectedPlan?.monthly_price_cop ? planBillingLabel(selectedPlan) : "Pendiente"}</b></div>
       </div>
       ${selectedPlan?.monthly_price_cop ? `<p>El alta queda activa cuando Mercado Pago autoriza la tarjeta. El resumen totaliza el plan y los tickets elegidos; los tickets seleccionados se cargan como saldo operativo inicial y no vencen por cierre de mes.</p>` : ""}
@@ -382,16 +382,16 @@ function renderSelectionBox() {
   }
 
   const emptyCopy = mode === "portal"
-    ? "Elige primero un plan del portal. Despues te mostramos los paquetes para definir con cuantos tickets quieres empezar."
+    ? "Elige primero un plan del portal. Después te mostramos los paquetes para definir con cuantos tickets quieres empezar."
     : "Elige un paquete. T50 aparece como saldo operativo; T200 o superior activa tu Portal RMS sin mensualidad y habilita el registro.";
   const html = `
     <span>Resumen de compra</span>
-    <strong>Seleccion pendiente</strong>
+    <strong>Selección pendiente</strong>
     <p>${emptyCopy}</p>
     <ul class="summary-list">
       <li>El formulario queda oculto mientras comparas opciones.</li>
       <li>Puedes cambiar o quitar selecciones antes de continuar.</li>
-      <li>Mercado Pago solo se abre despues del registro confirmado: pago para Portal Base o autorizacion de tarjeta para Growth/Premium.</li>
+      <li>Mercado Pago solo se abre después del registro confirmado: pago para Portal Base o autorización de tarjeta para Growth/Premium.</li>
     </ul>
   `;
   selectedBox.innerHTML = html;
@@ -425,11 +425,11 @@ function selectPlan(code, shouldScroll = true) {
   if (mode === "portal") {
     submitButton.textContent = selectedPlan.monthly_price_cop
       ? "Crear cuenta e inscribir tarjeta"
-      : "Solicitar cotizacion";
+      : "Solicitar cotización";
     offerTitle.textContent = selectedPlan.monthly_price_cop ? "Ahora escoge tus tickets iniciales" : "Solicita tu portal Global";
     offerCopy.textContent = selectedPlan.monthly_price_cop
       ? "Ya elegiste el portal. Ahora define el saldo inicial de tickets; se conserva hasta consumirse. La tarjeta se inscribe de forma segura en Mercado Pago."
-      : "Global se define por cotizacion para portal, volumen de tickets, sedes, integraciones y soporte.";
+      : "Global se define por cotización para portal, volumen de tickets, sedes, integraciones y soporte.";
     packageGrid.classList.toggle("hidden", !selectedPlan.monthly_price_cop);
     renderPackages();
     if (shouldScroll && selectedPlan.monthly_price_cop) {
@@ -446,8 +446,8 @@ function removeSelection(type) {
     packageGrid.classList.add("hidden");
     offerTitle.textContent = "Primero escoge tu Portal RMS";
     offerCopy.textContent = billingCycle === "annual"
-      ? "La anualidad paga el acceso al portal por 12 meses. Despues eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
-      : "La mensualidad paga el acceso al portal. Despues eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga segun uso.";
+      ? "La anualidad paga el acceso al portal por 12 meses. Después eliges el paquete inicial de tickets; ese saldo se conserva hasta consumirse."
+      : "La mensualidad paga el acceso al portal. Después eliges el paquete inicial de tickets; ese saldo no vence con el mes y se recarga según uso.";
   }
   if (type === "package") selectedPackage = null;
   renderPackages();
@@ -460,7 +460,7 @@ function updateContinueState() {
   const ready = selectionComplete();
   continueToSignupButton.disabled = !ready;
   continueToSignupButton.textContent = ready
-    ? "Confirmar seleccion y registrar"
+    ? "Confirmar selección y registrar"
     : mode === "portal" && !selectedPlan ? "Elige primero el portal" : mode === "portal" ? "Elige tickets iniciales" : "Elige tickets";
 }
 
@@ -479,7 +479,7 @@ function syncBillingSwitch() {
   if (billingSwitchCopy) {
     billingSwitchCopy.textContent = billingCycle === "annual"
       ? "Autorizas la tarjeta para renovar el portal cada 12 meses con beneficio anual. Los tickets iniciales quedan como saldo operativo al activarse la cuenta."
-      : "Autorizas la tarjeta para renovar el portal automaticamente. Los tickets iniciales quedan como saldo operativo al activarse la cuenta.";
+      : "Autorizas la tarjeta para renovar el portal automáticamente. Los tickets iniciales quedan como saldo operativo al activarse la cuenta.";
   }
 }
 
@@ -542,18 +542,18 @@ async function submitSignup(event) {
     return;
   }
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
-    requestMessage.textContent = "Global requiere cotizacion. Envia la informacion de activacion al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
+    requestMessage.textContent = "Global requiere cotización. Envia la información de activación al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
     return;
   }
   const payload = formPayload();
   if (payload.password !== payload.password_confirm) {
-    requestMessage.textContent = "La confirmacion de clave no coincide.";
+    requestMessage.textContent = "La confirmación de clave no coincide.";
     requestMessage.classList.add("error");
     return;
   }
   if (!payload.terms_accepted || !payload.privacy_accepted) {
-    requestMessage.textContent = "Debes aceptar terminos, condiciones y politica de privacidad antes de continuar al pago.";
+    requestMessage.textContent = "Debes aceptar términos, condiciones y política de privacidad antes de continuar al pago.";
     requestMessage.classList.add("error");
     return;
   }
@@ -561,7 +561,7 @@ async function submitSignup(event) {
   submitButton.disabled = true;
   requestMessage.textContent = mode === "base"
     ? "Creando cuenta y checkout seguro..."
-    : "Creando cuenta y autorizacion segura de tarjeta en Mercado Pago...";
+    : "Creando cuenta y autorización segura de tarjeta en Mercado Pago...";
   try {
     const path = mode === "base" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
     const body = mode === "base"
@@ -580,12 +580,12 @@ async function submitSignup(event) {
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
       throw new Error(mode === "base"
-        ? "La cuenta fue creada, pero Mercado Pago no devolvio link de pago."
-        : "La cuenta fue creada, pero Mercado Pago no devolvio link para inscribir la tarjeta.");
+        ? "La cuenta fue creada, pero Mercado Pago no devolvió link de pago."
+        : "La cuenta fue creada, pero Mercado Pago no devolvió link para inscribir la tarjeta.");
     }
     requestMessage.textContent = mode === "base"
       ? "Cuenta creada. Te llevamos a Mercado Pago; el acceso se activa al aprobarse el pago."
-      : `Cuenta creada para ${data.plan?.name || "el plan del portal"}. Te llevamos a Mercado Pago para inscribir la tarjeta con seguridad; el portal se activa cuando la autorizacion quede aprobada.`;
+      : `Cuenta creada para ${data.plan?.name || "el plan del portal"}. Te llevamos a Mercado Pago para inscribir la tarjeta con seguridad; el portal se activa cuando la autorización quede aprobada.`;
     requestMessage.classList.add("ok");
     window.location.href = checkoutUrl;
   } catch (error) {
@@ -602,11 +602,11 @@ function renderPaymentStatus() {
 
   paymentStatusSection.classList.remove("hidden");
   if (signup === "card") {
-    paymentStatusEyebrow.textContent = "Tarjeta en validacion";
-    paymentStatusTitle.textContent = "Mercado Pago esta confirmando la autorizacion";
-    paymentStatusCopy.textContent = "Tu cuenta queda activa solo cuando Mercado Pago confirma que la tarjeta fue autorizada. Market Games no guarda los datos de tu tarjeta; recibimos un estado seguro de autorizacion.";
+    paymentStatusEyebrow.textContent = "Tarjeta en validación";
+    paymentStatusTitle.textContent = "Mercado Pago está confirmando la autorización";
+    paymentStatusCopy.textContent = "Tu cuenta queda activa solo cuando Mercado Pago confirma que la tarjeta fue autorizada. Market Games no guarda los datos de tu tarjeta; recibimos un estado seguro de autorización.";
     paymentStatusActionTitle.textContent = "Siguiente paso";
-    paymentStatusActionCopy.textContent = "Si la autorizacion ya fue aprobada por Mercado Pago, entra al portal. Si aun aparece bloqueado, espera unos segundos y vuelve a intentar.";
+    paymentStatusActionCopy.textContent = "Si la autorización ya fue aprobada por Mercado Pago, entra al portal. Si aún aparece bloqueado, espera unos segundos y vuelve a intentar.";
     paymentStatusPrimaryLink.href = "/empresa/";
     paymentStatusPrimaryLink.textContent = "Ingresar al portal";
     return;
@@ -615,8 +615,8 @@ function renderPaymentStatus() {
   if (signup === "success") {
     paymentStatusEyebrow.textContent = "Pago aprobado";
     paymentStatusTitle.textContent = "Estamos activando tu cuenta";
-    paymentStatusCopy.textContent = "Si Mercado Pago ya notifico el webhook, tu empresa y usuario quedan activos. Si aun no, espera unos segundos y vuelve a intentar.";
-    paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmacion";
+    paymentStatusCopy.textContent = "Si Mercado Pago ya notificó el webhook, tu empresa y usuario quedan activos. Si aún no, espera unos segundos y vuelve a intentar.";
+    paymentStatusActionTitle.textContent = "Acceso habilitado tras confirmación";
     paymentStatusActionCopy.textContent = mode === "portal"
       ? "Entra al portal con tu acceso registrado."
       : "Entra al Portal Base con tu acceso registrado.";
@@ -627,9 +627,9 @@ function renderPaymentStatus() {
 
   if (signup === "pending") {
     paymentStatusEyebrow.textContent = "Pago pendiente";
-    paymentStatusTitle.textContent = "Tu cuenta aun no esta activa";
-    paymentStatusCopy.textContent = "Mercado Pago esta revisando la transaccion o autorizacion. La empresa y el usuario se activan automaticamente cuando llegue la aprobacion.";
-    paymentStatusActionTitle.textContent = "Espera confirmacion";
+    paymentStatusTitle.textContent = "Tu cuenta aún no está activa";
+    paymentStatusCopy.textContent = "Mercado Pago está revisando la transacción o autorización. La empresa y el usuario se activan automáticamente cuando llegue la aprobación.";
+    paymentStatusActionTitle.textContent = "Espera confirmación";
     paymentStatusActionCopy.textContent = "Conserva el comprobante y vuelve a intentar el ingreso cuando el pago figure aprobado.";
     paymentStatusPrimaryLink.href = "/paquetes/";
     paymentStatusPrimaryLink.textContent = "Ver paquetes";
@@ -639,9 +639,9 @@ function renderPaymentStatus() {
   if (signup === "failure") {
     paymentStatusEyebrow.textContent = "Pago no aprobado";
     paymentStatusTitle.textContent = "No se activo la cuenta";
-    paymentStatusCopy.textContent = "El acceso sigue bloqueado porque Mercado Pago no aprobo el pago o la autorizacion de tarjeta. Puedes reintentar con otro medio.";
+    paymentStatusCopy.textContent = "El acceso sigue bloqueado porque Mercado Pago no aprobó el pago o la autorización de tarjeta. Puedes reintentar con otro medio.";
     paymentStatusActionTitle.textContent = "Reintentar pago";
-    paymentStatusActionCopy.textContent = "Selecciona de nuevo el paquete o plan y completa el pago o la autorizacion de tarjeta.";
+    paymentStatusActionCopy.textContent = "Selecciona de nuevo el paquete o plan y completa el pago o la autorización de tarjeta.";
     paymentStatusPrimaryLink.href = mode === "portal" ? "/paquetes/?mode=portal" : "/paquetes/?mode=base";
     paymentStatusPrimaryLink.textContent = "Reintentar";
   }
