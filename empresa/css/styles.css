@@ -8469,29 +8469,43 @@ textarea {
 
 :root[data-theme="light"] .season-launch-card {
   color: #ffffff !important;
-  border-color: rgba(255, 214, 124, 0.42) !important;
+  border-color: rgba(255, 220, 138, 0.76) !important;
   background:
-    linear-gradient(135deg, rgba(60, 10, 36, 0.96), rgba(8, 61, 50, 0.94)),
-    radial-gradient(circle at 12% 14%, rgba(255, 214, 124, 0.3), transparent 34%) !important;
-  box-shadow: 0 24px 62px rgba(53, 8, 34, 0.24) !important;
+    linear-gradient(135deg, #190713 0%, #4f1232 47%, #06382f 100%),
+    radial-gradient(circle at 12% 14%, rgba(255, 220, 138, 0.2), transparent 34%) !important;
+  box-shadow: 0 24px 68px rgba(53, 8, 34, 0.3) !important;
 }
 
-:root[data-theme="light"] .season-launch-card :where(h3, p, span, strong) {
+:root[data-theme="light"] .season-launch-card :where(h3, p) {
   color: #ffffff !important;
 }
 
 :root[data-theme="light"] .season-launch-card .mono-label {
-  color: #ffd67c !important;
+  color: #21100d !important;
+  background: #ffe08a !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+:root[data-theme="light"] .season-flow-strip span {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
 }
 
 :root[data-theme="light"] .season-flow-strip strong {
-  color: #2d1424 !important;
+  color: #21100d !important;
+  background: #ffe08a !important;
+}
+
+:root[data-theme="light"] .season-launch-actions .solid-button {
+  color: #21100d !important;
+  background: #ffe08a !important;
 }
 
 :root[data-theme="light"] .season-launch-actions .ghost-button {
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.34) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.58) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
 }
 
 /* RMS Data Explorer / Chart Focus Mode */
@@ -9832,19 +9846,19 @@ body.chart-focus-open .command-center {
   margin-bottom: 18px;
   padding: 24px;
   color: #fff;
-  border: 1px solid rgba(255, 214, 124, 0.34);
+  border: 1px solid rgba(255, 220, 138, 0.72);
   background:
-    linear-gradient(135deg, rgba(60, 10, 36, 0.95), rgba(8, 61, 50, 0.92)),
-    radial-gradient(circle at 12% 14%, rgba(255, 214, 124, 0.28), transparent 34%);
-  box-shadow: 0 24px 62px rgba(53, 8, 34, 0.28);
+    linear-gradient(135deg, #190713 0%, #4f1232 47%, #06382f 100%),
+    radial-gradient(circle at 12% 14%, rgba(255, 220, 138, 0.2), transparent 34%);
+  box-shadow: 0 24px 68px rgba(53, 8, 34, 0.34);
 }
 
 .season-launch-hero {
   margin: 0 0 18px;
   border-width: 2px;
   box-shadow:
-    0 0 0 4px rgba(255, 214, 124, 0.12),
-    0 28px 76px rgba(53, 8, 34, 0.32);
+    0 0 0 4px rgba(255, 220, 138, 0.18),
+    0 30px 82px rgba(53, 8, 34, 0.38);
 }
 
 .season-launch-copy {
@@ -9853,7 +9867,13 @@ body.chart-focus-open .command-center {
 }
 
 .season-launch-card .mono-label {
-  color: #ffd67c;
+  width: fit-content;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  border-radius: 999px;
+  color: #21100d;
+  background: #ffe08a;
+  font-weight: 900;
 }
 
 .season-launch-card h3 {
@@ -9861,15 +9881,17 @@ body.chart-focus-open .command-center {
   color: #ffffff;
   font-size: clamp(28px, 3vw, 42px);
   line-height: 1;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.42);
 }
 
 .season-launch-card p {
   max-width: 72ch;
   margin: 0;
-  color: #fff7e8;
+  color: #ffffff;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.5;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.36);
 }
 
 .season-flow-strip {
@@ -9885,12 +9907,13 @@ body.chart-focus-open .command-center {
   gap: 7px;
   min-height: 34px;
   padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 999px;
-  color: #fffaf1;
-  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
+  text-shadow: 0 1px 7px rgba(0, 0, 0, 0.34);
 }
 
 .season-flow-strip strong {
@@ -9899,9 +9922,10 @@ body.chart-focus-open .command-center {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  color: #2d1424;
-  background: #ffd67c;
+  color: #21100d;
+  background: #ffe08a;
   font-size: 12px;
+  text-shadow: none;
 }
 
 .season-launch-actions {
@@ -9915,12 +9939,19 @@ body.chart-focus-open .command-center {
   justify-content: center;
   min-height: 46px;
   white-space: nowrap;
+  font-weight: 900;
+}
+
+.season-launch-actions .solid-button {
+  color: #21100d;
+  background: #ffe08a;
+  box-shadow: 0 12px 28px rgba(255, 224, 138, 0.22);
 }
 
 .season-launch-actions .ghost-button {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .activation-type-picker {
