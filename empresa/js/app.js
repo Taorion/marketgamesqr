@@ -17,11 +17,13 @@ const passwordResetNewInput = document.getElementById("passwordResetNewInput");
 const passwordResetConfirmInput = document.getElementById("passwordResetConfirmInput");
 const passwordResetMessage = document.getElementById("passwordResetMessage");
 const passwordRevealButtons = Array.from(document.querySelectorAll("[data-password-toggle]"));
+const loginGamingCenterButton = document.getElementById("loginGamingCenterButton");
 const actionFeedback = document.getElementById("actionFeedback");
 const subscriptionBanner = document.getElementById("subscriptionBanner");
 const subscriptionPlanName = document.getElementById("subscriptionPlanName");
 const subscriptionPlanSummary = document.getElementById("subscriptionPlanSummary");
 const subscriptionLimits = document.getElementById("subscriptionLimits");
+const gamingCenterCoreButton = document.getElementById("gamingCenterCoreButton");
 const busyOverlay = document.getElementById("busyOverlay");
 const busyOverlayTitle = document.getElementById("busyOverlayTitle");
 const busyOverlayMessage = document.getElementById("busyOverlayMessage");
@@ -635,6 +637,8 @@ let state = {
   qrBatchProgressTimer: null,
   feedbackTimer: 0,
   busyDepth: 0,
+  loadedBusinessId: null,
+  workspaceLoadSeq: 0,
 };
 
 const TICKET_CENTER_CACHE_TTL_MS = 60 * 1000;
@@ -899,6 +903,12 @@ function loadSession() {
 
 function saveSession(value) {
   const nextSession = normalizeSession(value);
+  const identityChanged = !session
+    || session.user?.id !== nextSession?.user?.id
+    || session.user?.business_id !== nextSession?.user?.business_id;
+  if (identityChanged) {
+    resetBusinessScopedState({ session: nextSession });
+  }
   session = nextSession;
   localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
   localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
@@ -910,6 +920,7 @@ function saveValidatorSession(value) {
 
 function clearSession() {
   stopActivityPolling();
+  resetBusinessScopedState({ session: null });
   session = null;
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(VALIDATOR_SESSION_KEY);
@@ -1081,6 +1092,124 @@ function setInlineMessage(element, message, kind = "info") {
 function renderSkeletonCards(container, count = 4) {
   if (!container) return;
   container.innerHTML = Array.from({ length: count }, () => '<article class="skeleton-card"></article>').join("");
+}
+
+function clearCanvas(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width || canvas.clientWidth || 1, canvas.height || canvas.clientHeight || 1);
+}
+
+function clearBusinessWorkspaceUi() {
+  renderSkeletonCards(businessKpiGrid, 6);
+  if (commandCenterRoot) {
+    commandCenterRoot.innerHTML = `
+      <article class="command-center-loading surface-card">
+        <span class="busy-spinner" aria-hidden="true"></span>
+        <div>
+          <strong>Cargando RMS Command Center</strong>
+          <p>Sincronizando datos de la empresa activa.</p>
+        </div>
+      </article>
+    `;
+  }
+  [
+    businessTrendChart,
+    cacTrendChart,
+    hourlyOperationsChart,
+    weekdayPerformanceChart,
+    qrStatusChart,
+    campaignPerformanceChart,
+    rewardMixChart,
+    paymentMethodChart,
+    campaignTimelineChart,
+    campaignSnapshotChart,
+  ].forEach(clearCanvas);
+
+  const loadingRows = [
+    [recentRedemptionsTable, 4, "Cargando redenciones de la empresa activa..."],
+    [recentLeadsTable, 4, "Cargando leads de la empresa activa..."],
+    [branchPerformanceTable, 5, "Cargando actividad por sucursal..."],
+    [campaignLeadsTable, 9, "Cargando leads..."],
+    [campaignRedemptionsTable, 6, "Cargando redenciones..."],
+    [campaignSalesTable, 8, "Cargando ventas..."],
+    [branchTable, 4, "Cargando sucursales..."],
+    [qrBatchTable, 5, "Abre Gaming Center para cargar paquetes recientes."],
+    [strategicQrHistoryTable, 5, "Abre Gaming Center para cargar historial reciente."],
+    [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
+    [affiliateTable, 9, "Cargando afiliados..."],
+    [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
+    [rewardPassTable, 8, "Cargando Reward Pass..."],
+    [rewardPassRedemptionTable, 9, "Cargando historial..."],
+    [rewardPassTicketLedgerTable, 5, "Cargando movimientos..."],
+  ];
+  loadingRows.forEach(([element, colspan, message]) => {
+    if (element) element.innerHTML = `<tr><td colspan="${colspan}">${message}</td></tr>`;
+  });
+
+  if (campaignList) campaignList.innerHTML = '<article class="campaign-item"><p>Cargando campanas de la empresa activa...</p></article>';
+  if (leadFeedTable) leadFeedTable.innerHTML = '<tr><td colspan="9">Cargando contactos...</td></tr>';
+  if (strategicQrKpiGrid) {
+    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Cargando</strong><p class="kpi-meta">Preparando datos de la empresa activa.</p></article>';
+  }
+}
+
+function resetBusinessScopedState(options = {}) {
+  const keepView = options.keepView === true;
+  const targetSession = Object.prototype.hasOwnProperty.call(options, "session")
+    ? options.session || {}
+    : session || {};
+  stopActivityPolling();
+  clearQrBatchProgressTimer();
+  state.dashboard = null;
+  state.activityVersion = "";
+  state.activityRefreshInFlight = false;
+  state.commandCenter = null;
+  state.summary = null;
+  state.businessProfile = null;
+  state.subscription = targetSession.user?.subscription || null;
+  state.access = null;
+  state.businessUsers = [];
+  state.campaignGroups = null;
+  state.campaigns = [];
+  state.adminCampaigns = [];
+  state.affiliates = [];
+  state.rewardPasses = [];
+  state.rewardPassMetrics = null;
+  state.rewardPassContext = null;
+  state.selectedRewardPassId = null;
+  state.selectedRewardPass = null;
+  state.selectedCampaignId = null;
+  state.selectedCampaign = null;
+  state.selectedReport = null;
+  state.selectedLeads = [];
+  state.contactFeed = [];
+  state.contactFeedRetention = null;
+  state.contactFeedGate = null;
+  state.contactFeedLoaded = false;
+  state.selectedRedemptions = [];
+  state.selectedSales = [];
+  state.selectedAffiliateId = null;
+  state.selectedAffiliate = null;
+  state.selectedAffiliateLedger = [];
+  state.strategicQrMetrics = null;
+  state.qrCreditAccount = null;
+  state.qrCreditOrders = [];
+  state.strategicQrBatches = [];
+  state.strategicQrHistory = [];
+  state.triviaLaunchers = [];
+  state.affiliatesLoaded = false;
+  state.strategicQrLoaded = false;
+  state.ticketCenterLoadedAt = {};
+  state.ticketCenterLoading = false;
+  state.strategicQrRecentBatchId = null;
+  state.loadedBusinessId = targetSession.user?.business_id || null;
+  state.workspaceLoadSeq += 1;
+  if (!keepView) {
+    state.currentView = "dashboard";
+  }
+  clearBusinessWorkspaceUi();
 }
 
 function clearQrBatchProgressTimer() {
@@ -2255,6 +2384,20 @@ function applyInitialRouteParams() {
   }
 }
 
+function openGamingCenterEntry() {
+  if (session?.token) {
+    setView("strategic-qr");
+    closePortalMenu();
+    showFeedback("Gaming Center abierto. Aqui esta el core operativo de tickets, QR y activaciones.", "success", { title: "Core operativo" });
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", "strategic-qr");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  setInlineMessage(loginError, "Inicia sesion y abriremos Gaming Center como primera pantalla del portal.", "info");
+  emailInput.focus();
+}
+
 async function login(event) {
   event.preventDefault();
   loginError.textContent = "";
@@ -2476,6 +2619,11 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
 }
 
 async function loadWorkspace() {
+  if (state.loadedBusinessId && state.loadedBusinessId !== session?.user?.business_id) {
+    resetBusinessScopedState({ session, keepView: false });
+  }
+  const loadSeq = ++state.workspaceLoadSeq;
+  const loadBusinessId = session?.user?.business_id || null;
   state.subscription = session.user?.subscription || state.subscription;
   if (isPrepaidValidatorOnly()) {
     await loadPrepaidValidatorWorkspace();
@@ -2496,6 +2644,7 @@ async function loadWorkspace() {
     if (isAdmin()) {
       try {
         const adminCampaignData = await api("/api/admin/campaigns", { headers: authHeaders() });
+        if (loadSeq !== state.workspaceLoadSeq || (session?.user?.business_id || null) !== loadBusinessId) return;
         state.dashboard = null;
         state.summary = null;
         state.campaigns = [];
@@ -2509,14 +2658,17 @@ async function loadWorkspace() {
         state.contactFeedGate = null;
         state.selectedRedemptions = [];
         state.selectedSales = [];
+        state.loadedBusinessId = null;
         renderNoCampaignState();
         setView("admin");
         showFeedback("Vista admin global cargada. Selecciona una campana o negocio para continuar.", "success", { title: "Sesion lista" });
       } catch (error) {
         showFeedback(error.message, "error");
       } finally {
-        refreshButton.disabled = false;
-        hideBusyOverlay();
+        if (loadSeq === state.workspaceLoadSeq) {
+          refreshButton.disabled = false;
+          hideBusyOverlay();
+        }
       }
       return;
     }
@@ -2564,6 +2716,7 @@ async function loadWorkspace() {
 
   try {
     const [accessData, dashboardData, commandCenterData, campaignData, businessProfileData, creditData, subscriptionPlansData, contactFeedData, businessUsersData, activityData, adminCampaignData] = await Promise.all(requests);
+    if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
     state.access = accessData.access || null;
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
@@ -2582,6 +2735,7 @@ async function loadWorkspace() {
     state.contactFeedGate = contactFeedData.lead_gate || null;
     state.contactFeedLoaded = false;
     state.businessUsers = businessUsersData.users || [];
+    state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
     state.strategicQrMetrics = null;
     state.qrPackageOffers = [];
@@ -2634,6 +2788,7 @@ async function loadWorkspace() {
       { title: lightTestMode ? "Prueba ligera" : "Portal actualizado" }
     );
   } catch (error) {
+    if (loadSeq !== state.workspaceLoadSeq || (session?.user?.business_id || null) !== loadBusinessId) return;
     if (
       currentPlan().access_status === "LOCKED"
       || currentPlan().portal_access_allowed === false
@@ -2644,8 +2799,10 @@ async function loadWorkspace() {
     }
     showFeedback(error.message, "error");
   } finally {
-    refreshButton.disabled = false;
-    hideBusyOverlay();
+    if (loadSeq === state.workspaceLoadSeq) {
+      refreshButton.disabled = false;
+      hideBusyOverlay();
+    }
   }
 }
 
@@ -2667,8 +2824,11 @@ async function checkBusinessActivity() {
   if (lightTestMode) return;
   if (document.hidden) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
+  const pollSeq = state.workspaceLoadSeq;
+  const pollBusinessId = session.user.business_id;
   try {
     const data = await apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null });
+    if (pollSeq !== state.workspaceLoadSeq || session?.user?.business_id !== pollBusinessId) return;
     const nextVersion = data.activity?.version || "";
     if (!nextVersion || nextVersion === state.activityVersion) return;
     state.activityVersion = nextVersion;
@@ -2681,6 +2841,8 @@ async function checkBusinessActivity() {
 async function refreshLiveBusinessData() {
   if (lightTestMode) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
+  const refreshSeq = state.workspaceLoadSeq;
+  const refreshBusinessId = session.user.business_id;
   state.activityRefreshInFlight = true;
   try {
     const shouldRefreshDashboard = state.currentView === "dashboard";
@@ -2694,6 +2856,7 @@ async function refreshLiveBusinessData() {
         : Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention, lead_gate: state.contactFeedGate }),
       apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
     ]);
+    if (refreshSeq !== state.workspaceLoadSeq || session?.user?.business_id !== refreshBusinessId) return;
 
     state.dashboard = dashboardData;
     state.commandCenter = commandCenterData;
@@ -2731,6 +2894,8 @@ async function refreshLiveBusinessData() {
 }
 
 async function loadPrepaidValidatorWorkspace() {
+  const loadSeq = ++state.workspaceLoadSeq;
+  const loadBusinessId = session?.user?.business_id || null;
   showFeedback("Cargando saldo de tickets y herramientas del portal.", "loading", { title: "Portal por tickets", timeout: 0 });
   showBusyOverlay("Portal por tickets", "Preparando saldo operativo, paquetes y muestra comercial de leads.");
   refreshButton.disabled = true;
@@ -2772,6 +2937,7 @@ async function loadPrepaidValidatorWorkspace() {
       apiSafe("/api/business/contacts/feed?limit=40", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null }),
       apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
     ]);
+    if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
 
     mergeBusinessProfile(businessProfileData.business || null);
     state.access = accessData.access || state.access || null;
@@ -2787,6 +2953,7 @@ async function loadPrepaidValidatorWorkspace() {
     state.contactFeedGate = contactFeedData.lead_gate || null;
     state.contactFeedLoaded = true;
     state.businessUsers = businessUsersData.users || [];
+    state.loadedBusinessId = session.user.business_id || null;
 
     renderSubscriptionBanner();
     applyPlanNavigation();
@@ -2797,10 +2964,13 @@ async function loadPrepaidValidatorWorkspace() {
     setView("strategic-qr");
     showFeedback("Crea tickets individuales o paquetes con tu saldo operativo. Portal Base muestra el historial permitido y Growth/Premium desbloquea mas profundidad.", "success", { title: "Herramientas listas" });
   } catch (error) {
+    if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
   } finally {
-    refreshButton.disabled = false;
-    hideBusyOverlay();
+    if (loadSeq === state.workspaceLoadSeq) {
+      refreshButton.disabled = false;
+      hideBusyOverlay();
+    }
   }
 }
 
@@ -11794,6 +11964,7 @@ function handleRangeToggle() {
 }
 
 loginForm.addEventListener("submit", login);
+loginGamingCenterButton?.addEventListener("click", openGamingCenterEntry);
 passwordResetRequestForm?.addEventListener("submit", submitPasswordResetRequest);
 passwordResetForm?.addEventListener("submit", submitPasswordReset);
 logoutButton.addEventListener("click", () => {
@@ -11890,6 +12061,7 @@ requestCampaignButton.addEventListener("click", () => {
   openCampaignModal("create");
 });
 editCampaignButton.addEventListener("click", () => openCampaignModal("edit"));
+gamingCenterCoreButton?.addEventListener("click", openGamingCenterEntry);
 redemptionInsightButton.addEventListener("click", () => setView("redemptions"));
 dashboardInsightButton.addEventListener("click", () => setView("campaigns"));
 qrWorkflowCampaignButton?.addEventListener("click", () => setView("campaigns"));
