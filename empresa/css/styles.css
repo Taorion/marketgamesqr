@@ -9839,6 +9839,14 @@ body.chart-focus-open .command-center {
   box-shadow: 0 24px 62px rgba(53, 8, 34, 0.28);
 }
 
+.season-launch-hero {
+  margin: 0 0 18px;
+  border-width: 2px;
+  box-shadow:
+    0 0 0 4px rgba(255, 214, 124, 0.12),
+    0 28px 76px rgba(53, 8, 34, 0.32);
+}
+
 .season-launch-copy {
   display: grid;
   gap: 10px;
