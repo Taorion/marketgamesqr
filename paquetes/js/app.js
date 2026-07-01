@@ -241,7 +241,9 @@ function renderPlans() {
 
 function renderPlanComparison() {
   if (!planComparisonGrid) return;
-  const comparisonPlans = [basePlan, ...plans].filter(Boolean);
+  const comparisonPlans = [basePlan, ...plans].filter(Boolean).filter((plan, index, list) => {
+    return list.findIndex((item) => item.code === plan.code) === index;
+  });
   planComparisonGrid.innerHTML = comparisonPlans.map((plan) => {
     const isFull = plan.code === "GLOBAL";
     const price = plan.monthly_price_cop ? planBillingLabel(plan) : escapeHtml(plan.price_label || "Compra por paquete");

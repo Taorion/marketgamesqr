@@ -196,7 +196,7 @@ async function listPackageOffers(_req, res, next) {
 async function listPublicSubscriptionPlans(_req, res, next) {
   try {
     const plans = listPlans();
-    const publicPlanCodes = [PLAN_CODES.TICKET_BASE, PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO, PLAN_CODES.GLOBAL];
+    const publicPlanCodes = [PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO, PLAN_CODES.GLOBAL];
     res.json({
       prepaid_plan: null,
       portal_base_plan: plans.find((plan) => plan.code === PLAN_CODES.TICKET_BASE),
