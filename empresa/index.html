@@ -97,6 +97,10 @@
             <span class="material-symbols-outlined">dashboard</span>
             <span>Dashboard</span>
           </button>
+          <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
+            <span class="material-symbols-outlined">sports_esports</span>
+            <span>Gaming Center</span>
+          </button>
           <button class="nav-item" data-view="account" type="button">
             <span class="material-symbols-outlined">manage_accounts</span>
             <span>Cuenta</span>
@@ -124,10 +128,6 @@
           <button class="nav-item" data-view="sales" type="button">
             <span class="material-symbols-outlined">payments</span>
             <span>Sales</span>
-          </button>
-          <button class="nav-item" data-view="strategic-qr" type="button">
-            <span class="material-symbols-outlined">qr_code_2</span>
-            <span>Ticket Center</span>
           </button>
           <button class="nav-item" data-view="validator" type="button">
             <span class="material-symbols-outlined">qr_code_scanner</span>
@@ -720,9 +720,9 @@
           <section class="view-section" data-view="strategic-qr">
             <div class="view-head">
               <div>
-                <span class="mono-label">RMS fisico basado en tickets</span>
-                <h2>Ticket Center</h2>
-                <p>Crea, emite, valida y mide tickets para que cada cliente llegue a tienda con ticket y se vaya con el proximo motivo para volver.</p>
+                <span class="mono-label">Nucleo de marketing gamificado</span>
+                <h2>Gaming Center</h2>
+                <p>Crea activaciones, juegos, beneficios y tickets QR para convertir el punto fisico en interaccion medible. Los tickets funcionan como moneda de uso; el poder esta en las experiencias gamificadas que activan clientes.</p>
               </div>
             </div>
 
@@ -736,10 +736,10 @@
 
             <section class="kpi-grid" id="strategicQrKpiGrid"></section>
 
-            <nav class="ticket-center-menu" aria-label="Secciones de Ticket Center">
+            <nav class="ticket-center-menu" aria-label="Secciones de Gaming Center">
               <button class="ticket-center-tab active" data-ticket-tab="center" type="button">
-                <span class="material-symbols-outlined">confirmation_number</span>
-                <span>Ticket Center</span>
+                <span class="material-symbols-outlined">sports_esports</span>
+                <span>Gaming Center</span>
               </button>
               <button class="ticket-center-tab" data-ticket-tab="trivia" type="button">
                 <span class="material-symbols-outlined">quiz</span>
@@ -784,18 +784,18 @@
               <div class="qr-workflow-head">
                 <div>
                   <span class="mono-label">Flujo recomendado</span>
-                  <h3>Campana primero, tickets despues</h3>
+                  <h3>Experiencia primero, tickets despues</h3>
                 </div>
                 <button class="ghost-button" id="qrWorkflowCampaignButton" type="button">Ir a campanas</button>
               </div>
               <div class="qr-workflow-steps">
                 <span><strong>1</strong> Crear o seleccionar campana</span>
-                <span><strong>2</strong> Definir canal de activacion</span>
-                <span><strong>3</strong> Generar tickets asociados</span>
+                <span><strong>2</strong> Elegir dinamica gamificada</span>
+                <span><strong>3</strong> Emitir tickets como moneda de uso</span>
                 <span><strong>4</strong> Medir leads, redenciones y ventas</span>
               </div>
               <p class="qr-workflow-copy" id="qrWorkflowContext">
-                Selecciona una campana antes de generar tickets. Si generas tickets sin campana, quedan fuera del reporte por campana.
+                Selecciona una campana antes de generar tickets. La activacion define el objetivo comercial; el ticket registra el uso, la redencion y la venta.
               </p>
             </article>
 
@@ -803,7 +803,7 @@
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Recarga automatica</span>
-                  <h3>Comprar mas tickets</h3>
+                  <h3>Comprar tickets de uso</h3>
                 </div>
                 <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
               </div>
@@ -836,12 +836,12 @@
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Planes del portal</span>
-                  <h3>Suscripcion mensual + tickets por recarga</h3>
+                  <h3>Suscripcion mensual + tickets de uso</h3>
                 </div>
                 <span class="status-chip ok">Precios coherentes con Portal Base</span>
               </div>
               <p class="pricing-intro" id="subscriptionPricingNote">
-                Portal Base se activa desde T200 sin mensualidad. Los tickets quedan como saldo operativo y Growth/Premium desbloquea mas campanas, historial, exportaciones, sedes, afiliados, referidos y analitica avanzada.
+                Portal Base se activa desde T200 sin mensualidad. Los tickets quedan como saldo operativo para ejecutar dinamicas; Growth/Premium desbloquea mas campanas, historial, exportaciones, sedes, afiliados, referidos y analitica avanzada.
               </p>
               <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
             </article>

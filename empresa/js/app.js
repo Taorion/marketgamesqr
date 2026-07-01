@@ -1287,9 +1287,9 @@ async function loadStrategicQrData(options = {}) {
   setTicketCenterLoadingRows(groupsToLoad);
   if (!quiet) {
     showFeedback(
-      lightTestMode ? "Cargando solo los datos necesarios para probar." : "Cargando datos visibles de Ticket Center.",
+      lightTestMode ? "Cargando solo los datos necesarios para probar." : "Cargando datos visibles de Gaming Center.",
       "loading",
-      { title: lightTestMode ? "Prueba ligera" : "Sincronizando tickets", timeout: 0 }
+      { title: lightTestMode ? "Prueba ligera" : "Sincronizando Gaming Center", timeout: 0 }
     );
   }
 
@@ -2178,7 +2178,7 @@ function setView(view) {
   if (view === "strategic-qr") {
     renderStrategicQrView();
     loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
-      showFeedback(error.message, "error", { title: "No se pudo cargar Ticket Center" });
+      showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
     });
   }
   if (view === "validator") renderValidatorView();
@@ -2530,11 +2530,11 @@ async function loadWorkspace() {
 
   if (!lightTestMode) {
     renderSkeletonCards(businessKpiGrid, 6);
-    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Ticket Center</span><strong class="kpi-value">Bajo demanda</strong><p class="kpi-meta">Las metricas se cargan al abrir esta seccion para reducir egresos.</p></article>';
+    strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Bajo demanda</strong><p class="kpi-meta">Las metricas de activaciones y tickets se cargan al abrir esta seccion para reducir egresos.</p></article>';
     recentRedemptionsTable.innerHTML = '<tr><td colspan="5">Cargando redenciones recientes...</td></tr>';
     recentLeadsTable.innerHTML = '<tr><td colspan="5">Cargando leads recientes...</td></tr>';
-    qrBatchTable.innerHTML = '<tr><td colspan="5">Abre Ticket Center para cargar paquetes recientes.</td></tr>';
-    strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Abre Ticket Center para cargar historial reciente.</td></tr>';
+    qrBatchTable.innerHTML = '<tr><td colspan="5">Abre Gaming Center para cargar paquetes recientes.</td></tr>';
+    strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Abre Gaming Center para cargar historial reciente.</td></tr>';
   }
 
   const needsLogoPayload = !lightTestMode && (!(state.businessProfile?.logo_data_url
@@ -5372,7 +5372,7 @@ function setTicketCenterTab(tab) {
   if (state.currentView === "strategic-qr") {
     renderTicketCenterModules();
     loadTicketCenterForCurrentTab({ quiet: true }).catch((error) => {
-      showFeedback(error.message, "error", { title: "No se pudo cargar Ticket Center" });
+      showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
     });
   }
 }
