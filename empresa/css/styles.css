@@ -8467,6 +8467,33 @@ textarea {
   color: #11211c !important;
 }
 
+:root[data-theme="light"] .season-launch-card {
+  color: #ffffff !important;
+  border-color: rgba(255, 214, 124, 0.42) !important;
+  background:
+    linear-gradient(135deg, rgba(60, 10, 36, 0.96), rgba(8, 61, 50, 0.94)),
+    radial-gradient(circle at 12% 14%, rgba(255, 214, 124, 0.3), transparent 34%) !important;
+  box-shadow: 0 24px 62px rgba(53, 8, 34, 0.24) !important;
+}
+
+:root[data-theme="light"] .season-launch-card :where(h3, p, span, strong) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .season-launch-card .mono-label {
+  color: #ffd67c !important;
+}
+
+:root[data-theme="light"] .season-flow-strip strong {
+  color: #2d1424 !important;
+}
+
+:root[data-theme="light"] .season-launch-actions .ghost-button {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* RMS Data Explorer / Chart Focus Mode */
 .chart-focus-root.hidden {
   display: none;
@@ -9797,6 +9824,97 @@ body.chart-focus-open .command-center {
   line-height: 1.45;
 }
 
+.season-launch-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 18px;
+  padding: 24px;
+  color: #fff;
+  border: 1px solid rgba(255, 214, 124, 0.34);
+  background:
+    linear-gradient(135deg, rgba(60, 10, 36, 0.95), rgba(8, 61, 50, 0.92)),
+    radial-gradient(circle at 12% 14%, rgba(255, 214, 124, 0.28), transparent 34%);
+  box-shadow: 0 24px 62px rgba(53, 8, 34, 0.28);
+}
+
+.season-launch-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.season-launch-card .mono-label {
+  color: #ffd67c;
+}
+
+.season-launch-card h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1;
+}
+
+.season-launch-card p {
+  max-width: 72ch;
+  margin: 0;
+  color: #fff7e8;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.season-flow-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.season-flow-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #fffaf1;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.season-flow-strip strong {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #2d1424;
+  background: #ffd67c;
+  font-size: 12px;
+}
+
+.season-launch-actions {
+  display: grid;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.season-launch-actions .solid-button,
+.season-launch-actions .ghost-button {
+  justify-content: center;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.season-launch-actions .ghost-button {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .activation-type-picker {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -10146,6 +10264,16 @@ body.chart-focus-open .command-center {
 }
 
 @media (max-width: 720px) {
+  .season-launch-card {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .season-launch-actions {
+    width: 100%;
+    min-width: 0;
+  }
+
   .activation-type-picker,
   .survey-builder-grid,
   .reveal-card-grid {

@@ -326,6 +326,8 @@ const ticketShieldBoard = document.getElementById("ticketShieldBoard");
 const nextTicketBoard = document.getElementById("nextTicketBoard");
 const qrWorkflowContext = document.getElementById("qrWorkflowContext");
 const qrWorkflowCampaignButton = document.getElementById("qrWorkflowCampaignButton");
+const secretFriendTicketButton = document.getElementById("secretFriendTicketButton");
+const secretFriendActivationButton = document.getElementById("secretFriendActivationButton");
 const postSaleQrForm = document.getElementById("postSaleQrForm");
 const postSaleCampaignInput = document.getElementById("postSaleCampaignInput");
 const postSaleCampaignHelp = document.getElementById("postSaleCampaignHelp");
@@ -5546,6 +5548,87 @@ function setTicketCenterTab(tab) {
   }
 }
 
+function seasonalCampaignExpiryValue() {
+  const now = new Date();
+  let expiry = new Date(now.getFullYear(), 8, 30, 23, 59);
+  if (now > expiry) {
+    expiry = new Date(now.getFullYear() + 1, 8, 30, 23, 59);
+  }
+  return formatInputDateTime(expiry.toISOString());
+}
+
+function setFieldValue(field, value) {
+  if (!field) return;
+  field.value = value;
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function configureSecretFriendGiftTicket() {
+  setTicketCenterTab("center");
+  setFieldValue(postSaleAttributionSourceInput, "Amigo Secreto Endulzado");
+  setFieldValue(postSaleAttributionSubjectInput, "Ticket regalo comprado");
+  setFieldValue(postSaleAmountInput, "");
+  setFieldValue(postSaleCurrencyInput, "COP");
+  setFieldValue(postSaleProductInput, "Goyurt Parfait + 2 toppings");
+  setFieldValue(postSaleCustomerInput, "");
+  setFieldValue(postSaleDocumentInput, "");
+  setFieldValue(postSalePhoneInput, "");
+  setFieldValue(postSaleEmailInput, "");
+  setFieldValue(postSaleBenefitLabelInput, "Tu amigo secreto te ha endulzado: reclama Goyurt Parfait + 2 toppings");
+  setFieldValue(postSaleBenefitTypeInput, "FREE_GIFT");
+  setFieldValue(postSaleBenefitValueInput, JSON.stringify({
+    product: "Goyurt Parfait",
+    toppings: 2,
+    mechanic: "amigo_secreto_endulzado",
+    ticket_role: "principal_gift_ticket",
+  }));
+  setFieldValue(postSaleExpiresModeInput, "CUSTOM_DATE");
+  setFieldValue(postSaleExpiresAtInput, seasonalCampaignExpiryValue());
+  setFieldValue(postSaleNotesInput, "Ticket principal comprado por un cliente para su amigo secreto. Mensaje sugerido: Tu amigo secreto te ha endulzado. Presenta este ticket y reclama tu regalo. Despues de redimir, invitarlo a crear un ticket secundario para otro prospecto.");
+  postSaleQrForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  setInlineMessage(postSaleQrMessage, "Plantilla cargada. Ajusta el valor de venta, confirma datos del beneficiario y genera el ticket simple de regalo.", "info");
+  showFeedback("Ticket regalo de Amigo Secreto Endulzado preparado.", "success", { title: "Temporada lista" });
+}
+
+function configureSecretFriendProspectActivation() {
+  setTicketCenterTab("trivia");
+  setActivationType("SURVEY");
+  const surveyCountInput = document.querySelector('[data-question-count-for="SURVEY"]');
+  setFieldValue(surveyCountInput, "3");
+  updateActivationQuestionCountControls();
+  setFieldValue(triviaTitleInput, "Amigo Secreto Endulzado");
+  setFieldValue(triviaDescriptionInput, "Alguien penso en ti y te dejo una sorpresa dulce. Confirma tus datos, responde una pregunta rapida, reclama tu regalo en tienda y luego endulza a alguien mas.");
+  setFieldValue(triviaBenefitLabelInput, "Ticket secundario: endulza a alguien mas con un beneficio dulce");
+  setFieldValue(triviaBenefitTypeInput, "FREE_GIFT");
+  setFieldValue(triviaBenefitValueInput, JSON.stringify({
+    mechanic: "amigo_secreto_endulzado",
+    ticket_role: "secondary_referral_ticket",
+    suggested_offer: "topping gratis o beneficio sorpresa para un nuevo invitado",
+    conversion_goal: "beneficiary_to_new_prospect",
+  }));
+  setFieldValue(triviaExpiresModeInput, "CUSTOM_DATE");
+  setFieldValue(triviaExpiresAtInput, seasonalCampaignExpiryValue());
+  setFieldValue(minigameParticipantCooldownInput, "30");
+  setFieldValue(minigameWinnerPolicyInput, "block_previous_winners");
+
+  const surveyQuestions = [
+    ["1", "Para activar tu regalo, que topping elegirias hoy?", "SINGLE_CHOICE", "Fresa, Oreo, Granola, Chocolate, Fruta"],
+    ["2", "A quien endulzarias despues de reclamar tu sorpresa?", "SHORT_TEXT", ""],
+    ["3", "Quieres recibir nuevas sorpresas por WhatsApp?", "SINGLE_CHOICE", "Si, No por ahora"],
+  ];
+  surveyQuestions.forEach(([index, question, type, options]) => {
+    const card = document.querySelector(`[data-survey-question="${index}"]`);
+    setFieldValue(card?.querySelector('[data-survey-field="question"]'), question);
+    setFieldValue(card?.querySelector('[data-survey-field="type"]'), type);
+    setFieldValue(card?.querySelector('[data-survey-field="options"]'), options);
+  });
+  updateSurveyQuestionEditors();
+  triviaLauncherForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  setInlineMessage(triviaLauncherMessage, "Plantilla Amor y Amistad cargada. Selecciona la campana, revisa el copy y lanza la landing para convertir beneficiarios en prospectos.", "info");
+  showFeedback("Landing prospecto preparada: datos + pregunta + ticket secundario.", "success", { title: "Amigo Secreto Endulzado" });
+}
+
 function ticketChannelLabel(value) {
   const key = String(value || "").trim();
   const labels = {
@@ -7413,12 +7496,25 @@ async function submitPostSaleQr(event) {
     await loadStrategicQrData({ groups: ["core", "metrics", "history"], force: true, quiet: true });
     setView("strategic-qr");
     setInlineMessage(postSaleQrMessage, "Ticket generado. El ticket fue descontado y la descarga esta lista.", "success");
+    const recipientPhone = String(postSalePhoneInput.value || "").replace(/[^\d]/g, "");
+    const secretFriendWhatsappText = [
+      "Tu amigo secreto te ha endulzado.",
+      `Tienes un regalo esperando: ${postSaleBenefitLabelInput.value.trim() || "un ticket dulce"}.`,
+      "Presenta este ticket y reclama tu sorpresa:",
+      data.validator_url,
+    ].join(" ");
+    const secretFriendWhatsappUrl = recipientPhone
+      ? `https://wa.me/${recipientPhone}?text=${encodeURIComponent(secretFriendWhatsappText)}`
+      : `https://wa.me/?text=${encodeURIComponent(secretFriendWhatsappText)}`;
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
-      <p><a class="solid-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a></p>
+      <p class="inline-selects">
+        <a class="solid-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a>
+        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+      </p>
     `;
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
       window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
@@ -12020,6 +12116,8 @@ confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
+secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
+secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
 activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
