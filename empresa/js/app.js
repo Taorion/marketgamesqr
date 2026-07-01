@@ -10700,6 +10700,66 @@ function buildTimelineSeries() {
 }
 
 function renderLeadsView() {
+  const feedRows = filterRows(state.contactFeed || [], [
+    "name",
+    "document_id",
+    "phone",
+    "email",
+    "campaign_name",
+    "attribution_source",
+    "attribution_subject",
+    "lead_temperature",
+    "recommended_action",
+  ]);
+  const buyers = feedRows.filter((item) => item.lead_temperature === "buyer").length;
+  const hot = feedRows.filter((item) => item.lead_temperature === "hot").length;
+  const exportable = feedRows.filter((item) => item.email || item.phone).length;
+  const topSource = Object.entries(feedRows.reduce((acc, item) => {
+    const key = item.attribution_source || "Sin origen";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1])[0];
+
+  if (leadFeedKpiGrid) {
+    leadFeedKpiGrid.innerHTML = [
+      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Segun plan"],
+      ["Compradores", buyers, "Con venta registrada"],
+      ["Leads calientes", hot, "Prioridad comercial"],
+      ["Exportables", exportable, "Email o telefono"],
+      ["Origen lider", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
+    ].map(([label, value, meta]) => `
+      <article class="kpi-card">
+        <span class="mono-label">${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value ?? 0)}</strong>
+        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+      </article>
+    `).join("");
+  }
+  if (leadFeedRetention) {
+    leadFeedRetention.textContent = `Retencion ${state.contactFeedRetention?.label || "segun plan"}`;
+  }
+  if (leadFeedTable) {
+    leadFeedTable.innerHTML = feedRows.map((item) => `
+      <tr>
+        <td>
+          <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
+          <br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>
+        </td>
+        <td>${escapeHtml(prettyLeadValue(item.attribution_source || "-"))}</td>
+        <td>
+          ${escapeHtml(item.campaign_name || "Sin campana")}
+          <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
+        </td>
+        <td>
+          <span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span>
+          <br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span>
+        </td>
+        <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
+        <td>${escapeHtml(item.recommended_action || "-")}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retencion de tu plan.</td></tr>';
+  }
+
   const gate = state.contactFeedGate;
   if (gate?.locked && (!state.selectedCampaignId || !(state.selectedLeads || []).length)) {
     const sampleRows = withFilters(
@@ -10739,8 +10799,13 @@ function renderLeadsView() {
     return;
   }
 
+  const sourceRows = state.selectedCampaignId ? (state.selectedLeads || []) : feedRows.map((item) => ({
+    ...item,
+    lead_source: item.lead_source || item.attribution_source,
+    reward_name: item.reward_name || item.attribution_subject || item.campaign_name,
+  }));
   const rows = withFilters(
-    state.selectedLeads || [],
+    sourceRows,
     ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source", "favorite_product", "purchase_intent", "gift_budget", "purchase_window", "preferred_channel"],
     ["created_at", "redeemed_at"]
   );
@@ -10755,11 +10820,11 @@ function renderLeadsView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(item.qr_status || "-")}</td>
       <td>${escapeHtml(item.reward_name || "-")}<br><span class="table-secondary">${escapeHtml(item.email || "-")}</span></td>
-      <td>${item.qr_status === "ACTIVE" && item.qr_code_id
+      <td>${state.selectedCampaignId && item.qr_status === "ACTIVE" && item.qr_code_id
         ? `<button class="ghost-button" type="button" data-download-qr="${escapeHtml(item.qr_code_id)}">Descargar ticket</button>`
-        : '<span class="table-secondary">No disponible</span>'}</td>
+        : `<span class="table-secondary">${escapeHtml(item.qr_code_id ? "Ticket activo" : "Sin ticket")}</span>`}</td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin leads para esta campana.</td></tr>';
+  `).join("") || `<tr><td colspan="9">${state.selectedCampaignId ? "Sin leads para esta campana." : "Sin contactos capturados."}</td></tr>`;
 
   campaignLeadsTable.querySelectorAll("[data-download-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadQr));

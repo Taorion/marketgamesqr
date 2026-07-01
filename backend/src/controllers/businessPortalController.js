@@ -1099,8 +1099,22 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
          p.created_at,
          c.id as campaign_id,
          c.name as campaign_name,
-         coalesce(qn.answers->>'source', p.metadata->>'source', q.metadata->>'attribution_source', q.metadata->>'channel_use', 'Sin origen') as attribution_source,
-         coalesce(qn.answers->>'campaign_label', q.metadata->>'attribution_subject', q.metadata->>'package_name', c.name, 'Sin asunto') as attribution_subject,
+         coalesce(
+           qn.answers->>'source',
+           q.metadata->>'attribution_source',
+           nullif(p.metadata->>'source', ''),
+           case when ia.id is not null then 'interactive_activation' end,
+           q.metadata->>'channel_use',
+           'Sin origen'
+         ) as attribution_source,
+         coalesce(
+           qn.answers->>'campaign_label',
+           q.metadata->>'attribution_subject',
+           q.metadata->>'package_name',
+           ia.title,
+           c.name,
+           'Sin asunto'
+         ) as attribution_subject,
          q.id as qr_code_id,
          q.status as qr_status,
          q.origin_type,
@@ -1130,6 +1144,16 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
          limit 1
        ) q on true
        left join affiliates a on a.id = q.affiliate_id
+       left join interactive_activations ia on ia.id = coalesce(
+         case
+           when p.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (p.metadata->>'activation_id')::uuid
+         end,
+         case
+           when q.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (q.metadata->>'activation_id')::uuid
+         end
+       )
        left join lateral (
          select answers
          from questionnaires
