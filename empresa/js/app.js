@@ -7500,9 +7500,8 @@ async function submitPostSaleQr(event) {
     const secretFriendWhatsappText = [
       "Tu amigo secreto te ha endulzado.",
       `Tienes un regalo esperando: ${postSaleBenefitLabelInput.value.trim() || "un ticket dulce"}.`,
-      "Te adjunto tu ticket QR. Presenta ese QR en tienda para reclamar tu sorpresa.",
-      "Link de respaldo:",
-      data.validator_url,
+      "Te adjunto tu ticket QR. Presenta la imagen QR en tienda para reclamar tu sorpresa.",
+      "No necesitas iniciar sesion ni abrir ningun link.",
     ].join(" ");
     const secretFriendWhatsappUrl = recipientPhone
       ? `https://wa.me/${recipientPhone}?text=${encodeURIComponent(secretFriendWhatsappText)}`
@@ -7510,14 +7509,13 @@ async function submitPostSaleQr(event) {
     postSaleQrResult.classList.remove("hidden");
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
-      <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
       <p class="inline-selects">
         <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir ticket QR</button>
         <a class="ghost-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar QR</a>
-        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Texto WhatsApp</a>
+        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Mensaje WhatsApp</a>
       </p>
-      <p class="table-secondary">El ticket que se envia al beneficiario es esta imagen QR. WhatsApp queda solo como texto de apoyo por si necesitas copiar el mensaje.</p>
+      <p class="table-secondary">El beneficiario recibe la imagen QR del ticket. No recibe link y no necesita iniciar sesion.</p>
     `;
     document.getElementById("sharePostSaleQrButton")?.addEventListener("click", async () => {
       try {
@@ -7525,11 +7523,11 @@ async function submitPostSaleQr(event) {
           filename: ticketFilename,
           dataUrl: browserTicketDataUrl,
           text: secretFriendWhatsappText,
-      });
-    } catch (error) {
-      if (error?.name === "AbortError") return;
-      showFeedback(error.message || "No se pudo compartir el ticket QR.", "error", { title: "Ticket QR" });
-    }
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        showFeedback(error.message || "No se pudo compartir el ticket QR.", "error", { title: "Ticket QR" });
+      }
     });
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
       window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
