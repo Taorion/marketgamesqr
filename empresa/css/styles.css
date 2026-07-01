@@ -135,25 +135,28 @@ textarea {
 
 .gaming-core-entry {
   width: 100%;
-  min-height: 96px;
+  min-height: 136px;
   position: relative;
   isolation: isolate;
   overflow: hidden;
   appearance: none;
-  border: 1px solid rgba(111, 251, 190, 0.42);
-  border-radius: 16px;
+  border: 2px solid #f8d66d;
+  border-radius: 18px;
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) 42px;
+  grid-template-columns: 78px minmax(0, 1fr) 54px;
   align-items: center;
-  gap: 18px;
-  padding: 20px 22px;
+  gap: 22px;
+  padding: 28px 30px;
   text-align: left;
   cursor: pointer;
   background:
-    linear-gradient(90deg, #6ffbbe 0 5px, transparent 5px),
-    linear-gradient(135deg, #041f1a 0%, #06372e 48%, #0b4f3f 100%);
+    linear-gradient(90deg, #f8d66d 0 9px, transparent 9px),
+    linear-gradient(135deg, #020f0c 0%, #06372e 42%, #0b6b55 72%, #075985 100%);
   color: #fff;
-  box-shadow: 0 18px 42px rgba(0, 27, 20, 0.28);
+  box-shadow:
+    0 0 0 4px rgba(248, 214, 109, 0.16),
+    0 28px 70px rgba(0, 27, 20, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
@@ -163,58 +166,61 @@ textarea {
 }
 
 .gaming-core-entry::after {
-  content: "CORE";
+  content: "CORE DEL PORTAL";
   position: absolute;
   z-index: 2;
-  top: 12px;
-  right: 14px;
-  padding: 4px 8px;
+  top: 16px;
+  right: 18px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: #f8d66d;
   color: #11211c;
   font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0;
 }
 
 .gaming-core-entry:hover,
 .gaming-core-entry:focus-visible {
-  transform: translateY(-1px);
-  border-color: #f8d66d;
-  box-shadow: 0 24px 58px rgba(0, 27, 20, 0.36);
+  transform: translateY(-3px);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 5px rgba(248, 214, 109, 0.22),
+    0 34px 82px rgba(0, 27, 20, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   outline: none;
 }
 
 .gaming-core-entry:focus-visible {
   box-shadow:
-    0 0 0 3px rgba(248, 214, 109, 0.52),
-    0 24px 58px rgba(0, 27, 20, 0.36);
+    0 0 0 5px rgba(248, 214, 109, 0.62),
+    0 34px 82px rgba(0, 27, 20, 0.48);
 }
 
 .gaming-core-entry .material-symbols-outlined:first-child {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 78px;
+  height: 78px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   background: #d9fff0;
   color: #003527;
-  font-size: 34px;
+  font-size: 46px;
   box-shadow: inset 0 0 0 1px rgba(0, 53, 39, 0.08);
 }
 
 .gaming-core-entry .material-symbols-outlined:last-child {
   justify-self: end;
   align-self: center;
-  width: 42px;
-  height: 42px;
+  width: 54px;
+  height: 54px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  font-size: 28px;
+  font-size: 34px;
 }
 
 .gaming-core-entry strong,
@@ -223,20 +229,21 @@ textarea {
 }
 
 .gaming-core-entry strong {
-  max-width: 22ch;
-  font-size: 24px;
-  line-height: 1.1;
-  font-weight: 800;
+  max-width: 18ch;
+  font-size: clamp(30px, 3.2vw, 42px);
+  line-height: 0.98;
+  font-weight: 900;
   color: #ffffff;
+  text-transform: uppercase;
 }
 
 .gaming-core-entry small {
-  max-width: 60ch;
-  margin-top: 8px;
-  color: #e9fff7;
+  max-width: 68ch;
+  margin-top: 12px;
+  color: #f2fff9;
   line-height: 1.45;
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -251,11 +258,11 @@ textarea {
 }
 
 .login-gaming-entry {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
 }
 
 .portal-gaming-entry {
-  margin: 0 0 22px;
+  margin: 0 0 18px;
 }
 
 .login-form {
@@ -3482,23 +3489,24 @@ td {
   }
 
   .gaming-core-entry {
-    min-height: 124px;
-    grid-template-columns: 50px minmax(0, 1fr);
-    padding: 18px 16px 16px 20px;
-    gap: 12px;
+    min-height: 150px;
+    grid-template-columns: 58px minmax(0, 1fr);
+    padding: 26px 18px 18px 22px;
+    gap: 14px;
   }
 
   .gaming-core-entry::after {
-    top: 10px;
-    right: 12px;
-    padding: 3px 7px;
+    top: 12px;
+    right: 14px;
+    padding: 4px 8px;
     font-size: 9px;
   }
 
   .gaming-core-entry .material-symbols-outlined:first-child {
-    width: 50px;
-    height: 50px;
-    font-size: 28px;
+    width: 58px;
+    height: 58px;
+    border-radius: 15px;
+    font-size: 34px;
   }
 
   .gaming-core-entry .material-symbols-outlined:last-child {
@@ -3506,13 +3514,13 @@ td {
   }
 
   .gaming-core-entry strong {
-    padding-right: 48px;
-    font-size: 20px;
+    padding-right: 86px;
+    font-size: 25px;
   }
 
   .gaming-core-entry small {
-    max-width: 34ch;
-    font-size: 13px;
+    max-width: 36ch;
+    font-size: 13.5px;
   }
 
   .view-section {
@@ -8414,23 +8422,29 @@ textarea {
 
 :root[data-theme="light"] .gaming-core-entry {
   background:
-    linear-gradient(90deg, #f8d66d 0 5px, transparent 5px),
-    linear-gradient(135deg, #041f1a 0%, #075946 54%, #0b6b55 100%) !important;
-  border-color: rgba(0, 53, 39, 0.32) !important;
+    linear-gradient(90deg, #f8d66d 0 9px, transparent 9px),
+    linear-gradient(135deg, #020f0c 0%, #06372e 42%, #0b6b55 72%, #075985 100%) !important;
+  border-color: #f8d66d !important;
   color: #ffffff !important;
-  box-shadow: 0 18px 38px rgba(6, 33, 29, 0.2) !important;
+  box-shadow:
+    0 0 0 4px rgba(248, 214, 109, 0.18),
+    0 28px 70px rgba(6, 33, 29, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
 :root[data-theme="light"] .gaming-core-entry:hover,
 :root[data-theme="light"] .gaming-core-entry:focus-visible {
-  border-color: #f8d66d !important;
-  box-shadow: 0 24px 56px rgba(6, 33, 29, 0.28) !important;
+  border-color: #ffffff !important;
+  box-shadow:
+    0 0 0 5px rgba(248, 214, 109, 0.24),
+    0 34px 82px rgba(6, 33, 29, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 :root[data-theme="light"] .gaming-core-entry:focus-visible {
   box-shadow:
-    0 0 0 3px rgba(248, 214, 109, 0.56),
-    0 24px 56px rgba(6, 33, 29, 0.28) !important;
+    0 0 0 5px rgba(248, 214, 109, 0.62),
+    0 34px 82px rgba(6, 33, 29, 0.42) !important;
 }
 
 :root[data-theme="light"] .gaming-core-entry,
