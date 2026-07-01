@@ -49,11 +49,11 @@ function renderStatus(data) {
   finalTicketBlock.classList.toggle("hidden", !hasFinalTicket);
   if (hasFinalTicket) {
     finalTicketQrImage.src = data.final_ticket.qr_image_data_url;
-    finalTicketLink.href = data.final_ticket.validator_url;
+    finalTicketLink.textContent = "Presenta este QR para reclamar el beneficio";
     resultBlock.textContent = "";
   } else {
     finalTicketQrImage.removeAttribute("src");
-    finalTicketLink.href = "#";
+    finalTicketLink.textContent = "";
   }
   if (!data.allowed && !hasFinalTicket) {
     resultBlock.textContent = data.message || "Este QR no puede activarse.";

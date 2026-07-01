@@ -330,6 +330,8 @@ async function createPostSaleQr(businessId, user, body) {
     });
 
     const validatorUrl = buildValidatorUrl(token);
+    const claimUrl = buildClaimUrl(token);
+    const sharedTicketUrl = isGenericTicket ? claimUrl : validatorUrl;
     const businessResult = await client.query(
       `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
        from businesses b
@@ -341,7 +343,7 @@ async function createPostSaleQr(businessId, user, body) {
     const hasFrame = Boolean(brand.ticketFrameUrl);
     const postSaleTicketImage = hasFrame
       ? await buildBrandedTicketSvgDataUrl({
-          scanUrl: validatorUrl,
+          scanUrl: sharedTicketUrl,
           brand,
           detailLines: buildTicketDetailLines({
             label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio",
@@ -349,7 +351,7 @@ async function createPostSaleQr(businessId, user, body) {
             code: shortTicketCode(qr),
           }),
         })
-      : await QRCode.toDataURL(validatorUrl);
+      : await QRCode.toDataURL(sharedTicketUrl);
 
     return {
       sale,
@@ -357,7 +359,9 @@ async function createPostSaleQr(businessId, user, body) {
       business,
       credit_account: mapPublicCreditAccount(creditAccount),
       validator_url: validatorUrl,
-      qr_content: validatorUrl,
+      claim_url: claimUrl,
+      public_ticket_url: sharedTicketUrl,
+      qr_content: sharedTicketUrl,
       qr_image_data_url: postSaleTicketImage,
       filename: `${isGenericTicket ? safeFilenamePart(ticketUseCaseLabel) : "post-sale"}-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
       benefit: benefitPayload,
@@ -1426,16 +1430,20 @@ async function getClaimDetails(tokenInput) {
   }
 
   const brand = getBrandStyle(qr.business_settings || {});
-  const finalTicketUrl = qr.final_qr_token ? buildValidatorUrl(qr.final_qr_token) : null;
-  const finalTicketImageDataUrl = qr.final_qr_code_id && finalTicketUrl
+  const activeTicketUrl = !qr.claim_required && qr.token ? buildValidatorUrl(qr.token) : null;
+  const finalTicketUrl = qr.final_qr_token ? buildValidatorUrl(qr.final_qr_token) : activeTicketUrl;
+  const finalTicketId = qr.final_qr_code_id || (!qr.claim_required ? qr.id : null);
+  const finalTicketExpiresAt = qr.final_qr_expires_at || (!qr.claim_required ? qr.expires_at : null);
+  const finalTicketCreatedAt = qr.final_qr_created_at || (!qr.claim_required ? qr.claimed_at : null);
+  const finalTicketImageDataUrl = finalTicketId && finalTicketUrl
     ? brand.ticketFrameUrl
       ? await buildBrandedTicketSvgDataUrl({
           scanUrl: finalTicketUrl,
           brand,
           detailLines: buildTicketDetailLines({
             label: qr.benefit_value?.label || qr.benefit_type || "Beneficio",
-            expiresAt: qr.final_qr_expires_at,
-            code: shortTicketCode({ id: qr.final_qr_code_id, token: qr.final_qr_token }),
+            expiresAt: finalTicketExpiresAt,
+            code: shortTicketCode({ id: finalTicketId, token: qr.final_qr_token || qr.token }),
           }),
         })
       : await QRCode.toDataURL(finalTicketUrl)
@@ -1459,14 +1467,14 @@ async function getClaimDetails(tokenInput) {
       type: qr.benefit_type,
       value: qr.benefit_value || {},
     },
-    final_ticket: qr.final_qr_code_id
+    final_ticket: finalTicketId
       ? {
-          id: qr.final_qr_code_id,
-          status: qr.final_qr_status,
+          id: finalTicketId,
+          status: qr.final_qr_status || qr.status,
           validator_url: finalTicketUrl,
           qr_image_data_url: finalTicketImageDataUrl,
-          created_at: qr.final_qr_created_at,
-          expires_at: qr.final_qr_expires_at,
+          created_at: finalTicketCreatedAt,
+          expires_at: finalTicketExpiresAt,
         }
       : null,
     player: qr.player_id

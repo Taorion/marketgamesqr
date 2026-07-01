@@ -134,6 +134,17 @@ h1 {
   text-decoration: none;
 }
 
+#finalTicketLink {
+  max-width: 280px;
+  margin: 0;
+  color: #4d5d69;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
 .hidden {
   display: none;
 }

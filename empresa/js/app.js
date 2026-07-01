@@ -7471,20 +7471,6 @@ function whatsappPhoneFromInput(value) {
   return digits;
 }
 
-function buildGenericTicketShareText({ business, beneficiary, product, benefit, occasion, validatorUrl }) {
-  const businessName = business?.name || "el punto autorizado";
-  const greeting = beneficiary ? `Hola ${beneficiary}.` : "Hola.";
-  const subject = product || benefit || "tu ticket";
-  const occasionLine = occasion ? `Motivo: ${occasion}.` : "";
-  return [
-    greeting,
-    `Recibiste un ticket para reclamar ${subject} en ${businessName}.`,
-    occasionLine,
-    "Presenta este enlace o su QR en el punto de validación:",
-    validatorUrl,
-  ].filter(Boolean).join(" ");
-}
-
 async function submitPostSaleQr(event) {
   event.preventDefault();
   if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir un ticket generico")) {
@@ -7548,18 +7534,10 @@ async function submitPostSaleQr(event) {
     const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
     const ticketFilename = filenameForDataUrl(data.filename || `ticket-${slugify(ticketUseCaseLabel)}-${data.qr_code.id}.png`, browserTicketDataUrl);
     const ticketDownloadUrl = URL.createObjectURL(dataUrlToBlob(browserTicketDataUrl));
-    const shareText = buildGenericTicketShareText({
-      business: data.business,
-      beneficiary: beneficiaryName,
-      product: productName,
-      benefit: data.benefit?.label || benefitLabel,
-      occasion: ticketOccasion,
-      validatorUrl: data.validator_url,
-    });
+    const publicTicketUrl = data.public_ticket_url
+      || data.claim_url
+      || (data.qr_code?.token ? `${window.location.origin}/claim/${encodeURIComponent(data.qr_code.token)}` : data.validator_url);
     const whatsappPhone = whatsappPhoneFromInput(postSalePhoneInput.value);
-    const whatsappUrl = whatsappPhone
-      ? `https://wa.me/${encodeURIComponent(whatsappPhone)}?text=${encodeURIComponent(shareText)}`
-      : `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
     markTicketCenterDataStale(["core", "metrics", "history"]);
     await loadStrategicQrData({ groups: ["core", "metrics", "history"], force: true, quiet: true });
@@ -7569,8 +7547,8 @@ async function submitPostSaleQr(event) {
       beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
       `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
       ticketOccasion ? `Motivo: ${ticketOccasion}.` : "",
-      "Presenta la imagen QR o el enlace del ticket en el punto autorizado.",
-      data.validator_url,
+      "Abre este ticket para ver el QR y presentarlo en el punto autorizado.",
+      publicTicketUrl,
     ].filter(Boolean).join(" ");
     const genericTicketWhatsappUrl = whatsappPhone
       ? `https://wa.me/${encodeURIComponent(whatsappPhone)}?text=${encodeURIComponent(genericTicketWhatsappText)}`
@@ -7580,7 +7558,7 @@ async function submitPostSaleQr(event) {
       <p><strong>Uso:</strong> ${escapeHtml(ticketUseCaseLabel)}${ticketOccasion ? ` | ${escapeHtml(ticketOccasion)}` : ""}</p>
       <p><strong>Representa:</strong> ${escapeHtml(productName || data.benefit?.label || benefitLabel || "Beneficio")}</p>
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
-      <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
+      <p><strong>Link:</strong> <a href="${escapeHtml(publicTicketUrl)}" target="_blank" rel="noopener">Abrir ticket público</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
       <div class="inline-actions">
         <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir QR</button>
@@ -7606,7 +7584,7 @@ async function submitPostSaleQr(event) {
       window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
     });
     document.getElementById("copyGenericTicketLinkButton")?.addEventListener("click", async () => {
-      await navigator.clipboard?.writeText(data.validator_url);
+      await navigator.clipboard?.writeText(publicTicketUrl);
       showFeedback("Link del ticket copiado.", "success", { title: "Ticket listo" });
     });
     showFeedback("Ticket generico listo. Comparte la imagen QR, descarga el ticket o envia el mensaje al beneficiario.", "success", { title: "Ticket emitido" });
