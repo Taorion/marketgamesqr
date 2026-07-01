@@ -31,6 +31,17 @@ const packageJson = require("../../package.json");
 const app = express();
 const projectRoot = path.join(__dirname, "../..");
 const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
+const utf8StaticExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
+
+function setUtf8StaticHeaders(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (utf8StaticExtensions.has(ext)) {
+    const currentType = res.getHeader("Content-Type");
+    if (currentType && !String(currentType).toLowerCase().includes("charset=")) {
+      res.setHeader("Content-Type", `${currentType}; charset=utf-8`);
+    }
+  }
+}
 
 function addOriginVariant(origins, value) {
   if (!value) return;
@@ -154,7 +165,7 @@ app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
-app.use(express.static(marketGamesWebRoot));
+app.use(express.static(marketGamesWebRoot, { setHeaders: setUtf8StaticHeaders }));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
   if (req.query.token) {
@@ -189,6 +200,7 @@ app.get("/activacion/:slug", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "activacion", "index.html"));
 });
 app.get("/", (_req, res) => {
+  res.set("Content-Type", "text/html; charset=utf-8");
   res.sendFile(path.join(marketGamesWebRoot, "index.html"));
 });
 
