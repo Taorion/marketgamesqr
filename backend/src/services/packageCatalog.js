@@ -6,7 +6,7 @@ const rawPackageOffers = [
     public_code: "T50",
     package_size: 50,
     unit_price_cop: 1500,
-    prepaid_allowed: false,
+    prepaid_allowed: true,
     subscriber_allowed: true,
     base_access_allowed: false,
     title: "Ticket x50",

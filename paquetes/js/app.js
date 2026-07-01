@@ -121,6 +121,10 @@ function activatesBasePortal(item) {
   return Boolean(item?.base_access_allowed && Number(item?.package_size || 0) >= 200);
 }
 
+function isTicketOnlyPackage(item) {
+  return Boolean(item && !activatesBasePortal(item));
+}
+
 function selectedTotal() {
   if (mode === "base") {
     return {
@@ -147,6 +151,14 @@ function resetSignupVisibility() {
 
 function selectedBenefits() {
   if (mode === "base") {
+    if (isTicketOnlyPackage(selectedPackage)) {
+      return [
+        "50 tickets como saldo operativo inicial",
+        "Sirve para emitir tickets QR, beneficios o activaciones puntuales",
+        "No activa Portal Base por si solo",
+        "Puedes subir a T200 o superior cuando quieras activar el portal completo",
+      ];
+    }
     return [
       "Portal RMS Base sin mensualidad",
       "Dashboard base, validador interno y Sales Tracker básico",
@@ -196,7 +208,7 @@ function renderPackages() {
       <p>${copMoney(item.unit_price_cop)} por ticket. ${item.savings_percent ? `${Number(item.savings_percent).toLocaleString("es-CO")}% mejor valor frente al ticket base.` : "Precio base de entrada."}</p>
       <p>${escapeHtml(item.mode_label || "Tickets")} · ${escapeHtml(item.expiration_label || "")}</p>
       <p class="ticket-balance-note">${activatesBasePortal(item) ? "Activa Portal Base sin mensualidad y suma saldo operativo RMS." : "Paquete T50: saldo operativo para generar QR; el Portal Base se activa desde T200."}</p>
-      <button type="button" data-package-code="${escapeHtml(item.code)}" ${mode === "base" && !activatesBasePortal(item) ? "disabled" : ""}>${mode === "base" ? activatesBasePortal(item) ? "Activar Portal Base" : "Recarga T50" : "Sumar tickets"}</button>
+      <button type="button" data-package-code="${escapeHtml(item.code)}">${mode === "base" ? activatesBasePortal(item) ? "Activar Portal Base" : "Comprar T50" : "Sumar tickets"}</button>
     </article>
   `).join("");
 
@@ -290,7 +302,7 @@ function syncMode() {
     formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
     submitButton.textContent = "Crear cuenta y activar portal";
     if (signupCardSecurity) signupCardSecurity.classList.add("hidden");
-    selectedPackage = packages.find((item) => activatesBasePortal(item) && item.code === selectedPackage?.code) || null;
+    selectedPackage = packages.find((item) => item.code === selectedPackage?.code) || null;
     selectedPlan = null;
     renderPackages();
     renderPlans();
@@ -331,14 +343,16 @@ function renderSelectionBox() {
   };
 
   if (mode === "base" && selectedPackage) {
+    const ticketOnly = isTicketOnlyPackage(selectedPackage);
     const html = `
       <span>Resumen de compra</span>
       <strong>${escapeHtml(selectedPackage.title)}</strong>
       <div class="summary-lines">
-        <div><span>Servicio</span><b>Portal Base activado por tickets</b></div>
+        <div><span>Servicio</span><b>${ticketOnly ? "Saldo operativo de tickets" : "Portal Base activado por tickets"}</b></div>
         <div><span>Tickets</span><b>${Number(selectedPackage.package_size).toLocaleString("es-CO")} tickets</b></div>
         <div><span>Total hoy</span><b>${priceLabel(selectedPackage)}</b></div>
       </div>
+      ${ticketOnly ? '<p>T50 no activa Portal Base por si solo. Es una compra inicial de saldo operativo; para abrir el portal completo elige T200 o superior.</p>' : ""}
       <ul class="summary-list">
         ${selectedBenefits().map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
       </ul>
@@ -460,8 +474,45 @@ function updateContinueState() {
   const ready = selectionComplete();
   continueToSignupButton.disabled = !ready;
   continueToSignupButton.textContent = ready
-    ? "Confirmar selección y registrar"
+    ? mode === "base" && isTicketOnlyPackage(selectedPackage) ? "Confirmar compra T50" : "Confirmar selección y registrar"
     : mode === "portal" && !selectedPlan ? "Elige primero el portal" : mode === "portal" ? "Elige tickets iniciales" : "Elige tickets";
+}
+
+function syncSignupIntentCopy() {
+  const passwordInput = document.getElementById("password");
+  const passwordConfirmInput = document.getElementById("passwordConfirm");
+  const passwordFields = [passwordInput?.parentElement, passwordConfirmInput?.parentElement].filter(Boolean);
+  const ticketOnlyBase = mode === "base" && isTicketOnlyPackage(selectedPackage);
+
+  passwordFields.forEach((field) => field.classList.toggle("hidden", ticketOnlyBase));
+  if (passwordInput) passwordInput.required = !ticketOnlyBase;
+  if (passwordConfirmInput) passwordConfirmInput.required = !ticketOnlyBase;
+
+  if (ticketOnlyBase) {
+    formEyebrow.textContent = "Compra inicial de tickets";
+    formTitle.textContent = "Solicita 50 tickets operativos";
+    formCopy.textContent = "T50 no activa Portal Base. Deja tus datos para confirmar el pago y cargar los 50 tickets como saldo operativo.";
+    submitButton.textContent = "Solicitar compra T50";
+    if (signupCardSecurity) signupCardSecurity.classList.add("hidden");
+    return;
+  }
+
+  if (mode === "base") {
+    formEyebrow.textContent = "Información de activación";
+    formTitle.textContent = "Crea tu acceso al Portal Base";
+    formCopy.textContent = "El pago aprobado activa tu Portal RMS y carga tus tickets como saldo operativo.";
+    submitButton.textContent = "Crear cuenta y activar portal";
+    if (signupCardSecurity) signupCardSecurity.classList.add("hidden");
+    return;
+  }
+
+  formEyebrow.textContent = "Información de activación";
+  formTitle.textContent = "Registro, upgrade y tickets iniciales";
+  formCopy.textContent = billingCycle === "annual"
+    ? "Inscribes la tarjeta en Mercado Pago para renovar el portal cada 12 meses. Market Games no recibe ni guarda datos de tarjeta."
+    : "Inscribes la tarjeta en Mercado Pago para activar el portal y dejar la renovación automatica lista. Market Games no recibe ni guarda datos de tarjeta.";
+  submitButton.textContent = "Crear cuenta e inscribir tarjeta";
+  if (signupCardSecurity) signupCardSecurity.classList.remove("hidden");
 }
 
 function continueToSignup() {
@@ -469,6 +520,7 @@ function continueToSignup() {
     renderSelectionBox();
     return;
   }
+  syncSignupIntentCopy();
   signupSection.classList.remove("hidden");
   signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -527,7 +579,7 @@ async function submitSignup(event) {
   requestMessage.textContent = "";
 
   if (mode === "base" && !selectedPackage) {
-    requestMessage.textContent = "Selecciona T200 o superior para activar el Portal Base. T50 queda disponible como recarga de tickets.";
+    requestMessage.textContent = "Selecciona T50 como saldo operativo o T200 o superior para activar el Portal Base.";
     requestMessage.classList.add("error");
     return;
   }
@@ -541,13 +593,14 @@ async function submitSignup(event) {
     requestMessage.classList.add("error");
     return;
   }
+  const ticketOnlyBase = mode === "base" && isTicketOnlyPackage(selectedPackage);
   if (mode === "portal" && selectedPlan && !selectedPlan.monthly_price_cop) {
     requestMessage.textContent = "Global requiere cotización. Envia la información de activación al equipo comercial para definir portal brandeable, sedes, afiliados, integraciones y soporte.";
     requestMessage.classList.add("ok");
     return;
   }
   const payload = formPayload();
-  if (payload.password !== payload.password_confirm) {
+  if (!ticketOnlyBase && payload.password !== payload.password_confirm) {
     requestMessage.textContent = "La confirmación de clave no coincide.";
     requestMessage.classList.add("error");
     return;
@@ -559,14 +612,31 @@ async function submitSignup(event) {
   }
 
   submitButton.disabled = true;
-  requestMessage.textContent = mode === "base"
-    ? "Creando cuenta y checkout seguro..."
-    : "Creando cuenta y autorización segura de tarjeta en Mercado Pago...";
+  requestMessage.textContent = ticketOnlyBase
+    ? "Registrando solicitud de compra T50..."
+    : mode === "base"
+      ? "Creando cuenta y checkout seguro..."
+      : "Creando cuenta y autorización segura de tarjeta en Mercado Pago...";
   try {
-    const path = mode === "base" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
-    const body = mode === "base"
-      ? { ...payload, package_code: selectedPackage.code }
-      : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code, billing_cycle: billingCycle };
+    const path = ticketOnlyBase
+      ? "/api/public/packages/requests"
+      : mode === "base" ? "/api/public/signup/ticket-base" : "/api/public/signup/portal";
+    const body = ticketOnlyBase
+      ? {
+          package_code: selectedPackage.code,
+          nit: payload.nit,
+          contact_name: payload.contact_name,
+          company_name: payload.company_name || payload.contact_name,
+          email: payload.email,
+          phone: payload.phone,
+          website: payload.website,
+          city: payload.city,
+          address: payload.address,
+          notes: "Compra inicial T50 solicitada desde pagina de planes.",
+        }
+      : mode === "base"
+        ? { ...payload, package_code: selectedPackage.code }
+        : { ...payload, plan_code: selectedPlan.code, package_code: selectedPackage.code, billing_cycle: billingCycle };
     const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -575,6 +645,12 @@ async function submitSignup(event) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(data.error?.message || "No se pudo completar el registro.");
+    }
+
+    if (ticketOnlyBase) {
+      requestMessage.textContent = "Solicitud T50 registrada. El equipo comercial puede confirmar el pago y cargar los 50 tickets como saldo operativo.";
+      requestMessage.classList.add("ok");
+      return;
     }
 
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
