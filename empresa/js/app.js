@@ -7500,7 +7500,8 @@ async function submitPostSaleQr(event) {
     const secretFriendWhatsappText = [
       "Tu amigo secreto te ha endulzado.",
       `Tienes un regalo esperando: ${postSaleBenefitLabelInput.value.trim() || "un ticket dulce"}.`,
-      "Presenta este ticket y reclama tu sorpresa:",
+      "Te adjunto tu ticket QR. Presenta ese QR en tienda para reclamar tu sorpresa.",
+      "Link de respaldo:",
       data.validator_url,
     ].join(" ");
     const secretFriendWhatsappUrl = recipientPhone
@@ -7510,16 +7511,30 @@ async function submitPostSaleQr(event) {
     postSaleQrResult.innerHTML = `
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(data.validator_url)}" target="_blank" rel="noopener">Abrir ticket</a></p>
-      <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket generado" style="max-width:220px;width:100%;border-radius:18px;">
+      <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
       <p class="inline-selects">
-        <a class="solid-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a>
-        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir ticket QR</button>
+        <a class="ghost-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar QR</a>
+        <a class="ghost-button" href="${escapeHtml(secretFriendWhatsappUrl)}" target="_blank" rel="noopener">Texto WhatsApp</a>
       </p>
+      <p class="table-secondary">El ticket que se envia al beneficiario es esta imagen QR. WhatsApp queda solo como texto de apoyo por si necesitas copiar el mensaje.</p>
     `;
+    document.getElementById("sharePostSaleQrButton")?.addEventListener("click", async () => {
+      try {
+        await shareTicketQrFile({
+          filename: ticketFilename,
+          dataUrl: browserTicketDataUrl,
+          text: secretFriendWhatsappText,
+      });
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      showFeedback(error.message || "No se pudo compartir el ticket QR.", "error", { title: "Ticket QR" });
+    }
+    });
     document.getElementById("downloadPostSaleQrButton")?.addEventListener("click", () => {
       window.setTimeout(() => URL.revokeObjectURL(ticketDownloadUrl), 30000);
     });
-    showFeedback("Ticket postventa listo. Descargalo o abre el link para validar.", "success", { title: "Ticket generado" });
+    showFeedback("Ticket QR listo. Comparte la imagen QR con el beneficiario.", "success", { title: "Ticket generado" });
   } catch (error) {
     setInlineMessage(postSaleQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo generar el ticket" });
@@ -8996,6 +9011,23 @@ async function downloadDataUrl(filename, dataUrl) {
   }
 
   triggerBlobDownload(filenameForDataUrl(filename, value), dataUrlToBlob(value));
+}
+
+async function shareTicketQrFile({ filename, dataUrl, text }) {
+  const blob = dataUrlToBlob(dataUrl);
+  const file = new File([blob], filenameForDataUrl(filename, dataUrl), { type: blob.type || "image/png" });
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({
+      title: "Ticket QR Market Games",
+      text,
+      files: [file],
+    });
+    showFeedback("Ticket QR compartido como imagen.", "success", { title: "Ticket QR" });
+    return;
+  }
+
+  triggerBlobDownload(file.name, blob);
+  showFeedback("Tu navegador no permite compartir archivos directamente. Se descargo el ticket QR para adjuntarlo en WhatsApp.", "info", { title: "Ticket QR descargado" });
 }
 
 function loadImageDataUrl(src) {
