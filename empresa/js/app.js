@@ -17,7 +17,6 @@ const passwordResetNewInput = document.getElementById("passwordResetNewInput");
 const passwordResetConfirmInput = document.getElementById("passwordResetConfirmInput");
 const passwordResetMessage = document.getElementById("passwordResetMessage");
 const passwordRevealButtons = Array.from(document.querySelectorAll("[data-password-toggle]"));
-const loginGamingCenterButton = document.getElementById("loginGamingCenterButton");
 const actionFeedback = document.getElementById("actionFeedback");
 const subscriptionBanner = document.getElementById("subscriptionBanner");
 const subscriptionPlanName = document.getElementById("subscriptionPlanName");
@@ -11964,7 +11963,6 @@ function handleRangeToggle() {
 }
 
 loginForm.addEventListener("submit", login);
-loginGamingCenterButton?.addEventListener("click", openGamingCenterEntry);
 passwordResetRequestForm?.addEventListener("submit", submitPasswordResetRequest);
 passwordResetForm?.addEventListener("submit", submitPasswordReset);
 logoutButton.addEventListener("click", () => {
