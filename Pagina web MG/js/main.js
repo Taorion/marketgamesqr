@@ -1,88 +1,58 @@
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-function initHeader() {
-  const header = document.querySelector("[data-site-header]");
-
-  if (!header) {
-    return;
-  }
-
-  function updateHeader() {
-    header.classList.toggle("is-scrolled", window.scrollY > 12);
-  }
-
-  window.addEventListener("scroll", updateHeader, { passive: true });
-  updateHeader();
-}
-
 function initMenu() {
   const toggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector(".main-nav");
+  const nav = document.querySelector(".site-nav");
 
   if (!toggle || !nav) {
     return;
   }
 
-  function closeMenu() {
-    toggle.setAttribute("aria-expanded", "false");
-    nav.classList.remove("is-open");
-  }
-
   toggle.addEventListener("click", () => {
-    const isOpen = toggle.getAttribute("aria-expanded") === "true";
-    toggle.setAttribute("aria-expanded", String(!isOpen));
-    nav.classList.toggle("is-open", !isOpen);
+    const expanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!expanded));
+    nav.classList.toggle("is-open", !expanded);
   });
 
   nav.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", closeMenu);
-  });
-
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 1180) {
-      closeMenu();
-    }
+    link.addEventListener("click", () => {
+      toggle.setAttribute("aria-expanded", "false");
+      nav.classList.remove("is-open");
+    });
   });
 }
 
 function initReveal() {
-  const revealItems = document.querySelectorAll(".reveal");
-
-  if (!revealItems.length) {
-    return;
-  }
+  const elements = document.querySelectorAll(".reveal");
 
   if (!("IntersectionObserver" in window)) {
-    revealItems.forEach((item) => item.classList.add("is-visible"));
+    elements.forEach((element) => element.classList.add("is-visible"));
     return;
   }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (!entry.isIntersecting) {
-        return;
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
       }
-
-      entry.target.classList.add("is-visible");
-      observer.unobserve(entry.target);
     });
   }, {
-    threshold: 0.16,
-    rootMargin: "0px 0px -8% 0px"
+    threshold: 0.2
   });
 
-  revealItems.forEach((item) => observer.observe(item));
+  elements.forEach((element) => observer.observe(element));
 }
 
 function initActiveNav() {
   const sections = document.querySelectorAll("main section[id]");
-  const links = Array.from(document.querySelectorAll(".main-nav a[href^='#']"));
+  const links = document.querySelectorAll(".site-nav a");
 
   if (!sections.length || !links.length || !("IntersectionObserver" in window)) {
     return;
   }
 
-  const linkMap = new Map(links.map((link) => [link.getAttribute("href"), link]));
+  const linkMap = new Map(
+    Array.from(links).map((link) => [link.getAttribute("href"), link])
+  );
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -98,224 +68,279 @@ function initActiveNav() {
       }
     });
   }, {
-    threshold: 0.18,
-    rootMargin: "-34% 0px -48% 0px"
+    rootMargin: "-35% 0px -45% 0px",
+    threshold: 0.1
   });
 
   sections.forEach((section) => observer.observe(section));
 }
 
-function initSlider(slider) {
-  const slides = Array.from(slider.querySelectorAll(".hero-slide, .experience-slide, .sector-slide"));
-  const previous = slider.querySelector("[data-prev]");
-  const next = slider.querySelector("[data-next]");
-  const dotsContainer = slider.querySelector("[data-dots]");
-  let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
-  let timerId = null;
-  let startX = 0;
-  let currentX = 0;
-  let dragging = false;
+function initPortfolioSlider() {
+  const track = document.getElementById("portfolio-track");
+  const buttons = document.querySelectorAll("[data-slide]");
+  const sliderWindow = track ? track.parentElement : null;
 
-  if (!slides.length || !dotsContainer) {
+  if (!track || !buttons.length || !sliderWindow) {
     return;
   }
 
-  if (activeIndex < 0) {
-    activeIndex = 0;
+  const cards = Array.from(track.children);
+  let currentIndex = 0;
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  let baseOffset = 0;
+
+  function visibleCards() {
+    return window.innerWidth >= 900 ? 2 : 1;
   }
 
-  const dotButtons = slides.map((slide, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.setAttribute("aria-label", `Ver slide ${index + 1}`);
-    button.addEventListener("click", () => {
-      showSlide(index);
-      restartAutoplay();
-    });
-    dotsContainer.appendChild(button);
-    return button;
-  });
-
-  function showSlide(index) {
-    activeIndex = (index + slides.length) % slides.length;
-
-    slides.forEach((slide, slideIndex) => {
-      const isActive = slideIndex === activeIndex;
-      slide.classList.toggle("is-active", isActive);
-      slide.setAttribute("aria-hidden", String(!isActive));
-    });
-
-    dotButtons.forEach((button, dotIndex) => {
-      button.classList.toggle("is-active", dotIndex === activeIndex);
-    });
+  function maxIndex() {
+    return Math.max(0, cards.length - visibleCards());
   }
 
-  function move(direction) {
-    showSlide(activeIndex + direction);
+  function getOffset() {
+    const visible = visibleCards();
+    return (100 / visible) * currentIndex;
   }
 
-  function startAutoplay() {
-    if (reducedMotion.matches || timerId) {
-      return;
+  function updateSlider() {
+    const visible = visibleCards();
+    const width = 100 / visible;
+
+    cards.forEach((card) => {
+      card.style.flex = `0 0 calc(${width}% - 7px)`;
+    });
+
+    if (currentIndex > maxIndex()) {
+      currentIndex = maxIndex();
     }
 
-    timerId = window.setInterval(() => move(1), slider.dataset.slider === "hero" ? 6200 : 5400);
+    baseOffset = getOffset();
+    track.style.transition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
+    track.style.transform = `translate3d(calc(-${baseOffset}% - ${currentIndex * 14}px), 0, 0)`;
   }
 
-  function stopAutoplay() {
-    window.clearInterval(timerId);
-    timerId = null;
+  function goToSlide(direction) {
+    currentIndex += direction;
+
+    if (currentIndex < 0) {
+      currentIndex = maxIndex();
+    }
+
+    if (currentIndex > maxIndex()) {
+      currentIndex = 0;
+    }
+
+    updateSlider();
   }
 
-  function restartAutoplay() {
-    stopAutoplay();
-    startAutoplay();
-  }
-
-  previous?.addEventListener("click", () => {
-    move(-1);
-    restartAutoplay();
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      goToSlide(Number(button.getAttribute("data-slide")));
+    });
   });
 
-  next?.addEventListener("click", () => {
-    move(1);
-    restartAutoplay();
-  });
-
-  slider.addEventListener("mouseenter", stopAutoplay);
-  slider.addEventListener("mouseleave", startAutoplay);
-  slider.addEventListener("focusin", stopAutoplay);
-  slider.addEventListener("focusout", startAutoplay);
-
-  slider.addEventListener("touchstart", (event) => {
+  sliderWindow.addEventListener("touchstart", (event) => {
     startX = event.touches[0].clientX;
     currentX = startX;
-    dragging = true;
-    stopAutoplay();
+    isDragging = true;
+    baseOffset = getOffset();
+    track.style.transition = "none";
   }, { passive: true });
 
-  slider.addEventListener("touchmove", (event) => {
-    if (!dragging) {
+  sliderWindow.addEventListener("touchmove", (event) => {
+    if (!isDragging) {
       return;
     }
 
     currentX = event.touches[0].clientX;
+    const deltaX = currentX - startX;
+    const sliderWidth = sliderWindow.clientWidth || 1;
+    const dragPercent = (deltaX / sliderWidth) * 100;
+    const visible = visibleCards();
+    const dragGap = (deltaX / sliderWidth) * (14 * visible);
+    track.style.transform = `translate3d(calc(-${baseOffset}% - ${currentIndex * 14}px + ${dragPercent}% + ${dragGap}px), 0, 0)`;
   }, { passive: true });
 
-  slider.addEventListener("touchend", () => {
-    if (!dragging) {
+  sliderWindow.addEventListener("touchend", () => {
+    if (!isDragging) {
       return;
     }
 
     const deltaX = currentX - startX;
-    dragging = false;
+    isDragging = false;
 
-    if (Math.abs(deltaX) > 44) {
-      move(deltaX < 0 ? 1 : -1);
-    }
-
-    startAutoplay();
-  });
-
-  slider.addEventListener("touchcancel", () => {
-    dragging = false;
-    startAutoplay();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      stopAutoplay();
+    if (Math.abs(deltaX) < 40) {
+      updateSlider();
       return;
     }
 
-    startAutoplay();
+    goToSlide(deltaX < 0 ? 1 : -1);
   });
 
-  showSlide(activeIndex);
-  startAutoplay();
+  sliderWindow.addEventListener("touchcancel", () => {
+    isDragging = false;
+    updateSlider();
+  });
+
+  window.addEventListener("resize", updateSlider);
+  updateSlider();
 }
 
-function initSliders() {
-  document.querySelectorAll("[data-slider]").forEach(initSlider);
+function shuffle(values) {
+  for (let index = values.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
+  }
 }
 
-function initCounters() {
-  const counters = document.querySelectorAll("[data-count]");
+function initScratchDemo() {
+  const cells = document.querySelectorAll(".scratch-cell");
+  const result = document.getElementById("scratch-result");
 
-  if (!counters.length) {
+  if (!cells.length || !result) {
     return;
   }
 
-  function animateCounter(counter) {
-    const target = Number(counter.dataset.count || "0");
-    const duration = reducedMotion.matches ? 1 : 1100;
-    const start = performance.now();
+  const prizes = Array.from(cells, (cell) => cell.dataset.prize || "");
+  shuffle(prizes);
 
-    function tick(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      counter.textContent = String(Math.round(target * eased));
+  cells.forEach((cell, index) => {
+    cell.dataset.prize = prizes[index];
+  });
 
-      if (progress < 1) {
-        window.requestAnimationFrame(tick);
-      }
-    }
+  let usedAttempt = false;
 
-    window.requestAnimationFrame(tick);
-  }
-
-  if (!("IntersectionObserver" in window)) {
-    counters.forEach(animateCounter);
-    return;
-  }
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting || entry.target.dataset.counted === "true") {
+  cells.forEach((cell) => {
+    cell.addEventListener("click", () => {
+      if (usedAttempt) {
         return;
       }
 
-      entry.target.dataset.counted = "true";
-      animateCounter(entry.target);
-      observer.unobserve(entry.target);
-    });
-  }, {
-    threshold: 0.45
-  });
+      usedAttempt = true;
+      cell.classList.add("is-revealed");
+      cell.textContent = cell.dataset.prize || "";
+      result.textContent = `Resultado: ${cell.dataset.prize || ""}`;
 
-  counters.forEach((counter) => observer.observe(counter));
+      cells.forEach((otherCell) => {
+        if (otherCell !== cell) {
+          otherCell.disabled = true;
+          otherCell.classList.add("is-locked");
+        }
+      });
+    });
+  });
 }
 
-function initPointerGlow() {
-  const cards = document.querySelectorAll([
-    ".feature-grid article",
-    ".capability-grid article",
-    ".portal-feature",
-    ".benefits-grid article",
-    ".lead-flow article",
-    ".metric-grid article",
-    ".sector-mini-grid article"
-  ].join(","));
+function initIframeFullscreen() {
+  const buttons = document.querySelectorAll("[data-fullscreen-target]");
 
-  if (!cards.length || window.matchMedia("(pointer: coarse)").matches) {
+  if (!buttons.length) {
     return;
   }
 
-  cards.forEach((card) => {
-    card.addEventListener("mousemove", (event) => {
-      const rect = card.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 100;
-      const y = ((event.clientY - rect.top) / rect.height) * 100;
-      card.style.setProperty("--mx", `${x.toFixed(1)}%`);
-      card.style.setProperty("--my", `${y.toFixed(1)}%`);
+  buttons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const targetId = button.getAttribute("data-fullscreen-target");
+      const target = targetId ? document.getElementById(targetId) : null;
+
+      if (!target) {
+        return;
+      }
+
+      try {
+        if (document.fullscreenElement === target) {
+          await document.exitFullscreen();
+          button.textContent = "Pantalla completa";
+          return;
+        }
+
+        await target.requestFullscreen();
+        button.textContent = "Salir de pantalla completa";
+      } catch (error) {
+        console.error("No se pudo abrir pantalla completa", error);
+      }
+    });
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    buttons.forEach((button) => {
+      const targetId = button.getAttribute("data-fullscreen-target");
+      const target = targetId ? document.getElementById(targetId) : null;
+      const activa = !!target && document.fullscreenElement === target;
+      button.textContent = activa ? "Salir de pantalla completa" : "Pantalla completa";
     });
   });
 }
 
-function initLightbox() {
-  const figures = document.querySelectorAll(".gallery-grid figure");
+function initContactForm() {
+  const form = document.getElementById("contact-form");
 
-  if (!figures.length) {
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(form);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim();
+    const company = String(formData.get("company") || "").trim();
+    const message = String(formData.get("message") || "").trim();
+
+    const subject = encodeURIComponent(`Nuevo contacto web - ${company || name || "Market Games"}`);
+    const body = encodeURIComponent(
+      [
+        `Nombre: ${name || "No especificado"}`,
+        `Email: ${email || "No especificado"}`,
+        `Empresa: ${company || "No especificada"}`,
+        "",
+        "Mensaje:",
+        message || "Sin mensaje"
+      ].join("\n")
+    );
+
+    window.location.href = `mailto:contacto@marketgamesqr.com?subject=${subject}&body=${body}`;
+  });
+}
+
+function initAccessFeedback() {
+  const toast = document.getElementById("accessFeedbackToast");
+  const links = document.querySelectorAll(".access-feedback-link");
+  let timeoutId = null;
+
+  if (!toast || !links.length) {
+    return;
+  }
+
+  links.forEach((link) => {
+    link.addEventListener("click", () => {
+      const message = link.dataset.feedback || "Abriendo acceso";
+      toast.textContent = `${message}...`;
+      toast.classList.add("is-visible");
+
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        toast.classList.remove("is-visible");
+      }, 1800);
+    });
+  });
+}
+
+function initImageLightbox() {
+  const images = document.querySelectorAll([
+    ".rms-command-card img",
+    ".rms-large-visual img",
+    ".rms-os-card img",
+    ".rms-bento-card img",
+    ".rms-product-card img",
+    ".rms-guide-rail img",
+    ".rms-strategy-media img"
+  ].join(", "));
+
+  if (!images.length) {
     return;
   }
 
@@ -323,14 +348,13 @@ function initLightbox() {
   overlay.className = "image-lightbox";
   overlay.setAttribute("aria-hidden", "true");
   overlay.innerHTML = [
-    "<button type=\"button\" aria-label=\"Cerrar imagen ampliada\">Cerrar</button>",
-    "<img alt=\"\">"
+    "<button class=\"image-lightbox-close\" type=\"button\" aria-label=\"Cerrar imagen ampliada\">Cerrar</button>",
+    "<img class=\"image-lightbox-image\" alt=\"\">"
   ].join("");
-
   document.body.appendChild(overlay);
 
-  const overlayImage = overlay.querySelector("img");
-  const closeButton = overlay.querySelector("button");
+  const preview = overlay.querySelector(".image-lightbox-image");
+  const closeButton = overlay.querySelector(".image-lightbox-close");
 
   function closeLightbox() {
     overlay.classList.remove("is-open");
@@ -339,27 +363,22 @@ function initLightbox() {
   }
 
   function openLightbox(image) {
-    overlayImage.src = image.currentSrc || image.src;
-    overlayImage.alt = image.alt || "Imagen Market Games ampliada";
+    preview.src = image.currentSrc || image.src;
+    preview.alt = image.alt || "Imagen ampliada";
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("has-lightbox-open");
     closeButton.focus();
   }
 
-  figures.forEach((figure) => {
-    const image = figure.querySelector("img");
+  images.forEach((image) => {
+    image.classList.add("is-zoomable");
+    image.setAttribute("tabindex", "0");
+    image.setAttribute("role", "button");
+    image.setAttribute("aria-label", `${image.alt || "Imagen"} - ampliar`);
 
-    if (!image) {
-      return;
-    }
-
-    figure.setAttribute("tabindex", "0");
-    figure.setAttribute("role", "button");
-    figure.setAttribute("aria-label", `${image.alt}. Ampliar imagen.`);
-
-    figure.addEventListener("click", () => openLightbox(image));
-    figure.addEventListener("keydown", (event) => {
+    image.addEventListener("click", () => openLightbox(image));
+    image.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") {
         return;
       }
@@ -370,6 +389,7 @@ function initLightbox() {
   });
 
   closeButton.addEventListener("click", closeLightbox);
+  preview.addEventListener("click", closeLightbox);
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closeLightbox();
@@ -383,22 +403,14 @@ function initLightbox() {
   });
 }
 
-function initYear() {
-  const year = new Date().getFullYear();
-
-  document.querySelectorAll("[data-year]").forEach((node) => {
-    node.textContent = year;
-  });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  initHeader();
   initMenu();
   initReveal();
   initActiveNav();
-  initSliders();
-  initCounters();
-  initPointerGlow();
-  initLightbox();
-  initYear();
+  initPortfolioSlider();
+  initScratchDemo();
+  initIframeFullscreen();
+  initContactForm();
+  initAccessFeedback();
+  initImageLightbox();
 });
