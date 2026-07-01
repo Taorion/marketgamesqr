@@ -1949,7 +1949,17 @@
                 <h2>Feed de Leads y Contactos</h2>
                 <p>Contactos capturados, compradores y referidos con origen, campana, interes y accion recomendada para email, WhatsApp y remarketing.</p>
               </div>
-              <button class="ghost-button" id="exportLeadsButton" type="button">Exportar Feed</button>
+              <div class="head-actions">
+                <label class="compact-field">
+                  <span>Exportar</span>
+                  <select id="leadExportScopeInput">
+                    <option value="all">Todos los leads</option>
+                    <option value="active">Solo tickets activos sin redimir</option>
+                    <option value="redeemed">Solo redimidos / inactivos</option>
+                  </select>
+                </label>
+                <button class="ghost-button" id="exportLeadsButton" type="button">Exportar CSV</button>
+              </div>
             </div>
             <section class="kpi-grid compact" id="leadFeedKpiGrid"></section>
             <article class="surface-card data-table-card">

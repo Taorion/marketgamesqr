@@ -45,6 +45,8 @@ router.get("/users", listBusinessUsers);
 router.post("/users", createBusinessUser);
 router.patch("/users/:userId", updateBusinessUser);
 router.get("/contacts/feed", contactFeed);
+router.get("/contacts/feed/export.csv", exportContactFeed);
+router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 
 router.use(requirePortalAccess);
 router.get("/activity", businessActivity);
@@ -57,8 +59,6 @@ router.patch("/campaigns/:id", updateCampaign);
 router.patch("/campaigns/:id/client-setup", patchClientSetup);
 router.post("/campaigns/:id/confirm-launch", confirmLaunch);
 router.get("/campaigns/:id/report", campaignReport);
-router.get("/contacts/feed/export.csv", exportContactFeed);
-router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/campaigns/:id/leads", campaignLeads);
 router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);

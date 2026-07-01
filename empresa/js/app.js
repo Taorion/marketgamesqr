@@ -48,6 +48,7 @@ const commandCenterRoot = document.getElementById("commandCenterRoot");
 const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
+const leadExportScopeInput = document.getElementById("leadExportScopeInput");
 const campaignList = document.getElementById("campaignList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
@@ -10428,14 +10429,16 @@ function exportCampaignReport() {
 }
 
 async function exportLeads() {
-  if (!hasPlanFeature("leads_export")) {
-    showFeedback("Tus 20 leads de muestra ya prueban el valor. Activa Portal RMS mensual para llevarte la base completa en CSV y trabajarla con tu equipo.", "info", { title: "Exportacion lista con Portal RMS" });
-    return;
-  }
+  const scope = leadExportScopeInput?.value || "all";
+  const labels = {
+    all: "todos los leads",
+    active: "tickets activos sin redimir",
+    redeemed: "redimidos e inactivos",
+  };
   try {
     exportLeadsButton.disabled = true;
     exportLeadsButton.textContent = "Exportando...";
-    const response = await fetch("/api/business/contacts/feed/export.csv", {
+    const response = await fetch(`/api/business/contacts/feed/export.csv?ticket_filter=${encodeURIComponent(scope)}`, {
       headers: authHeaders(),
     });
     if (!response.ok) {
@@ -10446,17 +10449,17 @@ async function exportLeads() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "contactos-leads-rms.csv";
+    link.download = `contactos-leads-${scope}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    showFeedback("Feed exportado con contactos, origen, campana, estado y accion sugerida.", "success", { title: "Leads exportados" });
+    showFeedback(`Feed exportado: ${labels[scope] || "leads"}. Incluye enlaces de ticket y mensaje sugerido para WhatsApp cuando aplica.`, "success", { title: "Leads exportados" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "Exportacion bloqueada" });
   } finally {
     exportLeadsButton.disabled = false;
-    exportLeadsButton.textContent = "Exportar Feed";
+    exportLeadsButton.textContent = "Exportar CSV";
   }
 }
 

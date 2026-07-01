@@ -1010,6 +1010,25 @@ async function campaignLeads(req, res, next) {
   }
 }
 
+function normalizeContactTicketFilter(value) {
+  const filter = String(value || "all").toLowerCase();
+  return ["all", "active", "redeemed"].includes(filter) ? filter : "all";
+}
+
+function ticketUrlForRow(row) {
+  const isExpired = row.expires_at && new Date(row.expires_at) <= new Date();
+  return row.qr_token && row.qr_status === "ACTIVE" && !row.redeemed_at && !isExpired
+    ? buildValidatorUrl(row.qr_token)
+    : "";
+}
+
+function whatsappReminderForRow(row) {
+  const ticketUrl = ticketUrlForRow(row);
+  if (!ticketUrl) return "";
+  const name = row.name ? ` ${row.name}` : "";
+  return `Hola${name}, tienes un beneficio activo pendiente por redimir. Presenta este ticket en el punto fisico: ${ticketUrl}`;
+}
+
 function contactFeedToCsv(rows) {
   const headers = [
     "tipo",
@@ -1026,6 +1045,10 @@ function contactFeedToCsv(rows) {
     "producto",
     "canal_preferido",
     "hora_contacto",
+    "qr_code_id",
+    "ticket_url",
+    "mensaje_whatsapp",
+    "vence_en",
     "temperatura",
     "recomendacion",
     "fecha",
@@ -1045,6 +1068,10 @@ function contactFeedToCsv(rows) {
     row.product_name,
     row.preferred_channel,
     row.preferred_contact_time,
+    row.qr_code_id,
+    ticketUrlForRow(row),
+    whatsappReminderForRow(row),
+    row.expires_at,
     row.lead_temperature,
     row.recommended_action,
     row.created_at,
@@ -1086,7 +1113,11 @@ function mapContactFeedRows(rows) {
   });
 }
 
-async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
+async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticketFilter = "all") {
+  const normalizedFilter = normalizeContactTicketFilter(ticketFilter);
+  const params = [businessId, retentionDays, normalizedFilter];
+  const limitClause = limit ? `limit $${params.length + 1}` : "";
+  if (limit) params.push(limit);
   const result = await query(
     `with lead_rows as (
        select
@@ -1116,9 +1147,11 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
            'Sin asunto'
          ) as attribution_subject,
          q.id as qr_code_id,
+         q.token as qr_token,
          q.status as qr_status,
          q.origin_type,
          q.created_at as qr_created_at,
+         q.expires_at,
          q.claimed_at,
          q.redeemed_at,
          q.affiliate_id,
@@ -1190,9 +1223,11 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
          coalesce(bs.acquisition_source, bs.metadata->>'attribution_source', 'Venta registrada') as attribution_source,
          coalesce(nullif(bs.acquisition_channel, ''), bs.metadata->>'attribution_subject', bs.product_name, 'Comprador') as attribution_subject,
          bs.qr_code_id,
+         q.token as qr_token,
          q.status as qr_status,
          q.origin_type,
          q.created_at as qr_created_at,
+         q.expires_at,
          q.claimed_at,
          q.redeemed_at,
          bs.referred_affiliate_id as affiliate_id,
@@ -1216,13 +1251,17 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000) {
          and ($2::int is null or bs.created_at >= now() - ($2::int * interval '1 day'))
      )
      select *
-     from lead_rows
-     union all
-     select *
-     from buyer_rows
+     from (
+       select * from lead_rows
+       union all
+       select * from buyer_rows
+     ) contact_rows
+     where $3::text = 'all'
+       or ($3::text = 'active' and qr_status = 'ACTIVE' and redeemed_at is null and (expires_at is null or expires_at > now()))
+       or ($3::text = 'redeemed' and (qr_status = 'REDEEMED' or redeemed_at is not null))
      order by created_at desc
-     limit $3`,
-    [businessId, retentionDays, limit]
+     ${limitClause}`,
+    params
   );
   return mapContactFeedRows(result.rows);
 }
@@ -1309,39 +1348,29 @@ async function contactFeed(req, res, next) {
 async function exportContactFeed(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await assertFeatureForRequest(req, businessId, "leads_export");
-    const retentionDays = subscription.plan.limits.history_days ?? null;
-    const rows = await getContactFeedRows(businessId, retentionDays);
-    await assertMonthlyUsageLimit(
-      businessId,
-      "lead_export",
-      subscription.plan.limits.lead_exports_month,
-      1,
-      "exportaciones de leads"
-    );
-    await assertMonthlyUsageLimit(
-      businessId,
-      "lead_export_row",
-      subscription.plan.limits.lead_export_rows_month,
-      rows.length,
-      "filas exportadas"
-    );
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    const retentionDays = null;
+    const ticketFilter = normalizeContactTicketFilter(req.query.ticket_filter || req.query.status);
+    const rows = await getContactFeedRows(businessId, retentionDays, null, ticketFilter);
     await recordUsage({
       business_id: businessId,
       user_id: req.user.id,
       event_type: "lead_export",
       quantity: 1,
-      metadata: { source: "contact_feed", rows: rows.length },
+      metadata: { source: "contact_feed", rows: rows.length, ticket_filter: ticketFilter },
     });
     await recordUsage({
       business_id: businessId,
       user_id: req.user.id,
       event_type: "lead_export_row",
       quantity: rows.length,
-      metadata: { source: "contact_feed" },
+      metadata: { source: "contact_feed", ticket_filter: ticketFilter },
     });
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="contactos-leads-${businessId}.csv"`);
+    res.setHeader("Content-Disposition", `attachment; filename="contactos-leads-${ticketFilter}-${businessId}.csv"`);
     res.send(contactFeedToCsv(rows));
   } catch (error) {
     next(error);
@@ -1351,22 +1380,7 @@ async function exportContactFeed(req, res, next) {
 async function exportCampaignLeads(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await assertFeatureForRequest(req, businessId, "leads_export");
     const rows = await getCampaignLeadRows(businessId, req.params.id);
-    await assertMonthlyUsageLimit(
-      businessId,
-      "lead_export",
-      subscription.plan.limits.lead_exports_month,
-      1,
-      "exportaciones de leads"
-    );
-    await assertMonthlyUsageLimit(
-      businessId,
-      "lead_export_row",
-      subscription.plan.limits.lead_export_rows_month,
-      rows.length,
-      "filas exportadas"
-    );
     await recordUsage({
       business_id: businessId,
       user_id: req.user.id,
