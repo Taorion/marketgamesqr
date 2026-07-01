@@ -2551,7 +2551,7 @@ function renderCampaignAssociationInputs() {
     } else if (selectedCampaign?.id && Array.from(input.options).some((option) => option.value === selectedCampaign.id)) {
       input.value = selectedCampaign.id;
     }
-    input.required = allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly();
+    input.required = input !== triviaCampaignInput && allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly();
   });
 
   const campaignName = selectedCampaign?.name || "";
@@ -2566,8 +2566,8 @@ function renderCampaignAssociationInputs() {
     ? "El lote completo descontará tickets y cada ticket quedará asociado a la campaña seleccionada."
     : "Primero crea una campaña para medir el lote por activación.";
   if (triviaCampaignHelp) triviaCampaignHelp.textContent = campaigns.length
-    ? "La activación emitirá tickets según la dinámica y los asociará a la campaña seleccionada."
-    : "Primero crea una campaña para medir la activación por leads, tickets y redenciones.";
+    ? "Opcional: selecciona una campaña si quieres que la activación alimente un reporte específico. También puedes lanzarla sin campaña."
+    : "Puedes lanzar la activación sin campaña. Luego podrás medirla desde el historial de activaciones y tickets.";
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -5572,24 +5572,24 @@ function configureSecretFriendGiftTicket() {
   setFieldValue(postSaleAttributionSubjectInput, "Ticket regalo comprado");
   setFieldValue(postSaleAmountInput, "");
   setFieldValue(postSaleCurrencyInput, "COP");
-  setFieldValue(postSaleProductInput, "Goyurt Parfait + 2 toppings");
+  setFieldValue(postSaleProductInput, "Producto regalo endulzado");
   setFieldValue(postSaleCustomerInput, "");
   setFieldValue(postSaleDocumentInput, "");
   setFieldValue(postSalePhoneInput, "");
   setFieldValue(postSaleEmailInput, "");
-  setFieldValue(postSaleBenefitLabelInput, "Tu amigo secreto te ha endulzado: reclama Goyurt Parfait + 2 toppings");
+  setFieldValue(postSaleBenefitLabelInput, "Tu amigo secreto te endulzo: reclama tu producto regalo");
   setFieldValue(postSaleBenefitTypeInput, "FREE_GIFT");
   setFieldValue(postSaleBenefitValueInput, JSON.stringify({
-    product: "Goyurt Parfait",
-    toppings: 2,
+    product: "Producto regalo",
+    example: "caja dulce, postre, bebida, libro, hamburguesa o producto definido por la marca",
     mechanic: "amigo_secreto_endulzado",
     ticket_role: "principal_gift_ticket",
   }));
   setFieldValue(postSaleExpiresModeInput, "CUSTOM_DATE");
   setFieldValue(postSaleExpiresAtInput, seasonalCampaignExpiryValue());
-  setFieldValue(postSaleNotesInput, "Ticket principal comprado por un cliente para su amigo secreto. Mensaje sugerido: Tu amigo secreto te ha endulzado. Presenta este ticket y reclama tu regalo. Despues de redimir, invitarlo a crear un ticket secundario para otro prospecto.");
+  setFieldValue(postSaleNotesInput, "Ejemplo generico: un cliente compra un ticket producto regalo para su amigo secreto. El beneficiario recibe el QR, presenta el ticket y reclama el producto definido por la marca. Ajusta producto, valor, vigencia, mensaje y datos del beneficiario antes de generar.");
   postSaleQrForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-  setInlineMessage(postSaleQrMessage, "Plantilla cargada. Ajusta el valor de venta, confirma datos del beneficiario y genera el ticket simple de regalo.", "info");
+  setInlineMessage(postSaleQrMessage, "Plantilla generica cargada. Cambia el producto regalo, valor, vigencia y datos del beneficiario antes de generar.", "info");
   showFeedback("Ticket regalo de Amigo Secreto Endulzado preparado.", "success", { title: "Temporada lista" });
 }
 
@@ -5600,13 +5600,13 @@ function configureSecretFriendProspectActivation() {
   setFieldValue(surveyCountInput, "3");
   updateActivationQuestionCountControls();
   setFieldValue(triviaTitleInput, "Amigo Secreto Endulzado");
-  setFieldValue(triviaDescriptionInput, "Alguien penso en ti y te dejo una sorpresa dulce. Confirma tus datos, responde una pregunta rapida, reclama tu regalo en tienda y luego endulza a alguien mas.");
-  setFieldValue(triviaBenefitLabelInput, "Ticket secundario: endulza a alguien mas con un beneficio dulce");
+  setFieldValue(triviaDescriptionInput, "Alguien penso en ti y te dejo una sorpresa. Confirma tus datos, responde una pregunta rapida, reclama tu producto regalo en tienda y luego invita a otro prospecto.");
+  setFieldValue(triviaBenefitLabelInput, "Ticket secundario: invita a alguien mas a reclamar un beneficio");
   setFieldValue(triviaBenefitTypeInput, "FREE_GIFT");
   setFieldValue(triviaBenefitValueInput, JSON.stringify({
     mechanic: "amigo_secreto_endulzado",
     ticket_role: "secondary_referral_ticket",
-    suggested_offer: "topping gratis o beneficio sorpresa para un nuevo invitado",
+    suggested_offer: "beneficio sorpresa o producto definido por la marca para un nuevo invitado",
     conversion_goal: "beneficiary_to_new_prospect",
   }));
   setFieldValue(triviaExpiresModeInput, "CUSTOM_DATE");
@@ -5615,9 +5615,9 @@ function configureSecretFriendProspectActivation() {
   setFieldValue(minigameWinnerPolicyInput, "block_previous_winners");
 
   const surveyQuestions = [
-    ["1", "Para activar tu regalo, que topping elegirias hoy?", "SINGLE_CHOICE", "Fresa, Oreo, Granola, Chocolate, Fruta"],
-    ["2", "A quien endulzarias despues de reclamar tu sorpresa?", "SHORT_TEXT", ""],
-    ["3", "Quieres recibir nuevas sorpresas por WhatsApp?", "SINGLE_CHOICE", "Si, No por ahora"],
+    ["1", "Para activar tu regalo, que producto o sabor elegirias hoy?", "SINGLE_CHOICE", "Opcion 1, Opcion 2, Opcion 3, Sorpresa de la marca"],
+    ["2", "A quien invitarias despues de reclamar tu sorpresa?", "SHORT_TEXT", ""],
+    ["3", "Quieres recibir nuevas invitaciones o beneficios por WhatsApp?", "SINGLE_CHOICE", "Si, No por ahora"],
   ];
   surveyQuestions.forEach(([index, question, type, options]) => {
     const card = document.querySelector(`[data-survey-question="${index}"]`);
@@ -5627,7 +5627,7 @@ function configureSecretFriendProspectActivation() {
   });
   updateSurveyQuestionEditors();
   triviaLauncherForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-  setInlineMessage(triviaLauncherMessage, "Plantilla Amor y Amistad cargada. Selecciona la campana, revisa el copy y lanza la landing para convertir beneficiarios en prospectos.", "info");
+  setInlineMessage(triviaLauncherMessage, "Plantilla generica de Amigo Secreto cargada. Ajusta producto, preguntas y beneficio secundario. La campana es opcional; puedes lanzar sin asociarla.", "info");
   showFeedback("Landing prospecto preparada: datos + pregunta + ticket secundario.", "success", { title: "Amigo Secreto Endulzado" });
 }
 
@@ -7402,9 +7402,6 @@ async function recycleInteractiveActivation(id) {
 
 async function submitTriviaLauncher(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(triviaCampaignInput, triviaLauncherMessage, "lanzar una activación")) {
-    return;
-  }
   if (!triviaLauncherForm.reportValidity()) {
     setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la activación.", "error");
     return;

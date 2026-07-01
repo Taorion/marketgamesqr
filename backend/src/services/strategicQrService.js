@@ -193,7 +193,7 @@ function shortTicketCode(qr) {
     .toUpperCase();
 }
 
-function truncateTicketLine(value, maxLength = 44) {
+function truncateTicketLine(value, maxLength = 96) {
   const text = String(value || "").trim();
   if (text.length <= maxLength) {
     return text;
@@ -995,6 +995,50 @@ function svgEscape(value) {
   return escapeHtml(value).replace(/\n/g, " ");
 }
 
+function wrapTicketSvgText(value, maxChars = 48, maxLines = 1) {
+  const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const lines = [];
+  let current = "";
+
+  words.forEach((rawWord) => {
+    let word = rawWord;
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars) {
+      current = next;
+      return;
+    }
+    if (current) {
+      lines.push(current);
+      current = "";
+    }
+    while (word.length > maxChars) {
+      lines.push(word.slice(0, maxChars));
+      word = word.slice(maxChars);
+    }
+    current = word;
+  });
+  if (current) lines.push(current);
+
+  if (lines.length > maxLines) {
+    const visible = lines.slice(0, maxLines);
+    visible[maxLines - 1] = truncateTicketLine(visible[maxLines - 1], Math.max(8, maxChars - 1));
+    return visible;
+  }
+  return lines;
+}
+
+function buildTicketSvgTextRows(detailLines = []) {
+  return detailLines.slice(0, 3).flatMap((line, index) => {
+    const maxLines = index === 0 ? 2 : 1;
+    return wrapTicketSvgText(line, index === 0 ? 48 : 54, maxLines).map((text, subIndex) => ({
+      text: svgEscape(text),
+      weight: index === 0 && subIndex === 0 ? 800 : 700,
+      size: index === 0 ? 23 : 22,
+    }));
+  }).slice(0, 4);
+}
+
 async function buildBrandedTicketSvgDataUrl({ scanUrl, brand, detailLines = [] }) {
   const qrImage = await QRCode.toDataURL(scanUrl, {
     type: "image/png",
@@ -1008,14 +1052,18 @@ async function buildBrandedTicketSvgDataUrl({ scanUrl, brand, detailLines = [] }
   const qrSize = 500;
   const qrX = Math.round((width - qrSize) / 2);
   const qrY = 450;
-  const normalizedLines = detailLines.slice(0, 3).map((line) => svgEscape(line));
+  const textRows = buildTicketSvgTextRows(detailLines);
+  const panelX = 150;
+  const panelY = 976;
+  const panelWidth = width - panelX * 2;
+  const panelHeight = textRows.length ? 56 + textRows.length * 31 : 0;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="${width}" height="${height}" rx="48" fill="#ffffff"/>
   ${frame ? `<image href="${svgEscape(frame)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>` : `<rect x="0" y="0" width="${width}" height="${height}" rx="48" fill="${svgEscape(brand.primary)}"/><rect x="42" y="42" width="996" height="1266" rx="40" fill="#ffffff"/>`}
   <rect x="${qrX - 28}" y="${qrY - 28}" width="${qrSize + 56}" height="${qrSize + 56}" rx="36" fill="#ffffff"/>
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
-  ${normalizedLines.length ? `<rect x="190" y="995" width="700" height="132" rx="28" fill="#ffffff" opacity="0.94"/>
-  ${normalizedLines.map((line, index) => `<text x="${width / 2}" y="${1038 + index * 34}" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="${index === 0 ? "800" : "700"}" fill="#111827">${line}</text>`).join("\n  ")}
+  ${textRows.length ? `<rect x="${panelX}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="30" fill="#ffffff" opacity="0.96"/>
+  ${textRows.map((row, index) => `<text x="${width / 2}" y="${panelY + 45 + index * 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${row.size}" font-weight="${row.weight}" fill="#111827">${row.text}</text>`).join("\n  ")}
   ` : ""}
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;

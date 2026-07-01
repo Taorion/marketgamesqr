@@ -8487,14 +8487,16 @@ textarea {
 }
 
 :root[data-theme="light"] .season-flow-strip span {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(255, 255, 255, 0.42) !important;
+  color: #21100d !important;
+  background: #fff8e1 !important;
+  border-color: rgba(255, 224, 138, 0.92) !important;
+  text-shadow: none !important;
 }
 
 :root[data-theme="light"] .season-flow-strip strong {
   color: #21100d !important;
   background: #ffe08a !important;
+  text-shadow: none !important;
 }
 
 :root[data-theme="light"] .season-launch-actions .solid-button {
