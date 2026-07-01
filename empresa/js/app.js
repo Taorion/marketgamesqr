@@ -2387,7 +2387,7 @@ function openGamingCenterEntry() {
   if (session?.token) {
     setView("strategic-qr");
     closePortalMenu();
-    showFeedback("Gaming Center abierto. Aqui esta el core operativo de tickets, QR y activaciones.", "success", { title: "Core operativo" });
+    showFeedback("Gaming Center abierto. Crea marketing gamificado con juegos, tickets QR, premios y beneficios medibles.", "success", { title: "Marketing gamificado" });
     return;
   }
   const url = new URL(window.location.href);

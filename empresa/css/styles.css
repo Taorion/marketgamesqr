@@ -166,7 +166,7 @@ textarea {
 }
 
 .gaming-core-entry::after {
-  content: "CORE DEL PORTAL";
+  content: "ACTIVA Y VENDE";
   position: absolute;
   z-index: 2;
   top: 16px;
@@ -229,9 +229,9 @@ textarea {
 }
 
 .gaming-core-entry strong {
-  max-width: 18ch;
-  font-size: clamp(30px, 3.2vw, 42px);
-  line-height: 0.98;
+  max-width: 24ch;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
@@ -3510,8 +3510,8 @@ td {
   }
 
   .gaming-core-entry strong {
-    padding-right: 86px;
-    font-size: 25px;
+    padding-right: 82px;
+    font-size: 23px;
   }
 
   .gaming-core-entry small {
