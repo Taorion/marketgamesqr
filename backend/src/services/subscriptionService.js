@@ -33,17 +33,17 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: "QR200",
     portal_access_fee_cop: STARTED_PORTAL_COP,
-    pricing_note: "Growth convierte la muestra del Portal Base en operacion diaria: mas campanas, mas historial, exportaciones reales y una prueba limitada de afiliados/referidos.",
+    pricing_note: "Starter convierte la muestra del Portal Base en operacion diaria: mas campanas, mas historial, exportaciones reales y una prueba limitada de afiliados/referidos.",
   },
   GROWTH: {
     recommended_start_package: "QR600",
     portal_access_fee_cop: MEDIUM_PORTAL_COP,
-    pricing_note: "Premium es el plan RMS completo para operar activaciones, afiliados, redenciones, sedes y analitica comercial sin quedarse corto a mitad de campana.",
+    pricing_note: "Growth amplia la operacion RMS con Command Center, activaciones recurrentes, afiliados, referidos, automatizaciones y mas sedes.",
   },
   PRO: {
     recommended_start_package: "QR2000",
     portal_access_fee_cop: PREMIUM_PORTAL_COP,
-    pricing_note: "Enterprise esta pensado para equipos comerciales, varias sedes, integraciones y acompanamiento operativo. Global queda para marca blanca, franquicias y condiciones a medida.",
+    pricing_note: "Premium esta pensado para equipos comerciales, varias sedes, integraciones y acompanamiento operativo. Global queda para marca blanca, franquicias y condiciones a medida.",
   },
 };
 
@@ -248,7 +248,7 @@ const PLAN_CATALOG = {
   },
   [PLAN_CODES.STARTER]: {
     code: PLAN_CODES.STARTER,
-    name: "Growth",
+    name: "Starter",
     category: "subscription",
     monthly_price_cop: STARTED_PORTAL_COP,
     annual_price_cop: annualCop(STARTED_PORTAL_COP),
@@ -260,7 +260,7 @@ const PLAN_CATALOG = {
     portal_value_cop: PLAN_PRICING_NOTES.STARTER.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.STARTER.recommended_start_package,
     best_for: "Negocios que ya validaron leads/redenciones y necesitan operar campanas todos los meses sin quedarse en una muestra.",
-    access_summary: "Plan mensual de crecimiento: mas campanas, mas historial, exportaciones utiles, reportes de campana y una prueba controlada de afiliados/referidos.",
+    access_summary: "Plan mensual inicial: mas campanas que Portal Base, mas historial, exportaciones utiles, reportes de campana y una prueba controlada de afiliados/referidos.",
     pricing_note: PLAN_PRICING_NOTES.STARTER.pricing_note,
     included: [
       "Todo lo incluido en Portal Base",
@@ -387,7 +387,7 @@ const PLAN_CATALOG = {
   },
   [PLAN_CODES.GROWTH]: {
     code: PLAN_CODES.GROWTH,
-    name: "Premium",
+    name: "Growth",
     category: "subscription",
     monthly_price_cop: MEDIUM_PORTAL_COP,
     annual_price_cop: annualCop(MEDIUM_PORTAL_COP),
@@ -398,11 +398,11 @@ const PLAN_CATALOG = {
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.GROWTH.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.GROWTH.recommended_start_package,
-    best_for: "Empresas que ya generan volumen y necesitan RMS completo para campanas, referidos, sedes, revenue y decisiones comerciales.",
-    access_summary: "Premium mensual con Command Center completo, activaciones recurrentes, afiliados, referidos, automatizaciones, sedes, branding y reportes avanzados.",
+    best_for: "Empresas que ya generan volumen y necesitan escalar campanas, referidos, sedes, revenue y decisiones comerciales.",
+    access_summary: "Growth mensual con Command Center, activaciones recurrentes, afiliados, referidos, automatizaciones, sedes, branding y reportes avanzados.",
     pricing_note: PLAN_PRICING_NOTES.GROWTH.pricing_note,
     included: [
-      "Todo lo incluido en Growth",
+      "Todo lo incluido en Starter",
       "Command Center completo con analitica RMS",
       "5 tipos de activacion interactiva al mes",
       "5 campanas activas simultaneas",
@@ -468,7 +468,7 @@ const PLAN_CATALOG = {
   },
   [PLAN_CODES.PRO]: {
     code: PLAN_CODES.PRO,
-    name: "Enterprise Operado",
+    name: "Premium",
     category: "subscription",
     monthly_price_cop: PREMIUM_PORTAL_COP,
     annual_price_cop: annualCop(PREMIUM_PORTAL_COP),
@@ -480,10 +480,10 @@ const PLAN_CATALOG = {
     portal_value_cop: PLAN_PRICING_NOTES.PRO.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.PRO.recommended_start_package,
     best_for: "Empresas con equipo comercial, varias sedes, integraciones y necesidad de acompanamiento operativo.",
-    access_summary: "Plan enterprise con activaciones avanzadas, API, Data Explorer completo, reportes ejecutivos, sedes, usuarios, afiliados y soporte priorizado.",
+    access_summary: "Plan Premium con activaciones avanzadas, API, Data Explorer completo, reportes ejecutivos, sedes, usuarios, afiliados y soporte priorizado.",
     pricing_note: PLAN_PRICING_NOTES.PRO.pricing_note,
     included: [
-      "Todo lo incluido en Premium",
+      "Todo lo incluido en Growth",
       "10 tipos de activacion mensual",
       "Visualizacion de todos los leads",
       "50 exportaciones de leads al mes",
