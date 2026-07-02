@@ -140,6 +140,18 @@ h1 {
   cursor: pointer;
 }
 
+.ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.download-ticket-button.secondary {
+  color: #13212c;
+  background: #eef3f7;
+}
+
 .download-ticket-button:disabled {
   cursor: not-allowed;
   opacity: 0.48;

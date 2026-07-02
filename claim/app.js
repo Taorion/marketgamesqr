@@ -15,9 +15,11 @@ const finalTicketBlock = document.getElementById("finalTicketBlock");
 const finalTicketQrImage = document.getElementById("finalTicketQrImage");
 const finalTicketLink = document.getElementById("finalTicketLink");
 const downloadTicketImageButton = document.getElementById("downloadTicketImageButton");
+const shareTicketImageButton = document.getElementById("shareTicketImageButton");
 
 let currentTicketImageDataUrl = "";
 let currentTicketFilename = "ticket-qr.png";
+let currentTicketShareText = "Presenta esta imagen QR para reclamar el beneficio.";
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -60,13 +62,16 @@ function extensionForDataUrl(dataUrl) {
 }
 
 function dataUrlToBlob(dataUrl) {
-  const match = String(dataUrl || "").match(/^data:([^;,]+)(;base64)?,(.*)$/);
-  if (!match) {
+  const value = String(dataUrl || "");
+  const commaIndex = value.indexOf(",");
+  if (!value.startsWith("data:") || commaIndex < 0) {
     throw new Error("La imagen del ticket no esta disponible para descargar.");
   }
-  const mimeType = match[1] || "application/octet-stream";
-  const isBase64 = Boolean(match[2]);
-  const body = match[3] || "";
+  const header = value.slice(5, commaIndex);
+  const body = value.slice(commaIndex + 1);
+  const headerParts = header.split(";").filter(Boolean);
+  const mimeType = headerParts[0] || "application/octet-stream";
+  const isBase64 = headerParts.some((part) => part.toLowerCase() === "base64");
   if (isBase64) {
     const binary = atob(body);
     const bytes = new Uint8Array(binary.length);
@@ -78,8 +83,58 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([decodeURIComponent(body)], { type: mimeType });
 }
 
-function downloadDataUrl(filename, dataUrl) {
-  const blob = dataUrlToBlob(dataUrl);
+function loadImageDataUrl(src) {
+  return new Promise((resolve, reject) => {
+    if (!src) {
+      resolve(null);
+      return;
+    }
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("No se pudo preparar la imagen del ticket."));
+    image.src = src;
+  });
+}
+
+async function convertSvgDataUrlToPngBlob(dataUrl) {
+  const image = await loadImageDataUrl(dataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = image?.naturalWidth || image?.width || 1080;
+  canvas.height = image?.naturalHeight || image?.height || 1350;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("No se pudo convertir el ticket a PNG."));
+      }
+    }, "image/png", 0.96);
+  });
+}
+
+async function ticketBlobForBrowser(dataUrl) {
+  const value = String(dataUrl || "");
+  if (value.startsWith("data:image/svg+xml")) {
+    try {
+      return {
+        blob: await convertSvgDataUrlToPngBlob(value),
+        filename: currentTicketFilename.replace(/\.[^.]+$/, "") + ".png",
+      };
+    } catch (error) {
+      console.warn("No se pudo convertir SVG a PNG; se usara la imagen original.", error);
+    }
+  }
+  return {
+    blob: dataUrlToBlob(value),
+    filename: currentTicketFilename,
+  };
+}
+
+function triggerBlobDownload(filename, blob) {
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
@@ -90,14 +145,39 @@ function downloadDataUrl(filename, dataUrl) {
   setTimeout(() => URL.revokeObjectURL(objectUrl), 1200);
 }
 
+async function downloadDataUrl() {
+  const { blob, filename } = await ticketBlobForBrowser(currentTicketImageDataUrl);
+  triggerBlobDownload(filename, blob);
+}
+
+async function shareTicketImage() {
+  const { blob, filename } = await ticketBlobForBrowser(currentTicketImageDataUrl);
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({
+      title: "Ticket QR",
+      text: currentTicketShareText,
+      files: [file],
+    });
+    return;
+  }
+  triggerBlobDownload(filename, blob);
+  resultBlock.classList.remove("hidden");
+  resultBlock.textContent = "Tu navegador no permite compartir archivos directamente. Se descargo la imagen para adjuntarla en WhatsApp.";
+}
+
 function setDownloadState(data) {
   currentTicketImageDataUrl = data?.final_ticket?.qr_image_data_url || "";
   const business = safeFilenamePart(data?.business?.name, "negocio");
   const benefit = safeFilenamePart(data?.benefit?.value?.label || data?.benefit?.type, "beneficio");
   const code = safeFilenamePart(data?.final_ticket?.id || token, "ticket").slice(0, 12);
   currentTicketFilename = `${business}-${benefit}-${code}.${extensionForDataUrl(currentTicketImageDataUrl)}`;
+  currentTicketShareText = `Ticket para reclamar ${data?.benefit?.value?.label || data?.benefit?.type || "un beneficio"}. Presenta esta imagen QR en el punto autorizado.`;
   if (downloadTicketImageButton) {
     downloadTicketImageButton.disabled = !currentTicketImageDataUrl;
+  }
+  if (shareTicketImageButton) {
+    shareTicketImageButton.disabled = !currentTicketImageDataUrl;
   }
 }
 
@@ -159,10 +239,20 @@ claimForm.addEventListener("submit", async (event) => {
   }
 });
 
-downloadTicketImageButton?.addEventListener("click", () => {
+downloadTicketImageButton?.addEventListener("click", async () => {
   try {
-    downloadDataUrl(currentTicketFilename, currentTicketImageDataUrl);
+    await downloadDataUrl();
   } catch (error) {
+    resultBlock.classList.remove("hidden");
+    resultBlock.textContent = error.message;
+  }
+});
+
+shareTicketImageButton?.addEventListener("click", async () => {
+  try {
+    await shareTicketImage();
+  } catch (error) {
+    if (error?.name === "AbortError") return;
     resultBlock.classList.remove("hidden");
     resultBlock.textContent = error.message;
   }

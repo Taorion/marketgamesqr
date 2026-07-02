@@ -7540,6 +7540,12 @@ async function submitPostSaleQr(event) {
     await loadStrategicQrData({ groups: ["core", "metrics", "history"], force: true, quiet: true });
     setView("strategic-qr");
     setInlineMessage(postSaleQrMessage, "Ticket emitido. El ticket fue descontado y el envio esta listo.", "success");
+    const genericTicketShareText = [
+      beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
+      `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
+      ticketOccasion ? `Motivo: ${ticketOccasion}.` : "",
+      "Te envio la imagen QR del ticket para presentarla en el punto autorizado.",
+    ].filter(Boolean).join(" ");
     const genericTicketWhatsappText = [
       beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
       `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
@@ -7558,19 +7564,19 @@ async function submitPostSaleQr(event) {
       <p><strong>Link:</strong> <a href="${escapeHtml(publicTicketUrl)}" target="_blank" rel="noopener">Abrir ticket público</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
       <div class="inline-actions">
-        <button class="solid-button" id="sharePostSaleQrButton" type="button">Compartir QR</button>
+        <button class="solid-button" id="sharePostSaleQrButton" type="button">Enviar imagen</button>
         <a class="ghost-button" id="downloadPostSaleQrButton" href="${escapeHtml(ticketDownloadUrl)}" download="${escapeHtml(ticketFilename)}">Descargar ticket</a>
-        <a class="ghost-button" href="${escapeHtml(genericTicketWhatsappUrl)}" target="_blank" rel="noopener">Mensaje WhatsApp</a>
+        <a class="ghost-button" href="${escapeHtml(genericTicketWhatsappUrl)}" target="_blank" rel="noopener">Mensaje con link</a>
         <button class="ghost-button" id="copyGenericTicketLinkButton" type="button">Copiar link</button>
       </div>
-      <p class="table-secondary">Puedes enviar la imagen QR o copiar el enlace del ticket. El beneficiario solo debe presentarlo para validacion.</p>
+      <p class="table-secondary">Usa Enviar imagen para compartir el ticket QR por WhatsApp cuando el navegador lo permita. El link queda como respaldo si el dispositivo no adjunta imagen.</p>
     `;
     document.getElementById("sharePostSaleQrButton")?.addEventListener("click", async () => {
       try {
         await shareTicketQrFile({
           filename: ticketFilename,
           dataUrl: browserTicketDataUrl,
-          text: genericTicketWhatsappText,
+          text: genericTicketShareText,
         });
       } catch (error) {
         if (error?.name === "AbortError") return;
