@@ -363,6 +363,23 @@ create table if not exists package_sales_requests (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public_contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  email text not null,
+  phone text,
+  company text,
+  message text not null,
+  source_url text,
+  ip_address text,
+  user_agent text,
+  mail_delivery_status text not null default 'PENDING' check (mail_delivery_status in ('PENDING', 'SENT', 'ERROR')),
+  mail_error text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists redemptions (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
@@ -615,6 +632,8 @@ create index if not exists idx_qr_credit_purchase_orders_status on qr_credit_pur
 create index if not exists idx_qr_credit_purchase_orders_preference on qr_credit_purchase_orders(mercado_pago_preference_id);
 create index if not exists idx_package_sales_requests_created on package_sales_requests(created_at desc);
 create index if not exists idx_package_sales_requests_assignment on package_sales_requests(payment_confirmed, service_assigned);
+create index if not exists idx_public_contact_messages_created on public_contact_messages(created_at desc);
+create index if not exists idx_public_contact_messages_mail_status on public_contact_messages(mail_delivery_status, created_at desc);
 create index if not exists idx_redemptions_business_date on redemptions(business_id, redeemed_at desc);
 create index if not exists idx_redemptions_campaign_date on redemptions(campaign_id, redeemed_at desc);
 create index if not exists idx_portal_redemptions_business_campaign_redeemed on redemptions(business_id, campaign_id, redeemed_at desc);

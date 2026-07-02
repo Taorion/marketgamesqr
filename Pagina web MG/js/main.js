@@ -331,7 +331,7 @@ function initContactForm() {
       }
 
       form.reset();
-      setStatus("Mensaje enviado. MarketGamesQR recibió tu consulta.", "success");
+      setStatus(data.message || "Mensaje enviado. MarketGamesQR recibió tu consulta.", "success");
     } catch (error) {
       const message = error.name === "AbortError"
         ? "El envío tardó demasiado. Intenta nuevamente o escríbenos por WhatsApp."
