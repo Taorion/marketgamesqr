@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns/promises");
 const { env } = require("../config/env");
 
 function serviceUnavailable(message) {
@@ -61,8 +62,9 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
     throw serviceUnavailable("El envío de correo no está configurado. Define SMTP_HOST, SMTP_USER y SMTP_PASS.");
   }
 
+  const resolvedSmtpHost = await dns.lookup(env.smtpHost, { family: 4 });
   const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
+    host: resolvedSmtpHost.address,
     port: env.smtpPort,
     secure: env.smtpSecure,
     family: 4,
@@ -72,6 +74,7 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
     },
     tls: {
       rejectUnauthorized: env.smtpRejectUnauthorized,
+      servername: env.smtpHost,
     },
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
@@ -90,6 +93,8 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
   } catch (error) {
     console.error("Contact SMTP delivery failed", {
       host: env.smtpHost,
+      resolved_host: resolvedSmtpHost.address,
+      resolved_family: resolvedSmtpHost.family,
       port: env.smtpPort,
       secure: env.smtpSecure,
       user: env.smtpUser,
