@@ -281,28 +281,61 @@ function initContactForm() {
     return;
   }
 
-  form.addEventListener("submit", (event) => {
+  const status = document.getElementById("contact-form-status");
+  const submitButton = form.querySelector("button[type='submit']");
+  const defaultButtonText = submitButton ? submitButton.textContent : "";
+
+  function setStatus(message, type = "") {
+    if (!status) {
+      return;
+    }
+    status.textContent = message;
+    status.dataset.state = type;
+  }
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const formData = new FormData(form);
-    const name = String(formData.get("name") || "").trim();
-    const email = String(formData.get("email") || "").trim();
-    const company = String(formData.get("company") || "").trim();
-    const message = String(formData.get("message") || "").trim();
+    const payload = {
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      phone: String(formData.get("phone") || "").trim(),
+      company: String(formData.get("company") || "").trim(),
+      message: String(formData.get("message") || "").trim(),
+      source_url: window.location.href
+    };
 
-    const subject = encodeURIComponent(`Nuevo contacto web - ${company || name || "Market Games"}`);
-    const body = encodeURIComponent(
-      [
-        `Nombre: ${name || "No especificado"}`,
-        `Email: ${email || "No especificado"}`,
-        `Empresa: ${company || "No especificada"}`,
-        "",
-        "Mensaje:",
-        message || "Sin mensaje"
-      ].join("\n")
-    );
+    setStatus("Enviando consulta...", "pending");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Enviando...";
+    }
 
-    window.location.href = `mailto:contacto@marketgamesqr.com?subject=${subject}&body=${body}`;
+    try {
+      const response = await fetch(form.getAttribute("action") || "/api/public/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "No se pudo enviar la consulta.");
+      }
+
+      form.reset();
+      setStatus("Mensaje enviado. MarketGamesQR recibió tu consulta.", "success");
+    } catch (error) {
+      setStatus(error.message || "No se pudo enviar la consulta. Intenta nuevamente.", "error");
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = defaultButtonText;
+      }
+    }
   });
 }
 

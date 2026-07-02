@@ -40,6 +40,15 @@ const env = {
   motoRewardId: process.env.MOTO_REWARD_ID || null,
   motoCampaignId: process.env.MOTO_CAMPAIGN_ID || null,
   productCampaignId: process.env.PRODUCT_CAMPAIGN_ID || null,
+  contactRecipientEmail: process.env.CONTACT_RECIPIENT_EMAIL || "contacto@marketgamesqr.com",
+  contactMailFrom: process.env.CONTACT_MAIL_FROM || "MarketGamesQR <no-reply@marketgamesqr.com>",
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  smtpHost: process.env.SMTP_HOST || "",
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpSecure: process.env.SMTP_SECURE === "true" || Number(process.env.SMTP_PORT || 587) === 465,
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
+  smtpRejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== "false",
 };
 
 if (!env.databaseUrl || /PROJECT_REF|YOUR_PASSWORD/.test(env.databaseUrl)) {

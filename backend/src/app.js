@@ -16,6 +16,7 @@ const affiliateRoutes = require("./routes/affiliateRoutes");
 const salesRoutes = require("./routes/salesRoutes");
 const publicGameRoutes = require("./routes/publicGameRoutes");
 const publicQrRoutes = require("./routes/publicQrRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rewardPassRoutes = require("./routes/rewardPassRoutes");
@@ -99,7 +100,7 @@ app.use(helmet({
         "https://luxyandpets.com",
         "https://atelierdecoleccion.com",
       ],
-      "form-action": ["'self'", "mailto:"],
+      "form-action": ["'self'"],
       "worker-src": ["'self'", "blob:"],
     },
   },
@@ -122,6 +123,8 @@ app.get("/api/version", (_req, res) => {
     render_git_commit: process.env.RENDER_GIT_COMMIT || null,
   });
 });
+
+app.use("/api/public", contactRoutes);
 
 app.use((req, res, next) => {
   if (env.databaseConfigured || !req.path.startsWith("/api/")) {

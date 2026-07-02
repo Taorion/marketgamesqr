@@ -4324,6 +4324,32 @@ body::before {
   color: #8fa4c4;
 }
 
+.form-status {
+  min-height: 22px;
+  margin: 0;
+  color: #b9c9e4;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.form-status[data-state="pending"] {
+  color: #7fe8ff;
+}
+
+.form-status[data-state="success"] {
+  color: #80ffd4;
+}
+
+.form-status[data-state="error"] {
+  color: #ffb3b3;
+}
+
+.rms-contact-form button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
 .rms-panel-band .button-secondary,
 .rms-full-band .button-secondary,
 .rms-rail-band .button-secondary {
