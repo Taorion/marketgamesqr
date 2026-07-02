@@ -87,7 +87,12 @@ app.use(helmet({
       "default-src": ["'self'"],
       "base-uri": ["'self'"],
       "object-src": ["'none'"],
-      "script-src": ["'self'", "'unsafe-eval'"],
+      "script-src": [
+        "'self'",
+        "'unsafe-eval'",
+        "'sha256-IHp/uS8mBTw7c/l/jF15NszNHWr0ClZaGSbEC0tBSUk='",
+        "'sha256-Oc+70N0mYEuTXE/mDfwrSpVsc/qCHDZCdbVTtgrcBDU='",
+      ],
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
       "img-src": ["'self'", "data:", "blob:", "https:"],
