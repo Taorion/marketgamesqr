@@ -28,6 +28,15 @@ const ACTIVATION_CATALOG = [
   { type: "MEMORY_PAIRS", label: "Memoria de pares", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "FAST_TAP", label: "Tap rapido / Reflex challenge", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "MINI_MAZE", label: "Camino correcto / Mini laberinto", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "WHACK_A_MOLE", label: "Golpea el topo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "DODGE_RUNNER", label: "Runner esquiva obstaculos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "BALLOON_POP", label: "Revienta globos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "ROULETTE_SPIN", label: "Ruleta de beneficio", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "TOUCH_CATCH", label: "Touch atrapalo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "TRUE_FALSE", label: "Falso o verdadero", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "ORDER_OPTIONS", label: "Orden correcto", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "CONNECTORS", label: "Conectores", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "BATTLESHIP_COORDS", label: "Batalla naval por coordenadas", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "VIP_EXPERIENCE_SELECTOR", label: "Selector de experiencia VIP", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_choice"] },
   { type: "STYLE_PROFILE", label: "Perfil de estilo", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_profile"] },
   { type: "GIFT_CURATOR", label: "Curador de regalo", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_profile"] },
@@ -61,6 +70,102 @@ const ACTIVATION_CATALOG = [
 
 const CATALOG_BY_TYPE = new Map(ACTIVATION_CATALOG.map((item) => [item.type, item]));
 const JSONB_ACTIVATION_FIELDS = new Set(["reward_config", "game_config", "interaction_config", "capture_config", "visual_config"]);
+
+function escapeSvg(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\n/g, " ");
+}
+
+function safeBrandColor(value, fallback) {
+  const color = String(value || "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
+}
+
+function brandStyle(settings = {}) {
+  return {
+    primary: safeBrandColor(settings.brand_primary, "#13212c"),
+    secondary: safeBrandColor(settings.brand_secondary, "#945d20"),
+    logoUrl: typeof settings.logo_data_url === "string" && settings.logo_data_url
+      ? settings.logo_data_url
+      : typeof settings.logo_url === "string" ? settings.logo_url : "",
+    ticketFrameUrl: typeof settings.ticket_frame_data_url === "string" && settings.ticket_frame_data_url
+      ? settings.ticket_frame_data_url
+      : typeof settings.ticket_frame_url === "string" ? settings.ticket_frame_url : "",
+  };
+}
+
+function wrapSvgText(value, maxChars = 40, maxLines = 1) {
+  const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars) {
+      current = next;
+      return;
+    }
+    if (current) lines.push(current);
+    current = word.length > maxChars ? `${word.slice(0, Math.max(1, maxChars - 1))}…` : word;
+  });
+  if (current) lines.push(current);
+  return lines.slice(0, maxLines);
+}
+
+function brandedQrTextRows({ businessName, activationTitle, rewardLabel, publicCode }) {
+  return [
+    ...wrapSvgText(businessName || "MarketGamesQR", 34, 1).map((text) => ({ text, size: 30, weight: 900, fill: "#111827" })),
+    ...wrapSvgText(rewardLabel || "Beneficio desbloqueado", 42, 2).map((text, index) => ({ text, size: index ? 22 : 25, weight: 800, fill: "#111827" })),
+    ...wrapSvgText(activationTitle || "Activacion interactiva", 46, 1).map((text) => ({ text, size: 18, weight: 700, fill: "#4b5563" })),
+    { text: publicCode || "QR UNICO", size: 18, weight: 900, fill: "#111827" },
+  ].slice(0, 6);
+}
+
+async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }) {
+  const brand = brandStyle(activation.business_settings || {});
+  const qrImage = await QRCode.toDataURL(validatorUrl, {
+    type: "image/png",
+    width: 560,
+    margin: 1,
+    errorCorrectionLevel: "M",
+  });
+  const width = 1080;
+  const height = 1350;
+  const qrSize = 490;
+  const qrX = Math.round((width - qrSize) / 2);
+  const qrY = 440;
+  const frame = String(brand.ticketFrameUrl || "").trim();
+  const logo = String(brand.logoUrl || "").trim();
+  const rows = brandedQrTextRows({
+    businessName: activation.business_name,
+    activationTitle: activation.title,
+    rewardLabel: reward.reward_label,
+    publicCode: reward.public_code,
+  });
+  const textPanelY = 970;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" rx="52" fill="#ffffff"/>
+  ${frame
+    ? `<image href="${escapeSvg(frame)}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>`
+    : `<rect x="0" y="0" width="${width}" height="${height}" rx="52" fill="${escapeSvg(brand.primary)}"/>
+       <rect x="44" y="44" width="992" height="1262" rx="42" fill="#ffffff"/>
+       <rect x="44" y="44" width="992" height="170" rx="42" fill="${escapeSvg(brand.primary)}"/>
+       <rect x="44" y="154" width="992" height="120" fill="${escapeSvg(brand.primary)}"/>`}
+  ${logo ? `<rect x="410" y="78" width="260" height="118" rx="28" fill="#ffffff" opacity="0.95"/>
+  <image href="${escapeSvg(logo)}" x="430" y="96" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${width / 2}" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#ffffff">MarketGamesQR</text>`}
+  <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="#ffffff"/>
+  <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="none" stroke="${escapeSvg(brand.secondary)}" stroke-width="10"/>
+  <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
+  <rect x="136" y="${textPanelY}" width="808" height="240" rx="34" fill="#ffffff" opacity="0.96"/>
+  ${rows.map((row, index) => `<text x="${width / 2}" y="${textPanelY + 48 + index * 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${row.size}" font-weight="${row.weight}" fill="${escapeSvg(row.fill)}">${escapeSvg(row.text)}</text>`).join("\n  ")}
+  <text x="${width / 2}" y="1260" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#4b5563">Presenta este QR en el punto físico para redimir</text>
+</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 
 function jsonParam(value, fallback) {
   if (value === undefined || value === null) {
@@ -774,7 +879,7 @@ async function completeInteractiveParticipant(slug, body) {
 
 async function lockActivationBySlug(client, slug) {
   const result = await client.query(
-    `select a.*, b.name as business_name
+    `select a.*, b.name as business_name, b.settings as business_settings
      from interactive_activations a
      join businesses b on b.id = a.company_id
      where a.public_slug = $1 and b.is_active = true
@@ -941,8 +1046,8 @@ function validateGameSession(activation, participant, body) {
     throw badRequest("Sesion de juego invalida. Reinicia la partida desde la landing.");
   }
   const elapsedMs = body.duration_ms || (Date.now() - new Date(participant.game_session_started_at || participant.started_at).getTime());
-  const minMs = Number(activation.game_config?.min_duration_ms || 3000);
-  const maxMs = Number(activation.game_config?.max_duration_ms || (Number(activation.game_config?.duration_seconds || 60) + 10) * 1000);
+  const minMs = Number(activation.game_config?.min_duration_ms ?? 3000);
+  const maxMs = Number(activation.game_config?.max_duration_ms ?? (Number(activation.game_config?.duration_seconds || 60) + 10) * 1000);
   if (elapsedMs < minMs || elapsedMs > maxMs) {
     throw badRequest("Duracion de partida fuera del rango permitido.");
   }
@@ -1276,7 +1381,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     qr_code: qr,
     credit_account: mapPublicCreditAccount(creditAccount),
     validator_url: validatorUrl,
-    qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+    qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
   };
 }
 

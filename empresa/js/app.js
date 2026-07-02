@@ -176,6 +176,7 @@ const affiliateSelectedSummary = document.getElementById("affiliateSelectedSumma
 const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseAmountInput");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
+const copyAffiliateCardLinkButton = document.getElementById("copyAffiliateCardLinkButton");
 const affiliateReferralQrQuantityInput = document.getElementById("affiliateReferralQrQuantityInput");
 const affiliateReferralQrCampaignInput = document.getElementById("affiliateReferralQrCampaignInput");
 const affiliateReferralQrBenefitInput = document.getElementById("affiliateReferralQrBenefitInput");
@@ -378,6 +379,14 @@ const minigameLivesInput = document.getElementById("minigameLivesInput");
 const minigameFireIntervalInput = document.getElementById("minigameFireIntervalInput");
 const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
 const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
+const minigameSpecificTitle = document.getElementById("minigameSpecificTitle");
+const minigameSpecificSummary = document.getElementById("minigameSpecificSummary");
+const minigameSpecificConfigPanel = document.getElementById("minigameSpecificConfigPanel");
+const minigameSpecificHelp = document.getElementById("minigameSpecificHelp");
+const battleshipShipCountInput = document.getElementById("battleshipShipCountInput");
+const battleshipShip1Input = document.getElementById("battleshipShip1Input");
+const battleshipShip2Input = document.getElementById("battleshipShip2Input");
+const battleshipShip3Input = document.getElementById("battleshipShip3Input");
 const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
 const triviaLauncherResult = document.getElementById("triviaLauncherResult");
 const triviaLauncherTable = document.getElementById("triviaLauncherTable");
@@ -632,6 +641,7 @@ let state = {
   strategicQrBatches: [],
   strategicQrHistory: [],
   triviaLaunchers: [],
+  currentLauncherActivationId: null,
   affiliatesLoaded: false,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
@@ -6512,6 +6522,15 @@ function activationTypeLabel(type) {
     MEMORY_PAIRS: "Memoria de pares",
     FAST_TAP: "Tap rápido",
     MINI_MAZE: "Mini laberinto",
+    WHACK_A_MOLE: "Golpea el topo",
+    DODGE_RUNNER: "Runner esquiva",
+    BALLOON_POP: "Revienta globos",
+    ROULETTE_SPIN: "Ruleta",
+    TOUCH_CATCH: "Touch atrápalo",
+    TRUE_FALSE: "Falso/Verdadero",
+    ORDER_OPTIONS: "Orden correcto",
+    CONNECTORS: "Conectores",
+    BATTLESHIP_COORDS: "Batalla naval",
   }[type] || "Activación";
 }
 
@@ -6559,6 +6578,15 @@ function interactiveCategoryForType(type) {
     MEMORY_PAIRS: "minigame",
     FAST_TAP: "minigame",
     MINI_MAZE: "minigame",
+    WHACK_A_MOLE: "minigame",
+    DODGE_RUNNER: "minigame",
+    BALLOON_POP: "minigame",
+    ROULETTE_SPIN: "minigame",
+    TOUCH_CATCH: "minigame",
+    TRUE_FALSE: "minigame",
+    ORDER_OPTIONS: "minigame",
+    CONNECTORS: "minigame",
+    BATTLESHIP_COORDS: "minigame",
   }[type] || "commercial";
 }
 
@@ -6580,6 +6608,7 @@ function setActivationType(type) {
     panel.classList.toggle("hidden", !active);
     panel.classList.toggle("active", active);
   });
+  renderMinigameSpecificConfig(nextType);
   if (nextType === "TRIVIA") {
     if (triviaQuestionCountInput) {
       triviaQuestionCountInput.disabled = false;
@@ -6749,6 +6778,22 @@ function collectFlatChoiceOptions(type) {
     .filter((item) => item.label);
 }
 
+function collectRouletteBenefits() {
+  return Array.from(document.querySelectorAll("[data-roulette-benefit]"))
+    .map((input, index) => {
+      const label = input.value.trim();
+      const value = `ROULETTE_${index + 1}`;
+      return {
+        value,
+        label,
+        reward_type: triviaBenefitTypeInput.value,
+        reward_label: label,
+        reward_value: parseJsonObject(triviaBenefitValueInput.value),
+      };
+    })
+    .filter((item) => item.label);
+}
+
 function syncProductVoteImagePreview(key, dataUrl = "") {
   const preview = document.querySelector(`[data-product-vote-preview="${key}"]`);
   if (!preview) return;
@@ -6823,8 +6868,165 @@ function isFixedPremiumActivation(type) {
 }
 
 function isMinigameActivation(type) {
-  return ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE"].includes(type);
+  return ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "ROULETTE_SPIN", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"].includes(type);
 }
+
+const MINIGAME_SPECIFIC_CONFIG = {
+  SPACE_SHOOTER: {
+    title: "Marcianitos",
+    summary: "Dinámica: moverse lateralmente, disparar automaticamente y sobrevivir a enemigos que bajan y disparan.",
+    help: "Recomendado para ferias y pantallas touch: duración corta, enemigos frecuentes y score minimo alcanzable.",
+    fields: [
+      { key: "enemy_spawn_ms", label: "Cada cuánto aparece enemigo (ms)", type: "number", min: 250, max: 1200, value: 480 },
+      { key: "enemy_base_speed", label: "Velocidad base enemigos", type: "number", min: 40, max: 180, value: 70 },
+      { key: "enemy_fire_chance", label: "% enemigos que disparan", type: "number", min: 0, max: 100, value: 55 },
+      { key: "player_speed", label: "Velocidad de nave", type: "number", min: 160, max: 520, value: 280 },
+    ],
+  },
+  BREAKOUT: {
+    title: "Breakout",
+    summary: "Dinámica: mover la barra, sostener la bola y romper bloques para acumular puntos.",
+    help: "Sube filas/columnas para partidas más largas; baja ancho de barra para más dificultad.",
+    fields: [
+      { key: "brick_rows", label: "Filas de bloques", type: "number", min: 2, max: 6, value: 4 },
+      { key: "brick_cols", label: "Columnas de bloques", type: "number", min: 5, max: 12, value: 9 },
+      { key: "ball_speed", label: "Velocidad de bola", type: "number", min: 150, max: 420, value: 250 },
+      { key: "paddle_width", label: "Ancho de barra", type: "number", min: 70, max: 170, value: 108 },
+    ],
+  },
+  SNAKE: {
+    title: "Culebrita",
+    summary: "Dinámica: dirigir la serpiente, comer premios y evitar paredes o el propio cuerpo.",
+    help: "El intervalo menor hace el juego más rápido. Ajusta el tablero según la habilidad del público.",
+    fields: [
+      { key: "board_cols", label: "Columnas del tablero", type: "number", min: 14, max: 30, value: 24 },
+      { key: "board_rows", label: "Filas del tablero", type: "number", min: 9, max: 18, value: 13 },
+      { key: "move_interval_ms", label: "Paso de movimiento (ms)", type: "number", min: 90, max: 260, value: 130 },
+      { key: "growth_per_food", label: "Crecimiento por premio", type: "number", min: 1, max: 3, value: 1 },
+    ],
+  },
+  CATCH_PRIZE: {
+    title: "Atrapa el premio",
+    summary: "Dinámica: mover la canasta, atrapar premios buenos, sostener combos y evitar bombas.",
+    help: "Muy útil para retail: los textos del beneficio van en el ticket; aquí calibras ritmo y riesgo.",
+    fields: [
+      { key: "lane_count", label: "Carriles de caída", type: "number", min: 4, max: 9, value: 7 },
+      { key: "bad_item_rate", label: "% penalizadores", type: "number", min: 10, max: 70, value: 34 },
+      { key: "bonus_item_rate", label: "% bonus especiales", type: "number", min: 0, max: 45, value: 22 },
+      { key: "drop_base_speed", label: "Velocidad base caída", type: "number", min: 80, max: 260, value: 118 },
+    ],
+  },
+  MEMORY_PAIRS: {
+    title: "Memoria de pares",
+    summary: "Dinámica: encontrar pares ocultos. Los errores quitan vidas y los aciertos suman score.",
+    help: "Usa símbolos cortos o iniciales de categorías de producto para que el juego sea rápido.",
+    fields: [
+      { key: "pair_count", label: "Cantidad de pares", type: "number", min: 3, max: 8, value: 6 },
+      { key: "mismatch_reveal_ms", label: "Tiempo para ocultar error (ms)", type: "number", min: 350, max: 1500, value: 650 },
+      { key: "memory_symbols", label: "Símbolos separados por coma", type: "text", value: "A,B,C,D,E,F,G,H" },
+    ],
+  },
+  FAST_TAP: {
+    title: "Tap rápido",
+    summary: "Dinámica: tocar objetivos antes de que desaparezcan. Cada fallo o expiración penaliza.",
+    help: "Para público masivo usa objetivos grandes y TTL mayor; para reto competitivo, TTL menor.",
+    fields: [
+      { key: "target_ttl_ms", label: "Vida del objetivo (ms)", type: "number", min: 450, max: 1800, value: 1050 },
+      { key: "target_min_size", label: "Tamaño mínimo objetivo", type: "number", min: 12, max: 32, value: 18 },
+      { key: "target_max_size", label: "Tamaño máximo objetivo", type: "number", min: 20, max: 48, value: 32 },
+    ],
+  },
+  MINI_MAZE: {
+    title: "Mini laberinto",
+    summary: "Dinámica: llevar el punto a la meta sin tocar paredes. Llegar a meta suma fuerte.",
+    help: "La dificultad cambia grosor/espacio del laberinto. Usa fácil para celulares pequeños.",
+    fields: [
+      { key: "maze_difficulty", label: "Dificultad", type: "select", value: "medium", options: [["easy", "Fácil"], ["medium", "Media"], ["hard", "Difícil"]] },
+      { key: "player_speed", label: "Velocidad del punto", type: "number", min: 100, max: 280, value: 180 },
+      { key: "goal_points_multiplier", label: "Multiplicador al llegar", type: "number", min: 1, max: 6, value: 3 },
+    ],
+  },
+  WHACK_A_MOLE: {
+    title: "Golpea el topo",
+    summary: "Dinámica: tocar solo objetivos buenos antes de que se escondan y evitar falsos objetivos.",
+    help: "Más huecos y TTL bajo elevan dificultad. El porcentaje falso controla trampas.",
+    fields: [
+      { key: "hole_rows", label: "Filas de huecos", type: "number", min: 2, max: 4, value: 3 },
+      { key: "hole_cols", label: "Columnas de huecos", type: "number", min: 2, max: 4, value: 3 },
+      { key: "bad_target_rate", label: "% objetivos falsos", type: "number", min: 0, max: 45, value: 18 },
+      { key: "target_ttl_ms", label: "Tiempo visible objetivo (ms)", type: "number", min: 450, max: 1600, value: 950 },
+    ],
+  },
+  DODGE_RUNNER: {
+    title: "Runner esquiva",
+    summary: "Dinámica: moverse por la pantalla, recoger beneficios y esquivar obstáculos.",
+    help: "Aumenta penalizadores y velocidad para retos de habilidad; baja spawn para niños o filas rápidas.",
+    fields: [
+      { key: "bad_item_rate", label: "% obstáculos", type: "number", min: 10, max: 70, value: 28 },
+      { key: "runner_spawn_ms", label: "Frecuencia objetos (ms)", type: "number", min: 180, max: 900, value: 580 },
+      { key: "runner_item_speed", label: "Velocidad de objetos", type: "number", min: 90, max: 340, value: 150 },
+      { key: "player_speed", label: "Velocidad jugador", type: "number", min: 160, max: 520, value: 300 },
+    ],
+  },
+  BALLOON_POP: {
+    title: "Revienta globos",
+    summary: "Dinámica: tocar globos buenos, evitar globos penalizados y sostener racha.",
+    help: "Funciona bien para activaciones táctiles porque cualquier usuario entiende el objetivo en segundos.",
+    fields: [
+      { key: "bad_balloon_rate", label: "% globos penalizados", type: "number", min: 0, max: 45, value: 16 },
+      { key: "balloon_spawn_ms", label: "Frecuencia globos (ms)", type: "number", min: 160, max: 900, value: 460 },
+      { key: "balloon_speed", label: "Velocidad subida", type: "number", min: 60, max: 240, value: 95 },
+      { key: "streak_bonus", label: "Bonus máximo por racha", type: "number", min: 0, max: 30, value: 24 },
+    ],
+  },
+  TOUCH_CATCH: {
+    title: "Touch atrápalo",
+    summary: "Dinámica: perseguir un objetivo móvil antes de que escape.",
+    help: "Sube velocidad y baja TTL para hacerlo competitivo. El bonus rate crea objetivos 2x.",
+    fields: [
+      { key: "target_ttl_ms", label: "Tiempo para atraparlo (ms)", type: "number", min: 650, max: 2200, value: 1350 },
+      { key: "target_speed", label: "Velocidad objetivo", type: "number", min: 60, max: 360, value: 150 },
+      { key: "bonus_target_rate", label: "% objetivos 2x", type: "number", min: 0, max: 45, value: 22 },
+    ],
+  },
+  TRUE_FALSE: {
+    title: "Falso o verdadero",
+    summary: "Dinámica: leer una afirmación y tocar FALSO o VERDADERO antes de que venza.",
+    help: "Escribe una afirmación por línea usando: texto | verdadero o texto | falso.",
+    fields: [
+      { key: "prompt_time_ms", label: "Tiempo por afirmación (ms)", type: "number", min: 1800, max: 7000, value: 3600 },
+      { key: "true_false_prompts", label: "Afirmaciones", type: "textarea", rows: 5, value: "Un QR redimido puede medirse contra ventas | verdadero\nMas intentos siempre significan mas revenue | falso\nCapturar telefono ayuda a controlar duplicados | verdadero\nUn beneficio vencido debe validarse igual | falso" },
+    ],
+  },
+  ORDER_OPTIONS: {
+    title: "Orden correcto",
+    summary: "Dinámica: tocar opciones en el orden correcto para completar una secuencia.",
+    help: "Escribe una secuencia por línea separando pasos con >. Ejemplo: Entrada > Plato fuerte > Postre.",
+    fields: [
+      { key: "order_sequences", label: "Secuencias posibles", type: "textarea", rows: 5, value: "Entrada > Plato fuerte > Postre > Cafe\nEscanear > Jugar > Recibir QR > Redimir\nProspecto > Lead > Cliente > Referido" },
+    ],
+  },
+  CONNECTORS: {
+    title: "Conectores",
+    summary: "Dinámica: seleccionar un elemento izquierdo y luego su pareja correcta a la derecha.",
+    help: "Escribe una pareja por línea usando =. Ejemplo: QR = Redención.",
+    fields: [
+      { key: "connector_pairs", label: "Pares correctos", type: "textarea", rows: 5, value: "QR = Redencion\nLead = Contacto\nTicket = Beneficio\nVenta = Revenue" },
+    ],
+  },
+  BATTLESHIP_COORDS: {
+    title: "Batalla naval",
+    summary: "Dinámica: elegir coordenadas, encontrar barcos contiguos y hundir toda la flota.",
+    help: "Máximo 3 barcos. Cada agujero equivale a una casilla contigua que debe ser impactada.",
+    fields: [
+      { key: "grid_size", label: "Tamaño de grilla", type: "number", min: 5, max: 8, value: 6 },
+      { key: "ship_count", label: "Barcos a hundir", type: "number", min: 1, max: 3, value: 3 },
+      { key: "ship_1", label: "Agujeros barco 1", type: "number", min: 1, max: 5, value: 3 },
+      { key: "ship_2", label: "Agujeros barco 2", type: "number", min: 1, max: 5, value: 2 },
+      { key: "ship_3", label: "Agujeros barco 3", type: "number", min: 1, max: 5, value: 2 },
+    ],
+  },
+};
 
 function minigameInstructionForType(type) {
   return {
@@ -6835,7 +7037,182 @@ function minigameInstructionForType(type) {
     MEMORY_PAIRS: "Encuentra pares y gana puntos por rapidez.",
     FAST_TAP: "Toca los objetivos correctos tan rápido como puedas.",
     MINI_MAZE: "Avanza hacia la meta sin tocar zonas de penalizacion.",
+    WHACK_A_MOLE: "Toca solo los objetivos activos antes de que se escondan y evita penalizaciones.",
+    DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
+    BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
+    ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
+    TOUCH_CATCH: "Toca y atrapa objetivos móviles antes de que escapen.",
+    TRUE_FALSE: "Elige falso o verdadero rapidamente y encadena respuestas correctas.",
+    ORDER_OPTIONS: "Toca las opciones en el orden correcto para completar el menú o secuencia.",
+    CONNECTORS: "Conecta cada elemento de la izquierda con su par correcto de la derecha.",
+    BATTLESHIP_COORDS: "Selecciona coordenadas, detecta barcos contiguos y hunde toda la flota para recibir tu beneficio.",
   }[type] || "Completa la partida y supera el score mínimo para recibir QR.";
+}
+
+function boundedInteger(value, fallback, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(number)));
+}
+
+function renderMinigameSpecificConfig(type) {
+  if (!minigameSpecificConfigPanel) return;
+  const definition = MINIGAME_SPECIFIC_CONFIG[type];
+  if (!definition) {
+    minigameSpecificConfigPanel.innerHTML = "";
+    if (minigameSpecificTitle) minigameSpecificTitle.textContent = "Dinámica del juego";
+    if (minigameSpecificSummary) minigameSpecificSummary.textContent = "Ajusta los datos que definen cómo se juega y qué debe lograr el participante.";
+    if (minigameSpecificHelp) minigameSpecificHelp.textContent = "Estos campos se guardan en la activación y controlan la lógica del juego público.";
+    return;
+  }
+  if (minigameSpecificTitle) minigameSpecificTitle.textContent = definition.title;
+  if (minigameSpecificSummary) minigameSpecificSummary.textContent = definition.summary;
+  if (minigameSpecificHelp) minigameSpecificHelp.textContent = definition.help;
+  minigameSpecificConfigPanel.innerHTML = definition.fields.map((field) => {
+    const common = `data-minigame-config="${escapeHtml(field.key)}"`;
+    if (field.type === "textarea") {
+      return `<label class="full"><span>${escapeHtml(field.label)}</span><textarea ${common} rows="${Number(field.rows || 4)}">${escapeHtml(field.value || "")}</textarea></label>`;
+    }
+    if (field.type === "select") {
+      return `<label><span>${escapeHtml(field.label)}</span><select ${common}>${(field.options || []).map(([value, label]) => `<option value="${escapeHtml(value)}" ${String(value) === String(field.value) ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}</select></label>`;
+    }
+    const attrs = field.type === "number"
+      ? `type="number" min="${field.min}" max="${field.max}" step="${field.step || 1}" value="${escapeHtml(field.value)}"`
+      : `type="text" value="${escapeHtml(field.value || "")}"`;
+    return `<label><span>${escapeHtml(field.label)}</span><input ${common} ${attrs}></label>`;
+  }).join("");
+}
+
+function minigameFieldValue(key) {
+  return minigameSpecificConfigPanel?.querySelector(`[data-minigame-config="${key}"]`)?.value;
+}
+
+function collectMinigameSpecificConfig(type) {
+  const definition = MINIGAME_SPECIFIC_CONFIG[type];
+  if (!definition) return {};
+  const config = {};
+  definition.fields.forEach((field) => {
+    const value = minigameFieldValue(field.key);
+    if (field.type === "number") {
+      config[field.key] = boundedInteger(value, field.value, field.min, field.max);
+      return;
+    }
+    config[field.key] = String(value ?? field.value ?? "").trim();
+  });
+
+  if (type === "TRUE_FALSE") {
+    config.prompts = parseTrueFalsePrompts(config.true_false_prompts);
+    delete config.true_false_prompts;
+  }
+  if (type === "ORDER_OPTIONS") {
+    config.sequences = parseOrderSequences(config.order_sequences);
+    delete config.order_sequences;
+  }
+  if (type === "CONNECTORS") {
+    config.pairs = parseConnectorPairs(config.connector_pairs);
+    delete config.connector_pairs;
+  }
+  if (type === "MEMORY_PAIRS") {
+    config.symbols = splitOptionList(config.memory_symbols).slice(0, 12);
+    delete config.memory_symbols;
+  }
+  if (type === "BATTLESHIP_COORDS") {
+    const shipCount = boundedInteger(config.ship_count, 3, 1, 3);
+    config.ship_count = shipCount;
+    config.ship_lengths = [config.ship_1, config.ship_2, config.ship_3].slice(0, shipCount);
+    delete config.ship_1;
+    delete config.ship_2;
+    delete config.ship_3;
+  }
+  return config;
+}
+
+function parseTrueFalsePrompts(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [textPart, answerPart = ""] = line.split("|").map((part) => part.trim());
+      const normalized = answerPart.toLowerCase();
+      return {
+        id: `tf${index + 1}`,
+        text: textPart,
+        answer: ["true", "verdadero", "v", "si", "sí"].includes(normalized),
+      };
+    })
+    .filter((item) => item.text.length >= 4)
+    .slice(0, 12);
+}
+
+function parseOrderSequences(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.split(">").map((part) => part.trim()).filter(Boolean))
+    .filter((items) => items.length >= 2)
+    .slice(0, 8);
+}
+
+function parseConnectorPairs(value) {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.split("=").map((part) => part.trim()).filter(Boolean))
+    .filter((parts) => parts.length >= 2)
+    .map(([left, right], index) => ({ key: index, left, right }))
+    .slice(0, 8);
+}
+
+function collectBattleshipConfig() {
+  const dynamic = collectMinigameSpecificConfig("BATTLESHIP_COORDS");
+  if (dynamic.ship_lengths?.length) return dynamic;
+  const shipCount = boundedInteger(battleshipShipCountInput?.value, 3, 1, 3);
+  const rawLengths = [
+    boundedInteger(battleshipShip1Input?.value, 3, 1, 5),
+    boundedInteger(battleshipShip2Input?.value, 2, 1, 5),
+    boundedInteger(battleshipShip3Input?.value, 2, 1, 5),
+  ];
+  return {
+    grid_size: 6,
+    ship_count: shipCount,
+    ship_lengths: rawLengths.slice(0, shipCount),
+  };
+}
+
+function updateBattleshipShipInputs() {
+  const shipCount = boundedInteger(battleshipShipCountInput?.value, 3, 1, 3);
+  [battleshipShip1Input, battleshipShip2Input, battleshipShip3Input].forEach((input, index) => {
+    if (input) input.disabled = index >= shipCount;
+  });
+}
+
+function validateMinigameSpecificConfig(type) {
+  const config = collectMinigameSpecificConfig(type);
+  if (type === "TRUE_FALSE" && (!Array.isArray(config.prompts) || config.prompts.length < 2)) {
+    setInlineMessage(triviaLauncherMessage, "Falso/Verdadero necesita al menos dos afirmaciones con formato: texto | verdadero/falso.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='true_false_prompts']")?.focus();
+    return null;
+  }
+  if (type === "ORDER_OPTIONS" && (!Array.isArray(config.sequences) || config.sequences.length < 1)) {
+    setInlineMessage(triviaLauncherMessage, "Orden correcto necesita al menos una secuencia con dos o más pasos separados por >.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='order_sequences']")?.focus();
+    return null;
+  }
+  if (type === "CONNECTORS" && (!Array.isArray(config.pairs) || config.pairs.length < 2)) {
+    setInlineMessage(triviaLauncherMessage, "Conectores necesita al menos dos pares con formato: izquierda = derecha.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='connector_pairs']")?.focus();
+    return null;
+  }
+  if (type === "MEMORY_PAIRS" && Array.isArray(config.symbols) && config.symbols.length < config.pair_count) {
+    setInlineMessage(triviaLauncherMessage, "Memoria necesita tantos símbolos como pares configurados.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='memory_symbols']")?.focus();
+    return null;
+  }
+  if (type === "BATTLESHIP_COORDS" && (!Array.isArray(config.ship_lengths) || config.ship_lengths.length < 1 || config.ship_lengths.length > 3)) {
+    setInlineMessage(triviaLauncherMessage, "Batalla naval permite entre 1 y 3 barcos.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='ship_count']")?.focus();
+    return null;
+  }
+  return config;
 }
 
 function activationParticipantLockFromForm() {
@@ -7046,6 +7423,35 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     };
   }
 
+  if (type === "ROULETTE_SPIN") {
+    const choices = collectRouletteBenefits();
+    return {
+      ...base,
+      category: "minigame",
+      reward_mode: "by_choice",
+      reward_config: {
+        ...benefit,
+        choices,
+      },
+      game_config: {
+        game_type: type,
+        min_duration_ms: 0,
+        max_duration_ms: 120000,
+        max_score: 100000,
+        segments: choices,
+        instruction: minigameInstructionForType(type),
+      },
+      interaction_config: {
+        minigame: type,
+        result_mode: "roulette_choice",
+      },
+      visual_config: {
+        ...base.visual_config,
+        minigame_skin: type,
+      },
+    };
+  }
+
   if (isMinigameActivation(type)) {
     const durationSeconds = Math.max(10, Math.min(180, Number(minigameDurationInput?.value || 30)));
     const minScore = Math.max(1, Number(minigameMinScoreInput?.value || 100));
@@ -7054,6 +7460,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     const penalty = Math.max(0, Number(minigamePenaltyInput?.value || 10));
     const lives = Math.max(1, Math.min(10, Number(minigameLivesInput?.value || 3)));
     const fireIntervalMs = Math.max(250, Math.min(1200, Number(minigameFireIntervalInput?.value || 480)));
+    const specificConfig = collectMinigameSpecificConfig(type);
     return {
       ...base,
       category: "minigame",
@@ -7073,14 +7480,16 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       game_config: {
         game_type: type,
         duration_seconds: durationSeconds,
-        min_duration_ms: 3000,
+        min_duration_ms: type === "BATTLESHIP_COORDS" ? 0 : 3000,
         max_duration_ms: (durationSeconds + 10) * 1000,
         max_score: maxScore,
+        min_score_for_reward: minScore,
         points_per_target: pointsPerTarget,
         penalty,
         lives,
         fire_interval_ms: fireIntervalMs,
         instruction: minigameInstructionForType(type),
+        ...(specificConfig || {}),
       },
       interaction_config: {
         minigame: type,
@@ -7171,7 +7580,18 @@ function validateTriviaLauncherForm() {
   if (isFixedPremiumActivation(type)) {
     return { message: true };
   }
+  if (type === "ROULETTE_SPIN") {
+    const choices = collectRouletteBenefits();
+    if (choices.length < 2) {
+      setInlineMessage(triviaLauncherMessage, "Configura al menos dos beneficios para la ruleta.", "error");
+      document.querySelector("[data-roulette-benefit]")?.focus();
+      return null;
+    }
+    return { roulette: true, choices };
+  }
   if (isMinigameActivation(type)) {
+    const specificConfig = validateMinigameSpecificConfig(type);
+    if (!specificConfig) return null;
     const durationSeconds = Number(minigameDurationInput?.value || 30);
     const minScore = Number(minigameMinScoreInput?.value || 100);
     const maxScore = Number(minigameMaxScoreInput?.value || 2500);
@@ -7458,6 +7878,21 @@ async function recycleInteractiveActivation(id) {
   }
 }
 
+async function archivePreviousLauncherActivation(previousId, nextId) {
+  if (!previousId || String(previousId) === String(nextId)) return false;
+  try {
+    await patchInteractiveActivation(previousId, { status: "archived" });
+    return true;
+  } catch (error) {
+    showFeedback(
+      "El nuevo link fue creado, pero no se pudo archivar el link anterior. Anúlalo desde la tabla si ya no debe usarse.",
+      "error",
+      { title: "Renovación parcial" }
+    );
+    return false;
+  }
+}
+
 async function submitTriviaLauncher(event) {
   event.preventDefault();
   if (!triviaLauncherForm.reportValidity()) {
@@ -7468,8 +7903,11 @@ async function submitTriviaLauncher(event) {
   if (!activationPayload) return;
   const type = currentActivationType();
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
+  const previousLauncherActivationId = state.currentLauncherActivationId;
   setButtonLoading(submitButton, true, "Lanzando...");
-  setInlineMessage(triviaLauncherMessage, `Creando landing pública de ${activationTypeLabel(type).toLowerCase()}.`, "info");
+  triviaLauncherResult?.classList.add("hidden");
+  if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
+  setInlineMessage(triviaLauncherMessage, `Renovando landing pública de ${activationTypeLabel(type).toLowerCase()} y generando link nuevo.`, "info");
   try {
     const data = await api("/api/business/interactive-activations", {
       method: "POST",
@@ -7478,12 +7916,14 @@ async function submitTriviaLauncher(event) {
     });
 
     const activation = data.activation || data.trivia;
+    state.currentLauncherActivationId = activation.id;
+    const archivedPrevious = await archivePreviousLauncherActivation(previousLauncherActivationId, activation.id);
     state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => item.id !== activation.id)];
     renderTriviaLaunchers();
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
-      <strong>Activación lanzada</strong>
-      <p class="table-secondary">Comparte este link con clientes. Primero dejan sus datos, luego completan la dinámica y el sistema emite el ticket según la regla configurada.</p>
+      <strong>Activación renovada</strong>
+      <p class="table-secondary">${archivedPrevious ? "El link anterior quedó archivado y este es el link vigente." : "Este es un link nuevo y vigente para compartir."} Primero dejan sus datos, luego completan la dinámica y el sistema emite el ticket según la regla configurada.</p>
       <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
     `;
@@ -7491,8 +7931,8 @@ async function submitTriviaLauncher(event) {
       await navigator.clipboard?.writeText(activation.public_url);
       showFeedback("Link de activación copiado.");
     });
-    setInlineMessage(triviaLauncherMessage, "Activación lista para compartir.", "success");
-    showFeedback("Activación lanzada. El link público ya está listo.", "success", { title: "Constructor de activaciones" });
+    setInlineMessage(triviaLauncherMessage, "Activación renovada. Comparte el link nuevo.", "success");
+    showFeedback("Activación renovada. El link público nuevo ya está listo.", "success", { title: "Constructor de activaciones" });
     markTicketCenterDataStale(["activations", "metrics"]);
     await loadStrategicQrData({ groups: ["activations", "metrics"], force: true, quiet: true });
     renderStrategicQrView();
@@ -9225,7 +9665,8 @@ function affiliateCardMetaText(affiliate = {}) {
   const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
   const documentId = firstTextValue(affiliate.document_id, affiliate.document, "Sin documento");
   const qrToken = String(affiliate.qr_token || "").slice(0, 12);
-  return `Negocio: ${businessProfile.name || "-"} | Documento: ${documentId} | Puntos: ${points} | Ticket: ${qrToken ? `${qrToken}...` : "sin ticket"}`;
+  const digitalUrl = affiliateDigitalCardUrl(affiliate);
+  return `Negocio: ${businessProfile.name || "-"} | Documento: ${documentId} | Puntos: ${points} | Carnet digital: ${digitalUrl ? "activo" : "sin link"} | Token: ${qrToken ? `${qrToken}...` : "sin token"}`;
 }
 
 function renderAffiliateSelectedSummary(affiliate = null) {
@@ -9236,6 +9677,7 @@ function renderAffiliateSelectedSummary(affiliate = null) {
   }
   const businessProfile = businessCardProfile(affiliate);
   const qrToken = String(affiliate.qr_token || "");
+  const digitalUrl = affiliateDigitalCardUrl(affiliate);
   const rows = [
     ["Afiliado", firstTextValue(affiliate.full_name, affiliate.name, "-")],
     ["Documento", firstTextValue(affiliate.document_id, affiliate.document, "-")],
@@ -9243,6 +9685,7 @@ function renderAffiliateSelectedSummary(affiliate = null) {
     ["Email", firstTextValue(affiliate.email, "-")],
     ["Puntos", toNumber(affiliate.points_total || affiliate.ledger_points || 0)],
     ["Negocio", firstTextValue(businessProfile.name, affiliate.business_name, "-")],
+    ["Carnet digital", digitalUrl || "-"],
     ["Ticket afiliado", qrToken ? `${qrToken.slice(0, 16)}...` : "Sin token"],
   ];
   affiliateSelectedSummary.innerHTML = `
@@ -9268,6 +9711,13 @@ function affiliateQrSource(affiliate) {
     || affiliate?.qrImageDataUrl
     || affiliate?.card_metadata?.qr_data_url
     || "";
+}
+
+function affiliateDigitalCardUrl(affiliate = {}) {
+  if (affiliate.digital_card_url) return affiliate.digital_card_url;
+  const token = String(affiliate.qr_token || "").trim();
+  if (!token) return "";
+  return `${window.location.origin}/carnet-afiliado/${encodeURIComponent(token)}`;
 }
 
 async function buildAffiliateCardDataUrl(affiliate) {
@@ -9930,7 +10380,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "center";
   ctx.fillStyle = "#7cfbff";
   ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("CODIGO DEL AFILIADO", qrX + qrSize / 2, qrY + qrSize + 36);
+  ctx.fillText("CARNET DIGITAL EN VIVO", qrX + qrSize / 2, qrY + qrSize + 36);
   ctx.fillStyle = "#a8c6d9";
   ctx.font = "800 15px JetBrains Mono, monospace";
   ctx.fillText(`${tokenPreview || "SIN TOKEN"}...`, qrX + qrSize / 2, qrY + qrSize + 62);
@@ -9940,7 +10390,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.fill();
   ctx.fillStyle = "#9bdcff";
   ctx.font = "800 15px Inter, Arial, sans-serif";
-  ctx.fillText("Ticket permanente de afiliado. No redime premios.", width / 2, 706);
+  ctx.fillText("Escanea el QR para ver puntos y movimientos en tiempo real.", width / 2, 706);
   if (platformLogo) {
     drawContainedImage(platformLogo, width - 204, 684, 138, 38, 8, "rgba(255, 255, 255, 0.03)", { trimWhite: true, removeWhiteBackground: true });
   } else {
@@ -10594,17 +11044,30 @@ async function awardSelectedAffiliatePoints() {
 async function downloadSelectedAffiliateCard() {
   if (!state.selectedAffiliate) return;
   downloadAffiliateCardButton.disabled = true;
-  downloadAffiliateCardButton.textContent = "Generando...";
+  downloadAffiliateCardButton.textContent = "Abriendo...";
   try {
-    const dataUrl = await renderAffiliateCardPreview(state.selectedAffiliate);
-    if (!dataUrl) return;
-    downloadDataUrl(`carnet-afiliado-${String(state.selectedAffiliate.full_name || "afiliado").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`, dataUrl);
-    showFeedback("Carnet descargado como PNG.");
+    const url = affiliateDigitalCardUrl(state.selectedAffiliate);
+    if (!url) throw new Error("Este afiliado no tiene link de carnet digital.");
+    window.open(url, "_blank", "noopener");
   } catch (error) {
-    showFeedback(error.message || "No se pudo descargar el carnet.", "error");
+    showFeedback(error.message || "No se pudo abrir el carnet digital.", "error");
   } finally {
     downloadAffiliateCardButton.disabled = false;
-    downloadAffiliateCardButton.textContent = "Descargar PNG";
+    downloadAffiliateCardButton.textContent = "Abrir carnet digital";
+  }
+}
+
+async function copySelectedAffiliateCardLink() {
+  const url = affiliateDigitalCardUrl(state.selectedAffiliate || {});
+  if (!url) {
+    showFeedback("Este afiliado no tiene link de carnet digital.", "error");
+    return;
+  }
+  try {
+    await navigator.clipboard?.writeText(url);
+    showFeedback("Link del carnet digital copiado.", "success", { title: "Carnet afiliado" });
+  } catch {
+    window.prompt("Link del carnet digital", url);
   }
 }
 
@@ -11562,13 +12025,14 @@ async function renderAffiliatesView() {
 
   if (!selected) {
     affiliateCardTitle.textContent = "Sin afiliado seleccionado";
-    affiliateCardMeta.textContent = "Crea o selecciona un afiliado para generar el carnet y el ticket.";
+    affiliateCardMeta.textContent = "Crea o selecciona un afiliado para abrir su carnet digital.";
     renderAffiliateSelectedSummary(null);
     affiliateCardPreview.removeAttribute("src");
     affiliateCardPreviewWrap?.classList.add("is-empty");
     affiliateCardPreviewWrap?.classList.remove("is-loading");
     affiliateAddPointsButton.disabled = true;
     downloadAffiliateCardButton.disabled = true;
+    if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
     if (affiliateReferralQrSelectedMeta) affiliateReferralQrSelectedMeta.textContent = "Selecciona un afiliado del listado para generar sus tickets de recomendación.";
     setInlineMessage(affiliateReferralQrMessage, "", "info");
@@ -11584,6 +12048,7 @@ async function renderAffiliatesView() {
   affiliateCardPreviewWrap?.classList.remove("is-empty");
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
+  if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = !affiliateDigitalCardUrl(selected);
   if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = false;
   if (affiliateReferralQrSelectedMeta) {
     affiliateReferralQrSelectedMeta.textContent = `Generando ticket para ${selected.full_name || "el afiliado seleccionado"}. Se descontaran de los tickets disponibles.`;
@@ -12402,6 +12867,7 @@ affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);
 resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
+copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
 affiliateFinderSearchButton?.addEventListener("click", () => searchAffiliateForPoints());
@@ -12445,6 +12911,7 @@ document.querySelectorAll("[data-product-vote-upload]").forEach((button) => {
 document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
+battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
 
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
@@ -12456,6 +12923,7 @@ updateTriviaQuestionVisibility();
 updateTriviaExpiryMode();
 updateSurveyQuestionEditors();
 updateActivationQuestionCountControls();
+updateBattleshipShipInputs();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

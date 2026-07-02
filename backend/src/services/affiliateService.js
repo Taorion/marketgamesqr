@@ -1,5 +1,6 @@
 const QRCode = require("qrcode");
 const { query, withTransaction } = require("../config/db");
+const { env } = require("../config/env");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { canAccessBusiness } = require("../middleware/auth");
@@ -42,10 +43,17 @@ async function businessNameFor(businessId) {
   return result.rows[0] || null;
 }
 
+function affiliateDigitalCardUrl(token) {
+  const base = String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
+  return `${base}/carnet-afiliado/${encodeURIComponent(token || "")}`;
+}
+
 async function attachQrDataUrl(affiliate) {
+  const digitalCardUrl = affiliateDigitalCardUrl(affiliate.qr_token || "");
   return {
     ...affiliate,
-    qr_data_url: await QRCode.toDataURL(String(affiliate.qr_token || ""), {
+    digital_card_url: digitalCardUrl,
+    qr_data_url: await QRCode.toDataURL(digitalCardUrl, {
       margin: 2,
       width: 720,
       errorCorrectionLevel: "Q",
@@ -142,6 +150,56 @@ async function getAffiliate(businessId, affiliateId, user) {
     throw notFound("Affiliate not found.");
   }
   return attachQrDataUrl(affiliate);
+}
+
+async function getPublicAffiliateCard(token) {
+  const value = String(token || "").trim();
+  if (!value) {
+    throw notFound("Affiliate card not found.");
+  }
+  const result = await query(
+    `select
+       a.id,
+       a.business_id,
+       a.full_name,
+       a.document_id,
+       a.phone,
+       a.email,
+       a.photo_data_url,
+       a.qr_token,
+       a.status,
+       a.created_at,
+       a.updated_at,
+       b.name as business_name,
+       ${BUSINESS_CARD_SETTINGS_SQL} as business_settings,
+       coalesce((select sum(l.points_awarded)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as ledger_points,
+       coalesce((select count(*)::int from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as point_events,
+       coalesce((select sum(l.amount)::numeric from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as purchase_total,
+       coalesce((select avg(l.amount)::numeric from affiliate_point_ledger l where l.affiliate_id = a.id), 0) as average_purchase,
+       (select max(l.created_at) from affiliate_point_ledger l where l.affiliate_id = a.id) as last_purchase_at
+     from affiliates a
+     join businesses b on b.id = a.business_id
+     where a.qr_token = $1
+       and a.status <> 'DELETED'
+     limit 1`,
+    [value]
+  );
+  const affiliate = result.rows[0];
+  if (!affiliate) {
+    throw notFound("Affiliate card not found.");
+  }
+  const ledger = await query(
+    `select id, points_awarded, reason, created_at
+     from affiliate_point_ledger
+     where affiliate_id = $1
+     order by created_at desc
+     limit 20`,
+    [affiliate.id]
+  );
+  return {
+    affiliate: await attachQrDataUrl(affiliate),
+    ledger: ledger.rows,
+  };
 }
 
 async function awardAffiliatePoints(businessId, affiliateId, user, body) {
@@ -249,9 +307,11 @@ async function deleteAffiliate(businessId, affiliateId, user) {
 }
 
 module.exports = {
+  affiliateDigitalCardUrl,
   createAffiliate,
   deleteAffiliate,
   getAffiliate,
+  getPublicAffiliateCard,
   listAffiliates,
   listAffiliateLedger,
   awardAffiliatePoints,

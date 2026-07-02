@@ -33,6 +33,15 @@ const minigameTypes = new Set([
   "MEMORY_PAIRS",
   "FAST_TAP",
   "MINI_MAZE",
+  "WHACK_A_MOLE",
+  "DODGE_RUNNER",
+  "BALLOON_POP",
+  "ROULETTE_SPIN",
+  "TOUCH_CATCH",
+  "TRUE_FALSE",
+  "ORDER_OPTIONS",
+  "CONNECTORS",
+  "BATTLESHIP_COORDS",
 ]);
 
 function minigameInstruction(type, config = {}) {
@@ -45,6 +54,15 @@ function minigameInstruction(type, config = {}) {
     MEMORY_PAIRS: "Encuentra pares rapidamente y acumula puntos por cada acierto.",
     FAST_TAP: "Toca cada objetivo apenas aparezca. La velocidad define tu score.",
     MINI_MAZE: "Avanza tocando objetivos cercanos a la ruta y evita penalizaciones.",
+    WHACK_A_MOLE: "Toca solo los objetivos activos antes de que se escondan y evita penalizaciones.",
+    DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
+    BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
+    ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
+    TOUCH_CATCH: "Toca y atrapa objetivos moviles antes de que escapen.",
+    TRUE_FALSE: "Elige falso o verdadero rapidamente y encadena respuestas correctas.",
+    ORDER_OPTIONS: "Toca las opciones en el orden correcto para completar el menu o secuencia.",
+    CONNECTORS: "Conecta cada elemento de la izquierda con su par correcto de la derecha.",
+    BATTLESHIP_COORDS: "Selecciona coordenadas, encuentra barcos contiguos y hunde toda la flota para desbloquear tu beneficio.",
   }[type] || "Completa la partida y supera el score minimo para recibir tu QR.";
 }
 
@@ -399,15 +417,16 @@ function renderThermometer() {
 
 function renderMinigame() {
   const config = currentActivation.game_config || {};
+  const rouletteMode = currentActivation.activation_type === "ROULETTE_SPIN";
   experienceStage.classList.remove("hidden");
-  experienceTitle.textContent = currentActivation.activation_label || "Minijuego con score";
+  experienceTitle.textContent = currentActivation.activation_label || (rouletteMode ? "Ruleta de beneficios" : "Minijuego con score");
   experienceCopy.textContent = minigameInstruction(currentActivation.activation_type, config);
   experienceBody.innerHTML = `
     <article class="game-panel retro-game-panel">
       <div class="game-hud">
-        <span id="scoreValue">Score: 0</span>
-        <span id="timeValue">Tiempo: ${escapeHtml(config.duration_seconds || 30)}</span>
-        <span id="livesValue">Vidas: ${escapeHtml(config.lives || 3)}</span>
+        <span id="scoreValue">${rouletteMode ? "Resultado pendiente" : "Score: 0"}</span>
+        <span id="timeValue" ${rouletteMode ? 'style="display:none"' : ""}>Tiempo: ${escapeHtml(config.duration_seconds || 30)}</span>
+        <span id="livesValue" ${rouletteMode ? 'style="display:none"' : ""}>Vidas: ${escapeHtml(config.lives || 3)}</span>
         <span id="gameObjectiveValue">${escapeHtml(minigameShortGoal(currentActivation.activation_type))}</span>
       </div>
       <div class="game-screen-wrap">
@@ -420,8 +439,8 @@ function renderMinigame() {
         <button type="button" data-game-control="right">Der</button>
         <button type="button" data-game-control="down">Abajo</button>
       </div>
-      <button class="submit-button" type="button" id="startGameButton">Iniciar partida</button>
-      <small class="game-help">Touch directo en pantalla. En celular tambien puedes usar los controles inferiores.</small>
+      <button class="submit-button" type="button" id="startGameButton">${rouletteMode ? "Girar ruleta" : "Iniciar partida"}</button>
+      <small class="game-help">${rouletteMode ? "Toca la ruleta o el boton de accion para detenerla. El segmento final define el beneficio." : "Touch directo en pantalla. En celular tambien puedes usar los controles inferiores."}</small>
     </article>
   `;
   document.getElementById("startGameButton").addEventListener("click", startConfiguredMinigame);
@@ -436,6 +455,15 @@ function minigameShortGoal(type) {
     MEMORY_PAIRS: "Encuentra pares",
     FAST_TAP: "Toca rapido",
     MINI_MAZE: "Llega a meta",
+    WHACK_A_MOLE: "Atina al topo",
+    DODGE_RUNNER: "Esquiva y recoge",
+    BALLOON_POP: "Revienta globos",
+    ROULETTE_SPIN: "Deten la ruleta",
+    TOUCH_CATCH: "Atrapa objetivos",
+    TRUE_FALSE: "Falso o verdadero",
+    ORDER_OPTIONS: "Orden correcto",
+    CONNECTORS: "Une pares",
+    BATTLESHIP_COORDS: "Acierta coordenadas",
   }[type] || "Suma score";
 }
 
@@ -456,6 +484,15 @@ function startConfiguredMinigame() {
     MEMORY_PAIRS: startMemoryPairs,
     FAST_TAP: startFastTap,
     MINI_MAZE: startMiniMaze,
+    WHACK_A_MOLE: startWhackAMole,
+    DODGE_RUNNER: startDodgeRunner,
+    BALLOON_POP: startBalloonPop,
+    ROULETTE_SPIN: startRouletteSpin,
+    TOUCH_CATCH: startTouchCatch,
+    TRUE_FALSE: startTrueFalse,
+    ORDER_OPTIONS: startOrderOptions,
+    CONNECTORS: startConnectors,
+    BATTLESHIP_COORDS: startBattleshipCoords,
   }[gameType] || startFastTap)(gameState);
 }
 
@@ -464,12 +501,14 @@ function createGameRuntime(canvas, config = {}) {
   const runtime = {
     canvas,
     ctx,
+    config,
     width: canvas.width,
     height: canvas.height,
     duration: Math.max(10, Number(config.duration_seconds || 30)),
     points: Math.max(1, Number(config.points_per_target || 50)),
     penalty: Math.max(0, Number(config.penalty || 10)),
     maxScore: Math.max(100, Number(config.max_score || 10000)),
+    minScoreForReward: Math.max(1, Number(config.min_score_for_reward || 1)),
     lives: Math.max(1, Math.min(10, Number(config.lives || 3))),
     fireInterval: Math.max(0.25, Math.min(1.2, Number(config.fire_interval_ms || 480) / 1000)),
     invulnerableUntil: 0,
@@ -681,6 +720,10 @@ function shouldFinishAfterNoLives(runtime, elapsed, minSeconds = 3) {
 
 function startSpaceShooter(runtime) {
   const { ctx, width, height } = runtime;
+  const enemySpawnSeconds = boundedGameNumber(runtime.config.enemy_spawn_ms, 480, 250, 1200) / 1000;
+  const enemyBaseSpeed = boundedGameNumber(runtime.config.enemy_base_speed, 70, 40, 180);
+  const enemyFireChance = boundedGameNumber(runtime.config.enemy_fire_chance, 55, 0, 100) / 100;
+  const playerSpeed = boundedGameNumber(runtime.config.player_speed, 280, 160, 520);
   const player = { x: width / 2, y: height - 42, w: 44, h: 24, dead: false };
   const bullets = [];
   const enemyBullets = [];
@@ -713,8 +756,8 @@ function startSpaceShooter(runtime) {
       return;
     }
 
-    if (runtime.keys.left) player.x -= 260 * dt;
-    if (runtime.keys.right) player.x += 260 * dt;
+    if (runtime.keys.left) player.x -= playerSpeed * dt;
+    if (runtime.keys.right) player.x += playerSpeed * dt;
     player.x = Math.max(28, Math.min(width - 28, player.x));
 
     fireDelay -= dt;
@@ -730,11 +773,11 @@ function startSpaceShooter(runtime) {
         y: 42,
         w: 28,
         h: 22,
-        vy: 62 + Math.random() * 72,
+        vy: enemyBaseSpeed + Math.random() * Math.max(18, enemyBaseSpeed),
         wobble: Math.random() * Math.PI * 2,
-        shot: 0.5 + Math.random() * 1.4,
+        shot: Math.random() <= enemyFireChance ? 0.5 + Math.random() * 1.4 : 999,
       });
-      spawn = 0.48;
+      spawn = enemySpawnSeconds;
     }
     bullets.forEach((bullet) => { bullet.y += bullet.vy * dt; });
     enemyBullets.forEach((bullet) => { bullet.y += bullet.vy * dt; });
@@ -823,16 +866,18 @@ function drawDestroyedShip(ctx, x, y) {
 
 function startBreakout(runtime) {
   const { ctx, width, height } = runtime;
-  const paddle = { x: width / 2 - 54, y: height - 36, w: 108, h: 14 };
-  const ball = { x: width / 2, y: height - 64, r: 8, vx: 190, vy: -230 };
-  let bricks = buildBricks(width);
+  const paddleWidth = boundedGameInteger(runtime.config.paddle_width, 108, 70, 170);
+  const ballSpeed = boundedGameNumber(runtime.config.ball_speed, 250, 150, 420);
+  const paddle = { x: width / 2 - paddleWidth / 2, y: height - 36, w: paddleWidth, h: 14 };
+  const ball = { x: width / 2, y: height - 64, r: 8, vx: ballSpeed * 0.76, vy: -ballSpeed };
+  let bricks = buildBricks(width, runtime.config);
   let serving = 0.8;
   let dead = false;
   function resetBall() {
     ball.x = width / 2;
     ball.y = height - 64;
-    ball.vx = 170 * (Math.random() > 0.5 ? 1 : -1);
-    ball.vy = -230;
+    ball.vx = ballSpeed * 0.68 * (Math.random() > 0.5 ? 1 : -1);
+    ball.vy = -ballSpeed;
     serving = 0.8;
   }
   runtime.onPointerMove = (pos) => { paddle.x = Math.max(12, Math.min(width - paddle.w - 12, pos.x - paddle.w / 2)); };
@@ -862,7 +907,7 @@ function startBreakout(runtime) {
     if (ball.y < 44) ball.vy = Math.abs(ball.vy);
     if (circleRectHit(ball, paddle) && ball.vy > 0) {
       const hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-      ball.vx = 260 * hit;
+      ball.vx = ballSpeed * 1.04 * hit;
       ball.vy = -Math.abs(ball.vy) - 6;
     }
     for (let i = bricks.length - 1; i >= 0; i -= 1) {
@@ -873,7 +918,7 @@ function startBreakout(runtime) {
         break;
       }
     }
-    if (!bricks.length) bricks = buildBricks(width);
+    if (!bricks.length) bricks = buildBricks(width, runtime.config);
     if (ball.y > height + 20) {
       runtime.damage(1);
       if (runtime.lives <= 0) {
@@ -905,12 +950,13 @@ function drawBreakoutObjects(ctx, bricks, paddle, ball) {
   ctx.fill();
 }
 
-function buildBricks(width) {
+function buildBricks(width, config = {}) {
   const bricks = [];
-  const cols = 9;
+  const cols = boundedGameInteger(config.brick_cols, 9, 5, 12);
+  const rows = boundedGameInteger(config.brick_rows, 4, 2, 6);
   const gap = 8;
   const w = (width - 40 - gap * (cols - 1)) / cols;
-  for (let row = 0; row < 4; row += 1) {
+  for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       bricks.push({ x: 20 + col * (w + gap), y: 58 + row * 28, w, h: 18 });
     }
@@ -920,8 +966,10 @@ function buildBricks(width) {
 
 function startSnake(runtime) {
   const { ctx, width, height } = runtime;
-  const cols = 24;
-  const rows = 13;
+  const cols = boundedGameInteger(runtime.config.board_cols, 24, 14, 30);
+  const rows = boundedGameInteger(runtime.config.board_rows, 13, 9, 18);
+  const moveInterval = boundedGameNumber(runtime.config.move_interval_ms, 130, 90, 260) / 1000;
+  const growthPerFood = boundedGameInteger(runtime.config.growth_per_food, 1, 1, 3);
   const cell = Math.floor(Math.min((width - 40) / cols, (height - 72) / rows));
   const ox = Math.floor((width - cols * cell) / 2);
   const oy = 54;
@@ -960,7 +1008,7 @@ function startSnake(runtime) {
       return;
     }
     moveClock += dt;
-    if (moveClock >= 0.13) {
+    if (moveClock >= moveInterval) {
       moveClock = 0;
       dir = nextDir;
       const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
@@ -976,6 +1024,9 @@ function startSnake(runtime) {
         snake.unshift(head);
         if (head.x === food.x && head.y === food.y) {
           runtime.addScore(runtime.points);
+          for (let index = 1; index < growthPerFood; index += 1) {
+            snake.push({ ...snake[snake.length - 1] });
+          }
           food = randomSnakeFood(cols, rows, snake);
         } else {
           snake.pop();
@@ -1008,11 +1059,12 @@ function randomSnakeFood(cols, rows, snake) {
 
 function startCatchPrize(runtime) {
   const { ctx, width, height } = runtime;
+  const laneCount = boundedGameInteger(runtime.config.lane_count, 7, 4, 9);
+  const dropBaseSpeed = boundedGameNumber(runtime.config.drop_base_speed, 118, 80, 260);
   const startingLives = runtime.lives;
   const basket = { x: width / 2 - 48, y: height - 44, w: 96, h: 18 };
   const drops = [];
   const effects = [];
-  const laneCount = 7;
   const lanes = Array.from({ length: laneCount }, (_, index) => 38 + index * ((width - 76) / (laneCount - 1)));
   let spawn = 0.18;
   let burstClock = 5;
@@ -1055,11 +1107,11 @@ function startCatchPrize(runtime) {
     burstClock -= dt;
     jackpotFlash = Math.max(0, jackpotFlash - dt);
     if (burstClock <= 0) {
-      spawnCatchBurst(drops, lanes, width, effectiveElapsed);
+      spawnCatchBurst(drops, lanes, width, effectiveElapsed, runtime.config);
       burstClock = 5.5 + Math.random() * 2.8;
     }
     if (spawn <= 0) {
-      drops.push(createCatchDrop(lanes, width, effectiveElapsed));
+      drops.push(createCatchDrop(lanes, width, effectiveElapsed, runtime.config));
       spawn = Math.max(0.16, 0.48 - effectiveElapsed * 0.01) + Math.random() * 0.16;
     }
     for (let i = drops.length - 1; i >= 0; i -= 1) {
@@ -1109,8 +1161,8 @@ function startCatchPrize(runtime) {
   });
 }
 
-function createCatchDrop(lanes, width, elapsed = 0) {
-  const type = weightedCatchDropType(elapsed);
+function createCatchDrop(lanes, width, elapsed = 0, config = {}) {
+  const type = weightedCatchDropType(elapsed, config);
   const lane = lanes[Math.floor(Math.random() * lanes.length)] || (24 + Math.random() * (width - 48));
   const offset = (Math.random() - 0.5) * 18;
   const speedBoost = Math.min(170, elapsed * 5.5);
@@ -1118,7 +1170,7 @@ function createCatchDrop(lanes, width, elapsed = 0) {
     x: Math.max(24, Math.min(width - 24, lane + offset)),
     y: 42,
     r: 12,
-    vy: 118 + speedBoost + Math.random() * 120,
+    vy: boundedGameNumber(config.drop_base_speed, 118, 80, 260) + speedBoost + Math.random() * 120,
     phase: Math.random() * Math.PI * 2,
     sway: 8 + Math.random() * 18,
     swaySpeed: 1.2 + Math.random() * 2.4,
@@ -1138,23 +1190,25 @@ function createCatchDrop(lanes, width, elapsed = 0) {
   return { ...base, ...presets[type], type };
 }
 
-function weightedCatchDropType(elapsed = 0) {
+function weightedCatchDropType(elapsed = 0, config = {}) {
   const pressure = Math.min(0.16, elapsed * 0.004);
+  const badRate = boundedGameNumber(config.bad_item_rate, 34, 10, 70) / 100;
+  const bonusRate = boundedGameNumber(config.bonus_item_rate, 22, 0, 45) / 100;
   const roll = Math.random();
-  if (roll < 0.06) return "clock";
-  if (roll < 0.11) return "shield";
-  if (roll < 0.16) return "magnet";
-  if (roll < 0.22) return "gem";
-  if (roll < 0.27) return "jackpot";
-  if (roll < 0.41 + pressure) return "rotten";
-  if (roll < 0.50 + pressure) return "bomb";
+  if (roll < bonusRate * 0.27) return "clock";
+  if (roll < bonusRate * 0.5) return "shield";
+  if (roll < bonusRate * 0.73) return "magnet";
+  if (roll < bonusRate * 0.88) return "gem";
+  if (roll < bonusRate) return "jackpot";
+  if (roll < bonusRate + badRate * 0.58 + pressure) return "rotten";
+  if (roll < bonusRate + badRate + pressure) return "bomb";
   return "coin";
 }
 
-function spawnCatchBurst(drops, lanes, width, elapsed) {
+function spawnCatchBurst(drops, lanes, width, elapsed, config = {}) {
   const used = shuffleArray([...lanes]).slice(0, 3 + Math.floor(Math.random() * 2));
   used.forEach((lane, index) => {
-    const drop = createCatchDrop([lane], width, elapsed + index * 3);
+    const drop = createCatchDrop([lane], width, elapsed + index * 3, config);
     drop.y -= index * 26;
     drop.vy += index * 28;
     drops.push(drop);
@@ -1309,14 +1363,20 @@ function drawCatchStatus(ctx, combo, bestCombo, shield, magnet, slow) {
 
 function startMemoryPairs(runtime) {
   const { ctx, width, height } = runtime;
+  const pairCount = boundedGameInteger(runtime.config.pair_count, 6, 3, 8);
+  const mismatchRevealMs = boundedGameInteger(runtime.config.mismatch_reveal_ms, 650, 350, 1500);
+  const configuredSymbols = Array.isArray(runtime.config.symbols) && runtime.config.symbols.length >= pairCount
+    ? runtime.config.symbols
+    : ["A", "B", "C", "D", "E", "F", "G", "H"];
   const cols = 4;
-  const rows = 3;
-  const cardW = 112;
-  const cardH = 78;
+  const rows = Math.ceil((pairCount * 2) / cols);
+  const cardW = Math.min(112, Math.floor((width - 90) / cols));
+  const cardH = Math.min(78, Math.floor((height - 105) / rows));
   const gap = 14;
   const ox = (width - cols * cardW - (cols - 1) * gap) / 2;
   const oy = 66;
-  const symbols = shuffleArray(["A", "B", "C", "D", "E", "F", "A", "B", "C", "D", "E", "F"])
+  const selectedSymbols = configuredSymbols.slice(0, pairCount);
+  const symbols = shuffleArray([...selectedSymbols, ...selectedSymbols])
     .map((symbol, index) => ({ symbol, index, matched: false, open: false }));
   let selected = [];
   let lockUntil = 0;
@@ -1335,12 +1395,12 @@ function startMemoryPairs(runtime) {
       } else {
         runtime.damage(1);
         if (runtime.lives <= 0) dead = true;
-        lockUntil = Date.now() + 650;
+        lockUntil = Date.now() + mismatchRevealMs;
         const pair = selected;
         selected = [];
         const timer = window.setTimeout(() => {
           pair.forEach((item) => { item.open = false; });
-        }, 620);
+        }, Math.max(300, mismatchRevealMs - 30));
         runtime.timers.push(timer);
       }
     }
@@ -1397,7 +1457,7 @@ function cardAt(pos, ox, oy, cardW, cardH, gap, cols, cards) {
 
 function startFastTap(runtime) {
   const { ctx, width, height } = runtime;
-  let target = fastTapTarget(width, height);
+  let target = fastTapTarget(width, height, runtime.config);
   let age = 0;
   let dead = false;
   runtime.onPointerDown = (pos) => {
@@ -1405,7 +1465,7 @@ function startFastTap(runtime) {
     const hit = Math.hypot(pos.x - target.x, pos.y - target.y) <= target.r + 10;
     if (hit) {
       runtime.addScore(runtime.points);
-      target = fastTapTarget(width, height);
+      target = fastTapTarget(width, height, runtime.config);
       age = 0;
     } else {
       runtime.damage(1);
@@ -1424,7 +1484,7 @@ function startFastTap(runtime) {
     if (age > target.ttl) {
       runtime.damage(1);
       if (runtime.lives <= 0) dead = true;
-      target = fastTapTarget(width, height);
+      target = fastTapTarget(width, height, runtime.config);
       age = 0;
     }
     drawRetroBackground(ctx, width, height, "TAP RAPIDO");
@@ -1445,21 +1505,26 @@ function drawFastTapTarget(ctx, target, age) {
   ctx.stroke();
 }
 
-function fastTapTarget(width, height) {
+function fastTapTarget(width, height, config = {}) {
+  const minSize = boundedGameNumber(config.target_min_size, 18, 12, 32);
+  const maxSize = Math.max(minSize, boundedGameNumber(config.target_max_size, 32, 20, 48));
   return {
     x: 48 + Math.random() * (width - 96),
     y: 70 + Math.random() * (height - 120),
-    r: 18 + Math.random() * 14,
-    ttl: 0.75 + Math.random() * 0.55,
+    r: minSize + Math.random() * (maxSize - minSize),
+    ttl: boundedGameNumber(config.target_ttl_ms, 1050, 450, 1800) / 1000,
   };
 }
 
 function startMiniMaze(runtime) {
   const { ctx, width, height } = runtime;
+  const playerSpeed = boundedGameNumber(runtime.config.player_speed, 180, 100, 280);
+  const goalMultiplier = boundedGameInteger(runtime.config.goal_points_multiplier, 3, 1, 6);
+  const difficulty = String(runtime.config.maze_difficulty || "medium");
   const start = { x: 48, y: height - 48 };
   const goal = { x: width - 52, y: 58, r: 22 };
   const player = { ...start, r: 12 };
-  const walls = [
+  const baseWalls = [
     { x: 94, y: 78, w: 28, h: 258 },
     { x: 180, y: 52, w: 28, h: 250 },
     { x: 266, y: 132, w: 28, h: 250 },
@@ -1470,6 +1535,8 @@ function startMiniMaze(runtime) {
     { x: 290, y: 356, w: 176, h: 24 },
     { x: 552, y: 132, w: 94, h: 24 },
   ];
+  const wallScale = difficulty === "easy" ? 0.72 : difficulty === "hard" ? 1.22 : 1;
+  const walls = baseWalls.map((wall) => ({ ...wall, w: Math.max(18, Math.round(wall.w * wallScale)) }));
   let target = { x: player.x, y: player.y };
   let dead = false;
   runtime.onPointerDown = (pos) => { target = pos; };
@@ -1490,8 +1557,8 @@ function startMiniMaze(runtime) {
     const dy = target.y - player.y;
     const distance = Math.hypot(dx, dy) || 1;
     const next = {
-      x: player.x + (dx / distance) * Math.min(distance, 180 * dt),
-      y: player.y + (dy / distance) * Math.min(distance, 180 * dt),
+      x: player.x + (dx / distance) * Math.min(distance, playerSpeed * dt),
+      y: player.y + (dy / distance) * Math.min(distance, playerSpeed * dt),
       r: player.r,
     };
     const hitWall = walls.some((wall) => circleRectHit(next, wall));
@@ -1506,7 +1573,7 @@ function startMiniMaze(runtime) {
       player.y = next.y;
     }
     if (Math.hypot(player.x - goal.x, player.y - goal.y) < goal.r + player.r) {
-      runtime.addScore(runtime.points * 3);
+      runtime.addScore(runtime.points * goalMultiplier);
       player.x = start.x;
       player.y = start.y;
       target = { x: player.x, y: player.y };
@@ -1527,6 +1594,1050 @@ function drawMazeObjects(ctx, walls, goal, player) {
   ctx.beginPath();
   ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function startWhackAMole(runtime) {
+  const { ctx, width, height } = runtime;
+  const grid = buildWhackGrid(width, height, runtime.config);
+  let target = createWhackTarget(grid, runtime.config);
+  let age = 0;
+  let combo = 0;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead) return;
+    const hitIndex = grid.findIndex((hole) => Math.hypot(pos.x - hole.x, pos.y - hole.y) <= hole.r);
+    if (hitIndex < 0) {
+      runtime.damage(1);
+      combo = 0;
+    } else if (hitIndex === target.index && target.good) {
+      combo += 1;
+      runtime.addScore(runtime.points + Math.min(combo, 5) * 5);
+      target = createWhackTarget(grid, runtime.config);
+      age = 0;
+    } else {
+      runtime.damage(target.good ? 1 : 2);
+      combo = 0;
+      target = createWhackTarget(grid, runtime.config);
+      age = 0;
+    }
+    if (runtime.lives <= 0) dead = true;
+  };
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "GOLPEA EL TOPO");
+      drawWhackGrid(ctx, grid, target, age, combo);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    age += dt;
+    if (age > target.ttl) {
+      if (target.good) {
+        runtime.damage(1);
+        combo = 0;
+      }
+      target = createWhackTarget(grid, runtime.config);
+      age = 0;
+      if (runtime.lives <= 0) dead = true;
+    }
+    drawRetroBackground(ctx, width, height, "GOLPEA EL TOPO");
+    drawWhackGrid(ctx, grid, target, age, combo);
+  });
+}
+
+function buildWhackGrid(width, height, config = {}) {
+  const holes = [];
+  const rows = boundedGameInteger(config.hole_rows, 3, 2, 4);
+  const cols = boundedGameInteger(config.hole_cols, 3, 2, 4);
+  const xGap = Math.min(170, (width - 120) / Math.max(1, cols - 1));
+  const yGap = Math.min(92, (height - 150) / Math.max(1, rows - 1));
+  const startX = width / 2 - ((cols - 1) * xGap) / 2;
+  const startY = 94;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      holes.push({ x: startX + col * xGap, y: startY + row * yGap, r: rows > 3 || cols > 3 ? 28 : 34 });
+    }
+  }
+  return holes;
+}
+
+function createWhackTarget(grid, config = {}) {
+  return {
+    index: Math.floor(Math.random() * grid.length),
+    good: Math.random() > boundedGameNumber(config.bad_target_rate, 18, 0, 45) / 100,
+    ttl: boundedGameNumber(config.target_ttl_ms, 950, 450, 1600) / 1000,
+  };
+}
+
+function drawWhackGrid(ctx, grid, target, age, combo) {
+  grid.forEach((hole, index) => {
+    ctx.fillStyle = "#17293b";
+    ctx.beginPath();
+    ctx.ellipse(hole.x, hole.y + 14, hole.r + 16, hole.r * 0.48, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (index !== target.index) return;
+    const progress = Math.max(0, 1 - age / target.ttl);
+    const lift = 12 + progress * 18;
+    ctx.fillStyle = target.good ? "#f2b84b" : "#ff5c8a";
+    ctx.beginPath();
+    ctx.arc(hole.x, hole.y - lift, hole.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#07111f";
+    ctx.fillRect(hole.x - 12, hole.y - lift - 8, 7, 7);
+    ctx.fillRect(hole.x + 5, hole.y - lift - 8, 7, 7);
+    ctx.fillRect(hole.x - 10, hole.y - lift + 10, 20, 4);
+  });
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText(`COMBO ${combo}`, 18, 54);
+}
+
+function startDodgeRunner(runtime) {
+  const { ctx, width, height } = runtime;
+  const playerSpeed = boundedGameNumber(runtime.config.player_speed, 300, 160, 520);
+  const spawnBase = boundedGameNumber(runtime.config.runner_spawn_ms, 580, 180, 900) / 1000;
+  const player = { x: width / 2, y: height - 52, r: 17 };
+  const items = [];
+  let spawn = 0;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    player.x = pos.x;
+    player.y = Math.max(70, Math.min(height - 28, pos.y));
+  };
+  runtime.onPointerMove = runtime.onPointerDown;
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "RUNNER");
+      drawRunnerObjects(ctx, player, items);
+      drawGameOver(ctx, width, height, "CHOQUE");
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    if (runtime.keys.left) player.x -= playerSpeed * dt;
+    if (runtime.keys.right) player.x += playerSpeed * dt;
+    if (runtime.keys.up) player.y -= playerSpeed * 0.8 * dt;
+    if (runtime.keys.down) player.y += playerSpeed * 0.8 * dt;
+    player.x = Math.max(22, Math.min(width - 22, player.x));
+    player.y = Math.max(70, Math.min(height - 24, player.y));
+    spawn -= dt;
+    if (spawn <= 0) {
+      items.push(createRunnerItem(width, elapsed, runtime.config));
+      spawn = Math.max(0.18, spawnBase - elapsed * 0.012);
+    }
+    for (let i = items.length - 1; i >= 0; i -= 1) {
+      const item = items[i];
+      item.y += item.vy * dt;
+      item.x += Math.sin(elapsed * item.swaySpeed + item.phase) * item.sway * dt;
+      if (Math.hypot(player.x - item.x, player.y - item.y) < player.r + item.r) {
+        if (item.good) {
+          runtime.addScore(runtime.points * item.scale);
+        } else {
+          runtime.damage(1);
+          if (runtime.lives <= 0) dead = true;
+        }
+        items.splice(i, 1);
+      } else if (item.y > height + 24) {
+        items.splice(i, 1);
+      }
+    }
+    drawRetroBackground(ctx, width, height, "RUNNER");
+    drawRunnerLanes(ctx, width, height, elapsed);
+    drawRunnerObjects(ctx, player, items);
+  });
+}
+
+function createRunnerItem(width, elapsed, config = {}) {
+  const bad = Math.random() < Math.min(0.75, boundedGameNumber(config.bad_item_rate, 28, 10, 70) / 100 + elapsed * 0.01);
+  const baseSpeed = boundedGameNumber(config.runner_item_speed, 150, 90, 340);
+  return {
+    x: 40 + Math.random() * (width - 80),
+    y: 54,
+    r: bad ? 16 : 13,
+    vy: baseSpeed + Math.random() * 120 + Math.min(150, elapsed * 6),
+    good: !bad,
+    scale: Math.random() > 0.82 ? 2 : 1,
+    phase: Math.random() * Math.PI * 2,
+    sway: 10 + Math.random() * 30,
+    swaySpeed: 1.5 + Math.random() * 2.5,
+  };
+}
+
+function drawRunnerLanes(ctx, width, height, elapsed) {
+  ctx.strokeStyle = "rgba(234, 252, 255, .14)";
+  ctx.lineWidth = 3;
+  for (let x = width / 2 - 180; x <= width / 2 + 180; x += 90) {
+    ctx.beginPath();
+    ctx.moveTo(x, 48 + (elapsed * 90) % 42);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+}
+
+function drawRunnerObjects(ctx, player, items) {
+  items.forEach((item) => {
+    ctx.fillStyle = item.good ? (item.scale > 1 ? "#57d27f" : "#f2b84b") : "#ff5c8a";
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, item.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#07111f";
+    ctx.font = "900 12px monospace";
+    ctx.fillText(item.good ? "$" : "!", item.x - 4, item.y + 4);
+  });
+  ctx.fillStyle = "#7cfbff";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#07111f";
+  ctx.fillRect(player.x - 10, player.y - 5, 20, 10);
+}
+
+function startBalloonPop(runtime) {
+  const { ctx, width, height } = runtime;
+  const spawnBase = boundedGameNumber(runtime.config.balloon_spawn_ms, 460, 160, 900) / 1000;
+  const streakBonusStep = Math.ceil(boundedGameNumber(runtime.config.streak_bonus, 24, 0, 30) / 6);
+  const balloons = [];
+  let spawn = 0;
+  let streak = 0;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead) return;
+    const index = balloons.findIndex((balloon) => Math.hypot(pos.x - balloon.x, pos.y - balloon.y) <= balloon.r + 8);
+    if (index < 0) {
+      runtime.damage(1);
+      streak = 0;
+    } else {
+      const balloon = balloons[index];
+      if (balloon.bad) {
+        runtime.damage(2);
+        streak = 0;
+      } else {
+        streak += 1;
+        runtime.addScore(runtime.points * balloon.scale + Math.min(streak, 6) * streakBonusStep);
+      }
+      balloons.splice(index, 1);
+    }
+    if (runtime.lives <= 0) dead = true;
+  };
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "GLOBOS");
+      drawBalloons(ctx, balloons, streak);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    spawn -= dt;
+    if (spawn <= 0) {
+      balloons.push(createBalloon(width, height, elapsed, runtime.config));
+      spawn = Math.max(0.16, spawnBase - elapsed * 0.008);
+    }
+    for (let i = balloons.length - 1; i >= 0; i -= 1) {
+      const balloon = balloons[i];
+      balloon.y -= balloon.vy * dt;
+      balloon.x += Math.sin(elapsed * balloon.swaySpeed + balloon.phase) * balloon.sway * dt;
+      if (balloon.y < 40) {
+        if (!balloon.bad) {
+          runtime.damage(1);
+          streak = 0;
+        }
+        balloons.splice(i, 1);
+        if (runtime.lives <= 0) dead = true;
+      }
+    }
+    drawRetroBackground(ctx, width, height, "GLOBOS");
+    drawBalloons(ctx, balloons, streak);
+  });
+}
+
+function createBalloon(width, height, elapsed, config = {}) {
+  const bad = Math.random() < Math.min(0.55, boundedGameNumber(config.bad_balloon_rate, 16, 0, 45) / 100 + elapsed * 0.006);
+  const scale = Math.random() > 0.78 ? 2 : 1;
+  const baseSpeed = boundedGameNumber(config.balloon_speed, 95, 60, 240);
+  return {
+    x: 38 + Math.random() * (width - 76),
+    y: height - 28,
+    r: scale > 1 ? 18 : 14,
+    vy: baseSpeed + Math.random() * 70 + Math.min(90, elapsed * 3),
+    bad,
+    scale,
+    phase: Math.random() * Math.PI * 2,
+    sway: 18 + Math.random() * 34,
+    swaySpeed: 1.3 + Math.random() * 2.1,
+  };
+}
+
+function drawBalloons(ctx, balloons, streak) {
+  balloons.forEach((balloon) => {
+    ctx.fillStyle = balloon.bad ? "#ff5c8a" : (balloon.scale > 1 ? "#57d27f" : "#7cfbff");
+    ctx.beginPath();
+    ctx.ellipse(balloon.x, balloon.y, balloon.r * 0.9, balloon.r * 1.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(234, 252, 255, .45)";
+    ctx.beginPath();
+    ctx.moveTo(balloon.x, balloon.y + balloon.r);
+    ctx.lineTo(balloon.x + Math.sin(balloon.phase) * 8, balloon.y + balloon.r + 28);
+    ctx.stroke();
+    ctx.fillStyle = "#07111f";
+    ctx.font = "900 12px monospace";
+    ctx.fillText(balloon.bad ? "!" : (balloon.scale > 1 ? "2x" : "+"), balloon.x - 7, balloon.y + 4);
+  });
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText(`RACHA ${streak}`, 18, 54);
+}
+
+function startRouletteSpin(runtime) {
+  const { ctx, width, height } = runtime;
+  const configuredSegments = currentActivation.reward_config?.choices
+    || currentActivation.game_config?.segments
+    || [];
+  const palette = ["#57d27f", "#7cfbff", "#f2b84b", "#b894ff", "#ff9a3d", "#ff5c8a", "#5ad7ff", "#eafcff"];
+  const segments = (configuredSegments.length ? configuredSegments : [
+    { value: "ROULETTE_1", label: "10% de descuento" },
+    { value: "ROULETTE_2", label: "Regalo sorpresa" },
+    { value: "ROULETTE_3", label: "2x1 seleccionado" },
+    { value: "ROULETTE_4", label: "Acceso VIP" },
+  ]).map((segment, index) => ({
+    value: segment.value || segment.key || `ROULETTE_${index + 1}`,
+    label: segment.label || segment.reward_label || `Beneficio ${index + 1}`,
+    color: palette[index % palette.length],
+  }));
+  let angle = 0;
+  let speed = 10 + Math.random() * 2;
+  let stopping = false;
+  let completed = false;
+  runtime.onPointerDown = () => {
+    stopping = true;
+  };
+  runtime.onControl = (key) => {
+    if (key === "fire") stopping = true;
+  };
+  let last = performance.now();
+  const frame = (now) => {
+    if (runtime.done || completed) return;
+    const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+    last = now;
+    angle += speed * dt;
+    if (stopping) {
+      speed = Math.max(0, speed - dt * 4.2);
+      if (speed <= 0.08) {
+        completed = true;
+        const landed = rouletteSegmentAtPointer(segments, angle);
+        const scoreValue = document.getElementById("scoreValue");
+        if (scoreValue) scoreValue.textContent = `Resultado: ${landed.label}`;
+        drawRetroBackground(ctx, width, height, "RULETA");
+        drawRoulette(ctx, width / 2, height / 2 + 8, 132, segments, angle, true, landed);
+        setProgress(1, 1);
+        window.setTimeout(() => {
+          cleanupGameState();
+          completeActivation({
+            selected_choice: landed.value,
+            score: 1,
+            duration_ms: Date.now() - runtime.startedAt,
+            participant_id: participant?.id,
+            game_session_token: gameSessionToken,
+          });
+        }, 650);
+        return;
+      }
+    }
+    drawRetroBackground(ctx, width, height, "RULETA");
+    drawRoulette(ctx, width / 2, height / 2 + 8, 132, segments, angle, stopping);
+    runtime.frame = requestAnimationFrame(frame);
+  };
+  drawRetroBackground(ctx, width, height, "RULETA");
+  drawRoulette(ctx, width / 2, height / 2 + 8, 132, segments, angle, false);
+  runtime.frame = requestAnimationFrame(frame);
+}
+
+function rouletteSegmentAtPointer(segments, angle) {
+  const slice = (Math.PI * 2) / segments.length;
+  const pointerAngle = -Math.PI / 2;
+  const normalized = ((pointerAngle - angle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+  return segments[Math.floor(normalized / slice)] || segments[0];
+}
+
+function drawRoulette(ctx, cx, cy, r, segments, angle, stopping, landed = null) {
+  const slice = (Math.PI * 2) / segments.length;
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, .35)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = "rgba(3, 9, 18, .58)";
+  ctx.beginPath();
+  ctx.arc(cx, cy + 8, r + 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  segments.forEach((segment, index) => {
+    const start = angle + index * slice;
+    ctx.fillStyle = segment.color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + slice);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(7, 17, 31, .55)";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#07111f";
+    ctx.font = "900 14px monospace";
+    rouletteLabelLines(segment.label).forEach((line, lineIndex, lines) => {
+      ctx.fillText(line, r * 0.58, (lineIndex - (lines.length - 1) / 2) * 17);
+    });
+    ctx.restore();
+  });
+
+  ctx.strokeStyle = "#07111f";
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = "#eafcff";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 44, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#f2b84b";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.fillStyle = "#07111f";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "900 18px monospace";
+  ctx.fillText("MG", cx, cy);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, .45)";
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = "#ff5c8a";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r + 18);
+  ctx.lineTo(cx - 24, cy - r - 28);
+  ctx.lineTo(cx + 24, cy - r - 28);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 4;
+  ctx.fillStyle = "#ff5c8a";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r + 18);
+  ctx.lineTo(cx - 24, cy - r - 28);
+  ctx.lineTo(cx + 24, cy - r - 28);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(7, 17, 31, .86)";
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(cx - 210, cy + r + 20, 420, 36, 18);
+  } else {
+    ctx.rect(cx - 210, cy + r + 20, 420, 36);
+  }
+  ctx.fill();
+  ctx.fillStyle = "#eafcff";
+  ctx.textAlign = "center";
+  ctx.font = "800 14px monospace";
+  const hint = landed ? `RESULTADO: ${landed.label}` : (stopping ? "DETENIENDO..." : "TOCA PARA DETENER");
+  ctx.fillText(hint.slice(0, 52), cx, cy + r + 43);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function rouletteLabelLines(value) {
+  const text = String(value || "Beneficio").trim();
+  if (text.length <= 12) return [text];
+  const words = text.split(/\s+/);
+  const lines = [];
+  let current = "";
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= 12) {
+      current = next;
+      return;
+    }
+    if (current) lines.push(current);
+    current = word.length > 12 ? `${word.slice(0, 11)}…` : word;
+  });
+  if (current) lines.push(current);
+  return lines.slice(0, 2);
+}
+
+function startTouchCatch(runtime) {
+  const { ctx, width, height } = runtime;
+  let target = touchCatchTarget(width, height, 0, runtime.config);
+  let trail = [];
+  let dead = false;
+  runtime.onPointerDown = (pos) => catchTouchTarget(pos);
+  runtime.onPointerMove = (pos) => catchTouchTarget(pos);
+  function catchTouchTarget(pos) {
+    if (dead) return;
+    const hit = Math.hypot(pos.x - target.x, pos.y - target.y) <= target.r + 14;
+    if (hit) {
+      runtime.addScore(runtime.points * target.scale);
+      trail.push({ x: target.x, y: target.y, ttl: 0.35 });
+      target = touchCatchTarget(width, height, runtime.score, runtime.config);
+    }
+  }
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "TOUCH ATRAPALO");
+      drawTouchCatch(ctx, target, trail);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    target.age += dt;
+    target.x += target.vx * dt;
+    target.y += target.vy * dt;
+    if (target.x < target.r || target.x > width - target.r) target.vx *= -1;
+    if (target.y < 54 + target.r || target.y > height - target.r) target.vy *= -1;
+    if (target.age > target.ttl) {
+      runtime.damage(1);
+      target = touchCatchTarget(width, height, runtime.score, runtime.config);
+      if (runtime.lives <= 0) dead = true;
+    }
+    trail.forEach((item) => { item.ttl -= dt; });
+    trail = trail.filter((item) => item.ttl > 0);
+    drawRetroBackground(ctx, width, height, "TOUCH ATRAPALO");
+    drawTouchCatch(ctx, target, trail);
+  });
+}
+
+function touchCatchTarget(width, height, score, config = {}) {
+  const baseSpeed = boundedGameNumber(config.target_speed, 150, 60, 360);
+  const fast = Math.min(180, score * 0.6);
+  return {
+    x: 52 + Math.random() * (width - 104),
+    y: 74 + Math.random() * (height - 130),
+    r: 22,
+    vx: (Math.random() > 0.5 ? 1 : -1) * (baseSpeed + Math.random() * 80 + fast),
+    vy: (Math.random() > 0.5 ? 1 : -1) * (baseSpeed * 0.85 + Math.random() * 70 + fast),
+    ttl: boundedGameNumber(config.target_ttl_ms, 1350, 650, 2200) / 1000,
+    age: 0,
+    scale: Math.random() < boundedGameNumber(config.bonus_target_rate, 22, 0, 45) / 100 ? 2 : 1,
+  };
+}
+
+function drawTouchCatch(ctx, target, trail) {
+  trail.forEach((item) => {
+    ctx.fillStyle = `rgba(87, 210, 127, ${Math.max(0, item.ttl * 2)})`;
+    ctx.beginPath();
+    ctx.arc(item.x, item.y, 18 + (0.35 - item.ttl) * 80, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  const pulse = 1 + Math.sin(Date.now() / 70) * 0.08;
+  ctx.fillStyle = target.scale > 1 ? "#f2b84b" : "#7cfbff";
+  ctx.beginPath();
+  ctx.arc(target.x, target.y, target.r * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#eafcff";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = "#07111f";
+  ctx.font = "900 13px monospace";
+  ctx.fillText(target.scale > 1 ? "2x" : "+", target.x - 8, target.y + 5);
+}
+
+function startTrueFalse(runtime) {
+  const { ctx, width, height } = runtime;
+  const prompts = Array.isArray(runtime.config.prompts) && runtime.config.prompts.length >= 2 ? runtime.config.prompts : [
+    { text: "Un QR redimido puede medirse contra ventas", answer: true },
+    { text: "Mas intentos siempre significan mas revenue", answer: false },
+    { text: "Un beneficio vencido debe validarse igual", answer: false },
+    { text: "Capturar telefono ayuda a controlar duplicados", answer: true },
+    { text: "La redencion fisica cierra el ciclo RMS", answer: true },
+    { text: "Un cliente sin datos mide igual que un lead", answer: false },
+  ];
+  const promptTime = boundedGameNumber(runtime.config.prompt_time_ms, 3600, 1800, 7000) / 1000;
+  let prompt = randomPrompt(prompts);
+  let age = 0;
+  let streak = 0;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead) return;
+    const selected = pos.x >= width / 2;
+    answerTrueFalse(selected);
+  };
+  runtime.onControl = (key) => {
+    if (key === "left") answerTrueFalse(false);
+    if (key === "right" || key === "fire") answerTrueFalse(true);
+  };
+  function answerTrueFalse(value) {
+    if (value === prompt.answer) {
+      streak += 1;
+      runtime.addScore(runtime.points + Math.min(streak, 5) * 5);
+    } else {
+      streak = 0;
+      runtime.damage(1);
+      if (runtime.lives <= 0) dead = true;
+    }
+    prompt = randomPrompt(prompts, prompt);
+    age = 0;
+  }
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "FALSO VERDADERO");
+      drawTrueFalse(ctx, width, height, prompt, age, streak, promptTime);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    age += dt;
+    if (age > promptTime) {
+      streak = 0;
+      runtime.damage(1);
+      prompt = randomPrompt(prompts, prompt);
+      age = 0;
+      if (runtime.lives <= 0) dead = true;
+    }
+    drawRetroBackground(ctx, width, height, "FALSO VERDADERO");
+    drawTrueFalse(ctx, width, height, prompt, age, streak, promptTime);
+  });
+}
+
+function randomPrompt(prompts, current = null) {
+  let next;
+  do {
+    next = prompts[Math.floor(Math.random() * prompts.length)];
+  } while (prompts.length > 1 && next === current);
+  return next;
+}
+
+function drawTrueFalse(ctx, width, height, prompt, age, streak, promptTime = 3.6) {
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "900 21px monospace";
+  wrapCanvasText(ctx, prompt.text, width / 2, 122, width - 90, 26, "center");
+  ctx.fillStyle = "#ff5c8a";
+  ctx.fillRect(70, 214, width / 2 - 95, 104);
+  ctx.fillStyle = "#57d27f";
+  ctx.fillRect(width / 2 + 25, 214, width / 2 - 95, 104);
+  ctx.fillStyle = "#07111f";
+  ctx.font = "900 26px monospace";
+  ctx.fillText("FALSO", 145, 276);
+  ctx.fillText("VERDADERO", width / 2 + 84, 276);
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText(`RACHA ${streak}`, 18, 54);
+  ctx.fillRect(70, 350, Math.max(0, 1 - age / promptTime) * (width - 140), 8);
+}
+
+function startOrderOptions(runtime) {
+  const { ctx, width, height } = runtime;
+  const sets = Array.isArray(runtime.config.sequences) && runtime.config.sequences.length
+    ? runtime.config.sequences
+    : [
+    ["Entrada", "Plato fuerte", "Postre", "Cafe"],
+    ["Escanear", "Jugar", "Recibir QR", "Redimir"],
+    ["Prospecto", "Lead", "Cliente", "Referido"],
+    ["Bajo", "Medio", "Alto", "Premium"],
+  ];
+  let sequence = createOrderSequence(sets);
+  let step = 0;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead) return;
+    const item = sequence.items.find((entry) => pos.x >= entry.x && pos.x <= entry.x + entry.w && pos.y >= entry.y && pos.y <= entry.y + entry.h);
+    if (!item || item.done) return;
+    if (item.index === step) {
+      item.done = true;
+      step += 1;
+      runtime.addScore(runtime.points);
+      if (step >= sequence.items.length) {
+        runtime.addScore(runtime.points * 2);
+        sequence = createOrderSequence(sets);
+        step = 0;
+      }
+    } else {
+      runtime.damage(1);
+      if (runtime.lives <= 0) dead = true;
+    }
+  };
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "ORDEN CORRECTO");
+      drawOrderSequence(ctx, sequence, step);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    drawRetroBackground(ctx, width, height, "ORDEN CORRECTO");
+    drawOrderSequence(ctx, sequence, step);
+  });
+}
+
+function createOrderSequence(sets) {
+  const source = sets[Math.floor(Math.random() * sets.length)];
+  const shuffled = shuffleArray(source.map((label, index) => ({ label, index })));
+  const w = 190;
+  const h = 58;
+  return {
+    labels: source,
+    items: shuffled.map((item, pos) => ({
+      ...item,
+      x: 92 + (pos % 2) * 350,
+      y: 118 + Math.floor(pos / 2) * 112,
+      w,
+      h,
+      done: false,
+    })),
+  };
+}
+
+function drawOrderSequence(ctx, sequence, step) {
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText(`SIGUIENTE: ${sequence.labels[step] || "COMPLETO"}`, 18, 54);
+  sequence.items.forEach((item) => {
+    ctx.fillStyle = item.done ? "#143f35" : "#182d45";
+    ctx.fillRect(item.x, item.y, item.w, item.h);
+    ctx.strokeStyle = item.index === step ? "#f2b84b" : "#7cfbff";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(item.x, item.y, item.w, item.h);
+    ctx.fillStyle = item.done ? "#57d27f" : "#eafcff";
+    ctx.font = "900 17px monospace";
+    ctx.fillText(item.label, item.x + 18, item.y + 36);
+  });
+}
+
+function startConnectors(runtime) {
+  const { ctx, width, height } = runtime;
+  const pairs = Array.isArray(runtime.config.pairs) && runtime.config.pairs.length >= 2
+    ? runtime.config.pairs.map((pair) => [pair.left, pair.right])
+    : [
+      ["QR", "Redencion"],
+      ["Lead", "Contacto"],
+      ["Ticket", "Beneficio"],
+      ["Venta", "Revenue"],
+    ];
+  let board = createConnectorBoard(pairs, width);
+  let selected = null;
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead) return;
+    const left = board.left.find((item) => pointInConnector(pos, item));
+    const right = board.right.find((item) => pointInConnector(pos, item));
+    if (left && !left.done) {
+      selected = left;
+      return;
+    }
+    if (!right || right.done || !selected) return;
+    if (selected.key === right.key) {
+      selected.done = true;
+      right.done = true;
+      board.links.push({ from: selected, to: right });
+      selected = null;
+      runtime.addScore(runtime.points);
+      if (board.left.every((item) => item.done)) {
+        runtime.addScore(runtime.points * 2);
+        board = createConnectorBoard(pairs, width);
+      }
+    } else {
+      selected = null;
+      runtime.damage(1);
+      if (runtime.lives <= 0) dead = true;
+    }
+  };
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "CONECTORES");
+      drawConnectorBoard(ctx, board, selected);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    drawRetroBackground(ctx, width, height, "CONECTORES");
+    drawConnectorBoard(ctx, board, selected);
+  });
+}
+
+function createConnectorBoard(pairs, width) {
+  const rightOrder = shuffleArray(pairs.map((pair, index) => ({ key: index, label: pair[1] })));
+  return {
+    links: [],
+    left: pairs.map((pair, index) => ({ key: index, label: pair[0], x: 80, y: 90 + index * 70, w: 190, h: 46, done: false })),
+    right: rightOrder.map((item, index) => ({ ...item, x: width - 270, y: 90 + index * 70, w: 190, h: 46, done: false })),
+  };
+}
+
+function pointInConnector(pos, item) {
+  return pos.x >= item.x && pos.x <= item.x + item.w && pos.y >= item.y && pos.y <= item.y + item.h;
+}
+
+function drawConnectorBoard(ctx, board, selected) {
+  board.links.forEach((link) => {
+    ctx.strokeStyle = "#57d27f";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(link.from.x + link.from.w, link.from.y + link.from.h / 2);
+    ctx.lineTo(link.to.x, link.to.y + link.to.h / 2);
+    ctx.stroke();
+  });
+  [...board.left, ...board.right].forEach((item) => {
+    ctx.fillStyle = item.done ? "#143f35" : (item === selected ? "#f2b84b" : "#182d45");
+    ctx.fillRect(item.x, item.y, item.w, item.h);
+    ctx.strokeStyle = item === selected ? "#fff" : "#7cfbff";
+    ctx.strokeRect(item.x, item.y, item.w, item.h);
+    ctx.fillStyle = item === selected ? "#07111f" : "#eafcff";
+    ctx.font = "900 16px monospace";
+    ctx.fillText(item.label, item.x + 16, item.y + 29);
+  });
+}
+
+function startBattleshipCoords(runtime) {
+  const { ctx, width, height } = runtime;
+  const board = createBattleshipBoard(currentActivation.game_config || {});
+  let dead = false;
+  runtime.onPointerDown = (pos) => {
+    if (dead || board.completed) return;
+    const cell = battleshipCellAt(pos, width, height, board.size);
+    if (!cell) return;
+    const key = battleshipCellKey(cell.x, cell.y);
+    if (board.shots.has(key)) return;
+    board.shots.add(key);
+    const ship = board.cellToShip.get(key);
+    if (ship) {
+      ship.hits.add(key);
+      runtime.addScore(runtime.points * 2);
+      if (!ship.sunk && ship.hits.size >= ship.cells.length) {
+        ship.sunk = true;
+        runtime.addScore(runtime.points * ship.cells.length);
+      }
+      if (board.ships.every((item) => item.sunk)) {
+        board.completed = true;
+        runtime.setScore(Math.max(runtime.score + runtime.points * 3, runtime.minScoreForReward));
+        drawRetroBackground(ctx, width, height, "BATALLA NAVAL");
+        drawBattleshipBoard(ctx, width, height, board);
+        window.setTimeout(() => runtime.finish(), 550);
+      }
+    } else {
+      runtime.damage(1);
+      if (runtime.lives <= 0) dead = true;
+    }
+  };
+  runtime.loop((dt, elapsed) => {
+    if (dead) {
+      drawRetroBackground(ctx, width, height, "BATALLA NAVAL");
+      drawBattleshipBoard(ctx, width, height, board);
+      drawGameOver(ctx, width, height);
+      if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
+      return;
+    }
+    drawRetroBackground(ctx, width, height, "BATALLA NAVAL");
+    drawBattleshipBoard(ctx, width, height, board);
+  });
+}
+
+function createBattleshipBoard(config = {}) {
+  const normalized = normalizeBattleshipConfig(config);
+  const ships = placeBattleshipFleet(normalized.size, normalized.shipLengths);
+  const cellToShip = new Map();
+  ships.forEach((ship) => {
+    ship.cells.forEach((cell) => {
+      cellToShip.set(battleshipCellKey(cell.x, cell.y), ship);
+    });
+  });
+  return {
+    size: normalized.size,
+    ships,
+    cellToShip,
+    shots: new Set(),
+    completed: false,
+  };
+}
+
+function normalizeBattleshipConfig(config = {}) {
+  const size = boundedGameInteger(config.grid_size, 6, 5, 8);
+  const shipCount = boundedGameInteger(config.ship_count, 3, 1, 3);
+  const defaults = [3, 2, 2];
+  const rawLengths = Array.isArray(config.ship_lengths) ? config.ship_lengths : defaults;
+  const shipLengths = rawLengths
+    .slice(0, shipCount)
+    .map((length, index) => boundedGameInteger(length, defaults[index] || 2, 1, Math.min(5, size - 1)));
+  while (shipLengths.length < shipCount) {
+    shipLengths.push(defaults[shipLengths.length] || 2);
+  }
+  return { size, shipLengths };
+}
+
+function boundedGameInteger(value, fallback, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(number)));
+}
+
+function boundedGameNumber(value, fallback, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
+}
+
+function placeBattleshipFleet(size, shipLengths) {
+  const occupied = new Set();
+  return shipLengths.map((length, index) => {
+    let cells = null;
+    for (let attempt = 0; attempt < 160 && !cells; attempt += 1) {
+      const horizontal = Math.random() > 0.5;
+      const maxX = horizontal ? size - length : size - 1;
+      const maxY = horizontal ? size - 1 : size - length;
+      const startX = Math.floor(Math.random() * (maxX + 1));
+      const startY = Math.floor(Math.random() * (maxY + 1));
+      const candidate = Array.from({ length }, (_, offset) => ({
+        x: startX + (horizontal ? offset : 0),
+        y: startY + (horizontal ? 0 : offset),
+      }));
+      if (candidate.every((cell) => !occupied.has(battleshipCellKey(cell.x, cell.y)))) {
+        cells = candidate;
+      }
+    }
+    if (!cells) {
+      cells = fallbackBattleshipCells(size, length, occupied);
+    }
+    cells.forEach((cell) => occupied.add(battleshipCellKey(cell.x, cell.y)));
+    return {
+      id: index + 1,
+      label: `Barco ${index + 1}`,
+      length,
+      cells,
+      hits: new Set(),
+      sunk: false,
+    };
+  });
+}
+
+function fallbackBattleshipCells(size, length, occupied) {
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x <= size - length; x += 1) {
+      const candidate = Array.from({ length }, (_, offset) => ({ x: x + offset, y }));
+      if (candidate.every((cell) => !occupied.has(battleshipCellKey(cell.x, cell.y)))) {
+        return candidate;
+      }
+    }
+  }
+  return [{ x: 0, y: 0 }];
+}
+
+function battleshipCellKey(x, y) {
+  return `${x},${y}`;
+}
+
+function battleshipLayout(width, height, size) {
+  const cell = Math.max(34, Math.min(46, Math.floor((height - 132) / size)));
+  const gridWidth = size * cell;
+  return {
+    cell,
+    ox: 64,
+    oy: Math.round((height - gridWidth) / 2) + 26,
+    gridWidth,
+  };
+}
+
+function battleshipCellAt(pos, width, height, size) {
+  const { cell, ox, oy } = battleshipLayout(width, height, size);
+  const x = Math.floor((pos.x - ox) / cell);
+  const y = Math.floor((pos.y - oy) / cell);
+  if (x < 0 || y < 0 || x >= size || y >= size) return null;
+  return { x, y };
+}
+
+function drawBattleshipBoard(ctx, width, height, board) {
+  const { cell, ox, oy } = battleshipLayout(width, height, board.size);
+  const sunkCount = board.ships.filter((ship) => ship.sunk).length;
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText(`Hunde la flota: ${sunkCount}/${board.ships.length} barcos`, 18, 54);
+  ctx.font = "900 13px monospace";
+  for (let index = 0; index < board.size; index += 1) {
+    ctx.fillStyle = "#7cfbff";
+    ctx.fillText(String.fromCharCode(65 + index), ox + index * cell + cell / 2 - 5, oy - 10);
+    ctx.fillText(String(index + 1), ox - 26, oy + index * cell + cell / 2 + 5);
+  }
+  for (let y = 0; y < board.size; y += 1) {
+    for (let x = 0; x < board.size; x += 1) {
+      const key = battleshipCellKey(x, y);
+      const shot = board.shots.has(key);
+      const ship = board.cellToShip.get(key);
+      const hit = shot && ship;
+      const miss = shot && !ship;
+      const revealShip = board.completed && ship;
+      ctx.fillStyle = hit ? (ship.sunk ? "#f2b84b" : "#57d27f") : (miss ? "#ff5c8a" : (revealShip ? "#244b58" : "#12314d"));
+      ctx.fillRect(ox + x * cell, oy + y * cell, cell - 3, cell - 3);
+      ctx.strokeStyle = hit ? "#ffffff" : "#7cfbff";
+      ctx.lineWidth = hit ? 3 : 1.5;
+      ctx.strokeRect(ox + x * cell, oy + y * cell, cell - 3, cell - 3);
+      ctx.fillStyle = "#eafcff";
+      ctx.font = "900 12px monospace";
+      const label = hit ? (ship.sunk ? `B${ship.id}` : "HIT") : (miss ? "X" : `${String.fromCharCode(65 + x)}${y + 1}`);
+      ctx.fillText(label, ox + x * cell + 8, oy + y * cell + Math.round(cell * 0.6));
+    }
+  }
+  drawBattleshipStatus(ctx, ox + board.size * cell + 42, oy, width, board);
+}
+
+function drawBattleshipStatus(ctx, x, y, width, board) {
+  const panelWidth = Math.max(220, width - x - 36);
+  ctx.fillStyle = "rgba(7, 17, 31, .78)";
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, panelWidth, 208, 18);
+  } else {
+    ctx.rect(x, y, panelWidth, 208);
+  }
+  ctx.fill();
+  ctx.strokeStyle = "rgba(124, 251, 255, .45)";
+  ctx.stroke();
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "900 17px monospace";
+  ctx.fillText("FLOTA", x + 18, y + 30);
+  board.ships.forEach((ship, index) => {
+    const rowY = y + 62 + index * 48;
+    ctx.fillStyle = ship.sunk ? "#57d27f" : "#eafcff";
+    ctx.font = "900 14px monospace";
+    ctx.fillText(`${ship.label}: ${ship.hits.size}/${ship.length}`, x + 18, rowY);
+    for (let dot = 0; dot < ship.length; dot += 1) {
+      ctx.fillStyle = dot < ship.hits.size ? (ship.sunk ? "#f2b84b" : "#57d27f") : "#12314d";
+      ctx.fillRect(x + 18 + dot * 22, rowY + 12, 16, 16);
+      ctx.strokeStyle = "#7cfbff";
+      ctx.strokeRect(x + 18 + dot * 22, rowY + 12, 16, 16);
+    }
+    ctx.fillStyle = ship.sunk ? "#f2b84b" : "#8eb2c7";
+    ctx.font = "800 12px monospace";
+    ctx.fillText(ship.sunk ? "HUNDIDO" : "BUSCANDO", x + panelWidth - 92, rowY);
+  });
+  ctx.fillStyle = board.completed ? "#57d27f" : "#8eb2c7";
+  ctx.font = "800 12px monospace";
+  ctx.fillText(board.completed ? "FLOTA HUNDIDA" : "Los barcos estan ocultos.", x + 18, y + 190);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, align = "left") {
+  const words = String(text || "").split(/\s+/);
+  let line = "";
+  ctx.textAlign = align;
+  words.forEach((word, index) => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, y);
+      y += lineHeight;
+      line = word;
+    } else {
+      line = test;
+    }
+    if (index === words.length - 1 && line) ctx.fillText(line, x, y);
+  });
+  ctx.textAlign = "left";
 }
 
 function cleanupGameState() {
@@ -1569,7 +2680,7 @@ async function completeActivation(payload = {}) {
     });
     experienceStage.classList.add("hidden");
     setStatus(data.message, data.rewarded ? "success" : "info");
-    renderResult(data);
+    await renderResult(data);
   } catch (error) {
     setStatus(error.message, "error");
     if (button) {
@@ -1579,7 +2690,8 @@ async function completeActivation(payload = {}) {
   }
 }
 
-function renderResult(data) {
+async function renderResult(data) {
+  const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
   ticketResult.innerHTML = data.rewarded ? `
     <div class="result-copy">
@@ -1587,7 +2699,7 @@ function renderResult(data) {
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
       <p>Guarda o comparte este QR. Es el codigo que debes presentar en el punto fisico para redimir tu beneficio.</p>
     </div>
-    <img src="${escapeHtml(data.qr_image_data_url)}" alt="Beneficio QR" id="rewardQrImage">
+    <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
       <button class="submit-button secondary" type="button" id="shareRewardQrButton">Compartir QR</button>
@@ -1601,21 +2713,64 @@ function renderResult(data) {
   `;
   ticketResult.classList.remove("hidden");
   if (data.rewarded) {
+    const filename = rewardQrFilename();
     document.getElementById("downloadRewardQrButton")?.addEventListener("click", () => {
-      downloadDataUrl("beneficio-marketgames-qr.png", data.qr_image_data_url);
+      downloadDataUrl(filename, rewardQrDataUrl);
     });
     document.getElementById("shareRewardQrButton")?.addEventListener("click", () => {
-      shareRewardQr(data).catch(() => downloadDataUrl("beneficio-marketgames-qr.png", data.qr_image_data_url));
+      shareRewardQr({ ...data, qr_image_data_url: rewardQrDataUrl }).catch(() => downloadDataUrl(filename, rewardQrDataUrl));
     });
   }
   setProgress(2, 2);
   ticketResult.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function downloadDataUrl(filename, dataUrl) {
+function rewardQrFilename() {
+  return "beneficio-marketgames-qr.png";
+}
+
+function loadImageDataUrl(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("No se pudo cargar la imagen del ticket."));
+    image.src = src;
+  });
+}
+
+async function convertSvgDataUrlToPngDataUrl(dataUrl) {
+  const image = await loadImageDataUrl(dataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || image.width || 1080;
+  canvas.height = image.naturalHeight || image.height || 1350;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png", 0.96);
+}
+
+async function ticketImageDataUrlForBrowser(dataUrl) {
+  const value = String(dataUrl || "");
+  if (!value.startsWith("data:image/svg+xml")) {
+    return value;
+  }
+  try {
+    return await convertSvgDataUrlToPngDataUrl(value);
+  } catch (error) {
+    console.warn("No se pudo convertir el ticket a PNG.", error);
+    return value;
+  }
+}
+
+async function downloadDataUrl(filename, dataUrl) {
+  let finalDataUrl = dataUrl || "";
+  if (String(finalDataUrl).startsWith("data:image/svg+xml")) {
+    finalDataUrl = await convertSvgDataUrlToPngDataUrl(finalDataUrl);
+  }
   const link = document.createElement("a");
-  link.href = dataUrl || "";
-  link.download = filename;
+  link.href = finalDataUrl;
+  link.download = rewardQrFilename();
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1635,7 +2790,10 @@ function dataUrlToFile(dataUrl, filename) {
 async function shareRewardQr(data) {
   const title = data.reward?.reward_label || "Beneficio MarketGames QR";
   const text = `${title}. Presenta este QR en el punto fisico para redimir tu beneficio.`;
-  const file = dataUrlToFile(data.qr_image_data_url, "beneficio-marketgames-qr.png");
+  const qrImageDataUrl = String(data.qr_image_data_url || "").startsWith("data:image/svg+xml")
+    ? await convertSvgDataUrlToPngDataUrl(data.qr_image_data_url)
+    : data.qr_image_data_url;
+  const file = dataUrlToFile(qrImageDataUrl, rewardQrFilename());
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({ title, text, files: [file] });
     return;

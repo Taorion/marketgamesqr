@@ -1217,6 +1217,51 @@
                         <strong>Mini laberinto</strong>
                         <small>Llega a la meta.</small>
                       </button>
+                      <button class="activation-type-option" type="button" data-activation-type="WHACK_A_MOLE">
+                        <span class="material-symbols-outlined">ads_click</span>
+                        <strong>Golpea topo</strong>
+                        <small>Atina al objetivo correcto.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="DODGE_RUNNER">
+                        <span class="material-symbols-outlined">directions_run</span>
+                        <strong>Runner esquiva</strong>
+                        <small>Recolecta y evita choques.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="BALLOON_POP">
+                        <span class="material-symbols-outlined">adjust</span>
+                        <strong>Revienta globos</strong>
+                        <small>Precisión contra el reloj.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="ROULETTE_SPIN">
+                        <span class="material-symbols-outlined">cycle</span>
+                        <strong>Ruleta</strong>
+                        <small>Gira y detén el premio.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="TOUCH_CATCH">
+                        <span class="material-symbols-outlined">touch_app</span>
+                        <strong>Touch atrápalo</strong>
+                        <small>Persigue objetivos.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="TRUE_FALSE">
+                        <span class="material-symbols-outlined">rule</span>
+                        <strong>Falso/Verdadero</strong>
+                        <small>Responde rápido.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="ORDER_OPTIONS">
+                        <span class="material-symbols-outlined">format_list_numbered</span>
+                        <strong>Orden correcto</strong>
+                        <small>Organiza el menú.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="CONNECTORS">
+                        <span class="material-symbols-outlined">conversion_path</span>
+                        <strong>Conectores</strong>
+                        <small>Une pares correctos.</small>
+                      </button>
+                      <button class="activation-type-option" type="button" data-activation-type="BATTLESHIP_COORDS">
+                        <span class="material-symbols-outlined">grid_on</span>
+                        <strong>Batalla naval</strong>
+                        <small>Acierta coordenadas.</small>
+                      </button>
                       <input id="activationTypeInput" type="hidden" value="TRIVIA">
                     </div>
                     <label><span>Titulo de la landing</span><input id="triviaTitleInput" type="text" minlength="4" maxlength="160" placeholder="Descubre tu beneficio de la semana" required></label>
@@ -1549,7 +1594,22 @@
                         <label><span>Elemento D</span><input data-flat-option="D" type="text" placeholder="Beneficio oculto"></label>
                       </div>
                     </div>
-                    <div class="full activation-config-panel hidden" data-activation-config="SPACE_SHOOTER BREAKOUT SNAKE CATCH_PRIZE MEMORY_PAIRS FAST_TAP MINI_MAZE">
+                    <div class="full activation-config-panel hidden" data-activation-config="ROULETTE_SPIN">
+                      <div class="activation-config-head">
+                        <strong>Ruleta de beneficios</strong>
+                        <span>El participante gira una vez. El resultado donde cae define el beneficio que recibirá.</span>
+                      </div>
+                      <div class="reveal-card-grid">
+                        <label><span>Beneficio 1</span><input data-roulette-benefit="1" type="text" value="10% de descuento"></label>
+                        <label><span>Beneficio 2</span><input data-roulette-benefit="2" type="text" value="Regalo sorpresa"></label>
+                        <label><span>Beneficio 3</span><input data-roulette-benefit="3" type="text" value="2x1 seleccionado"></label>
+                        <label><span>Beneficio 4</span><input data-roulette-benefit="4" type="text" value="Acceso VIP"></label>
+                        <label><span>Beneficio 5</span><input data-roulette-benefit="5" type="text" value="Reward Pass"></label>
+                        <label><span>Beneficio 6</span><input data-roulette-benefit="6" type="text" value="Muestra gratis"></label>
+                      </div>
+                      <small class="activation-help">Estos textos serán los segmentos de la ruleta. El QR emitido llevará el beneficio exacto donde caiga el giro.</small>
+                    </div>
+                    <div class="full activation-config-panel hidden" data-activation-config="SPACE_SHOOTER BREAKOUT SNAKE CATCH_PRIZE MEMORY_PAIRS FAST_TAP MINI_MAZE WHACK_A_MOLE DODGE_RUNNER BALLOON_POP TOUCH_CATCH TRUE_FALSE ORDER_OPTIONS CONNECTORS BATTLESHIP_COORDS">
                       <div class="activation-config-head">
                         <strong>Minijuego con score</strong>
                         <span>El participante juega una partida en navegador. El backend valida sesión, duración y score antes de emitir QR.</span>
@@ -1563,6 +1623,12 @@
                         <label><span>Vidas del juego</span><input id="minigameLivesInput" type="number" min="1" max="10" value="3"></label>
                         <label><span>Cadencia disparo ms</span><input id="minigameFireIntervalInput" type="number" min="250" max="1200" value="480"></label>
                       </div>
+                      <div class="activation-config-head">
+                        <strong id="minigameSpecificTitle">Dinámica del juego</strong>
+                        <span id="minigameSpecificSummary">Ajusta los datos que definen cómo se juega y qué debe lograr el participante.</span>
+                      </div>
+                      <div class="survey-builder-grid" id="minigameSpecificConfigPanel"></div>
+                      <small class="activation-help" id="minigameSpecificHelp">Estos campos se guardan en la activación y controlan la lógica del juego público.</small>
                       <small class="activation-help">Los minijuegos agregan validación de sesión, duración y score. El control de intentos se configura arriba y aplica igual que en las demas activaciones.</small>
                     </div>
                     <button class="solid-button" type="submit">Lanzar activación</button>
@@ -2882,7 +2948,7 @@
                 <div class="affiliate-card-preview-wrap is-empty" id="affiliateCardPreviewWrap">
                   <img id="affiliateCardPreview" alt="Carnet afiliado">
                 </div>
-                <p class="affiliate-card-note" id="affiliateCardMeta">Selecciona o crea un afiliado para generar el PNG.</p>
+                <p class="affiliate-card-note" id="affiliateCardMeta">Selecciona o crea un afiliado para abrir su carnet digital en tiempo real.</p>
                 <div class="affiliate-selected-summary" id="affiliateSelectedSummary">
                   <div class="affiliate-selected-empty">Ningun afiliado seleccionado.</div>
                 </div>
@@ -2892,7 +2958,8 @@
                     <input id="affiliatePurchaseAmountInput" type="number" min="0" step="1000" placeholder="Ej: 25000">
                   </label>
                   <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Sumar puntos</button>
-                  <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Descargar PNG</button>
+                  <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Abrir carnet digital</button>
+                  <button class="ghost-button" id="copyAffiliateCardLinkButton" type="button" disabled>Copiar link</button>
                 </div>
               </article>
 

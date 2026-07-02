@@ -16,6 +16,7 @@ const affiliateRoutes = require("./routes/affiliateRoutes");
 const salesRoutes = require("./routes/salesRoutes");
 const publicGameRoutes = require("./routes/publicGameRoutes");
 const publicQrRoutes = require("./routes/publicQrRoutes");
+const publicAffiliateRoutes = require("./routes/publicAffiliateRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
@@ -167,6 +168,7 @@ app.use("/api/portal", affiliateRoutes);
 app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
+app.use("/api/public", publicAffiliateRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
@@ -191,12 +193,16 @@ app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos")));
 app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad")));
 app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos")));
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
+app.use("/carnet-afiliado", express.static(path.join(__dirname, "../..", "carnet-afiliado")));
 app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
 app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/activacion", express.static(path.join(__dirname, "../..", "activacion")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
+});
+app.get("/carnet-afiliado/:token", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../..", "carnet-afiliado", "index.html"));
 });
 app.get("/rp/:publicCode", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "reward-pass-public", "index.html"));

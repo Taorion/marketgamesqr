@@ -6,6 +6,7 @@ const {
   listAffiliates,
   listAffiliateLedger,
   awardAffiliatePoints,
+  getPublicAffiliateCard,
 } = require("../services/affiliateService");
 const { validate } = require("../utils/validators");
 const { query } = require("../config/db");
@@ -88,10 +89,24 @@ async function deleteBusinessAffiliate(req, res, next) {
   }
 }
 
+async function getPublicAffiliateDigitalCard(req, res, next) {
+  try {
+    const result = await getPublicAffiliateCard(req.params.token);
+    res.json({
+      ok: true,
+      ...result,
+      server_time: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   listBusinessAffiliates,
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
   deleteBusinessAffiliate,
+  getPublicAffiliateDigitalCard,
 };

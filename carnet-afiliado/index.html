@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carnet digital de afiliado</title>
+  <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
+  <link rel="stylesheet" href="/carnet-afiliado/styles.css">
+</head>
+<body>
+  <main class="card-shell">
+    <section class="digital-card" id="digitalCard">
+      <div class="card-top">
+        <div>
+          <span class="eyebrow">Carnet digital</span>
+          <h1 id="affiliateName">Cargando...</h1>
+          <p id="businessName">MarketGamesQR</p>
+        </div>
+        <span class="status-pill" id="cardStatus">En línea</span>
+      </div>
+
+      <div class="identity-grid">
+        <div class="photo-frame" id="photoFrame">
+          <span id="photoInitials">MG</span>
+          <img id="affiliatePhoto" alt="Foto del afiliado" hidden>
+        </div>
+        <div class="points-panel">
+          <span>Puntos actuales</span>
+          <strong id="pointsTotal">0</strong>
+          <small id="lastUpdate">Sin actualizar</small>
+        </div>
+      </div>
+
+      <dl class="details-grid">
+        <div>
+          <dt>Documento</dt>
+          <dd id="documentId">-</dd>
+        </div>
+        <div>
+          <dt>Teléfono</dt>
+          <dd id="phone">-</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd id="email">-</dd>
+        </div>
+        <div>
+          <dt>Compras registradas</dt>
+          <dd id="eventsCount">0</dd>
+        </div>
+      </dl>
+
+      <section class="movement-panel">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Movimientos</span>
+            <h2>Últimos puntos</h2>
+          </div>
+          <button id="refreshButton" type="button">Actualizar</button>
+        </div>
+        <div class="ledger-list" id="ledgerList">
+          <p class="empty-state">Cargando movimientos...</p>
+        </div>
+      </section>
+
+      <footer>
+        <span id="tokenShort">Carnet activo</span>
+        <strong>MarketGamesQR</strong>
+      </footer>
+    </section>
+
+    <p class="status-message" id="statusMessage" role="status">Consultando carnet digital...</p>
+  </main>
+
+  <script src="/carnet-afiliado/app.js" defer></script>
+</body>
+</html>
