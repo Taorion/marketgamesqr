@@ -156,6 +156,35 @@ const customerAcquisitionSaleSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
+const nullableText = (max) => z.preprocess(
+  (value) => {
+    const text = String(value ?? "").trim();
+    return text ? text : null;
+  },
+  z.string().max(max).nullable()
+);
+
+const manualLeadSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  email: z.preprocess(
+    (value) => {
+      const text = String(value ?? "").trim();
+      return text ? text : null;
+    },
+    z.string().email().max(180).nullable()
+  ),
+  phone: nullableText(40),
+  company: nullableText(180),
+  source: z.string().trim().min(2).max(120).default("Manual"),
+  source_detail: nullableText(220),
+  interest: nullableText(500),
+  preferred_channel: nullableText(120),
+  preferred_contact_time: nullableText(120),
+  status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"]).default("NEW"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  notes: nullableText(2000),
+});
+
 const PREPAID_LEAD_SAMPLE_LIMIT = 20;
 
 function businessIdFor(req) {
@@ -1010,6 +1039,53 @@ async function campaignLeads(req, res, next) {
   }
 }
 
+async function createManualLead(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para recuperar tus leads y el portal.`);
+    }
+    const body = validate(manualLeadSchema, req.body);
+    if (!body.email && !body.phone) {
+      throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
+    }
+    const result = await query(
+      `insert into business_manual_leads
+         (business_id, created_by_user_id, name, email, phone, company, source, source_detail,
+          interest, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb)
+       returning *`,
+      [
+        businessId,
+        req.user.id,
+        body.name,
+        body.email,
+        body.phone,
+        body.company,
+        body.source || "Manual",
+        body.source_detail,
+        body.interest,
+        body.preferred_channel,
+        body.preferred_contact_time,
+        body.status,
+        body.priority,
+        body.notes,
+        JSON.stringify({
+          source: "manual_portal_entry",
+          created_by_email: req.user.email || null,
+        }),
+      ]
+    );
+    res.status(201).json({ lead: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
 function normalizeContactTicketFilter(value) {
   const filter = String(value || "all").toLowerCase();
   return ["all", "active", "redeemed"].includes(filter) ? filter : "all";
@@ -1089,21 +1165,41 @@ function mapContactFeedRows(rows) {
       row.qr_status,
       row.stage,
     ].filter(Boolean).join(" ").toLowerCase();
-    const leadTemperature = hasSale || row.qr_status === "REDEEMED"
-      ? "buyer"
-      : hotSignals.some((signal) => signalText.includes(signal))
-        ? "hot"
-        : row.qr_status === "ACTIVE"
-          ? "warm"
-          : "nurture";
+    const manualStatus = String(row.metadata?.manual_status || "").toUpperCase();
+    const manualPriority = String(row.metadata?.manual_priority || "").toUpperCase();
+    const isManual = row.stage === "MANUAL";
     const channel = row.preferred_channel || row.attribution_source || "WhatsApp/email";
-    const recommendedAction = leadTemperature === "buyer"
-      ? "Enviar postventa, recompra o fidelizacion."
-      : leadTemperature === "hot"
-        ? `Contactar hoy por ${channel} con oferta concreta.`
-        : leadTemperature === "warm"
-          ? `Hacer seguimiento por ${channel} y reforzar beneficio antes de vencer.`
-          : `Nutrir con email/remarketing y nuevo incentivo asociado a ${row.attribution_subject || "la campana"}.`;
+    let leadTemperature = "nurture";
+    if (isManual) {
+      if (manualStatus === "CONVERTED") leadTemperature = "buyer";
+      else if (manualStatus === "FOLLOW_UP" || manualPriority === "HIGH") leadTemperature = "hot";
+      else if (manualStatus === "CONTACTED") leadTemperature = "warm";
+    } else if (hasSale || row.qr_status === "REDEEMED") {
+      leadTemperature = "buyer";
+    } else if (hotSignals.some((signal) => signalText.includes(signal))) {
+      leadTemperature = "hot";
+    } else if (row.qr_status === "ACTIVE") {
+      leadTemperature = "warm";
+    }
+
+    let recommendedAction = `Nutrir con email/remarketing y nuevo incentivo asociado a ${row.attribution_subject || "la campana"}.`;
+    if (isManual && manualStatus === "LOST") {
+      recommendedAction = "Dejar en nutricion o archivar si no hay respuesta.";
+    } else if (isManual && manualStatus === "CONVERTED") {
+      recommendedAction = "Registrar la venta o pasar a postventa/fidelizacion.";
+    } else if (isManual && manualStatus === "CONTACTED") {
+      recommendedAction = `Dar continuidad por ${channel} con siguiente paso claro.`;
+    } else if (isManual && (manualStatus === "FOLLOW_UP" || manualPriority === "HIGH")) {
+      recommendedAction = `Contactar hoy por ${channel}; viene de registro manual y requiere seguimiento.`;
+    } else if (isManual) {
+      recommendedAction = `Primer contacto por ${channel}; validar interes y agendar siguiente accion.`;
+    } else if (leadTemperature === "buyer") {
+      recommendedAction = "Enviar postventa, recompra o fidelizacion.";
+    } else if (leadTemperature === "hot") {
+      recommendedAction = `Contactar hoy por ${channel} con oferta concreta.`;
+    } else if (leadTemperature === "warm") {
+      recommendedAction = `Hacer seguimiento por ${channel} y reforzar beneficio antes de vencer.`;
+    }
     return {
       ...row,
       sale_amount: row.sale_amount === null ? null : Number(row.sale_amount || 0),
@@ -1249,12 +1345,61 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
        left join affiliates a on a.id = bs.referred_affiliate_id
        where bs.business_id = $1
          and ($2::int is null or bs.created_at >= now() - ($2::int * interval '1 day'))
+     ),
+     manual_rows as (
+       select
+         ml.id::text as id,
+         'MANUAL' as stage,
+         ml.name,
+         null::text as document_id,
+         ml.phone,
+         ml.email,
+         ml.created_at,
+         null::uuid as campaign_id,
+         null::text as campaign_name,
+         coalesce(nullif(ml.source, ''), 'Manual') as attribution_source,
+         coalesce(nullif(ml.source_detail, ''), nullif(ml.company, ''), 'Prospecto manual') as attribution_subject,
+         null::uuid as qr_code_id,
+         null::text as qr_token,
+         null::text as qr_status,
+         null::qr_origin_type as origin_type,
+         null::timestamptz as qr_created_at,
+         null::timestamptz as expires_at,
+         null::timestamptz as claimed_at,
+         null::timestamptz as redeemed_at,
+         null::uuid as affiliate_id,
+         null::text as affiliate_name,
+         null::text as favorite_product,
+         ml.interest as purchase_intent,
+         null::text as gift_budget,
+         case
+           when ml.priority = 'HIGH' or ml.status = 'FOLLOW_UP' then 'esta-semana'
+           else null::text
+         end as purchase_window,
+         ml.preferred_channel,
+         ml.preferred_contact_time,
+         null::numeric as sale_amount,
+         null::text as currency,
+         ml.company as product_name,
+         null::timestamptz as sale_created_at,
+         ml.metadata
+           || jsonb_build_object(
+                'manual_status', ml.status,
+                'manual_priority', ml.priority,
+                'manual_notes', ml.notes,
+                'manual_company', ml.company
+              ) as metadata
+       from business_manual_leads ml
+       where ml.business_id = $1
+         and ($2::int is null or ml.created_at >= now() - ($2::int * interval '1 day'))
      )
      select *
      from (
        select * from lead_rows
        union all
        select * from buyer_rows
+       union all
+       select * from manual_rows
      ) contact_rows
      where $3::text = 'all'
        or ($3::text = 'active' and qr_status = 'ACTIVE' and redeemed_at is null and (expires_at is null or expires_at > now()))
@@ -1278,6 +1423,11 @@ async function countContactFeedRows(businessId, retentionDays) {
         from business_sales bs
         where bs.business_id = $1
           and ($2::int is null or bs.created_at >= now() - ($2::int * interval '1 day')))
+       +
+       (select count(*)::int
+        from business_manual_leads ml
+        where ml.business_id = $1
+          and ($2::int is null or ml.created_at >= now() - ($2::int * interval '1 day')))
      )::int as total`,
     [businessId, retentionDays]
   );
@@ -1664,6 +1814,7 @@ module.exports = {
   confirmLaunch,
   campaignReport,
   campaignLeads,
+  createManualLead,
   contactFeed,
   exportContactFeed,
   exportCampaignLeads,

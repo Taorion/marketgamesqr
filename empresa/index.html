@@ -2069,6 +2069,55 @@
             <article class="surface-card data-table-card">
               <div class="table-card-head">
                 <div>
+                  <span class="mono-label">Prospecto manual</span>
+                  <h3>Agregar lead para seguimiento</h3>
+                </div>
+                <span class="pill muted">CRM operativo</span>
+              </div>
+              <p class="chart-explainer">Registra contactos que llegan por correo, WhatsApp, llamada, feria o la página de contacto. Quedan mezclados en el feed comercial y en la exportación.</p>
+              <form class="modal-form" id="manualLeadForm">
+                <label><span>Nombre</span><input id="manualLeadNameInput" type="text" maxlength="160" required placeholder="Nombre del prospecto"></label>
+                <label><span>Empresa</span><input id="manualLeadCompanyInput" type="text" maxlength="180" placeholder="Empresa o marca"></label>
+                <label><span>Teléfono</span><input id="manualLeadPhoneInput" type="text" maxlength="40" placeholder="WhatsApp o celular"></label>
+                <label><span>Correo</span><input id="manualLeadEmailInput" type="email" maxlength="180" placeholder="correo@empresa.com"></label>
+                <label><span>Origen</span>
+                  <select id="manualLeadSourceInput">
+                    <option value="Formulario home">Formulario home / correo recibido</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Llamada">Llamada</option>
+                    <option value="Referido">Referido</option>
+                    <option value="Evento">Evento o feria</option>
+                    <option value="Manual">Manual</option>
+                  </select>
+                </label>
+                <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
+                <label><span>Prioridad</span>
+                  <select id="manualLeadPriorityInput">
+                    <option value="HIGH">Alta</option>
+                    <option value="MEDIUM" selected>Media</option>
+                    <option value="LOW">Baja</option>
+                  </select>
+                </label>
+                <label><span>Estado</span>
+                  <select id="manualLeadStatusInput">
+                    <option value="NEW" selected>Nuevo</option>
+                    <option value="CONTACTED">Contactado</option>
+                    <option value="FOLLOW_UP">Seguimiento</option>
+                    <option value="CONVERTED">Convertido</option>
+                    <option value="LOST">Perdido</option>
+                  </select>
+                </label>
+                <label><span>Canal preferido</span><input id="manualLeadPreferredChannelInput" type="text" maxlength="120" placeholder="WhatsApp, email, llamada..."></label>
+                <label><span>Hora o momento</span><input id="manualLeadPreferredTimeInput" type="text" maxlength="120" placeholder="Mañana, tarde, hoy, esta semana..."></label>
+                <label class="span-2"><span>Interés</span><input id="manualLeadInterestInput" type="text" maxlength="500" placeholder="Qué necesita, producto de interés, intención de compra..."></label>
+                <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadNotesInput" rows="3" maxlength="2000" placeholder="Pega aquí el contenido del correo o la próxima acción comercial."></textarea></label>
+                <p class="form-message span-2" id="manualLeadMessage"></p>
+                <button class="solid-button" id="manualLeadSubmitButton" type="submit">Guardar prospecto</button>
+              </form>
+            </article>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <div>
                   <span class="mono-label">Feed comercial</span>
                   <h3>Leads, compradores y contactos retenidos por plan</h3>
                 </div>

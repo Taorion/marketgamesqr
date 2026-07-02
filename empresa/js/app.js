@@ -50,6 +50,21 @@ const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
 const leadExportScopeInput = document.getElementById("leadExportScopeInput");
+const manualLeadForm = document.getElementById("manualLeadForm");
+const manualLeadNameInput = document.getElementById("manualLeadNameInput");
+const manualLeadCompanyInput = document.getElementById("manualLeadCompanyInput");
+const manualLeadPhoneInput = document.getElementById("manualLeadPhoneInput");
+const manualLeadEmailInput = document.getElementById("manualLeadEmailInput");
+const manualLeadSourceInput = document.getElementById("manualLeadSourceInput");
+const manualLeadSourceDetailInput = document.getElementById("manualLeadSourceDetailInput");
+const manualLeadPriorityInput = document.getElementById("manualLeadPriorityInput");
+const manualLeadStatusInput = document.getElementById("manualLeadStatusInput");
+const manualLeadPreferredChannelInput = document.getElementById("manualLeadPreferredChannelInput");
+const manualLeadPreferredTimeInput = document.getElementById("manualLeadPreferredTimeInput");
+const manualLeadInterestInput = document.getElementById("manualLeadInterestInput");
+const manualLeadNotesInput = document.getElementById("manualLeadNotesInput");
+const manualLeadMessage = document.getElementById("manualLeadMessage");
+const manualLeadSubmitButton = document.getElementById("manualLeadSubmitButton");
 const campaignList = document.getElementById("campaignList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
@@ -1750,6 +1765,12 @@ function prettyLeadValue(value, fallback = "-") {
   return String(value)
     .replaceAll("-", " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function setFormMessage(element, message = "", type = "") {
+  if (!element) return;
+  element.textContent = message;
+  element.dataset.status = type || "";
 }
 
 function leadInterestSummary(lead) {
@@ -11357,6 +11378,58 @@ function exportCampaignReport() {
   ]);
 }
 
+async function createManualLead(event) {
+  event?.preventDefault();
+  if (!manualLeadForm) return;
+  const payload = {
+    name: String(manualLeadNameInput?.value || "").trim(),
+    company: optionalInputValue(manualLeadCompanyInput),
+    phone: optionalInputValue(manualLeadPhoneInput),
+    email: optionalInputValue(manualLeadEmailInput),
+    source: String(manualLeadSourceInput?.value || "Manual").trim(),
+    source_detail: optionalInputValue(manualLeadSourceDetailInput),
+    priority: manualLeadPriorityInput?.value || "MEDIUM",
+    status: manualLeadStatusInput?.value || "NEW",
+    preferred_channel: optionalInputValue(manualLeadPreferredChannelInput),
+    preferred_contact_time: optionalInputValue(manualLeadPreferredTimeInput),
+    interest: optionalInputValue(manualLeadInterestInput),
+    notes: optionalInputValue(manualLeadNotesInput),
+  };
+  if (!payload.name || (!payload.phone && !payload.email)) {
+    setFormMessage(manualLeadMessage, "Agrega nombre y al menos telefono o correo.", "error");
+    return;
+  }
+  try {
+    if (manualLeadSubmitButton) {
+      manualLeadSubmitButton.disabled = true;
+      manualLeadSubmitButton.textContent = "Guardando...";
+    }
+    setFormMessage(manualLeadMessage, "Guardando prospecto...", "info");
+    await api("/api/business/contacts/manual", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    manualLeadForm.reset();
+    if (manualLeadSourceInput) manualLeadSourceInput.value = "Formulario home";
+    if (manualLeadPriorityInput) manualLeadPriorityInput.value = "MEDIUM";
+    if (manualLeadStatusInput) manualLeadStatusInput.value = "NEW";
+    state.contactFeedLoaded = false;
+    await loadContactFeedData({ force: true, quiet: true });
+    renderLeadsView();
+    setFormMessage(manualLeadMessage, "Prospecto guardado en el feed comercial.", "success");
+    showFeedback("Lead manual agregado al feed.", "success", { title: "Prospecto guardado" });
+  } catch (error) {
+    setFormMessage(manualLeadMessage, error.message || "No se pudo guardar el prospecto.", "error");
+    showFeedback(error.message || "No se pudo guardar el prospecto.", "error");
+  } finally {
+    if (manualLeadSubmitButton) {
+      manualLeadSubmitButton.disabled = false;
+      manualLeadSubmitButton.textContent = "Guardar prospecto";
+    }
+  }
+}
+
 async function exportLeads() {
   const scope = leadExportScopeInput?.value || "all";
   const labels = {
@@ -12788,6 +12861,7 @@ segmentTabs.forEach((tab, index) => {
 });
 exportCampaignReportButton.addEventListener("click", exportCampaignReport);
 markReadyCampaignButton.addEventListener("click", markCampaignReady);
+manualLeadForm?.addEventListener("submit", createManualLead);
 exportLeadsButton.addEventListener("click", exportLeads);
 exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);

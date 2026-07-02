@@ -21,6 +21,7 @@ const {
   confirmLaunch,
   campaignReport,
   campaignLeads,
+  createManualLead,
   contactFeed,
   exportContactFeed,
   exportCampaignLeads,
@@ -45,6 +46,7 @@ router.get("/users", listBusinessUsers);
 router.post("/users", createBusinessUser);
 router.patch("/users/:userId", updateBusinessUser);
 router.get("/contacts/feed", contactFeed);
+router.post("/contacts/manual", createManualLead);
 router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 

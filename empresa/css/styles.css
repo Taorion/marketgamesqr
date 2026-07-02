@@ -2965,6 +2965,10 @@ td {
   font-weight: 600;
 }
 
+.modal-form .span-2 {
+  grid-column: 1 / -1;
+}
+
 .field-label {
   display: inline-flex;
   align-items: center;
