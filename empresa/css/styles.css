@@ -9930,6 +9930,24 @@ body.chart-focus-open .command-center {
   text-shadow: none;
 }
 
+:root[data-theme="light"] .season-flow-strip span {
+  color: #21100d !important;
+  background: #fff8e1 !important;
+  border-color: rgba(136, 83, 12, 0.34) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .season-flow-strip span:not(:has(strong)) {
+  color: #21100d !important;
+}
+
+:root[data-theme="light"] .season-flow-strip strong {
+  color: #21100d !important;
+  background: #ffd66b !important;
+  box-shadow: inset 0 0 0 1px rgba(136, 83, 12, 0.24) !important;
+  text-shadow: none !important;
+}
+
 .season-launch-actions {
   display: grid;
   gap: 10px;
