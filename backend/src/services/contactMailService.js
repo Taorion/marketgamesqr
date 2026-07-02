@@ -87,6 +87,19 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
       html,
     });
   } catch (error) {
+    console.error("Contact SMTP delivery failed", {
+      host: env.smtpHost,
+      port: env.smtpPort,
+      secure: env.smtpSecure,
+      user: env.smtpUser,
+      from: contactFromAddress(),
+      to: env.contactRecipientEmail,
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      response: error.response,
+      message: error.message,
+    });
     throw deliveryError(`SMTP no pudo enviar el correo: ${error.message}`, error);
   }
 }
