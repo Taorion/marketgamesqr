@@ -9985,26 +9985,34 @@ async function buildAffiliateCardDataUrl(affiliate) {
     top: "#0E1E2D",
     panel: "#081625",
     panelSoft: "#1D3550",
+    smoke: "#203041",
+    royal: "#284976",
     ink: "#F1F3F8",
+    darkInk: "#2F2F2B",
     muted: "#C8B57F",
     accent: "#B29C6B",
     gold: "#C8B57F",
-    line: "rgba(178, 156, 107, 0.34)",
+    goldShadow: "#8F815F",
+    line: "#8F815F",
     qrBg: "#000209",
     qrInk: "#F1F3F8",
-    qrLine: "rgba(200, 181, 127, 0.52)",
-    qrGlow: "rgba(200, 181, 127, 0.18)",
-    footerBg: "rgba(178, 156, 107, 0.10)",
+    qrLine: "#C8B57F",
+    qrGlow: "#8F815F",
+    footerBg: "#203041",
   } : {
     bg: "#07110f",
     card: "#101c1a",
     top: "#16392f",
     panel: "#142621",
     panelSoft: "#1c352d",
+    smoke: "rgba(255, 255, 255, 0.09)",
+    royal: "#74f7bf",
     ink: "#f7fff9",
+    darkInk: "#0f172a",
     muted: "#b7ccc3",
     accent: "#74f7bf",
     gold: "#f4c84f",
+    goldShadow: "#f4c84f",
     line: "rgba(116, 247, 191, 0.24)",
     qrBg: "#020817",
     qrInk: "#f8fdff",
@@ -10024,7 +10032,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, 36);
   ctx.fill();
-  ctx.strokeStyle = isPanoInglesTheme ? "rgba(200, 181, 127, 0.58)" : "rgba(116, 247, 191, 0.54)";
+  ctx.strokeStyle = isPanoInglesTheme ? palette.gold : "rgba(116, 247, 191, 0.54)";
   ctx.lineWidth = 3;
   ctx.stroke();
 
@@ -10032,9 +10040,9 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.beginPath();
   ctx.roundRect(62, 62, width - 124, 178, 28);
   ctx.fill();
-  ctx.fillStyle = isPanoInglesTheme ? "rgba(200, 181, 127, 0.14)" : "rgba(244, 200, 79, 0.12)";
+  ctx.fillStyle = isPanoInglesTheme ? palette.smoke : "rgba(244, 200, 79, 0.12)";
   ctx.fillRect(62, 218, width - 124, 22);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+  ctx.strokeStyle = palette.smoke;
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -10110,7 +10118,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const dataY = 278;
   const dataW = 450;
   const dataH = 340;
-  drawPanel(dataX, dataY, dataW, dataH, "rgba(8, 21, 18, 0.62)");
+  drawPanel(dataX, dataY, dataW, dataH, isPanoInglesTheme ? palette.panel : "rgba(8, 21, 18, 0.62)");
 
   ctx.textAlign = "left";
   ctx.fillStyle = palette.accent;
@@ -10138,7 +10146,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
 
   drawCardField("Documento", affiliateDocument, dataX + 30, dataY + 94, 202, 26);
   drawCardField("Teléfono", affiliatePhone, dataX + 262, dataY + 94, 158, 26);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+  ctx.strokeStyle = palette.smoke;
   ctx.beginPath();
   ctx.moveTo(dataX + 30, dataY + 158);
   ctx.lineTo(dataX + dataW - 30, dataY + 158);
