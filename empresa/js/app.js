@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260629-affiliate-finder-v1";
+const APP_VERSION = "empresa-20260701-session-isolation-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -923,8 +923,12 @@ function saveValidatorSession(value) {
 
 function clearSession() {
   stopActivityPolling();
+  stopValidatorScanner();
+  stopAffiliateFinderScanner();
   resetBusinessScopedState({ session: null });
   session = null;
+  hideFeedback();
+  hideBusyOverlay(true);
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(VALIDATOR_SESSION_KEY);
 }
@@ -1105,6 +1109,11 @@ function clearCanvas(canvas) {
 }
 
 function clearBusinessWorkspaceUi() {
+  if (profileName) profileName.textContent = "Sesión";
+  if (profileAvatar) profileAvatar.textContent = "MG";
+  if (requestCampaignButton) requestCampaignButton.textContent = "Nueva campaña";
+  if (subscriptionBanner) subscriptionBanner.classList.add("hidden");
+  if (campaignBreadcrumb) campaignBreadcrumb.textContent = "Campaña";
   renderSkeletonCards(businessKpiGrid, 6);
   if (commandCenterRoot) {
     commandCenterRoot.innerHTML = `
@@ -1156,6 +1165,23 @@ function clearBusinessWorkspaceUi() {
   if (strategicQrKpiGrid) {
     strategicQrKpiGrid.innerHTML = '<article class="surface-card kpi-card"><span class="mono-label">Gaming Center</span><strong class="kpi-value">Cargando</strong><p class="kpi-meta">Preparando datos de la empresa activa.</p></article>';
   }
+  if (postSaleQrResult) {
+    postSaleQrResult.classList.add("hidden");
+    postSaleQrResult.innerHTML = "";
+  }
+  if (postSaleQrMessage) setInlineMessage(postSaleQrMessage, "", "info");
+  if (validatorQrTokenInput) validatorQrTokenInput.value = "";
+  if (validatorManualStatus) setInlineMessage(validatorManualStatus, "", "info");
+  if (validatorSaleForm) validatorSaleForm.reset();
+  if (validatorHistoryTable) validatorHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial de la empresa activa...</td></tr>';
+  setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
+  if (rewardPassKpiGrid) renderSkeletonCards(rewardPassKpiGrid, 4);
+  if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = "Vista previa";
+  if (accountLogoPreview) accountLogoPreview.innerHTML = '<span class="material-symbols-outlined">storefront</span>';
+  if (accountTicketFramePreview) accountTicketFramePreview.innerHTML = '<span class="material-symbols-outlined">crop_portrait</span>';
+  if (businessLogoTitle) businessLogoTitle.textContent = "Sin logo cargado";
+  if (businessLogoPreview) businessLogoPreview.innerHTML = '<span class="material-symbols-outlined">storefront</span>';
+  resetQrBatchProgress();
 }
 
 function resetBusinessScopedState(options = {}) {
@@ -1341,14 +1367,28 @@ async function apiSafe(path, options = {}, fallback = null) {
   }
 }
 
+function businessScopeKey(value = session) {
+  return [
+    value?.token || "",
+    value?.user?.id || "",
+    value?.user?.business_id || "",
+  ].join("|");
+}
+
+function isCurrentBusinessScope(scopeKey) {
+  return Boolean(scopeKey && session?.token && businessScopeKey() === scopeKey);
+}
+
 async function loadAffiliatesData() {
   if (!session?.user?.business_id || !hasPlanFeature("affiliates")) {
     state.affiliatesLoaded = true;
     state.affiliates = [];
     return;
   }
+  const scopeKey = businessScopeKey();
   showFeedback("Cargando afiliados.", "loading", { title: "Sincronizando", timeout: 0 });
   const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
+  if (!isCurrentBusinessScope(scopeKey)) return;
   state.affiliates = data.affiliates || [];
   state.affiliatesLoaded = true;
   hideFeedback();
@@ -1364,7 +1404,9 @@ async function loadContactFeedData(options = {}) {
   if (!options.quiet) {
     showFeedback("Cargando leads visibles bajo demanda.", "loading", { title: "Leads", timeout: 0 });
   }
+  const scopeKey = businessScopeKey();
   const data = await apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null });
+  if (!isCurrentBusinessScope(scopeKey)) return;
   state.contactFeed = data.contacts || [];
   state.contactFeedRetention = data.retention || null;
   state.contactFeedGate = data.lead_gate || null;
@@ -1407,6 +1449,7 @@ async function loadStrategicQrData(options = {}) {
     state.strategicQrLoaded = true;
     return;
   }
+  const scopeKey = businessScopeKey();
   const requestedGroups = [...new Set(options.groups || TICKET_CENTER_GROUPS)];
   const groupsToLoad = requestedGroups.filter((group) => options.force || !isTicketCenterGroupFresh(group));
   if (!groupsToLoad.length) {
@@ -1430,6 +1473,7 @@ async function loadStrategicQrData(options = {}) {
       const data = lightTestMode
         ? { totals: {}, benefits: [], redemptions_by_seller: [] }
         : await apiSafe("/api/business/qr/metrics", { headers: authHeaders() }, { totals: {}, benefits: [], redemptions_by_seller: [] });
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.strategicQrMetrics = data || null;
     }
     if (group === "core") {
@@ -1438,6 +1482,7 @@ async function loadStrategicQrData(options = {}) {
         apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }),
         lightTestMode ? Promise.resolve({ orders: [] }) : apiSafe("/api/payments/qr-credits/orders?limit=20", { headers: authHeaders() }, { orders: [] }),
       ]);
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.qrPackageOffers = packageData.packages || [];
       state.pricing = packageData.pricing || state.pricing;
       state.qrCreditAccount = creditData.credit_account || state.qrCreditAccount || null;
@@ -1447,25 +1492,30 @@ async function loadStrategicQrData(options = {}) {
       const data = lightTestMode
         ? { batches: [] }
         : await apiSafe("/api/business/qr/batches?limit=80", { headers: authHeaders() }, { batches: [] });
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.strategicQrBatches = data.batches || [];
     }
     if (group === "history") {
       const data = lightTestMode
         ? { history: [] }
         : await apiSafe("/api/business/qr/history?limit=120", { headers: authHeaders() }, { history: [] });
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.strategicQrHistory = data.history || [];
     }
     if (group === "activations") {
       const data = await apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [], trivias: [] });
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.triviaLaunchers = data.activations || data.trivias || [];
     }
     if (group === "affiliates") {
       const data = !lightTestMode && hasPlanFeature("affiliates")
         ? await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] })
         : { affiliates: [] };
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.affiliates = data.affiliates || [];
       state.affiliatesLoaded = true;
     }
+    if (!isCurrentBusinessScope(scopeKey)) return;
     state.ticketCenterLoadedAt = {
       ...(state.ticketCenterLoadedAt || {}),
       [group]: Date.now(),
@@ -1473,16 +1523,19 @@ async function loadStrategicQrData(options = {}) {
   });
 
   await Promise.all(loaders);
+  if (!isCurrentBusinessScope(scopeKey)) return;
   state.strategicQrLoaded = true;
   state.ticketCenterLoading = false;
   if (!quiet) hideFeedback();
 }
 
 async function loadTicketCenterForCurrentTab(options = {}) {
+  const scopeKey = businessScopeKey();
   await loadStrategicQrData({
     groups: ticketCenterGroupsForTab(state.ticketCenterTab),
     ...options,
   });
+  if (!isCurrentBusinessScope(scopeKey)) return;
   if (state.currentView === "strategic-qr") {
     renderStrategicQrView();
   }
@@ -4880,6 +4933,7 @@ async function loadAdminCampaignWorkspace(campaignId) {
 }
 
 async function selectCampaign(campaignId) {
+  const scopeKey = businessScopeKey();
   state.selectedCampaignId = campaignId;
   renderCampaignList();
   renderCampaignAssociationInputs();
@@ -4893,6 +4947,7 @@ async function selectCampaign(campaignId) {
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
     ]);
 
+    if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
     state.selectedCampaign = campaignData.campaign || null;
     state.selectedReport = reportData || null;
     state.selectedLeads = leadsData.leads || [];
@@ -5487,13 +5542,16 @@ async function loadValidatorHistory() {
     return;
   }
 
+  const scopeKey = businessScopeKey();
   try {
     const data = await api(`/api/businesses/${businessId}/redemptions`, {
       method: "GET",
       headers: authHeaders(),
     });
+    if (!isCurrentBusinessScope(scopeKey)) return;
     renderValidatorHistory(data.redemptions || []);
   } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey)) return;
     validatorHistoryTable.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
   }
 }
@@ -7802,6 +7860,7 @@ async function validateValidatorToken(rawValue) {
   setInlineMessage(validatorManualStatus, "Consultando estado, negocio y beneficio del ticket...", "info");
   showFeedback("Validando ticket contra la base de datos.", "loading", { title: "Validando ticket", timeout: 0 });
 
+  const scopeKey = businessScopeKey();
   try {
     const isRewardPass = token.startsWith("rp_");
     const data = await api(isRewardPass
@@ -7810,6 +7869,7 @@ async function validateValidatorToken(rawValue) {
       method: "GET",
       headers: authHeaders(),
     });
+    if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
     state.validatorLastValidation = data;
     state.validatorLastRedemption = null;
     if (data.allowed) {
@@ -7822,13 +7882,16 @@ async function validateValidatorToken(rawValue) {
       showFeedback(data.message || "Este ticket no puede redimirse.", "error", { title: "Ticket rechazado" });
     }
   } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
     state.validatorLastValidation = null;
     state.validatorLastRedemption = null;
     setValidatorResult("danger", "Validación fallida", error.message);
     setInlineMessage(validatorManualStatus, error.message, "error");
     showFeedback(error.message, "error", { title: "Validación fallida" });
   } finally {
-    setButtonLoading(validateValidatorManualButton, false);
+    if (isCurrentBusinessScope(scopeKey)) {
+      setButtonLoading(validateValidatorManualButton, false);
+    }
   }
 }
 
@@ -7840,6 +7903,7 @@ async function redeemValidatorToken() {
   validatorRedeemButton.disabled = true;
   setButtonLoading(validatorRedeemButton, true, "Redimiendo...");
   showFeedback("Registrando redención y bloqueando el ticket para evitar doble uso.", "loading", { title: "Redimiendo beneficio", timeout: 0 });
+  const scopeKey = businessScopeKey();
   try {
     const isRewardPass = state.validatorLastValidation?.kind === "reward_pass";
     const rewardPassPreview = isRewardPass ? rewardPassBalancePreview(true) : null;
@@ -7877,6 +7941,7 @@ async function redeemValidatorToken() {
         confirm_full_consumption: !rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0,
       }) : undefined,
     });
+    if (!isCurrentBusinessScope(scopeKey)) return;
     state.validatorLastRedemption = data.redemption;
     state.validatorLastValidation = {
       ...state.validatorLastValidation,
@@ -7890,11 +7955,14 @@ async function redeemValidatorToken() {
     await loadValidatorHistory();
     showFeedback("Beneficio redimido. Si hubo venta, registra el valor para completar el seguimiento.", "success", { title: "Redención completada" });
   } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey)) return;
     setValidatorResult("danger", "No se pudo redimir", error.message, state.validatorLastValidation);
     showFeedback(error.message, "error");
   } finally {
-    setButtonLoading(validatorRedeemButton, false);
-    validatorRedeemButton.disabled = !state.validatorLastValidation?.allowed;
+    if (isCurrentBusinessScope(scopeKey)) {
+      setButtonLoading(validatorRedeemButton, false);
+      validatorRedeemButton.disabled = !state.validatorLastValidation?.allowed;
+    }
   }
 }
 
@@ -11603,10 +11671,12 @@ function renderRewardPassContext() {
 }
 
 async function loadRewardPasses() {
+  const scopeKey = businessScopeKey();
   const queryParams = new URLSearchParams();
   if (rewardPassStatusFilter?.value) queryParams.set("status", rewardPassStatusFilter.value);
   if (state.filter) queryParams.set("search", state.filter);
   const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, { headers: authHeaders() });
+  if (!isCurrentBusinessScope(scopeKey)) return false;
   state.rewardPasses = data.reward_passes || [];
   state.rewardPassMetrics = data.metrics || null;
   state.rewardPassContext = {
@@ -11616,13 +11686,17 @@ async function loadRewardPasses() {
   if (!state.selectedRewardPassId && state.rewardPasses[0]) {
     state.selectedRewardPassId = state.rewardPasses[0].id;
   }
+  return true;
 }
 
 async function loadRewardPassContext() {
+  const scopeKey = businessScopeKey();
   const data = await api("/api/business/reward-passes/context", { headers: authHeaders() });
+  if (!isCurrentBusinessScope(scopeKey)) return false;
   state.rewardPassContext = data || {};
   renderRewardPassContext();
   setRewardPassDefaults();
+  return true;
 }
 
 function renderRewardPassMetrics() {
@@ -11776,37 +11850,45 @@ function renderRewardPassDetail() {
 
 async function selectRewardPass(id) {
   if (!id) return;
+  const scopeKey = businessScopeKey();
   state.selectedRewardPassId = id;
   showFeedback("Cargando detalle del Reward Pass.", "loading", { title: "Reward Pass", timeout: 0 });
   try {
     const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}`, { headers: authHeaders() });
+    if (!isCurrentBusinessScope(scopeKey) || state.selectedRewardPassId !== id) return;
     state.selectedRewardPass = data.reward_pass;
     renderRewardPassTable();
     renderRewardPassDetail();
     showFeedback("Detalle de Reward Pass cargado.");
   } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey) || state.selectedRewardPassId !== id) return;
     showFeedback(error.message, "error");
   }
 }
 
 async function renderRewardPassesView() {
+  const scopeKey = businessScopeKey();
   renderRewardPassContext();
   setRewardPassDefaults();
   try {
     if (!state.rewardPassContext?.default_terms) {
-      await loadRewardPassContext();
+      const contextLoaded = await loadRewardPassContext();
+      if (contextLoaded === false || !isCurrentBusinessScope(scopeKey)) return;
     }
-    await loadRewardPasses();
+    const passesLoaded = await loadRewardPasses();
+    if (passesLoaded === false || !isCurrentBusinessScope(scopeKey)) return;
     renderRewardPassMetrics();
     renderRewardPassTable();
     const selected = state.rewardPasses.find((item) => item.id === state.selectedRewardPassId);
     if (selected) {
       await selectRewardPass(selected.id);
+      if (!isCurrentBusinessScope(scopeKey)) return;
     } else {
       state.selectedRewardPass = null;
       renderRewardPassDetail();
     }
   } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey)) return;
     if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="9">${escapeHtml(error.message)}</td></tr>`;
   }
 }
