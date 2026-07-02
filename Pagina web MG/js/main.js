@@ -312,13 +312,17 @@ function initContactForm() {
       submitButton.textContent = "Enviando...";
     }
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 18_000);
+
     try {
       const response = await fetch(form.getAttribute("action") || "/api/public/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
       const data = await response.json().catch(() => ({}));
 
@@ -329,8 +333,12 @@ function initContactForm() {
       form.reset();
       setStatus("Mensaje enviado. MarketGamesQR recibió tu consulta.", "success");
     } catch (error) {
-      setStatus(error.message || "No se pudo enviar la consulta. Intenta nuevamente.", "error");
+      const message = error.name === "AbortError"
+        ? "El envío tardó demasiado. Intenta nuevamente o escríbenos por WhatsApp."
+        : error.message || "No se pudo enviar la consulta. Intenta nuevamente.";
+      setStatus(message, "error");
     } finally {
+      window.clearTimeout(timeoutId);
       if (submitButton) {
         submitButton.disabled = false;
         submitButton.textContent = defaultButtonText;

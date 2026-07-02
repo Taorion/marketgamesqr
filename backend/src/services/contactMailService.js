@@ -72,6 +72,9 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
     tls: {
       rejectUnauthorized: env.smtpRejectUnauthorized,
     },
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 20_000,
   });
 
   try {
