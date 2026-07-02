@@ -96,7 +96,7 @@ function buildContactMessage(body, metadata) {
     "",
     `Nombre: ${body.name}`,
     `Email: ${body.email}`,
-    `Teléfono: ${body.phone}`,
+    `Teléfono: ${body.phone || "No especificado"}`,
     `Empresa: ${body.company || "No especificada"}`,
     "",
     "Mensaje:",
@@ -113,7 +113,7 @@ function buildContactMessage(body, metadata) {
     <h2>Nuevo mensaje desde la home de MarketGamesQR</h2>
     <p><strong>Nombre:</strong> ${escapeHtml(body.name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(body.email)}</p>
-    <p><strong>Teléfono:</strong> ${escapeHtml(body.phone)}</p>
+    <p><strong>Teléfono:</strong> ${escapeHtml(body.phone || "No especificado")}</p>
     <p><strong>Empresa:</strong> ${escapeHtml(body.company || "No especificada")}</p>
     <p><strong>Mensaje:</strong></p>
     <p>${escapeHtml(body.message).replace(/\r?\n/g, "<br>")}</p>
