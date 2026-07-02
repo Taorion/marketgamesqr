@@ -35,6 +35,20 @@ function initials(value) {
     .toUpperCase();
 }
 
+function normalizeBrandName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function isPanoInglesBusiness(value) {
+  const normalized = normalizeBrandName(value);
+  return normalized.includes("pano ingles") || normalized.includes("panos ingles");
+}
+
 function formatDate(value) {
   if (!value) return "-";
   const date = new Date(value);
@@ -47,8 +61,10 @@ function formatDate(value) {
 
 function setStatus(message, error = false) {
   if (!els.statusMessage) return;
+  const styles = getComputedStyle(document.body);
+  const color = styles.getPropertyValue(error ? "--status-error" : "--status-ok").trim();
   els.statusMessage.textContent = message || "";
-  els.statusMessage.style.color = error ? "#ff8aae" : "#b7ccc3";
+  els.statusMessage.style.color = color || (error ? "#ff8aae" : "#b7ccc3");
 }
 
 async function fetchCard() {
@@ -85,11 +101,13 @@ function renderLedger(rows = []) {
 function renderCard(data) {
   const affiliate = data.affiliate || {};
   const businessSettings = affiliate.business_settings || {};
+  const businessName = text(affiliate.business_name || businessSettings.name, "MarketGamesQR");
   const points = Number(affiliate.points_total || affiliate.ledger_points || 0);
   const active = String(affiliate.status || "ACTIVE").toUpperCase() !== "INACTIVE";
 
+  document.body.classList.toggle("brand-pano-ingles", isPanoInglesBusiness(businessName));
   els.affiliateName.textContent = text(affiliate.full_name, "Afiliado");
-  els.businessName.textContent = text(affiliate.business_name || businessSettings.name, "MarketGamesQR");
+  els.businessName.textContent = businessName;
   els.cardStatus.textContent = active ? "Activo" : "Inactivo";
   els.cardStatus.classList.toggle("inactive", !active);
   els.photoInitials.textContent = initials(affiliate.full_name);

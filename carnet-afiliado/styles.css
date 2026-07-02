@@ -3,6 +3,8 @@
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #07110f;
   color: #f7fff9;
+  --status-ok: #b7ccc3;
+  --status-error: #ff8aae;
 }
 
 * {
@@ -195,6 +197,82 @@ button {
   font: inherit;
   font-weight: 900;
   cursor: pointer;
+}
+
+body.brand-pano-ingles {
+  --status-ok: #c8b57f;
+  --status-error: #c8b57f;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(200, 181, 127, 0.18), transparent 32%),
+    radial-gradient(circle at 88% 18%, rgba(40, 73, 118, 0.24), transparent 34%),
+    linear-gradient(145deg, #000209 0%, #040c16 46%, #081625 100%);
+  color: #f1f3f8;
+}
+
+.brand-pano-ingles .digital-card {
+  border-color: rgba(200, 181, 127, 0.44);
+  background:
+    linear-gradient(145deg, rgba(8, 22, 37, 0.96), rgba(4, 12, 22, 0.98)),
+    #040c16;
+  box-shadow: 0 24px 80px rgba(0, 2, 9, 0.64);
+}
+
+.brand-pano-ingles .card-top {
+  background:
+    linear-gradient(135deg, #0e1e2d 0%, #1d3550 58%, #081625 100%);
+  border-bottom-color: rgba(178, 156, 107, 0.46);
+}
+
+.brand-pano-ingles .eyebrow,
+.brand-pano-ingles .points-panel strong,
+.brand-pano-ingles .section-head h2 {
+  color: #c8b57f;
+}
+
+.brand-pano-ingles #businessName,
+.brand-pano-ingles .points-panel span,
+.brand-pano-ingles .points-panel small,
+.brand-pano-ingles .ledger-item span,
+.brand-pano-ingles .empty-state,
+.brand-pano-ingles .status-message {
+  color: #f1f3f8;
+}
+
+.brand-pano-ingles .status-pill {
+  background: rgba(178, 156, 107, 0.18);
+  color: #c8b57f;
+}
+
+.brand-pano-ingles .photo-frame,
+.brand-pano-ingles .points-panel,
+.brand-pano-ingles .details-grid div,
+.brand-pano-ingles .movement-panel {
+  border-color: rgba(178, 156, 107, 0.28);
+  background: rgba(14, 30, 45, 0.78);
+}
+
+.brand-pano-ingles .photo-frame span,
+.brand-pano-ingles .ledger-item strong {
+  color: #c8b57f;
+}
+
+.brand-pano-ingles dt,
+.brand-pano-ingles footer {
+  color: #8f815f;
+}
+
+.brand-pano-ingles .ledger-item {
+  background: rgba(32, 48, 65, 0.72);
+}
+
+.brand-pano-ingles .section-head {
+  border-bottom-color: rgba(178, 156, 107, 0.18);
+}
+
+.brand-pano-ingles button {
+  border-color: rgba(200, 181, 127, 0.42);
+  background: rgba(178, 156, 107, 0.14);
+  color: #f1f3f8;
 }
 
 .ledger-list {

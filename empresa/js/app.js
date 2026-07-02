@@ -9642,6 +9642,11 @@ function firstTextValue(...values) {
   return match ? String(match).trim() : "";
 }
 
+function isPanoInglesBusinessName(value) {
+  const slug = slugify(value);
+  return slug.includes("pano-ingles") || slug.includes("panos-ingles");
+}
+
 function businessCardProfile(affiliate = {}) {
   const business = state.businessProfile || session?.user?.business || {};
   const settings = {
@@ -9864,7 +9869,11 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.restore();
   };
 
-  const drawDarkQrImage = (img, x, y, size) => {
+  const drawDarkQrImage = (img, x, y, size, options = {}) => {
+    const qrInk = options.ink || "#f8fdff";
+    const qrBg = options.bg || "#020817";
+    const qrLine = options.line || "rgba(124, 251, 255, 0.42)";
+    const qrGlow = options.glow || "rgba(124, 251, 255, 0.2)";
     const qrCanvas = document.createElement("canvas");
     qrCanvas.width = size;
     qrCanvas.height = size;
@@ -9884,9 +9893,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
       }
       const luminance = (red * 0.299) + (green * 0.587) + (blue * 0.114);
       if (luminance < 170) {
-        pixels[index] = 248;
-        pixels[index + 1] = 253;
-        pixels[index + 2] = 255;
+        const ink = qrInk.match(/[0-9a-f]{2}/gi) || ["f8", "fd", "ff"];
+        pixels[index] = parseInt(ink[0], 16);
+        pixels[index + 1] = parseInt(ink[1], 16);
+        pixels[index + 2] = parseInt(ink[2], 16);
         pixels[index + 3] = 255;
       } else {
         pixels[index + 3] = 0;
@@ -9895,10 +9905,10 @@ async function buildAffiliateCardDataUrl(affiliate) {
     qrContext.putImageData(imageData, 0, 0);
 
     ctx.save();
-    ctx.fillStyle = "#020817";
-    ctx.strokeStyle = "rgba(124, 251, 255, 0.42)";
+    ctx.fillStyle = qrBg;
+    ctx.strokeStyle = qrLine;
     ctx.lineWidth = 2;
-    ctx.shadowColor = "rgba(124, 251, 255, 0.2)";
+    ctx.shadowColor = qrGlow;
     ctx.shadowBlur = 16;
     ctx.beginPath();
     ctx.roundRect(x - 10, y - 10, size + 20, size + 20, 18);
@@ -9968,7 +9978,24 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const qrImg = await loadImageDataUrl(qrSource);
 
   {
-  const palette = {
+  const isPanoInglesTheme = isPanoInglesBusinessName(businessName);
+  const palette = isPanoInglesTheme ? {
+    bg: "#000209",
+    card: "#040C16",
+    top: "#0E1E2D",
+    panel: "#081625",
+    panelSoft: "#1D3550",
+    ink: "#F1F3F8",
+    muted: "#C8B57F",
+    accent: "#B29C6B",
+    gold: "#C8B57F",
+    line: "rgba(178, 156, 107, 0.34)",
+    qrBg: "#000209",
+    qrInk: "#F1F3F8",
+    qrLine: "rgba(200, 181, 127, 0.52)",
+    qrGlow: "rgba(200, 181, 127, 0.18)",
+    footerBg: "rgba(178, 156, 107, 0.10)",
+  } : {
     bg: "#07110f",
     card: "#101c1a",
     top: "#16392f",
@@ -9979,6 +10006,11 @@ async function buildAffiliateCardDataUrl(affiliate) {
     accent: "#74f7bf",
     gold: "#f4c84f",
     line: "rgba(116, 247, 191, 0.24)",
+    qrBg: "#020817",
+    qrInk: "#f8fdff",
+    qrLine: "rgba(124, 251, 255, 0.42)",
+    qrGlow: "rgba(124, 251, 255, 0.2)",
+    footerBg: "rgba(116, 247, 191, 0.08)",
   };
 
   ctx.fillStyle = palette.bg;
@@ -9992,7 +10024,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, 36);
   ctx.fill();
-  ctx.strokeStyle = "rgba(116, 247, 191, 0.54)";
+  ctx.strokeStyle = isPanoInglesTheme ? "rgba(200, 181, 127, 0.58)" : "rgba(116, 247, 191, 0.54)";
   ctx.lineWidth = 3;
   ctx.stroke();
 
@@ -10000,7 +10032,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.beginPath();
   ctx.roundRect(62, 62, width - 124, 178, 28);
   ctx.fill();
-  ctx.fillStyle = "rgba(244, 200, 79, 0.12)";
+  ctx.fillStyle = isPanoInglesTheme ? "rgba(200, 181, 127, 0.14)" : "rgba(244, 200, 79, 0.12)";
   ctx.fillRect(62, 218, width - 124, 22);
   ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
   ctx.lineWidth = 1;
@@ -10047,7 +10079,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   drawPanel(companyX, companyY, companyW, companyH, palette.panelSoft);
 
   drawInitials(businessName, companyX + 28, companyY + 28, 96, 96, {
-    background: "#0d1f1b",
+    background: isPanoInglesTheme ? "#081625" : "#0d1f1b",
     color: palette.accent,
     radius: 26,
     font: "900 40px Inter, Arial, sans-serif",
@@ -10123,9 +10155,14 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const qrPaperX = qrX + (qrW - qrPaperSize) / 2;
   const qrPaperY = qrY + 34;
   if (qrImg) {
-    drawDarkQrImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28);
+    drawDarkQrImage(qrImg, qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, {
+      bg: palette.qrBg,
+      ink: palette.qrInk,
+      line: palette.qrLine,
+      glow: palette.qrGlow,
+    });
   } else {
-    ctx.fillStyle = "#0b2a22";
+    ctx.fillStyle = isPanoInglesTheme ? "#081625" : "#0b2a22";
     ctx.beginPath();
     ctx.roundRect(qrPaperX + 14, qrPaperY + 14, qrPaperSize - 28, qrPaperSize - 28, 18);
     ctx.fill();
@@ -10144,7 +10181,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
     ctx.fillText(line, qrX + qrW / 2, qrY + 290 + index * 19);
   });
 
-  ctx.fillStyle = "rgba(116, 247, 191, 0.08)";
+  ctx.fillStyle = palette.footerBg;
   ctx.beginPath();
   ctx.roundRect(76, 646, width - 152, 46, 18);
   ctx.fill();
