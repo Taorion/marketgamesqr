@@ -6,6 +6,7 @@ const { env } = require("../config/env");
 function serviceUnavailable(message) {
   const error = new Error(message);
   error.status = 503;
+  error.publicMessage = "No se pudo enviar la consulta en este momento. Intenta nuevamente o escríbenos por WhatsApp.";
   return error;
 }
 

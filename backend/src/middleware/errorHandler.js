@@ -6,7 +6,7 @@ function errorHandler(error, _req, res, _next) {
 
   res.status(status).json({
     error: {
-      message: error.message || "Internal server error.",
+      message: error.publicMessage || error.message || "Internal server error.",
       details: error.details,
     },
   });
