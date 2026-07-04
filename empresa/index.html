@@ -2652,6 +2652,7 @@
                       <th>Pago</th>
                       <th>Origen</th>
                       <th>Producto o servicio</th>
+                      <th>Afiliado / puntos</th>
                       <th>Sucursal</th>
                       <th>Fecha</th>
                     </tr>
@@ -3373,18 +3374,24 @@
                     <span>Campaña de la compra</span>
                     <select id="affiliatePurchaseCampaignInput"></select>
                   </label>
-                  <label>
-                    <span>Producto / servicio</span>
-                    <input id="affiliatePurchaseProductInput" type="text" placeholder="Ej: Compra en tienda">
-                  </label>
-                  <label>
-                    <span>Monto de compra</span>
-                    <input id="affiliatePurchaseAmountInput" type="number" min="0" step="1000" placeholder="Ej: 25000">
-                  </label>
+                  <div class="affiliate-purchase-summary">
+                    <span>Total compra</span>
+                    <strong id="affiliatePurchaseTotalText">$0</strong>
+                    <small id="affiliatePurchasePointsText">0 puntos estimados</small>
+                  </div>
                   <label class="span-2">
                     <span>Nota interna</span>
                     <input id="affiliatePurchaseNotesInput" type="text" placeholder="Ej: Venta atribuida por recomendación">
                   </label>
+                  <div class="affiliate-purchase-builder span-3">
+                    <div class="affiliate-purchase-builder-head">
+                      <strong>Productos comprados</strong>
+                      <button class="ghost-button" id="affiliatePurchaseAddItemButton" type="button">Agregar producto</button>
+                    </div>
+                    <div class="affiliate-purchase-items" id="affiliatePurchaseItemsList"></div>
+                    <input id="affiliatePurchaseProductInput" type="hidden">
+                    <input id="affiliatePurchaseAmountInput" type="hidden">
+                  </div>
                   <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Registrar compra</button>
                   <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Abrir carnet digital</button>
                   <button class="ghost-button" id="copyAffiliateCardLinkButton" type="button" disabled>Copiar link</button>

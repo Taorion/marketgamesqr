@@ -257,6 +257,10 @@ const affiliatePurchaseCampaignInput = document.getElementById("affiliatePurchas
 const affiliatePurchaseProductInput = document.getElementById("affiliatePurchaseProductInput");
 const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseAmountInput");
 const affiliatePurchaseNotesInput = document.getElementById("affiliatePurchaseNotesInput");
+const affiliatePurchaseItemsList = document.getElementById("affiliatePurchaseItemsList");
+const affiliatePurchaseAddItemButton = document.getElementById("affiliatePurchaseAddItemButton");
+const affiliatePurchaseTotalText = document.getElementById("affiliatePurchaseTotalText");
+const affiliatePurchasePointsText = document.getElementById("affiliatePurchasePointsText");
 const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
@@ -798,6 +802,8 @@ let state = {
   activationShareSelectedKey: "",
   activationShareLoading: false,
   affiliatesLoaded: false,
+  affiliatePointRules: null,
+  affiliatePurchaseItems: [{ name: "", quantity: 1, unit_price: 0 }],
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
   ticketCenterLoading: false,
@@ -1562,6 +1568,7 @@ async function loadAffiliatesData() {
   const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
   if (!isCurrentBusinessScope(scopeKey)) return;
   state.affiliates = data.affiliates || [];
+  state.affiliatePointRules = data.point_rules || state.affiliatePointRules || null;
   state.affiliatesLoaded = true;
   hideFeedback();
 }
@@ -1757,6 +1764,7 @@ async function loadStrategicQrData(options = {}) {
         : { affiliates: [] };
       if (!isCurrentBusinessScope(scopeKey)) return;
       state.affiliates = data.affiliates || [];
+      state.affiliatePointRules = data.point_rules || state.affiliatePointRules || null;
       state.affiliatesLoaded = true;
     }
     if (!isCurrentBusinessScope(scopeKey)) return;
@@ -5674,7 +5682,7 @@ function renderRedemptionsView() {
 
 function renderSalesView() {
   const campaign = state.selectedCampaign || {};
-  const sales = filterRows(state.selectedSales || [], ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name"]);
+  const sales = filterRows(state.selectedSales || [], ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "affiliate_name"]);
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const avgTicket = sales.length ? totalRevenue / sales.length : 0;
   const items = [
@@ -5700,12 +5708,13 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td>${escapeHtml(item.product_or_service || "-")}</td>
+      <td>${escapeHtml(item.referred_affiliate_id ? "Afiliado" : saleSourceLabel(item.sale_source))}</td>
+      <td>${saleProductSummary(item)}</td>
+      <td>${saleAffiliateSummary(item)}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="10">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -6566,6 +6575,42 @@ function saleSourceLabel(source) {
   if (source === "CONTACT_CENTER") return "Contacto convertido";
   if (source === "REDEMPTION") return "Redención";
   return source || "-";
+}
+
+function saleMetadata(item = {}) {
+  if (!item.metadata) return {};
+  if (typeof item.metadata === "object") return item.metadata;
+  try {
+    return JSON.parse(item.metadata);
+  } catch {
+    return {};
+  }
+}
+
+function saleProductsForDisplay(item = {}) {
+  const metadata = saleMetadata(item);
+  return Array.isArray(metadata.products) ? metadata.products : [];
+}
+
+function saleProductSummary(item = {}) {
+  const products = saleProductsForDisplay(item);
+  if (!products.length) return escapeHtml(item.product_or_service || "-");
+  const summary = products.map((product) => {
+    const quantity = Number(product.quantity || 1);
+    const lineTotal = Number(product.line_total || (Number(product.unit_price || 0) * quantity));
+    return `${escapeHtml(product.name || "Producto")} <span class="table-secondary">x${quantity} · ${escapeHtml(money(lineTotal))}</span>`;
+  }).join("<br>");
+  return `<strong>${escapeHtml(item.product_or_service || `${products.length} productos`)}</strong><br>${summary}`;
+}
+
+function saleAffiliateSummary(item = {}) {
+  if (!item.referred_affiliate_id && !item.affiliate_name && !Number(item.referral_points_awarded || 0)) {
+    return '<span class="table-secondary">Sin afiliado</span>';
+  }
+  return `
+    <strong>${escapeHtml(item.affiliate_name || "Afiliado")}</strong>
+    <br><span class="status-chip ok">${Number(item.referral_points_awarded || 0).toLocaleString("es-CO")} pts</span>
+  `;
 }
 
 const LEAD_CAPTURE_FIELD_DEFS = [
@@ -9593,7 +9638,7 @@ function renderNoCampaignState() {
   recentLeadsTable.innerHTML = '<tr><td colspan="4">Sin leads.</td></tr>';
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
-  campaignSalesTable.innerHTML = '<tr><td colspan="8">Sin ventas.</td></tr>';
+  campaignSalesTable.innerHTML = '<tr><td colspan="10">Sin ventas.</td></tr>';
   branchTable.innerHTML = '<tr><td colspan="4">Sin datos por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
@@ -12057,6 +12102,9 @@ async function submitAffiliateForm(event) {
     state.affiliates = [affiliate, ...(state.affiliates || []).filter((item) => item.id !== affiliate.id)];
     state.selectedAffiliateId = affiliate.id;
     state.selectedAffiliate = affiliate;
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    state.leadCrmPagination.offset = 0;
     affiliateCreateMessage.textContent = "";
     resetAffiliateForm();
     await renderAffiliatesView();
@@ -12066,14 +12114,125 @@ async function submitAffiliateForm(event) {
   }
 }
 
+function normalizeAffiliatePurchaseItems() {
+  const rows = Array.isArray(state.affiliatePurchaseItems) && state.affiliatePurchaseItems.length
+    ? state.affiliatePurchaseItems
+    : [{ name: "", quantity: 1, unit_price: 0 }];
+  state.affiliatePurchaseItems = rows.map((item) => ({
+    name: String(item.name || "").trim(),
+    quantity: Math.max(1, Number(item.quantity || 1)),
+    unit_price: Math.max(0, Number(item.unit_price || 0)),
+  }));
+  return state.affiliatePurchaseItems;
+}
+
+function affiliatePurchaseLineTotal(item = {}) {
+  return Math.max(1, Number(item.quantity || 1)) * Math.max(0, Number(item.unit_price || 0));
+}
+
+function affiliatePurchaseTotal() {
+  return normalizeAffiliatePurchaseItems().reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
+}
+
+function affiliateReferralPointsEstimate(total) {
+  const rules = state.affiliatePointRules || {};
+  const pointAmount = Number(rules.point_amount_cop || 0);
+  const rate = Number(rules.referral_rate || 0);
+  if (!pointAmount || !rate || !Number.isFinite(total) || total <= 0) return null;
+  const raw = (total / pointAmount) * rate;
+  return Math.max(0, rules.referral_rounding === "floor" ? Math.floor(raw) : Math.ceil(raw));
+}
+
+function updateAffiliatePurchaseTotals() {
+  const items = normalizeAffiliatePurchaseItems();
+  const total = affiliatePurchaseTotal();
+  const namedItems = items.filter((item) => item.name && affiliatePurchaseLineTotal(item) > 0);
+  const productSummary = namedItems.length
+    ? namedItems.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 170)
+    : "";
+  const points = affiliateReferralPointsEstimate(total);
+  if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = String(total || "");
+  if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.value = productSummary || "Compra afiliado";
+  if (affiliatePurchaseTotalText) affiliatePurchaseTotalText.textContent = money(total);
+  if (affiliatePurchasePointsText) {
+    affiliatePurchasePointsText.textContent = points === null
+      ? "Puntos calculados al registrar"
+      : `${points.toLocaleString("es-CO")} puntos estimados`;
+  }
+  return { items, total, productSummary, points };
+}
+
+function renderAffiliatePurchaseItems() {
+  if (!affiliatePurchaseItemsList) return;
+  const disabled = !state.selectedAffiliateId;
+  const rows = normalizeAffiliatePurchaseItems();
+  affiliatePurchaseItemsList.innerHTML = rows.map((item, index) => `
+    <div class="affiliate-purchase-item" data-affiliate-purchase-row="${index}">
+      <label>
+        <span>Producto</span>
+        <input type="text" data-affiliate-purchase-field="name" value="${escapeHtml(item.name)}" placeholder="Nombre producto" ${disabled ? "disabled" : ""}>
+      </label>
+      <label>
+        <span>Cant.</span>
+        <input type="number" min="1" step="1" data-affiliate-purchase-field="quantity" value="${escapeHtml(item.quantity)}" ${disabled ? "disabled" : ""}>
+      </label>
+      <label>
+        <span>Valor unitario</span>
+        <input type="number" min="0" step="100" data-affiliate-purchase-field="unit_price" value="${escapeHtml(item.unit_price)}" ${disabled ? "disabled" : ""}>
+      </label>
+      <div class="affiliate-purchase-line-total">
+        <span>Subtotal</span>
+        <strong>${escapeHtml(money(affiliatePurchaseLineTotal(item)))}</strong>
+      </div>
+      <button class="ghost-button danger-button" type="button" data-affiliate-purchase-remove="${index}" ${disabled || rows.length <= 1 ? "disabled" : ""}>Quitar</button>
+    </div>
+  `).join("");
+  affiliatePurchaseItemsList.querySelectorAll("[data-affiliate-purchase-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const row = input.closest("[data-affiliate-purchase-row]");
+      const index = Number(row?.dataset.affiliatePurchaseRow || 0);
+      const field = input.dataset.affiliatePurchaseField;
+      const next = normalizeAffiliatePurchaseItems();
+      next[index][field] = field === "name" ? input.value : Number(input.value || 0);
+      state.affiliatePurchaseItems = next;
+      const totalCell = row?.querySelector(".affiliate-purchase-line-total strong");
+      if (totalCell) totalCell.textContent = money(affiliatePurchaseLineTotal(next[index]));
+      updateAffiliatePurchaseTotals();
+    });
+  });
+  affiliatePurchaseItemsList.querySelectorAll("[data-affiliate-purchase-remove]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.affiliatePurchaseRemove || 0);
+      state.affiliatePurchaseItems = normalizeAffiliatePurchaseItems().filter((_, itemIndex) => itemIndex !== index);
+      renderAffiliatePurchaseItems();
+    });
+  });
+  if (affiliatePurchaseAddItemButton) affiliatePurchaseAddItemButton.disabled = disabled;
+  updateAffiliatePurchaseTotals();
+}
+
 async function awardSelectedAffiliatePoints() {
   if (!state.selectedAffiliateId || !session?.user?.business_id) return;
   const selectedAffiliate = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === state.selectedAffiliateId) || {};
-  const amount = Number(affiliatePurchaseAmountInput?.value || 0);
+  const purchase = updateAffiliatePurchaseTotals();
+  const products = purchase.items
+    .map((item) => ({
+      name: String(item.name || "").trim(),
+      quantity: Math.max(1, Number(item.quantity || 1)),
+      unit_price: Math.max(0, Number(item.unit_price || 0)),
+      line_total: affiliatePurchaseLineTotal(item),
+    }))
+    .filter((item) => item.name && item.line_total > 0);
+  const amount = Number(purchase.total || 0);
   const campaignId = affiliatePurchaseCampaignInput?.value || "";
   if (!Number.isFinite(amount) || amount <= 0) {
-    setInlineMessage(affiliatePurchaseMessage, "Ingresa un monto valido de compra.", "error");
-    showFeedback("Ingresa un monto valido de compra.", "error");
+    setInlineMessage(affiliatePurchaseMessage, "Agrega productos con valor para totalizar la compra.", "error");
+    showFeedback("Agrega productos con valor para totalizar la compra.", "error");
+    return;
+  }
+  if (!products.length) {
+    setInlineMessage(affiliatePurchaseMessage, "Agrega al menos un producto comprado con nombre y valor.", "error");
+    showFeedback("Agrega al menos un producto comprado.", "error");
     return;
   }
   if (activeCampaignsForAssociation().length && !campaignId) {
@@ -12096,7 +12255,7 @@ async function awardSelectedAffiliatePoints() {
         customer_phone: selectedAffiliate.phone || null,
         customer_email: selectedAffiliate.email || null,
         customer_document_id: selectedAffiliate.document_id || null,
-        product_name: affiliatePurchaseProductInput?.value.trim() || "Compra afiliado",
+        product_name: purchase.productSummary || products[0]?.name || "Compra afiliado",
         sale_amount: amount,
         currency: "COP",
         acquisition_source: "FRIEND_REFERRAL",
@@ -12106,25 +12265,38 @@ async function awardSelectedAffiliatePoints() {
         metadata: {
           source: "affiliate_contact_purchase",
           affiliate_purchase: true,
+          products,
+          items_count: products.length,
+          purchase_total: amount,
+          estimated_referral_points: purchase.points,
+          affiliate_name: selectedAffiliate.full_name || null,
         },
       }),
     });
 
     const awarded = Number(data.referral?.points_awarded || 0);
     const selectedAffiliateId = state.selectedAffiliateId;
-    if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = "";
-    if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.value = "";
+    state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
     await loadAffiliatesData();
     state.selectedAffiliateId = selectedAffiliateId;
     state.selectedAffiliate = (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
-    if (campaignId && state.selectedCampaignId === campaignId) {
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    if (campaignId) {
+      if (state.selectedCampaignId !== campaignId) {
+        state.selectedCampaignId = campaignId;
+        state.selectedCampaign = campaignById(campaignId) || state.selectedCampaign;
+      }
       await reloadCampaignAffiliates(campaignId);
+      const salesData = await apiSafe(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }, { sales: state.selectedSales || [] });
+      state.selectedSales = salesData.sales || [];
+      if (state.currentView === "sales") renderSalesView();
     }
     await renderAffiliatesView();
     const message = awarded
-      ? `Compra registrada. ${data.referral?.affiliate_name || selectedAffiliate.full_name || "El afiliado"} recibio ${awarded} puntos automaticamente.`
-      : "Compra registrada. La regla actual no genero puntos para este monto.";
+      ? `Compra por ${money(amount)} registrada en Sales. ${data.referral?.affiliate_name || selectedAffiliate.full_name || "El afiliado"} recibio ${awarded} puntos automaticamente.`
+      : `Compra por ${money(amount)} registrada en Sales. La regla actual no genero puntos para este total.`;
     setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
     showFeedback(message, awarded ? "success" : "info", { title: "Compra atribuida" });
   } catch (error) {
@@ -12283,6 +12455,8 @@ async function deleteSelectedAffiliate(affiliateId, affiliateName = "afiliado") 
       headers: authHeaders(),
     });
     state.affiliates = (state.affiliates || []).filter((item) => item.id !== affiliateId);
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
     state.selectedAffiliateLedger = [];
     if (state.selectedAffiliateId === affiliateId) {
       state.selectedAffiliateId = state.affiliates[0]?.id || null;
@@ -12526,7 +12700,7 @@ function exportRedemptions() {
 
 function exportSales() {
   downloadCsv("campaign-sales", [
-    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Sucursal", "Fecha"],
+    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Productos detallados", "Afiliado", "Puntos", "Sucursal", "Fecha"],
     ...state.selectedSales.map((item) => [
       item.player_name,
       item.document_id,
@@ -12534,6 +12708,9 @@ function exportSales() {
       item.sale_amount,
       item.payment_method,
       item.product_or_service,
+      saleProductsForDisplay(item).map((product) => `${product.name} x${product.quantity || 1} = ${product.line_total || 0}`).join(" | "),
+      item.affiliate_name || "",
+      item.referral_points_awarded || 0,
       item.branch_name,
       item.created_at,
     ]),
@@ -13870,6 +14047,12 @@ async function openAffiliateForPoints(affiliateId) {
   if (!state.affiliatesLoaded && session?.user?.business_id) {
     await loadAffiliatesData();
   }
+  const changedAffiliate = state.selectedAffiliateId && state.selectedAffiliateId !== affiliateId;
+  if (changedAffiliate) {
+    state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
+    if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
+    setInlineMessage(affiliatePurchaseMessage, "", "info");
+  }
   state.selectedAffiliateId = affiliateId;
   state.filter = "";
   if (searchInput) searchInput.value = "";
@@ -14066,6 +14249,7 @@ async function renderAffiliatesView() {
     if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = true;
     if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = true;
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = true;
+    renderAffiliatePurchaseItems();
     downloadAffiliateCardButton.disabled = true;
     if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
@@ -14085,6 +14269,7 @@ async function renderAffiliatesView() {
   if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = false;
   if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = false;
   if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = false;
+  renderAffiliatePurchaseItems();
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
   if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = !affiliateDigitalCardUrl(selected);
@@ -14588,7 +14773,7 @@ function renderSalesView() {
   const campaign = state.selectedCampaign || {};
   const sales = withFilters(
     state.selectedSales || [],
-    ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name"],
+    ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "affiliate_name"],
     ["created_at"]
   );
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
@@ -14616,12 +14801,13 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td>${escapeHtml(item.product_or_service || "-")}</td>
+      <td>${escapeHtml(item.referred_affiliate_id ? "Afiliado" : saleSourceLabel(item.sale_source))}</td>
+      <td>${saleProductSummary(item)}</td>
+      <td>${saleAffiliateSummary(item)}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="10">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -15011,6 +15197,13 @@ window.addEventListener("beforeunload", () => {
 });
 affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);
 resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
+affiliatePurchaseAddItemButton?.addEventListener("click", () => {
+  state.affiliatePurchaseItems = [
+    ...normalizeAffiliatePurchaseItems(),
+    { name: "", quantity: 1, unit_price: 0 },
+  ];
+  renderAffiliatePurchaseItems();
+});
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);

@@ -3,6 +3,11 @@ const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { consumeQrCredit } = require("./qrCreditService");
+const {
+  affiliatePointRuleMetadata,
+  getAffiliatePointRules,
+  referralPointsForAmount,
+} = require("./affiliatePointRulesService");
 
 function normalizeSearch(value) {
   return String(value || "")
@@ -429,10 +434,126 @@ async function listLeadCrmRows(businessId, filters = {}) {
        ) s on true
        where ml.business_id = $1
      ),
+     affiliate_rows as (
+       select
+         fa.id,
+         'AFFILIATE'::text as source_type,
+         null::uuid as lead_id,
+         fa.full_name as name,
+         split_part(coalesce(fa.full_name, ''), ' ', 1) as first_name,
+         trim(substr(coalesce(fa.full_name, ''), length(split_part(coalesce(fa.full_name, ''), ' ', 1)) + 1)) as last_name,
+         fa.document_id,
+         fa.email,
+         fa.phone,
+         fa.created_at,
+         ca.campaign_id,
+         ca.campaign_name,
+         'Afiliados'::text as channel,
+         coalesce(fa.card_metadata->>'city', '') as city,
+         null::text as crm_priority,
+         'WhatsApp'::text as preferred_channel,
+         null::text as preferred_contact_time,
+         ''::text as stored_status,
+         coalesce(s.purchase_count, 0)::int as purchase_count,
+         coalesce(s.total_spent, 0)::numeric as total_spent,
+         coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
+         s.last_purchase_at,
+         coalesce(s.top_product, fa.notes) as top_product,
+         s.top_category,
+         coalesce(q.active_tickets, 0)::int as active_tickets,
+         coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
+         coalesce(q.benefits_received, 0)::int as benefits_received,
+         0::int as games_played,
+         coalesce(fa.points_total, 0)::int as score_total,
+         0::numeric as score_average,
+         0::int as best_score,
+         greatest(
+           fa.created_at,
+           coalesce(s.last_purchase_at, fa.created_at),
+           coalesce(q.last_ticket_at, fa.created_at),
+           coalesce(a.last_activation_at, fa.created_at),
+           coalesce(l.last_ledger_at, fa.created_at)
+         ) as last_interaction_at,
+         coalesce(a.activation_count, 0)::int as activation_count,
+         fa.id as affiliate_id,
+         fa.qr_token as affiliate_code,
+         fa.status as affiliate_status,
+         true as is_affiliate,
+         fa.notes as top_interest
+       from affiliates fa
+       left join lateral (
+         select c.id as campaign_id, c.name as campaign_name
+         from campaign_affiliates caf
+         join campaigns c on c.id = caf.campaign_id
+         where caf.business_id = fa.business_id
+           and caf.affiliate_id = fa.id
+           and caf.status = 'ACTIVE'
+         order by caf.updated_at desc, caf.created_at desc
+         limit 1
+       ) ca on true
+       left join lateral (
+         select count(*)::int as purchase_count,
+                coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
+                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                max(bs.created_at) as last_purchase_at,
+                (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
+         from business_sales bs
+         where bs.business_id = fa.business_id
+           and (
+             bs.referred_affiliate_id = fa.id
+             or (nullif(fa.document_id, '') is not null and bs.customer_document_id = fa.document_id)
+             or (nullif(fa.phone, '') is not null and bs.customer_phone = fa.phone)
+             or (nullif(fa.email, '') is not null and lower(bs.customer_email) = lower(fa.email))
+             or (bs.metadata->>'crm_source_type' = 'AFFILIATE' and bs.metadata->>'crm_source_id' = fa.id::text)
+           )
+       ) s on true
+       left join lateral (
+         select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
+                count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
+                count(*)::int as benefits_received,
+                max(q.created_at) as last_ticket_at
+         from qr_codes q
+         where q.business_id = fa.business_id and q.affiliate_id = fa.id
+       ) q on true
+       left join lateral (
+         select count(*)::int as activation_count, max(created_at) as last_activation_at
+         from lead_activations la
+         where la.business_id = fa.business_id and la.source_type = 'AFFILIATE' and la.source_id = fa.id
+       ) a on true
+       left join lateral (
+         select max(created_at) as last_ledger_at
+         from affiliate_point_ledger apl
+         where apl.business_id = fa.business_id and apl.affiliate_id = fa.id
+       ) l on true
+       where fa.business_id = $1
+         and fa.status <> 'DELETED'
+         and not exists (
+           select 1
+           from players p
+           where p.business_id = fa.business_id
+             and (
+               (nullif(fa.document_id, '') is not null and p.document_id = fa.document_id)
+               or (nullif(fa.phone, '') is not null and p.phone = fa.phone)
+               or (nullif(fa.email, '') is not null and lower(p.email) = lower(fa.email))
+             )
+         )
+         and not exists (
+           select 1
+           from business_manual_leads ml
+           where ml.business_id = fa.business_id
+             and (
+               (nullif(fa.phone, '') is not null and ml.phone = fa.phone)
+               or (nullif(fa.email, '') is not null and lower(ml.email) = lower(fa.email))
+             )
+         )
+     ),
      all_rows as (
        select * from player_rows
        union all
        select * from manual_rows
+       union all
+       select * from affiliate_rows
      ),
      shaped as (
        select *,
@@ -528,6 +649,33 @@ async function listLeadCrmRows(businessId, filters = {}) {
 
 async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = { query }) {
   const source = String(sourceType || "PLAYER").toUpperCase();
+  if (source === "AFFILIATE") {
+    const result = await client.query(
+      `select fa.id, fa.business_id, null::uuid as lead_id, 'AFFILIATE'::text as source_type,
+              fa.full_name as name, fa.document_id, fa.email, fa.phone, null::text as organization,
+              'Afiliados'::text as channel, null::text as source_detail, fa.notes as interest,
+              'WhatsApp'::text as preferred_channel, ''::text as stored_status, null::text as priority,
+              fa.notes, fa.card_metadata as metadata, fa.created_at, fa.updated_at,
+              ca.campaign_id, ca.campaign_name,
+              fa.id as affiliate_id, fa.qr_token as affiliate_code, fa.status as affiliate_status,
+              fa.points_total as affiliate_points_total
+       from affiliates fa
+       left join lateral (
+         select c.id as campaign_id, c.name as campaign_name
+         from campaign_affiliates caf
+         join campaigns c on c.id = caf.campaign_id
+         where caf.business_id = fa.business_id
+           and caf.affiliate_id = fa.id
+           and caf.status = 'ACTIVE'
+         order by caf.updated_at desc, caf.created_at desc
+         limit 1
+       ) ca on true
+       where fa.id = $1 and fa.business_id = $2 and fa.status <> 'DELETED'`,
+      [leadId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Lead not found.");
+    return result.rows[0];
+  }
   if (source === "MANUAL") {
     const result = await client.query(
       `select id, business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
@@ -571,6 +719,7 @@ function identityParams(lead) {
 
 async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
   const lead = await resolveLead(businessId, leadId, sourceType);
+  const affiliateId = lead.source_type === "AFFILIATE" ? lead.id : lead.affiliate_id || null;
   const params = identityParams(lead);
   const identityOnlyParams = params.slice(0, 5);
   const purchaseParams = [
@@ -581,9 +730,11 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     lead.email || null,
     lead.source_type || "PLAYER",
     lead.id,
+    affiliateId,
   ];
   const sourceParams = [lead.business_id, lead.lead_id || null, lead.source_type || "PLAYER", lead.id];
   const contactParams = [lead.business_id, lead.document_id || null, lead.phone || null, lead.email || null];
+  const affiliateContactParams = [...contactParams, affiliateId];
 
   const [
     purchases,
@@ -612,6 +763,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          or ($2::uuid is not null and bs.qr_code_id in (select id from qr_codes where player_id = $2))
          or (bs.metadata->>'crm_source_type' = $6::text and bs.metadata->>'crm_source_id' = $7::text)
          or ($2::uuid is not null and bs.metadata->>'crm_lead_id' = $2::text)
+         or ($8::uuid is not null and bs.referred_affiliate_id = $8)
        )
        order by bs.created_at desc
        limit 100`,
@@ -694,10 +846,11 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          or ($3::text is not null and nullif($3::text, '') is not null and p.document_id = $3::text)
          or ($4::text is not null and nullif($4::text, '') is not null and p.phone = $4::text)
          or ($5::text is not null and nullif($5::text, '') is not null and lower(p.email) = lower($5::text))
+         or ($6::uuid is not null and q.affiliate_id = $6)
        )
        order by q.created_at desc
        limit 120`,
-      identityOnlyParams
+      [...identityOnlyParams, affiliateId]
     ),
     query(
       `select ta.*, bt.title as trivia_title, c.name as campaign_name, g.name as game_name,
@@ -805,10 +958,11 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          ($2::text is not null and a.document_id = $2)
          or ($3::text is not null and a.phone = $3)
          or ($4::text is not null and lower(a.email) = lower($4))
+         or ($5::uuid is not null and a.id = $5)
        )
        order by a.created_at desc
        limit 5`,
-      contactParams
+      affiliateContactParams
     ),
     query(
       `select rp.*, c.name as campaign_name
@@ -903,7 +1057,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     commercial_status: lead.stored_status || summary.commercial_status,
     commercial_status_label: statusLabel(lead.stored_status || summary.commercial_status),
     level: leadLevel(summary),
-    is_affiliate: affiliates.rows.length > 0,
+    is_affiliate: lead.source_type === "AFFILIATE" || affiliates.rows.length > 0,
     has_active_benefits: activeTickets > 0 || rewardPasses.rows.some((item) => item.status === "ACTIVE"),
     insight: insightFor(summary, interestRows),
   };
@@ -1204,6 +1358,37 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
       };
     }
 
+    if (source === "AFFILIATE") {
+      const convertedPlayers = await client.query(
+        `select id
+         from players
+         where business_id = $1
+           and metadata->>'crm_created_from' = 'AFFILIATE'
+           and metadata->>'crm_source_id' = $2`,
+        [businessId, sourceId]
+      );
+      for (const row of convertedPlayers.rows) {
+        await deletePlayer(row.id);
+      }
+      const campaignLinks = await client.query(
+        "update campaign_affiliates set status = 'REMOVED', updated_at = now() where business_id = $1 and affiliate_id = $2 and status = 'ACTIVE'",
+        [businessId, sourceId]
+      );
+      incrementDeleted("campaign_affiliates", campaignLinks.rowCount);
+      const affiliate = await client.query(
+        "update affiliates set status = 'DELETED', updated_at = now() where id = $1 and business_id = $2 returning id",
+        [sourceId, businessId]
+      );
+      incrementDeleted("affiliates", affiliate.rowCount);
+      if (!affiliate.rowCount) throw notFound("Lead not found.");
+      return {
+        deleted: true,
+        lead_id: leadId,
+        source_type: source,
+        cleanup: deleted,
+      };
+    }
+
     if (!playerId) throw notFound("Lead not found.");
     const playerDeleted = await deletePlayer(playerId);
     if (!playerDeleted) throw notFound("Lead not found.");
@@ -1246,6 +1431,31 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
     const amount = moneyNumber(payload.sale_amount);
     if (amount <= 0) throw badRequest("El valor de la compra debe ser mayor a cero.");
     const source = lead.source_type || String(sourceType || "PLAYER").toUpperCase();
+    const affiliateResult = await client.query(
+      `select id, full_name, points_total
+       from affiliates
+       where business_id = $1
+         and status = 'ACTIVE'
+         and (
+           ($2::uuid is not null and id = $2)
+           or ($3::text is not null and nullif(document_id, '') = $3)
+           or ($4::text is not null and nullif(phone, '') = $4)
+           or ($5::text is not null and lower(nullif(email, '')) = lower($5))
+         )
+       order by case when $2::uuid is not null and id = $2 then 0 else 1 end, created_at desc
+       limit 1
+       for update`,
+      [
+        businessId,
+        source === "AFFILIATE" ? lead.id : lead.affiliate_id || null,
+        lead.document_id || null,
+        lead.phone || null,
+        lead.email || null,
+      ]
+    );
+    let relatedAffiliate = affiliateResult.rows[0] || null;
+    const affiliatePointRules = relatedAffiliate ? await getAffiliatePointRules(businessId) : null;
+    const referralPoints = affiliatePointRules ? referralPointsForAmount(amount, affiliatePointRules) : 0;
     const metadata = {
       ...(payload.metadata || {}),
       category: payload.category || payload.metadata?.category || null,
@@ -1253,16 +1463,19 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       crm_source_type: source,
       crm_source_id: lead.id,
       crm_lead_id: lead.lead_id || null,
+      related_affiliate_id: relatedAffiliate?.id || null,
       registered_from: "lead_detail",
+      ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
     };
 
     const sale = await client.query(
       `insert into business_sales
         (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
          customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
-         acquisition_source, acquisition_channel, notes, created_at, metadata)
-       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-               coalesce($15::timestamptz, now()), $16::jsonb)
+         acquisition_source, acquisition_channel, referred_affiliate_id, referral_points_awarded,
+         notes, created_at, metadata)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+               coalesce($17::timestamptz, now()), $18::jsonb)
        returning *`,
       [
         businessId,
@@ -1276,13 +1489,47 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         payload.currency || "COP",
         user?.id || null,
         payload.branch_id || null,
-        payload.acquisition_source || "CRM_LEAD",
-        payload.acquisition_channel || lead.channel || "CRM",
+        payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CRM_LEAD"),
+        payload.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || "CRM"),
+        relatedAffiliate?.id || null,
+        referralPoints,
         payload.notes || null,
         payload.created_at || null,
         JSON.stringify(metadata),
       ]
     );
+
+    if (relatedAffiliate && referralPoints > 0) {
+      await client.query(
+        `insert into affiliate_point_ledger
+          (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+         values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE', $6::jsonb)`,
+        [
+          businessId,
+          relatedAffiliate.id,
+          user?.id || null,
+          amount,
+          referralPoints,
+          JSON.stringify({
+            sale_id: sale.rows[0].id,
+            crm_source_type: source,
+            crm_source_id: lead.id,
+            registered_from: "lead_detail",
+            referred_customer: payload.customer_name || lead.name || null,
+            ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
+          }),
+        ]
+      );
+      const updatedAffiliate = await client.query(
+        `update affiliates
+         set points_total = points_total + $3,
+             updated_at = now()
+         where id = $1 and business_id = $2
+         returning id, full_name, points_total`,
+        [relatedAffiliate.id, businessId, referralPoints]
+      );
+      relatedAffiliate = updatedAffiliate.rows[0] || relatedAffiliate;
+    }
 
     if (source === "MANUAL" && ["", "NEW", "INTERESTED", "CONTACTED", "FOLLOW_UP"].includes(String(lead.stored_status || "").toUpperCase())) {
       await client.query(
@@ -1321,7 +1568,13 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         lead.id,
         `${payload.product_name || "Compra"} por ${amount.toLocaleString("es-CO")} ${payload.currency || "COP"}.`,
         payload.campaign_id || lead.campaign_id || null,
-        JSON.stringify({ sale_id: sale.rows[0].id, product_name: payload.product_name || null, sale_amount: amount }),
+        JSON.stringify({
+          sale_id: sale.rows[0].id,
+          product_name: payload.product_name || null,
+          sale_amount: amount,
+          related_affiliate_id: relatedAffiliate?.id || null,
+          referral_points_awarded: referralPoints,
+        }),
         user?.id || null,
       ]
     );

@@ -1398,6 +1398,10 @@ textarea {
   grid-column: span 2;
 }
 
+.affiliate-card-actions .span-3 {
+  grid-column: 1 / -1;
+}
+
 .affiliate-card-actions input[type="number"],
 .affiliate-card-actions input[type="text"],
 .affiliate-card-actions select {
@@ -1417,6 +1421,59 @@ textarea {
 #affiliateTable tr[data-affiliate-row-select]:focus-visible {
   outline: 2px solid rgba(124, 251, 255, 0.72);
   outline-offset: -2px;
+}
+
+.affiliate-purchase-summary,
+.affiliate-purchase-line-total {
+  display: grid;
+  gap: 4px;
+}
+
+.affiliate-purchase-summary {
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(2, 8, 23, 0.36);
+}
+
+.affiliate-purchase-summary span,
+.affiliate-purchase-summary small,
+.affiliate-purchase-line-total span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.affiliate-purchase-builder {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(124, 251, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(2, 8, 23, 0.24);
+}
+
+.affiliate-purchase-items {
+  display: grid;
+  gap: 8px;
+}
+
+.affiliate-purchase-builder-head,
+.affiliate-purchase-item {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+}
+
+.affiliate-purchase-builder-head {
+  grid-template-columns: 1fr auto;
+}
+
+.affiliate-purchase-item {
+  grid-template-columns: minmax(180px, 1fr) minmax(80px, 0.35fr) minmax(120px, 0.6fr) minmax(110px, 0.45fr) auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(124, 251, 255, 0.12);
 }
 
 .reward-pass-layout {
@@ -3604,9 +3661,15 @@ td {
   .affiliate-form,
   .affiliate-card-actions,
   .affiliate-finder-grid,
+  .affiliate-purchase-item,
   .affiliate-photo-actions,
   .affiliate-stepper {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .affiliate-card-actions .span-2,
+  .affiliate-card-actions .span-3 {
+    grid-column: auto;
   }
 
   .affiliate-logo-grid {

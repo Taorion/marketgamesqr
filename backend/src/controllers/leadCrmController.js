@@ -19,7 +19,7 @@ function businessIdFor(req) {
   return req.user.business_id;
 }
 
-const sourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER"]).default("PLAYER");
+const sourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER");
 
 const noteSchema = z.object({
   note: z.string().trim().min(2).max(3000),

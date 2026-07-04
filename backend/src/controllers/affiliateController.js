@@ -13,6 +13,7 @@ const {
 } = require("../services/affiliateService");
 const { validate } = require("../utils/validators");
 const { query } = require("../config/db");
+const { getAffiliatePointRules } = require("../services/affiliatePointRulesService");
 const {
   assertFeatureForRequest,
   assertLimitForBusiness,
@@ -44,8 +45,11 @@ const campaignAffiliateSchema = z.object({
 async function listBusinessAffiliates(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
-    const affiliates = await listAffiliates(req.params.id, req.user);
-    res.json({ affiliates });
+    const [affiliates, point_rules] = await Promise.all([
+      listAffiliates(req.params.id, req.user),
+      getAffiliatePointRules(req.params.id),
+    ]);
+    res.json({ affiliates, point_rules });
   } catch (error) {
     next(error);
   }

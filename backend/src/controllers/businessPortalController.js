@@ -1231,9 +1231,12 @@ function mapContactFeedRows(rows) {
     const manualStatus = String(row.metadata?.manual_status || "").toUpperCase();
     const manualPriority = String(row.metadata?.manual_priority || "").toUpperCase();
     const isManual = row.stage === "MANUAL";
+    const isAffiliate = row.stage === "AFFILIATE";
     const channel = row.preferred_channel || row.attribution_source || "WhatsApp/email";
     let leadTemperature = "nurture";
-    if (isManual) {
+    if (isAffiliate) {
+      leadTemperature = hasSale ? "buyer" : "warm";
+    } else if (isManual) {
       if (manualStatus === "CONVERTED") leadTemperature = "buyer";
       else if (manualStatus === "FOLLOW_UP" || manualPriority === "HIGH") leadTemperature = "hot";
       else if (manualStatus === "CONTACTED") leadTemperature = "warm";
@@ -1246,7 +1249,11 @@ function mapContactFeedRows(rows) {
     }
 
     let recommendedAction = `Nutrir con email/remarketing y nuevo incentivo asociado a ${row.attribution_subject || "la campana"}.`;
-    if (isManual && manualStatus === "LOST") {
+    if (isAffiliate && hasSale) {
+      recommendedAction = "Registrar recompra o beneficio VIP; es afiliado activo con compra atribuida.";
+    } else if (isAffiliate) {
+      recommendedAction = `Contactar por ${channel}; afiliado listo para campana, compra atribuida o referidos.`;
+    } else if (isManual && manualStatus === "LOST") {
       recommendedAction = "Dejar en nutricion o archivar si no hay respuesta.";
     } else if (isManual && manualStatus === "CONVERTED") {
       recommendedAction = "Registrar la venta o pasar a postventa/fidelizacion.";
@@ -1455,6 +1462,80 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
        from business_manual_leads ml
        where ml.business_id = $1
          and ($2::int is null or ml.created_at >= now() - ($2::int * interval '1 day'))
+     ),
+     affiliate_rows as (
+       select
+         fa.id::text as id,
+         'AFFILIATE' as stage,
+         fa.full_name as name,
+         fa.document_id,
+         fa.phone,
+         fa.email,
+         fa.created_at,
+         ca.campaign_id,
+         ca.campaign_name,
+         'Afiliados' as attribution_source,
+         coalesce(nullif(ca.campaign_name, ''), nullif(fa.notes, ''), 'Afiliado') as attribution_subject,
+         q.id as qr_code_id,
+         q.token as qr_token,
+         q.status::text as qr_status,
+         q.origin_type,
+         q.created_at as qr_created_at,
+         q.expires_at,
+         q.claimed_at,
+         q.redeemed_at,
+         fa.id as affiliate_id,
+         fa.full_name as affiliate_name,
+         null::text as favorite_product,
+         fa.notes as purchase_intent,
+         null::text as gift_budget,
+         null::text as purchase_window,
+         'WhatsApp' as preferred_channel,
+         null::text as preferred_contact_time,
+         s.sale_amount,
+         s.currency,
+         s.product_name,
+         s.created_at as sale_created_at,
+         fa.card_metadata
+           || jsonb_build_object(
+                'affiliate_status', fa.status,
+                'affiliate_points_total', fa.points_total,
+                'affiliate_qr_token', fa.qr_token
+              ) as metadata
+       from affiliates fa
+       left join lateral (
+         select c.id as campaign_id, c.name as campaign_name
+         from campaign_affiliates caf
+         join campaigns c on c.id = caf.campaign_id
+         where caf.business_id = fa.business_id
+           and caf.affiliate_id = fa.id
+           and caf.status = 'ACTIVE'
+         order by caf.updated_at desc, caf.created_at desc
+         limit 1
+       ) ca on true
+       left join lateral (
+         select *
+         from qr_codes
+         where business_id = fa.business_id and affiliate_id = fa.id
+         order by created_at desc
+         limit 1
+       ) q on true
+       left join lateral (
+         select sale_amount, currency, product_name, created_at
+         from business_sales
+         where business_id = fa.business_id
+           and (
+             referred_affiliate_id = fa.id
+             or (nullif(fa.document_id, '') is not null and customer_document_id = fa.document_id)
+             or (nullif(fa.phone, '') is not null and customer_phone = fa.phone)
+             or (nullif(fa.email, '') is not null and lower(customer_email) = lower(fa.email))
+           )
+         order by created_at desc
+         limit 1
+       ) s on true
+       where fa.business_id = $1
+         and fa.status <> 'DELETED'
+         and ($2::int is null or fa.created_at >= now() - ($2::int * interval '1 day'))
      )
      select *
      from (
@@ -1463,6 +1544,8 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
        select * from buyer_rows
        union all
        select * from manual_rows
+       union all
+       select * from affiliate_rows
      ) contact_rows
      where $3::text = 'all'
        or ($3::text = 'active' and qr_status = 'ACTIVE' and redeemed_at is null and (expires_at is null or expires_at > now()))
@@ -1491,6 +1574,12 @@ async function countContactFeedRows(businessId, retentionDays) {
         from business_manual_leads ml
         where ml.business_id = $1
           and ($2::int is null or ml.created_at >= now() - ($2::int * interval '1 day')))
+       +
+       (select count(*)::int
+        from affiliates fa
+        where fa.business_id = $1
+          and fa.status <> 'DELETED'
+          and ($2::int is null or fa.created_at >= now() - ($2::int * interval '1 day')))
      )::int as total`,
     [businessId, retentionDays]
   );
@@ -1759,6 +1848,9 @@ async function campaignSales(req, res, next) {
            s.payment_method,
            s.product_or_service,
            s.notes,
+           null::jsonb as metadata,
+           null::uuid as referred_affiliate_id,
+           0::int as referral_points_awarded,
            s.created_at,
            'REDEMPTION'::text as sale_source,
            p.name as player_name,
@@ -1766,7 +1858,8 @@ async function campaignSales(req, res, next) {
            p.phone,
            p.email,
            br.name as branch_name,
-           u.full_name as confirmed_by
+           u.full_name as confirmed_by,
+           null::text as affiliate_name
          from attributed_sales s
          left join players p on p.id = s.player_id
          left join branches br on br.id = s.branch_id
@@ -1789,6 +1882,9 @@ async function campaignSales(req, res, next) {
            bs.acquisition_source as payment_method,
            bs.product_name as product_or_service,
            bs.notes,
+           bs.metadata,
+           bs.referred_affiliate_id,
+           bs.referral_points_awarded,
            bs.created_at,
            'CONTACT_CENTER'::text as sale_source,
            bs.customer_name as player_name,
@@ -1796,10 +1892,12 @@ async function campaignSales(req, res, next) {
            bs.customer_phone as phone,
            bs.customer_email as email,
            br.name as branch_name,
-           u.full_name as confirmed_by
+           u.full_name as confirmed_by,
+           a.full_name as affiliate_name
          from business_sales bs
          left join branches br on br.id = bs.branch_id
          left join app_users u on u.id = bs.seller_user_id
+         left join affiliates a on a.id = bs.referred_affiliate_id
          where bs.business_id = $1 and bs.campaign_id = $2
        ) sales
        order by created_at desc
