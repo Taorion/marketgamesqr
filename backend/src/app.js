@@ -12,6 +12,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const businessPortalRoutes = require("./routes/businessPortalRoutes");
 const businessQrRoutes = require("./routes/businessQrRoutes");
 const interactiveActivationRoutes = require("./routes/interactiveActivationRoutes");
+const leadCaptureRoutes = require("./routes/leadCaptureRoutes");
+const digitalAssetRoutes = require("./routes/digitalAssetRoutes");
 const affiliateRoutes = require("./routes/affiliateRoutes");
 const salesRoutes = require("./routes/salesRoutes");
 const publicGameRoutes = require("./routes/publicGameRoutes");
@@ -163,6 +165,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/business", businessPortalRoutes);
 app.use("/api/business/qr", businessQrRoutes);
 app.use("/api/business/interactive-activations", interactiveActivationRoutes);
+app.use("/api/business/lead-capture-activations", leadCaptureRoutes);
+app.use("/api/business/digital-assets", digitalAssetRoutes);
 app.use("/api/business/reward-passes", rewardPassRoutes);
 app.use("/api/portal", affiliateRoutes);
 app.use("/api", salesRoutes);
@@ -197,6 +201,7 @@ app.use("/carnet-afiliado", express.static(path.join(__dirname, "../..", "carnet
 app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
 app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/activacion", express.static(path.join(__dirname, "../..", "activacion")));
+app.use("/captura", express.static(path.join(__dirname, "../..", "captura")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
@@ -212,6 +217,9 @@ app.get("/trivia/:slug", (_req, res) => {
 });
 app.get("/activacion/:slug", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "activacion", "index.html"));
+});
+app.get("/captura/:token", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../..", "captura", "index.html"));
 });
 app.get("/", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");

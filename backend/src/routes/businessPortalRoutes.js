@@ -32,6 +32,14 @@ const {
   createSalesSnapshot,
   updateSalesSnapshot,
 } = require("../controllers/businessPortalController");
+const {
+  addInterest,
+  createNote,
+  leadDetail,
+  listLeadsCrm,
+  removeInterest,
+  sendActivation,
+} = require("../controllers/leadCrmController");
 
 const router = express.Router();
 
@@ -49,6 +57,12 @@ router.get("/contacts/feed", contactFeed);
 router.post("/contacts/manual", createManualLead);
 router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
+router.get("/leads/crm", listLeadsCrm);
+router.get("/leads/:leadId", leadDetail);
+router.post("/leads/:leadId/notes", createNote);
+router.post("/leads/:leadId/interests", addInterest);
+router.delete("/leads/:leadId/interests/:interestId", removeInterest);
+router.post("/leads/:leadId/activations", sendActivation);
 
 router.use(requirePortalAccess);
 router.get("/activity", businessActivity);

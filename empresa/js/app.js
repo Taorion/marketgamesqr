@@ -49,7 +49,55 @@ const commandCenterRoot = document.getElementById("commandCenterRoot");
 const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
+const leadAttentionBoard = document.getElementById("leadAttentionBoard");
 const leadExportScopeInput = document.getElementById("leadExportScopeInput");
+const contactCenterSummaryGrid = document.getElementById("contactCenterSummaryGrid");
+const contactCenterPanels = Array.from(document.querySelectorAll("[data-contact-center-panel]"));
+const contactCenterTabs = Array.from(document.querySelectorAll("[data-contact-center-tab]"));
+const leadCrmSearchInput = document.getElementById("leadCrmSearchInput");
+const leadCrmSearchButton = document.getElementById("leadCrmSearchButton");
+const leadCrmResetButton = document.getElementById("leadCrmResetButton");
+const leadCrmCampaignFilter = document.getElementById("leadCrmCampaignFilter");
+const leadCrmStatusFilter = document.getElementById("leadCrmStatusFilter");
+const leadCrmAffiliateFilter = document.getElementById("leadCrmAffiliateFilter");
+const leadCrmPurchaseFilter = document.getElementById("leadCrmPurchaseFilter");
+const leadCrmTicketFilter = document.getElementById("leadCrmTicketFilter");
+const leadCrmPriorityFilter = document.getElementById("leadCrmPriorityFilter");
+const leadCrmScoreMinFilter = document.getElementById("leadCrmScoreMinFilter");
+const leadCrmScoreMaxFilter = document.getElementById("leadCrmScoreMaxFilter");
+const leadCrmChannelFilter = document.getElementById("leadCrmChannelFilter");
+const leadCrmTable = document.getElementById("leadCrmTable");
+const leadCrmPaginationLabel = document.getElementById("leadCrmPaginationLabel");
+const leadCrmPrevButton = document.getElementById("leadCrmPrevButton");
+const leadCrmNextButton = document.getElementById("leadCrmNextButton");
+const leadDetailModal = document.getElementById("leadDetailModal");
+const leadDetailCloseButton = document.getElementById("leadDetailCloseButton");
+const leadDetailTitle = document.getElementById("leadDetailTitle");
+const leadDetailSubtitle = document.getElementById("leadDetailSubtitle");
+const leadDetailEyebrow = document.getElementById("leadDetailEyebrow");
+const leadDetailHeader = document.getElementById("leadDetailHeader");
+const leadDetailTabs = document.getElementById("leadDetailTabs");
+const leadDetailContent = document.getElementById("leadDetailContent");
+const leadSendActivationButton = document.getElementById("leadSendActivationButton");
+const leadSendBenefitButton = document.getElementById("leadSendBenefitButton");
+const leadCreateNoteButton = document.getElementById("leadCreateNoteButton");
+const leadCopyLastLinkButton = document.getElementById("leadCopyLastLinkButton");
+const leadActivationModal = document.getElementById("leadActivationModal");
+const leadActivationCloseButton = document.getElementById("leadActivationCloseButton");
+const leadActivationForm = document.getElementById("leadActivationForm");
+const leadActivationTypeInput = document.getElementById("leadActivationTypeInput");
+const leadActivationCampaignInput = document.getElementById("leadActivationCampaignInput");
+const leadActivationNameInput = document.getElementById("leadActivationNameInput");
+const leadActivationChannelInput = document.getElementById("leadActivationChannelInput");
+const leadActivationBenefitTypeInput = document.getElementById("leadActivationBenefitTypeInput");
+const leadActivationBenefitValueInput = document.getElementById("leadActivationBenefitValueInput");
+const leadActivationExpiresInput = document.getElementById("leadActivationExpiresInput");
+const leadActivationScoreMinInput = document.getElementById("leadActivationScoreMinInput");
+const leadActivationMessageInput = document.getElementById("leadActivationMessageInput");
+const leadActivationConditionsInput = document.getElementById("leadActivationConditionsInput");
+const leadActivationMessage = document.getElementById("leadActivationMessage");
+const leadActivationSubmitButton = document.getElementById("leadActivationSubmitButton");
+const leadActivationResult = document.getElementById("leadActivationResult");
 const manualLeadForm = document.getElementById("manualLeadForm");
 const manualLeadNameInput = document.getElementById("manualLeadNameInput");
 const manualLeadCompanyInput = document.getElementById("manualLeadCompanyInput");
@@ -167,6 +215,17 @@ const accountTicketFrameInput = document.getElementById("accountTicketFrameInput
 const accountTicketFrameUploadButton = document.getElementById("accountTicketFrameUploadButton");
 const accountTicketFrameRemoveButton = document.getElementById("accountTicketFrameRemoveButton");
 const accountTicketFrameMessage = document.getElementById("accountTicketFrameMessage");
+const digitalAssetForm = document.getElementById("digitalAssetForm");
+const digitalAssetTitleInput = document.getElementById("digitalAssetTitleInput");
+const digitalAssetCategoryInput = document.getElementById("digitalAssetCategoryInput");
+const digitalAssetDescriptionInput = document.getElementById("digitalAssetDescriptionInput");
+const digitalAssetFileInput = document.getElementById("digitalAssetFileInput");
+const digitalAssetCoverInput = document.getElementById("digitalAssetCoverInput");
+const digitalAssetButtonTextInput = document.getElementById("digitalAssetButtonTextInput");
+const digitalAssetMessage = document.getElementById("digitalAssetMessage");
+const digitalAssetSubmitButton = document.getElementById("digitalAssetSubmitButton");
+const digitalAssetsGrid = document.getElementById("digitalAssetsGrid");
+const refreshDigitalAssetsButton = document.getElementById("refreshDigitalAssetsButton");
 const accountPasswordForm = document.getElementById("accountPasswordForm");
 const accountCurrentPasswordInput = document.getElementById("accountCurrentPasswordInput");
 const accountNewPasswordInput = document.getElementById("accountNewPasswordInput");
@@ -218,6 +277,31 @@ const rewardPassBeneficiaryNameInput = document.getElementById("rewardPassBenefi
 const rewardPassBeneficiaryDocumentInput = document.getElementById("rewardPassBeneficiaryDocumentInput");
 const rewardPassBeneficiaryPhoneInput = document.getElementById("rewardPassBeneficiaryPhoneInput");
 const rewardPassBeneficiaryEmailInput = document.getElementById("rewardPassBeneficiaryEmailInput");
+const leadCaptureForm = document.getElementById("leadCaptureForm");
+const leadCaptureNameInput = document.getElementById("leadCaptureNameInput");
+const leadCaptureCampaignInput = document.getElementById("leadCaptureCampaignInput");
+const leadCaptureChannelInput = document.getElementById("leadCaptureChannelInput");
+const leadCaptureStatusInput = document.getElementById("leadCaptureStatusInput");
+const leadCaptureStartsInput = document.getElementById("leadCaptureStartsInput");
+const leadCaptureExpiresInput = document.getElementById("leadCaptureExpiresInput");
+const leadCaptureDescriptionInput = document.getElementById("leadCaptureDescriptionInput");
+const leadCaptureAssetSelect = document.getElementById("leadCaptureAssetSelect");
+const leadCaptureAssetPreview = document.getElementById("leadCaptureAssetPreview");
+const leadCaptureAssetTitleInput = document.getElementById("leadCaptureAssetTitleInput");
+const leadCaptureAssetCategoryInput = document.getElementById("leadCaptureAssetCategoryInput");
+const leadCaptureAssetDescriptionInput = document.getElementById("leadCaptureAssetDescriptionInput");
+const leadCaptureAssetFileInput = document.getElementById("leadCaptureAssetFileInput");
+const leadCaptureCoverInput = document.getElementById("leadCaptureCoverInput");
+const leadCaptureOpenAssetsButton = document.getElementById("leadCaptureOpenAssetsButton");
+const leadCaptureButtonTextInput = document.getElementById("leadCaptureButtonTextInput");
+const leadCaptureConsentTextInput = document.getElementById("leadCaptureConsentTextInput");
+const leadCaptureFieldsGrid = document.getElementById("leadCaptureFieldsGrid");
+const leadCaptureMessage = document.getElementById("leadCaptureMessage");
+const leadCaptureSubmitButton = document.getElementById("leadCaptureSubmitButton");
+const leadCaptureResult = document.getElementById("leadCaptureResult");
+const refreshLeadCaptureButton = document.getElementById("refreshLeadCaptureButton");
+const leadCaptureTable = document.getElementById("leadCaptureTable");
+const leadCaptureDetail = document.getElementById("leadCaptureDetail");
 const rewardPassIssuedAtInput = document.getElementById("rewardPassIssuedAtInput");
 const rewardPassExpiresAtInput = document.getElementById("rewardPassExpiresAtInput");
 const rewardPassBranchInput = document.getElementById("rewardPassBranchInput");
@@ -603,6 +687,12 @@ let state = {
   rewardPasses: [],
   rewardPassMetrics: null,
   rewardPassContext: null,
+  digitalAssets: [],
+  digitalAssetsLoaded: false,
+  leadCaptureActivations: [],
+  leadCaptureLoaded: false,
+  selectedLeadCaptureId: null,
+  selectedLeadCaptureDetail: null,
   selectedRewardPassId: null,
   selectedRewardPass: null,
   selectedCampaignId: null,
@@ -613,6 +703,28 @@ let state = {
   contactFeedRetention: null,
   contactFeedGate: null,
   contactFeedLoaded: false,
+  contactCenterMounted: false,
+  contactCenterTab: "overview",
+  leadCrmRows: [],
+  leadCrmPagination: { total: 0, limit: 40, offset: 0, has_more: false },
+  leadCrmLoaded: false,
+  leadCrmLoading: false,
+  leadCrmFilters: {
+    search: "",
+    campaign_id: "",
+    status: "",
+    is_affiliate: "",
+    has_purchases: "",
+    ticket_filter: "",
+    priority: "",
+    score_min: "",
+    score_max: "",
+    channel: "",
+  },
+  selectedLeadDetail: null,
+  selectedLeadTab: "summary",
+  selectedLeadRef: null,
+  lastLeadActivationLink: "",
   selectedRedemptions: [],
   selectedSales: [],
   selectedAffiliateId: null,
@@ -1232,6 +1344,12 @@ function resetBusinessScopedState(options = {}) {
   state.rewardPasses = [];
   state.rewardPassMetrics = null;
   state.rewardPassContext = null;
+  state.digitalAssets = [];
+  state.digitalAssetsLoaded = false;
+  state.leadCaptureActivations = [];
+  state.leadCaptureLoaded = false;
+  state.selectedLeadCaptureId = null;
+  state.selectedLeadCaptureDetail = null;
   state.selectedRewardPassId = null;
   state.selectedRewardPass = null;
   state.selectedCampaignId = null;
@@ -1242,6 +1360,7 @@ function resetBusinessScopedState(options = {}) {
   state.contactFeedRetention = null;
   state.contactFeedGate = null;
   state.contactFeedLoaded = false;
+  state.contactCenterTab = "overview";
   state.selectedRedemptions = [];
   state.selectedSales = [];
   state.selectedAffiliateId = null;
@@ -1437,6 +1556,78 @@ async function loadContactFeedData(options = {}) {
   state.contactFeedGate = data.lead_gate || null;
   state.contactFeedLoaded = true;
   if (!options.quiet) hideFeedback();
+}
+
+function leadCrmQueryString() {
+  const filters = {
+    search: String(leadCrmSearchInput?.value || state.leadCrmFilters.search || "").trim(),
+    campaign_id: leadCrmCampaignFilter?.value || state.leadCrmFilters.campaign_id || "",
+    status: leadCrmStatusFilter?.value || state.leadCrmFilters.status || "",
+    is_affiliate: leadCrmAffiliateFilter?.value || state.leadCrmFilters.is_affiliate || "",
+    has_purchases: leadCrmPurchaseFilter?.value || state.leadCrmFilters.has_purchases || "",
+    ticket_filter: leadCrmTicketFilter?.value || state.leadCrmFilters.ticket_filter || "",
+    priority: leadCrmPriorityFilter?.value || state.leadCrmFilters.priority || "",
+    score_min: leadCrmScoreMinFilter?.value || state.leadCrmFilters.score_min || "",
+    score_max: leadCrmScoreMaxFilter?.value || state.leadCrmFilters.score_max || "",
+    channel: String(leadCrmChannelFilter?.value || state.leadCrmFilters.channel || "").trim(),
+  };
+  state.leadCrmFilters = filters;
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value) return;
+    if (key === "ticket_filter") {
+      if (value === "active") params.set("has_active_tickets", "true");
+      if (value === "redeemed") params.set("has_redeemed_tickets", "true");
+      return;
+    }
+    params.set(key, value);
+  });
+  params.set("limit", String(state.leadCrmPagination.limit || 40));
+  params.set("offset", String(state.leadCrmPagination.offset || 0));
+  return params.toString();
+}
+
+async function loadLeadCrmData(options = {}) {
+  if (!session?.user?.business_id) {
+    state.leadCrmRows = [];
+    state.leadCrmLoaded = true;
+    return;
+  }
+  if (state.leadCrmLoaded && !options.force) return;
+  state.leadCrmLoading = true;
+  if (!options.quiet && leadCrmTable) {
+    leadCrmTable.innerHTML = '<tr><td colspan="9">Cargando CRM de leads...</td></tr>';
+  }
+  const scopeKey = businessScopeKey();
+  const data = await apiSafe(`/api/business/leads/crm?${leadCrmQueryString()}`, { headers: authHeaders() }, { leads: [], pagination: { total: 0, limit: 40, offset: 0 } });
+  if (!isCurrentBusinessScope(scopeKey)) return;
+  state.leadCrmRows = data.leads || [];
+  state.leadCrmPagination = data.pagination || { total: 0, limit: 40, offset: 0 };
+  state.leadCrmLoaded = true;
+  state.leadCrmLoading = false;
+}
+
+function refreshLeadCampaignFilterOptions() {
+  if (!leadCrmCampaignFilter) return;
+  const current = leadCrmCampaignFilter.value;
+  leadCrmCampaignFilter.innerHTML = '<option value="">Todas</option>' + (state.campaigns || [])
+    .map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`)
+    .join("");
+  if (current) leadCrmCampaignFilter.value = current;
+  if (leadActivationCampaignInput) {
+    const selected = leadActivationCampaignInput.value;
+    leadActivationCampaignInput.innerHTML = '<option value="">Sin campaña</option>' + (state.campaigns || [])
+      .map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`)
+      .join("");
+    if (selected) leadActivationCampaignInput.value = selected;
+  }
+}
+
+async function refreshLeadCrm(options = {}) {
+  state.leadCrmLoaded = false;
+  if (!options.keepOffset) state.leadCrmPagination.offset = 0;
+  await loadLeadCrmData({ force: true, quiet: options.quiet });
+  renderLeadsView();
 }
 
 function isTicketCenterGroupFresh(group, ttl = TICKET_CENTER_CACHE_TTL_MS) {
@@ -2260,6 +2451,7 @@ function renderAccountView() {
   renderCommercialDeal();
   renderBusinessUsers();
   renderSubscriptionRenewal();
+  renderDigitalAssets();
 
   if (accountNameInput) accountNameInput.value = business.name || "";
   if (accountSloganInput) accountSloganInput.value = business.slogan || business.settings?.slogan || business.settings?.tagline || "";
@@ -2332,6 +2524,11 @@ async function ensureSelectedCampaignLoaded(options = {}) {
 }
 
 function setView(view) {
+  const requestedView = view;
+  if (view === "sales") {
+    state.contactCenterTab = "sales";
+    view = "leads";
+  }
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
     showFeedback("Ese módulo es interno de Market Games. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
@@ -2350,7 +2547,10 @@ function setView(view) {
   }
   state.currentView = view;
   navButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.view === view);
+    const isSalesAlias = button.dataset.view === "sales" && view === "leads" && state.contactCenterTab === "sales";
+    const isLeadsBase = button.dataset.view === "leads" && view === "leads" && state.contactCenterTab !== "sales";
+    const isRegular = button.dataset.view === view && view !== "leads";
+    button.classList.toggle("active", isSalesAlias || isLeadsBase || isRegular);
   });
   viewSections.forEach((section) => {
     section.classList.toggle("active", section.dataset.view === view);
@@ -2358,12 +2558,20 @@ function setView(view) {
   workspace?.classList.remove("sidebar-open");
 
   segmentTabs.forEach((tab, index) => {
-    const active = (view === "redemptions" && index === 0) || (view === "sales" && index === 1);
+    const active = (view === "redemptions" && index === 0) || (requestedView === "sales" && index === 1);
     tab.classList.toggle("active", active);
   });
 
   if (view === "dashboard" && state.dashboard) renderDashboard();
-  if (view === "account") renderAccountView();
+  if (view === "account") {
+    if (!state.digitalAssetsLoaded) {
+      loadDigitalAssets({ quiet: true }).then(() => {
+        renderDigitalAssets();
+        renderLeadCaptureAssetOptions();
+      });
+    }
+    renderAccountView();
+  }
   if (view === "campaigns" && state.selectedCampaign) renderCampaignView();
   if (viewNeedsCampaignData(view) && state.selectedCampaignId && !state.selectedReport) {
     ensureSelectedCampaignLoaded({ quiet: true }).catch((error) => {
@@ -2371,8 +2579,22 @@ function setView(view) {
     });
   }
   if (view === "leads") {
+    mountContactCenterLayout();
+    refreshLeadCampaignFilterOptions();
     if (!state.contactFeedLoaded) {
       loadContactFeedData({ quiet: true }).then(renderLeadsView);
+    }
+    if (!state.leadCrmLoaded) {
+      loadLeadCrmData({ quiet: true }).then(renderLeadsView);
+    }
+    if (!state.leadCaptureLoaded) {
+      loadLeadCaptureActivations({ quiet: true }).then(() => {
+        renderLeadCaptureTable();
+        renderContactCenterSummary(state.leadCrmRows || []);
+      });
+    }
+    if (state.contactCenterTab === "sales" && !state.affiliatesLoaded) {
+      loadAffiliatesData().then(renderSalesView);
     }
     renderLeadsView();
   }
@@ -2384,13 +2606,6 @@ function setView(view) {
     }
   }
   if (view === "redemptions") renderRedemptionsView();
-  if (view === "sales") {
-    if (!state.affiliatesLoaded) {
-      loadAffiliatesData().then(renderSalesView);
-    } else {
-      renderSalesView();
-    }
-  }
   if (view === "strategic-qr") {
     renderStrategicQrView();
     loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
@@ -2625,6 +2840,7 @@ function renderCampaignAssociationInputs() {
     [postSaleCampaignInput, true],
     [qrBatchCampaignInput, true],
     [triviaCampaignInput, true],
+    [leadCaptureCampaignInput, true],
     [affiliateReferralQrCampaignInput, false],
   ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
@@ -6187,8 +6403,379 @@ function renderCustomerAcquisitionAffiliateOptions() {
   ].join("");
 }
 
+const LEAD_CAPTURE_FIELD_DEFS = [
+  ["first_name", "Nombre", true, true],
+  ["last_name", "Apellido", true, false],
+  ["phone", "Telefono", true, true],
+  ["email", "Correo", true, false],
+  ["document_id", "Cedula / documento", true, false],
+  ["city", "Ciudad", false, false],
+  ["company", "Empresa", false, false],
+  ["role", "Cargo", false, false],
+  ["interest", "Interes principal", true, false],
+  ["budget", "Presupuesto aproximado", false, false],
+  ["source_detail", "Como nos conociste", true, false],
+];
+
+function renderLeadCaptureFields() {
+  if (!leadCaptureFieldsGrid) return;
+  leadCaptureFieldsGrid.innerHTML = LEAD_CAPTURE_FIELD_DEFS.map(([name, label, visible, required]) => `
+    <label class="lead-capture-field-row">
+      <span>${escapeHtml(label)}</span>
+      <span><input data-lead-capture-visible="${escapeHtml(name)}" type="checkbox" ${visible ? "checked" : ""}> Visible</span>
+      <span><input data-lead-capture-required="${escapeHtml(name)}" type="checkbox" ${required ? "checked" : ""}> Obligatorio</span>
+    </label>
+  `).join("");
+}
+
+function leadCaptureFormConfig() {
+  return {
+    consent_required: true,
+    consent_text: leadCaptureConsentTextInput?.value.trim() || "Autorizo el tratamiento de mis datos personales para recibir informacion comercial relacionada con esta marca.",
+    fields: LEAD_CAPTURE_FIELD_DEFS.map(([name, label]) => ({
+      name,
+      label,
+      type: name === "email" ? "email" : name === "phone" ? "tel" : "text",
+      visible: Boolean(document.querySelector(`[data-lead-capture-visible="${name}"]`)?.checked),
+      required: Boolean(document.querySelector(`[data-lead-capture-required="${name}"]`)?.checked),
+    })),
+  };
+}
+
+function readFileAsDataUrl(file, maxBytes, allowedTypes) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve("");
+    if (file.size > maxBytes) return reject(new Error(`El archivo supera ${Math.round(maxBytes / 1024 / 1024)} MB.`));
+    if (allowedTypes?.length && !allowedTypes.includes(file.type)) return reject(new Error("Tipo de archivo no permitido."));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.readAsDataURL(file);
+  });
+}
+
+function digitalAssetLabel(asset = {}) {
+  const type = String(asset.file_type || "").split("/").pop()?.toUpperCase() || "FILE";
+  const sizeMb = Number(asset.file_size || 0) ? `${(Number(asset.file_size || 0) / 1024 / 1024).toFixed(1)} MB` : "";
+  return [asset.title || "Activo digital", asset.category || "", type, sizeMb].filter(Boolean).join(" · ");
+}
+
+async function loadDigitalAssets(options = {}) {
+  if (state.digitalAssetsLoaded && !options.force) return;
+  const data = await apiSafe("/api/business/digital-assets", { headers: authHeaders() }, { assets: [] });
+  state.digitalAssets = data.assets || [];
+  state.digitalAssetsLoaded = true;
+}
+
+function renderDigitalAssets() {
+  if (!digitalAssetsGrid) return;
+  const assets = state.digitalAssets || [];
+  digitalAssetsGrid.innerHTML = assets.map((asset) => `
+    <article class="digital-asset-card">
+      ${asset.cover_image_data_url ? `<img src="${escapeHtml(asset.cover_image_data_url)}" alt="${escapeHtml(asset.title || "")}">` : '<span class="material-symbols-outlined">description</span>'}
+      <div>
+        <strong>${escapeHtml(asset.title || "Activo digital")}</strong>
+        <p>${escapeHtml(asset.description || asset.file_name || "")}</p>
+        <small>${escapeHtml(digitalAssetLabel(asset))}</small>
+      </div>
+      <div class="activation-row-actions">
+        <button class="ghost-button" type="button" data-use-digital-asset="${escapeHtml(asset.id)}">Usar en Ticket Relámpago</button>
+        <button class="ghost-button" type="button" data-disable-digital-asset="${escapeHtml(asset.id)}">Desactivar</button>
+      </div>
+    </article>
+  `).join("") || '<div class="empty-state compact">Aún no hay activos digitales. Carga aquí el catálogo, portafolio o brochure antes de crear un Ticket Relámpago.</div>';
+  digitalAssetsGrid.querySelectorAll("[data-use-digital-asset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setView("strategic-qr");
+      if (leadCaptureAssetSelect) leadCaptureAssetSelect.value = button.dataset.useDigitalAsset || "";
+      renderLeadCaptureAssetPreview();
+      leadCaptureForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-disable-digital-asset]").forEach((button) => {
+    button.addEventListener("click", () => updateDigitalAssetStatus(button.dataset.disableDigitalAsset, false));
+  });
+}
+
+function renderLeadCaptureAssetOptions() {
+  if (!leadCaptureAssetSelect) return;
+  const current = leadCaptureAssetSelect.value;
+  const assets = state.digitalAssets || [];
+  leadCaptureAssetSelect.innerHTML = [
+    '<option value="">Selecciona un activo digital de la cuenta</option>',
+    ...assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(digitalAssetLabel(asset))}</option>`),
+  ].join("");
+  if (current && assets.some((asset) => asset.id === current)) {
+    leadCaptureAssetSelect.value = current;
+  }
+  renderLeadCaptureAssetPreview();
+}
+
+function selectedLeadCaptureAsset() {
+  const id = leadCaptureAssetSelect?.value || "";
+  return (state.digitalAssets || []).find((asset) => asset.id === id) || null;
+}
+
+function renderLeadCaptureAssetPreview() {
+  if (!leadCaptureAssetPreview) return;
+  const asset = selectedLeadCaptureAsset();
+  if (!asset) {
+    leadCaptureAssetPreview.innerHTML = '<div class="empty-state compact">Selecciona el activo que el vendedor entregará al visitante físico.</div>';
+    return;
+  }
+  if (leadCaptureAssetCategoryInput) leadCaptureAssetCategoryInput.value = asset.category || "catalogo";
+  if (leadCaptureButtonTextInput && !leadCaptureButtonTextInput.value.trim()) {
+    leadCaptureButtonTextInput.value = asset.download_button_text || "Descargar ahora";
+  }
+  leadCaptureAssetPreview.innerHTML = `
+    <article class="digital-asset-selected">
+      ${asset.cover_image_data_url ? `<img src="${escapeHtml(asset.cover_image_data_url)}" alt="${escapeHtml(asset.title || "")}">` : '<span class="material-symbols-outlined">description</span>'}
+      <div>
+        <strong>${escapeHtml(asset.title || "Activo digital")}</strong>
+        <p>${escapeHtml(asset.description || "Activo listo para entregar al lead.")}</p>
+        <small>${escapeHtml(asset.file_name || "")} · ${escapeHtml(asset.file_type || "")}</small>
+      </div>
+    </article>
+  `;
+}
+
+async function submitDigitalAsset(event) {
+  event.preventDefault();
+  try {
+    if (!digitalAssetFileInput?.files?.[0]) throw new Error("Sube el archivo digital para guardarlo en la cuenta.");
+    setInlineMessage(digitalAssetMessage, "Guardando activo digital...", "info");
+    if (digitalAssetSubmitButton) digitalAssetSubmitButton.disabled = true;
+    const assetFile = digitalAssetFileInput.files[0];
+    const coverFile = digitalAssetCoverInput?.files?.[0] || null;
+    await api("/api/business/digital-assets", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: digitalAssetTitleInput?.value.trim(),
+        description: digitalAssetDescriptionInput?.value.trim() || null,
+        category: digitalAssetCategoryInput?.value.trim() || "catalogo",
+        file_name: assetFile.name,
+        file_data_url: await readFileAsDataUrl(assetFile, 5 * 1024 * 1024, ["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+        cover_image_data_url: coverFile ? await readFileAsDataUrl(coverFile, 2 * 1024 * 1024, ["image/png", "image/jpeg", "image/webp"]) : null,
+        download_button_text: digitalAssetButtonTextInput?.value.trim() || "Descargar ahora",
+      }),
+    });
+    digitalAssetForm?.reset();
+    if (digitalAssetCategoryInput) digitalAssetCategoryInput.value = "catalogo";
+    if (digitalAssetButtonTextInput) digitalAssetButtonTextInput.value = "Descargar ahora";
+    await loadDigitalAssets({ force: true });
+    renderDigitalAssets();
+    renderLeadCaptureAssetOptions();
+    setInlineMessage(digitalAssetMessage, "Activo guardado. Ya puedes usarlo en un Ticket Relámpago.", "success");
+  } catch (error) {
+    setInlineMessage(digitalAssetMessage, error.message, "error");
+  } finally {
+    if (digitalAssetSubmitButton) digitalAssetSubmitButton.disabled = false;
+  }
+}
+
+async function updateDigitalAssetStatus(assetId, isActive) {
+  if (!assetId) return;
+  await api(`/api/business/digital-assets/${encodeURIComponent(assetId)}/status`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ is_active: Boolean(isActive) }),
+  });
+  await loadDigitalAssets({ force: true });
+  renderDigitalAssets();
+  renderLeadCaptureAssetOptions();
+  showFeedback("Biblioteca de activos actualizada.", "success");
+}
+
+async function loadLeadCaptureActivations(options = {}) {
+  if (state.leadCaptureLoaded && !options.force) return;
+  const data = await apiSafe("/api/business/lead-capture-activations?limit=80", { headers: authHeaders() }, { activations: [] });
+  state.leadCaptureActivations = data.activations || [];
+  state.leadCaptureLoaded = true;
+}
+
+function renderLeadCaptureTable() {
+  if (!leadCaptureTable) return;
+  const rows = state.leadCaptureActivations || [];
+  leadCaptureTable.innerHTML = rows.map((item) => `
+    <tr>
+      <td>
+        <strong>${escapeHtml(item.name)}</strong>
+        <br><span class="table-secondary">${escapeHtml(item.channel || "-")} · ${escapeHtml(item.public_code || "-")}</span>
+      </td>
+      <td>${escapeHtml(item.asset?.title || "-")}<br><span class="table-secondary">${escapeHtml(item.asset?.file_name || "-")}</span></td>
+      <td>
+        ${Number(item.metrics?.leads_captured || 0)} leads · ${Number(item.metrics?.downloads || 0)} descargas
+        <br><span class="table-secondary">${Number(item.metrics?.visits || 0)} visitas · ${Number(item.metrics?.conversion_rate || 0)}% conv.</span>
+      </td>
+      <td>
+        <span class="status-chip ${item.status === "ACTIVE" ? "ok" : item.status === "PAUSED" ? "pending" : "danger"}">${escapeHtml(item.status)}</span>
+        <br><span class="table-secondary">${escapeHtml(item.public_url)}</span>
+      </td>
+      <td>
+        <div class="activation-row-actions">
+          <button class="ghost-button" type="button" data-copy-lead-capture="${escapeHtml(item.public_url)}">Copiar link</button>
+          <button class="ghost-button" type="button" data-download-lead-capture-qr="${escapeHtml(item.id)}">Descargar QR</button>
+          <button class="ghost-button" type="button" data-open-lead-capture="${escapeHtml(item.id)}">Ver leads</button>
+          <button class="ghost-button" type="button" data-export-lead-capture="${escapeHtml(item.id)}">Exportar</button>
+        </div>
+      </td>
+    </tr>
+  `).join("") || '<tr><td colspan="5">Aun no hay capturas relampago creadas.</td></tr>';
+  leadCaptureTable.querySelectorAll("[data-copy-lead-capture]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyLeadCapture || "");
+      showFeedback("Link de Captura Relampago copiado.", "success");
+    });
+  });
+  leadCaptureTable.querySelectorAll("[data-download-lead-capture-qr]").forEach((button) => {
+    button.addEventListener("click", () => downloadLeadCaptureQr(button.dataset.downloadLeadCaptureQr));
+  });
+  leadCaptureTable.querySelectorAll("[data-open-lead-capture]").forEach((button) => {
+    button.addEventListener("click", () => openLeadCaptureDetail(button.dataset.openLeadCapture));
+  });
+  leadCaptureTable.querySelectorAll("[data-export-lead-capture]").forEach((button) => {
+    button.addEventListener("click", () => exportLeadCapture(button.dataset.exportLeadCapture));
+  });
+}
+
+async function submitLeadCapture(event) {
+  event.preventDefault();
+  try {
+    const selectedAsset = selectedLeadCaptureAsset();
+    if (!selectedAsset) throw new Error("Selecciona el activo digital que recibira el visitante.");
+    leadCaptureSubmitButton.disabled = true;
+    setInlineMessage(leadCaptureMessage, "Creando Captura Relampago y generando QR...", "info");
+    const payload = {
+      name: leadCaptureNameInput.value.trim(),
+      description: leadCaptureDescriptionInput?.value.trim() || null,
+      campaign_id: leadCaptureCampaignInput?.value || null,
+      channel: leadCaptureChannelInput?.value || "tienda_fisica",
+      status: leadCaptureStatusInput?.value || "ACTIVE",
+      starts_at: leadCaptureStartsInput?.value ? new Date(leadCaptureStartsInput.value).toISOString() : null,
+      expires_at: leadCaptureExpiresInput?.value ? new Date(leadCaptureExpiresInput.value).toISOString() : null,
+      form_config: leadCaptureFormConfig(),
+      public_message: {
+        title: leadCaptureAssetTitleInput.value.trim() || selectedAsset.title || leadCaptureNameInput.value.trim(),
+        subtitle: "Entrega un activo digital a cambio de los datos del cliente.",
+      },
+      asset_id: selectedAsset.id,
+    };
+    const result = await api("/api/business/lead-capture-activations", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.leadCaptureLoaded = false;
+    await loadLeadCaptureActivations({ force: true });
+    renderLeadCaptureTable();
+    leadCaptureResult.innerHTML = `
+      <div class="qr-result">
+        <strong>Captura Relampago creada</strong>
+        <p>${escapeHtml(result.activation.public_url)}</p>
+        ${result.qr_image_data_url ? `<img class="qr-preview" src="${escapeHtml(result.qr_image_data_url)}" alt="QR Captura Relampago">` : ""}
+        <div class="activation-row-actions">
+          <button class="ghost-button" id="leadCaptureCopyResultButton" type="button">Copiar link</button>
+          <button class="ghost-button" id="leadCaptureDownloadQrResultButton" type="button">Descargar QR</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("leadCaptureCopyResultButton")?.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(result.activation.public_url);
+      showFeedback("Link copiado.", "success");
+    });
+    document.getElementById("leadCaptureDownloadQrResultButton")?.addEventListener("click", () => {
+      downloadDataUrl(`captura-relampago-${result.activation.public_code}.png`, result.qr_image_data_url);
+    });
+    setInlineMessage(leadCaptureMessage, "Captura lista para mostrador, vitrina, feria o stand.", "success");
+  } catch (error) {
+    setInlineMessage(leadCaptureMessage, error.message, "error");
+  } finally {
+    leadCaptureSubmitButton.disabled = false;
+  }
+}
+
+async function downloadLeadCaptureQr(id) {
+  const item = (state.leadCaptureActivations || []).find((activation) => activation.id === id);
+  if (!item?.public_url) return;
+  const data = await api(`/api/business/lead-capture-activations/${encodeURIComponent(id)}`, { headers: authHeaders() });
+  if (data.qr_image_data_url) {
+    downloadDataUrl(`captura-relampago-${item.public_code || id}.png`, data.qr_image_data_url);
+    return;
+  }
+  await navigator.clipboard?.writeText(item.public_url);
+  showFeedback("No se pudo generar el QR; copie el link para imprimirlo.", "info");
+}
+
+async function openLeadCaptureDetail(id) {
+  const data = await api(`/api/business/lead-capture-activations/${encodeURIComponent(id)}`, { headers: authHeaders() });
+  state.selectedLeadCaptureId = id;
+  state.selectedLeadCaptureDetail = data;
+  if (!leadCaptureDetail) return;
+  const metrics = data.metrics || {};
+  leadCaptureDetail.innerHTML = `
+    <div class="lead-capture-metrics">
+      ${[
+        ["Visitas", metrics.visits],
+        ["Leads capturados", metrics.leads_captured],
+        ["Descargas", metrics.downloads],
+        ["Conversion", `${metrics.conversion_rate || 0}%`],
+        ["Con email", metrics.with_email],
+        ["Con telefono", metrics.with_phone],
+      ].map(([label, value]) => `<article class="kpi-card"><span class="mono-label">${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 0)}</strong></article>`).join("")}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lead</th><th>Contacto</th><th>Fecha</th><th>Consentimiento</th><th>Descargas</th><th>Acciones</th></tr></thead>
+        <tbody>
+          ${(data.leads || []).map((lead) => `
+            <tr>
+              <td>${escapeHtml(lead.name || lead.form_data?.first_name || "-")}<br><span class="table-secondary">${escapeHtml(lead.document_id || lead.form_data?.document_id || "-")}</span></td>
+              <td>${escapeHtml(lead.phone || lead.form_data?.phone || "-")}<br><span class="table-secondary">${escapeHtml(lead.email || lead.form_data?.email || "-")}</span></td>
+              <td>${formatDate(lead.created_at)}</td>
+              <td>${lead.consent_accepted ? "Si" : "No"}</td>
+              <td>${Number(lead.download_count || 0)}</td>
+              <td><button class="ghost-button" type="button" data-open-crm-lead="${escapeHtml(lead.lead_id || "")}">Ver lead</button></td>
+            </tr>
+          `).join("") || '<tr><td colspan="6">Sin leads capturados todavia.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+  leadCaptureDetail.querySelectorAll("[data-open-crm-lead]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!button.dataset.openCrmLead) return;
+      setView("leads");
+      openLeadDetail({ id: button.dataset.openCrmLead, source_type: "PLAYER" });
+    });
+  });
+}
+
+async function exportLeadCapture(id) {
+  const response = await fetch(`/api/business/lead-capture-activations/${encodeURIComponent(id)}/export.csv`, { headers: authHeaders() });
+  if (!response.ok) throw new Error("No se pudo exportar Captura Relampago.");
+  const blob = await response.blob();
+  triggerBlobDownload(blob, `captura-relampago-${id}.csv`);
+}
+
 function renderStrategicQrView() {
   renderCampaignAssociationInputs();
+  renderLeadCaptureFields();
+  if (!state.digitalAssetsLoaded) {
+    loadDigitalAssets({ force: true }).then(() => {
+      renderLeadCaptureAssetOptions();
+      renderDigitalAssets();
+    });
+  } else {
+    renderLeadCaptureAssetOptions();
+  }
+  if (!state.leadCaptureLoaded) {
+    loadLeadCaptureActivations({ force: true }).then(() => {
+      renderLeadCaptureTable();
+    });
+  } else {
+    renderLeadCaptureTable();
+  }
   const metrics = state.strategicQrMetrics?.totals || {};
   const credits = state.qrCreditAccount || null;
   const creditBalance = credits ? String(Number(credits.qr_balance || 0).toLocaleString("es-CO")) : "-";
@@ -11278,11 +11865,18 @@ function filenameFromDisposition(value, fallback) {
   return (simpleMatch?.[1] || fallback || "download.bin").trim();
 }
 
-function triggerBlobDownload(blob, filename) {
+function triggerBlobDownload(blobOrFilename, filenameOrBlob) {
+  const legacyOrder = typeof blobOrFilename === "string";
+  const blob = legacyOrder ? filenameOrBlob : blobOrFilename;
+  const filename = legacyOrder ? blobOrFilename : filenameOrBlob;
+  if (!(blob instanceof Blob)) {
+    console.warn("Descarga omitida: el contenido no es un Blob valido.");
+    return;
+  }
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
-  link.download = filename;
+  link.download = filename || "download.bin";
   link.rel = "noopener";
   link.style.display = "none";
   document.body.appendChild(link);
@@ -11405,7 +11999,7 @@ async function createManualLead(event) {
       manualLeadSubmitButton.textContent = "Guardando...";
     }
     setFormMessage(manualLeadMessage, "Guardando prospecto...", "info");
-    await api("/api/business/contacts/manual", {
+    const result = await api("/api/business/contacts/manual", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
@@ -11415,7 +12009,13 @@ async function createManualLead(event) {
     if (manualLeadPriorityInput) manualLeadPriorityInput.value = "MEDIUM";
     if (manualLeadStatusInput) manualLeadStatusInput.value = "NEW";
     state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    state.leadCrmPagination.offset = 0;
+    if (leadCrmSearchInput && result?.lead?.name) {
+      leadCrmSearchInput.value = result.lead.name;
+    }
     await loadContactFeedData({ force: true, quiet: true });
+    await loadLeadCrmData({ force: true, quiet: true });
     renderLeadsView();
     setFormMessage(manualLeadMessage, "Prospecto guardado en el feed comercial.", "success");
     showFeedback("Lead manual agregado al feed.", "success", { title: "Prospecto guardado" });
@@ -11725,106 +12325,179 @@ function buildTimelineSeries() {
   );
 }
 
-function renderLeadsView() {
-  const feedRows = filterRows(state.contactFeed || [], [
-    "name",
-    "document_id",
-    "phone",
-    "email",
-    "campaign_name",
-    "attribution_source",
-    "attribution_subject",
-    "lead_temperature",
-    "recommended_action",
-  ]);
-  const buyers = feedRows.filter((item) => item.lead_temperature === "buyer").length;
-  const hot = feedRows.filter((item) => item.lead_temperature === "hot").length;
-  const exportable = feedRows.filter((item) => item.email || item.phone).length;
-  const topSource = Object.entries(feedRows.reduce((acc, item) => {
-    const key = item.attribution_source || "Sin origen";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b[1] - a[1])[0];
+function commercialChipClass(status = "") {
+  const value = String(status || "").toUpperCase();
+  if (["VIP", "BUYER", "RECURRENT", "CONVERTED"].includes(value)) return "ok";
+  if (["INTERESTED", "FOLLOW_UP", "CONTACTED"].includes(value)) return "warning";
+  if (["INACTIVE", "LOST"].includes(value)) return "danger";
+  return "pending";
+}
 
-  if (leadFeedKpiGrid) {
-    leadFeedKpiGrid.innerHTML = [
-      ["Contactos retenidos", feedRows.length, state.contactFeedRetention?.label || "Según plan"],
-      ["Compradores", buyers, "Con venta registrada"],
-      ["Leads calientes", hot, "Prioridad comercial"],
-      ["Exportables", exportable, "Email o teléfono"],
-      ["Origen líder", topSource?.[0] || "-", topSource ? `${topSource[1]} contactos` : "Sin datos"],
-    ].map(([label, value, meta]) => `
-      <article class="kpi-card">
-        <span class="mono-label">${escapeHtml(label)}</span>
-        <strong>${escapeHtml(value ?? 0)}</strong>
-        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
-      </article>
-    `).join("");
+function leadBadges(item = {}) {
+  return [
+    item.is_affiliate ? "Afiliado" : "",
+    item.purchase_count > 0 ? "Comprador" : "",
+    item.active_tickets > 0 ? "Ticket activo" : "",
+    item.redeemed_tickets > 0 ? "Redimio" : "",
+    item.source_type === "MANUAL" ? "Manual" : "",
+  ].filter(Boolean);
+}
+
+function leadPriorityChipClass(priority = "") {
+  const value = String(priority || "").toUpperCase();
+  if (value === "HIGH") return "danger";
+  if (value === "MEDIUM") return "warning";
+  return "pending";
+}
+
+function renderLeadCrmTable() {
+  if (!leadCrmTable) return;
+  const rows = state.leadCrmRows || [];
+  const pagination = state.leadCrmPagination || {};
+  if (leadCrmPaginationLabel) {
+    const from = rows.length ? Number(pagination.offset || 0) + 1 : 0;
+    const to = Number(pagination.offset || 0) + rows.length;
+    leadCrmPaginationLabel.textContent = `${from}-${to} de ${Number(pagination.total || rows.length).toLocaleString("es-CO")}`;
   }
-  if (leadFeedRetention) {
-    leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
+  if (leadCrmPrevButton) leadCrmPrevButton.disabled = Number(pagination.offset || 0) <= 0;
+  if (leadCrmNextButton) leadCrmNextButton.disabled = !pagination.has_more;
+  leadCrmTable.innerHTML = rows.map((item) => `
+    <tr class="lead-crm-row" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+      <td>
+        <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
+        <br><span class="table-secondary">${escapeHtml(item.document_id || item.email || item.phone || item.id)}</span>
+        <br><span class="table-secondary">${escapeHtml(item.email || "-")} · ${escapeHtml(item.phone || "-")}</span>
+      </td>
+      <td>
+        <span class="status-chip ${leadPriorityChipClass(item.care_priority)}">${escapeHtml(item.care_priority_label || "Seguimiento")}</span>
+        <br><strong>${Number(item.attention_score || 0).toLocaleString("es-CO")}</strong>
+        <br><span class="table-secondary">${escapeHtml(item.recommended_action || "-")}</span>
+      </td>
+      <td>
+        <span class="status-chip ${commercialChipClass(item.commercial_status)}">${escapeHtml(item.commercial_status_label || item.commercial_status || "Nuevo")}</span>
+        <br><span class="table-secondary">${escapeHtml(item.level || "-")}</span>
+      </td>
+      <td><strong>${Number(item.score_total || 0).toLocaleString("es-CO")}</strong><br><span class="table-secondary">Mejor ${Number(item.best_score || 0)}</span></td>
+      <td><strong>${money(item.total_spent || 0)}</strong><br><span class="table-secondary">${Number(item.purchase_count || 0)} compras</span></td>
+      <td>${formatDate(item.last_interaction_at)}<br><span class="table-secondary">${escapeHtml(item.campaign_name || item.channel || "Sin campaña")}</span></td>
+      <td>${Number(item.activation_count || 0)} activaciones<br><span class="table-secondary">${Number(item.games_played || 0)} juegos</span></td>
+      <td><div class="lead-badge-wrap">${leadBadges(item).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("") || '<span class="table-secondary">Sin badges</span>'}</div></td>
+      <td>
+        <div class="activation-row-actions">
+          <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
+          <button class="ghost-button" type="button" data-lead-action="activation">Activar</button>
+        </div>
+      </td>
+    </tr>
+  `).join("") || '<tr><td colspan="9">Sin leads para los filtros actuales.</td></tr>';
+  leadCrmTable.querySelectorAll("[data-lead-id]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-lead-action]");
+      const action = actionButton?.dataset.leadAction || "detail";
+      const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
+      if (action === "activation") {
+        openLeadActivationModal(leadRef);
+      } else {
+        openLeadDetail(leadRef);
+      }
+    });
+  });
+}
+
+function appendIfFound(parent, node) {
+  if (parent && node && node.parentElement !== parent) parent.appendChild(node);
+}
+
+function mountContactCenterLayout() {
+  if (state.contactCenterMounted) return;
+  const overviewPanel = document.querySelector('[data-contact-center-panel="overview"]');
+  const capturesPanel = document.querySelector('[data-contact-center-panel="captures"]');
+  const salesPanel = document.querySelector('[data-contact-center-panel="sales"]');
+  if (!overviewPanel || !capturesPanel || !salesPanel) return;
+
+  appendIfFound(overviewPanel, document.querySelector(".lead-crm-command"));
+  appendIfFound(overviewPanel, leadFeedKpiGrid);
+  appendIfFound(overviewPanel, leadAttentionBoard);
+  appendIfFound(overviewPanel, document.querySelector(".lead-crm-card"));
+  appendIfFound(overviewPanel, manualLeadForm?.closest("article"));
+  appendIfFound(overviewPanel, leadFeedTable?.closest("article"));
+  appendIfFound(overviewPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
+  appendIfFound(overviewPanel, leadDetailModal);
+  appendIfFound(overviewPanel, leadActivationModal);
+
+  appendIfFound(capturesPanel, leadCaptureForm?.closest("article"));
+  appendIfFound(capturesPanel, leadCaptureTable?.closest("article"));
+
+  appendIfFound(salesPanel, salesKpiGrid);
+  appendIfFound(salesPanel, document.getElementById("customerAcquisitionForm")?.closest("article"));
+  appendIfFound(salesPanel, campaignSalesTable?.closest("article"));
+
+  state.contactCenterMounted = true;
+}
+
+function setContactCenterTab(tab = "overview") {
+  const nextTab = ["overview", "captures", "sales"].includes(tab) ? tab : "overview";
+  state.contactCenterTab = nextTab;
+  if (state.currentView === "leads") {
+    navButtons.forEach((button) => {
+      const isSalesAlias = button.dataset.view === "sales" && nextTab === "sales";
+      const isLeadsBase = button.dataset.view === "leads" && nextTab !== "sales";
+      button.classList.toggle("active", isSalesAlias || isLeadsBase);
+    });
   }
+  contactCenterTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.contactCenterTab === nextTab);
+  });
+  contactCenterPanels.forEach((panel) => {
+    const active = panel.dataset.contactCenterPanel === nextTab;
+    panel.classList.toggle("active", active);
+    panel.classList.toggle("hidden", !active);
+  });
+  if (nextTab === "captures") {
+    renderLeadCaptureTable();
+    renderLeadCaptureAssetOptions();
+  }
+  if (nextTab === "sales") renderSalesView();
+}
+
+function renderContactCenterSummary(crmRows = []) {
+  if (!contactCenterSummaryGrid) return;
+  const totalContacts = Number(state.leadCrmPagination?.total ?? crmRows.length);
+  const capturedLeads = (state.leadCaptureActivations || [])
+    .reduce((sum, item) => sum + Number(item.metrics?.leads_captured || 0), 0);
+  const buyers = crmRows.filter((item) => Number(item.purchase_count || 0) > 0).length;
+  const sales = state.selectedSales || [];
+  const revenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
+  const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
+  contactCenterSummaryGrid.innerHTML = [
+    ["Contactos unificados", totalContacts, "CRM, manuales, compradores y capturas"],
+    ["Capturados", capturedLeads, `${(state.leadCaptureActivations || []).length} capturas activas o historicas`],
+    ["Convertidos", buyers || sales.length, `${conversionRate} de conversion visible`],
+    ["Revenue registrado", money(revenue), `${sales.length} ventas en la campaña`],
+    ["Tickets activos", activeTickets, "Beneficios pendientes de redimir"],
+  ].map(([label, value, meta]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value ?? 0)}</strong>
+      <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+    </article>
+  `).join("");
+}
+
+function renderLegacyLeadTables(feedRows) {
   if (leadFeedTable) {
-    leadFeedTable.innerHTML = feedRows.map((item) => `
+    leadFeedTable.innerHTML = feedRows.slice(0, 40).map((item) => `
       <tr>
-        <td>
-          <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
-          <br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>
-        </td>
+        <td><strong>${escapeHtml(item.name || "Sin nombre")}</strong><br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span></td>
         <td>${escapeHtml(prettyLeadValue(item.attribution_source || "-"))}</td>
-        <td>
-          ${escapeHtml(item.campaign_name || "Sin campaña")}
-          <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
-        </td>
-        <td>
-          <span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span>
-          <br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span>
-        </td>
+        <td>${escapeHtml(item.campaign_name || "Sin campaña")}<br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span></td>
+        <td><span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span><br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span></td>
         <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
         <td>${escapeHtml(item.recommended_action || "-")}</td>
       </tr>
     `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retención de tu plan.</td></tr>';
   }
-
-  const gate = state.contactFeedGate;
-  if (gate?.locked && (!state.selectedCampaignId || !(state.selectedLeads || []).length)) {
-    const sampleRows = withFilters(
-      state.contactFeed || [],
-      ["name", "document_id", "phone", "email", "qr_status", "campaign_name", "attribution_source", "attribution_subject", "preferred_channel"],
-      ["created_at", "redeemed_at", "sale_created_at"]
-    );
-    const totalCopy = gate.total_available === null || gate.total_available === undefined
-      ? `Estas viendo la muestra permitida por tu plan (${escapeHtml(sampleRows.length)} contactos cargados).`
-      : `Estas viendo ${escapeHtml(sampleRows.length)} de ${escapeHtml(gate.total_available || sampleRows.length)} contactos. ${escapeHtml(gate.hidden_count || 0)} quedan reservados para un plan superior.`;
-    const gateRow = `
-      <tr>
-        <td colspan="9">
-          <div class="empty-state">
-            <strong>${escapeHtml(gate.title || "Ya tienes leads reales. Ahora necesitas el portal.")}</strong>
-            <p>${escapeHtml(gate.message || "Portal Base muestra el historial permitido. Growth/Premium desbloquea historial completo y más exportaciones.")}</p>
-            <p>${totalCopy}</p>
-            <a class="primary-button compact" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Activar Portal RMS</a>
-          </div>
-        </td>
-      </tr>
-    `;
-    const rows = sampleRows.map((item) => `
-      <tr>
-        <td>${escapeHtml(item.name || "-")}</td>
-        <td>${escapeHtml(prettyLeadValue(item.attribution_source || item.lead_source || "-"))}</td>
-        <td>${escapeHtml(item.attribution_subject || item.campaign_name || "Contacto capturado")}</td>
-        <td>${escapeHtml(item.recommended_action || "Suscribete para priorizar, exportar y hacer seguimiento comercial.")}</td>
-        <td>${escapeHtml(item.document_id || "-")}</td>
-        <td>${escapeHtml(item.phone || "-")}</td>
-        <td>${escapeHtml(item.qr_status || item.stage || "-")}</td>
-        <td>${escapeHtml(item.campaign_name || "-")}<br><span class="table-secondary">${escapeHtml(item.email || "-")}</span></td>
-        <td><a class="ghost-button" href="${escapeHtml(gate.upgrade_url || "/paquetes/?mode=portal&plan=STARTER")}">Ver todo</a></td>
-      </tr>
-    `).join("");
-    campaignLeadsTable.innerHTML = `${gateRow}${rows || '<tr><td colspan="9">Genera tus primeros tickets para empezar a capturar leads.</td></tr>'}`;
-    return;
-  }
-
   const sourceRows = state.selectedCampaignId ? (state.selectedLeads || []) : feedRows.map((item) => ({
     ...item,
     lead_source: item.lead_source || item.attribution_source,
@@ -11834,8 +12507,8 @@ function renderLeadsView() {
     sourceRows,
     ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source", "favorite_product", "purchase_intent", "gift_budget", "purchase_window", "preferred_channel"],
     ["created_at", "redeemed_at"]
-  );
-
+  ).slice(0, 60);
+  if (!campaignLeadsTable) return;
   campaignLeadsTable.innerHTML = rows.map((item) => `
     <tr>
       <td>${escapeHtml(item.name || "-")}</td>
@@ -11854,17 +12527,665 @@ function renderLeadsView() {
         : `<span class="table-secondary">${escapeHtml(item.qr_code_id ? "Ticket activo" : "Sin ticket")}</span>`}</td>
     </tr>
   `).join("") || `<tr><td colspan="9">${state.selectedCampaignId ? "Sin leads para esta campaña." : "Sin contactos capturados."}</td></tr>`;
-
   campaignLeadsTable.querySelectorAll("[data-download-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadQr));
   });
   campaignLeadsTable.querySelectorAll("[data-share-qr-wa]").forEach((button) => {
-    button.addEventListener("click", () => shareLeadQrWhatsApp(
-      button.dataset.shareQrWa,
-      button.dataset.leadPhone,
-      button.dataset.leadName
-    ));
+    button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.shareQrWa, button.dataset.leadPhone, button.dataset.leadName));
   });
+}
+
+function renderLeadsView() {
+  mountContactCenterLayout();
+  refreshLeadCampaignFilterOptions();
+  const feedRows = filterRows(state.contactFeed || [], [
+    "name", "document_id", "phone", "email", "campaign_name", "attribution_source", "attribution_subject", "lead_temperature", "recommended_action",
+  ]);
+  const crmRows = state.leadCrmRows || [];
+  const buyers = crmRows.filter((item) => Number(item.purchase_count || 0) > 0).length;
+  const totalScore = crmRows.reduce((sum, item) => sum + Number(item.score_total || 0), 0);
+  const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
+  const highPriority = crmRows.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH").length;
+  const withoutContact = crmRows.filter((item) => !item.email && !item.phone).length;
+  const attentionQueue = crmRows
+    .slice()
+    .sort((a, b) => Number(b.attention_score || 0) - Number(a.attention_score || 0))
+    .slice(0, 4);
+
+  if (leadFeedKpiGrid) {
+    leadFeedKpiGrid.innerHTML = [
+      ["Atender hoy", highPriority, "Tickets activos, seguimiento o conversion"],
+      ["Leads CRM", state.leadCrmPagination?.total ?? crmRows.length, state.contactFeedRetention?.label || "Busqueda paginada"],
+      ["Compradores", buyers, "Con venta registrada"],
+      ["Score acumulado", totalScore.toLocaleString("es-CO"), "Juegos y trivias"],
+      ["Tickets activos", activeTickets, "Beneficios por redimir"],
+      ["Sin contacto", withoutContact, "Completar antes de activar"],
+    ].map(([label, value, meta]) => `
+      <article class="kpi-card">
+        <span class="mono-label">${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value ?? 0)}</strong>
+        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+      </article>
+    `).join("");
+  }
+  renderContactCenterSummary(crmRows);
+  if (leadAttentionBoard) {
+    leadAttentionBoard.innerHTML = attentionQueue.length
+      ? attentionQueue.map((item, index) => `
+        <button class="lead-attention-card" type="button" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+          <span class="lead-attention-rank">${index + 1}</span>
+          <span>
+            <strong>${escapeHtml(item.name || "Lead sin nombre")}</strong>
+            <small>${escapeHtml(item.recommended_action || "Revisar ficha comercial.")}</small>
+          </span>
+          <span class="status-chip ${leadPriorityChipClass(item.care_priority)}">${escapeHtml(item.care_priority_label || "Seguimiento")}</span>
+        </button>
+      `).join("")
+      : '<div class="empty-state compact">Sin leads en la cola de atencion actual.</div>';
+    leadAttentionBoard.querySelectorAll("[data-lead-id]").forEach((button) => {
+      button.addEventListener("click", () => openLeadDetail({
+        id: button.dataset.leadId,
+        source_type: button.dataset.sourceType || "PLAYER",
+      }));
+    });
+  }
+  if (leadFeedRetention) {
+    leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
+  }
+  renderLeadCrmTable();
+  renderLeadCaptureTable();
+  if (state.contactCenterTab === "sales") renderSalesView();
+  renderLegacyLeadTables(feedRows);
+  setContactCenterTab(state.contactCenterTab);
+}
+
+function detailList(rows = [], empty = "Sin registros.") {
+  return rows.length
+    ? rows.map((row) => `<article class="lead-detail-item">${row}</article>`).join("")
+    : `<div class="empty-state compact">${escapeHtml(empty)}</div>`;
+}
+
+function daysSince(dateValue) {
+  if (!dateValue) return null;
+  const time = new Date(dateValue).getTime();
+  if (!Number.isFinite(time)) return null;
+  return Math.max(0, Math.floor((Date.now() - time) / 86400000));
+}
+
+function isRedeemedTicket(ticket = {}) {
+  return String(ticket.status || "").toUpperCase() === "REDEEMED" || Boolean(ticket.redeemed_at);
+}
+
+function isActiveTicket(ticket = {}) {
+  if (isRedeemedTicket(ticket)) return false;
+  if (String(ticket.status || "").toUpperCase() !== "ACTIVE") return false;
+  return !ticket.expires_at || new Date(ticket.expires_at) > new Date();
+}
+
+function ticketStatusLabel(ticket = {}) {
+  if (isRedeemedTicket(ticket)) return "Redimido";
+  if (isActiveTicket(ticket)) return "Activo";
+  if (ticket.expires_at && new Date(ticket.expires_at) <= new Date()) return "Vencido";
+  const status = String(ticket.status || "").toUpperCase();
+  const labels = {
+    UNCLAIMED: "Sin reclamar",
+    CLAIMED: "Reclamado",
+    EXPIRED: "Vencido",
+    CANCELLED: "Cancelado",
+  };
+  return labels[status] || status || "Sin estado";
+}
+
+function ticketStatusClass(ticket = {}) {
+  if (isActiveTicket(ticket)) return "ok";
+  if (isRedeemedTicket(ticket)) return "pending";
+  return "danger";
+}
+
+function ticketTitle(ticket = {}) {
+  const benefit = ticket.reward_name || ticket.benefit_value?.label || ticket.benefit_type || ticket.origin_type || "Ticket";
+  return String(benefit || "Ticket");
+}
+
+function ticketPublicUrl(ticket = {}) {
+  if (!ticket.token) return "";
+  return `${window.location.origin}/empresa/?view=validator&token=${encodeURIComponent(ticket.token)}`;
+}
+
+function ticketGroups(tickets = []) {
+  return {
+    active: tickets.filter(isActiveTicket),
+    redeemed: tickets.filter(isRedeemedTicket),
+    other: tickets.filter((ticket) => !isActiveTicket(ticket) && !isRedeemedTicket(ticket)),
+  };
+}
+
+function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
+  if (!tickets.length) return `<div class="empty-state compact">${escapeHtml(empty)}</div>`;
+  return `<div class="lead-ticket-grid">${tickets.map((ticket) => {
+    const publicUrl = ticketPublicUrl(ticket);
+    const meta = [
+      ticket.campaign_name || "Sin campana",
+      ticket.origin_type || "",
+      ticket.created_at ? `emitido ${formatDate(ticket.created_at)}` : "",
+    ].filter(Boolean).join(" | ");
+    return `
+      <article class="lead-ticket-card">
+        <div class="lead-ticket-head">
+          <div>
+            <strong>${escapeHtml(ticketTitle(ticket))}</strong>
+            <small>${escapeHtml(meta)}</small>
+          </div>
+          <span class="status-chip ${ticketStatusClass(ticket)}">${escapeHtml(ticketStatusLabel(ticket))}</span>
+        </div>
+        <div class="lead-ticket-meta">
+          <span><strong>ID</strong>${escapeHtml(ticket.id || "-")}</span>
+          <span><strong>Vence</strong>${formatDate(ticket.expires_at)}</span>
+          <span><strong>Redimido</strong>${formatDate(ticket.redeemed_at)}</span>
+          <span><strong>Beneficio</strong>${escapeHtml(ticket.benefit_value?.label || ticket.benefit_type || "-")}</span>
+        </div>
+        <div class="activation-row-actions">
+          ${isActiveTicket(ticket) ? `<button class="ghost-button" type="button" data-download-ticket="${escapeHtml(ticket.id)}">Descargar QR</button>` : ""}
+          ${publicUrl ? `<button class="ghost-button" type="button" data-copy-link="${escapeHtml(publicUrl)}">Copiar ticket</button>` : ""}
+        </div>
+      </article>
+    `;
+  }).join("")}</div>`;
+}
+
+function leadAnalysisModel(detail = {}) {
+  const lead = detail.lead || {};
+  const summary = detail.summary || {};
+  const purchases = detail.purchases || [];
+  const activations = detail.activations || [];
+  const benefits = detail.benefits || [];
+  const rewardPasses = detail.reward_passes || [];
+  const games = detail.games || [];
+  const communications = detail.communications || [];
+  const timeline = detail.timeline || [];
+  const purchaseCount = Number(summary.purchase_count || purchases.length || 0);
+  const totalSpent = Number(summary.total_spent || 0);
+  const scoreTotal = Number(summary.score_total || 0);
+  const redeemed = Number(summary.benefits_redeemed || 0);
+  const benefitsTotal = Number(summary.benefits_received || benefits.length + rewardPasses.length || 0);
+  const lastInteractionDays = daysSince(summary.last_interaction_at || lead.updated_at || lead.created_at);
+  const hasRecentInteraction = lastInteractionDays !== null && lastInteractionDays <= 30;
+  const hasContact = Boolean(lead.email || lead.phone);
+  const hasConsentSignal = timeline.some((item) => String(item.type || "").includes("consent")) || communications.length > 0;
+  const redemptionRate = benefitsTotal ? Math.round((redeemed / benefitsTotal) * 100) : 0;
+  const conversionWeight = purchaseCount > 1 ? 30 : purchaseCount === 1 ? 22 : 0;
+  const spendWeight = totalSpent >= 3000000 ? 18 : totalSpent >= 1000000 ? 12 : totalSpent > 0 ? 7 : 0;
+  const engagementWeight = Math.min(20, activations.length * 3 + games.length * 4 + communications.length * 2);
+  const scoreWeight = Math.min(15, Math.floor(scoreTotal / 50));
+  const recencyWeight = hasRecentInteraction ? 10 : lastInteractionDays === null ? 2 : lastInteractionDays <= 90 ? 5 : 0;
+  const dataWeight = hasContact ? 7 : 0;
+  const healthScore = Math.min(100, conversionWeight + spendWeight + engagementWeight + scoreWeight + recencyWeight + dataWeight);
+  const topInterest = (detail.interests || [])[0]?.interest_name || lead.interest || lead.channel || "Sin interes dominante";
+  const stage = purchaseCount > 1
+    ? "Cliente recurrente"
+    : purchaseCount === 1
+      ? "Comprador"
+      : redeemed > 0
+        ? "Redimio beneficio"
+        : benefitsTotal > 0
+          ? "Beneficio emitido"
+          : games.length > 0
+            ? "Interactuo con juego"
+            : activations.length > 0
+              ? "Activado"
+              : "Lead capturado";
+  const probability = purchaseCount > 1 || healthScore >= 78
+    ? "Alta"
+    : healthScore >= 52 || (activations.length && hasRecentInteraction)
+      ? "Media"
+      : healthScore >= 28
+        ? "Baja con seguimiento"
+        : "Por desarrollar";
+  const risks = [
+    !hasContact ? "Faltan datos de contacto para activarlo por canal directo." : "",
+    lastInteractionDays !== null && lastInteractionDays > 90 ? `Sin interaccion hace ${lastInteractionDays} dias.` : "",
+    activations.length > 0 && purchaseCount === 0 ? "Ha recibido activaciones pero aun no compra." : "",
+    benefitsTotal > 0 && redeemed === 0 ? "Tiene beneficios sin redimir." : "",
+    !hasConsentSignal ? "No hay senal clara de consentimiento/comunicacion en historial." : "",
+  ].filter(Boolean);
+  const nextActions = [];
+  if (purchaseCount === 0) {
+    nextActions.push({ title: "Convertir primera compra", detail: "Enviar beneficio de bienvenida con vencimiento corto.", preset: "FIRST_PURCHASE", tone: "warning" });
+  }
+  if (purchaseCount > 0 && purchaseCount < 2) {
+    nextActions.push({ title: "Activar recompra", detail: "Enviar ticket de recompra ligado al interes principal.", preset: "REBUY", tone: "ok" });
+  }
+  if (healthScore >= 72 || totalSpent >= 2000000) {
+    nextActions.push({ title: "Atencion VIP", detail: "Crear trato preferencial, invitacion o giftcard controlada.", preset: "VIP_ATTENTION", tone: "ok" });
+  }
+  if (!games.length || scoreTotal < 80) {
+    nextActions.push({ title: "Microjuego de perfilamiento", detail: "Recolectar preferencia y score para segmentacion.", preset: "MICROGAME", tone: "pending" });
+  }
+  if (risks.length) {
+    nextActions.push({ title: "Nota de seguimiento", detail: risks[0], preset: "NOTE", tone: "danger" });
+  }
+  return {
+    dataQuality: hasContact ? (lead.email && lead.phone ? "Completa" : "Util") : "Incompleta",
+    funnel: [
+      ["Lead", true],
+      ["Activacion", activations.length > 0],
+      ["Juego/Trivia", games.length > 0],
+      ["Ticket", benefitsTotal > 0],
+      ["Redencion", redeemed > 0],
+      ["Venta", purchaseCount > 0],
+      ["Revenue", totalSpent > 0],
+    ],
+    healthScore,
+    lastInteractionDays,
+    nextActions: nextActions.slice(0, 5),
+    probability,
+    redemptionRate,
+    risks,
+    stage,
+    topInterest,
+  };
+}
+
+function renderLeadDetailHeader(detail) {
+  const lead = detail.lead || {};
+  const summary = detail.summary || {};
+  const analysis = leadAnalysisModel(detail);
+  const tickets = detail.benefits || [];
+  const groupedTickets = ticketGroups(tickets);
+  if (leadDetailTitle) leadDetailTitle.textContent = lead.name || "Lead sin nombre";
+  if (leadDetailSubtitle) {
+    leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"}`;
+  }
+  if (leadDetailEyebrow) {
+    leadDetailEyebrow.textContent = `${lead.source_type || "PLAYER"} · ${lead.level || "Lead"}`;
+  }
+  if (!leadDetailHeader) return;
+  leadDetailHeader.innerHTML = `
+    <div class="lead-identity-block">
+      <div class="lead-status-row">
+        <span class="status-chip ${commercialChipClass(lead.commercial_status)}">${escapeHtml(lead.commercial_status_label || lead.commercial_status || "Nuevo")}</span>
+        <span class="pill muted">${escapeHtml(analysis.stage)}</span>
+        <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
+        <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
+      </div>
+      <h4>${escapeHtml(lead.name || "Lead")}</h4>
+      <p>${escapeHtml(lead.insight || "")}</p>
+      <div class="lead-contact-strip">
+        <span><strong>Documento</strong>${escapeHtml(lead.document_id || "-")}</span>
+        <span><strong>Email</strong>${escapeHtml(lead.email || "-")}</span>
+        <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
+        <span><strong>Origen</strong>${escapeHtml(lead.channel || lead.campaign_name || "-")}</span>
+      </div>
+      <div class="lead-funnel-strip">
+        ${analysis.funnel.map(([label, done]) => `<span class="${done ? "is-done" : ""}">${escapeHtml(label)}</span>`).join("")}
+      </div>
+    </div>
+    <div class="lead-decision-panel">
+      <article class="lead-health-card">
+        <span class="mono-label">Salud comercial</span>
+        <strong>${analysis.healthScore}/100</strong>
+        <div class="lead-health-bar"><span style="width:${analysis.healthScore}%"></span></div>
+        <small>${escapeHtml(analysis.topInterest)} · redencion ${analysis.redemptionRate}%</small>
+      </article>
+      <div class="lead-header-metrics">
+        <span><strong>${Number(summary.score_total || 0).toLocaleString("es-CO")}</strong>Score</span>
+        <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
+        <span><strong>${groupedTickets.active.length}</strong>Tickets activos</span>
+        <span><strong>${groupedTickets.redeemed.length}</strong>Tickets redimidos</span>
+      </div>
+      <div class="lead-next-actions">
+        ${analysis.nextActions.map((item) => `
+          <button class="lead-action-tile is-${escapeHtml(item.tone)}" type="button" data-lead-fast-action="${escapeHtml(item.preset)}">
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.detail)}</span>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderLeadTab(detail) {
+  if (!leadDetailContent) return;
+  const lead = detail.lead || {};
+  const summary = detail.summary || {};
+  const analysis = leadAnalysisModel(detail);
+  const groupedTickets = ticketGroups(detail.benefits || []);
+  const tab = state.selectedLeadTab || "summary";
+  const metricCards = (items) => `<section class="lead-summary-grid">${items.map(([label, value, meta]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value ?? "-")}</strong>
+      <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+    </article>
+  `).join("")}</section>`;
+
+  const renderers = {
+    summary: () => `
+      ${metricCards([
+        ["Score total", Number(summary.score_total || 0).toLocaleString("es-CO"), `Promedio ${Number(summary.score_average || 0).toFixed(1)}`],
+        ["Compras", summary.purchase_count || 0, money(summary.total_spent || 0)],
+        ["Ticket promedio", money(summary.avg_ticket || 0), `Ultima ${formatDate(summary.last_purchase_at)}`],
+        ["Tickets activos", groupedTickets.active.length, "Disponibles para activar"],
+        ["Tickets redimidos", groupedTickets.redeemed.length, "Ya usados en punto fisico"],
+        ["Activaciones", summary.activations_count || 0, `Ultima ${formatDate(summary.last_activation_at)}`],
+        ["Segmento sugerido", lead.commercial_status_label || summary.commercial_status, lead.level || ""],
+      ])}
+      <section class="lead-analysis-grid">
+        <article class="lead-insight-box">
+          <strong>Lectura comercial</strong>
+          <p>${escapeHtml(lead.insight || "")}</p>
+          <div class="lead-analysis-tags">
+            <span>Etapa: ${escapeHtml(analysis.stage)}</span>
+            <span>Interes: ${escapeHtml(analysis.topInterest)}</span>
+            <span>Recompra: ${escapeHtml(analysis.probability)}</span>
+            <span>Ultima interaccion: ${analysis.lastInteractionDays === null ? "sin dato" : `${analysis.lastInteractionDays} dias`}</span>
+          </div>
+        </article>
+        <article class="lead-insight-box">
+          <strong>Riesgos y bloqueos</strong>
+          ${(analysis.risks.length ? analysis.risks : ["Sin riesgos fuertes detectados."]).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
+        </article>
+      </section>
+      <section class="lead-action-grid">
+        ${analysis.nextActions.map((item) => `
+          <button class="lead-action-card is-${escapeHtml(item.tone)}" type="button" data-lead-fast-action="${escapeHtml(item.preset)}">
+            <span class="mono-label">Siguiente accion</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.detail)}</p>
+          </button>
+        `).join("")}
+      </section>
+      <article class="lead-insight-box">
+        <strong>Ruta RMS del lead</strong>
+        <div class="lead-funnel-strip wide">
+          ${analysis.funnel.map(([label, done]) => `<span class="${done ? "is-done" : ""}">${escapeHtml(label)}</span>`).join("")}
+        </div>
+      </article>
+    `,
+    personal: () => detailList([
+      `<strong>Nombre</strong><span>${escapeHtml(lead.name || "-")}</span>`,
+      `<strong>Documento</strong><span>${escapeHtml(lead.document_id || "-")}</span>`,
+      `<strong>Email</strong><span>${escapeHtml(lead.email || "-")}</span>`,
+      `<strong>Telefono</strong><span>${escapeHtml(lead.phone || "-")}</span>`,
+      `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
+      `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
+      `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
+      `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,
+    ]),
+    purchases: () => (detail.purchases || []).length ? detailList((detail.purchases || []).map((item) => `
+      <strong>${escapeHtml(item.product_name || "Compra")}</strong>
+      <span>${money(item.sale_amount || 0)} · ${formatDate(item.created_at)}</span>
+      <small>${escapeHtml(item.campaign_name || item.acquisition_source || "-")} · ${escapeHtml(item.branch_name || "Sin sucursal")}</small>
+    `)) : `
+      <div class="empty-state compact">
+        Este lead aun no registra compras. Puedes enviarle una activacion para convertirlo.
+        <br><button class="ghost-button" type="button" data-lead-fast-action="FIRST_PURCHASE">Enviar beneficio de primera compra</button>
+      </div>
+    `,
+    interests: () => `
+      <form class="lead-inline-form" id="leadInterestForm">
+        <input id="leadInterestInput" type="text" maxlength="120" placeholder="Agregar interes manual">
+        <button class="ghost-button" type="submit">Agregar</button>
+      </form>
+      <div class="lead-interest-cloud">${(detail.interests || []).map((item) => `
+        <button class="lead-interest-pill" data-delete-interest="${escapeHtml(item.id || "")}" type="button">
+          ${escapeHtml(item.interest_name)} <span>${escapeHtml(item.weight || "")}</span>
+        </button>
+      `).join("") || '<span class="table-secondary">Sin intereses detectados.</span>'}</div>
+    `,
+    activations: () => detailList((detail.activations || []).map((item) => `
+      <strong>${escapeHtml(item.name || item.activation_type)}</strong>
+      <span>${escapeHtml(item.status || "-")} · ${formatDate(item.created_at)}</span>
+      <small>
+        ${escapeHtml(item.campaign_name || "Sin campaña")}
+        ${item.qr_code_id ? `· <button class="link-button" data-download-activation-ticket="${escapeHtml(item.qr_code_id)}" type="button">Descargar ticket</button>` : ""}
+        ${item.public_url ? `· <button class="link-button" data-copy-link="${escapeHtml(item.public_url)}" type="button">Copiar ticket</button>` : ""}
+      </small>
+    `), "Sin activaciones enviadas."),
+    games: () => detailList((detail.games || []).map((item) => `
+      <strong>${escapeHtml(item.trivia_title || item.game_name || "Juego")}</strong>
+      <span>Score ${Number(item.score || 0)} / ${Number(item.total_questions || 0)} · ${formatDate(item.created_at)}</span>
+      <small>${escapeHtml(item.campaign_name || "-")} · ${item.passed ? "Aprobado" : "Participacion"}</small>
+    `), "Sin juegos o trivias registrados."),
+    benefits: () => `
+      <section class="lead-ticket-summary">
+        <article><span>Activos</span><strong>${groupedTickets.active.length}</strong></article>
+        <article><span>Redimidos</span><strong>${groupedTickets.redeemed.length}</strong></article>
+        <article><span>Otros</span><strong>${groupedTickets.other.length}</strong></article>
+      </section>
+      <section class="lead-ticket-section">
+        <h4>Tickets activos</h4>
+        ${renderTicketCards(groupedTickets.active, "Este lead no tiene tickets activos.")}
+      </section>
+      <section class="lead-ticket-section">
+        <h4>Tickets redimidos</h4>
+        ${renderTicketCards(groupedTickets.redeemed, "Este lead no ha redimido tickets.")}
+      </section>
+      <section class="lead-ticket-section">
+        <h4>Otros tickets</h4>
+        ${renderTicketCards(groupedTickets.other, "No hay tickets vencidos, cancelados o pendientes.")}
+      </section>
+      ${(detail.reward_passes || []).length ? `
+        <section class="lead-ticket-section">
+          <h4>Reward Pass asociados</h4>
+          ${detailList((detail.reward_passes || []).map((item) => `
+            <strong>Reward Pass ${escapeHtml(item.public_code || "")}</strong>
+            <span>${escapeHtml(item.status || "-")} · saldo ${money(item.current_balance_cop || 0)}</span>
+            <small>${escapeHtml(item.campaign_name || "-")}</small>
+          `))}
+        </section>
+      ` : ""}
+    `,
+    affiliate: () => detail.affiliate ? detailList([
+      `<strong>Codigo de afiliado</strong><span>${escapeHtml(detail.affiliate.qr_token || "-")}</span>`,
+      `<strong>Estado</strong><span>${escapeHtml(detail.affiliate.status || "-")}</span>`,
+      `<strong>Puntos acumulados</strong><span>${Number(detail.affiliate.points_total || 0).toLocaleString("es-CO")}</span>`,
+      `<strong>Carnet digital</strong><span>${detail.affiliate.qr_token ? `<a href="/carnet-afiliado/${escapeHtml(detail.affiliate.qr_token)}" target="_blank" rel="noreferrer">Abrir carnet</a>` : "-"}</span>`,
+    ]) : '<div class="empty-state compact">Este lead aun no es afiliado.<br><button class="ghost-button" type="button" id="leadInviteAffiliateButton">Enviar invitacion de afiliacion</button></div>',
+    communications: () => detailList((detail.communications || []).map((item) => `
+      <strong>${escapeHtml(item.subject || item.type)}</strong>
+      <span>${escapeHtml(item.channel || "-")} · ${escapeHtml(item.status || "-")} · ${formatDate(item.created_at)}</span>
+      <small>${escapeHtml(item.activation_name || item.campaign_name || "-")}</small>
+    `), "Sin comunicaciones registradas."),
+    notes: () => `
+      <form class="lead-note-form" id="leadNoteForm">
+        <textarea id="leadNoteInput" rows="3" maxlength="3000" placeholder="Escribe una nota interna"></textarea>
+        <select id="leadNoteTypeInput">
+          <option value="commercial">Comercial</option>
+          <option value="follow_up">Seguimiento</option>
+          <option value="vip">VIP</option>
+          <option value="support">Soporte</option>
+          <option value="observation">Observacion</option>
+        </select>
+        <input id="leadNoteNextActionInput" type="text" maxlength="500" placeholder="Proxima accion sugerida">
+        <button class="solid-button" type="submit">Guardar nota</button>
+      </form>
+      ${detailList((detail.notes || []).map((item) => `
+        <strong>${escapeHtml(item.note_type || "Nota")}</strong>
+        <span>${escapeHtml(item.note)}</span>
+        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""}</small>
+      `), "Sin notas internas.")}
+    `,
+    timeline: () => `<div class="lead-timeline">${(detail.timeline || []).map((item) => `
+      <article class="lead-timeline-item">
+        <span>${formatDate(item.created_at)}</span>
+        <strong>${escapeHtml(item.title || item.type)}</strong>
+        <p>${escapeHtml(item.description || "")}</p>
+      </article>
+    `).join("") || '<div class="empty-state compact">Sin eventos.</div>'}</div>`,
+  };
+  leadDetailContent.innerHTML = (renderers[tab] || renderers.summary)();
+  bindLeadDetailPanelActions();
+}
+
+function bindLeadDetailPanelActions() {
+  leadDetailContent?.querySelectorAll("[data-copy-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyLink || "");
+      state.lastLeadActivationLink = button.dataset.copyLink || "";
+      showFeedback("Ticket copiado.", "success");
+    });
+  });
+  leadDetailContent?.querySelectorAll("[data-download-activation-ticket]").forEach((button) => {
+    button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadActivationTicket));
+  });
+  leadDetailContent?.querySelectorAll("[data-download-ticket]").forEach((button) => {
+    button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadTicket));
+  });
+  const interestForm = document.getElementById("leadInterestForm");
+  interestForm?.addEventListener("submit", addLeadInterestFromForm);
+  leadDetailContent?.querySelectorAll("[data-delete-interest]").forEach((button) => {
+    if (!button.dataset.deleteInterest) return;
+    button.addEventListener("click", () => deleteLeadInterestFromDetail(button.dataset.deleteInterest));
+  });
+  document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
+  document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
+}
+
+function runLeadFastAction(action) {
+  if (!state.selectedLeadRef) return;
+  if (action === "NOTE") {
+    state.selectedLeadTab = "notes";
+    leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "notes"));
+    if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+    document.getElementById("leadNoteInput")?.focus();
+    return;
+  }
+  openLeadActivationModal(state.selectedLeadRef, action || "TICKET");
+}
+
+async function openLeadDetail(leadRef) {
+  state.selectedLeadRef = leadRef;
+  state.selectedLeadTab = "summary";
+  leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "summary"));
+  if (leadDetailModal) leadDetailModal.classList.remove("hidden");
+  if (leadDetailContent) leadDetailContent.innerHTML = '<div class="empty-state compact">Cargando ficha del lead...</div>';
+  try {
+    const detail = await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}?source_type=${encodeURIComponent(leadRef.source_type || "PLAYER")}`, { headers: authHeaders() });
+    state.selectedLeadDetail = detail;
+    renderLeadDetailHeader(detail);
+    renderLeadTab(detail);
+    leadDetailModal?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    if (leadDetailContent) leadDetailContent.innerHTML = `<div class="empty-state compact">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function closeLeadDetail() {
+  leadDetailModal?.classList.add("hidden");
+}
+
+function openLeadActivationModal(leadRef = state.selectedLeadRef, presetType = "") {
+  if (!leadRef) return;
+  state.selectedLeadRef = leadRef;
+  leadActivationForm?.reset();
+  refreshLeadCampaignFilterOptions();
+  if (leadActivationTypeInput && presetType) leadActivationTypeInput.value = presetType;
+  if (leadActivationTypeInput && !presetType) leadActivationTypeInput.value = "TICKET";
+  if (leadActivationNameInput) leadActivationNameInput.value = presetType === "REFERRAL_REWARD" ? "Invitacion de afiliacion" : "Beneficio comercial personalizado";
+  if (leadActivationResult) leadActivationResult.innerHTML = "";
+  setFormMessage(leadActivationMessage, "", "");
+  leadActivationModal?.classList.remove("hidden");
+}
+
+function closeLeadActivationModal() {
+  leadActivationModal?.classList.add("hidden");
+}
+
+async function submitLeadActivation(event) {
+  event.preventDefault();
+  if (!state.selectedLeadRef) return;
+  const expiresValue = leadActivationExpiresInput?.value ? new Date(leadActivationExpiresInput.value).toISOString() : null;
+  const payload = {
+    source_type: state.selectedLeadRef.source_type || "PLAYER",
+    activation_type: leadActivationTypeInput?.value || "TICKET",
+    campaign_id: leadActivationCampaignInput?.value || null,
+    name: String(leadActivationNameInput?.value || "").trim(),
+    channel: leadActivationChannelInput?.value || "manual",
+    benefit_type: leadActivationBenefitTypeInput?.value || "CUSTOM",
+    benefit_value: { label: String(leadActivationBenefitValueInput?.value || "").trim() },
+    expires_at: expiresValue,
+    score_min: leadActivationScoreMinInput?.value ? Number(leadActivationScoreMinInput.value) : null,
+    message: String(leadActivationMessageInput?.value || "").trim(),
+    conditions: String(leadActivationConditionsInput?.value || "").trim() || null,
+  };
+  if (!payload.name) {
+    setFormMessage(leadActivationMessage, "Escribe el nombre de la activacion.", "error");
+    return;
+  }
+  try {
+    if (leadActivationSubmitButton) leadActivationSubmitButton.disabled = true;
+    setFormMessage(leadActivationMessage, "Generando ticket QR para el lead...", "info");
+    const result = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/activations`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.lastLeadActivationLink = result.public_url || result.link?.public_url || "";
+    if (leadActivationResult) {
+      leadActivationResult.innerHTML = `
+        <div class="qr-result">
+          <strong>Ticket QR creado</strong>
+          <p>${escapeHtml(state.lastLeadActivationLink)}</p>
+          <button class="ghost-button" type="button" id="leadActivationCopyResultButton">Copiar ticket</button>
+        </div>
+      `;
+      document.getElementById("leadActivationCopyResultButton")?.addEventListener("click", async () => {
+        await navigator.clipboard?.writeText(state.lastLeadActivationLink);
+        showFeedback("Ticket copiado.", "success");
+      });
+    }
+    setFormMessage(leadActivationMessage, "Ticket QR registrado en el historial del lead.", "success");
+    state.leadCrmLoaded = false;
+    if (state.selectedLeadRef) await openLeadDetail(state.selectedLeadRef);
+    await refreshLeadCrm({ quiet: true, keepOffset: true });
+  } catch (error) {
+    setFormMessage(leadActivationMessage, error.message, "error");
+  } finally {
+    if (leadActivationSubmitButton) leadActivationSubmitButton.disabled = false;
+  }
+}
+
+async function createLeadNoteFromForm(event) {
+  event.preventDefault();
+  if (!state.selectedLeadRef) return;
+  const note = String(document.getElementById("leadNoteInput")?.value || "").trim();
+  if (!note) return;
+  await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      source_type: state.selectedLeadRef.source_type || "PLAYER",
+      note,
+      note_type: document.getElementById("leadNoteTypeInput")?.value || "commercial",
+      next_action: String(document.getElementById("leadNoteNextActionInput")?.value || "").trim() || null,
+    }),
+  });
+  await openLeadDetail(state.selectedLeadRef);
+}
+
+async function addLeadInterestFromForm(event) {
+  event.preventDefault();
+  if (!state.selectedLeadRef) return;
+  const input = document.getElementById("leadInterestInput");
+  const interest = String(input?.value || "").trim();
+  if (!interest) return;
+  await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/interests`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ source_type: state.selectedLeadRef.source_type || "PLAYER", interest_name: interest, source: "manual", weight: 20 }),
+  });
+  await openLeadDetail(state.selectedLeadRef);
+}
+
+async function deleteLeadInterestFromDetail(interestId) {
+  if (!state.selectedLeadRef) return;
+  await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/interests/${encodeURIComponent(interestId)}?source_type=${encodeURIComponent(state.selectedLeadRef.source_type || "PLAYER")}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  await openLeadDetail(state.selectedLeadRef);
 }
 
 function renderAffiliateDashboard() {
@@ -12851,7 +14172,16 @@ adminCampaignSlugInput?.addEventListener("input", () => {
   adminCampaignSlugInput.value = slugify(adminCampaignSlugInput.value);
 });
 navButtons.forEach((button) => {
-  button.addEventListener("click", () => setView(button.dataset.view));
+  button.addEventListener("click", () => {
+    if (button.dataset.contactCenterNav) setContactCenterTab(button.dataset.contactCenterNav);
+    setView(button.dataset.view);
+  });
+});
+contactCenterTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    setContactCenterTab(button.dataset.contactCenterTab);
+    if (state.currentView === "leads") renderLeadsView();
+  });
 });
 ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
@@ -12935,6 +14265,72 @@ settingsButton.addEventListener("click", () => {
   setView("account");
   showFeedback("Cuenta y configuración abiertas.", "info");
 });
+let leadCrmSearchTimer = 0;
+function scheduleLeadCrmRefresh() {
+  clearTimeout(leadCrmSearchTimer);
+  leadCrmSearchTimer = setTimeout(() => {
+    refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
+  }, 320);
+}
+leadCrmSearchInput?.addEventListener("input", scheduleLeadCrmRefresh);
+leadCrmSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
+});
+leadCrmSearchButton?.addEventListener("click", () => refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error")));
+[leadCrmCampaignFilter, leadCrmStatusFilter, leadCrmAffiliateFilter, leadCrmPurchaseFilter, leadCrmTicketFilter, leadCrmPriorityFilter, leadCrmScoreMinFilter, leadCrmScoreMaxFilter, leadCrmChannelFilter].forEach((input) => {
+  input?.addEventListener(input.tagName === "INPUT" ? "input" : "change", scheduleLeadCrmRefresh);
+});
+leadCrmResetButton?.addEventListener("click", () => {
+  [leadCrmSearchInput, leadCrmCampaignFilter, leadCrmStatusFilter, leadCrmAffiliateFilter, leadCrmPurchaseFilter, leadCrmTicketFilter, leadCrmPriorityFilter, leadCrmScoreMinFilter, leadCrmScoreMaxFilter, leadCrmChannelFilter].forEach((input) => {
+    if (input) input.value = "";
+  });
+  refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
+});
+leadCrmPrevButton?.addEventListener("click", () => {
+  state.leadCrmPagination.offset = Math.max(0, Number(state.leadCrmPagination.offset || 0) - Number(state.leadCrmPagination.limit || 40));
+  refreshLeadCrm({ quiet: true, keepOffset: true }).catch((error) => showFeedback(error.message, "error"));
+});
+leadCrmNextButton?.addEventListener("click", () => {
+  state.leadCrmPagination.offset = Number(state.leadCrmPagination.offset || 0) + Number(state.leadCrmPagination.limit || 40);
+  refreshLeadCrm({ quiet: true, keepOffset: true }).catch((error) => showFeedback(error.message, "error"));
+});
+leadDetailCloseButton?.addEventListener("click", closeLeadDetail);
+leadDetailModal?.addEventListener("click", (event) => {
+  const fastAction = event.target.closest("[data-lead-fast-action]");
+  if (fastAction) {
+    runLeadFastAction(fastAction.dataset.leadFastAction);
+  }
+});
+leadDetailTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-lead-tab]");
+  if (!button) return;
+  state.selectedLeadTab = button.dataset.leadTab || "summary";
+  leadDetailTabs.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab === button));
+  if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+});
+leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
+leadSendBenefitButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
+leadCreateNoteButton?.addEventListener("click", () => {
+  state.selectedLeadTab = "notes";
+  leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "notes"));
+  if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+});
+leadCopyLastLinkButton?.addEventListener("click", async () => {
+  const link = state.lastLeadActivationLink || state.selectedLeadDetail?.activations?.find((item) => item.public_url)?.public_url || "";
+  if (!link) {
+    showFeedback("Este lead aun no tiene ticket reciente para copiar.", "info");
+    return;
+  }
+  await navigator.clipboard?.writeText(link);
+  showFeedback("Ticket copiado.", "success");
+});
+leadActivationCloseButton?.addEventListener("click", closeLeadActivationModal);
+leadActivationModal?.addEventListener("click", (event) => {
+  if (event.target === leadActivationModal) closeLeadActivationModal();
+});
+leadActivationForm?.addEventListener("submit", submitLeadActivation);
 themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
 document.addEventListener("click", (event) => {
@@ -12956,6 +14352,14 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.chartFocus.open) {
     closeChartFocusMode();
+    return;
+  }
+  if (event.key === "Escape" && !leadActivationModal?.classList.contains("hidden")) {
+    closeLeadActivationModal();
+    return;
+  }
+  if (event.key === "Escape" && !leadDetailModal?.classList.contains("hidden")) {
+    closeLeadDetail();
     return;
   }
   if (event.key === "Escape") closePortalMenu();
@@ -12998,8 +14402,24 @@ affiliateFinderInput?.addEventListener("keydown", (event) => {
 affiliateFinderScanButton?.addEventListener("click", startAffiliateFinderScanner);
 affiliateFinderStopScanButton?.addEventListener("click", stopAffiliateFinderScanner);
 refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
+refreshLeadCaptureButton?.addEventListener("click", async () => {
+  await loadLeadCaptureActivations({ force: true });
+  renderLeadCaptureTable();
+});
+refreshDigitalAssetsButton?.addEventListener("click", async () => {
+  await loadDigitalAssets({ force: true });
+  renderDigitalAssets();
+  renderLeadCaptureAssetOptions();
+});
 rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
 rewardPassCreateForm?.addEventListener("submit", submitRewardPass);
+leadCaptureForm?.addEventListener("submit", submitLeadCapture);
+digitalAssetForm?.addEventListener("submit", submitDigitalAsset);
+leadCaptureAssetSelect?.addEventListener("change", renderLeadCaptureAssetPreview);
+leadCaptureOpenAssetsButton?.addEventListener("click", () => {
+  setView("account");
+  digitalAssetForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
 rewardPassValueInput?.addEventListener("input", () => renderRewardPassPreview(state.selectedRewardPass));
 rewardPassBeneficiaryNameInput?.addEventListener("input", () => renderRewardPassPreview(state.selectedRewardPass));
 rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardPassImage);

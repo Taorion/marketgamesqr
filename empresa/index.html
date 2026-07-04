@@ -109,9 +109,9 @@
             <span class="material-symbols-outlined">campaign</span>
             <span>Campaigns</span>
           </button>
-          <button class="nav-item" data-view="leads" type="button">
+          <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
             <span class="material-symbols-outlined">group</span>
-            <span>Leads</span>
+            <span>Contactos</span>
           </button>
           <button class="nav-item" data-view="affiliates" type="button">
             <span class="material-symbols-outlined">card_membership</span>
@@ -125,7 +125,7 @@
             <span class="material-symbols-outlined">redeem</span>
             <span>Redemptions</span>
           </button>
-          <button class="nav-item" data-view="sales" type="button">
+          <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button">
             <span class="material-symbols-outlined">payments</span>
             <span>Sales</span>
           </button>
@@ -603,6 +603,30 @@
                     <p class="table-secondary">Carga el logo desde Afiliados o usa los controles existentes de logo en esa sección.</p>
                   </div>
                 </div>
+              </article>
+
+              <article class="surface-card account-settings-card digital-asset-library-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Activos digitales</span>
+                    <h3>Biblioteca para Ticket Relámpago</h3>
+                  </div>
+                  <button class="ghost-button" id="refreshDigitalAssetsButton" type="button">Actualizar</button>
+                </div>
+                <p class="table-secondary">Aquí cargas catálogos, portafolios, menús, brochures, guías o fichas técnicas. En Captura Relámpago solo eliges cuál entregar al visitante físico.</p>
+                <form class="modal-form account-profile-form" id="digitalAssetForm">
+                  <label><span>Título del activo</span><input id="digitalAssetTitleInput" type="text" maxlength="180" required placeholder="Catálogo de trajes a la medida"></label>
+                  <label><span>Categoría</span><input id="digitalAssetCategoryInput" type="text" maxlength="80" value="catalogo"></label>
+                  <label class="span-2"><span>Descripción visible</span><textarea id="digitalAssetDescriptionInput" rows="2" maxlength="800" placeholder="Portafolio que recibirá el lead después de dejar sus datos."></textarea></label>
+                  <label><span>Archivo digital</span><input id="digitalAssetFileInput" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" required><small>PDF o imagen. Máximo 5 MB.</small></label>
+                  <label><span>Portada opcional</span><input id="digitalAssetCoverInput" type="file" accept="image/png,image/jpeg,image/webp"><small>Imagen de vista previa. Máximo 2 MB.</small></label>
+                  <label><span>Texto del botón</span><input id="digitalAssetButtonTextInput" type="text" maxlength="80" value="Descargar ahora"></label>
+                  <div class="modal-actions">
+                    <p class="error-line" id="digitalAssetMessage"></p>
+                    <button class="solid-button" id="digitalAssetSubmitButton" type="submit">Guardar activo digital</button>
+                  </div>
+                </form>
+                <div class="digital-assets-grid" id="digitalAssetsGrid"></div>
               </article>
 
               <article class="surface-card account-settings-card">
@@ -1637,6 +1661,61 @@
                   <div class="trivia-launcher-result hidden" id="triviaLauncherResult"></div>
                 </article>
 
+                <article class="surface-card data-table-card lead-capture-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Captura Relámpago de Lead</span>
+                      <h3>Entrega un activo digital a cambio de los datos del cliente</h3>
+                    </div>
+                    <span class="status-chip ok">Visitante → QR → Lead → Descarga</span>
+                  </div>
+                  <p class="chart-explainer">Convierte visitantes físicos en leads entregando catálogos, portafolios o activos digitales mediante QR. Cada persona que escanea ya no se va como visitante: se convierte en una oportunidad registrada.</p>
+                  <form class="modal-form lead-capture-form" id="leadCaptureForm">
+                    <label><span>Nombre de la activación</span><input id="leadCaptureNameInput" type="text" maxlength="160" required placeholder="Catálogo de trajes a la medida"></label>
+                    <label><span>Campaña asociada</span><select id="leadCaptureCampaignInput"></select></label>
+                    <label><span>Canal de uso</span>
+                      <select id="leadCaptureChannelInput">
+                        <option value="tienda_fisica">Tienda física</option>
+                        <option value="feria">Feria</option>
+                        <option value="vitrina">Vitrina</option>
+                        <option value="stand">Stand</option>
+                        <option value="redes">Redes</option>
+                        <option value="evento">Evento</option>
+                        <option value="mostrador">Mostrador</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </label>
+                    <label><span>Estado</span>
+                      <select id="leadCaptureStatusInput">
+                        <option value="ACTIVE">Activa</option>
+                        <option value="DRAFT">Borrador</option>
+                        <option value="PAUSED">Pausada</option>
+                        <option value="ENDED">Finalizada</option>
+                      </select>
+                    </label>
+                    <label><span>Inicio</span><input id="leadCaptureStartsInput" type="datetime-local"></label>
+                    <label><span>Vencimiento</span><input id="leadCaptureExpiresInput" type="datetime-local"></label>
+                    <label class="span-2"><span>Descripción interna</span><textarea id="leadCaptureDescriptionInput" rows="2" maxlength="1200" placeholder="Uso en mostrador para entregar catálogo PDF y capturar interesados."></textarea></label>
+                    <label class="span-2"><span>Qué activo entregará este Ticket Relámpago</span><select id="leadCaptureAssetSelect" required></select><small>Los activos se cargan en Cuenta → Activos digitales.</small></label>
+                    <div class="span-2 lead-capture-asset-preview" id="leadCaptureAssetPreview"></div>
+                    <label><span>Título público opcional</span><input id="leadCaptureAssetTitleInput" type="text" maxlength="180" placeholder="Si lo dejas vacío usa el título del activo"></label>
+                    <label><span>Categoría</span><input id="leadCaptureAssetCategoryInput" type="text" maxlength="80" value="catalogo" disabled></label>
+                    <label class="span-2"><span>Descripción pública opcional</span><textarea id="leadCaptureAssetDescriptionInput" rows="2" maxlength="800" placeholder="Si lo dejas vacío usa la descripción del activo."></textarea></label>
+                    <div class="span-2 inline-actions">
+                      <button class="ghost-button" id="leadCaptureOpenAssetsButton" type="button">Ir a biblioteca de activos</button>
+                    </div>
+                    <label><span>Texto del botón</span><input id="leadCaptureButtonTextInput" type="text" maxlength="80" value="Descargar catálogo"></label>
+                    <label><span>Texto legal</span><input id="leadCaptureConsentTextInput" type="text" maxlength="1000" value="Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca."></label>
+                    <fieldset class="span-2 lead-capture-fieldset">
+                      <legend>Campos del formulario público</legend>
+                      <div id="leadCaptureFieldsGrid"></div>
+                    </fieldset>
+                    <p class="form-message span-2" id="leadCaptureMessage"></p>
+                    <button class="solid-button" id="leadCaptureSubmitButton" type="submit">Crear captura</button>
+                  </form>
+                  <div class="lead-capture-result" id="leadCaptureResult"></div>
+                </article>
+
                 <article class="surface-card data-table-card">
                   <div class="table-card-head">
                     <div>
@@ -1658,6 +1737,31 @@
                       <tbody id="triviaLauncherTable"></tbody>
                     </table>
                   </div>
+                </article>
+
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Capturas Relámpago lanzadas</span>
+                      <h3>Links, QR, métricas y leads capturados</h3>
+                    </div>
+                    <button class="ghost-button" id="refreshLeadCaptureButton" type="button">Actualizar</button>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Activación</th>
+                          <th>Activo</th>
+                          <th>Métricas</th>
+                          <th>Link público</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="leadCaptureTable"></tbody>
+                    </table>
+                  </div>
+                  <div class="lead-capture-detail" id="leadCaptureDetail"></div>
                 </article>
               </section>
             </div>
@@ -2050,8 +2154,8 @@
           <section class="view-section" data-view="leads">
             <div class="view-head">
               <div>
-                <h2>Feed de Leads y Contactos</h2>
-                <p>Contactos capturados, compradores y referidos con origen, campaña, interés y acción recomendada para email, WhatsApp y remarketing.</p>
+                <h2>Centro de Contactos y Ventas</h2>
+                <p>Leads, capturas, compradores, ventas, tickets y seguimiento comercial en una sola sección operativa.</p>
               </div>
               <div class="head-actions">
                 <label class="compact-field">
@@ -2065,7 +2169,106 @@
                 <button class="ghost-button" id="exportLeadsButton" type="button">Exportar CSV</button>
               </div>
             </div>
+            <section class="contact-center-shell" id="contactCenterShell">
+              <div class="segment-tabs contact-center-tabs" id="contactCenterTabs">
+                <button class="segment-tab active" data-contact-center-tab="overview" type="button">Contactos</button>
+                <button class="segment-tab" data-contact-center-tab="captures" type="button">Capturas</button>
+                <button class="segment-tab" data-contact-center-tab="sales" type="button">Convertidos y ventas</button>
+              </div>
+              <section class="contact-center-summary kpi-grid compact" id="contactCenterSummaryGrid"></section>
+              <div class="contact-center-panel active" data-contact-center-panel="overview"></div>
+              <div class="contact-center-panel hidden" data-contact-center-panel="captures"></div>
+              <div class="contact-center-panel hidden" data-contact-center-panel="sales"></div>
+            </section>
+            <section class="lead-crm-command surface-card">
+              <div class="lead-crm-search-row">
+                <label class="lead-crm-search">
+                  <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                  <input id="leadCrmSearchInput" type="search" placeholder="Buscar por cedula, nombre, correo, telefono, afiliado o ID">
+                </label>
+                <button class="solid-button" id="leadCrmSearchButton" type="button">Buscar lead</button>
+                <button class="ghost-button" id="leadCrmResetButton" type="button">Limpiar</button>
+              </div>
+              <div class="lead-crm-filter-grid">
+                <label><span>Campaña</span><select id="leadCrmCampaignFilter"><option value="">Todas</option></select></label>
+                <label><span>Estado comercial</span>
+                  <select id="leadCrmStatusFilter">
+                    <option value="">Todos</option>
+                    <option value="NEW">Nuevo</option>
+                    <option value="INTERESTED">Interesado</option>
+                    <option value="BUYER">Comprador</option>
+                    <option value="RECURRENT">Recurrente</option>
+                    <option value="VIP">VIP</option>
+                    <option value="INACTIVE">Inactivo</option>
+                  </select>
+                </label>
+                <label><span>Afiliacion</span>
+                  <select id="leadCrmAffiliateFilter">
+                    <option value="">Todos</option>
+                    <option value="true">Afiliados</option>
+                    <option value="false">No afiliados</option>
+                  </select>
+                </label>
+                <label><span>Compras</span>
+                  <select id="leadCrmPurchaseFilter">
+                    <option value="">Todos</option>
+                    <option value="true">Con compras</option>
+                    <option value="false">Sin compras</option>
+                  </select>
+                </label>
+                <label><span>Tickets</span>
+                  <select id="leadCrmTicketFilter">
+                    <option value="">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="redeemed">Redimidos</option>
+                  </select>
+                </label>
+                <label><span>Prioridad</span>
+                  <select id="leadCrmPriorityFilter">
+                    <option value="">Todas</option>
+                    <option value="HIGH">Atender hoy</option>
+                    <option value="MEDIUM">Seguimiento</option>
+                    <option value="LOW">Nutrir / limpiar</option>
+                  </select>
+                </label>
+                <label><span>Score minimo</span><input id="leadCrmScoreMinFilter" type="number" min="0" step="1" placeholder="0"></label>
+                <label><span>Score maximo</span><input id="leadCrmScoreMaxFilter" type="number" min="0" step="1" placeholder="Sin limite"></label>
+                <label><span>Canal</span><input id="leadCrmChannelFilter" type="text" maxlength="80" placeholder="WhatsApp, feria, QR..."></label>
+              </div>
+            </section>
             <section class="kpi-grid compact" id="leadFeedKpiGrid"></section>
+            <section class="lead-attention-board" id="leadAttentionBoard"></section>
+            <article class="surface-card data-table-card lead-crm-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">CRM/RMS de leads</span>
+                  <h3>Centro de inteligencia comercial</h3>
+                </div>
+                <span class="pill muted" id="leadCrmPaginationLabel">Sin cargar</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Lead</th>
+                      <th>Atencion</th>
+                      <th>Estado</th>
+                      <th>Score</th>
+                      <th>Compras</th>
+                      <th>Interaccion</th>
+                      <th>Activaciones</th>
+                      <th>Badges</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leadCrmTable"></tbody>
+                </table>
+              </div>
+              <div class="lead-crm-pagination">
+                <button class="ghost-button" id="leadCrmPrevButton" type="button">Anterior</button>
+                <button class="ghost-button" id="leadCrmNextButton" type="button">Siguiente</button>
+              </div>
+            </article>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
                 <div>
@@ -2162,6 +2365,94 @@
                 </table>
               </div>
             </article>
+            <article class="surface-card lead-detail-workspace hidden" id="leadDetailModal" aria-labelledby="leadDetailTitle">
+                <div class="lead-workspace-head">
+                  <div>
+                    <span class="mono-label" id="leadDetailEyebrow">Ficha de lead</span>
+                    <h3 id="leadDetailTitle">Lead</h3>
+                    <p id="leadDetailSubtitle">Historial comercial y activaciones.</p>
+                  </div>
+                  <button class="ghost-button" id="leadDetailCloseButton" type="button">Volver al listado</button>
+                </div>
+                <section class="lead-profile-header" id="leadDetailHeader"></section>
+                <div class="lead-quick-actions">
+                  <button class="solid-button" id="leadSendActivationButton" type="button">Generar ticket</button>
+                  <button class="ghost-button" data-lead-fast-action="TRIVIA" type="button">Enviar trivia</button>
+                  <button class="ghost-button" id="leadSendBenefitButton" type="button">Enviar ticket</button>
+                  <button class="ghost-button" data-lead-fast-action="VIP_ATTENTION" type="button">Atencion VIP</button>
+                  <button class="ghost-button" data-lead-fast-action="REBUY" type="button">Recompra</button>
+                  <button class="ghost-button" id="leadCreateNoteButton" type="button">Crear nota</button>
+                  <button class="ghost-button" id="leadCopyLastLinkButton" type="button">Copiar ultimo ticket</button>
+                </div>
+                <div class="segment-tabs lead-tabs" id="leadDetailTabs">
+                  <button class="segment-tab active" data-lead-tab="summary" type="button">Resumen</button>
+                  <button class="segment-tab" data-lead-tab="personal" type="button">Datos</button>
+                  <button class="segment-tab" data-lead-tab="purchases" type="button">Compras</button>
+                  <button class="segment-tab" data-lead-tab="interests" type="button">Intereses</button>
+                  <button class="segment-tab" data-lead-tab="activations" type="button">Activaciones</button>
+                  <button class="segment-tab" data-lead-tab="games" type="button">Juegos</button>
+                  <button class="segment-tab" data-lead-tab="benefits" type="button">Tickets</button>
+                  <button class="segment-tab" data-lead-tab="affiliate" type="button">Afiliacion</button>
+                  <button class="segment-tab" data-lead-tab="communications" type="button">Comunicaciones</button>
+                  <button class="segment-tab" data-lead-tab="notes" type="button">Notas</button>
+                  <button class="segment-tab" data-lead-tab="timeline" type="button">Timeline</button>
+                </div>
+                <section class="lead-tab-panel" id="leadDetailContent"></section>
+            </article>
+            <div class="modal-shell hidden" id="leadActivationModal" role="dialog" aria-modal="true" aria-labelledby="leadActivationTitle">
+              <article class="modal-card">
+                <div class="modal-head">
+                  <div>
+                    <span class="mono-label">Accion comercial</span>
+                    <h3 id="leadActivationTitle">Enviar activacion</h3>
+                  </div>
+                  <button class="icon-button" id="leadActivationCloseButton" type="button" aria-label="Cerrar envio"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <form class="modal-form" id="leadActivationForm">
+                  <label><span>Tipo</span>
+                    <select id="leadActivationTypeInput">
+                      <option value="MICROGAME">Microjuego</option>
+                      <option value="TRIVIA">Trivia</option>
+                      <option value="TICKET">Ticket de beneficio</option>
+                      <option value="VIP_ATTENTION">Atencion VIP</option>
+                      <option value="GIFTCARD">Giftcard</option>
+                      <option value="DISCOUNT">Descuento</option>
+                      <option value="REBUY">Beneficio de recompra</option>
+                      <option value="FIRST_PURCHASE">Primera compra</option>
+                      <option value="INACTIVE_CLIENT">Cliente inactivo</option>
+                      <option value="VIP_CLIENT">Cliente VIP</option>
+                    </select>
+                  </label>
+                  <label><span>Campaña</span><select id="leadActivationCampaignInput"><option value="">Sin campaña</option></select></label>
+                  <label><span>Nombre</span><input id="leadActivationNameInput" type="text" maxlength="160" required placeholder="Ej: Atencion VIP de julio"></label>
+                  <label><span>Canal</span>
+                    <select id="leadActivationChannelInput">
+                      <option value="manual">Copiar ticket manual</option>
+                      <option value="email">Email</option>
+                      <option value="whatsapp">WhatsApp futuro</option>
+                    </select>
+                  </label>
+                  <label><span>Tipo de beneficio</span>
+                    <select id="leadActivationBenefitTypeInput">
+                      <option value="CUSTOM">Personalizado</option>
+                      <option value="PERCENT_DISCOUNT">% descuento</option>
+                      <option value="FIXED_AMOUNT_DISCOUNT">Monto fijo</option>
+                      <option value="FREE_GIFT">Obsequio</option>
+                      <option value="VIP_ACCESS">Acceso VIP</option>
+                      <option value="UPGRADE">Upgrade</option>
+                    </select>
+                  </label>
+                  <label><span>Valor / descripcion</span><input id="leadActivationBenefitValueInput" type="text" maxlength="180" placeholder="15%, $50.000, bebida gratis..."></label>
+                  <label><span>Vence</span><input id="leadActivationExpiresInput" type="datetime-local"></label>
+                  <label><span>Score minimo</span><input id="leadActivationScoreMinInput" type="number" min="0" step="1"></label>
+                  <label class="span-2"><span>Mensaje</span><textarea id="leadActivationMessageInput" rows="3" maxlength="2000" placeholder="Mensaje personalizado para el lead"></textarea></label>
+                  <label class="span-2"><span>Condiciones</span><textarea id="leadActivationConditionsInput" rows="2" maxlength="1200" placeholder="Condiciones de redencion, producto o sucursal valida"></textarea></label>
+                  <p class="form-message span-2" id="leadActivationMessage"></p>
+                  <button class="solid-button" id="leadActivationSubmitButton" type="submit">Generar ticket QR</button>
+                </form>
+                <div class="lead-activation-result" id="leadActivationResult"></div>
+              </article>
+            </div>
           </section>
 
           <section class="view-section" data-view="redemptions">
