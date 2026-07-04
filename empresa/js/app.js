@@ -8298,45 +8298,64 @@ function validateTriviaLauncherForm() {
 function renderTriviaLaunchers() {
   if (!triviaLauncherTable) return;
   triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
-    ? state.triviaLaunchers.map((item) => `
+    ? state.triviaLaunchers.map((item) => {
+      const attemptsCount = Number(item.attempts_count || 0).toLocaleString("es-CO");
+      const winnersCount = Number(item.winners_count || 0).toLocaleString("es-CO");
+      const maxWinners = item.max_winners ? Number(item.max_winners || 0).toLocaleString("es-CO") : "";
+      return `
       <tr>
         <td>
-          <strong>${escapeHtml(item.title)}</strong><br>
-          <span class="table-secondary">${escapeHtml(activationTypeLabel(item.activation_type))} · ${escapeHtml(item.campaign_name || "Sin campaña")} · Creada ${escapeHtml(formatDate(item.created_at))}</span>
-          <span class="table-secondary">${escapeHtml(activationParticipantPolicyLabel(item))}</span>
+          <div class="activation-summary-cell">
+            <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
+            <div class="activation-meta-line">
+              <span>${escapeHtml(activationTypeLabel(item.activation_type))}</span>
+              <span>${escapeHtml(item.campaign_name || "Sin campaña")}</span>
+              <span>Creada ${escapeHtml(formatDate(item.created_at))}</span>
+            </div>
+            <small>${escapeHtml(activationParticipantPolicyLabel(item))}</small>
+          </div>
         </td>
         <td>
-          <span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span>
-          <br><span class="table-secondary">${item.ends_at ? `Vence ${escapeHtml(formatDate(item.ends_at))}` : "Sin vencimiento"}</span>
+          <div class="activation-status-cell">
+            <span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span>
+            <small>${item.ends_at ? `Vence ${escapeHtml(formatDate(item.ends_at))}` : "Sin vencimiento"}</small>
+          </div>
         </td>
         <td>
-          <strong>${escapeHtml(item.attempts_count || 0)}</strong> intentos<br>
-          <span class="table-secondary">${escapeHtml(item.winners_count || 0)} QR generados${item.max_winners ? ` / cupo ${escapeHtml(item.max_winners)}` : ""}</span>
+          <div class="activation-metric-stack">
+            <span><strong>${escapeHtml(attemptsCount)}</strong>Intentos</span>
+            <span><strong>${escapeHtml(winnersCount)}</strong>QR generados</span>
+            ${item.max_winners ? `<span><strong>${escapeHtml(maxWinners)}</strong>Cupo</span>` : ""}
+          </div>
         </td>
         <td>
-          <a class="table-link" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || item.public_url)}</a>
-          <div class="activation-row-actions">
-            <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
+          <div class="activation-share-cell">
+            <a class="table-link activation-public-link" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || "Abrir link público")}</a>
+            <small>${escapeHtml(item.public_url || "")}</small>
+          </div>
+          <div class="activation-row-actions activation-share-actions">
+            <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar link</button>
             <button class="ghost-button" type="button" data-copy-activation-invite="${escapeHtml(item.id)}">Copiar mensaje</button>
-            <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Compartir</button>
+            <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar a lead</button>
             <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
           </div>
         </td>
         <td>
-          <div class="activation-row-actions">
+          <div class="activation-row-actions activation-manage-actions">
             <button class="ghost-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
-            <button class="ghost-button" type="button" data-activation-data="${escapeHtml(item.id)}">Datos</button>
+            <button class="ghost-button" type="button" data-activation-data="${escapeHtml(item.id)}">Copiar datos</button>
             ${item.status === "active"
               ? `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="paused">Pausar</button>`
               : `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="active">Activar</button>`}
-            <button class="ghost-button" type="button" data-recycle-activation="${escapeHtml(item.id)}">Reciclar</button>
-            <button class="ghost-button danger-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="archived">Anular</button>
+            <button class="ghost-button" type="button" data-recycle-activation="${escapeHtml(item.id)}">Duplicar</button>
+            <button class="ghost-button danger-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="archived">Archivar</button>
             <button class="ghost-button danger-button" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
           </div>
         </td>
       </tr>
-    `).join("")
-    : '<tr><td colspan="5">Sin activaciones lanzadas todavia.</td></tr>';
+    `;
+    }).join("")
+    : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones publicadas. Crea una experiencia para obtener su link de juego.</td></tr>';
 
   triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
     button.addEventListener("click", async () => {

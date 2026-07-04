@@ -10412,6 +10412,77 @@ body.chart-focus-open .command-center {
   background: var(--surface-soft);
 }
 
+.table-card-subtitle {
+  margin: 4px 0 0;
+  max-width: 640px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.activation-summary-cell,
+.activation-status-cell,
+.activation-share-cell {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.activation-title {
+  display: block;
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.24;
+}
+
+.activation-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.activation-meta-line span {
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.activation-summary-cell small,
+.activation-status-cell small,
+.activation-share-cell small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.activation-metric-stack {
+  display: grid;
+  min-width: 120px;
+  gap: 8px;
+}
+
+.activation-metric-stack span {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.activation-metric-stack strong {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .activation-row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -10419,11 +10490,21 @@ body.chart-focus-open .command-center {
   margin-top: 8px;
 }
 
+.activation-share-actions,
+.activation-manage-actions {
+  margin-top: 10px;
+}
+
 .activation-row-actions .ghost-button {
   min-height: 34px;
   padding: 0 10px;
   border-radius: 8px;
   font-size: 12px;
+}
+
+.activation-manage-actions .danger-button {
+  border-color: rgba(220, 38, 38, 0.22);
+  color: #b42318;
 }
 
 .table-link {
@@ -10437,6 +10518,20 @@ body.chart-focus-open .command-center {
 
 .table-link:hover {
   text-decoration: underline;
+}
+
+.activation-public-link {
+  max-width: 280px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface-soft);
+}
+
+.activation-empty-state {
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
 }
 
 @media (max-width: 720px) {
