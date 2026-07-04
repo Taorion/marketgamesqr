@@ -12640,6 +12640,7 @@ function renderLeadCrmTable() {
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
           <button class="ghost-button" type="button" data-lead-action="activation">Activar</button>
+          <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
         </div>
       </td>
     </tr>
@@ -12651,11 +12652,44 @@ function renderLeadCrmTable() {
       const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
       if (action === "activation") {
         openLeadActivationModal(leadRef);
+      } else if (action === "delete") {
+        deleteLeadContact(leadRef, row.querySelector("strong")?.textContent || "este contacto");
       } else {
         openLeadDetail(leadRef);
       }
     });
   });
+}
+
+async function deleteLeadContact(leadRef, label = "este contacto") {
+  if (!leadRef?.id) return;
+  const sourceType = leadRef.source_type || "PLAYER";
+  const confirmation = window.prompt(`Vas a eliminar ${label} del centro de contactos. Escribe ELIMINAR para confirmar.`);
+  if (confirmation !== "ELIMINAR") return;
+  try {
+    showFeedback("Eliminando contacto y limpiando el CRM.", "loading", { title: "Contactos", timeout: 0 });
+    await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}?source_type=${encodeURIComponent(sourceType)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.leadCrmRows = (state.leadCrmRows || []).filter((item) => String(item.id) !== String(leadRef.id) || String(item.source_type || "PLAYER") !== String(sourceType));
+    state.contactFeed = (state.contactFeed || []).filter((item) => String(item.id) !== String(leadRef.id));
+    state.leadCrmLoaded = false;
+    state.contactFeedLoaded = false;
+    if (state.selectedLeadRef && String(state.selectedLeadRef.id) === String(leadRef.id)) {
+      closeLeadDetail();
+      state.selectedLeadRef = null;
+      state.selectedLeadDetail = null;
+    }
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+    ]);
+    renderLeadsView();
+    showFeedback("Contacto eliminado del centro unificado.", "success", { title: "Contactos" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo eliminar" });
+  }
 }
 
 function appendIfFound(parent, node) {
@@ -13083,6 +13117,7 @@ function renderLeadDetailHeader(detail) {
         <span class="pill muted">${escapeHtml(analysis.stage)}</span>
         <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
         <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
+        <button class="ghost-button danger-button" type="button" data-delete-lead-detail>Eliminar contacto</button>
       </div>
       <h4>${escapeHtml(lead.name || "Lead")}</h4>
       <p>${escapeHtml(lead.insight || "")}</p>
@@ -13119,6 +13154,12 @@ function renderLeadDetailHeader(detail) {
       </div>
     </div>
   `;
+  leadDetailHeader.querySelector("[data-delete-lead-detail]")?.addEventListener("click", () => {
+    deleteLeadContact(
+      { id: lead.id, source_type: lead.source_type || "PLAYER" },
+      lead.name || "este contacto"
+    );
+  });
 }
 
 function renderLeadTab(detail) {

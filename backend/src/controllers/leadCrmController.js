@@ -5,6 +5,7 @@ const {
   addLeadInterest,
   createLeadActivation,
   createLeadNote,
+  deleteLeadContact,
   deleteLeadInterest,
   getLeadCrmDetail,
   listLeadCrmRows,
@@ -146,6 +147,19 @@ async function removeInterest(req, res, next) {
   }
 }
 
+async function deleteContact(req, res, next) {
+  try {
+    res.json(await deleteLeadContact(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      String(req.query.source_type || "PLAYER").toUpperCase()
+    ));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function sendActivation(req, res, next) {
   try {
     const body = validate(activationSchema, req.body);
@@ -165,6 +179,7 @@ async function sendActivation(req, res, next) {
 module.exports = {
   addInterest,
   createNote,
+  deleteContact,
   leadDetail,
   listLeadsCrm,
   removeInterest,

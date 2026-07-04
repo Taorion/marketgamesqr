@@ -35,6 +35,7 @@ const {
 const {
   addInterest,
   createNote,
+  deleteContact,
   leadDetail,
   listLeadsCrm,
   removeInterest,
@@ -59,6 +60,7 @@ router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/leads/crm", listLeadsCrm);
 router.get("/leads/:leadId", leadDetail);
+router.delete("/leads/:leadId", deleteContact);
 router.post("/leads/:leadId/notes", createNote);
 router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);

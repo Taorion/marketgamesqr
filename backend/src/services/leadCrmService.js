@@ -980,6 +980,186 @@ async function deleteLeadInterest(businessId, leadId, interestId, sourceType = "
   return { id: interestId };
 }
 
+async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER") {
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
+    const playerId = lead.lead_id || (source === "PLAYER" ? lead.id : null);
+    const sourceId = lead.id;
+    const deleted = {};
+
+    const incrementDeleted = (key, count) => {
+      deleted[key] = (deleted[key] || 0) + Number(count || 0);
+    };
+
+    const deleteBySource = async (table, sourceLeadId = playerId || null, sourceName = source, sourceRowId = sourceId) => {
+      const result = await client.query(
+        `delete from ${table}
+         where business_id = $1
+           and (
+             ($2::uuid is not null and lead_id = $2)
+             or (source_type = $3 and source_id = $4)
+           )`,
+        [businessId, sourceLeadId || null, sourceName, sourceRowId]
+      );
+      incrementDeleted(table, result.rowCount);
+    };
+
+    const deleteLeadArtifacts = async (sourceLeadId = playerId || null, sourceName = source, sourceRowId = sourceId) => {
+      await deleteBySource("lead_interests", sourceLeadId, sourceName, sourceRowId);
+      await deleteBySource("lead_notes", sourceLeadId, sourceName, sourceRowId);
+      await deleteBySource("lead_scores", sourceLeadId, sourceName, sourceRowId);
+      await deleteBySource("lead_communications", sourceLeadId, sourceName, sourceRowId);
+
+      const activationIds = await client.query(
+        `delete from lead_activations
+         where business_id = $1
+           and (
+             ($2::uuid is not null and lead_id = $2)
+             or (source_type = $3 and source_id = $4)
+           )
+         returning id`,
+        [businessId, sourceLeadId || null, sourceName, sourceRowId]
+      );
+      incrementDeleted("lead_activations", activationIds.rowCount);
+
+      const events = await client.query(
+        `delete from lead_events
+         where business_id = $1
+           and (
+             ($2::uuid is not null and lead_id = $2)
+             or (source_type = $3 and source_id = $4)
+           )`,
+        [businessId, sourceLeadId || null, sourceName, sourceRowId]
+      );
+      incrementDeleted("lead_events", events.rowCount);
+    };
+
+    const deletePlayer = async (targetPlayerId) => {
+      if (!targetPlayerId) return 0;
+      await deleteLeadArtifacts(targetPlayerId, "PLAYER", targetPlayerId);
+
+      const playerQrIds = await client.query(
+        "select id from qr_codes where business_id = $1 and player_id = $2",
+        [businessId, targetPlayerId]
+      );
+      const qrIds = playerQrIds.rows.map((row) => row.id);
+
+      await client.query(
+        "update qr_codes set claimed_by_player_id = null where business_id = $1 and claimed_by_player_id = $2",
+        [businessId, targetPlayerId]
+      );
+      await client.query(
+        "update redemptions set player_id = null where business_id = $1 and player_id = $2",
+        [businessId, targetPlayerId]
+      );
+      const attributedSales = await client.query(
+        "delete from attributed_sales where business_id = $1 and player_id = $2",
+        [businessId, targetPlayerId]
+      );
+      incrementDeleted("attributed_sales", attributedSales.rowCount);
+
+      if (qrIds.length) {
+        const activationLinks = await client.query(
+          "delete from activation_links where business_id = $1 and qr_code_id = any($2::uuid[])",
+          [businessId, qrIds]
+        );
+        incrementDeleted("activation_links", activationLinks.rowCount);
+        await client.query(
+          "update business_sales set qr_code_id = null where business_id = $1 and qr_code_id = any($2::uuid[])",
+          [businessId, qrIds]
+        );
+        await client.query(
+          "update validation_logs set qr_code_id = null where business_id = $1 and qr_code_id = any($2::uuid[])",
+          [businessId, qrIds]
+        );
+        await client.query(
+          "update qr_event_logs set qr_code_id = null where business_id = $1 and qr_code_id = any($2::uuid[])",
+          [businessId, qrIds]
+        );
+        await client.query(
+          "update qr_codes set player_id = null where business_id = $1 and player_id = $2",
+          [businessId, targetPlayerId]
+        );
+        const rewards = await client.query(
+          "delete from interactive_activation_rewards where company_id = $1 and qr_code_id = any($2::uuid[])",
+          [businessId, qrIds]
+        );
+        incrementDeleted("interactive_activation_rewards", rewards.rowCount);
+      }
+
+      await client.query(
+        "update lead_capture_submissions set lead_id = null where business_id = $1 and lead_id = $2",
+        [businessId, targetPlayerId]
+      );
+      await client.query(
+        "update digital_asset_downloads set lead_id = null where business_id = $1 and lead_id = $2",
+        [businessId, targetPlayerId]
+      );
+
+      const player = await client.query(
+        "delete from players where id = $1 and business_id = $2 returning id",
+        [targetPlayerId, businessId]
+      );
+      incrementDeleted("players", player.rowCount);
+      return player.rowCount;
+    };
+
+    await deleteLeadArtifacts(playerId || null, source, sourceId);
+
+    if (source === "MANUAL") {
+      const convertedPlayers = await client.query(
+        `select id
+         from players
+         where business_id = $1
+           and metadata->>'crm_created_from' = 'MANUAL'
+           and metadata->>'crm_source_id' = $2`,
+        [businessId, sourceId]
+      );
+      for (const row of convertedPlayers.rows) {
+        await deletePlayer(row.id);
+      }
+      const manual = await client.query(
+        "delete from business_manual_leads where id = $1 and business_id = $2 returning id",
+        [sourceId, businessId]
+      );
+      incrementDeleted("business_manual_leads", manual.rowCount);
+      if (!manual.rowCount) throw notFound("Lead not found.");
+      return {
+        deleted: true,
+        lead_id: leadId,
+        source_type: source,
+        cleanup: deleted,
+      };
+    }
+
+    if (!playerId) throw notFound("Lead not found.");
+    const playerDeleted = await deletePlayer(playerId);
+    if (!playerDeleted) throw notFound("Lead not found.");
+
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+       values ($1, null, $2, $3, 'lead_deleted', 'Lead eliminado', $4, $5, $6::jsonb)`,
+      [
+        businessId,
+        source,
+        sourceId,
+        `${lead.name || "Contacto"} fue eliminado del CRM unificado.`,
+        user?.id || null,
+        JSON.stringify({ deleted_player_id: playerId, cleanup: deleted }),
+      ]
+    );
+
+    return {
+      deleted: true,
+      lead_id: leadId,
+      source_type: source,
+      cleanup: deleted,
+    };
+  });
+}
+
 async function createLeadActivation(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
     const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
@@ -1140,6 +1320,7 @@ module.exports = {
   addLeadInterest,
   createLeadActivation,
   createLeadNote,
+  deleteLeadContact,
   deleteLeadInterest,
   getLeadCrmDetail,
   listLeadCrmRows,
