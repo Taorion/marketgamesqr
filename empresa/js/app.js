@@ -554,8 +554,6 @@ const customerAcquisitionChannelInput = document.getElementById("customerAcquisi
 const customerAcquisitionAffiliateInput = document.getElementById("customerAcquisitionAffiliateInput");
 const customerAcquisitionNotesInput = document.getElementById("customerAcquisitionNotesInput");
 const customerAcquisitionMessage = document.getElementById("customerAcquisitionMessage");
-const inventoryProductOptions = document.getElementById("inventoryProductOptions");
-const salesCustomerOptions = document.getElementById("salesCustomerOptions");
 const customerSaleItemsContainer = document.getElementById("customerSaleItemsContainer");
 const customerSaleAddItemButton = document.getElementById("customerSaleAddItemButton");
 const customerSaleTotalPreview = document.getElementById("customerSaleTotalPreview");
@@ -2018,9 +2016,9 @@ function parseJsonObject(value) {
 
 function benefitProductScope(modeInput, productInput) {
   const mode = String(modeInput?.value || "").trim();
-  const rawProductName = String(productInput?.value || "").trim();
+  const rawProductName = productInputRawValue(productInput);
   if (!mode && !rawProductName) return null;
-  const product = findInventoryProduct(rawProductName);
+  const product = findInventoryProduct(productInput?.value || rawProductName);
   const productName = product?.name || rawProductName || null;
   if (!productName) return null;
   return {
@@ -2063,6 +2061,7 @@ function benefitProductScopeLabel(value = {}, metadata = {}) {
 
 function syncBenefitProductFields(modeInput, productInput, labelInput, typeInput) {
   if (!modeInput || !productInput) return;
+  syncProductOpenInput(productInput);
   const productScope = benefitProductScope(modeInput, productInput);
   if (!productScope) return;
   if (!modeInput.value) modeInput.value = "applies_to_product";
@@ -6066,7 +6065,7 @@ function resetValidatorSaleForm() {
   if (validatorRewardPassBranchInput) validatorRewardPassBranchInput.value = "";
   if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = "";
   validatorPaymentMethodInput.value = "";
-  validatorProductServiceInput.value = "";
+  setProductInputValue(validatorProductServiceInput, "");
   validatorSaleNotesInput.value = "";
   validatorSaleStatus.textContent = "";
   rewardPassBalancePreview(false);
@@ -6193,7 +6192,11 @@ function seasonalCampaignExpiryValue() {
 
 function setFieldValue(field, value) {
   if (!field) return;
-  field.value = value;
+  if (field.matches?.("[data-product-select]")) {
+    setProductInputValue(field, value);
+  } else {
+    field.value = value;
+  }
   field.dispatchEvent(new Event("input", { bubbles: true }));
   field.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -6874,11 +6877,6 @@ function salesCustomerSelectLabel(customer = {}) {
 
 function renderSalesCustomerOptions() {
   const customers = salesCustomerRows();
-  if (salesCustomerOptions) {
-    salesCustomerOptions.innerHTML = customers
-      .map((customer) => `<option value="${escapeHtml(salesCustomerLookupValue(customer))}" label="${escapeHtml(customer.is_affiliate ? "Afiliado" : customer.campaign_name || customer.source || "Contacto")}"></option>`)
-      .join("");
-  }
   if (!customerAcquisitionCustomerSelect) return;
   const current = customerAcquisitionCustomerSelect.value;
   const filtered = filteredSalesCustomerRows();
@@ -7121,6 +7119,22 @@ function updateCustomerSaleItem(index, field, value, options = {}) {
   ensureCustomerSaleItems();
   const item = state.customerSaleItems[index];
   if (!item) return;
+  if (field === "product_select") {
+    const product = findInventoryProduct(value);
+    if (product) {
+      item.inventory_product_id = product.id;
+      item.name = product.name;
+      item.sku = product.sku || null;
+      item.barcode = product.barcode || null;
+      if (!Number(item.unit_price || 0)) item.unit_price = Number(product.unit_price || 0);
+      if (customerAcquisitionCurrencyInput && product.currency) customerAcquisitionCurrencyInput.value = product.currency;
+    } else {
+      item.inventory_product_id = null;
+      item.sku = null;
+      item.barcode = null;
+      if (value !== OPEN_PRODUCT_VALUE) item.name = "";
+    }
+  }
   if (field === "name") {
     item.name = value;
     const product = options.matchProduct ? findInventoryProduct(value) : null;
@@ -7147,11 +7161,13 @@ function renderCustomerSaleItems() {
   ensureCustomerSaleItems();
   customerSaleItemsContainer.innerHTML = state.customerSaleItems.map((item, index) => {
     const productLabel = item.inventory_product_id ? "Inventario" : "Producto abierto";
+    const selectedProductValue = item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.name ? OPEN_PRODUCT_VALUE : "");
     return `
       <div class="sales-item-row" data-sale-item-index="${index}">
         <label class="sales-item-product">
           <span>Producto</span>
-          <input type="text" list="inventoryProductOptions" value="${escapeHtml(item.name || "")}" placeholder="Nombre, SKU o codigo de barras" data-sale-item-field="name">
+          <select data-sale-item-field="product_select" data-product-select>${inventoryProductSelectOptions(selectedProductValue, { placeholder: "Seleccionar producto" })}</select>
+          <input class="open-product-input ${selectedProductValue === OPEN_PRODUCT_VALUE ? "" : "hidden"}" type="text" value="${escapeHtml(item.inventory_product_id ? "" : item.name || "")}" placeholder="Producto abierto o servicio" data-sale-item-field="name" data-open-product-input ${selectedProductValue === OPEN_PRODUCT_VALUE ? "" : "disabled"}>
         </label>
         <label class="sales-item-quantity">
           <span>Cant.</span>
@@ -7949,6 +7965,8 @@ function normalizeInventoryLookup(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+const OPEN_PRODUCT_VALUE = "__OPEN_PRODUCT__";
+
 function productSalePayload(product, quantity = 1, unitPrice = null) {
   if (!product) return null;
   const safeQuantity = Math.max(1, Number(quantity || 1));
@@ -7964,8 +7982,25 @@ function productSalePayload(product, quantity = 1, unitPrice = null) {
   };
 }
 
+function activeInventoryProducts() {
+  return (state.inventoryProducts || []).filter((item) => item.status !== "ARCHIVED");
+}
+
+function inventoryProductSelectValue(product = {}) {
+  return product?.id ? `inventory:${product.id}` : "";
+}
+
+function findInventoryProductById(productId) {
+  if (!productId) return null;
+  return (state.inventoryProducts || []).find((product) => String(product.id) === String(productId)) || null;
+}
+
 function findInventoryProduct(value) {
-  const needle = normalizeInventoryLookup(value);
+  const raw = String(value || "").trim();
+  if (raw.startsWith("inventory:")) {
+    return findInventoryProductById(raw.slice("inventory:".length));
+  }
+  const needle = normalizeInventoryLookup(raw);
   if (!needle) return null;
   return (state.inventoryProducts || []).find((product) => {
     const candidates = [product.name, product.sku, product.barcode].map(normalizeInventoryLookup);
@@ -7978,17 +8013,89 @@ function inventoryProductLabel(product = {}) {
   return refs ? `${product.name} - ${refs}` : product.name;
 }
 
-function renderInventoryProductOptions() {
-  if (!inventoryProductOptions) return;
-  const products = (state.inventoryProducts || []).filter((item) => item.status !== "ARCHIVED");
-  const options = [];
-  products.forEach((product) => {
-    const label = `${inventoryProductLabel(product)} - ${money(product.unit_price || 0)}`;
-    options.push(`<option value="${escapeHtml(product.name)}" label="${escapeHtml(label)}"></option>`);
-    if (product.sku) options.push(`<option value="${escapeHtml(product.sku)}" label="${escapeHtml(label)}"></option>`);
-    if (product.barcode) options.push(`<option value="${escapeHtml(product.barcode)}" label="${escapeHtml(label)}"></option>`);
+function productOpenInputFor(productInput) {
+  if (!productInput) return null;
+  const openInputId = productInput.dataset?.openProductInput;
+  if (openInputId) return document.getElementById(openInputId);
+  const row = productInput.closest?.("[data-sale-item-index], [data-affiliate-purchase-row], label");
+  return row?.querySelector?.("[data-open-product-input]") || null;
+}
+
+function productInputRawValue(productInput) {
+  if (!productInput) return "";
+  if (productInput.value === OPEN_PRODUCT_VALUE) {
+    return String(productOpenInputFor(productInput)?.value || "").trim();
+  }
+  const product = findInventoryProduct(productInput.value);
+  return String(product?.name || productInput.value || "").trim();
+}
+
+function productSelectSelectionForValue(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw === OPEN_PRODUCT_VALUE || raw.startsWith("inventory:")) return raw;
+  const product = findInventoryProduct(raw);
+  return product ? inventoryProductSelectValue(product) : OPEN_PRODUCT_VALUE;
+}
+
+function inventoryProductSelectOptions(selectedValue = "", options = {}) {
+  const selected = String(selectedValue || "");
+  const placeholder = options.placeholder || "Sin producto especifico";
+  const openLabel = options.openLabel || "Producto abierto / no esta en inventario";
+  const option = (value, label) => `<option value="${escapeHtml(value)}" ${selected === value ? "selected" : ""}>${escapeHtml(label)}</option>`;
+  return [
+    option("", placeholder),
+    ...activeInventoryProducts().map((product) => {
+      const stock = product.stock_quantity !== undefined && product.stock_quantity !== null ? ` · stock ${Number(product.stock_quantity || 0).toLocaleString("es-CO")}` : "";
+      return option(inventoryProductSelectValue(product), `${inventoryProductLabel(product)} · ${money(product.unit_price || 0)}${stock}`);
+    }),
+    option(OPEN_PRODUCT_VALUE, openLabel),
+  ].join("");
+}
+
+function syncProductOpenInput(productInput) {
+  const openInput = productOpenInputFor(productInput);
+  if (!openInput) return;
+  const isOpen = productInput?.value === OPEN_PRODUCT_VALUE;
+  openInput.classList.toggle("hidden", !isOpen);
+  openInput.disabled = !isOpen || Boolean(productInput?.disabled);
+  openInput.required = Boolean(isOpen && productInput?.required);
+}
+
+function setProductInputValue(productInput, value = "") {
+  if (!productInput) return;
+  const raw = String(value || "").trim();
+  const openInput = productOpenInputFor(productInput);
+  const selected = productSelectSelectionForValue(raw);
+  if (productInput.tagName === "SELECT" && !Array.from(productInput.options || []).some((option) => option.value === selected)) {
+    productInput.innerHTML = inventoryProductSelectOptions(selected, {
+      placeholder: productInput.dataset.placeholder || "Sin producto especifico",
+      openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en inventario",
+    });
+  }
+  productInput.value = selected;
+  if (openInput) {
+    openInput.value = selected === OPEN_PRODUCT_VALUE ? raw : "";
+  }
+  syncProductOpenInput(productInput);
+}
+
+function renderProductSelect(productInput) {
+  if (!productInput) return;
+  const openInput = productOpenInputFor(productInput);
+  const currentRaw = productInputRawValue(productInput) || openInput?.value || "";
+  const selected = productSelectSelectionForValue(productInput.value || currentRaw);
+  if (selected === OPEN_PRODUCT_VALUE && openInput && currentRaw) openInput.value = currentRaw;
+  productInput.innerHTML = inventoryProductSelectOptions(selected, {
+    placeholder: productInput.dataset.placeholder || "Sin producto especifico",
+    openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en inventario",
   });
-  inventoryProductOptions.innerHTML = options.join("");
+  productInput.value = selected;
+  syncProductOpenInput(productInput);
+}
+
+function renderInventoryProductOptions() {
+  document.querySelectorAll("[data-product-select]").forEach((select) => renderProductSelect(select));
 }
 
 async function loadInventoryProducts(options = {}) {
@@ -8189,6 +8296,7 @@ async function archiveInventoryProduct(productId) {
 }
 
 function applyInventoryProductToSaleInput(productInput, amountInput, currencyInput = null) {
+  syncProductOpenInput(productInput);
   const product = findInventoryProduct(productInput?.value || "");
   if (!product) return null;
   if (amountInput && Number(amountInput.value || 0) <= 0) {
@@ -9969,12 +10077,12 @@ async function submitPostSaleQr(event) {
     const ticketUseCase = postSaleUseCaseInput?.value || "gift_product";
     const ticketUseCaseLabel = genericTicketUseCaseLabel(ticketUseCase);
     const ticketOccasion = postSaleOccasionInput?.value.trim() || null;
-    const productName = postSaleProductInput.value.trim();
+    const productName = productInputRawValue(postSaleProductInput);
     const benefitLabel = postSaleBenefitLabelInput.value.trim();
     const beneficiaryName = postSaleCustomerInput.value.trim();
     const attributionSource = postSaleAttributionSourceInput?.value.trim() || ticketUseCase;
     const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || ticketOccasion || productName || benefitLabel || null;
-    const inventoryProduct = findInventoryProduct(productName);
+    const inventoryProduct = findInventoryProduct(postSaleProductInput.value || productName);
     const inventorySaleProduct = productSalePayload(inventoryProduct, 1, Number(postSaleAmountInput.value || inventoryProduct?.unit_price || 0));
     const productScope = benefitProductScope(postSaleBenefitProductModeInput, postSaleBenefitProductInput);
     const benefitValue = {
@@ -10424,7 +10532,7 @@ async function saveValidatorAttributedSale(event) {
         sale_amount: Number(validatorSaleAmountInput.value || 0),
         currency: "COP",
         payment_method: validatorPaymentMethodInput.value.trim() || null,
-        product_or_service: validatorProductServiceInput.value.trim() || null,
+        product_or_service: productInputRawValue(validatorProductServiceInput) || null,
         notes: validatorSaleNotesInput.value.trim() || null,
       }),
     });
@@ -13287,7 +13395,10 @@ function renderAffiliatePurchaseItems() {
     <div class="affiliate-purchase-item" data-affiliate-purchase-row="${index}">
       <label>
         <span>Producto</span>
-        <input type="text" list="inventoryProductOptions" data-affiliate-purchase-field="name" value="${escapeHtml(item.name)}" placeholder="Nombre producto" ${disabled ? "disabled" : ""}>
+        <select data-affiliate-purchase-field="product_select" data-product-select ${disabled ? "disabled" : ""}>
+          ${inventoryProductSelectOptions(item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.name ? OPEN_PRODUCT_VALUE : ""), { placeholder: "Seleccionar producto" })}
+        </select>
+        <input class="open-product-input ${!item.inventory_product_id && item.name ? "" : "hidden"}" type="text" data-affiliate-purchase-field="name" data-open-product-input value="${escapeHtml(item.inventory_product_id ? "" : item.name)}" placeholder="Producto abierto o servicio" ${disabled || item.inventory_product_id || !item.name ? "disabled" : ""}>
       </label>
       <label>
         <span>Cant.</span>
@@ -13305,13 +13416,12 @@ function renderAffiliatePurchaseItems() {
     </div>
   `).join("");
   affiliatePurchaseItemsList.querySelectorAll("[data-affiliate-purchase-field]").forEach((input) => {
-    input.addEventListener("input", () => {
+    const handleAffiliatePurchaseFieldChange = () => {
       const row = input.closest("[data-affiliate-purchase-row]");
       const index = Number(row?.dataset.affiliatePurchaseRow || 0);
       const field = input.dataset.affiliatePurchaseField;
       const next = normalizeAffiliatePurchaseItems();
-      next[index][field] = field === "name" ? input.value : Number(input.value || 0);
-      if (field === "name") {
+      if (field === "product_select") {
         const product = findInventoryProduct(input.value);
         if (product) {
           next[index].name = product.name;
@@ -13325,13 +13435,20 @@ function renderAffiliatePurchaseItems() {
           next[index].inventory_product_id = null;
           next[index].sku = null;
           next[index].barcode = null;
+          if (input.value !== OPEN_PRODUCT_VALUE) next[index].name = "";
         }
+        state.affiliatePurchaseItems = next;
+        renderAffiliatePurchaseItems();
+        return;
       }
+      next[index][field] = field === "name" ? input.value : Number(input.value || 0);
       state.affiliatePurchaseItems = next;
       const totalCell = row?.querySelector(".affiliate-purchase-line-total strong");
       if (totalCell) totalCell.textContent = money(affiliatePurchaseLineTotal(next[index]));
       updateAffiliatePurchaseTotals();
-    });
+    };
+    input.addEventListener("input", handleAffiliatePurchaseFieldChange);
+    input.addEventListener("change", handleAffiliatePurchaseFieldChange);
   });
   affiliatePurchaseItemsList.querySelectorAll("[data-affiliate-purchase-remove]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -14839,7 +14956,7 @@ function renderLeadTab(detail) {
           <span class="mono-label">Registrar venta o compra</span>
           <strong>Agregar movimiento comercial</strong>
         </div>
-        <label><span>Producto / servicio</span><input id="leadPurchaseProductInput" type="text" maxlength="180" required placeholder="Producto comprado"></label>
+        <label><span>Producto / servicio</span><select id="leadPurchaseProductInput" data-product-select data-open-product-input="leadPurchaseProductOpenInput" required>${inventoryProductSelectOptions("", { placeholder: "Seleccionar producto" })}</select><input id="leadPurchaseProductOpenInput" class="open-product-input hidden" type="text" maxlength="180" placeholder="Producto abierto o servicio"></label>
         <label><span>Valor</span><input id="leadPurchaseAmountInput" type="number" min="1" step="100" required placeholder="0"></label>
         <label><span>Categoria</span><input id="leadPurchaseCategoryInput" type="text" maxlength="160" placeholder="Categoria o linea"></label>
         <label><span>Fecha</span><input id="leadPurchaseDateInput" type="datetime-local"></label>
@@ -15000,31 +15117,69 @@ function bindLeadDetailPanelActions() {
   document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
   document.getElementById("leadPurchaseForm")?.addEventListener("submit", createLeadPurchaseFromForm);
   document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
+  leadDetailContent?.querySelectorAll("[data-product-select]").forEach((select) => {
+    renderProductSelect(select);
+    select.addEventListener("change", () => {
+      syncProductOpenInput(select);
+      if (select.id === "leadPurchaseProductInput") {
+        applyInventoryProductToSaleInput(select, document.getElementById("leadPurchaseAmountInput"), document.getElementById("leadPurchaseCurrencyInput"));
+      }
+    });
+  });
+  leadDetailContent?.querySelectorAll(".open-product-input").forEach((input) => {
+    input.addEventListener("input", () => {
+      const select = input.id
+        ? leadDetailContent.querySelector(`[data-open-product-input="${input.id}"]`)
+        : input.closest("label")?.querySelector("[data-product-select]");
+      syncProductOpenInput(select);
+    });
+  });
+}
+
+function setLeadDetailTab(tabName = "summary", options = {}) {
+  const nextTab = String(tabName || "summary");
+  state.selectedLeadTab = nextTab;
+  leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => {
+    const isActive = tab.dataset.leadTab === nextTab;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    tab.setAttribute("tabindex", isActive ? "0" : "-1");
+    if (isActive && options.scrollTab) {
+      tab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  });
+  if (options.render !== false && state.selectedLeadDetail) {
+    renderLeadTab(state.selectedLeadDetail);
+  }
+}
+
+async function reloadSelectedLeadDetail(options = {}) {
+  if (!state.selectedLeadRef) return null;
+  const keepTab = options.keepTab !== false ? state.selectedLeadTab || "summary" : "summary";
+  const detail = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}?source_type=${encodeURIComponent(state.selectedLeadRef.source_type || "PLAYER")}`, { headers: authHeaders() });
+  state.selectedLeadDetail = detail;
+  renderLeadDetailHeader(detail);
+  setLeadDetailTab(keepTab, { render: true, scrollTab: options.scrollTab });
+  return detail;
 }
 
 function runLeadFastAction(action) {
   if (!state.selectedLeadRef) return;
   if (action === "NOTE") {
-    state.selectedLeadTab = "notes";
-    leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "notes"));
-    if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+    setLeadDetailTab("notes", { scrollTab: true });
     document.getElementById("leadNoteInput")?.focus();
     return;
   }
   openLeadActivationModal(state.selectedLeadRef, action || "TICKET");
 }
 
-async function openLeadDetail(leadRef) {
+async function openLeadDetail(leadRef, options = {}) {
   state.selectedLeadRef = leadRef;
-  state.selectedLeadTab = "summary";
-  leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "summary"));
+  setLeadDetailTab(options.keepTab ? state.selectedLeadTab : "summary", { render: false });
   if (leadDetailModal) leadDetailModal.classList.remove("hidden");
   if (leadDetailContent) leadDetailContent.innerHTML = '<div class="empty-state compact">Cargando ficha del lead...</div>';
   try {
-    const detail = await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}?source_type=${encodeURIComponent(leadRef.source_type || "PLAYER")}`, { headers: authHeaders() });
-    state.selectedLeadDetail = detail;
-    renderLeadDetailHeader(detail);
-    renderLeadTab(detail);
+    await reloadSelectedLeadDetail({ keepTab: Boolean(options.keepTab) });
     leadDetailModal?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     if (leadDetailContent) leadDetailContent.innerHTML = `<div class="empty-state compact">${escapeHtml(error.message)}</div>`;
@@ -15097,7 +15252,7 @@ async function submitLeadActivation(event) {
     }
     setFormMessage(leadActivationMessage, "Ticket QR registrado en el historial del lead.", "success");
     state.leadCrmLoaded = false;
-    if (state.selectedLeadRef) await openLeadDetail(state.selectedLeadRef);
+    if (state.selectedLeadRef) await reloadSelectedLeadDetail({ keepTab: true });
     await refreshLeadCrm({ quiet: true, keepOffset: true });
   } catch (error) {
     setFormMessage(leadActivationMessage, error.message, "error");
@@ -15121,7 +15276,7 @@ async function createLeadNoteFromForm(event) {
       next_action: String(document.getElementById("leadNoteNextActionInput")?.value || "").trim() || null,
     }),
   });
-  await openLeadDetail(state.selectedLeadRef);
+  await reloadSelectedLeadDetail({ keepTab: true });
 }
 
 async function createLeadPurchaseFromForm(event) {
@@ -15131,7 +15286,8 @@ async function createLeadPurchaseFromForm(event) {
   const amountInput = document.getElementById("leadPurchaseAmountInput");
   const message = document.getElementById("leadPurchaseMessage");
   const submitButton = document.getElementById("leadPurchaseSubmitButton");
-  const productName = String(productInput?.value || "").trim();
+  renderProductSelect(productInput);
+  const productName = productInputRawValue(productInput);
   const amount = Number(amountInput?.value || 0);
   if (!productName || !Number.isFinite(amount) || amount <= 0) {
     setFormMessage(message, "Agrega producto y un valor de compra valido.", "error");
@@ -15157,12 +15313,8 @@ async function createLeadPurchaseFromForm(event) {
       body: JSON.stringify(payload),
     });
     setFormMessage(message, "Compra registrada. Actualizando ficha...", "success");
-    state.selectedLeadTab = "purchases";
-    leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "purchases"));
-    const detail = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}?source_type=${encodeURIComponent(state.selectedLeadRef.source_type || "PLAYER")}`, { headers: authHeaders() });
-    state.selectedLeadDetail = detail;
-    renderLeadDetailHeader(detail);
-    renderLeadTab(detail);
+    setLeadDetailTab("purchases", { render: false });
+    await reloadSelectedLeadDetail({ keepTab: true, scrollTab: true });
     state.leadCrmLoaded = false;
     await refreshLeadCrm({ quiet: true, keepOffset: true });
   } catch (error) {
@@ -15183,7 +15335,7 @@ async function addLeadInterestFromForm(event) {
     headers: authHeaders(),
     body: JSON.stringify({ source_type: state.selectedLeadRef.source_type || "PLAYER", interest_name: interest, source: "manual", weight: 20 }),
   });
-  await openLeadDetail(state.selectedLeadRef);
+  await reloadSelectedLeadDetail({ keepTab: true });
 }
 
 async function deleteLeadInterestFromDetail(interestId) {
@@ -15192,7 +15344,7 @@ async function deleteLeadInterestFromDetail(interestId) {
     method: "DELETE",
     headers: authHeaders(),
   });
-  await openLeadDetail(state.selectedLeadRef);
+  await reloadSelectedLeadDetail({ keepTab: true });
 }
 
 function renderAffiliateDashboard() {
@@ -16389,15 +16541,17 @@ leadDetailCloseButton?.addEventListener("click", closeLeadDetail);
 leadDetailModal?.addEventListener("click", (event) => {
   const fastAction = event.target.closest("[data-lead-fast-action]");
   if (fastAction) {
+    event.preventDefault();
+    event.stopPropagation();
     runLeadFastAction(fastAction.dataset.leadFastAction);
   }
 });
 leadDetailTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-lead-tab]");
   if (!button) return;
-  state.selectedLeadTab = button.dataset.leadTab || "summary";
-  leadDetailTabs.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab === button));
-  if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+  event.preventDefault();
+  event.stopPropagation();
+  setLeadDetailTab(button.dataset.leadTab || "summary", { scrollTab: true });
 });
 leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
 leadSendBenefitButton?.addEventListener("click", () => {
@@ -16410,9 +16564,7 @@ leadSendBenefitButton?.addEventListener("click", () => {
   openLeadActivationModal(state.selectedLeadRef, "TICKET");
 });
 leadCreateNoteButton?.addEventListener("click", () => {
-  state.selectedLeadTab = "notes";
-  leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "notes"));
-  if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
+  setLeadDetailTab("notes", { scrollTab: true });
 });
 leadCopyLastLinkButton?.addEventListener("click", async () => {
   const activeTicket = firstActiveLeadTicket();
@@ -16507,26 +16659,37 @@ inventorySearchInput?.addEventListener("input", () => {
 customerAcquisitionProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);
 });
-postSaleProductInput?.addEventListener("change", () => {
-  applyInventoryProductToSaleInput(postSaleProductInput, postSaleAmountInput, postSaleCurrencyInput);
-});
-[postSaleBenefitProductInput, postSaleBenefitProductModeInput].forEach((field) => {
-  field?.addEventListener("change", () => {
+function handlePortalProductSelectionChange(productSelect) {
+  if (!productSelect) return;
+  syncProductOpenInput(productSelect);
+  if (productSelect === postSaleProductInput) {
+    applyInventoryProductToSaleInput(postSaleProductInput, postSaleAmountInput, postSaleCurrencyInput);
+  }
+  if (productSelect === validatorProductServiceInput) {
+    applyInventoryProductToSaleInput(validatorProductServiceInput, validatorSaleAmountInput);
+  }
+  if (productSelect === postSaleBenefitProductInput || productSelect === postSaleBenefitProductModeInput) {
     syncBenefitProductFields(postSaleBenefitProductModeInput, postSaleBenefitProductInput, postSaleBenefitLabelInput, postSaleBenefitTypeInput);
-  });
-});
-[qrBatchBenefitProductInput, qrBatchBenefitProductModeInput].forEach((field) => {
-  field?.addEventListener("change", () => {
+  }
+  if (productSelect === qrBatchBenefitProductInput || productSelect === qrBatchBenefitProductModeInput) {
     syncBenefitProductFields(qrBatchBenefitProductModeInput, qrBatchBenefitProductInput, qrBatchBenefitLabelInput, qrBatchBenefitTypeInput);
-  });
-});
-[triviaBenefitProductInput, triviaBenefitProductModeInput].forEach((field) => {
-  field?.addEventListener("change", () => {
+  }
+  if (productSelect === triviaBenefitProductInput || productSelect === triviaBenefitProductModeInput) {
     syncBenefitProductFields(triviaBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitLabelInput, triviaBenefitTypeInput);
-  });
+  }
+}
+
+[postSaleProductInput, validatorProductServiceInput, postSaleBenefitProductInput, postSaleBenefitProductModeInput, qrBatchBenefitProductInput, qrBatchBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitProductModeInput].forEach((field) => {
+  field?.addEventListener("change", () => handlePortalProductSelectionChange(field));
 });
-validatorProductServiceInput?.addEventListener("change", () => {
-  applyInventoryProductToSaleInput(validatorProductServiceInput, validatorSaleAmountInput);
+
+document.querySelectorAll(".open-product-input").forEach((input) => {
+  input.addEventListener("input", () => {
+    const productSelect = input.id
+      ? document.querySelector(`[data-open-product-input="${input.id}"]`)
+      : input.closest("label")?.querySelector("[data-product-select]");
+    handlePortalProductSelectionChange(productSelect);
+  });
 });
 affiliatePurchaseAddItemButton?.addEventListener("click", () => {
   state.affiliatePurchaseItems = [

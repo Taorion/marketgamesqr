@@ -1476,6 +1476,12 @@ textarea {
   border-top: 1px solid rgba(124, 251, 255, 0.12);
 }
 
+.affiliate-purchase-item select,
+.affiliate-purchase-item input {
+  width: 100%;
+  min-width: 0;
+}
+
 .reward-pass-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
@@ -2121,9 +2127,14 @@ th,
   min-width: 0;
 }
 
-.sales-item-row input {
+.sales-item-row input,
+.sales-item-row select {
   width: 100%;
   min-width: 0;
+}
+
+.open-product-input {
+  margin-top: 6px;
 }
 
 .sales-item-total {
@@ -11466,12 +11477,19 @@ body.chart-focus-open .command-center {
 }
 
 .lead-tabs {
+  display: flex;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
 }
 
 .lead-tabs .segment-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
   white-space: nowrap;
+  scroll-snap-align: start;
 }
 
 .lead-tab-panel {

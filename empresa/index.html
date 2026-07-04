@@ -932,7 +932,7 @@
                   <label><span>Asunto / canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre de la actividad, persona o lote"></label>
                   <label><span>Valor asociado</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" placeholder="0 si no hubo venta previa"></label>
                   <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
-                  <label><span>Producto que representa</span><input id="postSaleProductInput" type="text" list="inventoryProductOptions" placeholder="Hamburguesa, helado, libro, entrada VIP"></label>
+                  <label><span>Producto que representa</span><select id="postSaleProductInput" data-product-select data-open-product-input="postSaleProductOpenInput"></select><input id="postSaleProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto, servicio o referencia"></label>
                   <label><span>Beneficiario</span><input id="postSaleCustomerInput" type="text" placeholder="Persona que reclamara el ticket"></label>
                   <label><span>Cédula</span><input id="postSaleDocumentInput" type="text" placeholder="Opcional"></label>
                   <label><span>Teléfono del beneficiario</span><input id="postSalePhoneInput" type="text" placeholder="Celular para enviar el ticket"></label>
@@ -958,7 +958,7 @@
                       <option value="gift_product">El obsequio es este producto</option>
                     </select>
                   </label>
-                  <label><span>Producto del beneficio</span><input id="postSaleBenefitProductInput" type="text" list="inventoryProductOptions" placeholder="Selecciona inventario o escribe producto abierto"></label>
+                  <label><span>Producto del beneficio</span><select id="postSaleBenefitProductInput" data-product-select data-open-product-input="postSaleBenefitProductOpenInput"></select><input id="postSaleBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                   <label><span>Detalle estructurado</span><input id="postSaleBenefitValueInput" type="text" placeholder="{'product':'Hamburguesa clásica'}"></label>
                   <label><span>Expiracion</span>
                     <select id="postSaleExpiresModeInput">
@@ -1042,7 +1042,7 @@
                       <option value="gift_product">El obsequio es este producto</option>
                     </select>
                   </label>
-                  <label><span class="field-label">Producto del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre producto del beneficio" data-help="Busca por nombre, SKU o codigo de barras. Si no existe en inventario, puedes escribirlo como producto abierto."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitProductInput" type="text" list="inventoryProductOptions" placeholder="Producto de inventario o abierto"></label>
+                  <label><span class="field-label">Producto del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre producto del beneficio" data-help="Selecciona un producto de inventario. Si no existe, usa producto abierto y escribe el nombre."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><select id="qrBatchBenefitProductInput" data-product-select data-open-product-input="qrBatchBenefitProductOpenInput"></select><input id="qrBatchBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                   <label><span class="field-label">Valor del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre valor del beneficio" data-help="Opcional: escribe datos estructurados del beneficio en JSON. Ejemplo para dinero: {'amount':10000}. Ejemplo para porcentaje: {'percent':15}."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
                   <label><span class="field-label">Flujo del paquete <button class="field-help" type="button" aria-label="Ayuda sobre flujo del paquete" data-help="Este flujo queda fijo: el QR impreso captura datos del lead y luego emite el ticket QR final que si se valida en tienda."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchClaimRequiredInput" disabled>
@@ -1337,7 +1337,7 @@
                         <option value="gift_product">El obsequio es este producto</option>
                       </select>
                     </label>
-                    <label><span>Producto del beneficio</span><input id="triviaBenefitProductInput" type="text" list="inventoryProductOptions" placeholder="Producto de inventario o abierto"></label>
+                    <label><span>Producto del beneficio</span><select id="triviaBenefitProductInput" data-product-select data-open-product-input="triviaBenefitProductOpenInput"></select><input id="triviaBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                     <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder='{"percent":15}'></label>
                     <label><span>Expiracion</span>
                       <select id="triviaExpiresModeInput">
@@ -2490,20 +2490,20 @@
                   <button class="ghost-button" id="leadCreateNoteButton" type="button">Crear nota</button>
                   <button class="ghost-button" id="leadCopyLastLinkButton" type="button">Copiar ultimo ticket</button>
                 </div>
-                <div class="segment-tabs lead-tabs" id="leadDetailTabs">
-                  <button class="segment-tab active" data-lead-tab="summary" type="button">Resumen</button>
-                  <button class="segment-tab" data-lead-tab="personal" type="button">Datos</button>
-                  <button class="segment-tab" data-lead-tab="purchases" type="button">Compras</button>
-                  <button class="segment-tab" data-lead-tab="interests" type="button">Intereses</button>
-                  <button class="segment-tab" data-lead-tab="activations" type="button">Activaciones</button>
-                  <button class="segment-tab" data-lead-tab="games" type="button">Juegos</button>
-                  <button class="segment-tab" data-lead-tab="benefits" type="button">Tickets</button>
-                  <button class="segment-tab" data-lead-tab="affiliate" type="button">Afiliacion</button>
-                  <button class="segment-tab" data-lead-tab="communications" type="button">Comunicaciones</button>
-                  <button class="segment-tab" data-lead-tab="notes" type="button">Notas</button>
-                  <button class="segment-tab" data-lead-tab="timeline" type="button">Timeline</button>
+                <div class="segment-tabs lead-tabs" id="leadDetailTabs" role="tablist" aria-label="Secciones del contacto">
+                  <button class="segment-tab active" data-lead-tab="summary" type="button" role="tab" aria-selected="true">Resumen</button>
+                  <button class="segment-tab" data-lead-tab="personal" type="button" role="tab" aria-selected="false" tabindex="-1">Datos</button>
+                  <button class="segment-tab" data-lead-tab="purchases" type="button" role="tab" aria-selected="false" tabindex="-1">Compras</button>
+                  <button class="segment-tab" data-lead-tab="interests" type="button" role="tab" aria-selected="false" tabindex="-1">Intereses</button>
+                  <button class="segment-tab" data-lead-tab="activations" type="button" role="tab" aria-selected="false" tabindex="-1">Activaciones</button>
+                  <button class="segment-tab" data-lead-tab="games" type="button" role="tab" aria-selected="false" tabindex="-1">Juegos</button>
+                  <button class="segment-tab" data-lead-tab="benefits" type="button" role="tab" aria-selected="false" tabindex="-1">Tickets</button>
+                  <button class="segment-tab" data-lead-tab="affiliate" type="button" role="tab" aria-selected="false" tabindex="-1">Afiliacion</button>
+                  <button class="segment-tab" data-lead-tab="communications" type="button" role="tab" aria-selected="false" tabindex="-1">Comunicaciones</button>
+                  <button class="segment-tab" data-lead-tab="notes" type="button" role="tab" aria-selected="false" tabindex="-1">Notas</button>
+                  <button class="segment-tab" data-lead-tab="timeline" type="button" role="tab" aria-selected="false" tabindex="-1">Timeline</button>
                 </div>
-                <section class="lead-tab-panel" id="leadDetailContent"></section>
+                <section class="lead-tab-panel" id="leadDetailContent" role="tabpanel"></section>
             </article>
             <div class="modal-shell hidden" id="leadActivationModal" role="dialog" aria-modal="true" aria-labelledby="leadActivationTitle">
               <article class="modal-card">
@@ -2644,7 +2644,7 @@
                 <label><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
                 <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
                 <label><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
-                <label><span>Buscar cliente existente</span><input id="customerAcquisitionCustomerLookupInput" type="text" list="salesCustomerOptions" placeholder="Nombre, cedula, telefono o correo"></label>
+                <label><span>Filtrar clientes</span><input id="customerAcquisitionCustomerLookupInput" type="search" placeholder="Nombre, cedula, telefono o correo"></label>
                 <label><span>Seleccionar cliente</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
                 <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
                 <label><span>Cédula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
@@ -2937,7 +2937,8 @@
                   </label>
                   <label>
                     <span>Producto o servicio</span>
-                    <input id="validatorProductServiceInput" type="text" list="inventoryProductOptions" placeholder="Producto comprado">
+                    <select id="validatorProductServiceInput" data-product-select data-open-product-input="validatorProductServiceOpenInput"></select>
+                    <input id="validatorProductServiceOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto o servicio">
                   </label>
                   <label class="span-2">
                     <span>Observacion</span>
@@ -3819,8 +3820,6 @@
       </form>
     </div>
   </div>
-  <datalist id="inventoryProductOptions"></datalist>
-  <datalist id="salesCustomerOptions"></datalist>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
   <script src="js/app.js?v=ticket-image-share-20260701" defer></script>
 </body>
