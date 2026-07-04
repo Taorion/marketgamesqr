@@ -6764,6 +6764,8 @@ function salesCustomerRows() {
       email: item.email,
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      is_affiliate: Boolean(item.is_affiliate),
+      affiliate_id: item.affiliate_id || null,
       source: item.source_type || "CRM",
     })),
     ...(state.contactFeed || []).map((item) => ({
@@ -6774,6 +6776,8 @@ function salesCustomerRows() {
       email: item.email,
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      is_affiliate: Boolean(item.is_affiliate),
+      affiliate_id: item.affiliate_id || null,
       source: item.attribution_source || "Lead",
     })),
     ...(state.selectedSales || []).map((item) => ({
@@ -6784,6 +6788,8 @@ function salesCustomerRows() {
       email: item.email,
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      is_affiliate: Boolean(item.referred_affiliate_id),
+      affiliate_id: item.referred_affiliate_id || null,
       source: "Venta previa",
     })),
   ];
@@ -6822,6 +6828,39 @@ function findSalesCustomer(value) {
   }) || null;
 }
 
+function findAffiliateByCustomerFields(customer = {}) {
+  const directId = normalizeInventoryLookup(customer.affiliate_id);
+  const documentId = normalizeInventoryLookup(customer.document_id || customer.customer_document_id);
+  const phone = normalizeInventoryLookup(customer.phone || customer.customer_phone);
+  const email = normalizeInventoryLookup(customer.email || customer.customer_email);
+  if (!directId && !documentId && !phone && !email) return null;
+  return (state.affiliates || []).find((affiliate) => {
+    if (affiliate.status === "INACTIVE" || affiliate.status === "DELETED") return false;
+    if (directId && normalizeInventoryLookup(affiliate.id) === directId) return true;
+    if (documentId && normalizeInventoryLookup(affiliate.document_id) === documentId) return true;
+    if (phone && normalizeInventoryLookup(affiliate.phone) === phone) return true;
+    if (email && normalizeInventoryLookup(affiliate.email) === email) return true;
+    return false;
+  }) || null;
+}
+
+function syncCustomerAffiliateSelection(customer = {}) {
+  if (!customerAcquisitionAffiliateInput) return null;
+  const autoSelectedId = customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId || "";
+  if (customerAcquisitionAffiliateInput.value && customerAcquisitionAffiliateInput.value !== autoSelectedId) return null;
+  const affiliate = findAffiliateByCustomerFields(customer);
+  if (!affiliate) {
+    if (autoSelectedId && customerAcquisitionAffiliateInput.value === autoSelectedId) {
+      customerAcquisitionAffiliateInput.value = "";
+      customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
+    }
+    return null;
+  }
+  customerAcquisitionAffiliateInput.value = affiliate.id;
+  customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = affiliate.id;
+  return affiliate;
+}
+
 function applySalesCustomerToForm(value) {
   const customer = findSalesCustomer(value);
   if (!customer) return false;
@@ -6831,6 +6870,10 @@ function applySalesCustomerToForm(value) {
   if (customerAcquisitionEmailInput) customerAcquisitionEmailInput.value = customer.email || "";
   if (customerAcquisitionCampaignInput && customer.campaign_id) {
     customerAcquisitionCampaignInput.value = customer.campaign_id;
+  }
+  const affiliate = syncCustomerAffiliateSelection(customer);
+  if (affiliate) {
+    setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
   }
   return true;
 }
@@ -7655,11 +7698,17 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, "Agrega al menos un producto con precio para registrar la venta.", "error");
     return;
   }
+  const matchedAffiliate = syncCustomerAffiliateSelection({
+    document_id: customerAcquisitionDocumentInput.value.trim(),
+    phone: customerAcquisitionPhoneInput.value.trim(),
+    email: customerAcquisitionEmailInput.value.trim(),
+  });
   const productSummary = customerSaleProductSummary(products);
   const metadata = {
     products,
     sale_entry: "sales_module",
     customer_lookup: customerAcquisitionCustomerLookupInput?.value?.trim() || null,
+    affiliate_match_source: matchedAffiliate ? "customer_identity_frontend" : null,
   };
   setButtonLoading(submitButton, true, "Registrando...");
   setInlineMessage(customerAcquisitionMessage, "Registrando venta real y medio de llegada...", "info");
@@ -7689,6 +7738,7 @@ async function submitCustomerAcquisitionSale(event) {
       : "Venta registrada con su medio de llegada.";
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
+    if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     customerAcquisitionCurrencyInput.value = "COP";
     state.customerSaleItems = [defaultCustomerSaleItem()];
     renderCustomerAcquisitionCampaignOptions();
@@ -15969,6 +16019,11 @@ customerAcquisitionCustomerLookupInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
   applySalesCustomerToForm(customerAcquisitionCustomerLookupInput.value);
+});
+customerAcquisitionAffiliateInput?.addEventListener("change", () => {
+  if (customerAcquisitionAffiliateInput.value !== customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId) {
+    customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
+  }
 });
 secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);

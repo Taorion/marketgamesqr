@@ -682,12 +682,6 @@ async function createCustomerAcquisitionSale(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const body = validate(customerAcquisitionSaleSchema, req.body);
-    const affiliatePointRules = body.referred_affiliate_id
-      ? await getAffiliatePointRules(businessId)
-      : null;
-    const referralPoints = affiliatePointRules
-      ? referralPointsForAmount(body.sale_amount, affiliatePointRules)
-      : 0;
 
     const result = await withTransaction(async (client) => {
       if (body.campaign_id) {
@@ -701,19 +695,39 @@ async function createCustomerAcquisitionSale(req, res, next) {
       }
 
       let referredAffiliate = null;
-      if (body.referred_affiliate_id) {
-        const affiliateResult = await client.query(
-          `select id, full_name, points_total
+      const affiliateResult = await client.query(
+        `select id, full_name, points_total
            from affiliates
-           where id = $1 and business_id = $2 and status = 'ACTIVE'
+           where business_id = $1
+             and status = 'ACTIVE'
+             and (
+               ($2::uuid is not null and id = $2)
+               or ($3::text is not null and nullif(document_id, '') = $3)
+               or ($4::text is not null and nullif(phone, '') = $4)
+               or ($5::text is not null and lower(nullif(email, '')) = lower($5))
+             )
+           order by case when $2::uuid is not null and id = $2 then 0 else 1 end, created_at desc
+           limit 1
            for update`,
-          [body.referred_affiliate_id, businessId]
-        );
-        referredAffiliate = affiliateResult.rows[0];
-        if (!referredAffiliate) {
-          throw badRequest("El afiliado referido no existe o no esta activo para este negocio.");
-        }
+        [
+          businessId,
+          body.referred_affiliate_id || null,
+          body.customer_document_id || null,
+          body.customer_phone || null,
+          body.customer_email || null,
+        ]
+      );
+      referredAffiliate = affiliateResult.rows[0] || null;
+      if (body.referred_affiliate_id && !referredAffiliate) {
+        throw badRequest("El afiliado referido no existe o no esta activo para este negocio.");
       }
+      const affiliatePointRules = referredAffiliate
+        ? await getAffiliatePointRules(businessId, client)
+        : null;
+      const referralPoints = affiliatePointRules
+        ? referralPointsForAmount(body.sale_amount, affiliatePointRules)
+        : 0;
+      const autoMatchedAffiliate = Boolean(referredAffiliate && !body.referred_affiliate_id);
 
       const saleResult = await client.query(
         `insert into business_sales
@@ -736,13 +750,15 @@ async function createCustomerAcquisitionSale(req, res, next) {
           req.user.branch_id || null,
           body.acquisition_source,
           body.acquisition_channel || null,
-          body.referred_affiliate_id || null,
+          referredAffiliate?.id || null,
           referralPoints,
           body.notes || null,
           {
             ...body.metadata,
             capture_source: "customer_acquisition",
             conversion_source: "contact_center_sale",
+            affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : body.referred_affiliate_id ? "manual_selection" : null,
+            related_affiliate_id: referredAffiliate?.id || null,
             ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
           },
         ]
@@ -820,6 +836,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
               acquisition_source: body.acquisition_source,
               acquisition_channel: body.acquisition_channel || null,
               referred_customer: body.customer_name || null,
+              affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : "manual_selection",
               ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
             },
           ]
