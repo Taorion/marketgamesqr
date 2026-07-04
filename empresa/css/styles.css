@@ -2067,6 +2067,99 @@ th,
   width: min(360px, 100%);
 }
 
+.sales-item-builder {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(111, 251, 190, 0.18);
+  border-radius: 8px;
+  background: rgba(111, 251, 190, 0.055);
+  min-width: 0;
+}
+
+.sales-item-builder-head,
+.sales-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sales-item-builder-head strong,
+.sales-total-row strong {
+  display: block;
+}
+
+.sales-item-builder-head > div {
+  min-width: 0;
+}
+
+.sales-item-builder-head .ghost-button {
+  flex: 0 0 auto;
+}
+
+.sales-item-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sales-item-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(76px, 0.38fr) minmax(132px, 0.7fr) minmax(118px, 0.55fr) 40px;
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.18);
+  min-width: 0;
+}
+
+.sales-item-row label {
+  min-width: 0;
+}
+
+.sales-item-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.sales-item-total {
+  display: grid;
+  gap: 4px;
+  min-height: 46px;
+  align-content: center;
+  min-width: 0;
+}
+
+.sales-item-total span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sales-item-total strong,
+.sales-total-row strong {
+  overflow-wrap: anywhere;
+}
+
+.sales-item-row .icon-button {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  align-self: center;
+  justify-self: end;
+  padding: 0;
+}
+
+.sales-total-row {
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
 .affiliate-reward-rule-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -2127,6 +2220,21 @@ th,
 @media (max-width: 1080px) {
   .inventory-layout {
     grid-template-columns: 1fr;
+  }
+
+  .sales-item-row {
+    grid-template-columns: minmax(180px, 1fr) 84px minmax(120px, 0.6fr) 40px;
+  }
+
+  .sales-item-total {
+    grid-column: 1 / -2;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    min-height: 28px;
+  }
+
+  .sales-item-total strong {
+    text-align: right;
   }
 
   .affiliate-reward-lists {
@@ -3897,6 +4005,53 @@ td {
   .ghost-button,
   .request-button {
     width: 100%;
+  }
+
+  .sales-item-builder {
+    padding: 12px;
+  }
+
+  .sales-item-builder-head {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .sales-item-builder-head .ghost-button {
+    width: 100%;
+  }
+
+  .sales-item-row {
+    grid-template-columns: minmax(0, 1fr) 72px 40px;
+    gap: 8px;
+  }
+
+  .sales-item-row .sales-item-product {
+    grid-column: 1 / -1;
+  }
+
+  .sales-item-row .sales-item-quantity {
+    grid-column: 2 / 3;
+  }
+
+  .sales-item-row .sales-item-price {
+    grid-column: 1 / 2;
+  }
+
+  .sales-item-total {
+    grid-column: 1 / -1;
+    min-height: 24px;
+  }
+
+  .sales-item-row .icon-button {
+    grid-column: 3 / 4;
+    width: 40px;
+    min-width: 40px;
+    align-self: end;
+  }
+
+  .sales-total-row {
+    align-items: flex-start;
   }
 
   .icon-button {

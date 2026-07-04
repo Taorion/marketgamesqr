@@ -476,6 +476,8 @@ const postSalePhoneInput = document.getElementById("postSalePhoneInput");
 const postSaleEmailInput = document.getElementById("postSaleEmailInput");
 const postSaleBenefitLabelInput = document.getElementById("postSaleBenefitLabelInput");
 const postSaleBenefitTypeInput = document.getElementById("postSaleBenefitTypeInput");
+const postSaleBenefitProductModeInput = document.getElementById("postSaleBenefitProductModeInput");
+const postSaleBenefitProductInput = document.getElementById("postSaleBenefitProductInput");
 const postSaleBenefitValueInput = document.getElementById("postSaleBenefitValueInput");
 const postSaleExpiresModeInput = document.getElementById("postSaleExpiresModeInput");
 const postSaleExpiresAtInput = document.getElementById("postSaleExpiresAtInput");
@@ -493,6 +495,8 @@ const triviaInviteMessageInput = document.getElementById("triviaInviteMessageInp
 const triviaMaxWinnersInput = document.getElementById("triviaMaxWinnersInput");
 const triviaBenefitLabelInput = document.getElementById("triviaBenefitLabelInput");
 const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput");
+const triviaBenefitProductModeInput = document.getElementById("triviaBenefitProductModeInput");
+const triviaBenefitProductInput = document.getElementById("triviaBenefitProductInput");
 const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput");
 const triviaExpiresModeInput = document.getElementById("triviaExpiresModeInput");
 const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
@@ -539,6 +543,7 @@ const customerAcquisitionAmountInput = document.getElementById("customerAcquisit
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
 const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
+const customerAcquisitionCustomerLookupInput = document.getElementById("customerAcquisitionCustomerLookupInput");
 const customerAcquisitionNameInput = document.getElementById("customerAcquisitionNameInput");
 const customerAcquisitionDocumentInput = document.getElementById("customerAcquisitionDocumentInput");
 const customerAcquisitionPhoneInput = document.getElementById("customerAcquisitionPhoneInput");
@@ -549,6 +554,10 @@ const customerAcquisitionAffiliateInput = document.getElementById("customerAcqui
 const customerAcquisitionNotesInput = document.getElementById("customerAcquisitionNotesInput");
 const customerAcquisitionMessage = document.getElementById("customerAcquisitionMessage");
 const inventoryProductOptions = document.getElementById("inventoryProductOptions");
+const salesCustomerOptions = document.getElementById("salesCustomerOptions");
+const customerSaleItemsContainer = document.getElementById("customerSaleItemsContainer");
+const customerSaleAddItemButton = document.getElementById("customerSaleAddItemButton");
+const customerSaleTotalPreview = document.getElementById("customerSaleTotalPreview");
 const inventoryProductForm = document.getElementById("inventoryProductForm");
 const inventoryProductIdInput = document.getElementById("inventoryProductIdInput");
 const inventoryNameInput = document.getElementById("inventoryNameInput");
@@ -583,6 +592,8 @@ const qrBatchChannelInput = document.getElementById("qrBatchChannelInput");
 const qrBatchOriginTypeInput = document.getElementById("qrBatchOriginTypeInput");
 const qrBatchBenefitLabelInput = document.getElementById("qrBatchBenefitLabelInput");
 const qrBatchBenefitTypeInput = document.getElementById("qrBatchBenefitTypeInput");
+const qrBatchBenefitProductModeInput = document.getElementById("qrBatchBenefitProductModeInput");
+const qrBatchBenefitProductInput = document.getElementById("qrBatchBenefitProductInput");
 const qrBatchBenefitValueInput = document.getElementById("qrBatchBenefitValueInput");
 const qrBatchClaimRequiredInput = document.getElementById("qrBatchClaimRequiredInput");
 const qrBatchExpiresModeInput = document.getElementById("qrBatchExpiresModeInput");
@@ -848,6 +859,7 @@ let state = {
   affiliateRewardRules: [],
   affiliateRewardUnlocks: [],
   affiliatePurchaseItems: [{ name: "", quantity: 1, unit_price: 0 }],
+  customerSaleItems: [{ name: "", quantity: 1, unit_price: 0 }],
   inventoryProducts: [],
   inventoryLoaded: false,
   inventorySearch: "",
@@ -2003,6 +2015,64 @@ function parseJsonObject(value) {
   }
 }
 
+function benefitProductScope(modeInput, productInput) {
+  const mode = String(modeInput?.value || "").trim();
+  const rawProductName = String(productInput?.value || "").trim();
+  if (!mode && !rawProductName) return null;
+  const product = findInventoryProduct(rawProductName);
+  const productName = product?.name || rawProductName || null;
+  if (!productName) return null;
+  return {
+    mode: mode || "applies_to_product",
+    source: product ? "inventory" : "open",
+    inventory_product_id: product?.id || null,
+    product_name: productName,
+    sku: product?.sku || null,
+    barcode: product?.barcode || null,
+    unit_price: product?.unit_price !== undefined && product?.unit_price !== null ? Number(product.unit_price) : null,
+    currency: product?.currency || null,
+  };
+}
+
+function withBenefitProductScope(value = {}, productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput)) {
+  if (!productScope) return value || {};
+  return {
+    ...(value || {}),
+    product_scope: productScope,
+    product_name: value?.product_name || productScope.product_name,
+    inventory_product_id: value?.inventory_product_id || productScope.inventory_product_id || null,
+  };
+}
+
+function productScopeFromValue(value = {}, metadata = {}) {
+  return value?.product_scope || value?.value?.product_scope || metadata?.benefit_product_scope || null;
+}
+
+function benefitProductScopeLabel(value = {}, metadata = {}) {
+  const scope = productScopeFromValue(value, metadata);
+  if (!scope?.product_name) return "";
+  const modeLabel = scope.mode === "gift_product"
+    ? "Obsequio"
+    : scope.mode === "applies_to_product"
+      ? "Aplica a"
+      : "Producto";
+  const sourceLabel = scope.source === "inventory" ? "inventario" : "abierto";
+  return `${modeLabel}: ${scope.product_name} (${sourceLabel})`;
+}
+
+function syncBenefitProductFields(modeInput, productInput, labelInput, typeInput) {
+  if (!modeInput || !productInput) return;
+  const productScope = benefitProductScope(modeInput, productInput);
+  if (!productScope) return;
+  if (!modeInput.value) modeInput.value = "applies_to_product";
+  if (productScope.mode === "gift_product" && typeInput) typeInput.value = "FREE_GIFT";
+  if (labelInput && !String(labelInput.value || "").trim()) {
+    labelInput.value = productScope.mode === "gift_product"
+      ? `Reclama ${productScope.product_name}`
+      : `Beneficio para ${productScope.product_name}`;
+  }
+}
+
 function interactiveBaseBenefitLabel(type, activationPayload = {}) {
   const configured = String(triviaBenefitLabelInput?.value || "").trim();
   if (configured.length >= 2) return configured;
@@ -2708,7 +2778,10 @@ function setView(view) {
       loadAffiliatesData().then(renderSalesView);
     }
     if (state.contactCenterTab === "sales" && !state.inventoryLoaded) {
-      loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
+      loadInventoryProducts({ quiet: true }).then(() => {
+        renderInventoryProductOptions();
+        renderCustomerSaleItems();
+      });
     }
     renderLeadsView();
   }
@@ -2731,6 +2804,7 @@ function setView(view) {
   }
   if (view === "redemptions") renderRedemptionsView();
   if (view === "strategic-qr") {
+    if (!state.inventoryLoaded) loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
     renderStrategicQrView();
     loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
       showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
@@ -5791,6 +5865,8 @@ function renderSalesView() {
   `).join("");
   renderCustomerAcquisitionAffiliateOptions();
   renderCustomerAcquisitionCampaignOptions();
+  renderSalesCustomerOptions();
+  renderCustomerSaleItems();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -5954,7 +6030,12 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorBusinessValue.textContent = data?.business?.name || "-";
   validatorCampaignValue.textContent = data?.campaign?.name || data?.batch?.name || "-";
   validatorGameValue.textContent = data?.game?.name || data?.qr_code?.origin_type || "-";
-  validatorRewardValue.textContent = data?.reward?.display || data?.reward?.name || data?.reward?.benefit_value?.label || "-";
+  const validatorBenefitValue = data?.reward?.value || data?.reward?.benefit_value || {};
+  const validatorProductScope = benefitProductScopeLabel(validatorBenefitValue);
+  validatorRewardValue.textContent = [
+    data?.reward?.display || data?.reward?.name || validatorBenefitValue?.label || "-",
+    validatorProductScope,
+  ].filter(Boolean).join(" | ");
   validatorPlayerValue.textContent = data?.player?.name || "-";
   validatorDocumentValue.textContent = data?.player?.document_id || "-";
   validatorContactValue.textContent = [
@@ -6129,6 +6210,8 @@ function configureSecretFriendGiftTicket() {
   setFieldValue(postSaleEmailInput, "");
   setFieldValue(postSaleBenefitLabelInput, "Tu amigo secreto te endulzo: reclama tu producto regalo");
   setFieldValue(postSaleBenefitTypeInput, "FREE_GIFT");
+  setFieldValue(postSaleBenefitProductModeInput, "gift_product");
+  setFieldValue(postSaleBenefitProductInput, "Producto regalo endulzado");
   setFieldValue(postSaleBenefitValueInput, JSON.stringify({
     product: "Producto regalo",
     example: "caja dulce, postre, bebida, libro, hamburguesa o producto definido por la marca",
@@ -6153,6 +6236,8 @@ function configureSecretFriendProspectActivation() {
   setFieldValue(triviaDescriptionInput, "Alguien penso en ti y te dejo una sorpresa. Confirma tus datos, responde una pregunta rapida, reclama tu producto regalo en tienda y luego invita a otro prospecto.");
   setFieldValue(triviaBenefitLabelInput, "Ticket secundario: invita a alguien mas a reclamar un beneficio");
   setFieldValue(triviaBenefitTypeInput, "FREE_GIFT");
+  setFieldValue(triviaBenefitProductModeInput, "gift_product");
+  setFieldValue(triviaBenefitProductInput, "Producto definido por la marca");
   setFieldValue(triviaBenefitValueInput, JSON.stringify({
     mechanic: "amigo_secreto_endulzado",
     ticket_role: "secondary_referral_ticket",
@@ -6564,6 +6649,7 @@ function renderQrBatchResultCard(batch, options = {}) {
   const unclaimedCount = Number(batch.unclaimed_count || 0);
   const redeemedCount = Number(batch.redeemed_count || 0);
   const expiresAt = batch.expires_at ? formatDate(batch.expires_at) : "Sin expiración";
+  const productScopeLabel = benefitProductScopeLabel(batch.benefit_value || {}, batch.metadata || {});
 
   qrBatchResult.classList.remove("hidden");
   qrBatchResult.className = "surface-card qr-batch-result-card";
@@ -6595,6 +6681,7 @@ function renderQrBatchResultCard(batch, options = {}) {
     <div class="qr-batch-result-meta">
       <span class="table-secondary">Creado ${escapeHtml(createdAt)}${batch.channel_use ? ` | Canal ${escapeHtml(batch.channel_use)}` : ""}</span>
       <span class="table-secondary">${escapeHtml(batch.qr_origin_type || "-")} | ${escapeHtml(batch.benefit_value?.label || batch.benefit_type || "Beneficio")}</span>
+      ${productScopeLabel ? `<span class="table-secondary">${escapeHtml(productScopeLabel)}</span>` : ""}
     </div>
     <div class="qr-batch-result-actions">
       <div class="inline-selects">
@@ -6660,6 +6747,226 @@ function renderCustomerAcquisitionCampaignOptions() {
   if (current && (state.campaigns || []).some((campaign) => campaign.id === current)) {
     customerAcquisitionCampaignInput.value = current;
   }
+}
+
+function salesCustomerIdentity(row = {}) {
+  return normalizeInventoryLookup(row.document_id || row.customer_document_id || row.phone || row.customer_phone || row.email || row.customer_email || row.name || row.player_name || row.id);
+}
+
+function salesCustomerRows() {
+  const seen = new Set();
+  const rows = [
+    ...(state.leadCrmRows || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      document_id: item.document_id,
+      phone: item.phone,
+      email: item.email,
+      campaign_id: item.campaign_id,
+      campaign_name: item.campaign_name,
+      source: item.source_type || "CRM",
+    })),
+    ...(state.contactFeed || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      document_id: item.document_id,
+      phone: item.phone,
+      email: item.email,
+      campaign_id: item.campaign_id,
+      campaign_name: item.campaign_name,
+      source: item.attribution_source || "Lead",
+    })),
+    ...(state.selectedSales || []).map((item) => ({
+      id: item.player_id || item.id,
+      name: item.player_name,
+      document_id: item.document_id,
+      phone: item.phone,
+      email: item.email,
+      campaign_id: item.campaign_id,
+      campaign_name: item.campaign_name,
+      source: "Venta previa",
+    })),
+  ];
+  return rows.filter((row) => {
+    const key = salesCustomerIdentity(row);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return row.name || row.document_id || row.phone || row.email;
+  });
+}
+
+function salesCustomerLookupValue(customer = {}) {
+  const refs = [customer.document_id, customer.phone, customer.email].filter(Boolean).join(" · ");
+  return refs ? `${customer.name || "Cliente"} | ${refs}` : (customer.name || "");
+}
+
+function renderSalesCustomerOptions() {
+  if (!salesCustomerOptions) return;
+  salesCustomerOptions.innerHTML = salesCustomerRows()
+    .map((customer) => `<option value="${escapeHtml(salesCustomerLookupValue(customer))}" label="${escapeHtml(customer.campaign_name || customer.source || "Contacto")}"></option>`)
+    .join("");
+}
+
+function findSalesCustomer(value) {
+  const needle = normalizeInventoryLookup(value);
+  if (!needle) return null;
+  return salesCustomerRows().find((customer) => {
+    const candidates = [
+      salesCustomerLookupValue(customer),
+      customer.name,
+      customer.document_id,
+      customer.phone,
+      customer.email,
+    ].map(normalizeInventoryLookup);
+    return candidates.includes(needle);
+  }) || null;
+}
+
+function applySalesCustomerToForm(value) {
+  const customer = findSalesCustomer(value);
+  if (!customer) return false;
+  if (customerAcquisitionNameInput) customerAcquisitionNameInput.value = customer.name || "";
+  if (customerAcquisitionDocumentInput) customerAcquisitionDocumentInput.value = customer.document_id || "";
+  if (customerAcquisitionPhoneInput) customerAcquisitionPhoneInput.value = customer.phone || "";
+  if (customerAcquisitionEmailInput) customerAcquisitionEmailInput.value = customer.email || "";
+  if (customerAcquisitionCampaignInput && customer.campaign_id) {
+    customerAcquisitionCampaignInput.value = customer.campaign_id;
+  }
+  return true;
+}
+
+function defaultCustomerSaleItem() {
+  return { name: "", quantity: 1, unit_price: 0, inventory_product_id: null, sku: null, barcode: null };
+}
+
+function ensureCustomerSaleItems() {
+  if (!Array.isArray(state.customerSaleItems) || !state.customerSaleItems.length) {
+    state.customerSaleItems = [defaultCustomerSaleItem()];
+  }
+  state.customerSaleItems = state.customerSaleItems.map((item) => ({
+    ...defaultCustomerSaleItem(),
+    ...item,
+    quantity: Math.max(1, Number(item.quantity || 1)),
+    unit_price: Math.max(0, Number(item.unit_price || 0)),
+  }));
+}
+
+function customerSaleLineTotal(item = {}) {
+  return Math.max(1, Number(item.quantity || 1)) * Math.max(0, Number(item.unit_price || 0));
+}
+
+function customerSaleTotal() {
+  ensureCustomerSaleItems();
+  return state.customerSaleItems.reduce((sum, item) => sum + customerSaleLineTotal(item), 0);
+}
+
+function syncCustomerSaleTotal() {
+  const total = customerSaleTotal();
+  if (customerAcquisitionAmountInput) customerAcquisitionAmountInput.value = total ? String(total) : "";
+  if (customerSaleTotalPreview) customerSaleTotalPreview.textContent = money(total);
+  return total;
+}
+
+function customerSaleProductsPayload() {
+  ensureCustomerSaleItems();
+  return state.customerSaleItems
+    .map((item) => {
+      const name = String(item.name || "").trim();
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const unitPrice = Math.max(0, Number(item.unit_price || 0));
+      if (!name || unitPrice <= 0) return null;
+      const product = item.inventory_product_id ? (state.inventoryProducts || []).find((candidate) => String(candidate.id) === String(item.inventory_product_id)) : findInventoryProduct(name);
+      const payload = product ? productSalePayload(product, quantity, unitPrice) : {
+        inventory_product_id: null,
+        name,
+        sku: item.sku || null,
+        barcode: item.barcode || null,
+        quantity,
+        unit_price: unitPrice,
+        line_total: quantity * unitPrice,
+      };
+      return payload;
+    })
+    .filter(Boolean);
+}
+
+function customerSaleProductSummary(products = customerSaleProductsPayload()) {
+  if (!products.length) return "";
+  if (products.length === 1) return products[0].name;
+  return `${products.length} productos`;
+}
+
+function updateCustomerSaleItem(index, field, value, options = {}) {
+  ensureCustomerSaleItems();
+  const item = state.customerSaleItems[index];
+  if (!item) return;
+  if (field === "name") {
+    item.name = value;
+    const product = options.matchProduct ? findInventoryProduct(value) : null;
+    if (product) {
+      item.inventory_product_id = product.id;
+      item.name = product.name;
+      item.sku = product.sku || null;
+      item.barcode = product.barcode || null;
+      if (!Number(item.unit_price || 0)) item.unit_price = Number(product.unit_price || 0);
+      if (customerAcquisitionCurrencyInput && product.currency) customerAcquisitionCurrencyInput.value = product.currency;
+    } else if (options.matchProduct) {
+      item.inventory_product_id = null;
+      item.sku = null;
+      item.barcode = null;
+    }
+  }
+  if (field === "quantity") item.quantity = Math.max(1, Number(value || 1));
+  if (field === "unit_price") item.unit_price = Math.max(0, Number(value || 0));
+  syncCustomerSaleTotal();
+}
+
+function renderCustomerSaleItems() {
+  if (!customerSaleItemsContainer) return;
+  ensureCustomerSaleItems();
+  customerSaleItemsContainer.innerHTML = state.customerSaleItems.map((item, index) => {
+    const productLabel = item.inventory_product_id ? "Inventario" : "Producto abierto";
+    return `
+      <div class="sales-item-row" data-sale-item-index="${index}">
+        <label class="sales-item-product">
+          <span>Producto</span>
+          <input type="text" list="inventoryProductOptions" value="${escapeHtml(item.name || "")}" placeholder="Nombre, SKU o codigo de barras" data-sale-item-field="name">
+        </label>
+        <label class="sales-item-quantity">
+          <span>Cant.</span>
+          <input type="number" min="1" step="1" value="${escapeHtml(item.quantity || 1)}" data-sale-item-field="quantity">
+        </label>
+        <label class="sales-item-price">
+          <span>Precio unitario</span>
+          <input type="number" min="0" step="0.01" value="${escapeHtml(item.unit_price || 0)}" data-sale-item-field="unit_price">
+        </label>
+        <div class="sales-item-total">
+          <span>${escapeHtml(productLabel)}</span>
+          <strong>${escapeHtml(money(customerSaleLineTotal(item)))}</strong>
+        </div>
+        <button class="icon-button danger-button" type="button" data-sale-item-remove="${index}" aria-label="Quitar producto">&times;</button>
+      </div>
+    `;
+  }).join("");
+  customerSaleItemsContainer.querySelectorAll("[data-sale-item-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const row = input.closest("[data-sale-item-index]");
+      updateCustomerSaleItem(Number(row?.dataset.saleItemIndex || 0), input.dataset.saleItemField, input.value);
+    });
+    input.addEventListener("change", () => {
+      const row = input.closest("[data-sale-item-index]");
+      updateCustomerSaleItem(Number(row?.dataset.saleItemIndex || 0), input.dataset.saleItemField, input.value, { matchProduct: input.dataset.saleItemField === "name" });
+      renderCustomerSaleItems();
+    });
+  });
+  customerSaleItemsContainer.querySelectorAll("[data-sale-item-remove]").forEach((button) => {
+    button.disabled = state.customerSaleItems.length <= 1;
+    button.addEventListener("click", () => {
+      state.customerSaleItems.splice(Number(button.dataset.saleItemRemove || 0), 1);
+      renderCustomerSaleItems();
+    });
+  });
+  syncCustomerSaleTotal();
 }
 
 function saleSourceLabel(source) {
@@ -7121,6 +7428,7 @@ function renderStrategicQrView() {
         <td>
           ${escapeHtml(item.qr_origin_type)}
           <br><span class="table-secondary">${escapeHtml(item.benefit_value?.label || item.benefit_type || "Beneficio")}</span>
+          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
         <td>
           ${escapeHtml(item.quantity)}
@@ -7158,7 +7466,10 @@ function renderStrategicQrView() {
     ? state.strategicQrHistory.map((item) => `
       <tr>
         <td>${escapeHtml(item.origin_type)}</td>
-        <td>${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}</td>
+        <td>
+          ${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}
+          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+        </td>
         <td>${escapeHtml(item.status)}</td>
         <td>${escapeHtml(item.player_name || "-")}</td>
         <td>
@@ -7338,21 +7649,18 @@ async function submitSubscriptionAutoRenewal() {
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
-  const selectedProduct = findInventoryProduct(customerAcquisitionProductInput.value);
-  const selectedQuantity = 1;
-  const metadata = selectedProduct
-    ? {
-        products: [{
-          inventory_product_id: selectedProduct.id,
-          name: selectedProduct.name,
-          sku: selectedProduct.sku || null,
-          barcode: selectedProduct.barcode || null,
-          quantity: selectedQuantity,
-          unit_price: Number(selectedProduct.unit_price || 0),
-          line_total: Number(customerAcquisitionAmountInput.value || selectedProduct.unit_price || 0),
-        }],
-      }
-    : {};
+  const products = customerSaleProductsPayload();
+  const saleTotal = products.reduce((sum, product) => sum + Number(product.line_total || 0), 0);
+  if (!products.length || saleTotal <= 0) {
+    setInlineMessage(customerAcquisitionMessage, "Agrega al menos un producto con precio para registrar la venta.", "error");
+    return;
+  }
+  const productSummary = customerSaleProductSummary(products);
+  const metadata = {
+    products,
+    sale_entry: "sales_module",
+    customer_lookup: customerAcquisitionCustomerLookupInput?.value?.trim() || null,
+  };
   setButtonLoading(submitButton, true, "Registrando...");
   setInlineMessage(customerAcquisitionMessage, "Registrando venta real y medio de llegada...", "info");
   try {
@@ -7360,10 +7668,10 @@ async function submitCustomerAcquisitionSale(event) {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        sale_amount: Number(customerAcquisitionAmountInput.value || 0),
+        sale_amount: saleTotal,
         campaign_id: customerAcquisitionCampaignInput?.value || null,
         currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
-        product_name: customerAcquisitionProductInput.value.trim() || null,
+        product_name: productSummary || null,
         customer_name: customerAcquisitionNameInput.value.trim() || null,
         customer_document_id: customerAcquisitionDocumentInput.value.trim() || null,
         customer_phone: customerAcquisitionPhoneInput.value.trim() || null,
@@ -7382,9 +7690,16 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     customerAcquisitionCurrencyInput.value = "COP";
+    state.customerSaleItems = [defaultCustomerSaleItem()];
     renderCustomerAcquisitionCampaignOptions();
+    renderCustomerSaleItems();
     await loadInventoryProducts({ force: true, quiet: true });
     renderInventoryProductOptions();
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+    ]);
+    renderSalesCustomerOptions();
     await refreshLiveBusinessData();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
@@ -7934,12 +8249,13 @@ function collectOpenQuestions() {
 }
 
 function collectRevealCards() {
+  const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   return Array.from(document.querySelectorAll("[data-reveal-card]"))
     .map((input) => ({
       label: input.dataset.revealCard || "Card",
       benefit_label: input.value.trim(),
       benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
-      benefit_value: parseJsonObject(triviaBenefitValueInput?.value || "{}"),
+      benefit_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput?.value || "{}"), productScope),
     }))
     .filter((item) => item.benefit_label);
 }
@@ -7951,6 +8267,7 @@ function collectThermometerDiscounts() {
 }
 
 function collectFlatChoiceOptions(type) {
+  const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   return Array.from(document.querySelectorAll(`[data-flat-choice="${type}"] [data-flat-option]`))
     .map((input) => {
       const key = input.dataset.flatOption || input.value.trim();
@@ -7964,14 +8281,15 @@ function collectFlatChoiceOptions(type) {
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? { ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }
-          : parseJsonObject(triviaBenefitValueInput.value),
+          ? withBenefitProductScope({ ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }, productScope)
+          : withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
       };
     })
     .filter((item) => item.label);
 }
 
 function collectRouletteBenefits() {
+  const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   return Array.from(document.querySelectorAll("[data-roulette-benefit]"))
     .map((input, index) => {
       const label = input.value.trim();
@@ -7981,7 +8299,7 @@ function collectRouletteBenefits() {
         label,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: label,
-        reward_value: parseJsonObject(triviaBenefitValueInput.value),
+        reward_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
       };
     })
     .filter((item) => item.label);
@@ -8437,10 +8755,11 @@ function validateActivationParticipantLock() {
 
 function buildInteractiveActivationPayload(type, activationPayload) {
   const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
+  const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   const benefit = {
     reward_type: triviaBenefitTypeInput.value,
     reward_label: baseBenefitLabel,
-    reward_value: parseJsonObject(triviaBenefitValueInput.value),
+    reward_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
@@ -8451,7 +8770,10 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     activation_type: interactiveTypeForLegacyType(type),
     category: interactiveCategoryForType(type),
     reward_ticket_cost: 1,
-    reward_config: benefit,
+    reward_config: {
+      ...benefit,
+      product_scope: productScope,
+    },
     capture_config: {
       required_fields: ["name", "phone", "email", "document"],
       optional_fields: [],
@@ -8461,10 +8783,13 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       source: "ticket_center_activation_builder",
       invite_message_template: triviaInviteMessageInput?.value.trim() || defaultActivationInviteTemplate({ title: triviaTitleInput.value.trim() }),
     },
+    metadata: {
+      benefit_product_scope: productScope,
+    },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
       benefit_label: baseBenefitLabel,
-      benefit_value: parseJsonObject(triviaBenefitValueInput.value),
+      benefit_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
     },
   };
 
@@ -9417,6 +9742,7 @@ async function submitPostSaleQr(event) {
     const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || ticketOccasion || productName || benefitLabel || null;
     const inventoryProduct = findInventoryProduct(productName);
     const inventorySaleProduct = productSalePayload(inventoryProduct, 1, Number(postSaleAmountInput.value || inventoryProduct?.unit_price || 0));
+    const productScope = benefitProductScope(postSaleBenefitProductModeInput, postSaleBenefitProductInput);
     const benefitValue = {
       ...parseJsonObject(postSaleBenefitValueInput.value),
       product_name: productName || null,
@@ -9424,6 +9750,7 @@ async function submitPostSaleQr(event) {
       ticket_use_case_label: ticketUseCaseLabel,
       occasion: ticketOccasion,
     };
+    const benefitValueWithProduct = withBenefitProductScope(benefitValue, productScope);
     const data = await api("/api/business/qr/generic-ticket", {
       method: "POST",
       headers: authHeaders(),
@@ -9448,6 +9775,7 @@ async function submitPostSaleQr(event) {
           ticket_occasion: ticketOccasion,
           intended_recipient_name: beneficiaryName || null,
           gift_product_name: productName || null,
+          benefit_product_scope: productScope,
           products: inventorySaleProduct ? [inventorySaleProduct] : [],
         },
         expires_mode: postSaleExpiresModeInput.value,
@@ -9455,7 +9783,7 @@ async function submitPostSaleQr(event) {
         benefit: {
           benefit_type: postSaleBenefitTypeInput.value,
           benefit_label: benefitLabel,
-          benefit_value: benefitValue,
+          benefit_value: benefitValueWithProduct,
         },
       }),
     });
@@ -9547,6 +9875,8 @@ async function submitQrBatch(event) {
   try {
     const attributionSource = qrBatchAttributionSourceInput?.value.trim() || qrBatchChannelInput.value;
     const attributionSubject = qrBatchAttributionSubjectInput?.value.trim() || qrBatchNameInput.value.trim();
+    const productScope = benefitProductScope(qrBatchBenefitProductModeInput, qrBatchBenefitProductInput);
+    const benefitValue = withBenefitProductScope(parseJsonObject(qrBatchBenefitValueInput.value), productScope);
     const data = await api("/api/business/qr/batches", {
       method: "POST",
       headers: authHeaders(),
@@ -9565,11 +9895,12 @@ async function submitQrBatch(event) {
           attribution_subject: attributionSubject,
           campaign_id: qrBatchCampaignInput.value || null,
           qr_creation_context: "business_owner_batch",
+          benefit_product_scope: productScope,
         },
         benefit: {
           benefit_type: qrBatchBenefitTypeInput.value,
           benefit_label: qrBatchBenefitLabelInput.value.trim(),
-          benefit_value: parseJsonObject(qrBatchBenefitValueInput.value),
+          benefit_value: benefitValue,
         },
       }),
     });
@@ -15626,6 +15957,19 @@ campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
+customerSaleAddItemButton?.addEventListener("click", () => {
+  ensureCustomerSaleItems();
+  state.customerSaleItems.push(defaultCustomerSaleItem());
+  renderCustomerSaleItems();
+});
+customerAcquisitionCustomerLookupInput?.addEventListener("change", () => {
+  applySalesCustomerToForm(customerAcquisitionCustomerLookupInput.value);
+});
+customerAcquisitionCustomerLookupInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  applySalesCustomerToForm(customerAcquisitionCustomerLookupInput.value);
+});
 secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
@@ -15862,6 +16206,21 @@ customerAcquisitionProductInput?.addEventListener("change", () => {
 });
 postSaleProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(postSaleProductInput, postSaleAmountInput, postSaleCurrencyInput);
+});
+[postSaleBenefitProductInput, postSaleBenefitProductModeInput].forEach((field) => {
+  field?.addEventListener("change", () => {
+    syncBenefitProductFields(postSaleBenefitProductModeInput, postSaleBenefitProductInput, postSaleBenefitLabelInput, postSaleBenefitTypeInput);
+  });
+});
+[qrBatchBenefitProductInput, qrBatchBenefitProductModeInput].forEach((field) => {
+  field?.addEventListener("change", () => {
+    syncBenefitProductFields(qrBatchBenefitProductModeInput, qrBatchBenefitProductInput, qrBatchBenefitLabelInput, qrBatchBenefitTypeInput);
+  });
+});
+[triviaBenefitProductInput, triviaBenefitProductModeInput].forEach((field) => {
+  field?.addEventListener("change", () => {
+    syncBenefitProductFields(triviaBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitLabelInput, triviaBenefitTypeInput);
+  });
 });
 validatorProductServiceInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(validatorProductServiceInput, validatorSaleAmountInput);

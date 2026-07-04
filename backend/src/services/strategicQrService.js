@@ -201,12 +201,25 @@ function truncateTicketLine(value, maxLength = 96) {
   return `${text.slice(0, maxLength - 1)}...`;
 }
 
-function buildTicketDetailLines({ label, expiresAt, code }) {
+function benefitProductLine(benefitValue = {}) {
+  const scope = benefitValue?.product_scope || benefitValue?.value?.product_scope;
+  if (!scope?.product_name) return null;
+  const modeLabel = scope.mode === "gift_product"
+    ? "Obsequio"
+    : scope.mode === "applies_to_product"
+      ? "Aplica a"
+      : "Producto";
+  return `${modeLabel}: ${scope.product_name}`;
+}
+
+function buildTicketDetailLines({ label, expiresAt, code, benefitValue }) {
+  const productLine = benefitProductLine(benefitValue);
   return [
     `Beneficio: ${truncateTicketLine(label || "Beneficio")}`,
+    productLine ? truncateTicketLine(productLine) : null,
     `Vence: ${formatTicketDate(expiresAt)}`,
     `Codigo: ${String(code || "").trim() || "N/A"}`,
-  ];
+  ].filter(Boolean);
 }
 
 function safeFilenamePart(value, fallback = "ticket") {
@@ -349,6 +362,7 @@ async function createPostSaleQr(businessId, user, body) {
             label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio",
             expiresAt,
             code: shortTicketCode(qr),
+            benefitValue: benefitPayload?.value || {},
           }),
         })
       : await QRCode.toDataURL(sharedTicketUrl);
@@ -397,7 +411,7 @@ function buildBatchInsert(rows) {
     sql: `insert into qr_codes
       (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id, affiliate_id)
       values ${placeholders.join(", ")}
-      returning id, token, status, created_at, expires_at, batch_id, origin_type, benefit_type, benefit_value, affiliate_id`,
+      returning id, token, status, created_at, expires_at, batch_id, origin_type, benefit_type, benefit_value, metadata, affiliate_id`,
     values,
   };
 }
@@ -619,7 +633,7 @@ async function getQrBatch(businessId, batchId) {
       [batchId, businessId]
     ),
     query(
-      `select id, token, status, created_at, expires_at, claimed_at, redeemed_at, benefit_type, benefit_value, affiliate_id
+      `select id, token, status, created_at, expires_at, claimed_at, redeemed_at, benefit_type, benefit_value, metadata, affiliate_id
        from qr_codes
        where batch_id = $1 and business_id = $2
        order by created_at asc
@@ -654,6 +668,7 @@ async function getQrHistory(businessId, options = {}) {
        q.redeemed_at,
        q.benefit_type,
        q.benefit_value,
+       q.metadata,
        qb.id as batch_id,
        qb.name as batch_name,
        bs.id as sale_id,
@@ -788,6 +803,7 @@ async function getIndividualQrDownload(businessId, qrId, options = {}) {
     label: ticketLabel,
     expiresAt: qr.expires_at,
     code: shortTicketCode(qr),
+    benefitValue: qr.benefit_value || {},
   });
   const qrImageDataUrl = hasFrame
     ? await buildBrandedTicketSvgDataUrl({
@@ -1106,6 +1122,7 @@ async function getBatchPrintableHtml(businessId, batchId, template = "sticker", 
         label,
         expiresAt: row.expires_at,
         code: shortTicketCode(row),
+        benefitValue: row.benefit_value || {},
       });
       const affiliateLine = row.affiliate_name
         ? `Afiliado asignado: ${row.affiliate_name}${row.affiliate_document_id ? ` · ${row.affiliate_document_id}` : ""}`
@@ -1197,6 +1214,7 @@ async function getBatchZipDownload(businessId, batchId) {
           label: row.benefit_value?.label || row.benefit_type || "Beneficio",
           expiresAt: row.expires_at,
           code: shortTicketCode(row),
+          benefitValue: row.benefit_value || {},
         }),
       });
       const svg = decodeURIComponent(svgDataUrl.replace(/^data:image\/svg\+xml;charset=utf-8,/, ""));
@@ -1352,6 +1370,7 @@ async function getBatchPdfDownload(businessId, batchId, template = "sticker", pa
         label: title,
         expiresAt: row.expires_at,
         code: shortTicketCode(row),
+        benefitValue: row.benefit_value || {},
       });
       const panelWidth = Math.min(cardWidth - 18, 150);
       const panelHeight = 44;
@@ -1514,6 +1533,7 @@ async function getClaimDetails(tokenInput) {
             label: qr.benefit_value?.label || qr.benefit_type || "Beneficio",
             expiresAt: finalTicketExpiresAt,
             code: shortTicketCode({ id: finalTicketId, token: qr.final_qr_token || qr.token }),
+            benefitValue: qr.benefit_value || {},
           }),
         })
       : await QRCode.toDataURL(finalTicketUrl)
@@ -1756,6 +1776,7 @@ async function claimQr(tokenInput, body) {
             label: qr.benefit_value?.label || qr.benefit_type || "Beneficio",
             expiresAt: finalQr.expires_at,
             code: shortTicketCode(finalQr),
+            benefitValue: qr.benefit_value || {},
           }),
         })
       : await QRCode.toDataURL(finalTicketUrl);
