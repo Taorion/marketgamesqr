@@ -604,11 +604,76 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     ),
     query(
       `select q.*, c.name as campaign_name, r.name as reward_name,
-              q.player_id, p.document_id as document_value, p.phone as phone_value, p.email as email_value
+              q.player_id, p.document_id as document_value, p.phone as phone_value, p.email as email_value,
+              la.id as lead_activation_id,
+              la.name as lead_activation_name,
+              la.activation_type as lead_activation_type,
+              la.channel as lead_activation_channel,
+              ia.id as interactive_activation_id,
+              ia.title as interactive_activation_title,
+              ia.activation_type as interactive_activation_type,
+              qb.name as batch_name,
+              qb.channel_use as batch_channel_use,
+              coalesce(
+                case when la.id is not null then 'Accion CRM' end,
+                case when ia.id is not null then 'Activacion interactiva' end,
+                case when qb.id is not null then 'Paquete de tickets' end,
+                q.metadata->>'origin_label',
+                q.metadata->>'source',
+                replace(initcap(replace(q.origin_type::text, '_', ' ')), 'Qr', 'QR')
+              ) as source_label,
+              coalesce(
+                la.name,
+                ia.title,
+                q.metadata->>'package_name',
+                q.metadata->>'attribution_subject',
+                q.metadata->>'ticket_use_case',
+                qb.name,
+                c.name,
+                r.name,
+                q.benefit_value->>'label',
+                q.benefit_type::text,
+                q.origin_type::text
+              ) as source_name,
+              coalesce(
+                la.description,
+                q.metadata->>'message',
+                q.metadata->>'conditions',
+                q.metadata->>'channel_use',
+                qb.channel_use,
+                q.metadata->>'activation_type',
+                q.metadata->>'crm_activation_type',
+                ia.activation_type::text,
+                q.origin_type::text
+              ) as source_detail,
+              coalesce(c.name, q.metadata->>'campaign_name') as source_campaign,
+              coalesce(la.channel, qb.channel_use, q.metadata->>'channel_use', q.metadata->>'source') as source_channel,
+              (q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now())) as is_available
        from qr_codes q
        left join players p on p.id = q.player_id
        left join campaigns c on c.id = q.campaign_id
        left join rewards r on r.id = q.reward_id
+       left join qr_batches qb on qb.id = q.batch_id and qb.business_id = q.business_id
+       left join lead_activations la on la.business_id = q.business_id and la.id = coalesce(
+         case
+           when q.metadata->>'crm_activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (q.metadata->>'crm_activation_id')::uuid
+         end,
+         case
+           when q.metadata->>'lead_activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (q.metadata->>'lead_activation_id')::uuid
+         end
+       )
+       left join interactive_activations ia on ia.company_id = q.business_id and ia.id = coalesce(
+         case
+           when q.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (q.metadata->>'activation_id')::uuid
+         end,
+         case
+           when q.metadata->>'interactive_activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (q.metadata->>'interactive_activation_id')::uuid
+         end
+       )
        where q.business_id = $1 and (
          ($2::uuid is not null and q.player_id = $2)
          or ($3::text is not null and nullif($3::text, '') is not null and p.document_id = $3::text)

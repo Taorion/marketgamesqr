@@ -12643,6 +12643,8 @@ function isRedeemedTicket(ticket = {}) {
 
 function isActiveTicket(ticket = {}) {
   if (isRedeemedTicket(ticket)) return false;
+  if (ticket.is_available === true) return true;
+  if (ticket.is_available === false) return false;
   if (String(ticket.status || "").toUpperCase() !== "ACTIVE") return false;
   return !ticket.expires_at || new Date(ticket.expires_at) > new Date();
 }
@@ -12668,8 +12670,19 @@ function ticketStatusClass(ticket = {}) {
 }
 
 function ticketTitle(ticket = {}) {
-  const benefit = ticket.reward_name || ticket.benefit_value?.label || ticket.benefit_type || ticket.origin_type || "Ticket";
+  const benefit = ticket.reward_name || ticket.benefit_value?.label || ticket.benefit_value?.value || ticket.benefit_type || ticket.origin_type || "Ticket";
   return String(benefit || "Ticket");
+}
+
+function ticketSourceTitle(ticket = {}) {
+  return ticket.source_label || ticket.source_name || ticket.campaign_name || ticket.origin_type || "Origen no definido";
+}
+
+function ticketSourceDescription(ticket = {}) {
+  return [
+    ticket.source_name && ticket.source_name !== ticket.source_label ? ticket.source_name : "",
+    ticket.source_detail,
+  ].filter(Boolean).join(" - ") || "Sin detalle de origen.";
 }
 
 function ticketPublicUrl(ticket = {}) {
@@ -12690,10 +12703,11 @@ function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
   return `<div class="lead-ticket-grid">${tickets.map((ticket) => {
     const publicUrl = ticketPublicUrl(ticket);
     const meta = [
-      ticket.campaign_name || "Sin campana",
-      ticket.origin_type || "",
+      ticketSourceTitle(ticket),
+      ticket.source_campaign || ticket.campaign_name || "Sin campana",
       ticket.created_at ? `emitido ${formatDate(ticket.created_at)}` : "",
     ].filter(Boolean).join(" | ");
+    const benefitValue = ticket.benefit_value?.label || ticket.benefit_value?.value || ticket.benefit_type || ticket.reward_name || "-";
     return `
       <article class="lead-ticket-card">
         <div class="lead-ticket-head">
@@ -12703,14 +12717,22 @@ function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
           </div>
           <span class="status-chip ${ticketStatusClass(ticket)}">${escapeHtml(ticketStatusLabel(ticket))}</span>
         </div>
+        <div class="lead-ticket-origin">
+          <span class="mono-label">Origen del ticket</span>
+          <strong>${escapeHtml(ticketSourceTitle(ticket))}</strong>
+          <p>${escapeHtml(ticketSourceDescription(ticket))}</p>
+        </div>
         <div class="lead-ticket-meta">
-          <span><strong>ID</strong>${escapeHtml(ticket.id || "-")}</span>
+          <span><strong>Campaña</strong>${escapeHtml(ticket.source_campaign || ticket.campaign_name || "-")}</span>
+          <span><strong>Canal</strong>${escapeHtml(ticket.source_channel || ticket.lead_activation_channel || ticket.batch_channel_use || "-")}</span>
           <span><strong>Vence</strong>${formatDate(ticket.expires_at)}</span>
-          <span><strong>Redimido</strong>${formatDate(ticket.redeemed_at)}</span>
-          <span><strong>Beneficio</strong>${escapeHtml(ticket.benefit_value?.label || ticket.benefit_type || "-")}</span>
+          <span><strong>Beneficio</strong>${escapeHtml(benefitValue)}</span>
+          <span><strong>Tipo</strong>${escapeHtml(ticket.origin_type || "-")}</span>
+          <span><strong>ID</strong>${escapeHtml(ticket.id || "-")}</span>
         </div>
         <div class="activation-row-actions">
           ${isActiveTicket(ticket) ? `<button class="ghost-button" type="button" data-download-ticket="${escapeHtml(ticket.id)}">Descargar QR</button>` : ""}
+          ${publicUrl ? `<a class="ghost-button" href="${escapeHtml(publicUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
           ${publicUrl ? `<button class="ghost-button" type="button" data-copy-link="${escapeHtml(publicUrl)}">Copiar ticket</button>` : ""}
         </div>
       </article>
@@ -12855,7 +12877,7 @@ function renderLeadDetailHeader(detail) {
       <div class="lead-header-metrics">
         <span><strong>${Number(summary.score_total || 0).toLocaleString("es-CO")}</strong>Score</span>
         <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
-        <span><strong>${groupedTickets.active.length}</strong>Tickets activos</span>
+        <span><strong>${groupedTickets.active.length}</strong>Tickets disponibles</span>
         <span><strong>${groupedTickets.redeemed.length}</strong>Tickets redimidos</span>
       </div>
       <div class="lead-next-actions">
@@ -12891,7 +12913,7 @@ function renderLeadTab(detail) {
         ["Score total", Number(summary.score_total || 0).toLocaleString("es-CO"), `Promedio ${Number(summary.score_average || 0).toFixed(1)}`],
         ["Compras", summary.purchase_count || 0, money(summary.total_spent || 0)],
         ["Ticket promedio", money(summary.avg_ticket || 0), `Ultima ${formatDate(summary.last_purchase_at)}`],
-        ["Tickets activos", groupedTickets.active.length, "Disponibles para activar"],
+        ["Tickets disponibles", groupedTickets.active.length, "Listos para validar"],
         ["Tickets redimidos", groupedTickets.redeemed.length, "Ya usados en punto fisico"],
         ["Activaciones", summary.activations_count || 0, `Ultima ${formatDate(summary.last_activation_at)}`],
         ["Segmento sugerido", lead.commercial_status_label || summary.commercial_status, lead.level || ""],
@@ -12975,13 +12997,13 @@ function renderLeadTab(detail) {
     `), "Sin juegos o trivias registrados."),
     benefits: () => `
       <section class="lead-ticket-summary">
-        <article><span>Activos</span><strong>${groupedTickets.active.length}</strong></article>
+        <article><span>Disponibles</span><strong>${groupedTickets.active.length}</strong></article>
         <article><span>Redimidos</span><strong>${groupedTickets.redeemed.length}</strong></article>
         <article><span>Otros</span><strong>${groupedTickets.other.length}</strong></article>
       </section>
       <section class="lead-ticket-section">
-        <h4>Tickets activos</h4>
-        ${renderTicketCards(groupedTickets.active, "Este lead no tiene tickets activos.")}
+        <h4>Tickets disponibles</h4>
+        ${renderTicketCards(groupedTickets.active, "Este lead no tiene tickets disponibles.")}
       </section>
       <section class="lead-ticket-section">
         <h4>Tickets redimidos</h4>
