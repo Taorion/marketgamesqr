@@ -145,6 +145,12 @@ const launchClientNotesInput = document.getElementById("launchClientNotesInput")
 const launchSetupMessage = document.getElementById("launchSetupMessage");
 const confirmLaunchButton = document.getElementById("confirmLaunchButton");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
+const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
+const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
+const campaignAffiliateNotesInput = document.getElementById("campaignAffiliateNotesInput");
+const campaignAffiliateAssignButton = document.getElementById("campaignAffiliateAssignButton");
+const campaignAffiliateMessage = document.getElementById("campaignAffiliateMessage");
+const campaignAffiliatesTable = document.getElementById("campaignAffiliatesTable");
 const campaignSnapshotsTable = document.getElementById("campaignSnapshotsTable");
 const saveSnapshotButton = document.getElementById("saveSnapshotButton");
 const campaignSnapshotChart = document.getElementById("campaignSnapshotChart");
@@ -247,7 +253,11 @@ const affiliateCardPreviewWrap = document.getElementById("affiliateCardPreviewWr
 const affiliateCardPreview = document.getElementById("affiliateCardPreview");
 const affiliateCardMeta = document.getElementById("affiliateCardMeta");
 const affiliateSelectedSummary = document.getElementById("affiliateSelectedSummary");
+const affiliatePurchaseCampaignInput = document.getElementById("affiliatePurchaseCampaignInput");
+const affiliatePurchaseProductInput = document.getElementById("affiliatePurchaseProductInput");
 const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseAmountInput");
+const affiliatePurchaseNotesInput = document.getElementById("affiliatePurchaseNotesInput");
+const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
 const copyAffiliateCardLinkButton = document.getElementById("copyAffiliateCardLinkButton");
@@ -710,6 +720,7 @@ let state = {
   selectedRewardPass: null,
   selectedCampaignId: null,
   selectedCampaign: null,
+  selectedCampaignAffiliates: [],
   selectedReport: null,
   selectedLeads: [],
   contactFeed: [],
@@ -2859,6 +2870,7 @@ function renderCampaignAssociationInputs() {
     [triviaCampaignInput, true],
     [leadCaptureCampaignInput, true],
     [affiliateReferralQrCampaignInput, false],
+    [affiliatePurchaseCampaignInput, false],
   ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
     const currentValue = input.value || selectedCampaignId || selectedCampaign?.id || "";
@@ -2885,6 +2897,16 @@ function renderCampaignAssociationInputs() {
   if (triviaCampaignHelp) triviaCampaignHelp.textContent = campaigns.length
     ? "Opcional: selecciona una campaña si quieres que la activación alimente un reporte específico. También puedes lanzarla sin campaña."
     : "Puedes lanzar la activación sin campaña. Luego podrás medirla desde el historial de activaciones y tickets.";
+}
+
+function renderAffiliatePurchaseCampaignOptions() {
+  if (!affiliatePurchaseCampaignInput) return;
+  const currentValue = affiliatePurchaseCampaignInput.value || state.selectedCampaignId || "";
+  affiliatePurchaseCampaignInput.innerHTML = campaignAssociationOptions(currentValue, { allowNoCampaign: false });
+  if (currentValue && Array.from(affiliatePurchaseCampaignInput.options).some((option) => option.value === currentValue)) {
+    affiliatePurchaseCampaignInput.value = currentValue;
+  }
+  affiliatePurchaseCampaignInput.disabled = !state.selectedAffiliateId || !activeCampaignsForAssociation().length;
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -5203,20 +5225,23 @@ async function selectCampaign(campaignId) {
   renderCampaignAssociationInputs();
 
   try {
-    const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
+    const [campaignData, reportData, leadsData, redemptionsData, salesData, campaignAffiliatesData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
+      apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
+    if (!state.affiliatesLoaded) await loadAffiliatesData();
     state.selectedCampaign = campaignData.campaign || null;
     state.selectedReport = reportData || null;
     state.selectedLeads = leadsData.leads || [];
     state.selectedRedemptions = redemptionsData.redemptions || [];
     state.selectedSales = salesData.sales || [];
+    state.selectedCampaignAffiliates = campaignAffiliatesData.affiliates || [];
 
     renderCampaignView();
     renderCampaignAssociationInputs();
@@ -5244,6 +5269,106 @@ function formatCampaignDuration(campaign) {
   const start = campaign.starts_at ? formatDateShort(campaign.starts_at) : "Inicio abierto";
   const end = campaign.ends_at ? formatDateShort(campaign.ends_at) : "Sin cierre";
   return `${start} - ${end}`;
+}
+
+function renderCampaignAffiliatesPanel() {
+  if (!campaignAffiliateSelect || !campaignAffiliatesTable) return;
+  const assigned = state.selectedCampaignAffiliates || [];
+  const assignedIds = new Set(assigned.map((item) => item.affiliate_id));
+  const available = (state.affiliates || []).filter((affiliate) => affiliate.status !== "DELETED");
+  campaignAffiliateSelect.innerHTML = [
+    '<option value="">Seleccionar afiliado</option>',
+    ...available.map((affiliate) => `
+      <option value="${escapeHtml(affiliate.id)}" ${assignedIds.has(affiliate.id) ? "disabled" : ""}>
+        ${escapeHtml(affiliate.full_name || "Afiliado")} (${escapeHtml(affiliate.document_id || affiliate.phone || "sin documento")})${assignedIds.has(affiliate.id) ? " - asociado" : ""}
+      </option>
+    `),
+  ].join("");
+  const canAssign = Boolean(state.selectedCampaignId && available.some((affiliate) => !assignedIds.has(affiliate.id)));
+  if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = !canAssign;
+  if (campaignAffiliateMessage && !canAssign && !assigned.length) {
+    campaignAffiliateMessage.textContent = available.length ? "Todos los afiliados disponibles ya están asociados a esta campaña." : "Crea afiliados para asociarlos a campañas.";
+  } else if (campaignAffiliateMessage) {
+    campaignAffiliateMessage.textContent = "";
+  }
+  campaignAffiliatesTable.innerHTML = assigned.map((item) => `
+    <tr>
+      <td>
+        <strong>${escapeHtml(item.full_name || "Afiliado")}</strong>
+        <br><span class="table-secondary">${escapeHtml(item.document_id || item.phone || item.email || "-")}</span>
+      </td>
+      <td>${Number(item.referral_tickets_generated || 0).toLocaleString("es-CO")}</td>
+      <td>${Number(item.referral_tickets_redeemed || 0).toLocaleString("es-CO")}</td>
+      <td>${Number(item.referral_sales_count || 0).toLocaleString("es-CO")}</td>
+      <td>
+        <strong>${money(item.referral_revenue || 0)}</strong>
+        <br><span class="table-secondary">${Number(item.referral_points_awarded || 0).toLocaleString("es-CO")} pts</span>
+      </td>
+      <td>
+        <button class="ghost-button" type="button" data-campaign-affiliate-open="${escapeHtml(item.affiliate_id)}">Ver</button>
+        <button class="ghost-button danger-button" type="button" data-campaign-affiliate-remove="${escapeHtml(item.affiliate_id)}">Quitar</button>
+      </td>
+    </tr>
+  `).join("") || '<tr><td colspan="6">Sin afiliados asociados a esta campaña.</td></tr>';
+  campaignAffiliatesTable.querySelectorAll("[data-campaign-affiliate-open]").forEach((button) => {
+    button.addEventListener("click", () => openAffiliateForPoints(button.dataset.campaignAffiliateOpen));
+  });
+  campaignAffiliatesTable.querySelectorAll("[data-campaign-affiliate-remove]").forEach((button) => {
+    button.addEventListener("click", () => removeCampaignAffiliate(button.dataset.campaignAffiliateRemove));
+  });
+}
+
+async function reloadCampaignAffiliates(campaignId = state.selectedCampaignId) {
+  if (!campaignId || !session?.user?.business_id) return;
+  const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
+  if (state.selectedCampaignId !== campaignId) return;
+  state.selectedCampaignAffiliates = data.affiliates || [];
+  renderCampaignAffiliatesPanel();
+}
+
+async function assignCampaignAffiliate(event) {
+  event.preventDefault();
+  if (!state.selectedCampaignId || !session?.user?.business_id) return;
+  const affiliateId = campaignAffiliateSelect?.value || "";
+  if (!affiliateId) {
+    setFormMessage(campaignAffiliateMessage, "Selecciona un afiliado para asociarlo.", "error");
+    return;
+  }
+  try {
+    if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;
+    setFormMessage(campaignAffiliateMessage, "Asociando afiliado a la campaña...", "info");
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/campaigns/${state.selectedCampaignId}/affiliates`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        affiliate_id: affiliateId,
+        role: "REFERER",
+        notes: campaignAffiliateNotesInput?.value.trim() || null,
+      }),
+    });
+    state.selectedCampaignAffiliates = data.affiliates || [];
+    if (campaignAffiliateNotesInput) campaignAffiliateNotesInput.value = "";
+    renderCampaignAffiliatesPanel();
+    setFormMessage(campaignAffiliateMessage, "Afiliado asociado a la campaña.", "success");
+  } catch (error) {
+    setFormMessage(campaignAffiliateMessage, error.message || "No se pudo asociar el afiliado.", "error");
+    if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = false;
+  }
+}
+
+async function removeCampaignAffiliate(affiliateId) {
+  if (!affiliateId || !state.selectedCampaignId || !session?.user?.business_id) return;
+  try {
+    await api(`/api/portal/businesses/${session.user.business_id}/campaigns/${state.selectedCampaignId}/affiliates/${encodeURIComponent(affiliateId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.selectedCampaignAffiliates = (state.selectedCampaignAffiliates || []).filter((item) => item.affiliate_id !== affiliateId);
+    renderCampaignAffiliatesPanel();
+    showFeedback("Afiliado quitado de la campaña.", "success");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo quitar el afiliado.", "error");
+  }
 }
 
 function renderCampaignView() {
@@ -5324,6 +5449,7 @@ function renderCampaignView() {
         </article>
       `).join("")
     : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Market Games aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
+  renderCampaignAffiliatesPanel();
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
   campaignSnapshotsTable.innerHTML = snapshots.map((item) => `
@@ -9456,6 +9582,10 @@ function renderNoCampaignState() {
     input.disabled = true;
   });
   campaignAssetsGrid.innerHTML = '<article class="asset-card"><strong>Sin assets cargados</strong><span>Selecciona una campaña para ver material entregado.</span></article>';
+  state.selectedCampaignAffiliates = [];
+  if (campaignAffiliateSelect) campaignAffiliateSelect.innerHTML = '<option value="">Sin campaña</option>';
+  if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;
+  if (campaignAffiliatesTable) campaignAffiliatesTable.innerHTML = '<tr><td colspan="6">Selecciona una campaña.</td></tr>';
   campaignSnapshotsTable.innerHTML = '<tr><td colspan="6">Sin snapshots cargados.</td></tr>';
   campaignKpiGrid.innerHTML = "";
   funnelStack.innerHTML = "";
@@ -11938,38 +12068,71 @@ async function submitAffiliateForm(event) {
 
 async function awardSelectedAffiliatePoints() {
   if (!state.selectedAffiliateId || !session?.user?.business_id) return;
-  const amount = Number(affiliatePurchaseAmountInput.value || 0);
+  const selectedAffiliate = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === state.selectedAffiliateId) || {};
+  const amount = Number(affiliatePurchaseAmountInput?.value || 0);
+  const campaignId = affiliatePurchaseCampaignInput?.value || "";
   if (!Number.isFinite(amount) || amount <= 0) {
-    showFeedback("Ingresa un monto válido para sumar puntos.", "error");
+    setInlineMessage(affiliatePurchaseMessage, "Ingresa un monto valido de compra.", "error");
+    showFeedback("Ingresa un monto valido de compra.", "error");
+    return;
+  }
+  if (activeCampaignsForAssociation().length && !campaignId) {
+    setInlineMessage(affiliatePurchaseMessage, "Elige la campana que quieres atribuir a esta compra.", "error");
+    showFeedback("Elige una campana para atribuir la compra.", "error");
     return;
   }
 
   affiliateAddPointsButton.disabled = true;
-  affiliateAddPointsButton.textContent = "Sumando...";
+  affiliateAddPointsButton.textContent = "Registrando...";
+  setInlineMessage(affiliatePurchaseMessage, "Registrando compra y calculando puntos del afiliado...", "info");
 
   try {
-    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}/points`, {
+    const data = await api("/api/business/customer-acquisition-sales", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({
+        campaign_id: campaignId || null,
+        customer_name: selectedAffiliate.full_name || null,
+        customer_phone: selectedAffiliate.phone || null,
+        customer_email: selectedAffiliate.email || null,
+        customer_document_id: selectedAffiliate.document_id || null,
+        product_name: affiliatePurchaseProductInput?.value.trim() || "Compra afiliado",
+        sale_amount: amount,
+        currency: "COP",
+        acquisition_source: "FRIEND_REFERRAL",
+        acquisition_channel: "Afiliados",
+        referred_affiliate_id: state.selectedAffiliateId,
+        notes: affiliatePurchaseNotesInput?.value.trim() || null,
+        metadata: {
+          source: "affiliate_contact_purchase",
+          affiliate_purchase: true,
+        },
+      }),
     });
 
-    const updated = data.affiliate;
-    state.affiliates = (state.affiliates || []).map((item) => (item.id === updated.id ? updated : item));
-    state.selectedAffiliate = updated;
-    affiliatePurchaseAmountInput.value = "";
+    const awarded = Number(data.referral?.points_awarded || 0);
+    const selectedAffiliateId = state.selectedAffiliateId;
+    if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = "";
+    if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.value = "";
+    if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
+    await loadAffiliatesData();
+    state.selectedAffiliateId = selectedAffiliateId;
+    state.selectedAffiliate = (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
+    if (campaignId && state.selectedCampaignId === campaignId) {
+      await reloadCampaignAffiliates(campaignId);
+    }
     await renderAffiliatesView();
-    showFeedback(
-      data.awarded > 0
-        ? `Se sumaron ${data.awarded} puntos al afiliado.`
-        : data.message || "No se generaron puntos.",
-      data.awarded > 0 ? "success" : "error"
-    );
+    const message = awarded
+      ? `Compra registrada. ${data.referral?.affiliate_name || selectedAffiliate.full_name || "El afiliado"} recibio ${awarded} puntos automaticamente.`
+      : "Compra registrada. La regla actual no genero puntos para este monto.";
+    setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
+    showFeedback(message, awarded ? "success" : "info", { title: "Compra atribuida" });
   } catch (error) {
+    setInlineMessage(affiliatePurchaseMessage, error.message, "error");
     showFeedback(error.message, "error");
   } finally {
     affiliateAddPointsButton.disabled = false;
-    affiliateAddPointsButton.textContent = "Sumar puntos";
+    affiliateAddPointsButton.textContent = "Registrar compra";
   }
 }
 
@@ -12084,6 +12247,9 @@ async function generateSelectedAffiliateReferralQr() {
     await downloadBatchByFormat(data.batch.id, "pdf", "card", "a4", { silentSuccess: true });
     state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
     markTicketCenterDataStale(["core", "metrics", "batches", "history", "affiliates"]);
+    if (state.selectedCampaignId === affiliateReferralQrCampaignInput.value) {
+      await reloadCampaignAffiliates(state.selectedCampaignId);
+    }
     if (state.currentView === "affiliates") {
       await loadAffiliatesData();
       await renderAffiliatesView();
@@ -13255,15 +13421,32 @@ function renderLeadTab(detail) {
       `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
       `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,
     ]),
-    purchases: () => (detail.purchases || []).length ? detailList((detail.purchases || []).map((item) => `
-      <strong>${escapeHtml(item.product_name || "Compra")}</strong>
-      <span>${money(item.sale_amount || 0)} · ${formatDate(item.created_at)}</span>
-      <small>${escapeHtml(item.campaign_name || item.acquisition_source || "-")} · ${escapeHtml(item.branch_name || "Sin sucursal")}</small>
-    `)) : `
-      <div class="empty-state compact">
-        Este lead aun no registra compras. Puedes enviarle una activacion para convertirlo.
-        <br><button class="ghost-button" type="button" data-lead-fast-action="FIRST_PURCHASE">Enviar beneficio de primera compra</button>
-      </div>
+    purchases: () => `
+      <form class="lead-purchase-form" id="leadPurchaseForm">
+        <div>
+          <span class="mono-label">Registrar venta o compra</span>
+          <strong>Agregar movimiento comercial</strong>
+        </div>
+        <label><span>Producto / servicio</span><input id="leadPurchaseProductInput" type="text" maxlength="180" required placeholder="Producto comprado"></label>
+        <label><span>Valor</span><input id="leadPurchaseAmountInput" type="number" min="1" step="100" required placeholder="0"></label>
+        <label><span>Categoria</span><input id="leadPurchaseCategoryInput" type="text" maxlength="160" placeholder="Categoria o linea"></label>
+        <label><span>Fecha</span><input id="leadPurchaseDateInput" type="datetime-local"></label>
+        <label><span>Canal</span><input id="leadPurchaseChannelInput" type="text" maxlength="120" value="CRM" placeholder="Tienda, WhatsApp, feria..."></label>
+        <label><span>Moneda</span><input id="leadPurchaseCurrencyInput" type="text" maxlength="8" value="COP"></label>
+        <label class="span-2"><span>Notas</span><textarea id="leadPurchaseNotesInput" rows="2" maxlength="1200" placeholder="Detalle de la compra, referencia, vendedor o contexto"></textarea></label>
+        <p class="form-message span-2" id="leadPurchaseMessage"></p>
+        <button class="solid-button" id="leadPurchaseSubmitButton" type="submit">Guardar compra</button>
+      </form>
+      ${(detail.purchases || []).length ? detailList((detail.purchases || []).map((item) => `
+        <strong>${escapeHtml(item.product_name || "Compra")}</strong>
+        <span>${money(item.sale_amount || 0)} · ${formatDate(item.created_at)}</span>
+        <small>${escapeHtml(item.campaign_name || item.acquisition_source || "-")} · ${escapeHtml(item.branch_name || "Sin sucursal")} ${item.notes ? `· ${escapeHtml(item.notes)}` : ""}</small>
+      `)) : `
+        <div class="empty-state compact">
+          Este lead aun no registra compras. Puedes registrar una venta manual o enviarle una activacion para convertirlo.
+          <br><button class="ghost-button" type="button" data-lead-fast-action="FIRST_PURCHASE">Enviar beneficio de primera compra</button>
+        </div>
+      `}
     `,
     interests: () => `
       <form class="lead-inline-form" id="leadInterestForm">
@@ -13382,6 +13565,7 @@ function bindLeadDetailPanelActions() {
     button.addEventListener("click", () => deleteLeadInterestFromDetail(button.dataset.deleteInterest));
   });
   document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
+  document.getElementById("leadPurchaseForm")?.addEventListener("submit", createLeadPurchaseFromForm);
   document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
 }
 
@@ -13505,6 +13689,54 @@ async function createLeadNoteFromForm(event) {
     }),
   });
   await openLeadDetail(state.selectedLeadRef);
+}
+
+async function createLeadPurchaseFromForm(event) {
+  event.preventDefault();
+  if (!state.selectedLeadRef) return;
+  const productInput = document.getElementById("leadPurchaseProductInput");
+  const amountInput = document.getElementById("leadPurchaseAmountInput");
+  const message = document.getElementById("leadPurchaseMessage");
+  const submitButton = document.getElementById("leadPurchaseSubmitButton");
+  const productName = String(productInput?.value || "").trim();
+  const amount = Number(amountInput?.value || 0);
+  if (!productName || !Number.isFinite(amount) || amount <= 0) {
+    setFormMessage(message, "Agrega producto y un valor de compra valido.", "error");
+    return;
+  }
+  const dateValue = document.getElementById("leadPurchaseDateInput")?.value || "";
+  const payload = {
+    source_type: state.selectedLeadRef.source_type || "PLAYER",
+    product_name: productName,
+    sale_amount: amount,
+    currency: String(document.getElementById("leadPurchaseCurrencyInput")?.value || "COP").trim() || "COP",
+    category: String(document.getElementById("leadPurchaseCategoryInput")?.value || "").trim() || null,
+    acquisition_channel: String(document.getElementById("leadPurchaseChannelInput")?.value || "").trim() || "CRM",
+    notes: String(document.getElementById("leadPurchaseNotesInput")?.value || "").trim() || null,
+    created_at: dateValue ? new Date(dateValue).toISOString() : null,
+  };
+  try {
+    if (submitButton) submitButton.disabled = true;
+    setFormMessage(message, "Guardando compra en el historial del lead...", "info");
+    await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/purchases`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    setFormMessage(message, "Compra registrada. Actualizando ficha...", "success");
+    state.selectedLeadTab = "purchases";
+    leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "purchases"));
+    const detail = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}?source_type=${encodeURIComponent(state.selectedLeadRef.source_type || "PLAYER")}`, { headers: authHeaders() });
+    state.selectedLeadDetail = detail;
+    renderLeadDetailHeader(detail);
+    renderLeadTab(detail);
+    state.leadCrmLoaded = false;
+    await refreshLeadCrm({ quiet: true, keepOffset: true });
+  } catch (error) {
+    setFormMessage(message, error.message || "No se pudo registrar la compra.", "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 async function addLeadInterestFromForm(event) {
@@ -13647,7 +13879,7 @@ async function openAffiliateForPoints(affiliateId) {
   await renderAffiliatesView();
   const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
   renderAffiliateFinderResults([]);
-  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Ingresa el monto de compra y suma puntos.`, "success");
+  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Registra la compra, elige campana y los puntos se suman automatico.`, "success");
   affiliatePurchaseAmountInput?.focus();
   affiliatePurchaseAmountInput?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -13673,7 +13905,7 @@ async function searchAffiliateForPoints(value = affiliateFinderInput?.value) {
     return;
   }
   renderAffiliateFinderResults(matches);
-  setAffiliateFinderMessage(`Encontramos ${matches.length} afiliados. Elige el correcto para sumar puntos.`, "success");
+  setAffiliateFinderMessage(`Encontramos ${matches.length} afiliados. Elige el correcto para registrar la compra.`, "success");
 }
 
 function stopAffiliateFinderScanner() {
@@ -13773,9 +14005,10 @@ async function renderAffiliatesView() {
     state.selectedAffiliateId = selected.id;
   }
   state.selectedAffiliate = selected;
+  renderAffiliatePurchaseCampaignOptions();
 
   affiliateTable.innerHTML = rows.map((item) => `
-    <tr data-affiliate-id="${escapeHtml(item.id)}" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
+    <tr data-affiliate-id="${escapeHtml(item.id)}" data-affiliate-row-select="${escapeHtml(item.id)}" tabindex="0" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
       <td>${escapeHtml(item.full_name || "-")}</td>
       <td>${escapeHtml(item.document_id || "-")}</td>
       <td>${escapeHtml(toNumber(item.points_total || item.ledger_points || 0))}</td>
@@ -13794,14 +14027,31 @@ async function renderAffiliatesView() {
     </tr>
   `).join("") || '<tr><td colspan="9">Todavia no hay afiliados creados.</td></tr>';
 
+  affiliateTable.querySelectorAll("[data-affiliate-row-select]").forEach((row) => {
+    const selectRow = () => {
+      openAffiliateForPoints(row.dataset.affiliateRowSelect);
+    };
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      selectRow();
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      selectRow();
+    });
+  });
   affiliateTable.querySelectorAll("[data-affiliate-select]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedAffiliateId = button.dataset.affiliateSelect;
-      renderAffiliatesView();
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openAffiliateForPoints(button.dataset.affiliateSelect);
     });
   });
   affiliateTable.querySelectorAll("[data-affiliate-delete]").forEach((button) => {
-    button.addEventListener("click", () => deleteSelectedAffiliate(button.dataset.affiliateDelete, button.dataset.affiliateName));
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteSelectedAffiliate(button.dataset.affiliateDelete, button.dataset.affiliateName);
+    });
   });
 
   if (!selected) {
@@ -13812,6 +14062,10 @@ async function renderAffiliatesView() {
     affiliateCardPreviewWrap?.classList.add("is-empty");
     affiliateCardPreviewWrap?.classList.remove("is-loading");
     affiliateAddPointsButton.disabled = true;
+    if (affiliatePurchaseCampaignInput) affiliatePurchaseCampaignInput.disabled = true;
+    if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = true;
+    if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = true;
+    if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = true;
     downloadAffiliateCardButton.disabled = true;
     if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
@@ -13827,6 +14081,10 @@ async function renderAffiliatesView() {
   affiliateCardMeta.textContent = affiliateCardMetaText(selected);
   renderAffiliateSelectedSummary(selected);
   affiliateCardPreviewWrap?.classList.remove("is-empty");
+  renderAffiliatePurchaseCampaignOptions();
+  if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = false;
+  if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = false;
+  if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = false;
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
   if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = !affiliateDigitalCardUrl(selected);
@@ -14541,6 +14799,7 @@ exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);
 launchSetupForm.addEventListener("submit", saveClientLaunchSetup);
 confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
+campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);

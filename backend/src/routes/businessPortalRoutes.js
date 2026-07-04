@@ -34,6 +34,7 @@ const {
 } = require("../controllers/businessPortalController");
 const {
   addInterest,
+  addPurchase,
   createNote,
   deleteContact,
   leadDetail,
@@ -64,6 +65,7 @@ router.delete("/leads/:leadId", deleteContact);
 router.post("/leads/:leadId/notes", createNote);
 router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);
+router.post("/leads/:leadId/purchases", addPurchase);
 router.post("/leads/:leadId/activations", sendActivation);
 
 router.use(requirePortalAccess);

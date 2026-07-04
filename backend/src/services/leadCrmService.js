@@ -312,6 +312,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
              or (nullif(p.phone, '') is not null and bs.customer_phone = p.phone)
              or (nullif(p.email, '') is not null and lower(bs.customer_email) = lower(p.email))
              or bs.qr_code_id in (select id from qr_codes where player_id = p.id)
+             or (bs.metadata->>'crm_lead_id' = p.id::text)
+             or (bs.metadata->>'crm_source_type' = 'PLAYER' and bs.metadata->>'crm_source_id' = p.id::text)
            )
        ) s on true
        left join lateral (
@@ -422,7 +424,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          from business_sales bs
          where bs.business_id = ml.business_id
            and ((nullif(ml.phone, '') is not null and bs.customer_phone = ml.phone)
-             or (nullif(ml.email, '') is not null and lower(bs.customer_email) = lower(ml.email)))
+             or (nullif(ml.email, '') is not null and lower(bs.customer_email) = lower(ml.email))
+             or (bs.metadata->>'crm_source_type' = 'MANUAL' and bs.metadata->>'crm_source_id' = ml.id::text))
        ) s on true
        where ml.business_id = $1
      ),
@@ -570,6 +573,15 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
   const lead = await resolveLead(businessId, leadId, sourceType);
   const params = identityParams(lead);
   const identityOnlyParams = params.slice(0, 5);
+  const purchaseParams = [
+    lead.business_id,
+    lead.lead_id || null,
+    lead.document_id || null,
+    lead.phone || null,
+    lead.email || null,
+    lead.source_type || "PLAYER",
+    lead.id,
+  ];
   const sourceParams = [lead.business_id, lead.lead_id || null, lead.source_type || "PLAYER", lead.id];
   const contactParams = [lead.business_id, lead.document_id || null, lead.phone || null, lead.email || null];
 
@@ -577,6 +589,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     purchases,
     tickets,
     trivia,
+    interactiveParticipations,
     activations,
     communications,
     notes,
@@ -597,10 +610,12 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          or ($4::text is not null and nullif($4::text, '') is not null and bs.customer_phone = $4::text)
          or ($5::text is not null and nullif($5::text, '') is not null and lower(bs.customer_email) = lower($5::text))
          or ($2::uuid is not null and bs.qr_code_id in (select id from qr_codes where player_id = $2))
+         or (bs.metadata->>'crm_source_type' = $6::text and bs.metadata->>'crm_source_id' = $7::text)
+         or ($2::uuid is not null and bs.metadata->>'crm_lead_id' = $2::text)
        )
        order by bs.created_at desc
        limit 100`,
-      identityOnlyParams
+      purchaseParams
     ),
     query(
       `select q.*, c.name as campaign_name, r.name as reward_name,
@@ -703,6 +718,47 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
       identityOnlyParams
     ),
     query(
+      `select iap.id,
+              iap.activation_id,
+              iap.company_id as business_id,
+              iap.player_id,
+              iap.name as participant_name,
+              iap.document as document_value,
+              iap.phone as phone_value,
+              iap.email as email_value,
+              iap.score,
+              iap.result_profile,
+              iap.status,
+              iap.started_at,
+              iap.completed_at,
+              iap.created_at,
+              ia.title as name,
+              ia.title as trivia_title,
+              ia.title as game_name,
+              ia.description,
+              ia.activation_type,
+              ia.category,
+              ia.campaign_id,
+              c.name as campaign_name,
+              case when iap.status in ('completed', 'rewarded') then true else false end as passed,
+              case
+                when ia.game_config->>'min_score_for_reward' ~ '^[0-9]+$' then (ia.game_config->>'min_score_for_reward')::int
+                else 0
+              end as total_questions
+       from interactive_activation_participants iap
+       join interactive_activations ia on ia.id = iap.activation_id and ia.company_id = iap.company_id
+       left join campaigns c on c.id = ia.campaign_id
+       where iap.company_id = $1 and (
+         ($2::uuid is not null and iap.player_id = $2)
+         or ($3::text is not null and nullif($3::text, '') is not null and iap.document = $3::text)
+         or ($4::text is not null and nullif($4::text, '') is not null and iap.phone = $4::text)
+         or ($5::text is not null and nullif($5::text, '') is not null and lower(iap.email) = lower($5::text))
+       )
+       order by iap.created_at desc
+       limit 120`,
+      identityOnlyParams
+    ),
+    query(
       `select la.*, c.name as campaign_name, al.public_url, al.token, al.status as link_status
        from lead_activations la
        left join campaigns c on c.id = la.campaign_id
@@ -780,8 +836,23 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
 
   const purchaseRows = purchases.rows;
   const ticketRows = tickets.rows;
-  const gameRows = trivia.rows;
-  const activationRows = activations.rows;
+  const interactiveRows = interactiveParticipations.rows;
+  const gameRows = [
+    ...trivia.rows,
+    ...interactiveRows.filter((item) => item.category === "minigame" || item.score !== null),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const activationRows = [
+    ...activations.rows,
+    ...interactiveRows.map((item) => ({
+      ...item,
+      status: item.status || "completed",
+      source_type: "INTERACTIVE",
+      source_id: item.id,
+      public_url: null,
+      token: null,
+      link_status: null,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const communicationRows = communications.rows;
   const noteRows = notes.rows;
   const interestRows = interests.rows.length
@@ -1157,6 +1228,105 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
       source_type: source,
       cleanup: deleted,
     };
+  });
+}
+
+async function createLeadPurchase(businessId, user, leadId, sourceType, payload) {
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    if (payload.campaign_id) {
+      const campaign = await client.query("select id from campaigns where id = $1 and business_id = $2", [payload.campaign_id, businessId]);
+      if (!campaign.rowCount) throw badRequest("La campana seleccionada no pertenece a este negocio.");
+    }
+    if (payload.branch_id) {
+      const branch = await client.query("select id from branches where id = $1 and business_id = $2", [payload.branch_id, businessId]);
+      if (!branch.rowCount) throw badRequest("La sucursal seleccionada no pertenece a este negocio.");
+    }
+
+    const amount = moneyNumber(payload.sale_amount);
+    if (amount <= 0) throw badRequest("El valor de la compra debe ser mayor a cero.");
+    const source = lead.source_type || String(sourceType || "PLAYER").toUpperCase();
+    const metadata = {
+      ...(payload.metadata || {}),
+      category: payload.category || payload.metadata?.category || null,
+      crm_entry: true,
+      crm_source_type: source,
+      crm_source_id: lead.id,
+      crm_lead_id: lead.lead_id || null,
+      registered_from: "lead_detail",
+    };
+
+    const sale = await client.query(
+      `insert into business_sales
+        (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
+         customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
+         acquisition_source, acquisition_channel, notes, created_at, metadata)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+               coalesce($15::timestamptz, now()), $16::jsonb)
+       returning *`,
+      [
+        businessId,
+        payload.campaign_id || lead.campaign_id || null,
+        payload.customer_name || lead.name || null,
+        payload.customer_phone || lead.phone || null,
+        payload.customer_email || lead.email || null,
+        payload.customer_document_id || lead.document_id || null,
+        payload.product_name || "Compra registrada",
+        amount,
+        payload.currency || "COP",
+        user?.id || null,
+        payload.branch_id || null,
+        payload.acquisition_source || "CRM_LEAD",
+        payload.acquisition_channel || lead.channel || "CRM",
+        payload.notes || null,
+        payload.created_at || null,
+        JSON.stringify(metadata),
+      ]
+    );
+
+    if (source === "MANUAL" && ["", "NEW", "INTERESTED", "CONTACTED", "FOLLOW_UP"].includes(String(lead.stored_status || "").toUpperCase())) {
+      await client.query(
+        "update business_manual_leads set status = 'CONVERTED', updated_at = now() where id = $1 and business_id = $2",
+        [lead.id, businessId]
+      );
+    }
+
+    if (payload.product_name || payload.category) {
+      await client.query(
+        `insert into lead_interests
+          (business_id, lead_id, source_type, source_id, interest_name, source, weight, created_by)
+         values ($1, $2, $3, $4, $5, 'purchase', 24, $6)
+         on conflict (business_id, (coalesce(lead_id, '00000000-0000-0000-0000-000000000000'::uuid)), source_type, (coalesce(source_id, '00000000-0000-0000-0000-000000000000'::uuid)), (lower(interest_name)))
+         do update set weight = greatest(lead_interests.weight, excluded.weight), source = excluded.source, updated_at = now()`,
+        [
+          businessId,
+          lead.lead_id || null,
+          source,
+          lead.id,
+          payload.product_name || payload.category,
+          user?.id || null,
+        ]
+      );
+    }
+
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description,
+         campaign_id, metadata, created_by)
+       values ($1, $2, $3, $4, 'purchase_registered', 'Compra registrada', $5, $6, $7::jsonb, $8)`,
+      [
+        businessId,
+        lead.lead_id || null,
+        source,
+        lead.id,
+        `${payload.product_name || "Compra"} por ${amount.toLocaleString("es-CO")} ${payload.currency || "COP"}.`,
+        payload.campaign_id || lead.campaign_id || null,
+        JSON.stringify({ sale_id: sale.rows[0].id, product_name: payload.product_name || null, sale_amount: amount }),
+        user?.id || null,
+      ]
+    );
+
+    return sale.rows[0];
   });
 }
 

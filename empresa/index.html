@@ -2116,6 +2116,42 @@
                     </div>
                     <div class="asset-grid" id="campaignAssetsGrid"></div>
                   </article>
+
+                  <article class="surface-card campaign-affiliates-card">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Afiliados de campaña</span>
+                        <h3 class="subhead">Red de recomendación asociada</h3>
+                      </div>
+                    </div>
+                    <form class="campaign-affiliate-form" id="campaignAffiliateForm">
+                      <label>
+                        <span>Afiliado</span>
+                        <select id="campaignAffiliateSelect"></select>
+                      </label>
+                      <label>
+                        <span>Nota interna</span>
+                        <input id="campaignAffiliateNotesInput" type="text" maxlength="500" placeholder="Ej: promotor principal, tienda norte...">
+                      </label>
+                      <button class="solid-button" id="campaignAffiliateAssignButton" type="submit">Asociar</button>
+                      <p class="form-message" id="campaignAffiliateMessage"></p>
+                    </form>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Afiliado</th>
+                            <th>Tickets</th>
+                            <th>Redimidos</th>
+                            <th>Ventas</th>
+                            <th>Revenue</th>
+                            <th>Accion</th>
+                          </tr>
+                        </thead>
+                        <tbody id="campaignAffiliatesTable"></tbody>
+                      </table>
+                    </div>
+                  </article>
                 </section>
 
                 <article class="surface-card data-table-card">
@@ -3258,7 +3294,7 @@
                 <video id="affiliateFinderVideo" autoplay playsinline muted></video>
                 <div class="affiliate-finder-overlay"><div></div></div>
               </div>
-              <p class="affiliate-card-note" id="affiliateFinderMessage">Busca o escanea el carnet del afiliado para abrir su ficha y sumar puntos.</p>
+              <p class="affiliate-card-note" id="affiliateFinderMessage">Busca o escanea el carnet del afiliado para abrir su ficha y registrar una compra atribuida.</p>
               <div class="affiliate-finder-results" id="affiliateFinderResults"></div>
             </article>
 
@@ -3334,12 +3370,25 @@
                 </div>
                 <div class="affiliate-card-actions">
                   <label>
+                    <span>Campaña de la compra</span>
+                    <select id="affiliatePurchaseCampaignInput"></select>
+                  </label>
+                  <label>
+                    <span>Producto / servicio</span>
+                    <input id="affiliatePurchaseProductInput" type="text" placeholder="Ej: Compra en tienda">
+                  </label>
+                  <label>
                     <span>Monto de compra</span>
                     <input id="affiliatePurchaseAmountInput" type="number" min="0" step="1000" placeholder="Ej: 25000">
                   </label>
-                  <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Sumar puntos</button>
+                  <label class="span-2">
+                    <span>Nota interna</span>
+                    <input id="affiliatePurchaseNotesInput" type="text" placeholder="Ej: Venta atribuida por recomendación">
+                  </label>
+                  <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Registrar compra</button>
                   <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Abrir carnet digital</button>
                   <button class="ghost-button" id="copyAffiliateCardLinkButton" type="button" disabled>Copiar link</button>
+                  <p class="form-message span-2" id="affiliatePurchaseMessage"></p>
                 </div>
               </article>
 

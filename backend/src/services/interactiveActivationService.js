@@ -319,10 +319,14 @@ function publicActivation(row, questions = [], scoreRules = [], touchZones = [])
 
 function redactScratchRewardConfig(config = {}) {
   const choices = Array.isArray(config.choices)
-    ? config.choices.map((_choice, index) => ({
-      value: `scratch-${index}`,
-      label: `Casilla ${index + 1}`,
-    }))
+    ? config.choices.map((choice, index) => {
+      const slotKey = choice.value || choice.key || String.fromCharCode(65 + index);
+      return {
+        value: `scratch-${index}`,
+        slot_label: String(slotKey).length === 1 ? `Zona ${slotKey}` : `Casilla ${index + 1}`,
+        label: choice.reward_label || choice.benefit_label || choice.label || `Casilla ${index + 1}`,
+      };
+    })
     : [];
   return {
     masked: true,

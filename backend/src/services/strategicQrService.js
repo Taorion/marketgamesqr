@@ -527,7 +527,7 @@ async function createAffiliateReferralQrBatch(businessId, user, body) {
   if (!row) {
     throw badRequest("El afiliado no existe o no esta activo para este negocio.");
   }
-  return createQrBatch(businessId, user, {
+  const result = await createQrBatch(businessId, user, {
     name: `QR recomendacion - ${row.full_name}`,
     description: body.notes || `QR unicos de recomendacion asignados a ${row.full_name}.`,
     quantity: body.quantity,
@@ -555,6 +555,25 @@ async function createAffiliateReferralQrBatch(businessId, user, body) {
       benefit_value: body.benefit?.benefit_value || {},
     },
   });
+  await query(
+    `insert into campaign_affiliates
+      (business_id, campaign_id, affiliate_id, assigned_by_user_id, role, status, notes, metadata)
+     values ($1, $2, $3, $4, 'REFERER', 'ACTIVE', $5, $6::jsonb)
+     on conflict (business_id, campaign_id, affiliate_id)
+     do update set status = 'ACTIVE',
+                   notes = coalesce(excluded.notes, campaign_affiliates.notes),
+                   metadata = campaign_affiliates.metadata || excluded.metadata,
+                   updated_at = now()`,
+    [
+      businessId,
+      body.campaign_id,
+      row.id,
+      user?.id || null,
+      body.notes || null,
+      JSON.stringify({ source: "affiliate_referral_qr_batch", batch_id: result.batch?.id || null }),
+    ]
+  );
+  return result;
 }
 
 async function listQrBatches(businessId, options = {}) {

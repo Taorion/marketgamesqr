@@ -5,6 +5,7 @@ const {
   addLeadInterest,
   createLeadActivation,
   createLeadNote,
+  createLeadPurchase,
   deleteLeadContact,
   deleteLeadInterest,
   getLeadCrmDetail,
@@ -33,6 +34,25 @@ const interestSchema = z.object({
   source: z.enum(["manual", "purchase", "game", "trivia", "campaign", "benefit", "system"]).default("manual"),
   weight: z.number().int().min(1).max(100).default(10),
   source_type: sourceTypeSchema.optional(),
+});
+
+const purchaseSchema = z.object({
+  source_type: sourceTypeSchema.optional(),
+  product_name: z.string().trim().min(2).max(180),
+  sale_amount: z.number().positive(),
+  currency: z.string().trim().min(2).max(8).default("COP"),
+  category: z.string().trim().max(160).optional().nullable(),
+  campaign_id: z.string().uuid().optional().nullable(),
+  branch_id: z.string().uuid().optional().nullable(),
+  acquisition_source: z.string().trim().max(120).optional().nullable(),
+  acquisition_channel: z.string().trim().max(120).optional().nullable(),
+  notes: z.string().trim().max(1200).optional().nullable(),
+  created_at: z.string().datetime().optional().nullable(),
+  customer_name: z.string().trim().max(180).optional().nullable(),
+  customer_phone: z.string().trim().max(40).optional().nullable(),
+  customer_email: z.string().trim().email().max(180).optional().nullable(),
+  customer_document_id: z.string().trim().max(80).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 const activationSchema = z.object({
@@ -134,6 +154,22 @@ async function addInterest(req, res, next) {
   }
 }
 
+async function addPurchase(req, res, next) {
+  try {
+    const body = validate(purchaseSchema, req.body);
+    const sale = await createLeadPurchase(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      body.source_type || String(req.query.source_type || "PLAYER").toUpperCase(),
+      body
+    );
+    res.status(201).json({ sale });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function removeInterest(req, res, next) {
   try {
     res.json(await deleteLeadInterest(
@@ -178,6 +214,7 @@ async function sendActivation(req, res, next) {
 
 module.exports = {
   addInterest,
+  addPurchase,
   createNote,
   deleteContact,
   leadDetail,

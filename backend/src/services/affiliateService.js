@@ -291,6 +291,114 @@ async function listAffiliateLedger(businessId, affiliateId, user) {
   return result.rows;
 }
 
+async function assertCampaignOwnership(businessId, campaignId) {
+  const result = await query(
+    "select id, name from campaigns where id = $1 and business_id = $2",
+    [campaignId, businessId]
+  );
+  const campaign = result.rows[0];
+  if (!campaign) throw notFound("Campaign not found.");
+  return campaign;
+}
+
+async function listCampaignAffiliates(businessId, campaignId, user) {
+  ensureBusinessAccess(user, businessId);
+  await assertCampaignOwnership(businessId, campaignId);
+  const result = await query(
+    `select
+       ca.*,
+       a.full_name,
+       a.document_id,
+       a.phone,
+       a.email,
+       a.qr_token,
+       a.status as affiliate_status,
+       u.full_name as assigned_by_name,
+       coalesce(q.generated_count, 0)::int as referral_tickets_generated,
+       coalesce(q.redeemed_count, 0)::int as referral_tickets_redeemed,
+       coalesce(s.sales_count, 0)::int as referral_sales_count,
+       coalesce(s.revenue, 0)::numeric as referral_revenue,
+       coalesce(s.points_awarded, 0)::int as referral_points_awarded,
+       coalesce(l.ledger_points, 0)::int as ledger_points
+     from campaign_affiliates ca
+     join affiliates a on a.id = ca.affiliate_id and a.business_id = ca.business_id
+     left join app_users u on u.id = ca.assigned_by_user_id
+     left join lateral (
+       select count(*)::int as generated_count,
+              count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_count
+       from qr_codes q
+       where q.business_id = ca.business_id
+         and q.campaign_id = ca.campaign_id
+         and q.affiliate_id = ca.affiliate_id
+     ) q on true
+     left join lateral (
+       select count(*)::int as sales_count,
+              coalesce(sum(bs.sale_amount), 0)::numeric as revenue,
+              coalesce(sum(bs.referral_points_awarded), 0)::int as points_awarded
+       from business_sales bs
+       left join qr_codes qrs on qrs.id = bs.qr_code_id
+       where bs.business_id = ca.business_id
+         and coalesce(bs.campaign_id, qrs.campaign_id) = ca.campaign_id
+         and coalesce(bs.referred_affiliate_id, qrs.affiliate_id) = ca.affiliate_id
+     ) s on true
+     left join lateral (
+       select coalesce(sum(points_awarded), 0)::int as ledger_points
+       from affiliate_point_ledger l
+       where l.business_id = ca.business_id and l.affiliate_id = ca.affiliate_id
+     ) l on true
+     where ca.business_id = $1 and ca.campaign_id = $2
+     order by ca.created_at desc`,
+    [businessId, campaignId]
+  );
+  return result.rows;
+}
+
+async function assignAffiliateToCampaign(businessId, campaignId, affiliateId, user, body = {}) {
+  ensureBusinessAccess(user, businessId);
+  await assertCampaignOwnership(businessId, campaignId);
+  const affiliate = await query(
+    "select id from affiliates where id = $1 and business_id = $2 and status <> 'DELETED'",
+    [affiliateId, businessId]
+  );
+  if (!affiliate.rowCount) throw notFound("Affiliate not found.");
+  const result = await query(
+    `insert into campaign_affiliates
+      (business_id, campaign_id, affiliate_id, assigned_by_user_id, role, status, notes, metadata)
+     values ($1, $2, $3, $4, $5, 'ACTIVE', $6, $7::jsonb)
+     on conflict (business_id, campaign_id, affiliate_id)
+     do update set status = 'ACTIVE',
+                   role = excluded.role,
+                   notes = excluded.notes,
+                   assigned_by_user_id = excluded.assigned_by_user_id,
+                   metadata = campaign_affiliates.metadata || excluded.metadata,
+                   updated_at = now()
+     returning *`,
+    [
+      businessId,
+      campaignId,
+      affiliateId,
+      user?.id || null,
+      body.role || "REFERER",
+      body.notes || null,
+      JSON.stringify(body.metadata || {}),
+    ]
+  );
+  return result.rows[0];
+}
+
+async function removeAffiliateFromCampaign(businessId, campaignId, affiliateId, user) {
+  ensureBusinessAccess(user, businessId);
+  await assertCampaignOwnership(businessId, campaignId);
+  const result = await query(
+    `delete from campaign_affiliates
+     where business_id = $1 and campaign_id = $2 and affiliate_id = $3
+     returning id`,
+    [businessId, campaignId, affiliateId]
+  );
+  if (!result.rowCount) throw notFound("Campaign affiliate not found.");
+  return { removed: true, affiliate_id: affiliateId, campaign_id: campaignId };
+}
+
 async function deleteAffiliate(businessId, affiliateId, user) {
   ensureBusinessAccess(user, businessId);
   const result = await query(
@@ -307,12 +415,15 @@ async function deleteAffiliate(businessId, affiliateId, user) {
 }
 
 module.exports = {
+  assignAffiliateToCampaign,
   affiliateDigitalCardUrl,
   createAffiliate,
   deleteAffiliate,
   getAffiliate,
   getPublicAffiliateCard,
+  listCampaignAffiliates,
   listAffiliates,
   listAffiliateLedger,
+  removeAffiliateFromCampaign,
   awardAffiliatePoints,
 };

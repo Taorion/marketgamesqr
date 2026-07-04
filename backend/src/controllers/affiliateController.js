@@ -1,12 +1,15 @@
 const { z } = require("zod");
 const {
+  assignAffiliateToCampaign,
   createAffiliate,
   deleteAffiliate,
   getAffiliate,
   listAffiliates,
+  listCampaignAffiliates,
   listAffiliateLedger,
   awardAffiliatePoints,
   getPublicAffiliateCard,
+  removeAffiliateFromCampaign,
 } = require("../services/affiliateService");
 const { validate } = require("../utils/validators");
 const { query } = require("../config/db");
@@ -28,6 +31,13 @@ const createAffiliateSchema = z.object({
 const awardPointsSchema = z.object({
   amount: z.number().positive(),
   reason: z.string().trim().max(80).optional().nullable(),
+  metadata: z.record(z.any()).optional().nullable(),
+});
+
+const campaignAffiliateSchema = z.object({
+  affiliate_id: z.string().uuid(),
+  role: z.string().trim().max(80).optional().nullable(),
+  notes: z.string().trim().max(500).optional().nullable(),
   metadata: z.record(z.any()).optional().nullable(),
 });
 
@@ -79,6 +89,38 @@ async function awardBusinessAffiliatePoints(req, res, next) {
   }
 }
 
+async function listBusinessCampaignAffiliates(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const affiliates = await listCampaignAffiliates(req.params.id, req.params.campaignId, req.user);
+    res.json({ affiliates });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function assignBusinessCampaignAffiliate(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(campaignAffiliateSchema, req.body);
+    const assignment = await assignAffiliateToCampaign(req.params.id, req.params.campaignId, body.affiliate_id, req.user, body);
+    const affiliates = await listCampaignAffiliates(req.params.id, req.params.campaignId, req.user);
+    res.status(201).json({ assignment, affiliates });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function removeBusinessCampaignAffiliate(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const result = await removeAffiliateFromCampaign(req.params.id, req.params.campaignId, req.params.affiliateId, req.user);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function deleteBusinessAffiliate(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
@@ -103,10 +145,13 @@ async function getPublicAffiliateDigitalCard(req, res, next) {
 }
 
 module.exports = {
+  assignBusinessCampaignAffiliate,
   listBusinessAffiliates,
+  listBusinessCampaignAffiliates,
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
   deleteBusinessAffiliate,
+  removeBusinessCampaignAffiliate,
   getPublicAffiliateDigitalCard,
 };

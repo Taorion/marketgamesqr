@@ -228,7 +228,7 @@ function renderExperience() {
   experienceStage.classList.remove("hidden");
   experienceTitle.textContent = currentActivation.activation_label || "Completa la experiencia";
   experienceCopy.textContent = currentActivation.activation_type === "SCRATCH_WIN"
-    ? "Raspa la superficie. El premio real no se muestra hasta completar la dinamica."
+    ? "Raspa una sola zona. Al comenzar, las otras quedan bloqueadas y veras el beneficio seleccionado."
     : currentActivation.activation_type === "OPEN_QUESTION"
     ? "No hay respuesta correcta. Escribe tu opinion o necesidad y el sistema generara el QR configurado."
     : currentActivation.category === "premium"
@@ -404,6 +404,14 @@ function choiceValue(choice, index) {
   return String(choice.value || choice.key || choice.label || choice.profile || index);
 }
 
+function scratchSlotLabel(choice, index) {
+  return String(choice.slot_label || `Casilla ${index + 1}`);
+}
+
+function scratchBenefitLabel(choice, index) {
+  return String(choice.reveal_label || choice.reward_label || choice.benefit_label || choice.label || `Casilla ${index + 1}`);
+}
+
 function renderScratchExperience() {
   const choices = getChoiceOptions();
   const fallbackChoices = choices.length ? choices : [
@@ -415,32 +423,21 @@ function renderScratchExperience() {
 
   experienceBody.innerHTML = `
     <article class="question-card scratch-card">
-      <div class="question-title"><span>?</span><strong>Raspa la superficie para descubrir tu premio.</strong></div>
-      <div class="scratch-surface" id="scratchSurface">
-        <div class="scratch-prize" id="scratchPrize" aria-hidden="true">
-          <span>Premio oculto</span>
-          <strong id="scratchPrizeLabel">Sigue raspando</strong>
-        </div>
-        <canvas id="scratchCanvas" class="scratch-canvas" width="640" height="260" aria-label="Area para raspar el premio"></canvas>
-      </div>
-      <p class="scratch-help" id="scratchHelp">Mantén presionado y mueve el dedo o el mouse para raspar.</p>
-      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR para verlo</button>
-    </article>
-  `;
-
-  experienceBody.innerHTML = `
-    <article class="question-card scratch-card">
       <div class="question-title"><span>?</span><strong>Elige una casilla y raspa solo una superficie.</strong></div>
       <div class="scratch-option-grid">
         ${fallbackChoices.slice(0, 4).map((choice, index) => `
           <div class="scratch-surface" data-scratch-option="${escapeHtml(choiceValue(choice, index))}" data-scratch-index="${index}">
             <div class="scratch-prize" aria-hidden="true">
-              <span>Casilla ${index + 1}</span>
-              <strong>${escapeHtml(choice.label || `Casilla ${index + 1}`)}</strong>
+              <span>${escapeHtml(scratchSlotLabel(choice, index))}</span>
+              <strong>${escapeHtml(scratchBenefitLabel(choice, index))}</strong>
             </div>
             <canvas class="scratch-canvas" width="320" height="220" aria-label="Raspar casilla ${index + 1}"></canvas>
           </div>
         `).join("")}
+      </div>
+      <div class="scratch-selected-result hidden" id="scratchSelectedResult" aria-live="polite">
+        <span id="scratchSelectedZone">Zona seleccionada</span>
+        <strong id="scratchSelectedBenefit">Beneficio pendiente</strong>
       </div>
       <p class="scratch-help" id="scratchHelp">Raspa una sola casilla. Al desbloquearla, las otras quedan cerradas.</p>
       <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR para verlo</button>
@@ -454,25 +451,42 @@ function initScratchCanvases() {
   const surfaces = Array.from(experienceBody.querySelectorAll("[data-scratch-option]"));
   const button = document.getElementById("scratchCompleteButton");
   const help = document.getElementById("scratchHelp");
+  const selectedResult = document.getElementById("scratchSelectedResult");
+  const selectedZone = document.getElementById("scratchSelectedZone");
+  const selectedBenefit = document.getElementById("scratchSelectedBenefit");
   if (!surfaces.length || !button || !help) return;
   let lockedChoice = "";
+
+  const lockSurface = (surface) => {
+    if (lockedChoice && lockedChoice !== surface.dataset.scratchOption) return false;
+    if (!lockedChoice) {
+      lockedChoice = surface.dataset.scratchOption || "";
+      selectedChoice = lockedChoice;
+      surfaces.forEach((item) => {
+        const isSelected = item === surface;
+        item.classList.toggle("is-selected", isSelected);
+        item.classList.toggle("is-disabled", !isSelected);
+        if (!isSelected) item.querySelector("canvas")?.setAttribute("aria-disabled", "true");
+      });
+      const slotText = surface.querySelector(".scratch-prize span")?.textContent?.trim() || "Zona seleccionada";
+      const benefitText = surface.querySelector(".scratch-prize strong")?.textContent?.trim() || "Beneficio seleccionado";
+      if (selectedZone) selectedZone.textContent = slotText;
+      if (selectedBenefit) selectedBenefit.textContent = benefitText;
+      selectedResult?.classList.remove("hidden");
+      help.textContent = "Casilla seleccionada. Las otras quedaron bloqueadas. Termina de raspar para generar tu QR.";
+    }
+    return true;
+  };
 
   surfaces.forEach((surface) => {
     const canvas = surface.querySelector("canvas");
     if (!canvas) return;
     initScratchCanvas(surface, canvas, {
+      onStart: () => lockSurface(surface),
       onUnlock: () => {
-        if (lockedChoice && lockedChoice !== surface.dataset.scratchOption) return;
-        lockedChoice = surface.dataset.scratchOption || "";
-        selectedChoice = lockedChoice;
-        surfaces.forEach((item) => {
-          const isSelected = item === surface;
-          item.classList.toggle("is-selected", isSelected);
-          item.classList.toggle("is-disabled", !isSelected);
-          if (!isSelected) item.querySelector("canvas")?.setAttribute("aria-disabled", "true");
-        });
+        if (!lockSurface(surface)) return;
         button.disabled = false;
-        help.textContent = "Casilla seleccionada. Las otras quedaron bloqueadas. Genera tu QR para recibir ese beneficio.";
+        help.textContent = "Beneficio descubierto. Genera tu QR para recibir exactamente esta zona.";
         setProgress(1, 1);
       },
       isLocked: () => Boolean(lockedChoice && lockedChoice !== surface.dataset.scratchOption),
@@ -544,6 +558,7 @@ function initScratchCanvas(surface, canvas, options = {}) {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (options.isLocked?.()) return;
+    if (options.onStart && options.onStart() === false) return;
     scratching = true;
     canvas.setPointerCapture(event.pointerId);
     scratchAt(event);
