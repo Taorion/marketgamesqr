@@ -1145,6 +1145,9 @@ async function resolveRewardPayload(client, activation, context) {
     return resolvePositionReward(client, activation, context.position_percent);
   }
   if (activation.reward_mode === "by_choice") {
+    if (activation.activation_type === "SCRATCH_WIN") {
+      return rewardFromScratchChoice(activation.reward_config?.choices, context.selected_choice);
+    }
     return rewardFromConfigArray(activation.reward_config?.choices, context.selected_choice, "choice");
   }
   if (activation.reward_mode === "by_answer") {
@@ -1154,6 +1157,24 @@ async function resolveRewardPayload(client, activation, context) {
     return rewardFromConfigArray(activation.reward_config?.profiles, context.result_profile, "profile");
   }
   return fixedRewardPayload(activation.reward_config, "fixed");
+}
+
+function rewardFromScratchChoice(items = [], selectedValue) {
+  if (selectedValue === undefined || selectedValue === null) {
+    throw badRequest("Debes raspar una casilla para generar el beneficio.");
+  }
+  if (!Array.isArray(items) || !items.length) return null;
+  const matchIndex = items.findIndex((item, index) => (
+    String(item.value || item.key || item.label || item.profile) === String(selectedValue)
+    || String(selectedValue) === `scratch-${index}`
+  ));
+  if (matchIndex < 0) return null;
+  const match = items[matchIndex];
+  return fixedRewardPayload({
+    ...match,
+    reward_label: match.benefit_label || match.label || match.reward_label,
+    reward_value: match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` },
+  }, "choice", { selected: selectedValue, scratch_index: matchIndex, scratch: true });
 }
 
 async function resolveScoreReward(client, activation, score) {

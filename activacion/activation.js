@@ -401,11 +401,11 @@ function choiceValue(choice, index) {
 function renderScratchExperience() {
   const choices = getChoiceOptions();
   const fallbackChoices = choices.length ? choices : [
-    { value: "scratch-default", label: "Casilla 1" },
+    { value: "scratch-0", label: "Casilla 1" },
+    { value: "scratch-1", label: "Casilla 2" },
+    { value: "scratch-2", label: "Casilla 3" },
+    { value: "scratch-3", label: "Casilla 4" },
   ];
-  const choiceIndex = Math.floor(Math.random() * fallbackChoices.length);
-  const choice = fallbackChoices[choiceIndex];
-  selectedChoice = choiceValue(choice, choiceIndex);
 
   experienceBody.innerHTML = `
     <article class="question-card scratch-card">
@@ -422,13 +422,59 @@ function renderScratchExperience() {
     </article>
   `;
 
-  window.requestAnimationFrame(() => initScratchCanvas());
+  experienceBody.innerHTML = `
+    <article class="question-card scratch-card">
+      <div class="question-title"><span>?</span><strong>Elige una casilla y raspa solo una superficie.</strong></div>
+      <div class="scratch-option-grid">
+        ${fallbackChoices.slice(0, 4).map((choice, index) => `
+          <div class="scratch-surface" data-scratch-option="${escapeHtml(choiceValue(choice, index))}" data-scratch-index="${index}">
+            <div class="scratch-prize" aria-hidden="true">
+              <span>Casilla ${index + 1}</span>
+              <strong>${escapeHtml(choice.label || `Casilla ${index + 1}`)}</strong>
+            </div>
+            <canvas class="scratch-canvas" width="320" height="220" aria-label="Raspar casilla ${index + 1}"></canvas>
+          </div>
+        `).join("")}
+      </div>
+      <p class="scratch-help" id="scratchHelp">Raspa una sola casilla. Al desbloquearla, las otras quedan cerradas.</p>
+      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR para verlo</button>
+    </article>
+  `;
+  window.requestAnimationFrame(() => initScratchCanvases());
   document.getElementById("scratchCompleteButton").addEventListener("click", () => completeActivation({ selected_choice: selectedChoice }));
 }
 
-function initScratchCanvas() {
-  const canvas = document.getElementById("scratchCanvas");
-  const surface = document.getElementById("scratchSurface");
+function initScratchCanvases() {
+  const surfaces = Array.from(experienceBody.querySelectorAll("[data-scratch-option]"));
+  const button = document.getElementById("scratchCompleteButton");
+  const help = document.getElementById("scratchHelp");
+  if (!surfaces.length || !button || !help) return;
+  let lockedChoice = "";
+
+  surfaces.forEach((surface) => {
+    const canvas = surface.querySelector("canvas");
+    if (!canvas) return;
+    initScratchCanvas(surface, canvas, {
+      onUnlock: () => {
+        if (lockedChoice && lockedChoice !== surface.dataset.scratchOption) return;
+        lockedChoice = surface.dataset.scratchOption || "";
+        selectedChoice = lockedChoice;
+        surfaces.forEach((item) => {
+          const isSelected = item === surface;
+          item.classList.toggle("is-selected", isSelected);
+          item.classList.toggle("is-disabled", !isSelected);
+          if (!isSelected) item.querySelector("canvas")?.setAttribute("aria-disabled", "true");
+        });
+        button.disabled = false;
+        help.textContent = "Casilla seleccionada. Las otras quedaron bloqueadas. Genera tu QR para recibir ese beneficio.";
+        setProgress(1, 1);
+      },
+      isLocked: () => Boolean(lockedChoice && lockedChoice !== surface.dataset.scratchOption),
+    });
+  });
+}
+
+function initScratchCanvas(surface, canvas, options = {}) {
   const button = document.getElementById("scratchCompleteButton");
   const help = document.getElementById("scratchHelp");
   if (!canvas || !surface || !button || !help) return;
@@ -485,23 +531,20 @@ function initScratchCanvas() {
       unlocked = true;
       ctx.clearRect(0, 0, width, height);
       surface.classList.add("is-revealed");
-      document.getElementById("scratchPrize")?.removeAttribute("aria-hidden");
-      const label = document.getElementById("scratchPrizeLabel");
-      if (label) label.textContent = "Premio desbloqueado";
-      button.disabled = false;
-      help.textContent = "Premio desbloqueado. Ahora genera tu QR unico para ver el beneficio.";
-      setProgress(1, 1);
+      surface.querySelector(".scratch-prize")?.removeAttribute("aria-hidden");
+      options.onUnlock?.();
     }
   };
 
   canvas.addEventListener("pointerdown", (event) => {
+    if (options.isLocked?.()) return;
     scratching = true;
     canvas.setPointerCapture(event.pointerId);
     scratchAt(event);
     updateScratchProgress();
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (!scratching) return;
+    if (!scratching || options.isLocked?.()) return;
     event.preventDefault();
     scratchAt(event);
     updateScratchProgress();

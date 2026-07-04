@@ -350,15 +350,35 @@ button:focus-visible {
   gap: 16px;
 }
 
+.scratch-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .scratch-surface {
   position: relative;
-  min-height: 220px;
+  min-height: 180px;
   overflow: hidden;
   border: 1px solid #cbd9d5;
   border-radius: 8px;
   background:
     radial-gradient(circle at 28% 24%, rgba(242, 184, 75, .2), transparent 34%),
     linear-gradient(135deg, #ecfff6, #fff7da);
+}
+
+.scratch-surface.is-selected {
+  border-color: #118568;
+  box-shadow: 0 0 0 3px rgba(17, 133, 104, .15);
+}
+
+.scratch-surface.is-disabled {
+  opacity: .54;
+  filter: grayscale(.35);
+}
+
+.scratch-surface.is-disabled .scratch-canvas {
+  pointer-events: none;
 }
 
 .scratch-prize {
@@ -659,7 +679,8 @@ button:focus-visible {
   .participant-grid,
   .answer-grid,
   .choice-grid,
-  .reveal-grid {
+  .reveal-grid,
+  .scratch-option-grid {
     grid-template-columns: 1fr;
   }
 

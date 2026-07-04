@@ -7420,8 +7420,10 @@ function collectFlatChoiceOptions(type) {
         label: input.value.trim(),
         image_data_url: imageDataUrl || null,
         reward_type: triviaBenefitTypeInput.value,
-        reward_label: triviaBenefitLabelInput.value.trim(),
-        reward_value: parseJsonObject(triviaBenefitValueInput.value),
+        reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
+        reward_value: type === "SCRATCH_DIGITAL"
+          ? { ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }
+          : parseJsonObject(triviaBenefitValueInput.value),
       };
     })
     .filter((item) => item.label);
@@ -8212,6 +8214,10 @@ function validateTriviaLauncherForm() {
   }
   if (isFlatChoiceActivation(type)) {
     const choices = collectFlatChoiceOptions(type);
+    if (type === "SCRATCH_DIGITAL" && choices.length !== 4) {
+      setInlineMessage(triviaLauncherMessage, "Configura las cuatro zonas del Raspa digital.", "error");
+      return null;
+    }
     if (choices.length < 2) {
       setInlineMessage(triviaLauncherMessage, "Configura al menos dos opciones para esta activación.", "error");
       return null;
