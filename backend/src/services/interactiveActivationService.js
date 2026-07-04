@@ -790,6 +790,8 @@ async function startInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     assertRequiredCaptureFields(activation, body);
+    const existingReward = await existingRewardResponseForIdentity(client, activation, body);
+    if (existingReward) return existingReward;
     await assertDuplicateParticipant(client, activation, body);
     const gameSessionToken = createSecureToken();
     const player = await createPlayer(client, activation, body, { status: "started" });
@@ -823,6 +825,10 @@ async function completeInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
+    if (!body.participant_id) {
+      const existingReward = await existingRewardResponseForIdentity(client, activation, body);
+      if (existingReward) return existingReward;
+    }
     const participant = body.participant_id
       ? await lockParticipant(client, activation, body.participant_id)
       : await createParticipantInsideCompletion(client, activation, body);
@@ -894,6 +900,52 @@ async function completeInteractiveParticipant(slug, body) {
       credit_account: reward.credit_account,
     };
   });
+}
+
+async function existingRewardResponseForIdentity(client, activation, body) {
+  const document = body.document || body.document_id || null;
+  const email = body.email || null;
+  const phone = body.phone || null;
+  if (!document && !email && !phone) return null;
+  const result = await client.query(
+    `select r.*, q.token as qr_token_value, q.status as qr_status, q.expires_at as qr_expires_at,
+            p.id as participant_id, p.status as participant_status, p.score, p.result_profile
+     from interactive_activation_participants p
+     join interactive_activation_rewards r on r.participant_id = p.id
+     join qr_codes q on q.id = r.qr_code_id
+     where p.activation_id = $1
+       and p.company_id = $2
+       and r.status <> 'cancelled'
+       and q.status = 'ACTIVE'
+       and (q.expires_at is null or q.expires_at > now())
+       and (
+         ($3::text is not null and p.document = $3)
+         or ($4::text is not null and lower(p.email) = lower($4))
+         or ($5::text is not null and p.phone = $5)
+       )
+     order by r.created_at desc
+     limit 1`,
+    [activation.id, activation.company_id, document, email, phone]
+  );
+  const reward = result.rows[0];
+  if (!reward) return null;
+  const validatorUrl = buildValidatorUrl(reward.qr_token_value || reward.qr_token);
+  return {
+    participant: {
+      id: reward.participant_id,
+      status: reward.participant_status || "rewarded",
+      score: reward.score || null,
+      result_profile: reward.result_profile || null,
+    },
+    rewarded: true,
+    recovered: true,
+    message: "QR recuperado. Ya habias generado este beneficio; no se desconto otro ticket.",
+    reward,
+    qr_code: { id: reward.qr_code_id, token: reward.qr_token_value || reward.qr_token, status: reward.qr_status },
+    validator_url: validatorUrl,
+    qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
+    credit_account: null,
+  };
 }
 
 async function lockActivationBySlug(client, slug) {

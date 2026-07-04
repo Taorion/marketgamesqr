@@ -206,6 +206,12 @@ async function startGameSession() {
       method: "POST",
       body: JSON.stringify(participantPayload()),
     });
+    if (data.rewarded) {
+      participantForm.classList.add("hidden");
+      setStatus(data.message || "QR recuperado.", "success");
+      await renderResult(data);
+      return;
+    }
     participant = data.participant;
     gameSessionToken = data.game_session_token;
     participantForm.classList.add("hidden");
