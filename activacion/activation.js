@@ -132,7 +132,9 @@ function renderActivation(activation) {
   currentActivation = activation;
   businessName.textContent = activation.business?.name || "MarketGames RMS";
   activationTitle.textContent = activation.title;
-  activationDescription.textContent = activation.description || "Deja tus datos y completa la experiencia para desbloquear tu QR.";
+  activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
+    ? "Registra tus datos y raspa la superficie para descubrir el premio."
+    : activation.description || "Deja tus datos y completa la experiencia para desbloquear tu QR.";
   document.title = `${activation.title} | Activacion MarketGames`;
   card.classList.toggle("is-premium", isPremium(activation));
   syncCaptureRequirements(activation);
@@ -141,7 +143,12 @@ function renderActivation(activation) {
     setStatus("Esta activacion no esta activa en este momento.", "error");
     return;
   }
-  setStatus("Primero registra tus datos. Luego completa la experiencia para obtener tu beneficio.", "success");
+  setStatus(
+    activation.activation_type === "SCRATCH_WIN"
+      ? "Primero registra tus datos. Luego raspa para descubrir tu premio."
+      : "Primero registra tus datos. Luego completa la experiencia para obtener tu beneficio.",
+    "success"
+  );
   participantForm.classList.remove("hidden");
   setProgress(0, 2);
 }
@@ -214,7 +221,9 @@ async function startGameSession() {
 function renderExperience() {
   experienceStage.classList.remove("hidden");
   experienceTitle.textContent = currentActivation.activation_label || "Completa la experiencia";
-  experienceCopy.textContent = currentActivation.activation_type === "OPEN_QUESTION"
+  experienceCopy.textContent = currentActivation.activation_type === "SCRATCH_WIN"
+    ? "Raspa la superficie. El premio real no se muestra hasta completar la dinamica."
+    : currentActivation.activation_type === "OPEN_QUESTION"
     ? "No hay respuesta correcta. Escribe tu opinion o necesidad y el sistema generara el QR configurado."
     : currentActivation.category === "premium"
     ? "Esta experiencia esta disenada como atencion personalizada. Al completar se generara el pase configurado."
@@ -392,25 +401,24 @@ function choiceValue(choice, index) {
 function renderScratchExperience() {
   const choices = getChoiceOptions();
   const fallbackChoices = choices.length ? choices : [
-    { value: "scratch-default", label: currentActivation.reward_config?.reward_label || "Beneficio desbloqueado" },
+    { value: "scratch-default", label: "Casilla 1" },
   ];
   const choiceIndex = Math.floor(Math.random() * fallbackChoices.length);
   const choice = fallbackChoices[choiceIndex];
-  const prizeLabel = choice.reward_label || choice.benefit_label || choice.label || "Beneficio desbloqueado";
   selectedChoice = choiceValue(choice, choiceIndex);
 
   experienceBody.innerHTML = `
     <article class="question-card scratch-card">
-      <div class="question-title"><span>?</span><strong>Raspa la superficie para descubrir tu beneficio.</strong></div>
+      <div class="question-title"><span>?</span><strong>Raspa la superficie para descubrir tu premio.</strong></div>
       <div class="scratch-surface" id="scratchSurface">
         <div class="scratch-prize" id="scratchPrize" aria-hidden="true">
-          <span>Tu beneficio</span>
-          <strong>${escapeHtml(prizeLabel)}</strong>
+          <span>Premio oculto</span>
+          <strong id="scratchPrizeLabel">Sigue raspando</strong>
         </div>
-        <canvas id="scratchCanvas" class="scratch-canvas" width="640" height="260" aria-label="Area para raspar el beneficio"></canvas>
+        <canvas id="scratchCanvas" class="scratch-canvas" width="640" height="260" aria-label="Area para raspar el premio"></canvas>
       </div>
       <p class="scratch-help" id="scratchHelp">Mantén presionado y mueve el dedo o el mouse para raspar.</p>
-      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR</button>
+      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR para verlo</button>
     </article>
   `;
 
@@ -450,7 +458,7 @@ function initScratchCanvas() {
   ctx.textAlign = "center";
   ctx.fillText("RASPA AQUI", width / 2, height / 2 - 4);
   ctx.font = "700 13px Inter, sans-serif";
-  ctx.fillText("para descubrir tu beneficio", width / 2, height / 2 + 24);
+  ctx.fillText("para descubrir tu premio", width / 2, height / 2 + 24);
 
   let scratching = false;
   let unlocked = false;
@@ -478,8 +486,10 @@ function initScratchCanvas() {
       ctx.clearRect(0, 0, width, height);
       surface.classList.add("is-revealed");
       document.getElementById("scratchPrize")?.removeAttribute("aria-hidden");
+      const label = document.getElementById("scratchPrizeLabel");
+      if (label) label.textContent = "Premio desbloqueado";
       button.disabled = false;
-      help.textContent = "Beneficio descubierto. Ahora genera tu QR unico.";
+      help.textContent = "Premio desbloqueado. Ahora genera tu QR unico para ver el beneficio.";
       setProgress(1, 1);
     }
   };

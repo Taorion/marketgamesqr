@@ -291,8 +291,13 @@ function normalizeCaptureConfig(config = {}) {
 
 function publicActivation(row, questions = [], scoreRules = [], touchZones = []) {
   const mapped = mapActivation(row);
+  const scratchWin = row.activation_type === "SCRATCH_WIN";
   return {
     ...mapped,
+    ...(scratchWin ? {
+      description: "Registra tus datos y raspa la superficie para descubrir el premio.",
+      reward_config: redactScratchRewardConfig(mapped.reward_config),
+    } : {}),
     business: {
       id: row.company_id,
       name: row.business_name,
@@ -306,9 +311,23 @@ function publicActivation(row, questions = [], scoreRules = [], touchZones = [])
       required: question.required,
       order_index: question.order_index,
     })),
-    score_rewards: scoreRules.map(mapScoreRule),
-    touch_zones: touchZones.map(mapTouchZone),
+    score_rewards: scratchWin ? [] : scoreRules.map(mapScoreRule),
+    touch_zones: scratchWin ? [] : touchZones.map(mapTouchZone),
     active: row.status === "active" && (!row.starts_at || new Date(row.starts_at) <= new Date()) && (!row.ends_at || new Date(row.ends_at) > new Date()),
+  };
+}
+
+function redactScratchRewardConfig(config = {}) {
+  const choices = Array.isArray(config.choices)
+    ? config.choices.map((_choice, index) => ({
+      value: `scratch-${index}`,
+      label: `Casilla ${index + 1}`,
+    }))
+    : [];
+  return {
+    masked: true,
+    reveal_on_complete: true,
+    ...(choices.length ? { choices } : {}),
   };
 }
 
@@ -1024,7 +1043,7 @@ async function createPlayer(client, activation, body, metadata = {}) {
     [
       activation.company_id,
       activation.campaign_id || null,
-      await requiredGameId(client, activation.company_id),
+      await defaultGameId(client, activation.company_id),
       body.name || null,
       body.email || null,
       body.phone || null,
@@ -1185,7 +1204,10 @@ async function resolvePositionReward(client, activation, positionPercent) {
 
 function rewardFromConfigArray(items = [], selectedValue, source) {
   if (!Array.isArray(items) || !items.length || selectedValue === undefined || selectedValue === null) return null;
-  const match = items.find((item) => String(item.value || item.key || item.label || item.profile) === String(selectedValue));
+  const match = items.find((item, index) => (
+    String(item.value || item.key || item.label || item.profile) === String(selectedValue)
+    || String(selectedValue) === `scratch-${index}`
+  ));
   if (!match) return null;
   return fixedRewardPayload(match, source, { selected: selectedValue });
 }
@@ -1245,7 +1267,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     [
       activation.company_id,
       activation.campaign_id || null,
-      await requiredGameId(client, activation.company_id),
+      await defaultGameId(client, activation.company_id),
       participant.player_id || null,
       jsonParam({
         activation_id: activation.id,
@@ -1266,7 +1288,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     [
       activation.company_id,
       activation.campaign_id || null,
-      await requiredGameId(client, activation.company_id),
+      await defaultGameId(client, activation.company_id),
       participant.player_id || null,
       questionnaireResult.rows[0].id,
       token,
