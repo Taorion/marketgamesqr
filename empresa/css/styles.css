@@ -11132,6 +11132,68 @@ body.chart-focus-open .command-center {
   margin: 14px 0;
 }
 
+.lead-segment-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lead-segment-head {
+  display: grid;
+  gap: 3px;
+}
+
+.lead-segment-head strong {
+  font-size: 17px;
+}
+
+.lead-segment-head small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.lead-segment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.lead-segment-row {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.lead-segment-row:hover {
+  border-color: rgba(111, 251, 190, 0.32);
+  background: rgba(111, 251, 190, 0.07);
+}
+
+.lead-segment-row span {
+  min-width: 0;
+}
+
+.lead-segment-row strong,
+.lead-segment-row small {
+  display: block;
+}
+
+.lead-segment-row small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .lead-attention-card {
   min-width: 0;
   display: grid;

@@ -288,6 +288,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
          coalesce(q.benefits_received, 0)::int as benefits_received,
+         q.active_ticket_qr_id,
          coalesce(t.games_played, 0)::int + coalesce(ls.score_events, 0)::int as games_played,
          coalesce(t.score_total, 0)::int + coalesce(ls.score_total, 0)::int as score_total,
          coalesce(t.score_average, 0)::numeric as score_average,
@@ -330,6 +331,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
                 count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
                 count(*)::int as benefits_received,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
                 max(q.created_at) as last_ticket_at
          from qr_codes q
          where q.business_id = p.business_id and q.player_id = p.id
@@ -409,14 +411,15 @@ async function listLeadCrmRows(businessId, filters = {}) {
          s.last_purchase_at,
          coalesce(s.top_product, ml.company) as top_product,
          s.top_category,
-         0::int as active_tickets,
-         0::int as redeemed_tickets,
-         0::int as benefits_received,
+         coalesce(q.active_tickets, 0)::int as active_tickets,
+         coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
+         coalesce(q.benefits_received, 0)::int as benefits_received,
+         q.active_ticket_qr_id,
          0::int as games_played,
          0::int as score_total,
          0::numeric as score_average,
          0::int as best_score,
-         greatest(ml.created_at, coalesce(s.last_purchase_at, ml.created_at)) as last_interaction_at,
+         greatest(ml.created_at, coalesce(s.last_purchase_at, ml.created_at), coalesce(q.last_ticket_at, ml.created_at)) as last_interaction_at,
          0::int as activation_count,
          null::uuid as affiliate_id,
          null::text as affiliate_code,
@@ -437,6 +440,18 @@ async function listLeadCrmRows(businessId, filters = {}) {
              or (nullif(ml.email, '') is not null and lower(bs.customer_email) = lower(ml.email))
              or (bs.metadata->>'crm_source_type' = 'MANUAL' and bs.metadata->>'crm_source_id' = ml.id::text))
        ) s on true
+       left join lateral (
+         select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
+                count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
+                count(*)::int as benefits_received,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
+                max(q.created_at) as last_ticket_at
+         from lead_activations la
+         join qr_codes q on q.id = la.qr_code_id and q.business_id = la.business_id
+         where la.business_id = ml.business_id
+           and la.source_type = 'MANUAL'
+           and la.source_id = ml.id
+       ) q on true
        where ml.business_id = $1
      ),
      affiliate_rows as (
@@ -468,6 +483,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
          coalesce(q.benefits_received, 0)::int as benefits_received,
+         q.active_ticket_qr_id,
          0::int as games_played,
          coalesce(fa.points_total, 0)::int as score_total,
          0::numeric as score_average,
@@ -517,6 +533,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
                 count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
                 count(*)::int as benefits_received,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
                 max(q.created_at) as last_ticket_at
          from qr_codes q
          where q.business_id = fa.business_id and q.affiliate_id = fa.id

@@ -544,6 +544,7 @@ const customerAcquisitionCurrencyInput = document.getElementById("customerAcquis
 const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
 const customerAcquisitionCustomerLookupInput = document.getElementById("customerAcquisitionCustomerLookupInput");
+const customerAcquisitionCustomerSelect = document.getElementById("customerAcquisitionCustomerSelect");
 const customerAcquisitionNameInput = document.getElementById("customerAcquisitionNameInput");
 const customerAcquisitionDocumentInput = document.getElementById("customerAcquisitionDocumentInput");
 const customerAcquisitionPhoneInput = document.getElementById("customerAcquisitionPhoneInput");
@@ -6754,7 +6755,6 @@ function salesCustomerIdentity(row = {}) {
 }
 
 function salesCustomerRows() {
-  const seen = new Set();
   const rows = [
     ...(state.leadCrmRows || []).map((item) => ({
       id: item.id,
@@ -6764,9 +6764,10 @@ function salesCustomerRows() {
       email: item.email,
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      purchase_count: Number(item.purchase_count || 0),
       is_affiliate: Boolean(item.is_affiliate),
       affiliate_id: item.affiliate_id || null,
-      source: item.source_type || "CRM",
+      source: Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead CRM",
     })),
     ...(state.contactFeed || []).map((item) => ({
       id: item.id,
@@ -6788,17 +6789,50 @@ function salesCustomerRows() {
       email: item.email,
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      purchase_count: 1,
       is_affiliate: Boolean(item.referred_affiliate_id),
       affiliate_id: item.referred_affiliate_id || null,
-      source: "Venta previa",
+      source: "Cliente",
+    })),
+    ...(state.affiliates || []).map((item) => ({
+      id: item.id,
+      name: item.full_name,
+      document_id: item.document_id,
+      phone: item.phone,
+      email: item.email,
+      campaign_id: null,
+      campaign_name: "",
+      purchase_count: Number(item.purchase_count || item.sales_count || 0),
+      is_affiliate: true,
+      affiliate_id: item.id,
+      source: "Afiliado",
     })),
   ];
-  return rows.filter((row) => {
+  const byKey = new Map();
+  rows.forEach((row) => {
     const key = salesCustomerIdentity(row);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return row.name || row.document_id || row.phone || row.email;
+    if (!key || !(row.name || row.document_id || row.phone || row.email)) return;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, row);
+      return;
+    }
+    byKey.set(key, {
+      ...existing,
+      ...row,
+      name: existing.name || row.name,
+      document_id: existing.document_id || row.document_id,
+      phone: existing.phone || row.phone,
+      email: existing.email || row.email,
+      campaign_id: existing.campaign_id || row.campaign_id,
+      campaign_name: existing.campaign_name || row.campaign_name,
+      purchase_count: Math.max(Number(existing.purchase_count || 0), Number(row.purchase_count || 0)),
+      is_affiliate: Boolean(existing.is_affiliate || row.is_affiliate),
+      affiliate_id: existing.affiliate_id || row.affiliate_id,
+      source: existing.source === "Cliente" || row.source === "Cliente" ? "Cliente" : (existing.source === "Afiliado" || row.source !== "Afiliado" ? existing.source : row.source),
+    });
   });
+  return Array.from(byKey.values());
 }
 
 function salesCustomerLookupValue(customer = {}) {
@@ -6806,11 +6840,168 @@ function salesCustomerLookupValue(customer = {}) {
   return refs ? `${customer.name || "Cliente"} | ${refs}` : (customer.name || "");
 }
 
+function salesCustomerKey(customer = {}) {
+  return salesCustomerIdentity(customer);
+}
+
+function salesCustomerSearchText(customer = {}) {
+  return [
+    salesCustomerLookupValue(customer),
+    customer.name,
+    customer.document_id,
+    customer.phone,
+    customer.email,
+    customer.campaign_name,
+    customer.source,
+    customer.is_affiliate ? "afiliado" : "",
+  ].map(normalizeInventoryLookup).filter(Boolean).join(" ");
+}
+
+function filteredSalesCustomerRows(filter = customerAcquisitionCustomerLookupInput?.value || "") {
+  const needle = normalizeInventoryLookup(filter);
+  const rows = salesCustomerRows();
+  if (!needle) return rows;
+  return rows.filter((customer) => salesCustomerSearchText(customer).includes(needle));
+}
+
+function salesCustomerSelectLabel(customer = {}) {
+  const flags = [
+    customer.is_affiliate ? "Afiliado" : "",
+    customer.campaign_name || customer.source || "",
+  ].filter(Boolean).join(" · ");
+  return `${salesCustomerLookupValue(customer)}${flags ? ` (${flags})` : ""}`;
+}
+
 function renderSalesCustomerOptions() {
-  if (!salesCustomerOptions) return;
-  salesCustomerOptions.innerHTML = salesCustomerRows()
-    .map((customer) => `<option value="${escapeHtml(salesCustomerLookupValue(customer))}" label="${escapeHtml(customer.campaign_name || customer.source || "Contacto")}"></option>`)
-    .join("");
+  const customers = salesCustomerRows();
+  if (salesCustomerOptions) {
+    salesCustomerOptions.innerHTML = customers
+      .map((customer) => `<option value="${escapeHtml(salesCustomerLookupValue(customer))}" label="${escapeHtml(customer.is_affiliate ? "Afiliado" : customer.campaign_name || customer.source || "Contacto")}"></option>`)
+      .join("");
+  }
+  if (!customerAcquisitionCustomerSelect) return;
+  const current = customerAcquisitionCustomerSelect.value;
+  const filtered = filteredSalesCustomerRows();
+  customerAcquisitionCustomerSelect.innerHTML = [
+    '<option value="">Cliente nuevo / manual</option>',
+    ...filtered.map((customer) => `<option value="${escapeHtml(salesCustomerKey(customer))}">${escapeHtml(salesCustomerSelectLabel(customer))}</option>`),
+  ].join("");
+  if (current && filtered.some((customer) => salesCustomerKey(customer) === current)) {
+    customerAcquisitionCustomerSelect.value = current;
+  }
+}
+
+function findSalesCustomerByKey(key) {
+  const normalizedKey = normalizeInventoryLookup(key);
+  if (!normalizedKey) return null;
+  return salesCustomerRows().find((customer) => salesCustomerKey(customer) === normalizedKey) || null;
+}
+
+function findUniquePartialSalesCustomer(value) {
+  const needle = normalizeInventoryLookup(value);
+  if (!needle) return null;
+  const matches = filteredSalesCustomerRows(needle);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function syncSalesCustomerSelect(customer = {}) {
+  if (!customerAcquisitionCustomerSelect || !customer) return;
+  const key = salesCustomerKey(customer);
+  renderSalesCustomerOptions();
+  if (key) customerAcquisitionCustomerSelect.value = key;
+}
+
+function applySalesCustomer(customerOrValue) {
+  const customer = typeof customerOrValue === "object" && customerOrValue
+    ? customerOrValue
+    : findSalesCustomer(customerOrValue);
+  if (!customer) return false;
+  if (customerAcquisitionCustomerLookupInput) customerAcquisitionCustomerLookupInput.value = salesCustomerLookupValue(customer);
+  syncSalesCustomerSelect(customer);
+  if (customerAcquisitionNameInput) customerAcquisitionNameInput.value = customer.name || "";
+  if (customerAcquisitionDocumentInput) customerAcquisitionDocumentInput.value = customer.document_id || "";
+  if (customerAcquisitionPhoneInput) customerAcquisitionPhoneInput.value = customer.phone || "";
+  if (customerAcquisitionEmailInput) customerAcquisitionEmailInput.value = customer.email || "";
+  if (customerAcquisitionCampaignInput && customer.campaign_id) {
+    customerAcquisitionCampaignInput.value = customer.campaign_id;
+  }
+  const affiliate = syncCustomerAffiliateSelection(customer);
+  if (affiliate) {
+    setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
+  } else {
+    setInlineMessage(customerAcquisitionMessage, "Cliente seleccionado. No tiene afiliado activo asociado, por eso esta venta no sumara puntos de afiliado.", "info");
+  }
+  return true;
+}
+
+function renderSalesCustomerMatchesHint() {
+  if (!customerAcquisitionMessage) return;
+  const search = customerAcquisitionCustomerLookupInput?.value || "";
+  if (!search.trim()) return;
+  const matches = filteredSalesCustomerRows(search);
+  if (matches.length > 1) {
+    setInlineMessage(customerAcquisitionMessage, `${matches.length} clientes coinciden. Selecciona el correcto en el desplegable "Seleccionar cliente".`, "info");
+  } else if (!matches.length) {
+    setInlineMessage(customerAcquisitionMessage, "No hay cliente existente con esa busqueda. Puedes registrarlo como cliente nuevo/manual.", "info");
+  }
+}
+
+function handleSalesCustomerSearchInput() {
+  renderSalesCustomerOptions();
+  renderSalesCustomerMatchesHint();
+}
+
+function handleSalesCustomerSearchCommit() {
+  const value = customerAcquisitionCustomerLookupInput?.value || "";
+  const exact = findSalesCustomer(value);
+  const unique = exact || findUniquePartialSalesCustomer(value);
+  if (unique) {
+    applySalesCustomer(unique);
+    return;
+  }
+  renderSalesCustomerOptions();
+  renderSalesCustomerMatchesHint();
+}
+
+function handleSalesCustomerSelectChange() {
+  const customer = findSalesCustomerByKey(customerAcquisitionCustomerSelect?.value || "");
+  if (!customer) {
+    const autoSelectedId = customerAcquisitionAffiliateInput?.dataset.autoSelectedAffiliateId || "";
+    if (autoSelectedId && customerAcquisitionAffiliateInput?.value === autoSelectedId) {
+      customerAcquisitionAffiliateInput.value = "";
+      customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
+    }
+    return;
+  }
+  applySalesCustomer(customer);
+}
+
+function resolveCustomerBeforeSaleSubmit() {
+  const lookup = String(customerAcquisitionCustomerLookupInput?.value || "").trim();
+  const selectedKey = customerAcquisitionCustomerSelect?.value || "";
+  if (selectedKey) {
+    return Boolean(applySalesCustomer(findSalesCustomerByKey(selectedKey)));
+  }
+  if (!lookup) return true;
+  const exact = findSalesCustomer(lookup);
+  if (exact) return Boolean(applySalesCustomer(exact));
+  const matches = filteredSalesCustomerRows(lookup);
+  if (matches.length === 1) return Boolean(applySalesCustomer(matches[0]));
+  if (matches.length > 1) {
+    setInlineMessage(customerAcquisitionMessage, `Hay ${matches.length} clientes que coinciden con "${lookup}". Selecciona el cliente correcto o borra la busqueda para registrar uno nuevo.`, "error");
+    customerAcquisitionCustomerSelect?.focus();
+    return false;
+  }
+  return true;
+}
+
+function hasCustomerIdentityForSale() {
+  return [
+    customerAcquisitionNameInput?.value,
+    customerAcquisitionDocumentInput?.value,
+    customerAcquisitionPhoneInput?.value,
+    customerAcquisitionEmailInput?.value,
+  ].some((value) => String(value || "").trim());
 }
 
 function findSalesCustomer(value) {
@@ -6862,20 +7053,7 @@ function syncCustomerAffiliateSelection(customer = {}) {
 }
 
 function applySalesCustomerToForm(value) {
-  const customer = findSalesCustomer(value);
-  if (!customer) return false;
-  if (customerAcquisitionNameInput) customerAcquisitionNameInput.value = customer.name || "";
-  if (customerAcquisitionDocumentInput) customerAcquisitionDocumentInput.value = customer.document_id || "";
-  if (customerAcquisitionPhoneInput) customerAcquisitionPhoneInput.value = customer.phone || "";
-  if (customerAcquisitionEmailInput) customerAcquisitionEmailInput.value = customer.email || "";
-  if (customerAcquisitionCampaignInput && customer.campaign_id) {
-    customerAcquisitionCampaignInput.value = customer.campaign_id;
-  }
-  const affiliate = syncCustomerAffiliateSelection(customer);
-  if (affiliate) {
-    setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
-  }
-  return true;
+  return applySalesCustomer(value);
 }
 
 function defaultCustomerSaleItem() {
@@ -7692,6 +7870,12 @@ async function submitSubscriptionAutoRenewal() {
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
+  if (!resolveCustomerBeforeSaleSubmit()) return;
+  if (!hasCustomerIdentityForSale()) {
+    setInlineMessage(customerAcquisitionMessage, "Identifica el cliente antes de registrar la venta: selecciona uno existente o escribe nombre, telefono, correo o cedula.", "error");
+    customerAcquisitionNameInput?.focus();
+    return;
+  }
   const products = customerSaleProductsPayload();
   const saleTotal = products.reduce((sum, product) => sum + Number(product.line_total || 0), 0);
   if (!products.length || saleTotal <= 0) {
@@ -13991,7 +14175,10 @@ function renderLeadCrmTable() {
       <td>
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
-          <button class="ghost-button" type="button" data-lead-action="activation">Activar</button>
+          ${item.active_ticket_qr_id ? `
+            <button class="ghost-button" type="button" data-lead-action="ticket-download">Ticket PNG</button>
+            <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">WhatsApp</button>
+          ` : `<button class="ghost-button" type="button" data-lead-action="activation">Activar</button>`}
           <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
         </div>
       </td>
@@ -14004,6 +14191,12 @@ function renderLeadCrmTable() {
       const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
       if (action === "activation") {
         openLeadActivationModal(leadRef);
+      } else if (action === "ticket-download") {
+        const item = (state.leadCrmRows || []).find((lead) => String(lead.id) === String(leadRef.id) && String(lead.source_type || "PLAYER") === String(leadRef.source_type || "PLAYER"));
+        downloadLeadQr(item?.active_ticket_qr_id);
+      } else if (action === "ticket-whatsapp") {
+        const item = (state.leadCrmRows || []).find((lead) => String(lead.id) === String(leadRef.id) && String(lead.source_type || "PLAYER") === String(leadRef.source_type || "PLAYER"));
+        shareLeadQrWhatsApp(item?.active_ticket_qr_id, item?.phone, item?.name);
       } else if (action === "delete") {
         deleteLeadContact(leadRef, row.querySelector("strong")?.textContent || "este contacto");
       } else {
@@ -14187,10 +14380,30 @@ function renderLeadsView() {
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
   const highPriority = crmRows.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH").length;
   const withoutContact = crmRows.filter((item) => !item.email && !item.phone).length;
-  const attentionQueue = crmRows
-    .slice()
-    .sort((a, b) => Number(b.attention_score || 0) - Number(a.attention_score || 0))
+  const customers = crmRows
+    .filter((item) => Number(item.purchase_count || 0) > 0)
+    .sort((a, b) => Number(b.total_spent || 0) - Number(a.total_spent || 0))
     .slice(0, 4);
+  const leadProbabilityGroups = [
+    {
+      key: "HIGH",
+      title: "Probabilidad alta",
+      meta: "Leads sin compra con ticket activo, activaciones o alta interacción",
+      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "HIGH"),
+    },
+    {
+      key: "MEDIUM",
+      title: "Probabilidad media",
+      meta: "Leads no convertidos con señales parciales",
+      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "MEDIUM"),
+    },
+    {
+      key: "LOW",
+      title: "Probabilidad baja",
+      meta: "Leads con poca información o baja actividad",
+      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "LOW"),
+    },
+  ];
 
   if (leadFeedKpiGrid) {
     leadFeedKpiGrid.innerHTML = [
@@ -14210,18 +14423,49 @@ function renderLeadsView() {
   }
   renderContactCenterSummary(crmRows);
   if (leadAttentionBoard) {
-    leadAttentionBoard.innerHTML = attentionQueue.length
-      ? attentionQueue.map((item, index) => `
-        <button class="lead-attention-card" type="button" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
-          <span class="lead-attention-rank">${index + 1}</span>
-          <span>
-            <strong>${escapeHtml(item.name || "Lead sin nombre")}</strong>
-            <small>${escapeHtml(item.recommended_action || "Revisar ficha comercial.")}</small>
-          </span>
-          <span class="status-chip ${leadPriorityChipClass(item.care_priority)}">${escapeHtml(item.care_priority_label || "Seguimiento")}</span>
-        </button>
-      `).join("")
-      : '<div class="empty-state compact">Sin leads en la cola de atencion actual.</div>';
+    const customerPanel = `
+      <article class="lead-segment-card">
+        <div class="lead-segment-head">
+          <span class="mono-label">Base de clientes</span>
+          <strong>${customers.length ? `${customers.length} visibles` : "Sin compradores visibles"}</strong>
+        </div>
+        <div class="lead-segment-list">
+          ${customers.length ? customers.map((item) => `
+            <button class="lead-segment-row" type="button" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+              <span><strong>${escapeHtml(item.name || "Cliente")}</strong><small>${Number(item.purchase_count || 0)} compras · ${escapeHtml(money(item.total_spent || 0))}</small></span>
+              <span class="status-chip ok">Cliente</span>
+            </button>
+          `).join("") : '<div class="empty-state compact">Los leads convertidos aparecerán aquí como clientes.</div>'}
+        </div>
+      </article>
+    `;
+    const probabilityPanels = leadProbabilityGroups.map((group) => {
+      const rows = group.rows
+        .slice()
+        .sort((a, b) => Number(b.attention_score || 0) - Number(a.attention_score || 0))
+        .slice(0, 4);
+      return `
+        <article class="lead-segment-card">
+          <div class="lead-segment-head">
+            <span class="mono-label">${escapeHtml(group.title)}</span>
+            <strong>${group.rows.length.toLocaleString("es-CO")}</strong>
+            <small>${escapeHtml(group.meta)}</small>
+          </div>
+          <div class="lead-segment-list">
+            ${rows.length ? rows.map((item) => `
+              <button class="lead-segment-row" type="button" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+                <span>
+                  <strong>${escapeHtml(item.name || "Lead sin nombre")}</strong>
+                  <small>${escapeHtml(item.recommended_action || "Revisar ficha comercial.")}</small>
+                </span>
+                <span class="status-chip ${leadPriorityChipClass(item.care_priority)}">${Number(item.attention_score || 0)}</span>
+              </button>
+            `).join("") : '<div class="empty-state compact">Sin leads en esta categoría.</div>'}
+          </div>
+        </article>
+      `;
+    }).join("");
+    leadAttentionBoard.innerHTML = customerPanel + probabilityPanels;
     leadAttentionBoard.querySelectorAll("[data-lead-id]").forEach((button) => {
       button.addEventListener("click", () => openLeadDetail({
         id: button.dataset.leadId,
@@ -16013,13 +16257,17 @@ customerSaleAddItemButton?.addEventListener("click", () => {
   renderCustomerSaleItems();
 });
 customerAcquisitionCustomerLookupInput?.addEventListener("change", () => {
-  applySalesCustomerToForm(customerAcquisitionCustomerLookupInput.value);
+  handleSalesCustomerSearchCommit();
+});
+customerAcquisitionCustomerLookupInput?.addEventListener("input", () => {
+  handleSalesCustomerSearchInput();
 });
 customerAcquisitionCustomerLookupInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
-  applySalesCustomerToForm(customerAcquisitionCustomerLookupInput.value);
+  handleSalesCustomerSearchCommit();
 });
+customerAcquisitionCustomerSelect?.addEventListener("change", handleSalesCustomerSelectChange);
 customerAcquisitionAffiliateInput?.addEventListener("change", () => {
   if (customerAcquisitionAffiliateInput.value !== customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId) {
     customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
