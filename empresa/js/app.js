@@ -2003,6 +2003,17 @@ function parseJsonObject(value) {
   }
 }
 
+function interactiveBaseBenefitLabel(type, activationPayload = {}) {
+  const configured = String(triviaBenefitLabelInput?.value || "").trim();
+  if (configured.length >= 2) return configured;
+  if (type === "SCRATCH_DIGITAL") {
+    const firstChoice = (activationPayload.choices || collectFlatChoiceOptions(type))[0];
+    const firstLabel = String(firstChoice?.reward_label || firstChoice?.label || "").trim();
+    return firstLabel.length >= 2 ? firstLabel : "Beneficio Raspa digital";
+  }
+  return configured || "Beneficio desbloqueado";
+}
+
 function formatDateShort(value) {
   if (!value) return "-";
   return new Date(value).toLocaleDateString("es-CO", {
@@ -7782,6 +7793,13 @@ function setActivationType(type) {
     panel.classList.toggle("active", active);
   });
   renderMinigameSpecificConfig(nextType);
+  if (triviaBenefitLabelInput) {
+    const zoneBasedBenefit = nextType === "SCRATCH_DIGITAL";
+    triviaBenefitLabelInput.required = !zoneBasedBenefit;
+    triviaBenefitLabelInput.placeholder = zoneBasedBenefit
+      ? "Opcional: se usaran los beneficios de cada zona"
+      : "Beneficio desbloqueado por participar";
+  }
   if (nextType === "TRIVIA") {
     if (triviaQuestionCountInput) {
       triviaQuestionCountInput.disabled = false;
@@ -8418,9 +8436,10 @@ function validateActivationParticipantLock() {
 }
 
 function buildInteractiveActivationPayload(type, activationPayload) {
+  const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
   const benefit = {
     reward_type: triviaBenefitTypeInput.value,
-    reward_label: triviaBenefitLabelInput.value.trim(),
+    reward_label: baseBenefitLabel,
     reward_value: parseJsonObject(triviaBenefitValueInput.value),
   };
   const base = {
@@ -8444,7 +8463,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
-      benefit_label: triviaBenefitLabelInput.value.trim(),
+      benefit_label: baseBenefitLabel,
       benefit_value: parseJsonObject(triviaBenefitValueInput.value),
     },
   };

@@ -69,6 +69,13 @@ const strategicBenefitSchema = z.object({
   benefit_value: benefitValueSchema,
 });
 
+const interactiveBenefitSchema = z.object({
+  reward_id: z.string().uuid().optional().nullable(),
+  benefit_type: z.enum(benefitTypes),
+  benefit_label: z.string().trim().min(1).max(160).optional().default("Beneficio desbloqueado"),
+  benefit_value: benefitValueSchema.optional().default({}),
+});
+
 const postSaleQrSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
   sale_amount: z.number().min(0),
@@ -301,7 +308,7 @@ const interactiveActivationCreateSchema = z.object({
   questions: z.array(interactiveQuestionSchema).max(50).optional().default([]),
   score_rewards: z.array(interactiveScoreRewardRuleSchema).max(30).optional().default([]),
   touch_zones: z.array(interactiveTouchRewardZoneSchema).max(30).optional().default([]),
-  benefit: strategicBenefitSchema.optional(),
+  benefit: interactiveBenefitSchema.optional(),
 }).superRefine((body, ctx) => {
   if (body.reward_mode === "by_score" && !body.score_rewards.some((rule) => rule.reward_label)) {
     ctx.addIssue({ code: "custom", path: ["score_rewards"], message: "Configura al menos un rango de score con beneficio." });

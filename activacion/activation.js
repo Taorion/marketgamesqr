@@ -91,9 +91,21 @@ async function api(path, options = {}) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    throw new Error(data.error?.message || "No se pudo completar la solicitud.");
+    throw new Error(apiErrorMessage(data));
   }
   return data;
+}
+
+function apiErrorMessage(data = {}) {
+  const baseMessage = data.error?.message || "No se pudo completar la solicitud.";
+  const fieldErrors = data.error?.details?.fieldErrors || {};
+  const firstField = Object.keys(fieldErrors)[0];
+  const firstMessage = firstField ? fieldErrors[firstField]?.[0] : "";
+  if (firstField && firstMessage) {
+    return `${baseMessage} ${firstField}: ${firstMessage}`;
+  }
+  const formErrors = data.error?.details?.formErrors || [];
+  return formErrors.length ? `${baseMessage} ${formErrors[0]}` : baseMessage;
 }
 
 function setStatus(message, tone = "info") {
