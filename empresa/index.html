@@ -1740,6 +1740,42 @@
                   </div>
                 </article>
 
+                <div class="modal-shell hidden" id="activationShareModal" role="dialog" aria-modal="true" aria-labelledby="activationShareTitle">
+                  <article class="modal-card activation-share-modal-card">
+                    <div class="modal-head">
+                      <div>
+                        <span class="mono-label">Compartir activación</span>
+                        <h3 id="activationShareTitle">Enviar por WhatsApp</h3>
+                      </div>
+                      <button class="icon-button" id="activationShareCloseButton" type="button" aria-label="Cerrar compartir activación"><span class="material-symbols-outlined">close</span></button>
+                    </div>
+                    <div class="activation-share-grid">
+                      <section class="activation-share-panel">
+                        <label class="activation-share-search">
+                          <span>Buscar lead</span>
+                          <div>
+                            <input id="activationShareSearchInput" type="search" placeholder="Nombre, teléfono, email o documento">
+                            <button class="ghost-button" id="activationShareSearchButton" type="button">Buscar</button>
+                          </div>
+                        </label>
+                        <div class="activation-share-lead-list" id="activationShareLeadList"></div>
+                      </section>
+                      <section class="activation-share-panel activation-share-preview">
+                        <div id="activationShareSelectedContact" class="activation-share-selected"></div>
+                        <label class="activation-invite-preview">
+                          <span>Mensaje automatizado</span>
+                          <textarea id="activationShareMessagePreview" rows="7" readonly></textarea>
+                        </label>
+                        <p class="form-message" id="activationShareMessage"></p>
+                        <div class="modal-button-row">
+                          <button class="solid-button" id="activationShareOpenWhatsAppButton" type="button">Abrir WhatsApp</button>
+                          <button class="ghost-button" id="activationShareCopyMessageButton" type="button">Copiar mensaje</button>
+                        </div>
+                      </section>
+                    </div>
+                  </article>
+                </div>
+
                 <article class="surface-card data-table-card">
                   <div class="table-card-head">
                     <div>

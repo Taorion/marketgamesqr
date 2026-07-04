@@ -10323,6 +10323,95 @@ body.chart-focus-open .command-center {
   font: inherit;
 }
 
+#activationShareModal .activation-share-modal-card {
+  width: min(96vw, 840px);
+}
+
+.activation-share-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(300px, 1.1fr);
+  gap: 16px;
+  min-height: 0;
+}
+
+.activation-share-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.activation-share-search {
+  display: grid;
+  gap: 8px;
+}
+
+.activation-share-search > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.activation-share-search div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.activation-share-search input {
+  min-width: 0;
+}
+
+.activation-share-lead-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(420px, 50dvh);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.activation-share-lead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text);
+  background: var(--surface-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.activation-share-lead.active {
+  border-color: #00a676;
+  background: #e9fbf3;
+}
+
+.activation-share-lead strong,
+.activation-share-selected strong {
+  display: block;
+  color: var(--text);
+}
+
+.activation-share-lead small,
+.activation-share-selected small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.activation-share-selected {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-soft);
+}
+
 .activation-row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -10351,6 +10440,14 @@ body.chart-focus-open .command-center {
 }
 
 @media (max-width: 720px) {
+  .activation-share-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activation-share-search div {
+    grid-template-columns: 1fr;
+  }
+
   .season-launch-card {
     grid-template-columns: 1fr;
     padding: 20px;

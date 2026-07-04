@@ -490,6 +490,17 @@ const battleshipShip3Input = document.getElementById("battleshipShip3Input");
 const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
 const triviaLauncherResult = document.getElementById("triviaLauncherResult");
 const triviaLauncherTable = document.getElementById("triviaLauncherTable");
+const activationShareModal = document.getElementById("activationShareModal");
+const activationShareCloseButton = document.getElementById("activationShareCloseButton");
+const activationShareTitle = document.getElementById("activationShareTitle");
+const activationShareSearchInput = document.getElementById("activationShareSearchInput");
+const activationShareSearchButton = document.getElementById("activationShareSearchButton");
+const activationShareLeadList = document.getElementById("activationShareLeadList");
+const activationShareSelectedContact = document.getElementById("activationShareSelectedContact");
+const activationShareMessagePreview = document.getElementById("activationShareMessagePreview");
+const activationShareMessage = document.getElementById("activationShareMessage");
+const activationShareOpenWhatsAppButton = document.getElementById("activationShareOpenWhatsAppButton");
+const activationShareCopyMessageButton = document.getElementById("activationShareCopyMessageButton");
 const productVoteImages = {};
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
@@ -771,6 +782,10 @@ let state = {
   strategicQrHistory: [],
   triviaLaunchers: [],
   currentLauncherActivationId: null,
+  activationShareId: null,
+  activationShareLeads: [],
+  activationShareSelectedKey: "",
+  activationShareLoading: false,
   affiliatesLoaded: false,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
@@ -8297,6 +8312,7 @@ function renderTriviaLaunchers() {
           <div class="activation-row-actions">
             <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
             <button class="ghost-button" type="button" data-copy-activation-invite="${escapeHtml(item.id)}">Copiar mensaje</button>
+            <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Compartir</button>
             <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
           </div>
         </td>
@@ -8324,6 +8340,9 @@ function renderTriviaLaunchers() {
   });
   triviaLauncherTable.querySelectorAll("[data-copy-activation-invite]").forEach((button) => {
     button.addEventListener("click", () => copyActivationInviteMessage(button.dataset.copyActivationInvite));
+  });
+  triviaLauncherTable.querySelectorAll("[data-share-activation]").forEach((button) => {
+    button.addEventListener("click", () => openActivationShareModal(button.dataset.shareActivation));
   });
   triviaLauncherTable.querySelectorAll("[data-activation-status]").forEach((button) => {
     button.addEventListener("click", () => updateActivationStatus(button.dataset.activationStatus, button.dataset.nextStatus));
@@ -8402,10 +8421,11 @@ function activationInviteTemplate(activation = {}) {
     || defaultActivationInviteTemplate(activation);
 }
 
-function activationInviteMessage(activation = {}) {
+function activationInviteMessage(activation = {}, lead = {}) {
   const link = activation.public_url || "{link}";
   const title = activation.title || "esta activacion";
   const business = activation.business?.name || activationBusinessName();
+  const leadName = lead.name || lead.full_name || lead.customer_name || "tu";
   const template = activationInviteTemplate(activation);
   const message = String(template || "")
     .replaceAll("{link}", link)
@@ -8413,6 +8433,9 @@ function activationInviteMessage(activation = {}) {
     .replaceAll("{title}", title)
     .replaceAll("{negocio}", business)
     .replaceAll("{business}", business)
+    .replaceAll("{lead}", leadName)
+    .replaceAll("{nombre}", leadName)
+    .replaceAll("{cliente}", leadName)
     .trim();
   return message.includes(link) ? message : `${message}\n${link}`.trim();
 }
@@ -8421,6 +8444,149 @@ async function copyActivationInviteMessage(id) {
   const activation = activationById(id);
   if (!activation) return;
   const message = activationInviteMessage(activation);
+  try {
+    await navigator.clipboard?.writeText(message);
+    showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
+  } catch {
+    window.alert(message);
+  }
+}
+
+function activationShareLeadKey(lead = {}) {
+  return `${lead.source_type || "PLAYER"}::${lead.id || ""}`;
+}
+
+function selectedActivationShareLead() {
+  return (state.activationShareLeads || [])
+    .find((lead) => activationShareLeadKey(lead) === state.activationShareSelectedKey) || null;
+}
+
+function activationShareContactLine(lead = {}) {
+  return [
+    lead.phone || "Sin telefono",
+    lead.email || "",
+    lead.document_id || "",
+  ].filter(Boolean).join(" | ");
+}
+
+function activationShareWhatsAppUrl(activation, lead) {
+  const phone = whatsappPhoneFromInput(lead?.phone || lead?.whatsapp || lead?.mobile || "");
+  const message = activationInviteMessage(activation, lead || {});
+  return phone
+    ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
+function renderActivationShareModal() {
+  const activation = activationById(state.activationShareId);
+  const leads = state.activationShareLeads || [];
+  const selectedLead = selectedActivationShareLead();
+  if (activationShareTitle) {
+    activationShareTitle.textContent = activation ? `Enviar ${activation.title || "activacion"}` : "Enviar por WhatsApp";
+  }
+  if (activationShareLeadList) {
+    if (state.activationShareLoading) {
+      activationShareLeadList.innerHTML = '<div class="empty-state compact">Cargando leads...</div>';
+    } else {
+      activationShareLeadList.innerHTML = leads.length
+        ? leads.map((lead) => {
+          const key = activationShareLeadKey(lead);
+          const hasPhone = Boolean(whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || ""));
+          return `
+            <button class="activation-share-lead ${key === state.activationShareSelectedKey ? "active" : ""}" type="button" data-activation-share-lead="${escapeHtml(key)}">
+              <span>
+                <strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong>
+                <small>${escapeHtml(activationShareContactLine(lead))}</small>
+              </span>
+              <span class="status-chip ${hasPhone ? "ok" : "pending"}">${hasPhone ? "WhatsApp" : "Sin telefono"}</span>
+            </button>
+          `;
+        }).join("")
+        : '<div class="empty-state compact">Sin leads para esta busqueda.</div>';
+    }
+    activationShareLeadList.querySelectorAll("[data-activation-share-lead]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.activationShareSelectedKey = button.dataset.activationShareLead || "";
+        renderActivationShareModal();
+      });
+    });
+  }
+  const preview = activation ? activationInviteMessage(activation, selectedLead || {}) : "";
+  if (activationShareMessagePreview) activationShareMessagePreview.value = preview;
+  if (activationShareSelectedContact) {
+    activationShareSelectedContact.innerHTML = selectedLead
+      ? `<strong>${escapeHtml(selectedLead.name || "Lead sin nombre")}</strong><small>${escapeHtml(activationShareContactLine(selectedLead))}</small>`
+      : "<strong>Selecciona un lead</strong><small>El mensaje se abrira con el telefono del contacto elegido.</small>";
+  }
+  const hasPhone = Boolean(whatsappPhoneFromInput(selectedLead?.phone || selectedLead?.whatsapp || selectedLead?.mobile || ""));
+  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activation || !selectedLead || !hasPhone;
+  setFormMessage(
+    activationShareMessage,
+    selectedLead && !hasPhone ? "Este lead no tiene telefono. Puedes copiar el mensaje, pero WhatsApp necesita un numero." : "",
+    selectedLead && !hasPhone ? "error" : ""
+  );
+}
+
+async function loadActivationShareLeads(search = "") {
+  state.activationShareLoading = true;
+  renderActivationShareModal();
+  const params = new URLSearchParams();
+  params.set("limit", "30");
+  params.set("offset", "0");
+  if (search) params.set("search", search);
+  try {
+    const data = await apiSafe(`/api/business/leads/crm?${params.toString()}`, { headers: authHeaders() }, { leads: [] });
+    state.activationShareLeads = data.leads || [];
+    const currentExists = state.activationShareLeads.some((lead) => activationShareLeadKey(lead) === state.activationShareSelectedKey);
+    if (!currentExists) {
+      const firstWithPhone = state.activationShareLeads.find((lead) => whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || ""));
+      state.activationShareSelectedKey = firstWithPhone
+        ? activationShareLeadKey(firstWithPhone)
+        : (state.activationShareLeads[0] ? activationShareLeadKey(state.activationShareLeads[0]) : "");
+    }
+  } finally {
+    state.activationShareLoading = false;
+    renderActivationShareModal();
+  }
+}
+
+async function openActivationShareModal(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  state.activationShareId = id;
+  state.activationShareLeads = state.leadCrmRows || [];
+  state.activationShareSelectedKey = "";
+  if (activationShareSearchInput) activationShareSearchInput.value = "";
+  activationShareModal?.classList.remove("hidden");
+  renderActivationShareModal();
+  await loadActivationShareLeads("");
+}
+
+function closeActivationShareModal() {
+  activationShareModal?.classList.add("hidden");
+}
+
+async function searchActivationShareLeads() {
+  await loadActivationShareLeads(String(activationShareSearchInput?.value || "").trim());
+}
+
+function openActivationShareWhatsApp() {
+  const activation = activationById(state.activationShareId);
+  const lead = selectedActivationShareLead();
+  if (!activation || !lead) return;
+  const phone = whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || "");
+  if (!phone) {
+    setFormMessage(activationShareMessage, "Este lead no tiene telefono para abrir WhatsApp.", "error");
+    return;
+  }
+  window.open(activationShareWhatsAppUrl(activation, lead), "_blank", "noopener");
+}
+
+async function copyActivationShareMessage() {
+  const activation = activationById(state.activationShareId);
+  const lead = selectedActivationShareLead();
+  if (!activation) return;
+  const message = activationInviteMessage(activation, lead || {});
   try {
     await navigator.clipboard?.writeText(message);
     showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
@@ -8616,6 +8782,7 @@ async function submitTriviaLauncher(event) {
       <label class="activation-invite-preview"><span>Mensaje para invitar</span><textarea readonly rows="4">${escapeHtml(inviteMessage)}</textarea></label>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
       <button class="ghost-button" type="button" id="copyTriviaInviteResultButton">Copiar mensaje</button>
+      <button class="solid-button" type="button" id="shareTriviaInviteResultButton">Compartir a lead</button>
     `;
     document.getElementById("copyTriviaLauncherResultButton")?.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(activation.public_url);
@@ -8625,6 +8792,7 @@ async function submitTriviaLauncher(event) {
       await navigator.clipboard?.writeText(inviteMessage);
       showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
     });
+    document.getElementById("shareTriviaInviteResultButton")?.addEventListener("click", () => openActivationShareModal(activation.id));
     setInlineMessage(triviaLauncherMessage, "Activación renovada. Comparte el link nuevo.", "success");
     showFeedback("Activación renovada. El link público nuevo ya está listo.", "success", { title: "Constructor de activaciones" });
     markTicketCenterDataStale(["activations", "metrics"]);
@@ -14314,6 +14482,22 @@ secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTic
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
+activationShareSearchButton?.addEventListener("click", () => {
+  searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));
+});
+activationShareSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));
+});
+activationShareOpenWhatsAppButton?.addEventListener("click", openActivationShareWhatsApp);
+activationShareCopyMessageButton?.addEventListener("click", () => {
+  copyActivationShareMessage().catch((error) => showFeedback(error.message, "error"));
+});
+activationShareCloseButton?.addEventListener("click", closeActivationShareModal);
+activationShareModal?.addEventListener("click", (event) => {
+  if (event.target === activationShareModal) closeActivationShareModal();
+});
 activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
   button.addEventListener("click", () => setActivationType(button.dataset.activationType));
 });
@@ -14466,6 +14650,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !leadActivationModal?.classList.contains("hidden")) {
     closeLeadActivationModal();
+    return;
+  }
+  if (event.key === "Escape" && !activationShareModal?.classList.contains("hidden")) {
+    closeActivationShareModal();
     return;
   }
   if (event.key === "Escape" && !leadDetailModal?.classList.contains("hidden")) {
