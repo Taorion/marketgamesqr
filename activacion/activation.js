@@ -2835,15 +2835,17 @@ async function completeActivation(payload = {}) {
 
 async function renderResult(data) {
   const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
+  const validatorUrl = data.validator_url || "";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
   ticketResult.innerHTML = data.rewarded ? `
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
-      <p>Guarda o comparte este QR. Es el codigo que debes presentar en el punto fisico para redimir tu beneficio.</p>
+      <p>Guarda o comparte este QR. Tambien puedes abrir el ticket si la imagen no carga en tu navegador.</p>
     </div>
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
+      ${validatorUrl ? `<a class="submit-button" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
       <button class="submit-button secondary" type="button" id="shareRewardQrButton">Compartir QR</button>
     </div>
