@@ -4,6 +4,8 @@ const { env } = require("../config/env");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { canAccessBusiness } = require("../middleware/auth");
+const { logQrEvent } = require("./auditService");
+const { consumeQrCredit, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 const {
   affiliatePointRuleMetadata,
   affiliatePointsForAmount,
@@ -46,6 +48,33 @@ async function businessNameFor(businessId) {
 function affiliateDigitalCardUrl(token) {
   const base = String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
   return `${base}/carnet-afiliado/${encodeURIComponent(token || "")}`;
+}
+
+function publicAppBaseUrl() {
+  return String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
+}
+
+function validatorUrlForToken(token) {
+  const target = new URL("/empresa/", `${publicAppBaseUrl()}/`);
+  target.searchParams.set("view", "validator");
+  target.searchParams.set("token", token);
+  return target.toString();
+}
+
+function rewardRuleTicketPayload(rule) {
+  return {
+    type: rule.benefit_type,
+    label: rule.benefit_label,
+    value: rule.benefit_value || {},
+    reward_rule_id: rule.id,
+    required_points: Number(rule.required_points || 0),
+  };
+}
+
+function expiresAtForRule(rule) {
+  const days = Number(rule.expiration_days || 0);
+  if (!Number.isFinite(days) || days <= 0) return null;
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 }
 
 async function attachQrDataUrl(affiliate) {
@@ -291,6 +320,281 @@ async function listAffiliateLedger(businessId, affiliateId, user) {
   return result.rows;
 }
 
+async function listAffiliateRewardRules(businessId, user, options = {}) {
+  ensureBusinessAccess(user, businessId);
+  const includeArchived = options.includeArchived === true;
+  const result = await query(
+    `select
+       r.*,
+       c.name as campaign_name,
+       rw.name as reward_name,
+       coalesce(t.issued_count, 0)::int as issued_count
+     from affiliate_reward_rules r
+     left join campaigns c on c.id = r.campaign_id
+     left join rewards rw on rw.id = r.reward_id
+     left join lateral (
+       select count(*)::int as issued_count
+       from affiliate_reward_tickets t
+       where t.reward_rule_id = r.id
+     ) t on true
+     where r.business_id = $1
+       and ($2::boolean = true or r.status <> 'ARCHIVED')
+     order by r.required_points asc, r.created_at desc`,
+    [businessId, includeArchived]
+  );
+  return result.rows;
+}
+
+async function createAffiliateRewardRule(businessId, user, body) {
+  ensureBusinessAccess(user, businessId);
+  if (body.campaign_id) {
+    const campaign = await query(
+      "select id from campaigns where id = $1 and business_id = $2",
+      [body.campaign_id, businessId]
+    );
+    if (!campaign.rowCount) throw badRequest("La campana no existe para este negocio.");
+  }
+  if (body.reward_id) {
+    const reward = await query(
+      "select id from rewards where id = $1 and business_id = $2 and is_active = true",
+      [body.reward_id, businessId]
+    );
+    if (!reward.rowCount) throw badRequest("El reward no existe para este negocio.");
+  }
+  const result = await query(
+    `insert into affiliate_reward_rules
+      (business_id, created_by_user_id, title, description, required_points, benefit_type,
+       benefit_label, benefit_value, campaign_id, reward_id, expiration_days, status, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, 'ACTIVE', $12::jsonb)
+     returning *`,
+    [
+      businessId,
+      user?.id || null,
+      body.title,
+      body.description || null,
+      body.required_points,
+      body.benefit_type || "CUSTOM",
+      body.benefit_label,
+      JSON.stringify(body.benefit_value || {}),
+      body.campaign_id || null,
+      body.reward_id || null,
+      body.expiration_days || null,
+      JSON.stringify(body.metadata || {}),
+    ]
+  );
+  return result.rows[0];
+}
+
+async function archiveAffiliateRewardRule(businessId, ruleId, user) {
+  ensureBusinessAccess(user, businessId);
+  const result = await query(
+    `update affiliate_reward_rules
+     set status = 'ARCHIVED', updated_at = now()
+     where id = $1 and business_id = $2
+     returning *`,
+    [ruleId, businessId]
+  );
+  const rule = result.rows[0];
+  if (!rule) throw notFound("Premio de afiliado no encontrado.");
+  return rule;
+}
+
+async function listAffiliateRewardUnlocks(businessId, affiliateId, user) {
+  ensureBusinessAccess(user, businessId);
+  const affiliate = await query(
+    "select id, points_total from affiliates where id = $1 and business_id = $2 and status <> 'DELETED'",
+    [affiliateId, businessId]
+  );
+  const row = affiliate.rows[0];
+  if (!row) throw notFound("Affiliate not found.");
+  const pointsTotal = Number(row.points_total || 0);
+  const result = await query(
+    `select
+       r.*,
+       c.name as campaign_name,
+       t.id as ticket_id,
+       t.status as ticket_status,
+       t.created_at as ticket_created_at,
+       q.id as qr_code_id,
+       q.token as qr_token,
+       q.status as qr_status,
+       q.expires_at,
+       q.redeemed_at
+     from affiliate_reward_rules r
+     left join campaigns c on c.id = r.campaign_id
+     left join affiliate_reward_tickets t
+       on t.reward_rule_id = r.id
+      and t.affiliate_id = $2
+      and t.business_id = r.business_id
+     left join qr_codes q on q.id = t.qr_code_id
+     where r.business_id = $1
+       and r.status = 'ACTIVE'
+     order by r.required_points asc, r.created_at desc`,
+    [businessId, affiliateId]
+  );
+  return result.rows.map((rule) => {
+    const unlocked = pointsTotal >= Number(rule.required_points || 0);
+    const validatorUrl = rule.qr_token ? validatorUrlForToken(rule.qr_token) : null;
+    return {
+      ...rule,
+      affiliate_points_total: pointsTotal,
+      points_remaining: Math.max(0, Number(rule.required_points || 0) - pointsTotal),
+      unlocked,
+      generated: Boolean(rule.ticket_id),
+      validator_url: validatorUrl,
+      public_ticket_url: validatorUrl,
+    };
+  });
+}
+
+async function createAffiliateRewardTicket(businessId, affiliateId, user, body) {
+  ensureBusinessAccess(user, businessId);
+  return withTransaction(async (client) => {
+    const affiliateResult = await client.query(
+      `select *
+       from affiliates
+       where id = $1 and business_id = $2 and status = 'ACTIVE'
+       for update`,
+      [affiliateId, businessId]
+    );
+    const affiliate = affiliateResult.rows[0];
+    if (!affiliate) throw notFound("Affiliate not found.");
+
+    const ruleResult = await client.query(
+      `select *
+       from affiliate_reward_rules
+       where id = $1 and business_id = $2 and status = 'ACTIVE'
+       for update`,
+      [body.reward_rule_id, businessId]
+    );
+    const rule = ruleResult.rows[0];
+    if (!rule) throw notFound("Premio de afiliado no encontrado.");
+
+    const pointsTotal = Number(affiliate.points_total || 0);
+    if (pointsTotal < Number(rule.required_points || 0)) {
+      throw badRequest(`Este premio requiere ${rule.required_points} puntos. El afiliado tiene ${pointsTotal}.`);
+    }
+
+    const existing = await client.query(
+      `select
+         t.*,
+         q.token,
+         q.status as qr_status,
+         q.expires_at,
+         q.redeemed_at
+       from affiliate_reward_tickets t
+       join qr_codes q on q.id = t.qr_code_id
+       where t.business_id = $1
+         and t.affiliate_id = $2
+         and t.reward_rule_id = $3
+       limit 1`,
+      [businessId, affiliateId, rule.id]
+    );
+    if (existing.rowCount) {
+      const row = existing.rows[0];
+      const url = validatorUrlForToken(row.token);
+      return {
+        ticket: {
+          ...row,
+          validator_url: url,
+          public_ticket_url: url,
+          qr_image_data_url: await QRCode.toDataURL(url),
+        },
+        existing: true,
+      };
+    }
+
+    const token = createSecureToken();
+    const benefitPayload = rewardRuleTicketPayload(rule);
+    const expiresAt = expiresAtForRule(rule);
+    const qrResult = await client.query(
+      `insert into qr_codes
+        (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata,
+         expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required,
+         claimed_at, claimed_by_player_id, affiliate_id)
+       values ($1, $2, null, null, $3, $4, 'ACTIVE', $5::jsonb, $6, null, 'MANUAL_BENEFIT',
+         $7, $8::jsonb, null, false, null, null, $9)
+       returning *`,
+      [
+        businessId,
+        rule.campaign_id || null,
+        rule.reward_id || null,
+        token,
+        JSON.stringify({
+          source: "affiliate_reward_unlock",
+          origin_label: "Premio desbloqueado por afiliado",
+          affiliate_id: affiliate.id,
+          affiliate_name: affiliate.full_name,
+          reward_rule_id: rule.id,
+          required_points: rule.required_points,
+          points_snapshot: pointsTotal,
+        }),
+        expiresAt,
+        rule.benefit_type,
+        JSON.stringify(benefitPayload),
+        affiliate.id,
+      ]
+    );
+    const qr = qrResult.rows[0];
+
+    const ticketResult = await client.query(
+      `insert into affiliate_reward_tickets
+        (business_id, affiliate_id, reward_rule_id, qr_code_id, created_by_user_id, points_snapshot, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+       returning *`,
+      [
+        businessId,
+        affiliate.id,
+        rule.id,
+        qr.id,
+        user?.id || null,
+        pointsTotal,
+        JSON.stringify({
+          benefit_label: rule.benefit_label,
+          required_points: rule.required_points,
+        }),
+      ]
+    );
+
+    await ensureCreditAccount(client, businessId);
+    const creditAccount = await consumeQrCredit(client, businessId, qr.id, user?.id || null);
+
+    await logQrEvent(client, {
+      business_id: businessId,
+      campaign_id: rule.campaign_id || null,
+      qr_code_id: qr.id,
+      user_id: user?.id || null,
+      event_type: "QR_CREATED",
+      message: "Affiliate reward ticket created.",
+      metadata: {
+        origin_type: "MANUAL_BENEFIT",
+        source: "affiliate_reward_unlock",
+        affiliate_id: affiliate.id,
+        reward_rule_id: rule.id,
+      },
+    });
+
+    const validatorUrl = validatorUrlForToken(token);
+    return {
+      ticket: {
+        ...ticketResult.rows[0],
+        qr_code: qr,
+        qr_token: token,
+        qr_status: qr.status,
+        expires_at: qr.expires_at,
+        benefit: benefitPayload,
+        validator_url: validatorUrl,
+        public_ticket_url: validatorUrl,
+        qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+      },
+      affiliate,
+      reward_rule: rule,
+      credit_account: mapPublicCreditAccount(creditAccount),
+      existing: false,
+    };
+  });
+}
+
 async function assertCampaignOwnership(businessId, campaignId) {
   const result = await query(
     "select id, name from campaigns where id = $1 and business_id = $2",
@@ -417,10 +721,15 @@ async function deleteAffiliate(businessId, affiliateId, user) {
 module.exports = {
   assignAffiliateToCampaign,
   affiliateDigitalCardUrl,
+  archiveAffiliateRewardRule,
+  createAffiliateRewardRule,
+  createAffiliateRewardTicket,
   createAffiliate,
   deleteAffiliate,
   getAffiliate,
   getPublicAffiliateCard,
+  listAffiliateRewardRules,
+  listAffiliateRewardUnlocks,
   listCampaignAffiliates,
   listAffiliates,
   listAffiliateLedger,

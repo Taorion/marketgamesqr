@@ -1,10 +1,15 @@
 const { z } = require("zod");
 const {
   assignAffiliateToCampaign,
+  archiveAffiliateRewardRule,
   createAffiliate,
+  createAffiliateRewardRule,
+  createAffiliateRewardTicket,
   deleteAffiliate,
   getAffiliate,
   listAffiliates,
+  listAffiliateRewardRules,
+  listAffiliateRewardUnlocks,
   listCampaignAffiliates,
   listAffiliateLedger,
   awardAffiliatePoints,
@@ -42,14 +47,42 @@ const campaignAffiliateSchema = z.object({
   metadata: z.record(z.any()).optional().nullable(),
 });
 
+const affiliateRewardRuleSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().max(800).optional().nullable(),
+  required_points: z.number().int().positive(),
+  benefit_type: z.enum([
+    "PERCENT_DISCOUNT",
+    "FIXED_AMOUNT_DISCOUNT",
+    "FREE_GIFT",
+    "FREE_SAMPLE",
+    "UPGRADE",
+    "VIP_ACCESS",
+    "RAFFLE_ENTRY",
+    "BUY_X_GET_Y",
+    "CUSTOM",
+  ]).default("CUSTOM"),
+  benefit_label: z.string().trim().min(2).max(180),
+  benefit_value: z.record(z.any()).optional().default({}),
+  campaign_id: z.string().uuid().optional().nullable(),
+  reward_id: z.string().uuid().optional().nullable(),
+  expiration_days: z.number().int().positive().optional().nullable(),
+  metadata: z.record(z.any()).optional().nullable(),
+});
+
+const affiliateRewardTicketSchema = z.object({
+  reward_rule_id: z.string().uuid(),
+});
+
 async function listBusinessAffiliates(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
-    const [affiliates, point_rules] = await Promise.all([
+    const [affiliates, point_rules, reward_rules] = await Promise.all([
       listAffiliates(req.params.id, req.user),
       getAffiliatePointRules(req.params.id),
+      listAffiliateRewardRules(req.params.id, req.user),
     ]);
-    res.json({ affiliates, point_rules });
+    res.json({ affiliates, point_rules, reward_rules });
   } catch (error) {
     next(error);
   }
@@ -74,9 +107,56 @@ async function createBusinessAffiliate(req, res, next) {
 async function getBusinessAffiliate(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
-    const affiliate = await getAffiliate(req.params.id, req.params.affiliateId, req.user);
-    const ledger = await listAffiliateLedger(req.params.id, req.params.affiliateId, req.user);
-    res.json({ affiliate, ledger });
+    const [affiliate, ledger, reward_unlocks] = await Promise.all([
+      getAffiliate(req.params.id, req.params.affiliateId, req.user),
+      listAffiliateLedger(req.params.id, req.params.affiliateId, req.user),
+      listAffiliateRewardUnlocks(req.params.id, req.params.affiliateId, req.user),
+    ]);
+    res.json({ affiliate, ledger, reward_unlocks });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listBusinessAffiliateRewardRules(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const reward_rules = await listAffiliateRewardRules(req.params.id, req.user, {
+      includeArchived: String(req.query.include_archived || "") === "true",
+    });
+    res.json({ reward_rules });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createBusinessAffiliateRewardRule(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(affiliateRewardRuleSchema, req.body);
+    const reward_rule = await createAffiliateRewardRule(req.params.id, req.user, body);
+    res.status(201).json({ reward_rule });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveBusinessAffiliateRewardRule(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const reward_rule = await archiveAffiliateRewardRule(req.params.id, req.params.ruleId, req.user);
+    res.json({ reward_rule });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createBusinessAffiliateRewardTicket(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(affiliateRewardTicketSchema, req.body);
+    const result = await createAffiliateRewardTicket(req.params.id, req.params.affiliateId, req.user, body);
+    res.status(result.existing ? 200 : 201).json(result);
   } catch (error) {
     next(error);
   }
@@ -150,7 +230,11 @@ async function getPublicAffiliateDigitalCard(req, res, next) {
 
 module.exports = {
   assignBusinessCampaignAffiliate,
+  archiveBusinessAffiliateRewardRule,
+  createBusinessAffiliateRewardRule,
+  createBusinessAffiliateRewardTicket,
   listBusinessAffiliates,
+  listBusinessAffiliateRewardRules,
   listBusinessCampaignAffiliates,
   createBusinessAffiliate,
   getBusinessAffiliate,

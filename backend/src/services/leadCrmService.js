@@ -149,13 +149,18 @@ function buildValidatorUrl(token) {
   return target.toString();
 }
 
+function buildClaimUrl(token) {
+  const base = (env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
+  return `${base}/claim/${encodeURIComponent(token)}`;
+}
+
 function buildActivationUrl(type, token) {
   const base = (env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
   const normalized = String(type || "").toUpperCase();
   if (normalized.includes("TRIVIA")) return `${base}/trivia/${encodeURIComponent(token)}`;
   if (normalized.includes("GAME") || normalized.includes("MICRO")) return `${base}/activacion/${encodeURIComponent(token)}`;
   if (normalized.includes("TICKET") || normalized.includes("BENEFIT") || normalized.includes("VIP") || normalized.includes("GIFT")) {
-    return buildValidatorUrl(token);
+    return buildClaimUrl(token);
   }
   return `${base}/activacion/${encodeURIComponent(token)}`;
 }
@@ -1658,7 +1663,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       );
       qr = createdQr.rows[0];
       await consumeQrCredit(client, businessId, qr.id, user.id);
-      publicUrl = buildValidatorUrl(token);
+      publicUrl = buildClaimUrl(token);
       await client.query("update lead_activations set qr_code_id = $1 where id = $2", [qr.id, activation.rows[0].id]);
     }
 

@@ -117,6 +117,10 @@
             <span class="material-symbols-outlined">card_membership</span>
             <span>Afiliados</span>
           </button>
+          <button class="nav-item" data-view="inventory" type="button">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span>Inventario</span>
+          </button>
           <button class="nav-item" data-view="reward-passes" type="button">
             <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
             <span>Reward Pass</span>
@@ -579,6 +583,10 @@
                   <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
                   <label><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
                   <label><span>Dirección</span><input id="accountAddressInput" type="text" maxlength="220"></label>
+                  <label><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
+                  <label><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
+                  <label><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
+                  <p class="table-secondary span-2">Regla de afiliados: por cada monto comprado se asignan los puntos configurados. Ejemplo: 1 punto cada $1.000.</p>
                   <div class="modal-actions span-2">
                     <p class="error-line" id="accountProfileMessage"></p>
                     <button class="solid-button" id="accountProfileSaveButton" type="submit">Guardar cambios</button>
@@ -924,7 +932,7 @@
                   <label><span>Asunto / canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre de la actividad, persona o lote"></label>
                   <label><span>Valor asociado</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" placeholder="0 si no hubo venta previa"></label>
                   <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
-                  <label><span>Producto que representa</span><input id="postSaleProductInput" type="text" placeholder="Hamburguesa, helado, libro, entrada VIP"></label>
+                  <label><span>Producto que representa</span><input id="postSaleProductInput" type="text" list="inventoryProductOptions" placeholder="Hamburguesa, helado, libro, entrada VIP"></label>
                   <label><span>Beneficiario</span><input id="postSaleCustomerInput" type="text" placeholder="Persona que reclamara el ticket"></label>
                   <label><span>Cédula</span><input id="postSaleDocumentInput" type="text" placeholder="Opcional"></label>
                   <label><span>Teléfono del beneficiario</span><input id="postSalePhoneInput" type="text" placeholder="Celular para enviar el ticket"></label>
@@ -2612,7 +2620,7 @@
                 <label><span>Valor de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" required></label>
                 <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
                 <label><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
-                <label><span>Producto / servicio</span><input id="customerAcquisitionProductInput" type="text"></label>
+                <label><span>Producto / servicio</span><input id="customerAcquisitionProductInput" type="text" list="inventoryProductOptions"></label>
                 <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
                 <label><span>Cédula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
                 <label><span>Teléfono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
@@ -2661,6 +2669,76 @@
                 </table>
               </div>
             </article>
+          </section>
+
+          <section class="view-section" data-view="inventory">
+            <div class="view-head">
+              <div>
+                <h2>Inventario de productos</h2>
+                <p>Catálogo operativo con código de barras, SKU, precios, stock y búsqueda para registrar ventas.</p>
+              </div>
+              <button class="ghost-button" id="refreshInventoryButton" type="button">Actualizar</button>
+            </div>
+
+            <section class="kpi-grid sales-kpis" id="inventoryKpiGrid"></section>
+
+            <section class="inventory-layout">
+              <article class="surface-card inventory-form-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Producto</span>
+                    <strong id="inventoryFormTitle">Nuevo producto</strong>
+                  </div>
+                  <button class="ghost-button" id="inventoryResetButton" type="button">Limpiar</button>
+                </div>
+                <form class="modal-form inventory-form" id="inventoryProductForm">
+                  <input id="inventoryProductIdInput" type="hidden">
+                  <label><span>Nombre producto</span><input id="inventoryNameInput" type="text" maxlength="180" required></label>
+                  <label><span>Código de barras</span><input id="inventoryBarcodeInput" type="text" maxlength="120" placeholder="Escanea o escribe"></label>
+                  <label><span>SKU interno</span><input id="inventorySkuInput" type="text" maxlength="80" placeholder="Referencia interna"></label>
+                  <label><span>Categoría</span><input id="inventoryCategoryInput" type="text" maxlength="120"></label>
+                  <label><span>Marca</span><input id="inventoryBrandInput" type="text" maxlength="120"></label>
+                  <label><span>Precio venta</span><input id="inventoryUnitPriceInput" type="number" min="0" step="100" required></label>
+                  <label><span>Costo</span><input id="inventoryCostPriceInput" type="number" min="0" step="100"></label>
+                  <label><span>Moneda</span><input id="inventoryCurrencyInput" type="text" maxlength="12" value="COP"></label>
+                  <label><span>Stock</span><input id="inventoryStockInput" type="number" min="0" step="1" value="0"></label>
+                  <label><span>Stock mínimo</span><input id="inventoryMinStockInput" type="number" min="0" step="1" value="0"></label>
+                  <label><span>Unidad</span><input id="inventoryUnitLabelInput" type="text" maxlength="40" value="unidad"></label>
+                  <label><span>Estado</span><select id="inventoryStatusInput"><option value="ACTIVE">Activo</option><option value="INACTIVE">Inactivo</option><option value="ARCHIVED">Archivado</option></select></label>
+                  <label class="span-2"><span>Descripción</span><textarea id="inventoryDescriptionInput" rows="3" maxlength="1200"></textarea></label>
+                  <div class="modal-actions span-2">
+                    <p class="form-message" id="inventoryMessage"></p>
+                    <button class="solid-button" id="inventorySaveButton" type="submit">Guardar producto</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card data-table-card inventory-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Catálogo</span>
+                    <strong>Productos registrados</strong>
+                  </div>
+                  <input id="inventorySearchInput" type="search" placeholder="Buscar por nombre, código, SKU, marca o categoría">
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Código / SKU</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
           </section>
 
           <section class="view-section" data-view="validator">
@@ -2819,7 +2897,7 @@
                   </label>
                   <label>
                     <span>Producto o servicio</span>
-                    <input id="validatorProductServiceInput" type="text" placeholder="Producto comprado">
+                    <input id="validatorProductServiceInput" type="text" list="inventoryProductOptions" placeholder="Producto comprado">
                   </label>
                   <label class="span-2">
                     <span>Observacion</span>
@@ -3399,6 +3477,40 @@
                 </div>
               </article>
 
+              <article class="surface-card affiliate-panel affiliate-reward-panel">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Premios por puntos</span>
+                    <strong>Tickets desbloqueables</strong>
+                  </div>
+                </div>
+                <form class="modal-form affiliate-reward-rule-form" id="affiliateRewardRuleForm">
+                  <label><span>Nombre premio</span><input id="affiliateRewardTitleInput" type="text" maxlength="160" placeholder="Ej: Bono VIP" required></label>
+                  <label><span>Puntos requeridos</span><input id="affiliateRewardPointsInput" type="number" min="1" step="1" value="10" required></label>
+                  <label><span>Tipo beneficio</span><select id="affiliateRewardBenefitTypeInput"><option value="CUSTOM">Personalizado</option><option value="PERCENT_DISCOUNT">% descuento</option><option value="FIXED_AMOUNT_DISCOUNT">$ descuento</option><option value="FREE_GIFT">Regalo</option><option value="VIP_ACCESS">Acceso VIP</option><option value="UPGRADE">Upgrade</option></select></label>
+                  <label><span>Beneficio del ticket</span><input id="affiliateRewardBenefitLabelInput" type="text" maxlength="180" placeholder="Ej: 20% en próxima compra" required></label>
+                  <label><span>Valor JSON opcional</span><input id="affiliateRewardBenefitValueInput" type="text" placeholder='{"percent":20}'></label>
+                  <label><span>Vence en días</span><input id="affiliateRewardExpirationInput" type="number" min="1" step="1" placeholder="Sin vencimiento"></label>
+                  <label class="span-2"><span>Descripción interna</span><input id="affiliateRewardDescriptionInput" type="text" maxlength="800" placeholder="Condiciones o detalle operativo"></label>
+                  <div class="modal-actions span-2">
+                    <p class="form-message" id="affiliateRewardRuleMessage"></p>
+                    <button class="solid-button" id="affiliateRewardRuleSaveButton" type="submit">Guardar premio</button>
+                  </div>
+                </form>
+                <div class="affiliate-reward-lists">
+                  <div>
+                    <strong>Premios configurados</strong>
+                    <div class="affiliate-reward-rule-list" id="affiliateRewardRuleList"></div>
+                  </div>
+                  <div>
+                    <strong id="affiliateRewardUnlockTitle">Desbloqueados del afiliado</strong>
+                    <div class="affiliate-reward-unlock-list" id="affiliateRewardUnlockList"></div>
+                  </div>
+                </div>
+                <p class="affiliate-card-note" id="affiliateRewardTicketMessage"></p>
+                <div class="qr-result hidden" id="affiliateRewardTicketResult"></div>
+              </article>
+
               <article class="surface-card affiliate-panel affiliate-referral-panel">
                 <div class="table-card-head">
                   <span class="mono-label">Recomendaciones</span>
@@ -3667,6 +3779,7 @@
       </form>
     </div>
   </div>
+  <datalist id="inventoryProductOptions"></datalist>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
   <script src="js/app.js?v=ticket-image-share-20260701" defer></script>
 </body>

@@ -1,8 +1,8 @@
 const { query } = require("../config/db");
 
 const DEFAULT_AFFILIATE_POINT_AMOUNT_COP = 1000;
-const DEFAULT_REFERRAL_POINTS_RATE = 0.2;
-const DEFAULT_REFERRAL_ROUNDING = "ceil";
+const DEFAULT_REFERRAL_POINTS_RATE = 1;
+const DEFAULT_REFERRAL_ROUNDING = "floor";
 
 function positiveNumber(value, fallback) {
   const number = Number(value);
@@ -10,7 +10,7 @@ function positiveNumber(value, fallback) {
 }
 
 function referralRounding(value) {
-  return value === "floor" ? "floor" : DEFAULT_REFERRAL_ROUNDING;
+  return value === "ceil" ? "ceil" : DEFAULT_REFERRAL_ROUNDING;
 }
 
 function rulesFromSettings(settings = {}) {
@@ -24,10 +24,12 @@ function rulesFromSettings(settings = {}) {
       DEFAULT_AFFILIATE_POINT_AMOUNT_COP
     ),
     referral_rate: positiveNumber(
-      affiliatePoints.referral_rate ?? settings.affiliate_referral_points_rate,
+      affiliatePoints.referral_rate
+        ?? affiliatePoints.points_per_amount
+        ?? settings.affiliate_referral_points_rate,
       DEFAULT_REFERRAL_POINTS_RATE
     ),
-    referral_rounding: referralRounding(affiliatePoints.referral_rounding),
+    referral_rounding: referralRounding(affiliatePoints.referral_rounding ?? settings.affiliate_referral_points_rounding),
   };
 }
 
@@ -54,9 +56,9 @@ function referralPointsForAmount(amount, rules) {
     return 0;
   }
   const rawPoints = (value / rules.point_amount_cop) * rules.referral_rate;
-  const roundedPoints = rules.referral_rounding === "floor"
-    ? Math.floor(rawPoints)
-    : Math.ceil(rawPoints);
+  const roundedPoints = rules.referral_rounding === "ceil"
+    ? Math.ceil(rawPoints)
+    : Math.floor(rawPoints);
   return Math.max(0, roundedPoints);
 }
 

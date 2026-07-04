@@ -211,6 +211,9 @@ const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
 const accountAddressInput = document.getElementById("accountAddressInput");
+const accountAffiliatePointAmountInput = document.getElementById("accountAffiliatePointAmountInput");
+const accountAffiliatePointRateInput = document.getElementById("accountAffiliatePointRateInput");
+const accountAffiliatePointRoundingInput = document.getElementById("accountAffiliatePointRoundingInput");
 const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
@@ -265,6 +268,21 @@ const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessa
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
 const copyAffiliateCardLinkButton = document.getElementById("copyAffiliateCardLinkButton");
+const affiliateRewardRuleForm = document.getElementById("affiliateRewardRuleForm");
+const affiliateRewardTitleInput = document.getElementById("affiliateRewardTitleInput");
+const affiliateRewardPointsInput = document.getElementById("affiliateRewardPointsInput");
+const affiliateRewardBenefitTypeInput = document.getElementById("affiliateRewardBenefitTypeInput");
+const affiliateRewardBenefitLabelInput = document.getElementById("affiliateRewardBenefitLabelInput");
+const affiliateRewardBenefitValueInput = document.getElementById("affiliateRewardBenefitValueInput");
+const affiliateRewardExpirationInput = document.getElementById("affiliateRewardExpirationInput");
+const affiliateRewardDescriptionInput = document.getElementById("affiliateRewardDescriptionInput");
+const affiliateRewardRuleMessage = document.getElementById("affiliateRewardRuleMessage");
+const affiliateRewardRuleSaveButton = document.getElementById("affiliateRewardRuleSaveButton");
+const affiliateRewardRuleList = document.getElementById("affiliateRewardRuleList");
+const affiliateRewardUnlockTitle = document.getElementById("affiliateRewardUnlockTitle");
+const affiliateRewardUnlockList = document.getElementById("affiliateRewardUnlockList");
+const affiliateRewardTicketMessage = document.getElementById("affiliateRewardTicketMessage");
+const affiliateRewardTicketResult = document.getElementById("affiliateRewardTicketResult");
 const affiliateReferralQrQuantityInput = document.getElementById("affiliateReferralQrQuantityInput");
 const affiliateReferralQrCampaignInput = document.getElementById("affiliateReferralQrCampaignInput");
 const affiliateReferralQrBenefitInput = document.getElementById("affiliateReferralQrBenefitInput");
@@ -530,6 +548,30 @@ const customerAcquisitionChannelInput = document.getElementById("customerAcquisi
 const customerAcquisitionAffiliateInput = document.getElementById("customerAcquisitionAffiliateInput");
 const customerAcquisitionNotesInput = document.getElementById("customerAcquisitionNotesInput");
 const customerAcquisitionMessage = document.getElementById("customerAcquisitionMessage");
+const inventoryProductOptions = document.getElementById("inventoryProductOptions");
+const inventoryProductForm = document.getElementById("inventoryProductForm");
+const inventoryProductIdInput = document.getElementById("inventoryProductIdInput");
+const inventoryNameInput = document.getElementById("inventoryNameInput");
+const inventoryBarcodeInput = document.getElementById("inventoryBarcodeInput");
+const inventorySkuInput = document.getElementById("inventorySkuInput");
+const inventoryCategoryInput = document.getElementById("inventoryCategoryInput");
+const inventoryBrandInput = document.getElementById("inventoryBrandInput");
+const inventoryUnitPriceInput = document.getElementById("inventoryUnitPriceInput");
+const inventoryCostPriceInput = document.getElementById("inventoryCostPriceInput");
+const inventoryCurrencyInput = document.getElementById("inventoryCurrencyInput");
+const inventoryStockInput = document.getElementById("inventoryStockInput");
+const inventoryMinStockInput = document.getElementById("inventoryMinStockInput");
+const inventoryUnitLabelInput = document.getElementById("inventoryUnitLabelInput");
+const inventoryStatusInput = document.getElementById("inventoryStatusInput");
+const inventoryDescriptionInput = document.getElementById("inventoryDescriptionInput");
+const inventoryMessage = document.getElementById("inventoryMessage");
+const inventorySaveButton = document.getElementById("inventorySaveButton");
+const inventoryResetButton = document.getElementById("inventoryResetButton");
+const refreshInventoryButton = document.getElementById("refreshInventoryButton");
+const inventoryFormTitle = document.getElementById("inventoryFormTitle");
+const inventoryKpiGrid = document.getElementById("inventoryKpiGrid");
+const inventorySearchInput = document.getElementById("inventorySearchInput");
+const inventoryTable = document.getElementById("inventoryTable");
 const qrBatchForm = document.getElementById("qrBatchForm");
 const qrBatchCampaignInput = document.getElementById("qrBatchCampaignInput");
 const qrBatchCampaignHelp = document.getElementById("qrBatchCampaignHelp");
@@ -803,7 +845,12 @@ let state = {
   activationShareLoading: false,
   affiliatesLoaded: false,
   affiliatePointRules: null,
+  affiliateRewardRules: [],
+  affiliateRewardUnlocks: [],
   affiliatePurchaseItems: [{ name: "", quantity: 1, unit_price: 0 }],
+  inventoryProducts: [],
+  inventoryLoaded: false,
+  inventorySearch: "",
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
   ticketCenterLoading: false,
@@ -853,6 +900,9 @@ function mergeBusinessProfile(nextProfile) {
     merged.ticket_frame_data_url = existingTicketFrame;
   }
   state.businessProfile = merged;
+  if (merged.affiliate_points) {
+    state.affiliatePointRules = merged.affiliate_points;
+  }
   if (session?.user?.business) {
     session.user.business = {
       ...session.user.business,
@@ -1323,6 +1373,7 @@ function clearBusinessWorkspaceUi() {
     [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
+    [inventoryTable, 7, "Abre Inventario para cargar productos."],
     [rewardPassTable, 8, "Cargando Reward Pass..."],
     [rewardPassRedemptionTable, 9, "Cargando historial..."],
     [rewardPassTicketLedgerTable, 5, "Cargando movimientos..."],
@@ -1345,6 +1396,8 @@ function clearBusinessWorkspaceUi() {
   if (validatorManualStatus) setInlineMessage(validatorManualStatus, "", "info");
   if (validatorSaleForm) validatorSaleForm.reset();
   if (validatorHistoryTable) validatorHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial de la empresa activa...</td></tr>';
+  if (inventorySearchInput) inventorySearchInput.value = "";
+  resetInventoryForm();
   setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
   if (rewardPassKpiGrid) renderSkeletonCards(rewardPassKpiGrid, 4);
   if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = "Vista previa";
@@ -1407,6 +1460,11 @@ function resetBusinessScopedState(options = {}) {
   state.strategicQrHistory = [];
   state.triviaLaunchers = [];
   state.affiliatesLoaded = false;
+  state.affiliateRewardRules = [];
+  state.affiliateRewardUnlocks = [];
+  state.inventoryProducts = [];
+  state.inventoryLoaded = false;
+  state.inventorySearch = "";
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
   state.ticketCenterLoading = false;
@@ -1561,7 +1619,7 @@ async function loadAffiliatesData() {
   if (!session?.user?.business_id || !hasPlanFeature("affiliates")) {
     state.affiliatesLoaded = true;
     state.affiliates = [];
-    return;
+    return true;
   }
   const scopeKey = businessScopeKey();
   showFeedback("Cargando afiliados.", "loading", { title: "Sincronizando", timeout: 0 });
@@ -1569,6 +1627,7 @@ async function loadAffiliatesData() {
   if (!isCurrentBusinessScope(scopeKey)) return;
   state.affiliates = data.affiliates || [];
   state.affiliatePointRules = data.point_rules || state.affiliatePointRules || null;
+  state.affiliateRewardRules = data.reward_rules || state.affiliateRewardRules || [];
   state.affiliatesLoaded = true;
   hideFeedback();
 }
@@ -2114,6 +2173,7 @@ const viewFeatureMap = {
   campaigns: "portal_access",
   leads: "leads_view",
   affiliates: "affiliates",
+  inventory: "portal_access",
   "reward-passes": "portal_access",
   redemptions: "portal_access",
   sales: "portal_access",
@@ -2498,6 +2558,10 @@ function renderAccountView() {
   if (accountWebsiteInput) accountWebsiteInput.value = business.website || "";
   if (accountCityInput) accountCityInput.value = business.city || "";
   if (accountAddressInput) accountAddressInput.value = business.address || "";
+  const affiliatePoints = business.affiliate_points || state.affiliatePointRules || {};
+  if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.value = String(affiliatePoints.point_amount_cop || 1000);
+  if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.value = String(affiliatePoints.referral_rate || 1);
+  if (accountAffiliatePointRoundingInput) accountAffiliatePointRoundingInput.value = affiliatePoints.referral_rounding || "floor";
 
   const logo = business.logo_data_url || "";
   if (accountLogoPreview) {
@@ -2632,14 +2696,27 @@ function setView(view) {
     if (state.contactCenterTab === "sales" && !state.affiliatesLoaded) {
       loadAffiliatesData().then(renderSalesView);
     }
+    if (state.contactCenterTab === "sales" && !state.inventoryLoaded) {
+      loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
+    }
     renderLeadsView();
   }
   if (view === "affiliates") {
+    if (!state.inventoryLoaded) {
+      loadInventoryProducts({ quiet: true }).then(() => {
+        renderInventoryProductOptions();
+        renderAffiliatePurchaseItems();
+      });
+    }
     if (!state.affiliatesLoaded) {
       loadAffiliatesData().then(renderAffiliatesView);
     } else {
       renderAffiliatesView();
     }
+  }
+  if (view === "inventory") {
+    loadInventoryProducts({ quiet: true }).then(renderInventoryView);
+    renderInventoryView();
   }
   if (view === "redemptions") renderRedemptionsView();
   if (view === "strategic-qr") {
@@ -2648,7 +2725,10 @@ function setView(view) {
       showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
     });
   }
-  if (view === "validator") renderValidatorView();
+  if (view === "validator") {
+    if (!state.inventoryLoaded) loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
+    renderValidatorView();
+  }
   if (view === "reward-passes") renderRewardPassesView();
   if (view === "branches") renderBranchesView();
   if (view === "admin") renderAdminView();
@@ -7247,6 +7327,21 @@ async function submitSubscriptionAutoRenewal() {
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
+  const selectedProduct = findInventoryProduct(customerAcquisitionProductInput.value);
+  const selectedQuantity = 1;
+  const metadata = selectedProduct
+    ? {
+        products: [{
+          inventory_product_id: selectedProduct.id,
+          name: selectedProduct.name,
+          sku: selectedProduct.sku || null,
+          barcode: selectedProduct.barcode || null,
+          quantity: selectedQuantity,
+          unit_price: Number(selectedProduct.unit_price || 0),
+          line_total: Number(customerAcquisitionAmountInput.value || selectedProduct.unit_price || 0),
+        }],
+      }
+    : {};
   setButtonLoading(submitButton, true, "Registrando...");
   setInlineMessage(customerAcquisitionMessage, "Registrando venta real y medio de llegada...", "info");
   try {
@@ -7266,6 +7361,7 @@ async function submitCustomerAcquisitionSale(event) {
         acquisition_channel: customerAcquisitionChannelInput.value.trim() || null,
         referred_affiliate_id: customerAcquisitionAffiliateInput.value || null,
         notes: customerAcquisitionNotesInput.value.trim() || null,
+        metadata,
       }),
     });
     const awarded = Number(data.referral?.points_awarded || 0);
@@ -7276,6 +7372,8 @@ async function submitCustomerAcquisitionSale(event) {
     customerAcquisitionForm.reset();
     customerAcquisitionCurrencyInput.value = "COP";
     renderCustomerAcquisitionCampaignOptions();
+    await loadInventoryProducts({ force: true, quiet: true });
+    renderInventoryProductOptions();
     await refreshLiveBusinessData();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
@@ -7285,6 +7383,261 @@ async function submitCustomerAcquisitionSale(event) {
   } finally {
     setButtonLoading(submitButton, false);
   }
+}
+
+function normalizeInventoryLookup(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function productSalePayload(product, quantity = 1, unitPrice = null) {
+  if (!product) return null;
+  const safeQuantity = Math.max(1, Number(quantity || 1));
+  const safeUnitPrice = Math.max(0, Number(unitPrice ?? product.unit_price ?? 0));
+  return {
+    inventory_product_id: product.id,
+    name: product.name,
+    sku: product.sku || null,
+    barcode: product.barcode || null,
+    quantity: safeQuantity,
+    unit_price: safeUnitPrice,
+    line_total: safeQuantity * safeUnitPrice,
+  };
+}
+
+function findInventoryProduct(value) {
+  const needle = normalizeInventoryLookup(value);
+  if (!needle) return null;
+  return (state.inventoryProducts || []).find((product) => {
+    const candidates = [product.name, product.sku, product.barcode].map(normalizeInventoryLookup);
+    return candidates.includes(needle);
+  }) || null;
+}
+
+function inventoryProductLabel(product = {}) {
+  const refs = [product.sku, product.barcode].filter(Boolean).join(" / ");
+  return refs ? `${product.name} - ${refs}` : product.name;
+}
+
+function renderInventoryProductOptions() {
+  if (!inventoryProductOptions) return;
+  const products = (state.inventoryProducts || []).filter((item) => item.status !== "ARCHIVED");
+  const options = [];
+  products.forEach((product) => {
+    const label = `${inventoryProductLabel(product)} - ${money(product.unit_price || 0)}`;
+    options.push(`<option value="${escapeHtml(product.name)}" label="${escapeHtml(label)}"></option>`);
+    if (product.sku) options.push(`<option value="${escapeHtml(product.sku)}" label="${escapeHtml(label)}"></option>`);
+    if (product.barcode) options.push(`<option value="${escapeHtml(product.barcode)}" label="${escapeHtml(label)}"></option>`);
+  });
+  inventoryProductOptions.innerHTML = options.join("");
+}
+
+async function loadInventoryProducts(options = {}) {
+  if (state.inventoryLoaded && !options.force) return state.inventoryProducts;
+  if (!options.quiet && inventoryTable) {
+    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando inventario...</td></tr>';
+  }
+  const data = await apiSafe("/api/business/inventory/products?limit=500", { headers: authHeaders() }, { products: [] });
+  state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
+  state.inventoryLoaded = true;
+  renderInventoryProductOptions();
+  return state.inventoryProducts;
+}
+
+function filteredInventoryProducts() {
+  const needle = normalizeInventoryLookup(state.inventorySearch);
+  const products = state.inventoryProducts || [];
+  if (!needle) return products;
+  return products.filter((product) => [product.name, product.sku, product.barcode, product.category, product.brand]
+    .some((value) => normalizeInventoryLookup(value).includes(needle)));
+}
+
+function inventoryKpis(products = state.inventoryProducts || []) {
+  const active = products.filter((item) => item.status === "ACTIVE");
+  const stockUnits = active.reduce((sum, item) => sum + Number(item.stock_quantity || 0), 0);
+  const inventoryValue = active.reduce((sum, item) => sum + (Number(item.stock_quantity || 0) * Number(item.unit_price || 0)), 0);
+  const lowStock = active.filter((item) => Number(item.stock_quantity || 0) <= Number(item.min_stock_quantity || 0)).length;
+  return [
+    { label: "Productos activos", value: active.length.toLocaleString("es-CO"), meta: "Disponibles para venta" },
+    { label: "Unidades en stock", value: stockUnits.toLocaleString("es-CO"), meta: "Suma del inventario" },
+    { label: "Valor venta inventario", value: money(inventoryValue), meta: "Stock x precio venta" },
+    { label: "Stock bajo", value: lowStock.toLocaleString("es-CO"), meta: "Requieren reposicion" },
+  ];
+}
+
+function renderInventoryView() {
+  if (inventoryKpiGrid) {
+    inventoryKpiGrid.innerHTML = inventoryKpis().map((item) => `
+      <article class="surface-card kpi-card">
+        <span class="mono-label">${escapeHtml(item.label)}</span>
+        <strong class="kpi-value">${escapeHtml(item.value)}</strong>
+        <p class="kpi-meta">${escapeHtml(item.meta)}</p>
+      </article>
+    `).join("");
+  }
+  if (!inventoryTable) return;
+  if (!state.inventoryLoaded) {
+    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando inventario...</td></tr>';
+    return;
+  }
+  const rows = filteredInventoryProducts();
+  if (!rows.length) {
+    inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales o Afiliados.</td></tr>';
+    return;
+  }
+  inventoryTable.innerHTML = rows.map((product) => {
+    const stock = Number(product.stock_quantity || 0);
+    const minStock = Number(product.min_stock_quantity || 0);
+    const isLow = product.status === "ACTIVE" && stock <= minStock;
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(product.name)}</strong>
+          <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto de inventario")}</span>
+        </td>
+        <td>
+          <span>${escapeHtml(product.barcode || "-")}</span>
+          <span class="table-secondary">${escapeHtml(product.sku || "Sin SKU")}</span>
+        </td>
+        <td>${escapeHtml(product.category || "-")}</td>
+        <td>${escapeHtml(money(product.unit_price || 0))}</td>
+        <td>
+          <strong class="${isLow ? "stock-low" : ""}">${escapeHtml(stock.toLocaleString("es-CO"))} ${escapeHtml(product.unit_label || "unidad")}</strong>
+          <span class="table-secondary">Min. ${escapeHtml(String(minStock))}</span>
+        </td>
+        <td><span class="status-pill ${product.status === "ACTIVE" ? "success" : "muted"}">${escapeHtml(product.status || "ACTIVE")}</span></td>
+        <td>
+          <div class="table-actions">
+            <button class="ghost-button" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
+            <button class="ghost-button danger-button" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  inventoryTable.querySelectorAll("[data-inventory-edit]").forEach((button) => {
+    button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
+  });
+  inventoryTable.querySelectorAll("[data-inventory-archive]").forEach((button) => {
+    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
+  });
+}
+
+function resetInventoryForm() {
+  inventoryProductForm?.reset();
+  if (inventoryProductIdInput) inventoryProductIdInput.value = "";
+  if (inventoryCurrencyInput) inventoryCurrencyInput.value = "COP";
+  if (inventoryStockInput) inventoryStockInput.value = "0";
+  if (inventoryMinStockInput) inventoryMinStockInput.value = "0";
+  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = "unidad";
+  if (inventoryStatusInput) inventoryStatusInput.value = "ACTIVE";
+  if (inventoryFormTitle) inventoryFormTitle.textContent = "Nuevo producto";
+  setInlineMessage(inventoryMessage, "", "info");
+}
+
+function editInventoryProduct(productId) {
+  const product = (state.inventoryProducts || []).find((item) => item.id === productId);
+  if (!product) return;
+  if (inventoryProductIdInput) inventoryProductIdInput.value = product.id;
+  if (inventoryNameInput) inventoryNameInput.value = product.name || "";
+  if (inventoryBarcodeInput) inventoryBarcodeInput.value = product.barcode || "";
+  if (inventorySkuInput) inventorySkuInput.value = product.sku || "";
+  if (inventoryCategoryInput) inventoryCategoryInput.value = product.category || "";
+  if (inventoryBrandInput) inventoryBrandInput.value = product.brand || "";
+  if (inventoryUnitPriceInput) inventoryUnitPriceInput.value = String(product.unit_price || 0);
+  if (inventoryCostPriceInput) inventoryCostPriceInput.value = product.cost_price === null || product.cost_price === undefined ? "" : String(product.cost_price || 0);
+  if (inventoryCurrencyInput) inventoryCurrencyInput.value = product.currency || "COP";
+  if (inventoryStockInput) inventoryStockInput.value = String(product.stock_quantity || 0);
+  if (inventoryMinStockInput) inventoryMinStockInput.value = String(product.min_stock_quantity || 0);
+  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = product.unit_label || "unidad";
+  if (inventoryStatusInput) inventoryStatusInput.value = product.status || "ACTIVE";
+  if (inventoryDescriptionInput) inventoryDescriptionInput.value = product.description || "";
+  if (inventoryFormTitle) inventoryFormTitle.textContent = "Editar producto";
+  setInlineMessage(inventoryMessage, "Editando producto existente.", "info");
+}
+
+function inventoryFormPayload() {
+  return {
+    name: inventoryNameInput?.value.trim() || "",
+    barcode: inventoryBarcodeInput?.value.trim() || null,
+    sku: inventorySkuInput?.value.trim() || null,
+    category: inventoryCategoryInput?.value.trim() || null,
+    brand: inventoryBrandInput?.value.trim() || null,
+    unit_price: Number(inventoryUnitPriceInput?.value || 0),
+    cost_price: inventoryCostPriceInput?.value === "" ? null : Number(inventoryCostPriceInput?.value || 0),
+    currency: inventoryCurrencyInput?.value.trim() || "COP",
+    stock_quantity: Number(inventoryStockInput?.value || 0),
+    min_stock_quantity: Number(inventoryMinStockInput?.value || 0),
+    unit_label: inventoryUnitLabelInput?.value.trim() || "unidad",
+    status: inventoryStatusInput?.value || "ACTIVE",
+    description: inventoryDescriptionInput?.value.trim() || null,
+  };
+}
+
+async function submitInventoryProduct(event) {
+  event.preventDefault();
+  const productId = inventoryProductIdInput?.value || "";
+  const payload = inventoryFormPayload();
+  if (!payload.name || payload.unit_price < 0) {
+    setInlineMessage(inventoryMessage, "Completa nombre y precio de venta.", "error");
+    return;
+  }
+  setButtonLoading(inventorySaveButton, true, productId ? "Actualizando..." : "Guardando...");
+  setInlineMessage(inventoryMessage, "Guardando producto en inventario...", "info");
+  try {
+    const data = await api(productId ? `/api/business/inventory/products/${productId}` : "/api/business/inventory/products", {
+      method: productId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.product;
+    state.inventoryProducts = [
+      saved,
+      ...(state.inventoryProducts || []).filter((item) => item.id !== saved.id),
+    ];
+    state.inventoryLoaded = true;
+    resetInventoryForm();
+    renderInventoryProductOptions();
+    renderInventoryView();
+    setInlineMessage(inventoryMessage, "Producto guardado correctamente.", "success");
+    showFeedback("Producto guardado en inventario.", "success", { title: "Inventario" });
+  } catch (error) {
+    setInlineMessage(inventoryMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo guardar" });
+  } finally {
+    setButtonLoading(inventorySaveButton, false);
+  }
+}
+
+async function archiveInventoryProduct(productId) {
+  const product = (state.inventoryProducts || []).find((item) => item.id === productId);
+  if (!product) return;
+  if (!window.confirm(`Archivar ${product.name}? Seguirá disponible historicamente, pero no como producto activo.`)) return;
+  try {
+    await api(`/api/business/inventory/products/${productId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.inventoryProducts = (state.inventoryProducts || []).map((item) => (
+      item.id === productId ? { ...item, status: "ARCHIVED" } : item
+    ));
+    renderInventoryProductOptions();
+    renderInventoryView();
+    showFeedback("Producto archivado.", "success", { title: "Inventario" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo archivar" });
+  }
+}
+
+function applyInventoryProductToSaleInput(productInput, amountInput, currencyInput = null) {
+  const product = findInventoryProduct(productInput?.value || "");
+  if (!product) return null;
+  if (amountInput && Number(amountInput.value || 0) <= 0) {
+    amountInput.value = String(Number(product.unit_price || 0));
+  }
+  if (currencyInput && !currencyInput.value) {
+    currencyInput.value = product.currency || "COP";
+  }
+  return product;
 }
 
 function updateTriviaQuestionVisibility() {
@@ -9043,6 +9396,8 @@ async function submitPostSaleQr(event) {
     const beneficiaryName = postSaleCustomerInput.value.trim();
     const attributionSource = postSaleAttributionSourceInput?.value.trim() || ticketUseCase;
     const attributionSubject = postSaleAttributionSubjectInput?.value.trim() || ticketOccasion || productName || benefitLabel || null;
+    const inventoryProduct = findInventoryProduct(productName);
+    const inventorySaleProduct = productSalePayload(inventoryProduct, 1, Number(postSaleAmountInput.value || inventoryProduct?.unit_price || 0));
     const benefitValue = {
       ...parseJsonObject(postSaleBenefitValueInput.value),
       product_name: productName || null,
@@ -9074,6 +9429,7 @@ async function submitPostSaleQr(event) {
           ticket_occasion: ticketOccasion,
           intended_recipient_name: beneficiaryName || null,
           gift_product_name: productName || null,
+          products: inventorySaleProduct ? [inventorySaleProduct] : [],
         },
         expires_mode: postSaleExpiresModeInput.value,
         expires_at: postSaleExpiresAtInput.value ? new Date(postSaleExpiresAtInput.value).toISOString() : null,
@@ -10649,11 +11005,12 @@ async function shareTicketQrFile({ filename, dataUrl, text }) {
       files: [file],
     });
     showFeedback("Ticket QR compartido como imagen.", "success", { title: "Ticket QR" });
-    return;
+    return true;
   }
 
   triggerBlobDownload(file.name, blob);
   showFeedback("Tu navegador no permite compartir archivos directamente. Se descargo el ticket QR para adjuntarlo en WhatsApp.", "info", { title: "Ticket QR descargado" });
+  return false;
 }
 
 function loadImageDataUrl(src) {
@@ -11663,10 +12020,17 @@ async function submitAccountProfile(event) {
         website: optionalInputValue(accountWebsiteInput),
         city: optionalInputValue(accountCityInput),
         address: optionalInputValue(accountAddressInput),
+        affiliate_point_amount_cop: Number(accountAffiliatePointAmountInput?.value || 1000),
+        affiliate_referral_points_rate: Number(accountAffiliatePointRateInput?.value || 1),
+        affiliate_referral_points_rounding: accountAffiliatePointRoundingInput?.value || "floor",
       }),
     });
     mergeBusinessProfile(data.business || null);
+    if (data.business?.affiliate_points) {
+      state.affiliatePointRules = data.business.affiliate_points;
+    }
     renderAccountView();
+    renderAffiliatePurchaseItems();
     renderBusinessLogoPanel();
     setInlineMessage(accountProfileMessage, "Datos guardados.", "success");
     showFeedback("La información básica de la empresa fue actualizada.", "success", { title: "Perfil actualizado" });
@@ -12114,12 +12478,181 @@ async function submitAffiliateForm(event) {
   }
 }
 
+function renderAffiliateRewardRules() {
+  if (!affiliateRewardRuleList) return;
+  const rules = state.affiliateRewardRules || [];
+  if (!rules.length) {
+    affiliateRewardRuleList.innerHTML = '<div class="affiliate-selected-empty">Sin premios configurados.</div>';
+    return;
+  }
+  affiliateRewardRuleList.innerHTML = rules.map((rule) => `
+    <div class="affiliate-reward-row">
+      <div>
+        <strong>${escapeHtml(rule.title || rule.benefit_label || "Premio")}</strong>
+        <span>${escapeHtml(toNumber(rule.required_points || 0))} puntos · ${escapeHtml(rule.benefit_label || "-")}</span>
+      </div>
+      <button class="ghost-button danger-button" type="button" data-affiliate-reward-archive="${escapeHtml(rule.id)}">Archivar</button>
+    </div>
+  `).join("");
+  affiliateRewardRuleList.querySelectorAll("[data-affiliate-reward-archive]").forEach((button) => {
+    button.addEventListener("click", () => archiveAffiliateRewardRule(button.dataset.affiliateRewardArchive));
+  });
+}
+
+function renderAffiliateRewardUnlocks(unlocks = state.affiliateRewardUnlocks || []) {
+  if (!affiliateRewardUnlockList) return;
+  const affiliate = state.selectedAffiliate;
+  if (affiliateRewardUnlockTitle) {
+    affiliateRewardUnlockTitle.textContent = affiliate
+      ? `Desbloqueados de ${affiliate.full_name || "afiliado"}`
+      : "Desbloqueados del afiliado";
+  }
+  if (!affiliate) {
+    affiliateRewardUnlockList.innerHTML = '<div class="affiliate-selected-empty">Selecciona un afiliado para ver premios desbloqueados.</div>';
+    return;
+  }
+  if (!unlocks.length) {
+    affiliateRewardUnlockList.innerHTML = '<div class="affiliate-selected-empty">No hay reglas de premio activas.</div>';
+    return;
+  }
+  affiliateRewardUnlockList.innerHTML = unlocks.map((item) => {
+    const status = item.generated ? "Ticket generado" : item.unlocked ? "Desbloqueado" : `Faltan ${toNumber(item.points_remaining || 0)} puntos`;
+    return `
+      <div class="affiliate-reward-row ${item.unlocked ? "is-unlocked" : "is-locked"}">
+        <div>
+          <strong>${escapeHtml(item.title || item.benefit_label || "Premio")}</strong>
+          <span>${escapeHtml(status)} · requiere ${escapeHtml(toNumber(item.required_points || 0))} puntos</span>
+        </div>
+        ${item.generated && item.public_ticket_url
+          ? `<button class="ghost-button" type="button" data-affiliate-reward-open="${escapeHtml(item.public_ticket_url)}">Abrir</button>`
+          : `<button class="solid-button" type="button" data-affiliate-reward-generate="${escapeHtml(item.id)}" ${item.unlocked ? "" : "disabled"}>Generar ticket</button>`}
+      </div>
+    `;
+  }).join("");
+  affiliateRewardUnlockList.querySelectorAll("[data-affiliate-reward-open]").forEach((button) => {
+    button.addEventListener("click", () => window.open(button.dataset.affiliateRewardOpen, "_blank", "noopener"));
+  });
+  affiliateRewardUnlockList.querySelectorAll("[data-affiliate-reward-generate]").forEach((button) => {
+    button.addEventListener("click", () => generateAffiliateRewardTicket(button.dataset.affiliateRewardGenerate));
+  });
+}
+
+function resetAffiliateRewardResult() {
+  if (affiliateRewardTicketResult) {
+    affiliateRewardTicketResult.classList.add("hidden");
+    affiliateRewardTicketResult.innerHTML = "";
+  }
+  setInlineMessage(affiliateRewardTicketMessage, "", "info");
+}
+
+async function submitAffiliateRewardRule(event) {
+  event.preventDefault();
+  if (!session?.user?.business_id) return;
+  setButtonLoading(affiliateRewardRuleSaveButton, true, "Guardando...");
+  setInlineMessage(affiliateRewardRuleMessage, "Guardando premio de afiliado...", "info");
+  try {
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliate-rewards`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: affiliateRewardTitleInput.value.trim(),
+        description: optionalInputValue(affiliateRewardDescriptionInput),
+        required_points: Number(affiliateRewardPointsInput.value || 0),
+        benefit_type: affiliateRewardBenefitTypeInput.value || "CUSTOM",
+        benefit_label: affiliateRewardBenefitLabelInput.value.trim(),
+        benefit_value: parseJsonObject(affiliateRewardBenefitValueInput.value),
+        expiration_days: affiliateRewardExpirationInput.value ? Number(affiliateRewardExpirationInput.value) : null,
+      }),
+    });
+    state.affiliateRewardRules = [data.reward_rule, ...(state.affiliateRewardRules || []).filter((item) => item.id !== data.reward_rule.id)];
+    affiliateRewardRuleForm.reset();
+    if (affiliateRewardPointsInput) affiliateRewardPointsInput.value = "10";
+    renderAffiliateRewardRules();
+    await refreshSelectedAffiliateRewards();
+    setInlineMessage(affiliateRewardRuleMessage, "Premio guardado.", "success");
+    showFeedback("Premio de afiliado guardado.", "success", { title: "Afiliados" });
+  } catch (error) {
+    setInlineMessage(affiliateRewardRuleMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo guardar" });
+  } finally {
+    setButtonLoading(affiliateRewardRuleSaveButton, false);
+  }
+}
+
+async function archiveAffiliateRewardRule(ruleId) {
+  if (!session?.user?.business_id || !ruleId) return;
+  if (!window.confirm("Archivar este premio de afiliado? Los tickets ya generados no se eliminan.")) return;
+  try {
+    await api(`/api/portal/businesses/${session.user.business_id}/affiliate-rewards/${ruleId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.affiliateRewardRules = (state.affiliateRewardRules || []).filter((item) => item.id !== ruleId);
+    renderAffiliateRewardRules();
+    await refreshSelectedAffiliateRewards();
+    showFeedback("Premio archivado.", "success", { title: "Afiliados" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo archivar" });
+  }
+}
+
+async function refreshSelectedAffiliateRewards() {
+  if (!state.selectedAffiliateId || !session?.user?.business_id) {
+    state.affiliateRewardUnlocks = [];
+    renderAffiliateRewardUnlocks();
+    return;
+  }
+  const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}`, { headers: authHeaders() }, null);
+  if (!data) return;
+  if (data.reward_unlocks) {
+    state.affiliateRewardUnlocks = data.reward_unlocks;
+    renderAffiliateRewardUnlocks();
+  }
+}
+
+async function generateAffiliateRewardTicket(ruleId) {
+  if (!state.selectedAffiliateId || !session?.user?.business_id || !ruleId) return;
+  setInlineMessage(affiliateRewardTicketMessage, "Generando ticket desbloqueado...", "info");
+  showFeedback("Creando ticket QR del premio desbloqueado.", "loading", { title: "Premio afiliado", timeout: 0 });
+  try {
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}/reward-tickets`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ reward_rule_id: ruleId }),
+    });
+    if (data.credit_account) state.qrCreditAccount = data.credit_account;
+    const ticket = data.ticket || {};
+    if (affiliateRewardTicketResult) {
+      affiliateRewardTicketResult.classList.remove("hidden");
+      affiliateRewardTicketResult.innerHTML = `
+        <div class="qr-result-grid">
+          ${ticket.qr_image_data_url ? `<img src="${escapeHtml(ticket.qr_image_data_url)}" alt="Ticket premio afiliado">` : ""}
+          <div>
+            <strong>Ticket listo para enviar</strong>
+            <p>${escapeHtml(ticket.benefit?.label || "Premio desbloqueado")}</p>
+            <a class="ghost-button" href="${escapeHtml(ticket.public_ticket_url || ticket.validator_url || "#")}" target="_blank" rel="noopener">Abrir ticket</a>
+          </div>
+        </div>
+      `;
+    }
+    setInlineMessage(affiliateRewardTicketMessage, data.existing ? "Este premio ya tenía ticket generado." : "Ticket generado correctamente.", "success");
+    await refreshSelectedAffiliateRewards();
+    showFeedback("Ticket de premio listo para enviar.", "success", { title: "Premio afiliado" });
+  } catch (error) {
+    setInlineMessage(affiliateRewardTicketMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo generar" });
+  }
+}
+
 function normalizeAffiliatePurchaseItems() {
   const rows = Array.isArray(state.affiliatePurchaseItems) && state.affiliatePurchaseItems.length
     ? state.affiliatePurchaseItems
     : [{ name: "", quantity: 1, unit_price: 0 }];
   state.affiliatePurchaseItems = rows.map((item) => ({
     name: String(item.name || "").trim(),
+    inventory_product_id: item.inventory_product_id || null,
+    sku: item.sku || null,
+    barcode: item.barcode || null,
     quantity: Math.max(1, Number(item.quantity || 1)),
     unit_price: Math.max(0, Number(item.unit_price || 0)),
   }));
@@ -12136,11 +12669,11 @@ function affiliatePurchaseTotal() {
 
 function affiliateReferralPointsEstimate(total) {
   const rules = state.affiliatePointRules || {};
-  const pointAmount = Number(rules.point_amount_cop || 0);
-  const rate = Number(rules.referral_rate || 0);
+  const pointAmount = Number(rules.point_amount_cop || 1000);
+  const rate = Number(rules.referral_rate || 1);
   if (!pointAmount || !rate || !Number.isFinite(total) || total <= 0) return null;
   const raw = (total / pointAmount) * rate;
-  return Math.max(0, rules.referral_rounding === "floor" ? Math.floor(raw) : Math.ceil(raw));
+  return Math.max(0, rules.referral_rounding === "ceil" ? Math.ceil(raw) : Math.floor(raw));
 }
 
 function updateAffiliatePurchaseTotals() {
@@ -12170,7 +12703,7 @@ function renderAffiliatePurchaseItems() {
     <div class="affiliate-purchase-item" data-affiliate-purchase-row="${index}">
       <label>
         <span>Producto</span>
-        <input type="text" data-affiliate-purchase-field="name" value="${escapeHtml(item.name)}" placeholder="Nombre producto" ${disabled ? "disabled" : ""}>
+        <input type="text" list="inventoryProductOptions" data-affiliate-purchase-field="name" value="${escapeHtml(item.name)}" placeholder="Nombre producto" ${disabled ? "disabled" : ""}>
       </label>
       <label>
         <span>Cant.</span>
@@ -12194,6 +12727,22 @@ function renderAffiliatePurchaseItems() {
       const field = input.dataset.affiliatePurchaseField;
       const next = normalizeAffiliatePurchaseItems();
       next[index][field] = field === "name" ? input.value : Number(input.value || 0);
+      if (field === "name") {
+        const product = findInventoryProduct(input.value);
+        if (product) {
+          next[index].name = product.name;
+          next[index].inventory_product_id = product.id;
+          next[index].sku = product.sku || null;
+          next[index].barcode = product.barcode || null;
+          if (!Number(next[index].unit_price || 0)) next[index].unit_price = Number(product.unit_price || 0);
+          const unitInput = row?.querySelector('[data-affiliate-purchase-field="unit_price"]');
+          if (unitInput && !Number(unitInput.value || 0)) unitInput.value = String(next[index].unit_price || 0);
+        } else {
+          next[index].inventory_product_id = null;
+          next[index].sku = null;
+          next[index].barcode = null;
+        }
+      }
       state.affiliatePurchaseItems = next;
       const totalCell = row?.querySelector(".affiliate-purchase-line-total strong");
       if (totalCell) totalCell.textContent = money(affiliatePurchaseLineTotal(next[index]));
@@ -12218,6 +12767,9 @@ async function awardSelectedAffiliatePoints() {
   const products = purchase.items
     .map((item) => ({
       name: String(item.name || "").trim(),
+      inventory_product_id: item.inventory_product_id || null,
+      sku: item.sku || null,
+      barcode: item.barcode || null,
       quantity: Math.max(1, Number(item.quantity || 1)),
       unit_price: Math.max(0, Number(item.unit_price || 0)),
       line_total: affiliatePurchaseLineTotal(item),
@@ -12283,6 +12835,8 @@ async function awardSelectedAffiliatePoints() {
     state.selectedAffiliate = (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
+    await loadInventoryProducts({ force: true, quiet: true });
+    renderInventoryProductOptions();
     if (campaignId) {
       if (state.selectedCampaignId !== campaignId) {
         state.selectedCampaignId = campaignId;
@@ -12534,13 +13088,32 @@ function setZipDownloadGuidance(filename, stage = "ready") {
   }
 }
 
+async function fetchLeadTicketDownload(qrId) {
+  if (!qrId) return;
+  const data = await api(`/api/business/contacts/feed/${encodeURIComponent(qrId)}/active-qr`, {
+    headers: authHeaders(),
+  });
+  const publicUrl = data.public_ticket_url || data.share_url || data.claim_url || data.scan_url || "";
+  if (publicUrl) {
+    state.lastLeadActivationLink = publicUrl;
+  }
+  return { ...data, public_ticket_url: publicUrl, share_url: publicUrl };
+}
+
+function leadTicketWhatsAppMessage(ticket = {}, name = "") {
+  const publicUrl = ticket.public_ticket_url || ticket.share_url || ticket.claim_url || ticket.scan_url || "";
+  return [
+    `Hola ${name || ticket.player_name || ""}`.trim(),
+    "te compartimos tu ticket activo de beneficio. Abre este enlace publico para ver la imagen con QR:",
+    publicUrl,
+  ].filter(Boolean).join(" ");
+}
+
 async function downloadLeadQr(qrId) {
   if (!qrId) return;
   try {
-    const data = await api(`/api/business/contacts/feed/${encodeURIComponent(qrId)}/active-qr`, {
-      headers: authHeaders(),
-    });
-    downloadDataUrl(data.filename || `qr-${qrId}.png`, data.qr_image_data_url);
+    const data = await fetchLeadTicketDownload(qrId);
+    await downloadDataUrl(data.filename || `ticket-${qrId}.png`, data.qr_image_data_url);
     showFeedback(`Ticket descargado para ${data.player_name || "el lead"}. Puedes reenviarlo por el canal que prefieras.`);
   } catch (error) {
     showFeedback(error.message, "error");
@@ -12550,19 +13123,30 @@ async function downloadLeadQr(qrId) {
 async function shareLeadQrWhatsApp(qrId, phone, name) {
   if (!qrId) return;
   try {
-    const data = await api(`/api/business/contacts/feed/${encodeURIComponent(qrId)}/active-qr`, {
-      headers: authHeaders(),
-    });
-    const rawPhone = String(phone || data.player_phone || "").replace(/[^\d]/g, "");
-    const text = [
-      `Hola ${name || data.player_name || ""}`.trim(),
-      "este es tu ticket activo de beneficio MarketGames QR para presentar en el punto físico:",
-      data.validator_url,
-    ].join(" ");
+    const data = await fetchLeadTicketDownload(qrId);
+    const rawPhone = whatsappPhoneFromInput(phone || data.player_phone || "");
+    const text = leadTicketWhatsAppMessage(data, name || data.player_name || "");
+    const imageDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url || "");
+    try {
+      if (imageDataUrl) {
+        const sharedAsFile = await shareTicketQrFile({
+          filename: data.filename || `ticket-${qrId}.png`,
+          dataUrl: imageDataUrl,
+          text,
+        });
+        if (sharedAsFile) return;
+      }
+    } catch (shareError) {
+      if (shareError?.name === "AbortError") return;
+      if (imageDataUrl) {
+        await downloadDataUrl(data.filename || `ticket-${qrId}.png`, imageDataUrl);
+      }
+    }
     const target = rawPhone
       ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(target, "_blank", "noopener");
+    showFeedback("Ticket listo: se descargo la imagen y se abrio WhatsApp con el link publico.", "success");
   } catch (error) {
     showFeedback(error.message, "error");
   }
@@ -13317,8 +13901,10 @@ function ticketSourceDescription(ticket = {}) {
 }
 
 function ticketPublicUrl(ticket = {}) {
-  if (!ticket.token) return "";
-  return `${window.location.origin}/empresa/?view=validator&token=${encodeURIComponent(ticket.token)}`;
+  return ticket.public_ticket_url
+    || ticket.share_url
+    || ticket.claim_url
+    || (ticket.token ? `${window.location.origin}/claim/${encodeURIComponent(ticket.token)}` : "");
 }
 
 function ticketGroups(tickets = []) {
@@ -13327,6 +13913,10 @@ function ticketGroups(tickets = []) {
     redeemed: tickets.filter(isRedeemedTicket),
     other: tickets.filter((ticket) => !isActiveTicket(ticket) && !isRedeemedTicket(ticket)),
   };
+}
+
+function firstActiveLeadTicket(detail = state.selectedLeadDetail) {
+  return ticketGroups(detail?.benefits || []).active[0] || null;
 }
 
 function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
@@ -13362,7 +13952,8 @@ function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
           <span><strong>ID</strong>${escapeHtml(ticket.id || "-")}</span>
         </div>
         <div class="activation-row-actions">
-          ${isActiveTicket(ticket) ? `<button class="ghost-button" type="button" data-download-ticket="${escapeHtml(ticket.id)}">Descargar QR</button>` : ""}
+          ${isActiveTicket(ticket) ? `<button class="solid-button compact" type="button" data-share-ticket-whatsapp="${escapeHtml(ticket.id)}">Enviar WhatsApp</button>` : ""}
+          ${isActiveTicket(ticket) ? `<button class="ghost-button" type="button" data-download-ticket="${escapeHtml(ticket.id)}">Descargar imagen</button>` : ""}
           ${publicUrl ? `<a class="ghost-button" href="${escapeHtml(publicUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
           ${publicUrl ? `<button class="ghost-button" type="button" data-copy-link="${escapeHtml(publicUrl)}">Copiar ticket</button>` : ""}
         </div>
@@ -13641,8 +14232,9 @@ function renderLeadTab(detail) {
       <span>${escapeHtml(item.status || "-")} · ${formatDate(item.created_at)}</span>
       <small>
         ${escapeHtml(item.campaign_name || "Sin campaña")}
-        ${item.qr_code_id ? `· <button class="link-button" data-download-activation-ticket="${escapeHtml(item.qr_code_id)}" type="button">Descargar ticket</button>` : ""}
-        ${item.public_url ? `· <button class="link-button" data-copy-link="${escapeHtml(item.public_url)}" type="button">Copiar ticket</button>` : ""}
+        ${item.qr_code_id ? `· <button class="link-button" data-share-ticket-whatsapp="${escapeHtml(item.qr_code_id)}" type="button">Enviar WhatsApp</button>` : ""}
+        ${item.qr_code_id ? `· <button class="link-button" data-download-activation-ticket="${escapeHtml(item.qr_code_id)}" type="button">Descargar imagen</button>` : ""}
+        ${item.qr_code_id ? `· <button class="link-button" data-copy-ticket-qr="${escapeHtml(item.qr_code_id)}" type="button">Copiar ticket</button>` : item.public_url ? `· <button class="link-button" data-copy-link="${escapeHtml(item.public_url)}" type="button">Copiar ticket</button>` : ""}
       </small>
     `), "Sin activaciones enviadas."),
     games: () => detailList((detail.games || []).map((item) => `
@@ -13729,11 +14321,31 @@ function bindLeadDetailPanelActions() {
       showFeedback("Ticket copiado.", "success");
     });
   });
+  leadDetailContent?.querySelectorAll("[data-copy-ticket-qr]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        const data = await fetchLeadTicketDownload(button.dataset.copyTicketQr);
+        const link = data.public_ticket_url || data.share_url || "";
+        if (!link) throw new Error("No se pudo obtener el link publico del ticket.");
+        await navigator.clipboard?.writeText(link);
+        state.lastLeadActivationLink = link;
+        showFeedback("Ticket copiado.", "success");
+      } catch (error) {
+        showFeedback(error.message, "error");
+      }
+    });
+  });
   leadDetailContent?.querySelectorAll("[data-download-activation-ticket]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadActivationTicket));
   });
   leadDetailContent?.querySelectorAll("[data-download-ticket]").forEach((button) => {
     button.addEventListener("click", () => downloadLeadQr(button.dataset.downloadTicket));
+  });
+  leadDetailContent?.querySelectorAll("[data-share-ticket-whatsapp]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const lead = state.selectedLeadDetail?.lead || {};
+      shareLeadQrWhatsApp(button.dataset.shareTicketWhatsapp, lead.phone, lead.name);
+    });
   });
   const interestForm = document.getElementById("leadInterestForm");
   interestForm?.addEventListener("submit", addLeadInterestFromForm);
@@ -14189,6 +14801,8 @@ async function renderAffiliatesView() {
   }
   state.selectedAffiliate = selected;
   renderAffiliatePurchaseCampaignOptions();
+  renderAffiliateRewardRules();
+  resetAffiliateRewardResult();
 
   affiliateTable.innerHTML = rows.map((item) => `
     <tr data-affiliate-id="${escapeHtml(item.id)}" data-affiliate-row-select="${escapeHtml(item.id)}" tabindex="0" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
@@ -14253,6 +14867,8 @@ async function renderAffiliatesView() {
     downloadAffiliateCardButton.disabled = true;
     if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = true;
     if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = true;
+    state.affiliateRewardUnlocks = [];
+    renderAffiliateRewardUnlocks();
     if (affiliateReferralQrSelectedMeta) affiliateReferralQrSelectedMeta.textContent = "Selecciona un afiliado del listado para generar sus tickets de recomendación.";
     setInlineMessage(affiliateReferralQrMessage, "", "info");
     renderAffiliateReferralQrResult(null);
@@ -14289,6 +14905,8 @@ async function renderAffiliatesView() {
     };
     renderAffiliateSelectedSummary(state.selectedAffiliate);
     state.selectedAffiliateLedger = detail.ledger || [];
+    state.affiliateRewardUnlocks = detail.reward_unlocks || [];
+    renderAffiliateRewardUnlocks();
     await renderAffiliateCardPreview(state.selectedAffiliate);
     affiliateLedgerTable.innerHTML = (state.selectedAffiliateLedger || []).map((item) => `
       <tr>
@@ -15116,14 +15734,26 @@ leadDetailTabs?.addEventListener("click", (event) => {
   if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
 });
 leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
-leadSendBenefitButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
+leadSendBenefitButton?.addEventListener("click", () => {
+  const ticket = firstActiveLeadTicket();
+  if (ticket?.id) {
+    const lead = state.selectedLeadDetail?.lead || {};
+    shareLeadQrWhatsApp(ticket.id, lead.phone, lead.name);
+    return;
+  }
+  openLeadActivationModal(state.selectedLeadRef, "TICKET");
+});
 leadCreateNoteButton?.addEventListener("click", () => {
   state.selectedLeadTab = "notes";
   leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.leadTab === "notes"));
   if (state.selectedLeadDetail) renderLeadTab(state.selectedLeadDetail);
 });
 leadCopyLastLinkButton?.addEventListener("click", async () => {
-  const link = state.lastLeadActivationLink || state.selectedLeadDetail?.activations?.find((item) => item.public_url)?.public_url || "";
+  const activeTicket = firstActiveLeadTicket();
+  const link = state.lastLeadActivationLink
+    || ticketPublicUrl(activeTicket || {})
+    || state.selectedLeadDetail?.activations?.find((item) => item.public_url)?.public_url
+    || "";
   if (!link) {
     showFeedback("Este lead aun no tiene ticket reciente para copiar.", "info");
     return;
@@ -15197,6 +15827,26 @@ window.addEventListener("beforeunload", () => {
 });
 affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);
 resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
+affiliateRewardRuleForm?.addEventListener("submit", submitAffiliateRewardRule);
+inventoryProductForm?.addEventListener("submit", submitInventoryProduct);
+inventoryResetButton?.addEventListener("click", resetInventoryForm);
+refreshInventoryButton?.addEventListener("click", async () => {
+  await loadInventoryProducts({ force: true });
+  renderInventoryView();
+});
+inventorySearchInput?.addEventListener("input", () => {
+  state.inventorySearch = inventorySearchInput.value;
+  renderInventoryView();
+});
+customerAcquisitionProductInput?.addEventListener("change", () => {
+  applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);
+});
+postSaleProductInput?.addEventListener("change", () => {
+  applyInventoryProductToSaleInput(postSaleProductInput, postSaleAmountInput, postSaleCurrencyInput);
+});
+validatorProductServiceInput?.addEventListener("change", () => {
+  applyInventoryProductToSaleInput(validatorProductServiceInput, validatorSaleAmountInput);
+});
 affiliatePurchaseAddItemButton?.addEventListener("click", () => {
   state.affiliatePurchaseItems = [
     ...normalizeAffiliatePurchaseItems(),

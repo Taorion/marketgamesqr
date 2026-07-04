@@ -1,5 +1,4 @@
 const bcrypt = require("bcryptjs");
-const QRCode = require("qrcode");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
@@ -25,7 +24,9 @@ const {
   affiliatePointRuleMetadata,
   getAffiliatePointRules,
   referralPointsForAmount,
+  rulesFromSettings,
 } = require("../services/affiliatePointRulesService");
+const { getIndividualQrDownload } = require("../services/strategicQrService");
 
 const launchChannelOptions = [
   "Instagram",
@@ -105,6 +106,9 @@ const businessProfileSchema = z.object({
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(220).optional().nullable(),
+  affiliate_point_amount_cop: z.number().positive().optional().nullable(),
+  affiliate_referral_points_rate: z.number().positive().optional().nullable(),
+  affiliate_referral_points_rounding: z.enum(["floor", "ceil"]).optional().nullable(),
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
   ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
 });
@@ -156,6 +160,25 @@ const customerAcquisitionSaleSchema = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
+
+const inventoryProductSchema = z.object({
+  sku: z.string().trim().max(80).optional().nullable(),
+  barcode: z.string().trim().max(120).optional().nullable(),
+  name: z.string().trim().min(2).max(180),
+  description: z.string().trim().max(1200).optional().nullable(),
+  category: z.string().trim().max(120).optional().nullable(),
+  brand: z.string().trim().max(120).optional().nullable(),
+  unit_price: z.number().min(0).default(0),
+  cost_price: z.number().min(0).optional().nullable(),
+  currency: z.string().trim().max(12).default("COP"),
+  stock_quantity: z.number().min(0).default(0),
+  min_stock_quantity: z.number().min(0).default(0),
+  unit_label: z.string().trim().max(40).default("unidad"),
+  status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]).default("ACTIVE"),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const inventoryProductPatchSchema = inventoryProductSchema.partial();
 
 const nullableText = (max) => z.preprocess(
   (value) => {
@@ -382,6 +405,7 @@ function businessProfileFromRow(row, user = null, options = {}) {
     website: settings.website || "",
     city: settings.city || "",
     address: settings.address || "",
+    affiliate_points: rulesFromSettings(settings),
     commercial_deal: settings.commercial_deal || null,
     logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
     has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
@@ -506,6 +530,23 @@ async function updateBusinessProfile(req, res, next) {
         settingsPatch[key] = cleanSetting(body[key]);
       }
     });
+    if (
+      Object.prototype.hasOwnProperty.call(body, "affiliate_point_amount_cop")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rate")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rounding")
+    ) {
+      const currentSettings = await query(
+        "select settings from businesses where id = $1 and is_active = true",
+        [businessId]
+      );
+      const currentAffiliatePoints = currentSettings.rows[0]?.settings?.affiliate_points || {};
+      settingsPatch.affiliate_points = {
+        ...currentAffiliatePoints,
+        point_amount_cop: Number(body.affiliate_point_amount_cop || currentAffiliatePoints.point_amount_cop || 1000),
+        referral_rate: Number(body.affiliate_referral_points_rate || currentAffiliatePoints.referral_rate || 1),
+        referral_rounding: body.affiliate_referral_points_rounding || currentAffiliatePoints.referral_rounding || "floor",
+      };
+    }
 
     const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url")
       || Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url")
@@ -707,6 +748,23 @@ async function createCustomerAcquisitionSale(req, res, next) {
         ]
       );
 
+      const inventoryItems = saleInventoryItems(body.metadata?.products);
+      for (const item of inventoryItems) {
+        const updatedInventory = await client.query(
+          `update business_inventory_products
+           set stock_quantity = greatest(0, stock_quantity - $3::numeric),
+               updated_at = now()
+           where id = $1
+             and business_id = $2
+             and status <> 'ARCHIVED'
+           returning id`,
+          [item.inventory_product_id, businessId, item.quantity]
+        );
+        if (!updatedInventory.rowCount) {
+          throw badRequest("Uno de los productos seleccionados no existe en el inventario activo del negocio.");
+        }
+      }
+
       const matchParams = [
         businessId,
         body.customer_document_id || null,
@@ -796,6 +854,196 @@ async function createCustomerAcquisitionSale(req, res, next) {
     });
 
     res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+function saleInventoryItems(products) {
+  if (!Array.isArray(products)) return [];
+  return products
+    .map((item) => ({
+      inventory_product_id: item?.inventory_product_id || item?.product_id || null,
+      quantity: Math.max(1, Number(item?.quantity || 1)),
+    }))
+    .filter((item) => item.inventory_product_id && Number.isFinite(item.quantity) && item.quantity > 0);
+}
+
+function inventorySearchWhere(search, params) {
+  const text = String(search || "").trim();
+  if (!text) return "";
+  params.push(`%${text.toLowerCase()}%`);
+  const index = params.length;
+  return `and (
+    lower(name) like $${index}
+    or lower(coalesce(sku, '')) like $${index}
+    or lower(coalesce(barcode, '')) like $${index}
+    or lower(coalesce(category, '')) like $${index}
+    or lower(coalesce(brand, '')) like $${index}
+  )`;
+}
+
+async function ensureInventoryProductUnique(client, businessId, payload, excludeId = null) {
+  if (!payload.sku && !payload.barcode) return;
+  const duplicate = await client.query(
+    `select id, sku, barcode
+     from business_inventory_products
+     where business_id = $1
+       and ($2::uuid is null or id <> $2)
+       and (
+         ($3::text is not null and nullif(sku, '') = $3)
+         or ($4::text is not null and nullif(barcode, '') = $4)
+       )
+     limit 1`,
+    [businessId, excludeId, payload.sku || null, payload.barcode || null]
+  );
+  if (duplicate.rowCount) {
+    throw badRequest("Ya existe un producto con ese SKU o codigo de barras en este negocio.");
+  }
+}
+
+function mapInventoryPayload(body, userId) {
+  return {
+    sku: body.sku || null,
+    barcode: body.barcode || null,
+    name: body.name,
+    description: body.description || null,
+    category: body.category || null,
+    brand: body.brand || null,
+    unit_price: Number(body.unit_price || 0),
+    cost_price: body.cost_price === null || body.cost_price === undefined ? null : Number(body.cost_price || 0),
+    currency: body.currency || "COP",
+    stock_quantity: Number(body.stock_quantity || 0),
+    min_stock_quantity: Number(body.min_stock_quantity || 0),
+    unit_label: body.unit_label || "unidad",
+    status: body.status || "ACTIVE",
+    metadata: body.metadata || {},
+    created_by_user_id: userId || null,
+  };
+}
+
+async function listInventoryProducts(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 200, 500);
+    const params = [businessId];
+    const searchWhere = inventorySearchWhere(req.query.search, params);
+    const includeArchived = String(req.query.include_archived || "") === "true";
+    params.push(limit);
+    const result = await query(
+      `select *,
+              (stock_quantity <= min_stock_quantity) as low_stock
+       from business_inventory_products
+       where business_id = $1
+         ${includeArchived ? "" : "and status <> 'ARCHIVED'"}
+         ${searchWhere}
+       order by status asc, updated_at desc, name asc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ products: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInventoryProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(inventoryProductSchema, req.body);
+    const payload = mapInventoryPayload(body, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await ensureInventoryProductUnique(client, businessId, payload);
+      return client.query(
+        `insert into business_inventory_products
+          (business_id, sku, barcode, name, description, category, brand, unit_price, cost_price,
+           currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+         returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
+        [
+          businessId,
+          payload.sku,
+          payload.barcode,
+          payload.name,
+          payload.description,
+          payload.category,
+          payload.brand,
+          payload.unit_price,
+          payload.cost_price,
+          payload.currency,
+          payload.stock_quantity,
+          payload.min_stock_quantity,
+          payload.unit_label,
+          payload.status,
+          JSON.stringify(payload.metadata),
+          payload.created_by_user_id,
+        ]
+      );
+    });
+    res.status(201).json({ product: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateInventoryProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(inventoryProductPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_inventory_products where id = $1 and business_id = $2",
+      [req.params.productId, businessId]
+    );
+    if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
+    const payload = mapInventoryPayload({ ...existing.rows[0], ...body }, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await ensureInventoryProductUnique(client, businessId, payload, req.params.productId);
+      return client.query(
+        `update business_inventory_products
+         set sku = $3, barcode = $4, name = $5, description = $6, category = $7, brand = $8,
+             unit_price = $9, cost_price = $10, currency = $11, stock_quantity = $12,
+             min_stock_quantity = $13, unit_label = $14, status = $15,
+             metadata = $16::jsonb, updated_at = now()
+         where id = $1 and business_id = $2
+         returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
+        [
+          req.params.productId,
+          businessId,
+          payload.sku,
+          payload.barcode,
+          payload.name,
+          payload.description,
+          payload.category,
+          payload.brand,
+          payload.unit_price,
+          payload.cost_price,
+          payload.currency,
+          payload.stock_quantity,
+          payload.min_stock_quantity,
+          payload.unit_label,
+          payload.status,
+          JSON.stringify(payload.metadata),
+        ]
+      );
+    });
+    res.json({ product: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveInventoryProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `update business_inventory_products
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning id`,
+      [req.params.productId, businessId]
+    );
+    if (!result.rowCount) throw badRequest("Producto de inventario no encontrado.");
+    res.json({ ok: true, id: req.params.productId });
   } catch (error) {
     next(error);
   }
@@ -1732,22 +1980,23 @@ async function downloadActiveLeadQr(req, res, next) {
       throw badRequest("This lead does not have an active QR available for download.");
     }
 
-    const validatorUrl = buildValidatorUrl(qr.token);
     const safeName = (qr.player_name || "cliente")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .toLowerCase() || "cliente";
+    const ticket = await getIndividualQrDownload(businessId, qr.id, { publicClaimUrl: true });
 
     res.json({
+      ...ticket,
       qr_code_id: qr.id,
       status: qr.status,
       expires_at: qr.expires_at,
       player_name: qr.player_name,
-      validator_url: validatorUrl,
-      filename: `qr-${safeName}-${String(qr.id).slice(0, 8)}.png`,
-      qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+      public_ticket_url: ticket.claim_url,
+      share_url: ticket.claim_url,
+      filename: `ticket-${safeName}-${String(qr.id).slice(0, 8)}.${ticket.filename?.endsWith(".svg") ? "svg" : "png"}`,
     });
   } catch (error) {
     next(error);
@@ -1779,23 +2028,24 @@ async function downloadLeadQrById(req, res, next) {
       throw badRequest("Este contacto no tiene un ticket activo disponible para descargar.");
     }
 
-    const validatorUrl = buildValidatorUrl(qr.token);
     const safeName = (qr.player_name || "cliente")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .toLowerCase() || "cliente";
+    const ticket = await getIndividualQrDownload(businessId, qr.id, { publicClaimUrl: true });
 
     res.json({
+      ...ticket,
       qr_code_id: qr.id,
       status: qr.status,
       expires_at: qr.expires_at,
       player_name: qr.player_name,
       player_phone: qr.player_phone,
-      validator_url: validatorUrl,
-      filename: `qr-${safeName}-${String(qr.id).slice(0, 8)}.png`,
-      qr_image_data_url: await QRCode.toDataURL(validatorUrl),
+      public_ticket_url: ticket.claim_url,
+      share_url: ticket.claim_url,
+      filename: `ticket-${safeName}-${String(qr.id).slice(0, 8)}.${ticket.filename?.endsWith(".svg") ? "svg" : "png"}`,
     });
   } catch (error) {
     next(error);
@@ -2019,6 +2269,10 @@ module.exports = {
   createBusinessUser,
   updateBusinessUser,
   createCustomerAcquisitionSale,
+  archiveInventoryProduct,
+  createInventoryProduct,
+  listInventoryProducts,
+  updateInventoryProduct,
   listCampaigns,
   createCampaign,
   updateCampaign,

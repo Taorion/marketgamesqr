@@ -755,13 +755,14 @@ async function getQrMetrics(businessId) {
   };
 }
 
-async function getIndividualQrDownload(businessId, qrId) {
+async function getIndividualQrDownload(businessId, qrId, options = {}) {
   const result = await query(
     `select
        q.id,
        q.token,
        q.status,
        q.claim_required,
+       q.expires_at,
        q.origin_type,
        q.benefit_type,
        q.benefit_value,
@@ -779,6 +780,7 @@ async function getIndividualQrDownload(businessId, qrId) {
     throw notFound("QR not found.");
   }
   const links = buildPublicQrLinks(qr);
+  const scanUrl = options.publicClaimUrl ? links.claim_url : links.scan_url;
   const brand = getBrandStyle(qr.business_settings || {});
   const hasFrame = Boolean(brand.ticketFrameUrl);
   const ticketLabel = qr.benefit_value?.label || qr.benefit_type || "Beneficio";
@@ -789,17 +791,18 @@ async function getIndividualQrDownload(businessId, qrId) {
   });
   const qrImageDataUrl = hasFrame
     ? await buildBrandedTicketSvgDataUrl({
-        scanUrl: links.scan_url,
+        scanUrl,
         brand,
         detailLines,
       })
-    : await QRCode.toDataURL(links.scan_url);
+    : await QRCode.toDataURL(scanUrl);
   return {
     qr_code_id: qr.id,
     status: qr.status,
     validator_url: links.validator_url,
     claim_url: links.claim_url,
     scan_url: links.scan_url,
+    public_ticket_url: links.claim_url,
     filename: `strategic-qr-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
     qr_image_data_url: qrImageDataUrl,
   };

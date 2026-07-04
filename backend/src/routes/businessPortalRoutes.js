@@ -13,6 +13,10 @@ const {
   createBusinessUser,
   updateBusinessUser,
   createCustomerAcquisitionSale,
+  archiveInventoryProduct,
+  createInventoryProduct,
+  listInventoryProducts,
+  updateInventoryProduct,
   listCampaigns,
   createCampaign,
   updateCampaign,
@@ -72,6 +76,10 @@ router.use(requirePortalAccess);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", commandCenterAnalytics);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
+router.get("/inventory/products", listInventoryProducts);
+router.post("/inventory/products", createInventoryProduct);
+router.patch("/inventory/products/:productId", updateInventoryProduct);
+router.delete("/inventory/products/:productId", archiveInventoryProduct);
 router.get("/campaigns", listCampaigns);
 router.post("/campaigns", createCampaign);
 router.get("/campaigns/:id", getCampaign);
