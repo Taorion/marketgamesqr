@@ -457,6 +457,7 @@ const triviaCampaignInput = document.getElementById("triviaCampaignInput");
 const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
 const triviaTitleInput = document.getElementById("triviaTitleInput");
 const triviaDescriptionInput = document.getElementById("triviaDescriptionInput");
+const triviaInviteMessageInput = document.getElementById("triviaInviteMessageInput");
 const triviaMaxWinnersInput = document.getElementById("triviaMaxWinnersInput");
 const triviaBenefitLabelInput = document.getElementById("triviaBenefitLabelInput");
 const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput");
@@ -7898,6 +7899,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     },
     visual_config: {
       source: "ticket_center_activation_builder",
+      invite_message_template: triviaInviteMessageInput?.value.trim() || defaultActivationInviteTemplate({ title: triviaTitleInput.value.trim() }),
     },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
@@ -8294,6 +8296,7 @@ function renderTriviaLaunchers() {
           <a class="table-link" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || item.public_url)}</a>
           <div class="activation-row-actions">
             <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar</button>
+            <button class="ghost-button" type="button" data-copy-activation-invite="${escapeHtml(item.id)}">Copiar mensaje</button>
             <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
           </div>
         </td>
@@ -8318,6 +8321,9 @@ function renderTriviaLaunchers() {
       await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
       showFeedback("Link público de activación copiado.");
     });
+  });
+  triviaLauncherTable.querySelectorAll("[data-copy-activation-invite]").forEach((button) => {
+    button.addEventListener("click", () => copyActivationInviteMessage(button.dataset.copyActivationInvite));
   });
   triviaLauncherTable.querySelectorAll("[data-activation-status]").forEach((button) => {
     button.addEventListener("click", () => updateActivationStatus(button.dataset.activationStatus, button.dataset.nextStatus));
@@ -8348,6 +8354,7 @@ async function showInteractiveActivationData(id) {
     `QR generados: ${activation.winners_count || 0}${activation.max_winners ? ` / ${activation.max_winners}` : ""}`,
     `Vence: ${activation.ends_at ? formatDate(activation.ends_at) : "Sin vencimiento"}`,
     `Link: ${activation.public_url}`,
+    `Mensaje: ${activationInviteMessage(activation)}`,
   ].join("\n");
   try {
     await navigator.clipboard?.writeText(summary);
@@ -8379,6 +8386,47 @@ function activationStatusClass(status) {
 
 function activationById(id) {
   return (state.triviaLaunchers || []).find((item) => String(item.id) === String(id));
+}
+
+function activationBusinessName() {
+  return state.businessProfile?.name || session?.user?.business?.name || "nuestro negocio";
+}
+
+function defaultActivationInviteTemplate(activation = {}) {
+  return `Hola, te invito a jugar ${activation.title || "{titulo}"}. Abre este enlace, deja tus datos y participa: {link}`;
+}
+
+function activationInviteTemplate(activation = {}) {
+  return activation.visual_config?.invite_message_template
+    || activation.interaction_config?.invite_message_template
+    || defaultActivationInviteTemplate(activation);
+}
+
+function activationInviteMessage(activation = {}) {
+  const link = activation.public_url || "{link}";
+  const title = activation.title || "esta activacion";
+  const business = activation.business?.name || activationBusinessName();
+  const template = activationInviteTemplate(activation);
+  const message = String(template || "")
+    .replaceAll("{link}", link)
+    .replaceAll("{titulo}", title)
+    .replaceAll("{title}", title)
+    .replaceAll("{negocio}", business)
+    .replaceAll("{business}", business)
+    .trim();
+  return message.includes(link) ? message : `${message}\n${link}`.trim();
+}
+
+async function copyActivationInviteMessage(id) {
+  const activation = activationById(id);
+  if (!activation) return;
+  const message = activationInviteMessage(activation);
+  try {
+    await navigator.clipboard?.writeText(message);
+    showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
+  } catch {
+    window.alert(message);
+  }
 }
 
 function activationParticipantPolicyLabel(activation) {
@@ -8446,6 +8494,8 @@ async function editInteractiveActivation(id) {
   if (title === null) return;
   const description = window.prompt("Descripcion para la landing", activation.description || "");
   if (description === null) return;
+  const inviteTemplate = window.prompt("Mensaje generico para invitar. Puedes usar {link}, {titulo} y {negocio}.", activationInviteTemplate(activation));
+  if (inviteTemplate === null) return;
   const maxRewardsText = window.prompt("Cupo máximo de QR/beneficios. Deja vacío para sin limite.", activation.max_rewards || "");
   if (maxRewardsText === null) return;
   const maxRewards = String(maxRewardsText).trim() ? Number(maxRewardsText) : null;
@@ -8476,6 +8526,10 @@ async function editInteractiveActivation(id) {
       title: title.trim(),
       description: description.trim() || null,
       max_rewards: maxRewards,
+      visual_config: {
+        ...(activation.visual_config || {}),
+        invite_message_template: inviteTemplate.trim() || defaultActivationInviteTemplate({ title: title.trim() }),
+      },
       capture_config: {
         ...(activation.capture_config || {}),
         required_fields: ["name", "phone", "email", "document"],
@@ -8553,16 +8607,23 @@ async function submitTriviaLauncher(event) {
     const archivedPrevious = await archivePreviousLauncherActivation(previousLauncherActivationId, activation.id);
     state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => item.id !== activation.id)];
     renderTriviaLaunchers();
+    const inviteMessage = activationInviteMessage(activation);
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
       <strong>Activación renovada</strong>
       <p class="table-secondary">${archivedPrevious ? "El link anterior quedó archivado y este es el link vigente." : "Este es un link nuevo y vigente para compartir."} Primero dejan sus datos, luego completan la dinámica y el sistema emite el ticket según la regla configurada.</p>
       <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
+      <label class="activation-invite-preview"><span>Mensaje para invitar</span><textarea readonly rows="4">${escapeHtml(inviteMessage)}</textarea></label>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
+      <button class="ghost-button" type="button" id="copyTriviaInviteResultButton">Copiar mensaje</button>
     `;
     document.getElementById("copyTriviaLauncherResultButton")?.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(activation.public_url);
       showFeedback("Link de activación copiado.");
+    });
+    document.getElementById("copyTriviaInviteResultButton")?.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(inviteMessage);
+      showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
     });
     setInlineMessage(triviaLauncherMessage, "Activación renovada. Comparte el link nuevo.", "success");
     showFeedback("Activación renovada. El link público nuevo ya está listo.", "success", { title: "Constructor de activaciones" });

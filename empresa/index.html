@@ -1291,6 +1291,7 @@
                     <label><span>Titulo de la landing</span><input id="triviaTitleInput" type="text" minlength="4" maxlength="160" placeholder="Descubre tu beneficio de la semana" required></label>
                     <label><span>Máximo de tickets</span><input id="triviaMaxWinnersInput" type="number" min="1" max="100000" step="1" placeholder="Sin limite"></label>
                     <label class="full"><span>Descripcion para la landing</span><textarea id="triviaDescriptionInput" rows="3" placeholder="Responde bien y recibe tu ticket para redimir en tienda."></textarea></label>
+                    <label class="full"><span>Mensaje genérico para invitar</span><textarea id="triviaInviteMessageInput" rows="3" maxlength="1000">Hola, te invito a jugar {titulo}. Abre este enlace, deja tus datos y participa: {link}</textarea><small>Usa {link}, {titulo} y {negocio}; el sistema los reemplaza cuando crea la activación.</small></label>
                     <label><span>Beneficio base del ticket</span><input id="triviaBenefitLabelInput" type="text" placeholder="Beneficio desbloqueado por participar" required></label>
                     <label><span>Tipo de beneficio</span>
                       <select id="triviaBenefitTypeInput">

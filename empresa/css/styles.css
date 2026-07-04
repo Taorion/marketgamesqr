@@ -10299,6 +10299,30 @@ body.chart-focus-open .command-center {
   overflow-wrap: anywhere;
 }
 
+.activation-invite-preview {
+  display: grid;
+  gap: 6px;
+}
+
+.activation-invite-preview span {
+  color: #064e3b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.activation-invite-preview textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid #99cdbb;
+  border-radius: 8px;
+  padding: 10px;
+  color: #10201c;
+  background: #ffffff;
+  font: inherit;
+}
+
 .activation-row-actions {
   display: flex;
   flex-wrap: wrap;
