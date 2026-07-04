@@ -346,6 +346,83 @@ button:focus-visible {
   background: rgba(214, 183, 92, .12);
 }
 
+.scratch-card {
+  gap: 16px;
+}
+
+.scratch-surface {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid #cbd9d5;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 28% 24%, rgba(242, 184, 75, .2), transparent 34%),
+    linear-gradient(135deg, #ecfff6, #fff7da);
+}
+
+.scratch-prize {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 22px;
+  text-align: center;
+}
+
+.scratch-prize span {
+  color: #0d6b52;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.scratch-prize strong {
+  color: #112026;
+  font-size: clamp(1.45rem, 5vw, 2.7rem);
+  line-height: 1.04;
+  overflow-wrap: anywhere;
+}
+
+.scratch-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.scratch-canvas:active {
+  cursor: grabbing;
+}
+
+.scratch-surface.is-revealed .scratch-canvas {
+  pointer-events: none;
+}
+
+.scratch-help {
+  margin: 0;
+  color: #55736d;
+  font-size: .92rem;
+  font-weight: 700;
+}
+
+.is-premium .scratch-surface {
+  border-color: rgba(214, 183, 92, .34);
+  background:
+    radial-gradient(circle at 28% 24%, rgba(214, 183, 92, .22), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, .08), rgba(214, 183, 92, .12));
+}
+
+.is-premium .scratch-prize span,
+.is-premium .scratch-prize strong,
+.is-premium .scratch-help {
+  color: #f5f1e8;
+}
+
 .submit-button,
 .ticket-result a {
   min-height: 50px;

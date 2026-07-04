@@ -88,10 +88,28 @@ const campaignMetricsSelect = `
     coalesce((select count(*)::int from qr_codes q where q.campaign_id = c.id and q.status = 'REDEEMED'), 0) as total_qr_redeemed,
     coalesce((
       select count(*)::int
-      from attributed_sales s
-      where s.campaign_id = c.id and s.sale_type = 'DIRECT_REDEMPTION'
+      from (
+        select s.id
+        from attributed_sales s
+        where s.campaign_id = c.id and s.sale_type = 'DIRECT_REDEMPTION'
+        union all
+        select bs.id
+        from business_sales bs
+        where bs.campaign_id = c.id
+      ) direct_sales
     ), 0) as direct_sales_count,
-    coalesce((select sum(s.sale_amount) from attributed_sales s where s.campaign_id = c.id), 0)::numeric(14, 2) as attributed_revenue,
+    coalesce((
+      select sum(sale_amount)
+      from (
+        select s.sale_amount
+        from attributed_sales s
+        where s.campaign_id = c.id
+        union all
+        select bs.sale_amount
+        from business_sales bs
+        where bs.campaign_id = c.id
+      ) attributed_sales
+    ), 0)::numeric(14, 2) as attributed_revenue,
     coalesce((
       select sum(css.total_sales_amount)
       from campaign_sales_snapshots css

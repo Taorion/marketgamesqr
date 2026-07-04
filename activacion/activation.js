@@ -223,7 +223,11 @@ function renderExperience() {
     renderThermometer();
     return;
   }
-  if (["SPIN_DISCOVER", "TAP_REVEAL", "CHOOSE_DOOR", "BENEFIT_SELECTOR", "QUICK_VOTE", "VIP_EXPERIENCE_SELECTOR", "STYLE_PROFILE", "SCRATCH_WIN"].includes(currentActivation.activation_type)) {
+  if (currentActivation.activation_type === "SCRATCH_WIN") {
+    renderScratchExperience();
+    return;
+  }
+  if (["SPIN_DISCOVER", "TAP_REVEAL", "CHOOSE_DOOR", "BENEFIT_SELECTOR", "QUICK_VOTE", "VIP_EXPERIENCE_SELECTOR", "STYLE_PROFILE"].includes(currentActivation.activation_type)) {
     renderChoiceExperience();
     return;
   }
@@ -371,6 +375,135 @@ function renderChoiceExperience() {
     });
   });
   document.getElementById("choiceCompleteButton").addEventListener("click", () => completeActivation({ selected_choice: selectedChoice }));
+}
+
+function getChoiceOptions() {
+  return currentActivation.reward_config?.choices
+    || currentActivation.reward_config?.profiles
+    || currentActivation.interaction_config?.choices
+    || currentActivation.touch_zones
+    || [];
+}
+
+function choiceValue(choice, index) {
+  return String(choice.value || choice.key || choice.label || choice.profile || index);
+}
+
+function renderScratchExperience() {
+  const choices = getChoiceOptions();
+  const fallbackChoices = choices.length ? choices : [
+    { value: "scratch-default", label: currentActivation.reward_config?.reward_label || "Beneficio desbloqueado" },
+  ];
+  const choiceIndex = Math.floor(Math.random() * fallbackChoices.length);
+  const choice = fallbackChoices[choiceIndex];
+  const prizeLabel = choice.reward_label || choice.benefit_label || choice.label || "Beneficio desbloqueado";
+  selectedChoice = choiceValue(choice, choiceIndex);
+
+  experienceBody.innerHTML = `
+    <article class="question-card scratch-card">
+      <div class="question-title"><span>?</span><strong>Raspa la superficie para descubrir tu beneficio.</strong></div>
+      <div class="scratch-surface" id="scratchSurface">
+        <div class="scratch-prize" id="scratchPrize" aria-hidden="true">
+          <span>Tu beneficio</span>
+          <strong>${escapeHtml(prizeLabel)}</strong>
+        </div>
+        <canvas id="scratchCanvas" class="scratch-canvas" width="640" height="260" aria-label="Area para raspar el beneficio"></canvas>
+      </div>
+      <p class="scratch-help" id="scratchHelp">Mantén presionado y mueve el dedo o el mouse para raspar.</p>
+      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR</button>
+    </article>
+  `;
+
+  window.requestAnimationFrame(() => initScratchCanvas());
+  document.getElementById("scratchCompleteButton").addEventListener("click", () => completeActivation({ selected_choice: selectedChoice }));
+}
+
+function initScratchCanvas() {
+  const canvas = document.getElementById("scratchCanvas");
+  const surface = document.getElementById("scratchSurface");
+  const button = document.getElementById("scratchCompleteButton");
+  const help = document.getElementById("scratchHelp");
+  if (!canvas || !surface || !button || !help) return;
+
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const rect = surface.getBoundingClientRect();
+  const ratio = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.max(320, Math.round(rect.width * ratio));
+  canvas.height = Math.max(180, Math.round(rect.height * ratio));
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  const width = canvas.width / ratio;
+  const height = canvas.height / ratio;
+  ctx.globalCompositeOperation = "source-over";
+  const cover = ctx.createLinearGradient(0, 0, width, height);
+  cover.addColorStop(0, "#c8d1d0");
+  cover.addColorStop(0.45, "#7d8a8f");
+  cover.addColorStop(1, "#d9c27a");
+  ctx.fillStyle = cover;
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(255,255,255,.22)";
+  for (let line = -height; line < width; line += 24) {
+    ctx.fillRect(line, 0, 9, height * 2);
+  }
+  ctx.fillStyle = "rgba(17, 32, 38, .82)";
+  ctx.font = "900 22px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("RASPA AQUI", width / 2, height / 2 - 4);
+  ctx.font = "700 13px Inter, sans-serif";
+  ctx.fillText("para descubrir tu beneficio", width / 2, height / 2 + 24);
+
+  let scratching = false;
+  let unlocked = false;
+  const scratchAt = (event) => {
+    const bounds = canvas.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(x, y, 24, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const updateScratchProgress = () => {
+    if (unlocked) return;
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let cleared = 0;
+    for (let index = 3; index < data.length; index += 16) {
+      if (data[index] < 48) cleared += 1;
+    }
+    const sampledPixels = data.length / 16;
+    const percent = Math.min(100, Math.round((cleared / sampledPixels) * 100));
+    setProgress(percent, 100);
+    if (percent >= 55) {
+      unlocked = true;
+      ctx.clearRect(0, 0, width, height);
+      surface.classList.add("is-revealed");
+      document.getElementById("scratchPrize")?.removeAttribute("aria-hidden");
+      button.disabled = false;
+      help.textContent = "Beneficio descubierto. Ahora genera tu QR unico.";
+      setProgress(1, 1);
+    }
+  };
+
+  canvas.addEventListener("pointerdown", (event) => {
+    scratching = true;
+    canvas.setPointerCapture(event.pointerId);
+    scratchAt(event);
+    updateScratchProgress();
+  });
+  canvas.addEventListener("pointermove", (event) => {
+    if (!scratching) return;
+    event.preventDefault();
+    scratchAt(event);
+    updateScratchProgress();
+  });
+  canvas.addEventListener("pointerup", (event) => {
+    scratching = false;
+    canvas.releasePointerCapture(event.pointerId);
+    updateScratchProgress();
+  });
+  canvas.addEventListener("pointercancel", () => {
+    scratching = false;
+  });
 }
 
 function renderThermometer() {

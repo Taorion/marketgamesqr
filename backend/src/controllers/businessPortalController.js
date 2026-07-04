@@ -142,6 +142,7 @@ const acquisitionSourceOptions = [
 ];
 
 const customerAcquisitionSaleSchema = z.object({
+  campaign_id: z.string().uuid().optional().nullable(),
   customer_name: z.string().trim().max(160).optional().nullable(),
   customer_phone: z.string().trim().max(40).optional().nullable(),
   customer_email: z.string().trim().email().optional().nullable(),
@@ -648,6 +649,16 @@ async function createCustomerAcquisitionSale(req, res, next) {
       : 0;
 
     const result = await withTransaction(async (client) => {
+      if (body.campaign_id) {
+        const campaign = await client.query(
+          "select id from campaigns where id = $1 and business_id = $2",
+          [body.campaign_id, businessId]
+        );
+        if (!campaign.rowCount) {
+          throw badRequest("La campana atribuida no existe para este negocio.");
+        }
+      }
+
       let referredAffiliate = null;
       if (body.referred_affiliate_id) {
         const affiliateResult = await client.query(
@@ -665,13 +676,14 @@ async function createCustomerAcquisitionSale(req, res, next) {
 
       const saleResult = await client.query(
         `insert into business_sales
-          (business_id, customer_name, customer_phone, customer_email, customer_document_id,
+          (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
            product_name, sale_amount, currency, seller_user_id, branch_id, acquisition_source,
            acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
          returning *`,
         [
           businessId,
+          body.campaign_id || null,
           body.customer_name || null,
           body.customer_phone || null,
           body.customer_email || null,
@@ -689,8 +701,48 @@ async function createCustomerAcquisitionSale(req, res, next) {
           {
             ...body.metadata,
             capture_source: "customer_acquisition",
+            conversion_source: "contact_center_sale",
             ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
           },
+        ]
+      );
+
+      const matchParams = [
+        businessId,
+        body.customer_document_id || null,
+        body.customer_phone || null,
+        body.customer_email || null,
+      ];
+      const convertedPlayers = await client.query(
+        `update players
+         set metadata = jsonb_set(
+           jsonb_set(coalesce(metadata, '{}'::jsonb), '{commercial_status}', to_jsonb('BUYER'::text), true),
+           '{converted_sale_id}', to_jsonb($5::text), true
+         )
+         where business_id = $1
+           and (
+             ($2::text is not null and nullif(document_id, '') = $2)
+             or ($3::text is not null and nullif(phone, '') = $3)
+             or ($4::text is not null and lower(nullif(email, '')) = lower($4))
+           )
+         returning id`,
+        [...matchParams, saleResult.rows[0].id]
+      );
+      const convertedManual = await client.query(
+        `update business_manual_leads
+         set status = 'CONVERTED',
+             metadata = coalesce(metadata, '{}'::jsonb) || $4::jsonb
+         where business_id = $1
+           and (
+             ($2::text is not null and nullif(phone, '') = $2)
+             or ($3::text is not null and lower(nullif(email, '')) = lower($3))
+           )
+         returning id`,
+        [
+          businessId,
+          body.customer_phone || null,
+          body.customer_email || null,
+          JSON.stringify({ converted_sale_id: saleResult.rows[0].id, converted_at: new Date().toISOString() }),
         ]
       );
 
@@ -728,6 +780,10 @@ async function createCustomerAcquisitionSale(req, res, next) {
 
       return {
         sale: saleResult.rows[0],
+        conversion: {
+          players: convertedPlayers.rowCount,
+          manual_leads: convertedManual.rowCount,
+        },
         referral: referredAffiliate
           ? {
               affiliate_id: referredAffiliate.id,
@@ -992,13 +1048,20 @@ async function campaignReport(req, res, next) {
         [req.params.id, businessId]
       ),
       query(
-        `select to_char(created_at::date, 'YYYY-MM-DD') as date,
+        `select to_char(day::date, 'YYYY-MM-DD') as date,
                 count(*)::int as sales,
                 coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
-         from attributed_sales
-         where campaign_id = $1 and business_id = $2
-         group by created_at::date
-         order by created_at::date`,
+         from (
+           select created_at as day, sale_amount
+           from attributed_sales
+           where campaign_id = $1 and business_id = $2
+           union all
+           select created_at as day, sale_amount
+           from business_sales
+           where campaign_id = $1 and business_id = $2
+         ) sales
+         group by day::date
+         order by day::date`,
         [req.params.id, businessId]
       ),
       query(
@@ -1680,14 +1743,66 @@ async function campaignSales(req, res, next) {
     const businessId = businessIdFor(req);
     const limit = boundedLimit(req.query.limit, 150, 500);
     const result = await query(
-      `select s.*, p.name as player_name, p.document_id, p.phone, br.name as branch_name,
-              u.full_name as confirmed_by
-       from attributed_sales s
-       left join players p on p.id = s.player_id
-       left join branches br on br.id = s.branch_id
-       left join app_users u on u.id = s.sale_confirmed_by_user_id
-       where s.business_id = $1 and s.campaign_id = $2
-       order by s.created_at desc
+      `select *
+       from (
+         select
+           s.id,
+           s.business_id,
+           s.campaign_id,
+           s.qr_code_id,
+           s.redemption_id,
+           s.player_id,
+           s.sale_amount,
+           s.currency,
+           s.sale_confirmed_by_user_id,
+           s.branch_id,
+           s.payment_method,
+           s.product_or_service,
+           s.notes,
+           s.created_at,
+           'REDEMPTION'::text as sale_source,
+           p.name as player_name,
+           p.document_id,
+           p.phone,
+           p.email,
+           br.name as branch_name,
+           u.full_name as confirmed_by
+         from attributed_sales s
+         left join players p on p.id = s.player_id
+         left join branches br on br.id = s.branch_id
+         left join app_users u on u.id = s.sale_confirmed_by_user_id
+         where s.business_id = $1 and s.campaign_id = $2
+
+         union all
+
+         select
+           bs.id,
+           bs.business_id,
+           bs.campaign_id,
+           bs.qr_code_id,
+           null::uuid as redemption_id,
+           null::uuid as player_id,
+           bs.sale_amount,
+           bs.currency,
+           bs.seller_user_id as sale_confirmed_by_user_id,
+           bs.branch_id,
+           bs.acquisition_source as payment_method,
+           bs.product_name as product_or_service,
+           bs.notes,
+           bs.created_at,
+           'CONTACT_CENTER'::text as sale_source,
+           bs.customer_name as player_name,
+           bs.customer_document_id as document_id,
+           bs.customer_phone as phone,
+           bs.customer_email as email,
+           br.name as branch_name,
+           u.full_name as confirmed_by
+         from business_sales bs
+         left join branches br on br.id = bs.branch_id
+         left join app_users u on u.id = bs.seller_user_id
+         where bs.business_id = $1 and bs.campaign_id = $2
+       ) sales
+       order by created_at desc
        limit $3`,
       [businessId, req.params.id, limit]
     );

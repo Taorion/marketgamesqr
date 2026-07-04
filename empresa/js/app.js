@@ -493,6 +493,7 @@ const productVoteImages = {};
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
+const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
 const customerAcquisitionNameInput = document.getElementById("customerAcquisitionNameInput");
 const customerAcquisitionDocumentInput = document.getElementById("customerAcquisitionDocumentInput");
@@ -5548,6 +5549,7 @@ function renderSalesView() {
     </article>
   `).join("");
   renderCustomerAcquisitionAffiliateOptions();
+  renderCustomerAcquisitionCampaignOptions();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -5556,11 +5558,12 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
       <td>${escapeHtml(item.product_or_service || "-")}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="8">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="9">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -6403,6 +6406,26 @@ function renderCustomerAcquisitionAffiliateOptions() {
   ].join("");
 }
 
+function renderCustomerAcquisitionCampaignOptions() {
+  if (!customerAcquisitionCampaignInput) return;
+  const current = customerAcquisitionCampaignInput.value || state.selectedCampaignId || "";
+  customerAcquisitionCampaignInput.innerHTML = [
+    '<option value="">Sin campaña atribuida</option>',
+    ...(state.campaigns || []).map((campaign) => `
+      <option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>
+    `),
+  ].join("");
+  if (current && (state.campaigns || []).some((campaign) => campaign.id === current)) {
+    customerAcquisitionCampaignInput.value = current;
+  }
+}
+
+function saleSourceLabel(source) {
+  if (source === "CONTACT_CENTER") return "Contacto convertido";
+  if (source === "REDEMPTION") return "Redención";
+  return source || "-";
+}
+
 const LEAD_CAPTURE_FIELD_DEFS = [
   ["first_name", "Nombre", true, true],
   ["last_name", "Apellido", true, false],
@@ -7045,6 +7068,7 @@ async function submitCustomerAcquisitionSale(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         sale_amount: Number(customerAcquisitionAmountInput.value || 0),
+        campaign_id: customerAcquisitionCampaignInput?.value || null,
         currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
         product_name: customerAcquisitionProductInput.value.trim() || null,
         customer_name: customerAcquisitionNameInput.value.trim() || null,
@@ -7064,6 +7088,7 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     customerAcquisitionCurrencyInput.value = "COP";
+    renderCustomerAcquisitionCampaignOptions();
     await refreshLiveBusinessData();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
@@ -14007,6 +14032,7 @@ function renderSalesView() {
     </article>
   `).join("");
   renderCustomerAcquisitionAffiliateOptions();
+  renderCustomerAcquisitionCampaignOptions();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -14015,11 +14041,12 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
       <td>${escapeHtml(item.product_or_service || "-")}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="8">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="9">Sin ventas para esta campaña.</td></tr>';
 }
 
 function renderBranchesView() {
