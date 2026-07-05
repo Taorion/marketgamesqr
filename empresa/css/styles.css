@@ -6271,18 +6271,75 @@ textarea {
 
 .campaign-cost-config {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+  gap: 16px;
 }
 
 .campaign-cost-toolbar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-  gap: 14px;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(124, 251, 255, 0.12);
+}
+
+.campaign-cost-fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(124, 251, 255, 0.13);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(6, 20, 42, 0.72), rgba(2, 8, 23, 0.5));
+}
+
+.campaign-cost-fieldset-metrics {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(0, 245, 170, 0.08), transparent 26%),
+    linear-gradient(145deg, rgba(5, 30, 42, 0.72), rgba(2, 8, 23, 0.5));
+}
+
+.campaign-cost-fieldset-head {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.campaign-cost-fieldset-head > .material-symbols-outlined {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(124, 251, 255, 0.16);
+  border-radius: 11px;
+  background: rgba(124, 251, 255, 0.08);
+  color: #7cfbff;
+  font-size: 20px;
+}
+
+.campaign-cost-fieldset-head strong {
+  display: block;
+  margin-top: 2px;
+  color: #f8fdff;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.campaign-cost-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.campaign-cost-field-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+}
+
+.campaign-cost-field-wide {
+  grid-column: span 2;
 }
 
 .campaign-cost-config label,
@@ -6290,10 +6347,10 @@ textarea {
   min-width: 0;
   display: grid;
   gap: 7px;
-  padding: 10px;
-  border: 1px solid rgba(124, 251, 255, 0.1);
-  border-radius: 10px;
-  background: rgba(2, 8, 23, 0.26);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .campaign-cost-config label > span,
@@ -6305,9 +6362,18 @@ textarea {
   color: #9edff0;
 }
 
+.campaign-cost-config input,
+.campaign-cost-config select,
+.campaign-cost-toolbar input,
+.campaign-cost-toolbar select {
+  min-height: 48px;
+  border-radius: 11px;
+}
+
 .campaign-cost-toolbar .ghost-button {
   min-height: 48px;
   justify-content: center;
+  align-self: end;
 }
 
 .campaign-cost-summary {
@@ -6714,6 +6780,10 @@ textarea {
   .campaign-cost-row-fields .campaign-cost-field-main {
     grid-column: auto;
   }
+
+  .campaign-cost-field-wide {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 720px) {
@@ -6756,6 +6826,7 @@ textarea {
   .campaign-cost-shell,
   .campaign-cost-config,
   .campaign-cost-toolbar,
+  .campaign-cost-field-grid,
   .campaign-cost-answer-grid,
   .campaign-cost-detail-grid,
   .campaign-cost-sections,
@@ -6795,6 +6866,7 @@ textarea {
 :root[data-theme="light"] .campaign-cost-scenarios article,
 :root[data-theme="light"] .campaign-cost-panel,
 :root[data-theme="light"] .campaign-cost-section,
+:root[data-theme="light"] .campaign-cost-fieldset,
 :root[data-theme="light"] .campaign-cost-answer,
 :root[data-theme="light"] .campaign-cost-detail-grid > div {
   background: rgba(255, 255, 255, 0.82) !important;
