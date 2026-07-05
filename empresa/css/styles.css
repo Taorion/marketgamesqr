@@ -5936,6 +5936,64 @@ textarea {
 /* Campaign workspace polish: remove leftover light cards and keep contrast stable. */
 .view-section[data-view="campaigns"] .campaign-layout {
   align-items: start;
+  min-width: 0;
+}
+
+.view-section[data-view="campaigns"] .campaign-content,
+.view-section[data-view="campaigns"] .campaign-overview-grid,
+.view-section[data-view="campaigns"] .campaign-kpis,
+.view-section[data-view="campaigns"] .sales-kpis,
+.view-section[data-view="campaigns"] .surface-card,
+.view-section[data-view="campaigns"] .dark-hero-card {
+  min-width: 0;
+}
+
+.view-section[data-view="campaigns"] .campaign-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-start;
+}
+
+.view-section[data-view="campaigns"] .campaign-head > div:first-child {
+  min-width: 0;
+}
+
+.view-section[data-view="campaigns"] .campaign-head h2 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.view-section[data-view="campaigns"] .breadcrumb {
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
+.view-section[data-view="campaigns"] .campaign-head .head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  max-width: min(100%, 720px);
+}
+
+.view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button,
+.view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button {
+  min-height: 40px;
+  white-space: normal;
+}
+
+.view-section[data-view="campaigns"] .campaign-overview-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.75fr);
+}
+
+.view-section[data-view="campaigns"] .campaign-meta-grid strong,
+.view-section[data-view="campaigns"] .campaign-item h3,
+.view-section[data-view="campaigns"] .asset-card a,
+.view-section[data-view="campaigns"] .asset-card strong {
+  overflow-wrap: anywhere;
 }
 
 .view-section[data-view="campaigns"] .campaign-rail,
@@ -6006,6 +6064,12 @@ textarea {
 .view-section[data-view="campaigns"] .asset-card span,
 .view-section[data-view="campaigns"] .asset-card a {
   color: #a8c6d9 !important;
+}
+
+.view-section[data-view="campaigns"] .campaign-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
 }
 
 .view-section[data-view="campaigns"] .campaign-meta-grid {
@@ -6080,11 +6144,18 @@ textarea {
 
 .campaign-cost-card {
   grid-column: 1 / -1;
+  overflow: hidden;
 }
 
 .campaign-cost-card .card-head {
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.campaign-cost-card .card-head > div {
+  min-width: min(100%, 280px);
+  flex: 1 1 280px;
 }
 
 .campaign-cost-card .card-head .ghost-button,
@@ -6096,15 +6167,15 @@ textarea {
 
 .campaign-cost-shell {
   display: grid;
-  grid-template-columns: minmax(320px, 0.92fr) minmax(420px, 1.08fr);
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  gap: 16px;
   align-items: start;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .campaign-cost-panel {
   min-width: 0;
-  padding: 14px;
+  padding: 16px;
   border: 1px solid rgba(124, 251, 255, 0.14);
   border-radius: 12px;
   background: rgba(2, 8, 23, 0.38);
@@ -6124,16 +6195,37 @@ textarea {
 
 .campaign-cost-config {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
 }
 
 .campaign-cost-toolbar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 12px;
   align-items: end;
   margin-top: 12px;
+}
+
+.campaign-cost-config label,
+.campaign-cost-toolbar label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.campaign-cost-config label > span,
+.campaign-cost-toolbar label > span {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+  color: #9edff0;
+}
+
+.campaign-cost-toolbar .ghost-button {
+  min-height: 42px;
+  justify-content: center;
 }
 
 .campaign-cost-summary {
@@ -6144,8 +6236,8 @@ textarea {
 
 .campaign-cost-answer-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+  gap: 10px;
 }
 
 .campaign-cost-answer,
@@ -6162,6 +6254,7 @@ textarea {
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 9px;
   align-items: start;
+  min-height: 98px;
 }
 
 .campaign-cost-answer > .material-symbols-outlined {
@@ -6198,8 +6291,8 @@ textarea {
 
 .campaign-cost-detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 154px), 1fr));
+  gap: 10px;
 }
 
 .campaign-cost-summary strong {
@@ -6220,8 +6313,8 @@ textarea {
 
 .campaign-cost-decision {
   display: grid;
-  grid-template-columns: minmax(170px, 0.8fr) repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 10px;
   margin: 0 0 12px;
 }
 
@@ -6259,9 +6352,9 @@ textarea {
 
 .campaign-cost-sections {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .campaign-cost-section {
@@ -6297,42 +6390,67 @@ textarea {
 
 .campaign-cost-list {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .campaign-cost-row {
-  grid-template-columns: minmax(150px, 1.5fr) minmax(92px, 0.75fr) minmax(120px, 0.85fr) minmax(96px, auto) 34px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr));
   align-items: end;
-  padding: 9px;
+  padding: 12px;
   border: 1px solid rgba(124, 251, 255, 0.13);
   border-radius: 10px;
   background: rgba(2, 8, 23, 0.38);
 }
 
 .campaign-cost-row-benefit {
-  grid-template-columns: minmax(110px, 0.8fr) minmax(140px, 1.1fr) repeat(7, minmax(92px, 0.72fr)) minmax(132px, auto) 34px;
-  overflow-x: auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
+  overflow: visible;
+}
+
+.campaign-cost-row[data-campaign-cost-row="production"] {
+  grid-template-columns: minmax(min(100%, 210px), 1.35fr) minmax(104px, 0.7fr) minmax(128px, 0.85fr) minmax(118px, auto) 38px;
+}
+
+.campaign-cost-row[data-campaign-cost-row="service"] {
+  grid-template-columns: minmax(min(100%, 180px), 1.25fr) repeat(5, minmax(104px, 0.8fr)) minmax(118px, auto) 38px;
+}
+
+.campaign-cost-row[data-campaign-cost-row="variable"] {
+  grid-template-columns: minmax(min(100%, 210px), 1.35fr) minmax(128px, 0.85fr) minmax(104px, 0.7fr) minmax(150px, 1fr) minmax(118px, auto) 38px;
+}
+
+.campaign-cost-row[data-campaign-cost-row="fixed"] {
+  grid-template-columns: minmax(min(100%, 260px), 1fr) minmax(130px, 0.45fr) minmax(118px, auto) 38px;
+}
+
+.campaign-cost-section .campaign-cost-row[data-campaign-cost-row] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
 }
 
 .campaign-cost-row label {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .campaign-cost-row label span {
   font-size: 11px;
+  line-height: 1.25;
 }
 
 .campaign-cost-row input,
 .campaign-cost-row select {
   width: 100%;
   min-width: 0;
+  min-height: 40px;
 }
 
 .campaign-cost-row > strong {
   white-space: nowrap;
   text-align: right;
+  justify-self: end;
+  align-self: center;
+  min-width: max-content;
 }
 
 .campaign-cost-row > .table-secondary {
@@ -6343,8 +6461,10 @@ textarea {
 .campaign-cost-mini {
   display: grid;
   gap: 2px;
-  min-width: 132px;
+  min-width: 0;
   text-align: right;
+  justify-self: stretch;
+  align-self: center;
 }
 
 .campaign-cost-mini small {
@@ -6359,10 +6479,21 @@ textarea {
   grid-template-columns: none !important;
   align-items: center;
   gap: 7px !important;
+  min-height: 40px;
+  padding: 0 2px;
 }
 
 .campaign-cost-check input {
   width: auto;
+  min-height: 0;
+}
+
+.campaign-cost-row .icon-button {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  justify-self: end;
+  align-self: center;
 }
 
 .campaign-cost-scenarios {
@@ -6373,7 +6504,7 @@ textarea {
 
 .campaign-cost-scenario-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
   gap: 10px;
 }
 
@@ -6388,29 +6519,50 @@ textarea {
 }
 
 @media (max-width: 1180px) {
-  .campaign-cost-shell,
-  .campaign-cost-sections,
-  .campaign-cost-decision {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .view-section[data-view="campaigns"] .campaign-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .campaign-cost-answer-grid,
-  .campaign-cost-detail-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .campaign-cost-row,
+  .campaign-cost-row[data-campaign-cost-row],
   .campaign-cost-row-benefit {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   }
 
   .campaign-cost-row > strong,
   .campaign-cost-row > .table-secondary {
     text-align: left;
+    justify-self: start;
   }
 }
 
 @media (max-width: 720px) {
+  .view-section[data-view="campaigns"] {
+    padding: 12px;
+  }
+
+  .view-section[data-view="campaigns"] .campaign-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .view-section[data-view="campaigns"] .campaign-head h2 {
+    font-size: clamp(30px, 10vw, 42px);
+    line-height: 1.05;
+  }
+
+  .view-section[data-view="campaigns"] .campaign-head .head-actions,
+  .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button,
+  .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button,
+  .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button,
+  .campaign-cost-card .card-head .ghost-button,
+  .campaign-cost-toolbar .ghost-button {
+    justify-content: center;
+  }
+
   .campaign-cost-shell,
   .campaign-cost-config,
   .campaign-cost-toolbar,
@@ -6430,6 +6582,11 @@ textarea {
 
   .campaign-cost-row > strong {
     text-align: left;
+    justify-self: start;
+  }
+
+  .campaign-cost-row .icon-button {
+    justify-self: start;
   }
 }
 
@@ -12463,6 +12620,25 @@ body.chart-focus-open .command-center {
 .digital-asset-card small,
 .digital-asset-selected small {
   color: var(--muted);
+}
+
+.digital-asset-share-link,
+.digital-asset-share-note {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+.digital-asset-share-link {
+  color: var(--secondary-soft);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.digital-asset-share-note {
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .lead-capture-asset-preview {

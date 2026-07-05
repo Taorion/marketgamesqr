@@ -2800,10 +2800,14 @@ function setView(view) {
 
   if (view === "dashboard" && state.dashboard) renderDashboard();
   if (view === "account") {
-    if (!state.digitalAssetsLoaded) {
-      loadDigitalAssets({ quiet: true }).then(() => {
+    if (!state.digitalAssetsLoaded || !state.leadCaptureLoaded) {
+      Promise.all([
+        loadDigitalAssets({ quiet: true }),
+        loadLeadCaptureActivations({ quiet: true }),
+      ]).then(() => {
         renderDigitalAssets();
         renderLeadCaptureAssetOptions();
+        renderLeadCaptureTable();
       });
     }
     renderAccountView();
@@ -8109,6 +8113,20 @@ function leadCaptureFormConfig() {
   };
 }
 
+function defaultLeadCaptureFormConfig() {
+  return {
+    consent_required: true,
+    consent_text: "Autorizo el tratamiento de mis datos personales para recibir informacion comercial relacionada con esta marca.",
+    fields: LEAD_CAPTURE_FIELD_DEFS.map(([name, label, visible, required]) => ({
+      name,
+      label,
+      type: name === "email" ? "email" : name === "phone" ? "tel" : "text",
+      visible,
+      required,
+    })),
+  };
+}
+
 function readFileAsDataUrl(file, maxBytes, allowedTypes) {
   return new Promise((resolve, reject) => {
     if (!file) return resolve("");
@@ -8125,6 +8143,19 @@ function digitalAssetLabel(asset = {}) {
   const type = String(asset.file_type || "").split("/").pop()?.toUpperCase() || "FILE";
   const sizeMb = Number(asset.file_size || 0) ? `${(Number(asset.file_size || 0) / 1024 / 1024).toFixed(1)} MB` : "";
   return [asset.title || "Activo digital", asset.category || "", type, sizeMb].filter(Boolean).join(" · ");
+}
+
+function leadCaptureForDigitalAsset(assetId) {
+  if (!assetId) return null;
+  return (state.leadCaptureActivations || []).find((activation) => (
+    activation.asset?.id === assetId
+      && activation.public_url
+      && !["ENDED", "PAUSED"].includes(String(activation.status || "").toUpperCase())
+  )) || null;
+}
+
+function digitalAssetShareUrl(assetId) {
+  return leadCaptureForDigitalAsset(assetId)?.public_url || "";
 }
 
 async function loadDigitalAssets(options = {}) {
@@ -8144,13 +8175,28 @@ function renderDigitalAssets() {
         <strong>${escapeHtml(asset.title || "Activo digital")}</strong>
         <p>${escapeHtml(asset.description || asset.file_name || "")}</p>
         <small>${escapeHtml(digitalAssetLabel(asset))}</small>
+        ${digitalAssetShareUrl(asset.id) ? `
+          <a class="digital-asset-share-link" href="${escapeHtml(digitalAssetShareUrl(asset.id))}" target="_blank" rel="noopener">${escapeHtml(digitalAssetShareUrl(asset.id))}</a>
+        ` : '<small class="digital-asset-share-note">Sin link publico todavía. Crea uno para compartirlo sin perder la captura del lead.</small>'}
       </div>
       <div class="activation-row-actions">
         <button class="ghost-button" type="button" data-use-digital-asset="${escapeHtml(asset.id)}">Usar en Ticket Relámpago</button>
+        ${digitalAssetShareUrl(asset.id)
+          ? `<button class="ghost-button" type="button" data-copy-digital-asset-link="${escapeHtml(digitalAssetShareUrl(asset.id))}">Copiar link</button>`
+          : `<button class="ghost-button" type="button" data-create-digital-asset-link="${escapeHtml(asset.id)}">Crear link para compartir</button>`}
         <button class="ghost-button" type="button" data-disable-digital-asset="${escapeHtml(asset.id)}">Desactivar</button>
       </div>
     </article>
   `).join("") || '<div class="empty-state compact">Aún no hay activos digitales. Carga aquí el catálogo, portafolio o brochure antes de crear un Ticket Relámpago.</div>';
+  digitalAssetsGrid.querySelectorAll("[data-copy-digital-asset-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyDigitalAssetLink || "");
+      showFeedback("Link publico del activo copiado.", "success", { title: "Activo digital" });
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-create-digital-asset-link]").forEach((button) => {
+    button.addEventListener("click", () => createShareLinkForDigitalAsset(button.dataset.createDigitalAssetLink));
+  });
   digitalAssetsGrid.querySelectorAll("[data-use-digital-asset]").forEach((button) => {
     button.addEventListener("click", () => {
       setView("strategic-qr");
@@ -8162,6 +8208,43 @@ function renderDigitalAssets() {
   digitalAssetsGrid.querySelectorAll("[data-disable-digital-asset]").forEach((button) => {
     button.addEventListener("click", () => updateDigitalAssetStatus(button.dataset.disableDigitalAsset, false));
   });
+}
+
+async function createShareLinkForDigitalAsset(assetId) {
+  const asset = (state.digitalAssets || []).find((item) => item.id === assetId);
+  if (!asset) return;
+  try {
+    showFeedback("Creando link publico de Captura Relampago.", "loading", { title: "Activo digital", timeout: 0 });
+    const result = await api("/api/business/lead-capture-activations", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name: `Link para ${asset.title || "activo digital"}`.slice(0, 160),
+        description: asset.description || `Entrega publica de ${asset.title || "activo digital"}.`,
+        channel: "link_compartido",
+        status: "ACTIVE",
+        form_config: defaultLeadCaptureFormConfig(),
+        public_message: {
+          title: asset.title || "Activo digital",
+          subtitle: String(asset.description || "Deja tus datos para descargar este material.").slice(0, 240),
+          success_message: "Listo. Ya puedes descargar tu activo digital.",
+        },
+        asset_id: asset.id,
+      }),
+    });
+    state.leadCaptureLoaded = false;
+    await loadLeadCaptureActivations({ force: true });
+    renderDigitalAssets();
+    renderLeadCaptureTable();
+    const link = result.activation?.public_url || digitalAssetShareUrl(asset.id);
+    if (link) {
+      await navigator.clipboard?.writeText(link);
+      showFeedback("Link publico creado y copiado. Ya puedes compartirlo.", "success", { title: "Activo digital", timeout: 7000 });
+      setInlineMessage(digitalAssetMessage, `Link listo para compartir: ${link}`, "success");
+    }
+  } catch (error) {
+    showFeedback(error.message || "No se pudo crear el link del activo.", "error", { title: "Activo digital" });
+  }
 }
 
 function renderLeadCaptureAssetOptions() {
@@ -8214,7 +8297,7 @@ async function submitDigitalAsset(event) {
     if (digitalAssetSubmitButton) digitalAssetSubmitButton.disabled = true;
     const assetFile = digitalAssetFileInput.files[0];
     const coverFile = digitalAssetCoverInput?.files?.[0] || null;
-    await api("/api/business/digital-assets", {
+    const result = await api("/api/business/digital-assets", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -8233,7 +8316,10 @@ async function submitDigitalAsset(event) {
     await loadDigitalAssets({ force: true });
     renderDigitalAssets();
     renderLeadCaptureAssetOptions();
-    setInlineMessage(digitalAssetMessage, "Activo guardado. Ya puedes usarlo en un Ticket Relámpago.", "success");
+    const savedAsset = result.asset || (state.digitalAssets || [])[0] || null;
+    setInlineMessage(digitalAssetMessage, savedAsset?.id
+      ? "Activo guardado. Usa Crear link para compartir si necesitas enviar este material por WhatsApp o correo."
+      : "Activo guardado. Ya puedes usarlo en un Ticket Relámpago.", "success");
   } catch (error) {
     setInlineMessage(digitalAssetMessage, error.message, "error");
   } finally {
