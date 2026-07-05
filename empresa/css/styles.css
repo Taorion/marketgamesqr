@@ -6307,7 +6307,7 @@ textarea {
   gap: 10px;
 }
 
-.campaign-cost-fieldset-head > .material-symbols-outlined {
+.campaign-cost-step-badge {
   display: grid;
   place-items: center;
   width: 36px;
@@ -6316,7 +6316,10 @@ textarea {
   border-radius: 11px;
   background: rgba(124, 251, 255, 0.08);
   color: #7cfbff;
-  font-size: 20px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
 }
 
 .campaign-cost-fieldset-head strong {
@@ -6336,6 +6339,57 @@ textarea {
 
 .campaign-cost-field-grid-compact {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+}
+
+.campaign-cost-metric-groups {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.62fr) minmax(280px, 1.15fr) minmax(220px, 0.85fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.campaign-cost-metric-group {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(124, 251, 255, 0.11);
+  border-radius: 12px;
+  background: rgba(2, 8, 23, 0.24);
+}
+
+.campaign-cost-metric-group-head {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(124, 251, 255, 0.1);
+}
+
+.campaign-cost-metric-group-head strong {
+  color: #f8fdff;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.campaign-cost-metric-group .campaign-cost-field-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 10px;
+}
+
+.campaign-cost-date-button {
+  width: 100%;
+  position: relative;
+}
+
+.campaign-cost-date-button::before {
+  content: "";
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-width: 4px;
+  border-radius: 4px;
+  opacity: 0.82;
 }
 
 .campaign-cost-field-wide {
@@ -6766,6 +6820,10 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .campaign-cost-metric-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .campaign-cost-row[data-campaign-cost-row],
   .campaign-cost-row-benefit {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
@@ -6827,6 +6885,7 @@ textarea {
   .campaign-cost-config,
   .campaign-cost-toolbar,
   .campaign-cost-field-grid,
+  .campaign-cost-metric-groups,
   .campaign-cost-answer-grid,
   .campaign-cost-detail-grid,
   .campaign-cost-sections,
@@ -6867,6 +6926,7 @@ textarea {
 :root[data-theme="light"] .campaign-cost-panel,
 :root[data-theme="light"] .campaign-cost-section,
 :root[data-theme="light"] .campaign-cost-fieldset,
+:root[data-theme="light"] .campaign-cost-metric-group,
 :root[data-theme="light"] .campaign-cost-answer,
 :root[data-theme="light"] .campaign-cost-detail-grid > div {
   background: rgba(255, 255, 255, 0.82) !important;
