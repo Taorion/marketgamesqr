@@ -144,20 +144,35 @@ const launchSalesGoalInput = document.getElementById("launchSalesGoalInput");
 const launchClientNotesInput = document.getElementById("launchClientNotesInput");
 const launchSetupMessage = document.getElementById("launchSetupMessage");
 const confirmLaunchButton = document.getElementById("confirmLaunchButton");
+const campaignCostNameInput = document.getElementById("campaignCostNameInput");
+const campaignCostTypeInput = document.getElementById("campaignCostTypeInput");
+const campaignCostChannelInput = document.getElementById("campaignCostChannelInput");
+const campaignCostBranchInput = document.getElementById("campaignCostBranchInput");
+const campaignCostOwnerInput = document.getElementById("campaignCostOwnerInput");
+const campaignCostGoalInput = document.getElementById("campaignCostGoalInput");
+const campaignCostDynamicInput = document.getElementById("campaignCostDynamicInput");
+const campaignCostObjectiveInput = document.getElementById("campaignCostObjectiveInput");
 const campaignCostDurationInput = document.getElementById("campaignCostDurationInput");
 const campaignCostProfitInput = document.getElementById("campaignCostProfitInput");
 const campaignCostAverageTicketInput = document.getElementById("campaignCostAverageTicketInput");
+const campaignCostGrossMarginInput = document.getElementById("campaignCostGrossMarginInput");
+const campaignCostConversionInput = document.getElementById("campaignCostConversionInput");
+const campaignCostRedemptionInput = document.getElementById("campaignCostRedemptionInput");
 const campaignCostUseDatesButton = document.getElementById("campaignCostUseDatesButton");
 const campaignCostApplyBudgetButton = document.getElementById("campaignCostApplyBudgetButton");
 const campaignCostSummary = document.getElementById("campaignCostSummary");
+const campaignCostDecision = document.getElementById("campaignCostDecision");
 const campaignCostProductionList = document.getElementById("campaignCostProductionList");
 const campaignCostBenefitsList = document.getElementById("campaignCostBenefitsList");
 const campaignCostServicesList = document.getElementById("campaignCostServicesList");
+const campaignCostVariableList = document.getElementById("campaignCostVariableList");
 const campaignCostFixedList = document.getElementById("campaignCostFixedList");
 const campaignCostAddProductionButton = document.getElementById("campaignCostAddProductionButton");
 const campaignCostAddBenefitButton = document.getElementById("campaignCostAddBenefitButton");
 const campaignCostAddServiceButton = document.getElementById("campaignCostAddServiceButton");
+const campaignCostAddVariableButton = document.getElementById("campaignCostAddVariableButton");
 const campaignCostAddFixedButton = document.getElementById("campaignCostAddFixedButton");
+const campaignCostScenarios = document.getElementById("campaignCostScenarios");
 const campaignCostMessage = document.getElementById("campaignCostMessage");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
@@ -5469,19 +5484,36 @@ function campaignCostDurationFromDates(startValue = launchStartsAtInput?.value, 
 }
 
 function defaultCampaignCostCalculator(campaign = state.selectedCampaign || {}) {
+  const expectedSales = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count || 0);
+  const avgTicket = expectedSales ? toNumber(campaign.attributed_revenue) / expectedSales : 0;
+  const knownCampaignTypes = ["MIXED", "LEAD_CAPTURE", "REDEMPTION", "REFERRAL", "REBUY", "INVENTORY", "EVENT", "LAUNCH"];
   return {
+    name: campaign.name || "",
+    campaign_type: knownCampaignTypes.includes(campaign.type) ? campaign.type : "MIXED",
+    main_channel: Array.isArray(campaign.launch_channels) ? campaign.launch_channels[0] || "" : "",
+    branch: "",
+    owner: "",
+    primary_goal: "sales",
+    gamified_dynamic: "scratch",
+    objective: campaign.objective || "",
     duration_days: campaignCostDurationFromDates(formatInputDateTime(campaign.starts_at), formatInputDateTime(campaign.ends_at)),
     desired_profit_percent: 30,
-    average_ticket: toNumber(campaign.expected_sales_goal) || 0,
+    average_ticket: avgTicket || toNumber(campaign.expected_sales_goal) || 0,
+    gross_margin_per_sale: 0,
+    lead_to_sale_rate: 10,
+    expected_redemption_rate: toNumber(campaign.redemption_rate) || 40,
     production: [
       { label: "Volantes", quantity: 0, unit_cost: 0 },
       { label: "Cajas / empaques", quantity: 0, unit_cost: 0 },
     ],
     benefits: [
-      { type: "DISCOUNT", name: "Descuento producto", product_price: 0, discount_percent: 0, units: 0 },
+      { type: "DISCOUNT_PERCENT", name: "Descuento producto", product_price: 0, product_cost: 0, discount_percent: 0, discount_amount: 0, issued_units: 100, redemption_rate: 40, prepaid_units: 0 },
     ],
     services: [
-      { name: "Servicio contratado", monthly_cost: 0 },
+      { name: "Promotor / servicio", payment_type: "monthly", amount: 0, days: 0, hours_per_day: 0, commission_percent: 0, sales_base: 0 },
+    ],
+    variable: [
+      { label: "Empaque / domicilio / comisión", unit_cost: 0, units: 0, apply_redemption_rate: false },
     ],
     fixed: [
       { label: "Costo operativo", amount: 0 },
@@ -5501,24 +5533,50 @@ function normalizeCampaignCostCalculator(value = {}, campaign = state.selectedCa
     return source.map(mapper);
   };
   return {
+    name: cleanCustomerValue(value.name) || fallback.name || "",
+    campaign_type: cleanCustomerValue(value.campaign_type) || fallback.campaign_type,
+    main_channel: cleanCustomerValue(value.main_channel) || fallback.main_channel || "",
+    branch: cleanCustomerValue(value.branch) || "",
+    owner: cleanCustomerValue(value.owner) || "",
+    primary_goal: cleanCustomerValue(value.primary_goal) || fallback.primary_goal,
+    gamified_dynamic: cleanCustomerValue(value.gamified_dynamic) || fallback.gamified_dynamic,
+    objective: cleanCustomerValue(value.objective) || fallback.objective || "",
     duration_days: Math.max(1, Math.round(normalizeCampaignCostNumber(value.duration_days || fallback.duration_days || 30))),
     desired_profit_percent: normalizeCampaignCostNumber(value.desired_profit_percent ?? fallback.desired_profit_percent),
     average_ticket: normalizeCampaignCostNumber(value.average_ticket ?? fallback.average_ticket),
+    gross_margin_per_sale: normalizeCampaignCostNumber(value.gross_margin_per_sale ?? fallback.gross_margin_per_sale),
+    lead_to_sale_rate: Math.min(100, normalizeCampaignCostNumber(value.lead_to_sale_rate ?? fallback.lead_to_sale_rate)),
+    expected_redemption_rate: Math.min(100, normalizeCampaignCostNumber(value.expected_redemption_rate ?? fallback.expected_redemption_rate)),
     production: readRows(value.production, fallback.production, (item = {}) => ({
       label: cleanCustomerValue(item.label) || "Material",
       quantity: normalizeCampaignCostNumber(item.quantity),
       unit_cost: normalizeCampaignCostNumber(item.unit_cost),
     })),
     benefits: readRows(value.benefits, fallback.benefits, (item = {}) => ({
-      type: item.type === "GIFT" ? "GIFT" : "DISCOUNT",
+      type: ["DISCOUNT_FIXED", "GIFT", "GIFTCARD", "EXPERIENCE"].includes(item.type) ? item.type : "DISCOUNT_PERCENT",
       name: cleanCustomerValue(item.name) || "Beneficio",
       product_price: normalizeCampaignCostNumber(item.product_price),
+      product_cost: normalizeCampaignCostNumber(item.product_cost),
       discount_percent: Math.min(100, normalizeCampaignCostNumber(item.discount_percent)),
-      units: normalizeCampaignCostNumber(item.units),
+      discount_amount: normalizeCampaignCostNumber(item.discount_amount),
+      issued_units: normalizeCampaignCostNumber(item.issued_units ?? item.units),
+      redemption_rate: Math.min(100, normalizeCampaignCostNumber(item.redemption_rate ?? value.expected_redemption_rate ?? fallback.expected_redemption_rate)),
+      prepaid_units: normalizeCampaignCostNumber(item.prepaid_units),
     })),
     services: readRows(value.services, fallback.services, (item = {}) => ({
       name: cleanCustomerValue(item.name) || "Servicio",
-      monthly_cost: normalizeCampaignCostNumber(item.monthly_cost),
+      payment_type: ["daily", "hourly", "commission"].includes(item.payment_type) ? item.payment_type : "monthly",
+      amount: normalizeCampaignCostNumber(item.amount ?? item.monthly_cost),
+      days: normalizeCampaignCostNumber(item.days),
+      hours_per_day: normalizeCampaignCostNumber(item.hours_per_day),
+      commission_percent: normalizeCampaignCostNumber(item.commission_percent),
+      sales_base: normalizeCampaignCostNumber(item.sales_base),
+    })),
+    variable: readRows(value.variable, fallback.variable, (item = {}) => ({
+      label: cleanCustomerValue(item.label) || "Costo variable",
+      unit_cost: normalizeCampaignCostNumber(item.unit_cost),
+      units: normalizeCampaignCostNumber(item.units),
+      apply_redemption_rate: Boolean(item.apply_redemption_rate),
     })),
     fixed: readRows(value.fixed, fallback.fixed, (item = {}) => ({
       label: cleanCustomerValue(item.label) || "Costo fijo",
@@ -5573,12 +5631,27 @@ function readCampaignCostCalculatorFromForm() {
     type: row.querySelector("[data-cost-field='type']")?.value || "DISCOUNT",
     name: row.querySelector("[data-cost-field='name']")?.value || "",
     product_price: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='product_price']")?.value),
+    product_cost: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='product_cost']")?.value),
     discount_percent: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='discount_percent']")?.value),
-    units: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='units']")?.value),
+    discount_amount: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='discount_amount']")?.value),
+    issued_units: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='issued_units']")?.value),
+    redemption_rate: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='redemption_rate']")?.value),
+    prepaid_units: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='prepaid_units']")?.value),
   }));
   const readServiceRows = () => Array.from(campaignCostServicesList?.querySelectorAll("[data-campaign-cost-row='service']") || []).map((row) => ({
     name: row.querySelector("[data-cost-field='name']")?.value || "",
-    monthly_cost: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='monthly_cost']")?.value),
+    payment_type: row.querySelector("[data-cost-field='payment_type']")?.value || "monthly",
+    amount: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='amount']")?.value),
+    days: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='days']")?.value),
+    hours_per_day: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='hours_per_day']")?.value),
+    commission_percent: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='commission_percent']")?.value),
+    sales_base: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='sales_base']")?.value),
+  }));
+  const readVariableRows = () => Array.from(campaignCostVariableList?.querySelectorAll("[data-campaign-cost-row='variable']") || []).map((row) => ({
+    label: row.querySelector("[data-cost-field='label']")?.value || "",
+    unit_cost: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='unit_cost']")?.value),
+    units: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='units']")?.value),
+    apply_redemption_rate: Boolean(row.querySelector("[data-cost-field='apply_redemption_rate']")?.checked),
   }));
   const readFixedRows = () => Array.from(campaignCostFixedList?.querySelectorAll("[data-campaign-cost-row='fixed']") || []).map((row) => ({
     label: row.querySelector("[data-cost-field='label']")?.value || "",
@@ -5586,45 +5659,157 @@ function readCampaignCostCalculatorFromForm() {
   }));
   return normalizeCampaignCostCalculator({
     ...current,
+    name: campaignCostNameInput?.value || current.name,
+    campaign_type: campaignCostTypeInput?.value || current.campaign_type,
+    main_channel: campaignCostChannelInput?.value || current.main_channel,
+    branch: campaignCostBranchInput?.value || current.branch,
+    owner: campaignCostOwnerInput?.value || current.owner,
+    primary_goal: campaignCostGoalInput?.value || current.primary_goal,
+    gamified_dynamic: campaignCostDynamicInput?.value || current.gamified_dynamic,
+    objective: campaignCostObjectiveInput?.value || current.objective,
     duration_days: normalizeCampaignCostNumber(campaignCostDurationInput?.value || current.duration_days),
     desired_profit_percent: normalizeCampaignCostNumber(campaignCostProfitInput?.value || current.desired_profit_percent),
     average_ticket: normalizeCampaignCostNumber(campaignCostAverageTicketInput?.value || current.average_ticket),
+    gross_margin_per_sale: normalizeCampaignCostNumber(campaignCostGrossMarginInput?.value || current.gross_margin_per_sale),
+    lead_to_sale_rate: normalizeCampaignCostNumber(campaignCostConversionInput?.value || current.lead_to_sale_rate),
+    expected_redemption_rate: normalizeCampaignCostNumber(campaignCostRedemptionInput?.value || current.expected_redemption_rate),
     production: readProductionRows(),
     benefits: readBenefitRows(),
     services: readServiceRows(),
+    variable: readVariableRows(),
     fixed: readFixedRows(),
   });
 }
 
-function calculateCampaignCosts(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+function campaignBenefitMetrics(item = {}, calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  const issuedUnits = normalizeCampaignCostNumber(item.issued_units ?? item.units);
+  const redemptionRate = Math.min(100, normalizeCampaignCostNumber(item.redemption_rate ?? calculator.expected_redemption_rate));
+  const expectedRedeemed = issuedUnits * redemptionRate / 100;
+  const consumedUnits = Math.max(expectedRedeemed, normalizeCampaignCostNumber(item.prepaid_units));
+  const price = normalizeCampaignCostNumber(item.product_price);
+  const productCost = normalizeCampaignCostNumber(item.product_cost);
+  const marginBeforeUnit = Math.max(0, price - productCost);
+  let discountUnit = 0;
+  let marginAfterUnit = marginBeforeUnit;
+  let cashCostUnit = 0;
+
+  if (item.type === "DISCOUNT_FIXED") {
+    discountUnit = Math.min(price, normalizeCampaignCostNumber(item.discount_amount));
+    marginAfterUnit = Math.max(0, price - discountUnit - productCost);
+  } else if (item.type === "GIFT") {
+    cashCostUnit = productCost || price;
+    discountUnit = marginBeforeUnit;
+    marginAfterUnit = 0;
+  } else if (item.type === "GIFTCARD") {
+    discountUnit = normalizeCampaignCostNumber(item.discount_amount || price);
+    cashCostUnit = discountUnit;
+    marginAfterUnit = Math.max(0, marginBeforeUnit - discountUnit);
+  } else if (item.type === "EXPERIENCE") {
+    cashCostUnit = productCost || price;
+    discountUnit = cashCostUnit;
+    marginAfterUnit = marginBeforeUnit;
+  } else {
+    discountUnit = price * Math.min(100, normalizeCampaignCostNumber(item.discount_percent)) / 100;
+    marginAfterUnit = Math.max(0, price - discountUnit - productCost);
+  }
+
+  const opportunityCostUnit = Math.max(0, marginBeforeUnit - marginAfterUnit);
+  const estimatedCost = (cashCostUnit || opportunityCostUnit) * consumedUnits;
+  const remainingMargin = marginAfterUnit * consumedUnits;
+  return {
+    issuedUnits,
+    redemptionRate,
+    expectedRedeemed,
+    consumedUnits,
+    marginBeforeUnit,
+    marginAfterUnit,
+    opportunityCostUnit,
+    cashCostUnit,
+    estimatedCost,
+    remainingMargin,
+  };
+}
+
+function campaignServiceCost(item = {}, durationDays = 30, revenueGoal = 0) {
+  const amount = normalizeCampaignCostNumber(item.amount ?? item.monthly_cost);
+  const days = normalizeCampaignCostNumber(item.days) || durationDays;
+  if (item.payment_type === "daily") return amount * days;
+  if (item.payment_type === "hourly") return amount * days * Math.max(1, normalizeCampaignCostNumber(item.hours_per_day));
+  if (item.payment_type === "commission") {
+    const base = normalizeCampaignCostNumber(item.sales_base) || revenueGoal;
+    return base * normalizeCampaignCostNumber(item.commission_percent) / 100;
+  }
+  return amount / 30 * durationDays;
+}
+
+function campaignVariableCost(item = {}, calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  const units = normalizeCampaignCostNumber(item.units);
+  const effectiveUnits = item.apply_redemption_rate ? units * Math.min(100, normalizeCampaignCostNumber(calculator.expected_redemption_rate)) / 100 : units;
+  return normalizeCampaignCostNumber(item.unit_cost) * effectiveUnits;
+}
+
+function calculateCampaignCosts(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator(), scenario = {}) {
   const durationDays = Math.max(1, Number(calculator.duration_days || 1));
   const productionTotal = (calculator.production || []).reduce((sum, item) => sum + normalizeCampaignCostNumber(item.quantity) * normalizeCampaignCostNumber(item.unit_cost), 0);
-  const benefitsTotal = (calculator.benefits || []).reduce((sum, item) => {
-    const units = normalizeCampaignCostNumber(item.units);
-    const price = normalizeCampaignCostNumber(item.product_price);
-    const unitCost = item.type === "GIFT" ? price : price * Math.min(100, normalizeCampaignCostNumber(item.discount_percent)) / 100;
-    return sum + unitCost * units;
-  }, 0);
-  const servicesTotal = (calculator.services || []).reduce((sum, item) => {
-    const dailyCost = normalizeCampaignCostNumber(item.monthly_cost) / 30;
-    return sum + dailyCost * durationDays;
-  }, 0);
+  const scenarioRedemptionRate = scenario.redemption_rate ?? calculator.expected_redemption_rate;
+  const scenarioCalculator = { ...calculator, expected_redemption_rate: scenarioRedemptionRate };
+  const benefitRows = (calculator.benefits || []).map((item) => campaignBenefitMetrics({ ...item, redemption_rate: item.redemption_rate ?? scenarioRedemptionRate }, scenarioCalculator));
+  const benefitsTotal = benefitRows.reduce((sum, item) => sum + item.estimatedCost, 0);
+  const benefitsCommitted = (calculator.benefits || []).reduce((sum, item) => sum + normalizeCampaignCostNumber(item.issued_units ?? item.units), 0);
+  const benefitsRedeemed = benefitRows.reduce((sum, item) => sum + item.expectedRedeemed, 0);
+  const benefitRemainingMargin = benefitRows.reduce((sum, item) => sum + item.remainingMargin, 0);
+  const benefitOpportunityCost = benefitRows.reduce((sum, item) => sum + item.opportunityCostUnit * item.consumedUnits, 0);
   const fixedTotal = (calculator.fixed || []).reduce((sum, item) => sum + normalizeCampaignCostNumber(item.amount), 0);
-  const totalCost = productionTotal + benefitsTotal + servicesTotal + fixedTotal;
-  const targetProfit = totalCost * normalizeCampaignCostNumber(calculator.desired_profit_percent) / 100;
+  const variableTotal = (calculator.variable || []).reduce((sum, item) => sum + campaignVariableCost(item, scenarioCalculator), 0);
+  const fixedCostTotal = productionTotal + fixedTotal;
+  const averageTicket = normalizeCampaignCostNumber(scenario.average_ticket ?? calculator.average_ticket);
+  const conversionRate = Math.min(100, normalizeCampaignCostNumber(scenario.conversion_rate ?? calculator.lead_to_sale_rate));
+  const grossMarginPerSale = normalizeCampaignCostNumber(scenario.gross_margin_per_sale ?? calculator.gross_margin_per_sale);
+  const desiredProfitPercent = normalizeCampaignCostNumber(calculator.desired_profit_percent);
+  const preliminaryCost = fixedCostTotal + benefitsTotal + variableTotal;
+  const preliminaryProfit = preliminaryCost * desiredProfitPercent / 100;
+  const preliminaryRevenueGoal = preliminaryCost + preliminaryProfit;
+  const servicesTotal = (calculator.services || []).reduce((sum, item) => {
+    return sum + campaignServiceCost(item, durationDays, preliminaryRevenueGoal);
+  }, 0);
+  const totalCost = fixedCostTotal + benefitsTotal + servicesTotal + variableTotal;
+  const targetProfit = totalCost * desiredProfitPercent / 100;
   const revenueGoal = totalCost + targetProfit;
-  const averageTicket = normalizeCampaignCostNumber(calculator.average_ticket);
+  const requiredSales = averageTicket > 0 ? Math.ceil(revenueGoal / averageTicket) : 0;
+  const leadsNeeded = conversionRate > 0 ? Math.ceil(requiredSales / (conversionRate / 100)) : 0;
+  const breakEvenSales = grossMarginPerSale > 0 ? Math.ceil(totalCost / grossMarginPerSale) : 0;
+  const breakEvenRevenue = breakEvenSales * averageTicket;
+  const expectedGrossProfit = requiredSales * grossMarginPerSale + benefitRemainingMargin;
+  const netProfit = expectedGrossProfit - totalCost;
   return {
     durationDays,
+    fixedCostTotal,
+    variableTotal,
     productionTotal,
     benefitsTotal,
+    benefitsCommitted,
+    benefitsRedeemed,
+    benefitRemainingMargin,
+    benefitOpportunityCost,
     servicesTotal,
     fixedTotal,
     totalCost,
     dailyCost: totalCost / durationDays,
     targetProfit,
     revenueGoal,
-    requiredSales: averageTicket > 0 ? Math.ceil(revenueGoal / averageTicket) : 0,
+    requiredSales,
+    leadsNeeded,
+    breakEvenSales,
+    breakEvenRevenue,
+    averageTicket,
+    conversionRate,
+    grossMarginPerSale,
+    costPerLead: leadsNeeded > 0 ? totalCost / leadsNeeded : 0,
+    costPerSale: requiredSales > 0 ? totalCost / requiredSales : 0,
+    costPerRedemption: benefitsRedeemed > 0 ? benefitsTotal / benefitsRedeemed : 0,
+    expectedGrossProfit,
+    netProfit,
+    roi: totalCost > 0 ? (netProfit / totalCost) * 100 : 0,
   };
 }
 
@@ -5632,21 +5817,85 @@ function campaignCostRowTotal(type, item, calculator = state.campaignCostCalcula
   const durationDays = Math.max(1, Number(calculator.duration_days || 1));
   if (type === "production") return normalizeCampaignCostNumber(item.quantity) * normalizeCampaignCostNumber(item.unit_cost);
   if (type === "benefit") {
-    const unitCost = item.type === "GIFT"
-      ? normalizeCampaignCostNumber(item.product_price)
-      : normalizeCampaignCostNumber(item.product_price) * Math.min(100, normalizeCampaignCostNumber(item.discount_percent)) / 100;
-    return unitCost * normalizeCampaignCostNumber(item.units);
+    return campaignBenefitMetrics(item, calculator).estimatedCost;
   }
-  if (type === "service") return normalizeCampaignCostNumber(item.monthly_cost) / 30 * durationDays;
+  if (type === "service") return campaignServiceCost(item, durationDays, calculateCampaignCosts(calculator).revenueGoal);
+  if (type === "variable") return campaignVariableCost(item, calculator);
   return normalizeCampaignCostNumber(item.amount);
+}
+
+function campaignBenefitMetaHtml(item = {}, calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  const metrics = campaignBenefitMetrics(item, calculator);
+  return `
+    <small>Redime ${Math.round(metrics.expectedRedeemed).toLocaleString("es-CO")} de ${Math.round(metrics.issuedUnits).toLocaleString("es-CO")}</small>
+    <small>Margen: ${escapeHtml(money(metrics.marginBeforeUnit))} -> ${escapeHtml(money(metrics.marginAfterUnit))}</small>
+    <small>Sacrificio: ${escapeHtml(money(metrics.opportunityCostUnit * metrics.consumedUnits))}</small>
+  `;
+}
+
+function campaignGoalLabel(goal) {
+  return {
+    sales: "ventas",
+    leads: "leads",
+    redemptions: "redenciones",
+    referrals: "referidos",
+    rebuy: "recompras",
+    visits: "visitas",
+    registrations: "registros",
+    appointments: "agendamientos",
+    reactivation: "clientes reactivados",
+  }[goal] || "ventas";
+}
+
+function campaignDynamicLabel(dynamic) {
+  return {
+    scratch: "Raspa y gana",
+    roulette: "Ruleta",
+    trivia: "Trivia",
+    battleship: "Batalla naval",
+    referrals: "Referidos",
+    points: "Puntos",
+    ranking: "Ranking",
+    giftcard: "Giftcard",
+    vip: "Club VIP",
+    rebuy_challenge: "Reto de recompra",
+    physical_activation: "Activación en punto físico",
+    post_sale: "Campaña postventa",
+    brand_alliance: "Alianza entre marcas",
+  }[dynamic] || dynamic || "Sin dinámica";
+}
+
+function campaignDecisionStatus(totals = calculateCampaignCosts()) {
+  if (!totals.totalCost) return { tone: "pending", label: "Sin datos", action: "Completa costos, margen y ticket promedio antes de decidir." };
+  if (!totals.grossMarginPerSale || !totals.averageTicket || !totals.conversionRate) {
+    return { tone: "warning", label: "Amarillo", action: "Faltan margen, ticket o conversión para saber si la campaña se paga sola." };
+  }
+  if (totals.roi >= 25 && totals.requiredSales >= totals.breakEvenSales) {
+    return { tone: "ok", label: "Verde", action: "Activar campaña con seguimiento diario de redenciones y ventas." };
+  }
+  if (totals.roi >= 0) {
+    return { tone: "warning", label: "Amarillo", action: "Posible, pero conviene reducir costo de beneficios, subir ticket promedio o mejorar conversión." };
+  }
+  return { tone: "danger", label: "Rojo", action: "Riesgosa: necesita más margen, menos descuento o menor costo fijo antes de ejecutarla." };
 }
 
 function renderCampaignCostCalculator() {
   const calculator = ensureCampaignCostCalculatorForCampaign(state.selectedCampaign || {});
   if (!calculator || !campaignCostSummary) return;
+  if (campaignCostNameInput) campaignCostNameInput.value = calculator.name || "";
+  if (campaignCostTypeInput) campaignCostTypeInput.value = calculator.campaign_type || "MIXED";
+  if (campaignCostChannelInput) campaignCostChannelInput.value = calculator.main_channel || "";
+  if (campaignCostBranchInput) campaignCostBranchInput.value = calculator.branch || "";
+  if (campaignCostOwnerInput) campaignCostOwnerInput.value = calculator.owner || "";
+  if (campaignCostGoalInput) campaignCostGoalInput.value = calculator.primary_goal || "sales";
+  if (campaignCostDynamicInput) campaignCostDynamicInput.value = calculator.gamified_dynamic || "scratch";
+  if (campaignCostObjectiveInput) campaignCostObjectiveInput.value = calculator.objective || "";
   if (campaignCostDurationInput) campaignCostDurationInput.value = calculator.duration_days || 30;
   if (campaignCostProfitInput) campaignCostProfitInput.value = calculator.desired_profit_percent || 0;
   if (campaignCostAverageTicketInput) campaignCostAverageTicketInput.value = calculator.average_ticket || "";
+  if (campaignCostGrossMarginInput) campaignCostGrossMarginInput.value = calculator.gross_margin_per_sale || "";
+  if (campaignCostConversionInput) campaignCostConversionInput.value = calculator.lead_to_sale_rate || "";
+  if (campaignCostRedemptionInput) campaignCostRedemptionInput.value = calculator.expected_redemption_rate || "";
   renderCampaignCostRows(calculator);
   renderCampaignCostSummary(calculator);
 }
@@ -5666,12 +5915,19 @@ function renderCampaignCostRows(calculator = state.campaignCostCalculator || def
   if (campaignCostBenefitsList) {
     campaignCostBenefitsList.innerHTML = (calculator.benefits || []).map((item, index) => `
       <div class="campaign-cost-row campaign-cost-row-benefit" data-campaign-cost-row="benefit" data-index="${index}">
-        <label><span>Tipo</span><select data-cost-field="type"><option value="DISCOUNT" ${item.type !== "GIFT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${item.type === "GIFT" ? "selected" : ""}>Obsequio</option></select></label>
+        <label><span>Tipo</span><select data-cost-field="type"><option value="DISCOUNT_PERCENT" ${item.type === "DISCOUNT_PERCENT" ? "selected" : ""}>% descuento</option><option value="DISCOUNT_FIXED" ${item.type === "DISCOUNT_FIXED" ? "selected" : ""}>$ descuento</option><option value="GIFT" ${item.type === "GIFT" ? "selected" : ""}>Obsequio</option><option value="GIFTCARD" ${item.type === "GIFTCARD" ? "selected" : ""}>Bono</option><option value="EXPERIENCE" ${item.type === "EXPERIENCE" ? "selected" : ""}>Experiencia</option></select></label>
         <label><span>Producto</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Producto o beneficio"></label>
-        <label><span>Precio producto</span><input data-cost-field="product_price" type="number" min="0" step="100" value="${escapeHtml(item.product_price || 0)}"></label>
+        <label><span>Precio normal</span><input data-cost-field="product_price" type="number" min="0" step="100" value="${escapeHtml(item.product_price || 0)}"></label>
+        <label><span>Costo producto</span><input data-cost-field="product_cost" type="number" min="0" step="100" value="${escapeHtml(item.product_cost || 0)}"></label>
         <label><span>% descuento</span><input data-cost-field="discount_percent" type="number" min="0" max="100" step="1" value="${escapeHtml(item.discount_percent || 0)}"></label>
-        <label><span>Unidades</span><input data-cost-field="units" type="number" min="0" step="1" value="${escapeHtml(item.units || 0)}"></label>
-        <strong>${escapeHtml(money(campaignCostRowTotal("benefit", item, calculator)))}</strong>
+        <label><span>$ descuento</span><input data-cost-field="discount_amount" type="number" min="0" step="100" value="${escapeHtml(item.discount_amount || 0)}"></label>
+        <label><span>Emitidos</span><input data-cost-field="issued_units" type="number" min="0" step="1" value="${escapeHtml(item.issued_units || 0)}"></label>
+        <label><span>Redención %</span><input data-cost-field="redemption_rate" type="number" min="0" max="100" step="0.1" value="${escapeHtml(item.redemption_rate ?? calculator.expected_redemption_rate ?? 0)}"></label>
+        <label><span>Comprados ya</span><input data-cost-field="prepaid_units" type="number" min="0" step="1" value="${escapeHtml(item.prepaid_units || 0)}"></label>
+        <div class="campaign-cost-mini">
+          <strong>${escapeHtml(money(campaignCostRowTotal("benefit", item, calculator)))}</strong>
+          ${campaignBenefitMetaHtml(item, calculator)}
+        </div>
         <button class="icon-button" type="button" data-remove-campaign-cost="benefit" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
       </div>
     `).join("");
@@ -5679,11 +5935,26 @@ function renderCampaignCostRows(calculator = state.campaignCostCalculator || def
   if (campaignCostServicesList) {
     campaignCostServicesList.innerHTML = (calculator.services || []).map((item, index) => `
       <div class="campaign-cost-row" data-campaign-cost-row="service" data-index="${index}">
-        <label><span>Servicio/persona</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Promotor, agencia, diseñador..."></label>
-        <label><span>Valor mensual</span><input data-cost-field="monthly_cost" type="number" min="0" step="1000" value="${escapeHtml(item.monthly_cost || 0)}"></label>
-        <span class="table-secondary">${escapeHtml(money(normalizeCampaignCostNumber(item.monthly_cost) / 30))} / día</span>
+        <label><span>Rol / servicio</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Promotor, diseñador, validador..."></label>
+        <label><span>Tipo pago</span><select data-cost-field="payment_type"><option value="monthly" ${item.payment_type === "monthly" ? "selected" : ""}>Mensual</option><option value="daily" ${item.payment_type === "daily" ? "selected" : ""}>Diario</option><option value="hourly" ${item.payment_type === "hourly" ? "selected" : ""}>Por hora</option><option value="commission" ${item.payment_type === "commission" ? "selected" : ""}>Comisión</option></select></label>
+        <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
+        <label><span>Días</span><input data-cost-field="days" type="number" min="0" step="1" value="${escapeHtml(item.days || 0)}"></label>
+        <label><span>Horas/día</span><input data-cost-field="hours_per_day" type="number" min="0" step="0.5" value="${escapeHtml(item.hours_per_day || 0)}"></label>
+        <label><span>% comisión</span><input data-cost-field="commission_percent" type="number" min="0" step="0.1" value="${escapeHtml(item.commission_percent || 0)}"></label>
         <strong>${escapeHtml(money(campaignCostRowTotal("service", item, calculator)))}</strong>
         <button class="icon-button" type="button" data-remove-campaign-cost="service" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+    `).join("");
+  }
+  if (campaignCostVariableList) {
+    campaignCostVariableList.innerHTML = (calculator.variable || []).map((item, index) => `
+      <div class="campaign-cost-row" data-campaign-cost-row="variable" data-index="${index}">
+        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Domicilio, empaque, comisión..."></label>
+        <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
+        <label><span>Unidades</span><input data-cost-field="units" type="number" min="0" step="1" value="${escapeHtml(item.units || 0)}"></label>
+        <label class="campaign-cost-check"><input data-cost-field="apply_redemption_rate" type="checkbox" ${item.apply_redemption_rate ? "checked" : ""}> <span>Aplicar redención</span></label>
+        <strong>${escapeHtml(money(campaignCostRowTotal("variable", item, calculator)))}</strong>
+        <button class="icon-button" type="button" data-remove-campaign-cost="variable" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
       </div>
     `).join("");
   }
@@ -5703,6 +5974,8 @@ function renderCampaignCostSummary(calculator = state.campaignCostCalculator || 
   if (!campaignCostSummary) return;
   const totals = calculateCampaignCosts(calculator);
   campaignCostSummary.innerHTML = [
+    ["Costo fijo", money(totals.fixedCostTotal), "Se paga aunque nadie participe"],
+    ["Costo variable", money(totals.variableTotal + totals.benefitsTotal), `${money(totals.costPerRedemption)} por redención`],
     ["Producción", money(totals.productionTotal), "Volantes, cajas, piezas físicas"],
     ["Beneficios", money(totals.benefitsTotal), "Obsequios y descuentos asumidos"],
     ["Servicios", money(totals.servicesTotal), `${money(totals.servicesTotal / totals.durationDays)} diarios`],
@@ -5710,6 +5983,9 @@ function renderCampaignCostSummary(calculator = state.campaignCostCalculator || 
     ["Costo total", money(totals.totalCost), `${money(totals.dailyCost)} por día`],
     ["Utilidad meta", money(totals.targetProfit), `${calculator.desired_profit_percent || 0}% sobre costo`],
     ["Venta objetivo", money(totals.revenueGoal), totals.requiredSales ? `${totals.requiredSales.toLocaleString("es-CO")} ventas aprox.` : "Define ticket promedio"],
+    ["Equilibrio", totals.breakEvenSales ? `${totals.breakEvenSales.toLocaleString("es-CO")} ventas` : "-", `${money(totals.breakEvenRevenue)} mínimo`],
+    ["Leads necesarios", totals.leadsNeeded ? totals.leadsNeeded.toLocaleString("es-CO") : "-", `${totals.conversionRate || 0}% conversión`],
+    ["ROI esperado", `${Math.round(totals.roi)}%`, `Neto ${money(totals.netProfit)}`],
   ].map(([label, value, meta]) => `
     <div>
       <span class="mono-label">${escapeHtml(label)}</span>
@@ -5717,9 +5993,64 @@ function renderCampaignCostSummary(calculator = state.campaignCostCalculator || 
       <small>${escapeHtml(meta)}</small>
     </div>
   `).join("");
+  renderCampaignCostDecision(calculator, totals);
+  renderCampaignCostScenarios(calculator);
   if (campaignCostMessage) {
-    campaignCostMessage.textContent = `Para ganar ${money(totals.targetProfit)}, la campaña debe generar al menos ${money(totals.revenueGoal)} sobre un costo estimado de ${money(totals.totalCost)}.`;
+    campaignCostMessage.textContent = `Para que esta campaña sea rentable, necesita al menos ${money(totals.revenueGoal)} en ventas, ${totals.requiredSales.toLocaleString("es-CO")} ventas con ticket promedio de ${money(totals.averageTicket)}, o ${totals.leadsNeeded.toLocaleString("es-CO")} leads si convierte al ${totals.conversionRate || 0}%.`;
   }
+}
+
+function renderCampaignCostDecision(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator(), totals = calculateCampaignCosts(calculator)) {
+  if (!campaignCostDecision) return;
+  const decision = campaignDecisionStatus(totals);
+  const goalLabel = campaignGoalLabel(calculator.primary_goal);
+  campaignCostDecision.innerHTML = `
+    <div class="campaign-cost-status ${escapeHtml(decision.tone)}">
+      <span class="mono-label">¿Esta campaña se paga sola?</span>
+      <strong>${escapeHtml(decision.label)}</strong>
+      <p>${escapeHtml(decision.action)}</p>
+    </div>
+    <div>
+      <span class="mono-label">Decisión comercial</span>
+      <p>Sí, si logra ${totals.requiredSales.toLocaleString("es-CO")} ventas, convierte al menos ${totals.conversionRate || 0}% de leads o sostiene un margen bruto de ${escapeHtml(money(totals.grossMarginPerSale))} por venta.</p>
+    </div>
+    <div>
+      <span class="mono-label">Meta por comportamiento</span>
+      <p>Meta principal: ${escapeHtml(goalLabel)}. Costo estimado por ${escapeHtml(goalLabel.replace(/s$/, ""))}: ${escapeHtml(money(goalLabel === "leads" ? totals.costPerLead : goalLabel === "redenciones" ? totals.costPerRedemption : totals.costPerSale))}.</p>
+    </div>
+    <div>
+      <span class="mono-label">Resumen operativo</span>
+      <p>${totals.durationDays} días · ${escapeHtml(campaignDynamicLabel(calculator.gamified_dynamic))} · ${Math.round(totals.benefitsCommitted).toLocaleString("es-CO")} beneficios emitidos · ${Math.round(totals.benefitsRedeemed).toLocaleString("es-CO")} redenciones estimadas.</p>
+    </div>
+  `;
+}
+
+function renderCampaignCostScenarios(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  if (!campaignCostScenarios) return;
+  const baseTicket = normalizeCampaignCostNumber(calculator.average_ticket);
+  const baseConversion = normalizeCampaignCostNumber(calculator.lead_to_sale_rate);
+  const baseRedemption = normalizeCampaignCostNumber(calculator.expected_redemption_rate);
+  const baseMargin = normalizeCampaignCostNumber(calculator.gross_margin_per_sale);
+  const scenarios = [
+    ["Conservador", { average_ticket: baseTicket * 0.85, conversion_rate: baseConversion * 0.7, redemption_rate: baseRedemption * 0.75, gross_margin_per_sale: baseMargin * 0.85 }],
+    ["Esperado", { average_ticket: baseTicket, conversion_rate: baseConversion, redemption_rate: baseRedemption, gross_margin_per_sale: baseMargin }],
+    ["Optimista", { average_ticket: baseTicket * 1.15, conversion_rate: Math.min(100, baseConversion * 1.35), redemption_rate: Math.min(100, baseRedemption * 1.2), gross_margin_per_sale: baseMargin * 1.1 }],
+  ].map(([label, scenario]) => [label, calculateCampaignCosts(calculator, scenario)]);
+  campaignCostScenarios.innerHTML = `
+    <div class="campaign-cost-section-head">
+      <h4>Escenarios</h4>
+      <span class="table-secondary">Si sale mal, normal o mejor de lo esperado</span>
+    </div>
+    <div class="campaign-cost-scenario-grid">
+      ${scenarios.map(([label, totals]) => `
+        <article>
+          <span class="mono-label">${escapeHtml(label)}</span>
+          <strong>${escapeHtml(money(totals.netProfit))}</strong>
+          <small>ROI ${Math.round(totals.roi)}% · ${totals.requiredSales.toLocaleString("es-CO")} ventas · ${totals.leadsNeeded.toLocaleString("es-CO")} leads</small>
+        </article>
+      `).join("")}
+    </div>
+  `;
 }
 
 function syncCampaignCostCalculatorFromForm({ rerenderRows = false } = {}) {
@@ -5734,8 +6065,9 @@ function addCampaignCostRow(type) {
   state.campaignCostCalculator = readCampaignCostCalculatorFromForm();
   const calculator = state.campaignCostCalculator;
   if (type === "production") calculator.production.push({ label: "Material", quantity: 0, unit_cost: 0 });
-  if (type === "benefit") calculator.benefits.push({ type: "DISCOUNT", name: "Beneficio", product_price: 0, discount_percent: 0, units: 0 });
-  if (type === "service") calculator.services.push({ name: "Servicio", monthly_cost: 0 });
+  if (type === "benefit") calculator.benefits.push({ type: "DISCOUNT_PERCENT", name: "Beneficio", product_price: 0, product_cost: 0, discount_percent: 0, discount_amount: 0, issued_units: 0, redemption_rate: calculator.expected_redemption_rate || 0, prepaid_units: 0 });
+  if (type === "service") calculator.services.push({ name: "Servicio", payment_type: "monthly", amount: 0, days: 0, hours_per_day: 0, commission_percent: 0, sales_base: 0 });
+  if (type === "variable") calculator.variable.push({ label: "Costo variable", unit_cost: 0, units: 0, apply_redemption_rate: false });
   if (type === "fixed") calculator.fixed.push({ label: "Costo fijo", amount: 0 });
   saveCampaignCostCalculatorLocal();
   renderCampaignCostCalculator();
@@ -5748,6 +6080,7 @@ function removeCampaignCostRow(type, index) {
     production: calculator.production,
     benefit: calculator.benefits,
     service: calculator.services,
+    variable: calculator.variable,
     fixed: calculator.fixed,
   };
   const rows = collectionByType[type];
@@ -5755,8 +6088,9 @@ function removeCampaignCostRow(type, index) {
   rows.splice(index, 1);
   if (!rows.length) {
     if (type === "production") rows.push({ label: "Material", quantity: 0, unit_cost: 0 });
-    if (type === "benefit") rows.push({ type: "DISCOUNT", name: "Beneficio", product_price: 0, discount_percent: 0, units: 0 });
-    if (type === "service") rows.push({ name: "Servicio", monthly_cost: 0 });
+    if (type === "benefit") rows.push({ type: "DISCOUNT_PERCENT", name: "Beneficio", product_price: 0, product_cost: 0, discount_percent: 0, discount_amount: 0, issued_units: 0, redemption_rate: calculator.expected_redemption_rate || 0, prepaid_units: 0 });
+    if (type === "service") rows.push({ name: "Servicio", payment_type: "monthly", amount: 0, days: 0, hours_per_day: 0, commission_percent: 0, sales_base: 0 });
+    if (type === "variable") rows.push({ label: "Costo variable", unit_cost: 0, units: 0, apply_redemption_rate: false });
     if (type === "fixed") rows.push({ label: "Costo fijo", amount: 0 });
   }
   saveCampaignCostCalculatorLocal();
@@ -11120,10 +11454,19 @@ function renderNoCampaignState() {
   state.campaignCostCalculator = null;
   state.campaignCostCalculatorCampaignId = null;
   if (campaignCostSummary) campaignCostSummary.innerHTML = "";
+  if (campaignCostDecision) campaignCostDecision.innerHTML = "";
+  [campaignCostNameInput, campaignCostChannelInput, campaignCostBranchInput, campaignCostOwnerInput, campaignCostObjectiveInput, campaignCostDurationInput, campaignCostProfitInput, campaignCostAverageTicketInput, campaignCostGrossMarginInput, campaignCostConversionInput, campaignCostRedemptionInput].forEach((input) => {
+    if (input) input.value = "";
+  });
+  if (campaignCostTypeInput) campaignCostTypeInput.value = "MIXED";
+  if (campaignCostGoalInput) campaignCostGoalInput.value = "sales";
+  if (campaignCostDynamicInput) campaignCostDynamicInput.value = "scratch";
   if (campaignCostProductionList) campaignCostProductionList.innerHTML = "";
   if (campaignCostBenefitsList) campaignCostBenefitsList.innerHTML = "";
   if (campaignCostServicesList) campaignCostServicesList.innerHTML = "";
+  if (campaignCostVariableList) campaignCostVariableList.innerHTML = "";
   if (campaignCostFixedList) campaignCostFixedList.innerHTML = "";
+  if (campaignCostScenarios) campaignCostScenarios.innerHTML = "";
   if (campaignCostMessage) campaignCostMessage.textContent = "Selecciona una campaña para calcular costos.";
   Array.from(launchChannelGrid.querySelectorAll("input[type='checkbox']")).forEach((input) => {
     input.checked = false;
@@ -16858,16 +17201,24 @@ exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);
 launchSetupForm.addEventListener("submit", saveClientLaunchSetup);
 confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
+[campaignCostNameInput, campaignCostTypeInput, campaignCostChannelInput, campaignCostBranchInput, campaignCostOwnerInput, campaignCostGoalInput, campaignCostDynamicInput, campaignCostObjectiveInput].forEach((input) => {
+  input?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+  input?.addEventListener("change", () => syncCampaignCostCalculatorFromForm());
+});
 campaignCostDurationInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm({ rerenderRows: true }));
 campaignCostProfitInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
 campaignCostAverageTicketInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+campaignCostGrossMarginInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+campaignCostConversionInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+campaignCostRedemptionInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm({ rerenderRows: true }));
 campaignCostUseDatesButton?.addEventListener("click", applyCampaignCostDurationFromDates);
 campaignCostApplyBudgetButton?.addEventListener("click", applyCampaignCostToLaunchBudget);
 campaignCostAddProductionButton?.addEventListener("click", () => addCampaignCostRow("production"));
 campaignCostAddBenefitButton?.addEventListener("click", () => addCampaignCostRow("benefit"));
 campaignCostAddServiceButton?.addEventListener("click", () => addCampaignCostRow("service"));
+campaignCostAddVariableButton?.addEventListener("click", () => addCampaignCostRow("variable"));
 campaignCostAddFixedButton?.addEventListener("click", () => addCampaignCostRow("fixed"));
-[campaignCostProductionList, campaignCostBenefitsList, campaignCostServicesList, campaignCostFixedList].forEach((list) => {
+[campaignCostProductionList, campaignCostBenefitsList, campaignCostServicesList, campaignCostVariableList, campaignCostFixedList].forEach((list) => {
   list?.addEventListener("input", handleCampaignCostListInput);
   list?.addEventListener("change", handleCampaignCostListInput);
   list?.addEventListener("click", handleCampaignCostListInput);

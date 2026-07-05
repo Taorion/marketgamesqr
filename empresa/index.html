@@ -2153,12 +2153,79 @@
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Calculadora de campaña</span>
-                        <h3 class="subhead">Costo operativo y meta de ganancia</h3>
+                        <h3 class="subhead">Viabilidad financiera y operativa</h3>
                       </div>
                       <button class="ghost-button" id="campaignCostApplyBudgetButton" type="button">
                         <span class="material-symbols-outlined" aria-hidden="true">price_check</span>
                         Aplicar al presupuesto
                       </button>
+                    </div>
+                    <div class="campaign-cost-config">
+                      <label>
+                        <span>Nombre de campaña</span>
+                        <input id="campaignCostNameInput" type="text" placeholder="Nombre operativo">
+                      </label>
+                      <label>
+                        <span>Tipo de campaña</span>
+                        <select id="campaignCostTypeInput">
+                          <option value="MIXED">Mixta</option>
+                          <option value="LEAD_CAPTURE">Captación de leads</option>
+                          <option value="REDEMPTION">Redenciones</option>
+                          <option value="REFERRAL">Referidos</option>
+                          <option value="REBUY">Recompra</option>
+                          <option value="INVENTORY">Liquidar inventario</option>
+                          <option value="EVENT">Evento físico</option>
+                          <option value="LAUNCH">Lanzamiento</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Canal principal</span>
+                        <input id="campaignCostChannelInput" type="text" placeholder="Meta Ads, vitrina, WhatsApp...">
+                      </label>
+                      <label>
+                        <span>Sucursal / punto</span>
+                        <input id="campaignCostBranchInput" type="text" placeholder="Tienda norte, feria...">
+                      </label>
+                      <label>
+                        <span>Responsable</span>
+                        <input id="campaignCostOwnerInput" type="text" placeholder="Responsable comercial">
+                      </label>
+                      <label>
+                        <span>Objetivo principal</span>
+                        <select id="campaignCostGoalInput">
+                          <option value="sales">Quiero ventas</option>
+                          <option value="leads">Quiero leads</option>
+                          <option value="redemptions">Quiero redenciones</option>
+                          <option value="referrals">Quiero referidos</option>
+                          <option value="rebuy">Quiero recompra</option>
+                          <option value="visits">Quiero visitas al punto físico</option>
+                          <option value="registrations">Quiero registros</option>
+                          <option value="appointments">Quiero agendamientos</option>
+                          <option value="reactivation">Quiero activar clientes dormidos</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Dinámica gamificada</span>
+                        <select id="campaignCostDynamicInput">
+                          <option value="scratch">Raspa y gana</option>
+                          <option value="roulette">Ruleta</option>
+                          <option value="trivia">Trivia</option>
+                          <option value="battleship">Batalla naval</option>
+                          <option value="referrals">Referidos</option>
+                          <option value="points">Puntos</option>
+                          <option value="ranking">Ranking</option>
+                          <option value="giftcard">Giftcard</option>
+                          <option value="vip">Club VIP</option>
+                          <option value="rebuy_challenge">Reto de recompra</option>
+                          <option value="physical_activation">Activación en punto físico</option>
+                          <option value="post_sale">Campaña postventa</option>
+                          <option value="brand_alliance">Alianza entre marcas</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Objetivo operativo</span>
+                        <input id="campaignCostObjectiveInput" type="text" placeholder="Ej: vender producto específico, recuperar clientes...">
+                      </label>
                     </div>
                     <div class="campaign-cost-toolbar">
                       <label>
@@ -2173,12 +2240,25 @@
                         <span>Ticket promedio esperado</span>
                         <input id="campaignCostAverageTicketInput" type="number" min="0" step="1000">
                       </label>
+                      <label>
+                        <span>Margen bruto por venta</span>
+                        <input id="campaignCostGrossMarginInput" type="number" min="0" step="1000">
+                      </label>
+                      <label>
+                        <span>Conversión lead a venta (%)</span>
+                        <input id="campaignCostConversionInput" type="number" min="0" max="100" step="0.1">
+                      </label>
+                      <label>
+                        <span>Redención esperada (%)</span>
+                        <input id="campaignCostRedemptionInput" type="number" min="0" max="100" step="0.1">
+                      </label>
                       <button class="ghost-button" id="campaignCostUseDatesButton" type="button">
                         <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
                         Usar fechas
                       </button>
                     </div>
                     <section class="campaign-cost-summary" id="campaignCostSummary"></section>
+                    <section class="campaign-cost-decision" id="campaignCostDecision"></section>
                     <div class="campaign-cost-sections">
                       <section class="campaign-cost-section">
                         <div class="campaign-cost-section-head">
@@ -2200,12 +2280,21 @@
                       </section>
                       <section class="campaign-cost-section">
                         <div class="campaign-cost-section-head">
-                          <h4>Servicios mensuales</h4>
+                          <h4>Personal y servicios</h4>
                           <button class="icon-button" id="campaignCostAddServiceButton" type="button" title="Agregar servicio">
                             <span class="material-symbols-outlined" aria-hidden="true">add</span>
                           </button>
                         </div>
                         <div class="campaign-cost-list" id="campaignCostServicesList"></div>
+                      </section>
+                      <section class="campaign-cost-section">
+                        <div class="campaign-cost-section-head">
+                          <h4>Costos variables</h4>
+                          <button class="icon-button" id="campaignCostAddVariableButton" type="button" title="Agregar costo variable">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                          </button>
+                        </div>
+                        <div class="campaign-cost-list" id="campaignCostVariableList"></div>
                       </section>
                       <section class="campaign-cost-section">
                         <div class="campaign-cost-section-head">
@@ -2217,6 +2306,7 @@
                         <div class="campaign-cost-list" id="campaignCostFixedList"></div>
                       </section>
                     </div>
+                    <section class="campaign-cost-scenarios" id="campaignCostScenarios"></section>
                     <p class="chart-note" id="campaignCostMessage"></p>
                   </article>
 
