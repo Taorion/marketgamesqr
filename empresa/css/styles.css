@@ -7810,6 +7810,228 @@ textarea {
   color: #eafff8 !important;
 }
 
+/* Campaign light theme refinement: keep the clear mode bright, structured and readable. */
+:root[data-theme="light"] .view-section[data-view="campaigns"] {
+  --campaign-ink: #10201c;
+  --campaign-text: #314740;
+  --campaign-muted: #5f746d;
+  --campaign-line: #d7e7e1;
+  --campaign-surface: #ffffff;
+  --campaign-surface-2: #f5fbf8;
+  --campaign-raised: #ffffff;
+  --campaign-cyan: #075985;
+  --campaign-green: #087a5e;
+  --campaign-amber: #9a6a00;
+  --campaign-rose: #b4233b;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f5fbf8 100%) !important;
+  color: var(--campaign-text) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-head {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #effbf7 58%, #f7fbff 100%) !important;
+  border-color: #cfe3dc !important;
+  box-shadow: 0 16px 34px rgba(15, 35, 29, 0.08) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-head h2,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-head .breadcrumb,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-head p {
+  color: var(--campaign-ink) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-head p,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .breadcrumb {
+  color: var(--campaign-muted) !important;
+}
+
+:root[data-theme="light"] .campaign-section-tabs {
+  background: #eef8f4 !important;
+  border-color: #cfe3dc !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+:root[data-theme="light"] .campaign-section-tabs button {
+  background: #ffffff !important;
+  border-color: #d7e7e1 !important;
+  color: #314740 !important;
+  box-shadow: 0 7px 18px rgba(15, 35, 29, 0.045) !important;
+}
+
+:root[data-theme="light"] .campaign-section-tabs button.active {
+  background: linear-gradient(135deg, #e8fbf4 0%, #ffffff 72%) !important;
+  border-color: rgba(8, 122, 94, 0.44) !important;
+  color: #06372e !important;
+  box-shadow: 0 12px 24px rgba(8, 122, 94, 0.1) !important;
+}
+
+:root[data-theme="light"] .campaign-tab-mark,
+:root[data-theme="light"] .campaign-cost-step-badge {
+  background: #e6fbef !important;
+  border-color: rgba(8, 122, 94, 0.28) !important;
+  color: #087a5e !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-rail,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-content .surface-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-content > .surface-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-panel,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-section,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-fieldset,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-metric-group,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-assistant-tab-grid article,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-answer,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-detail-grid > div,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-decision > div,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-scenarios article,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-section .campaign-cost-row-card[data-campaign-cost-row] {
+  background: #ffffff !important;
+  border-color: #d7e7e1 !important;
+  color: var(--campaign-text) !important;
+  box-shadow: 0 10px 24px rgba(15, 35, 29, 0.055) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-card .card-head,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-results,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-fieldset-metrics {
+  background:
+    linear-gradient(135deg, #f7fffb 0%, #ffffff 58%, #f8fbff 100%) !important;
+  border-color: #cfe3dc !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-head,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-panel-head,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-metric-group-head {
+  border-bottom-color: #dcebe5 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] :where(h3, h4, strong),
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-summary strong,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-fieldset-head strong,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-metric-group-head strong,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-head strong,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-assistant-tab-grid strong {
+  color: var(--campaign-ink) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] :where(p, span, label, td, .chart-note, .chart-explainer, .table-secondary, .campaign-cost-summary small),
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-assistant-tab-grid p {
+  color: var(--campaign-muted) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .mono-label,
+:root[data-theme="light"] .view-section[data-view="campaigns"] th,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .kpi-meta,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-config label > span,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-toolbar label > span,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row label span {
+  color: #087a5e !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] :where(input, select, textarea),
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-config input,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-config select,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-toolbar input,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-toolbar select {
+  background: #ffffff !important;
+  border-color: #cfe3dc !important;
+  color: #10201c !important;
+  box-shadow: inset 0 1px 0 rgba(15, 35, 29, 0.03) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] :where(input, select, textarea):focus {
+  border-color: rgba(8, 122, 94, 0.64) !important;
+  box-shadow: 0 0 0 3px rgba(8, 122, 94, 0.12) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row label {
+  background: #f7fffb !important;
+  border: 1px solid #e2eee9 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-total {
+  background: #fff9e8 !important;
+  border-color: rgba(154, 106, 0, 0.24) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-total span,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-row-total strong {
+  color: #745500 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-status.ok,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-answer.positive {
+  background: #e9fbf0 !important;
+  border-color: rgba(8, 122, 94, 0.28) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-status.warning,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-status.pending,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-answer.benefit {
+  background: #fff9e8 !important;
+  border-color: rgba(154, 106, 0, 0.24) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-status.danger,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-cost-answer.negative {
+  background: #fff0f2 !important;
+  border-color: rgba(180, 35, 59, 0.22) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-meta-grid > div,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .channel-option {
+  background: #ffffff !important;
+  border-color: #d7e7e1 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item:hover,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item.active {
+  background: #f2fff9 !important;
+  border-color: rgba(8, 122, 94, 0.36) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .dark-hero-card {
+  background: linear-gradient(135deg, #087a5e 0%, #075985 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(8, 122, 94, 0.32) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="campaigns"] .dark-hero-card :where(strong, span, p) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-wizard-main,
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-wizard-summary,
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-option-card,
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-wizard-summary dl div,
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-final-grid div {
+  background: #ffffff !important;
+  border-color: #d7e7e1 !important;
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .campaign-strategy-wizard-card :where(h3, h4, strong, dd) {
+  color: #10201c !important;
+}
+
+:root[data-theme="light"] .campaign-strategy-wizard-card :where(p, small) {
+  color: #5f746d !important;
+}
+
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-wizard-field input,
+:root[data-theme="light"] .campaign-strategy-wizard-card .strategy-wizard-field textarea {
+  background: #ffffff !important;
+  border-color: #cfe3dc !important;
+  color: #10201c !important;
+}
+
 /* Light theme fixes for global header and affiliate card details. */
 :root[data-theme="light"] .topbar {
   background: rgba(255, 255, 255, 0.98) !important;
