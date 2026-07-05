@@ -118,6 +118,9 @@ const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
 const campaignHeroTitle = document.getElementById("campaignHeroTitle");
 const campaignHeroSubtitle = document.getElementById("campaignHeroSubtitle");
+const campaignSectionTabs = Array.from(document.querySelectorAll("[data-campaign-section-tab]"));
+const campaignSectionTabOpenButtons = Array.from(document.querySelectorAll("[data-campaign-tab-open]"));
+const campaignSectionPanels = Array.from(document.querySelectorAll("[data-campaign-tab-panel]"));
 const campaignStateGrid = document.getElementById("campaignStateGrid");
 const campaignInsightText = document.getElementById("campaignInsightText");
 const campaignObjectiveValue = document.getElementById("campaignObjectiveValue");
@@ -174,6 +177,7 @@ const campaignCostAddVariableButton = document.getElementById("campaignCostAddVa
 const campaignCostAddFixedButton = document.getElementById("campaignCostAddFixedButton");
 const campaignCostScenarios = document.getElementById("campaignCostScenarios");
 const campaignCostMessage = document.getElementById("campaignCostMessage");
+const campaignStrategyTabOpenButton = document.getElementById("campaignStrategyTabOpenButton");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
 const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
@@ -827,6 +831,7 @@ let state = {
   selectedCampaignId: null,
   selectedCampaign: null,
   selectedCampaignAffiliates: [],
+  campaignSectionTab: "analysis",
   campaignCostCalculator: null,
   campaignCostCalculatorCampaignId: null,
   selectedReport: null,
@@ -6260,6 +6265,23 @@ function renderCampaignAffiliatesPanel() {
   });
 }
 
+function setCampaignSectionTab(tab = "analysis") {
+  const nextTab = ["analysis", "calculator", "assistant"].includes(tab) ? tab : "analysis";
+  state.campaignSectionTab = nextTab;
+  campaignSectionTabs.forEach((button) => {
+    const active = button.dataset.campaignSectionTab === nextTab;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+    button.setAttribute("tabindex", active ? "0" : "-1");
+  });
+  campaignSectionPanels.forEach((panel) => {
+    panel.classList.toggle("campaign-tab-hidden", panel.dataset.campaignTabPanel !== nextTab);
+  });
+  if (nextTab === "calculator" && state.selectedCampaign) {
+    renderCampaignCostCalculator();
+  }
+}
+
 async function reloadCampaignAffiliates(campaignId = state.selectedCampaignId) {
   if (!campaignId || !session?.user?.business_id) return;
   const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
@@ -6462,6 +6484,7 @@ function renderCampaignView() {
       { key: "sales", color: NEON_CHART.yellow, label: "Ventas" },
     ]
   );
+  setCampaignSectionTab(state.campaignSectionTab || "analysis");
 }
 
 function renderFunnel(campaign) {
@@ -11691,6 +11714,7 @@ function renderNoCampaignState() {
     { key: "leads", color: NEON_CHART.cyan },
     { key: "sales", color: NEON_CHART.yellow },
   ]);
+  setCampaignSectionTab(state.campaignSectionTab || "analysis");
 }
 
 const STRATEGY_WIZARD_DRAFT_KEY = "marketgames:campaign-strategy-wizard:draft";
@@ -17899,7 +17923,14 @@ searchInput.addEventListener("input", (event) => {
   if (isAdmin()) renderAdminView();
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
-campaignStrategyAssistantButton?.addEventListener("click", () => openStrategyWizard());
+campaignSectionTabs.forEach((button) => {
+  button.addEventListener("click", () => setCampaignSectionTab(button.dataset.campaignSectionTab));
+});
+campaignSectionTabOpenButtons.forEach((button) => {
+  button.addEventListener("click", () => setCampaignSectionTab(button.dataset.campaignTabOpen));
+});
+campaignStrategyAssistantButton?.addEventListener("click", () => setCampaignSectionTab("assistant"));
+campaignStrategyTabOpenButton?.addEventListener("click", () => openStrategyWizard());
 campaignWizardEntryButton?.addEventListener("click", () => {
   closeCampaignModal();
   openStrategyWizard();

@@ -2000,13 +2000,13 @@
                 <button class="ghost-button hidden" id="markReadyCampaignButton" type="button">Marcar lista</button>
                 <button class="ghost-button" id="campaignStrategyAssistantButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
-                  Asistente de Estrategia
+                  Asistente estratégico
                 </button>
                 <button class="solid-button" id="editCampaignButton" type="button">Editar Campaña</button>
               </div>
             </div>
 
-            <section class="kpi-grid sales-kpis" id="campaignStateGrid"></section>
+            <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
 
             <section class="campaign-layout">
               <aside class="campaign-rail surface-card">
@@ -2029,7 +2029,22 @@
               </aside>
 
               <div class="campaign-content">
-                <section class="campaign-overview-grid">
+                <nav class="campaign-section-tabs" aria-label="Secciones de campaña">
+                  <button class="active" data-campaign-section-tab="analysis" type="button" aria-selected="true">
+                    <span class="campaign-tab-mark">01</span>
+                    <span>Análisis</span>
+                  </button>
+                  <button data-campaign-section-tab="calculator" type="button" aria-selected="false">
+                    <span class="campaign-tab-mark">02</span>
+                    <span>Calculadora</span>
+                  </button>
+                  <button data-campaign-section-tab="assistant" type="button" aria-selected="false">
+                    <span class="campaign-tab-mark">03</span>
+                    <span>Asistente estratégico</span>
+                  </button>
+                </nav>
+
+                <section class="campaign-overview-grid" data-campaign-tab-panel="analysis">
                   <article class="surface-card insight-card">
                     <div class="insight-badge">
                       <span class="material-symbols-outlined">auto_awesome</span>
@@ -2070,10 +2085,10 @@
                   </article>
                 </section>
 
-                <section class="kpi-grid campaign-kpis" id="campaignKpiGrid"></section>
+                <section class="kpi-grid campaign-kpis" id="campaignKpiGrid" data-campaign-tab-panel="analysis"></section>
 
                 <section class="campaign-overview-grid">
-                  <article class="surface-card">
+                  <article class="surface-card" data-campaign-tab-panel="analysis">
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Preparar lanzamiento</span>
@@ -2143,7 +2158,7 @@
                     </form>
                   </article>
 
-                  <article class="surface-card">
+                  <article class="surface-card" data-campaign-tab-panel="analysis">
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Material entregado</span>
@@ -2153,7 +2168,7 @@
                     <div class="asset-grid" id="campaignAssetsGrid"></div>
                   </article>
 
-                  <article class="surface-card campaign-cost-card">
+                  <article class="surface-card campaign-cost-card campaign-tab-hidden" data-campaign-tab-panel="calculator">
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Calculadora de campaña</span>
@@ -2384,7 +2399,37 @@
                     <p class="chart-note" id="campaignCostMessage"></p>
                   </article>
 
-                  <article class="surface-card campaign-affiliates-card">
+                  <article class="surface-card campaign-assistant-tab-card campaign-tab-hidden" data-campaign-tab-panel="assistant">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Asistente estratégico</span>
+                        <h3 class="subhead">Diseña campañas con estructura comercial</h3>
+                      </div>
+                    </div>
+                    <div class="campaign-assistant-tab-grid">
+                      <article>
+                        <span class="campaign-tab-mark">01</span>
+                        <strong>Brief estratégico</strong>
+                        <p>Define objetivo, público, incentivo, canales y dinámica gamificada sin llenar todo manualmente.</p>
+                      </article>
+                      <article>
+                        <span class="campaign-tab-mark">02</span>
+                        <strong>Viabilidad operativa</strong>
+                        <p>El asistente traduce tus respuestas en metas, tickets, enlaces y recomendaciones accionables.</p>
+                      </article>
+                      <article>
+                        <span class="campaign-tab-mark">03</span>
+                        <strong>Aplicar al formulario</strong>
+                        <p>Al final puedes generar la campaña y llevarla al formulario existente para guardar el flujo real.</p>
+                      </article>
+                    </div>
+                    <div class="campaign-assistant-tab-actions">
+                      <button class="solid-button" id="campaignStrategyTabOpenButton" type="button">Abrir asistente estratégico</button>
+                      <button class="ghost-button" type="button" data-campaign-tab-open="calculator">Ir a calculadora</button>
+                    </div>
+                  </article>
+
+                  <article class="surface-card campaign-affiliates-card" data-campaign-tab-panel="analysis">
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Afiliados de campaña</span>
@@ -2421,7 +2466,7 @@
                   </article>
                 </section>
 
-                <article class="surface-card data-table-card">
+                <article class="surface-card data-table-card" data-campaign-tab-panel="analysis">
                   <div class="table-card-head">
                     <span class="mono-label">Comparacion antes / durante / después</span>
                     <button class="ghost-button" id="saveSnapshotButton" type="button">Registrar snapshot</button>
@@ -2445,7 +2490,7 @@
                   </div>
                 </article>
 
-                <section class="charts-grid campaign-charts">
+                <section class="charts-grid campaign-charts" data-campaign-tab-panel="analysis">
                   <article class="surface-card chart-card">
                     <div class="card-head">
                       <div>
@@ -2473,7 +2518,7 @@
                   </article>
                 </section>
 
-                <section class="explain-grid campaign-explain-grid">
+                <section class="explain-grid campaign-explain-grid" data-campaign-tab-panel="analysis">
                   <article class="surface-card explain-card">
                     <span class="mono-label">Diagnóstico</span>
                     <h3 id="campaignAnalysisTitle">Selecciona una campaña.</h3>
