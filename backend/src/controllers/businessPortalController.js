@@ -66,6 +66,7 @@ const clientSetupSchema = z.object({
   client_notes: z.string().trim().max(2000).optional().nullable(),
   objective: z.string().trim().max(500).optional().nullable(),
   additional_budget: z.number().min(0).optional().nullable(),
+  campaign_cost_calculator: z.record(z.string(), z.any()).optional().nullable(),
 });
 
 const ownerCampaignSchema = z.object({
@@ -1242,7 +1243,12 @@ async function patchClientSetup(req, res, next) {
            expected_redemptions_goal = $9,
            client_notes = $10,
            objective = coalesce($11, objective),
-           metadata = jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($12::numeric), true),
+           metadata = jsonb_set(
+             jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($12::numeric), true),
+             '{campaign_cost_calculator}',
+             $13::jsonb,
+             true
+           ),
            client_setup_completed_at = now()
        where id = $1 and business_id = $2
        returning *`,
@@ -1259,6 +1265,7 @@ async function patchClientSetup(req, res, next) {
         body.client_notes ?? null,
         body.objective ?? null,
         body.additional_budget ?? 0,
+        JSON.stringify(body.campaign_cost_calculator || {}),
       ]
     );
     res.json({ campaign: await getCampaignMetrics(result.rows[0].id, businessId) });

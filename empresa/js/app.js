@@ -144,6 +144,21 @@ const launchSalesGoalInput = document.getElementById("launchSalesGoalInput");
 const launchClientNotesInput = document.getElementById("launchClientNotesInput");
 const launchSetupMessage = document.getElementById("launchSetupMessage");
 const confirmLaunchButton = document.getElementById("confirmLaunchButton");
+const campaignCostDurationInput = document.getElementById("campaignCostDurationInput");
+const campaignCostProfitInput = document.getElementById("campaignCostProfitInput");
+const campaignCostAverageTicketInput = document.getElementById("campaignCostAverageTicketInput");
+const campaignCostUseDatesButton = document.getElementById("campaignCostUseDatesButton");
+const campaignCostApplyBudgetButton = document.getElementById("campaignCostApplyBudgetButton");
+const campaignCostSummary = document.getElementById("campaignCostSummary");
+const campaignCostProductionList = document.getElementById("campaignCostProductionList");
+const campaignCostBenefitsList = document.getElementById("campaignCostBenefitsList");
+const campaignCostServicesList = document.getElementById("campaignCostServicesList");
+const campaignCostFixedList = document.getElementById("campaignCostFixedList");
+const campaignCostAddProductionButton = document.getElementById("campaignCostAddProductionButton");
+const campaignCostAddBenefitButton = document.getElementById("campaignCostAddBenefitButton");
+const campaignCostAddServiceButton = document.getElementById("campaignCostAddServiceButton");
+const campaignCostAddFixedButton = document.getElementById("campaignCostAddFixedButton");
+const campaignCostMessage = document.getElementById("campaignCostMessage");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
 const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
@@ -777,6 +792,8 @@ let state = {
   selectedCampaignId: null,
   selectedCampaign: null,
   selectedCampaignAffiliates: [],
+  campaignCostCalculator: null,
+  campaignCostCalculatorCampaignId: null,
   selectedReport: null,
   selectedLeads: [],
   contactFeed: [],
@@ -943,7 +960,7 @@ const chartHoverRegistry = new WeakMap();
 
 const ACQUISITION_SOURCE_LABELS = {
   STORE_WALK_IN: "Vio el almacen",
-  FRIEND_REFERRAL: "Recomendación",
+  FRIEND_REFERRAL: "Recomendación de un amigo",
   FAIR_EVENT: "Feria o evento",
   INTERNET_SEARCH: "Internet / buscador",
   SOCIAL_MEDIA: "Redes sociales",
@@ -5444,6 +5461,336 @@ function formatCampaignDuration(campaign) {
   return `${start} - ${end}`;
 }
 
+function campaignCostDurationFromDates(startValue = launchStartsAtInput?.value, endValue = launchEndsAtInput?.value) {
+  const start = startValue ? new Date(startValue).getTime() : 0;
+  const end = endValue ? new Date(endValue).getTime() : 0;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 30;
+  return Math.max(1, Math.ceil((end - start) / 86400000));
+}
+
+function defaultCampaignCostCalculator(campaign = state.selectedCampaign || {}) {
+  return {
+    duration_days: campaignCostDurationFromDates(formatInputDateTime(campaign.starts_at), formatInputDateTime(campaign.ends_at)),
+    desired_profit_percent: 30,
+    average_ticket: toNumber(campaign.expected_sales_goal) || 0,
+    production: [
+      { label: "Volantes", quantity: 0, unit_cost: 0 },
+      { label: "Cajas / empaques", quantity: 0, unit_cost: 0 },
+    ],
+    benefits: [
+      { type: "DISCOUNT", name: "Descuento producto", product_price: 0, discount_percent: 0, units: 0 },
+    ],
+    services: [
+      { name: "Servicio contratado", monthly_cost: 0 },
+    ],
+    fixed: [
+      { label: "Costo operativo", amount: 0 },
+    ],
+  };
+}
+
+function normalizeCampaignCostNumber(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
+function normalizeCampaignCostCalculator(value = {}, campaign = state.selectedCampaign || {}) {
+  const fallback = defaultCampaignCostCalculator(campaign);
+  const readRows = (rows, defaults, mapper) => {
+    const source = Array.isArray(rows) && rows.length ? rows : defaults;
+    return source.map(mapper);
+  };
+  return {
+    duration_days: Math.max(1, Math.round(normalizeCampaignCostNumber(value.duration_days || fallback.duration_days || 30))),
+    desired_profit_percent: normalizeCampaignCostNumber(value.desired_profit_percent ?? fallback.desired_profit_percent),
+    average_ticket: normalizeCampaignCostNumber(value.average_ticket ?? fallback.average_ticket),
+    production: readRows(value.production, fallback.production, (item = {}) => ({
+      label: cleanCustomerValue(item.label) || "Material",
+      quantity: normalizeCampaignCostNumber(item.quantity),
+      unit_cost: normalizeCampaignCostNumber(item.unit_cost),
+    })),
+    benefits: readRows(value.benefits, fallback.benefits, (item = {}) => ({
+      type: item.type === "GIFT" ? "GIFT" : "DISCOUNT",
+      name: cleanCustomerValue(item.name) || "Beneficio",
+      product_price: normalizeCampaignCostNumber(item.product_price),
+      discount_percent: Math.min(100, normalizeCampaignCostNumber(item.discount_percent)),
+      units: normalizeCampaignCostNumber(item.units),
+    })),
+    services: readRows(value.services, fallback.services, (item = {}) => ({
+      name: cleanCustomerValue(item.name) || "Servicio",
+      monthly_cost: normalizeCampaignCostNumber(item.monthly_cost),
+    })),
+    fixed: readRows(value.fixed, fallback.fixed, (item = {}) => ({
+      label: cleanCustomerValue(item.label) || "Costo fijo",
+      amount: normalizeCampaignCostNumber(item.amount),
+    })),
+  };
+}
+
+function campaignCostStorageKey(campaignId = state.selectedCampaignId) {
+  const businessId = session?.user?.business_id || state.loadedBusinessId || "business";
+  return `marketgames:campaign-cost:${businessId}:${campaignId || "draft"}`;
+}
+
+function loadCampaignCostCalculator(campaign = state.selectedCampaign || {}) {
+  const metadataCalculator = campaign.metadata?.campaign_cost_calculator || campaign.metadata?.cost_calculator || null;
+  let localCalculator = null;
+  try {
+    const raw = window.localStorage?.getItem(campaignCostStorageKey(campaign.id));
+    localCalculator = raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    localCalculator = null;
+  }
+  return normalizeCampaignCostCalculator(localCalculator || metadataCalculator || {}, campaign);
+}
+
+function saveCampaignCostCalculatorLocal(calculator = state.campaignCostCalculator) {
+  if (!state.selectedCampaignId || !calculator) return;
+  try {
+    window.localStorage?.setItem(campaignCostStorageKey(), JSON.stringify(calculator));
+  } catch (error) {
+    // Local persistence is a convenience; calculation should continue even if storage is unavailable.
+  }
+}
+
+function ensureCampaignCostCalculatorForCampaign(campaign = state.selectedCampaign || {}) {
+  if (!campaignCostSummary) return null;
+  if (!state.campaignCostCalculator || state.campaignCostCalculatorCampaignId !== campaign.id) {
+    state.campaignCostCalculator = loadCampaignCostCalculator(campaign);
+    state.campaignCostCalculatorCampaignId = campaign.id || null;
+  }
+  return state.campaignCostCalculator;
+}
+
+function readCampaignCostCalculatorFromForm() {
+  const current = state.campaignCostCalculator || defaultCampaignCostCalculator();
+  const readProductionRows = () => Array.from(campaignCostProductionList?.querySelectorAll("[data-campaign-cost-row='production']") || []).map((row) => ({
+    label: row.querySelector("[data-cost-field='label']")?.value || "",
+    quantity: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='quantity']")?.value),
+    unit_cost: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='unit_cost']")?.value),
+  }));
+  const readBenefitRows = () => Array.from(campaignCostBenefitsList?.querySelectorAll("[data-campaign-cost-row='benefit']") || []).map((row) => ({
+    type: row.querySelector("[data-cost-field='type']")?.value || "DISCOUNT",
+    name: row.querySelector("[data-cost-field='name']")?.value || "",
+    product_price: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='product_price']")?.value),
+    discount_percent: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='discount_percent']")?.value),
+    units: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='units']")?.value),
+  }));
+  const readServiceRows = () => Array.from(campaignCostServicesList?.querySelectorAll("[data-campaign-cost-row='service']") || []).map((row) => ({
+    name: row.querySelector("[data-cost-field='name']")?.value || "",
+    monthly_cost: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='monthly_cost']")?.value),
+  }));
+  const readFixedRows = () => Array.from(campaignCostFixedList?.querySelectorAll("[data-campaign-cost-row='fixed']") || []).map((row) => ({
+    label: row.querySelector("[data-cost-field='label']")?.value || "",
+    amount: normalizeCampaignCostNumber(row.querySelector("[data-cost-field='amount']")?.value),
+  }));
+  return normalizeCampaignCostCalculator({
+    ...current,
+    duration_days: normalizeCampaignCostNumber(campaignCostDurationInput?.value || current.duration_days),
+    desired_profit_percent: normalizeCampaignCostNumber(campaignCostProfitInput?.value || current.desired_profit_percent),
+    average_ticket: normalizeCampaignCostNumber(campaignCostAverageTicketInput?.value || current.average_ticket),
+    production: readProductionRows(),
+    benefits: readBenefitRows(),
+    services: readServiceRows(),
+    fixed: readFixedRows(),
+  });
+}
+
+function calculateCampaignCosts(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  const durationDays = Math.max(1, Number(calculator.duration_days || 1));
+  const productionTotal = (calculator.production || []).reduce((sum, item) => sum + normalizeCampaignCostNumber(item.quantity) * normalizeCampaignCostNumber(item.unit_cost), 0);
+  const benefitsTotal = (calculator.benefits || []).reduce((sum, item) => {
+    const units = normalizeCampaignCostNumber(item.units);
+    const price = normalizeCampaignCostNumber(item.product_price);
+    const unitCost = item.type === "GIFT" ? price : price * Math.min(100, normalizeCampaignCostNumber(item.discount_percent)) / 100;
+    return sum + unitCost * units;
+  }, 0);
+  const servicesTotal = (calculator.services || []).reduce((sum, item) => {
+    const dailyCost = normalizeCampaignCostNumber(item.monthly_cost) / 30;
+    return sum + dailyCost * durationDays;
+  }, 0);
+  const fixedTotal = (calculator.fixed || []).reduce((sum, item) => sum + normalizeCampaignCostNumber(item.amount), 0);
+  const totalCost = productionTotal + benefitsTotal + servicesTotal + fixedTotal;
+  const targetProfit = totalCost * normalizeCampaignCostNumber(calculator.desired_profit_percent) / 100;
+  const revenueGoal = totalCost + targetProfit;
+  const averageTicket = normalizeCampaignCostNumber(calculator.average_ticket);
+  return {
+    durationDays,
+    productionTotal,
+    benefitsTotal,
+    servicesTotal,
+    fixedTotal,
+    totalCost,
+    dailyCost: totalCost / durationDays,
+    targetProfit,
+    revenueGoal,
+    requiredSales: averageTicket > 0 ? Math.ceil(revenueGoal / averageTicket) : 0,
+  };
+}
+
+function campaignCostRowTotal(type, item, calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  const durationDays = Math.max(1, Number(calculator.duration_days || 1));
+  if (type === "production") return normalizeCampaignCostNumber(item.quantity) * normalizeCampaignCostNumber(item.unit_cost);
+  if (type === "benefit") {
+    const unitCost = item.type === "GIFT"
+      ? normalizeCampaignCostNumber(item.product_price)
+      : normalizeCampaignCostNumber(item.product_price) * Math.min(100, normalizeCampaignCostNumber(item.discount_percent)) / 100;
+    return unitCost * normalizeCampaignCostNumber(item.units);
+  }
+  if (type === "service") return normalizeCampaignCostNumber(item.monthly_cost) / 30 * durationDays;
+  return normalizeCampaignCostNumber(item.amount);
+}
+
+function renderCampaignCostCalculator() {
+  const calculator = ensureCampaignCostCalculatorForCampaign(state.selectedCampaign || {});
+  if (!calculator || !campaignCostSummary) return;
+  if (campaignCostDurationInput) campaignCostDurationInput.value = calculator.duration_days || 30;
+  if (campaignCostProfitInput) campaignCostProfitInput.value = calculator.desired_profit_percent || 0;
+  if (campaignCostAverageTicketInput) campaignCostAverageTicketInput.value = calculator.average_ticket || "";
+  renderCampaignCostRows(calculator);
+  renderCampaignCostSummary(calculator);
+}
+
+function renderCampaignCostRows(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  if (campaignCostProductionList) {
+    campaignCostProductionList.innerHTML = (calculator.production || []).map((item, index) => `
+      <div class="campaign-cost-row" data-campaign-cost-row="production" data-index="${index}">
+        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Volantes, cajas, impresión..."></label>
+        <label><span>Cantidad</span><input data-cost-field="quantity" type="number" min="0" step="1" value="${escapeHtml(item.quantity || 0)}"></label>
+        <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
+        <strong>${escapeHtml(money(campaignCostRowTotal("production", item, calculator)))}</strong>
+        <button class="icon-button" type="button" data-remove-campaign-cost="production" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+    `).join("");
+  }
+  if (campaignCostBenefitsList) {
+    campaignCostBenefitsList.innerHTML = (calculator.benefits || []).map((item, index) => `
+      <div class="campaign-cost-row campaign-cost-row-benefit" data-campaign-cost-row="benefit" data-index="${index}">
+        <label><span>Tipo</span><select data-cost-field="type"><option value="DISCOUNT" ${item.type !== "GIFT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${item.type === "GIFT" ? "selected" : ""}>Obsequio</option></select></label>
+        <label><span>Producto</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Producto o beneficio"></label>
+        <label><span>Precio producto</span><input data-cost-field="product_price" type="number" min="0" step="100" value="${escapeHtml(item.product_price || 0)}"></label>
+        <label><span>% descuento</span><input data-cost-field="discount_percent" type="number" min="0" max="100" step="1" value="${escapeHtml(item.discount_percent || 0)}"></label>
+        <label><span>Unidades</span><input data-cost-field="units" type="number" min="0" step="1" value="${escapeHtml(item.units || 0)}"></label>
+        <strong>${escapeHtml(money(campaignCostRowTotal("benefit", item, calculator)))}</strong>
+        <button class="icon-button" type="button" data-remove-campaign-cost="benefit" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+    `).join("");
+  }
+  if (campaignCostServicesList) {
+    campaignCostServicesList.innerHTML = (calculator.services || []).map((item, index) => `
+      <div class="campaign-cost-row" data-campaign-cost-row="service" data-index="${index}">
+        <label><span>Servicio/persona</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Promotor, agencia, diseñador..."></label>
+        <label><span>Valor mensual</span><input data-cost-field="monthly_cost" type="number" min="0" step="1000" value="${escapeHtml(item.monthly_cost || 0)}"></label>
+        <span class="table-secondary">${escapeHtml(money(normalizeCampaignCostNumber(item.monthly_cost) / 30))} / día</span>
+        <strong>${escapeHtml(money(campaignCostRowTotal("service", item, calculator)))}</strong>
+        <button class="icon-button" type="button" data-remove-campaign-cost="service" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+    `).join("");
+  }
+  if (campaignCostFixedList) {
+    campaignCostFixedList.innerHTML = (calculator.fixed || []).map((item, index) => `
+      <div class="campaign-cost-row" data-campaign-cost-row="fixed" data-index="${index}">
+        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Transporte, pauta, permisos..."></label>
+        <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
+        <strong>${escapeHtml(money(campaignCostRowTotal("fixed", item, calculator)))}</strong>
+        <button class="icon-button" type="button" data-remove-campaign-cost="fixed" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+    `).join("");
+  }
+}
+
+function renderCampaignCostSummary(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
+  if (!campaignCostSummary) return;
+  const totals = calculateCampaignCosts(calculator);
+  campaignCostSummary.innerHTML = [
+    ["Producción", money(totals.productionTotal), "Volantes, cajas, piezas físicas"],
+    ["Beneficios", money(totals.benefitsTotal), "Obsequios y descuentos asumidos"],
+    ["Servicios", money(totals.servicesTotal), `${money(totals.servicesTotal / totals.durationDays)} diarios`],
+    ["Otros costos", money(totals.fixedTotal), "Pauta, transporte, permisos"],
+    ["Costo total", money(totals.totalCost), `${money(totals.dailyCost)} por día`],
+    ["Utilidad meta", money(totals.targetProfit), `${calculator.desired_profit_percent || 0}% sobre costo`],
+    ["Venta objetivo", money(totals.revenueGoal), totals.requiredSales ? `${totals.requiredSales.toLocaleString("es-CO")} ventas aprox.` : "Define ticket promedio"],
+  ].map(([label, value, meta]) => `
+    <div>
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(meta)}</small>
+    </div>
+  `).join("");
+  if (campaignCostMessage) {
+    campaignCostMessage.textContent = `Para ganar ${money(totals.targetProfit)}, la campaña debe generar al menos ${money(totals.revenueGoal)} sobre un costo estimado de ${money(totals.totalCost)}.`;
+  }
+}
+
+function syncCampaignCostCalculatorFromForm({ rerenderRows = false } = {}) {
+  if (!campaignCostSummary) return;
+  state.campaignCostCalculator = readCampaignCostCalculatorFromForm();
+  saveCampaignCostCalculatorLocal();
+  if (rerenderRows) renderCampaignCostRows(state.campaignCostCalculator);
+  renderCampaignCostSummary(state.campaignCostCalculator);
+}
+
+function addCampaignCostRow(type) {
+  state.campaignCostCalculator = readCampaignCostCalculatorFromForm();
+  const calculator = state.campaignCostCalculator;
+  if (type === "production") calculator.production.push({ label: "Material", quantity: 0, unit_cost: 0 });
+  if (type === "benefit") calculator.benefits.push({ type: "DISCOUNT", name: "Beneficio", product_price: 0, discount_percent: 0, units: 0 });
+  if (type === "service") calculator.services.push({ name: "Servicio", monthly_cost: 0 });
+  if (type === "fixed") calculator.fixed.push({ label: "Costo fijo", amount: 0 });
+  saveCampaignCostCalculatorLocal();
+  renderCampaignCostCalculator();
+}
+
+function removeCampaignCostRow(type, index) {
+  state.campaignCostCalculator = readCampaignCostCalculatorFromForm();
+  const calculator = state.campaignCostCalculator;
+  const collectionByType = {
+    production: calculator.production,
+    benefit: calculator.benefits,
+    service: calculator.services,
+    fixed: calculator.fixed,
+  };
+  const rows = collectionByType[type];
+  if (!Array.isArray(rows)) return;
+  rows.splice(index, 1);
+  if (!rows.length) {
+    if (type === "production") rows.push({ label: "Material", quantity: 0, unit_cost: 0 });
+    if (type === "benefit") rows.push({ type: "DISCOUNT", name: "Beneficio", product_price: 0, discount_percent: 0, units: 0 });
+    if (type === "service") rows.push({ name: "Servicio", monthly_cost: 0 });
+    if (type === "fixed") rows.push({ label: "Costo fijo", amount: 0 });
+  }
+  saveCampaignCostCalculatorLocal();
+  renderCampaignCostCalculator();
+}
+
+function handleCampaignCostListInput(event) {
+  if (event.target?.matches?.("input, select")) {
+    syncCampaignCostCalculatorFromForm({ rerenderRows: event.type === "change" });
+    return;
+  }
+  const removeButton = event.target?.closest?.("[data-remove-campaign-cost]");
+  if (removeButton) {
+    const row = removeButton.closest("[data-campaign-cost-row]");
+    removeCampaignCostRow(removeButton.dataset.removeCampaignCost, Number(row?.dataset.index || 0));
+  }
+}
+
+function applyCampaignCostDurationFromDates() {
+  if (!campaignCostDurationInput) return;
+  campaignCostDurationInput.value = campaignCostDurationFromDates();
+  syncCampaignCostCalculatorFromForm({ rerenderRows: true });
+}
+
+function applyCampaignCostToLaunchBudget() {
+  syncCampaignCostCalculatorFromForm();
+  const totals = calculateCampaignCosts(state.campaignCostCalculator);
+  if (launchBudgetInput) launchBudgetInput.value = Math.round(totals.totalCost);
+  if (launchSalesGoalInput) launchSalesGoalInput.value = Math.round(totals.revenueGoal);
+  if (campaignCostMessage) {
+    campaignCostMessage.textContent = `Costo aplicado al presupuesto: ${money(totals.totalCost)}. Meta de ventas sugerida: ${money(totals.revenueGoal)}.`;
+  }
+}
+
 function renderCampaignAffiliatesPanel() {
   if (!campaignAffiliateSelect || !campaignAffiliatesTable) return;
   const assigned = state.selectedCampaignAffiliates || [];
@@ -5584,6 +5931,7 @@ function renderCampaignView() {
   launchRedemptionsGoalInput.value = campaign.expected_redemptions_goal || "";
   launchSalesGoalInput.value = campaign.expected_sales_goal || "";
   launchClientNotesInput.value = campaign.client_notes || "";
+  renderCampaignCostCalculator();
   Array.from(launchChannelGrid.querySelectorAll("input[type='checkbox']")).forEach((input) => {
     input.checked = Array.isArray(campaign.launch_channels) && campaign.launch_channels.includes(input.value);
     input.disabled = !setupEditable;
@@ -6754,60 +7102,118 @@ function renderCustomerAcquisitionCampaignOptions() {
 }
 
 function salesCustomerIdentity(row = {}) {
-  return normalizeInventoryLookup(row.document_id || row.customer_document_id || row.phone || row.customer_phone || row.email || row.customer_email || row.name || row.player_name || row.id);
+  return normalizeInventoryLookup(
+    cleanCustomerValue(row.document_id || row.customer_document_id)
+    || cleanCustomerValue(row.phone || row.customer_phone)
+    || cleanCustomerValue(row.email || row.customer_email)
+    || cleanCustomerValue(row.name || row.player_name)
+    || cleanCustomerValue(row.id)
+  );
+}
+
+function cleanCustomerValue(value) {
+  const text = String(value ?? "").trim();
+  if (!text || ["-", "—", "n/a", "na", "null", "undefined", "sin dato", "sin datos"].includes(text.toLowerCase())) return "";
+  return text;
+}
+
+function firstCustomerValue(...values) {
+  return values.map(cleanCustomerValue).find(Boolean) || "";
+}
+
+function customerMoneyValue(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "-") return 0;
+  const digits = raw.replace(/[^\d-]/g, "");
+  return Number(digits || 0);
+}
+
+function latestDateValue(first, second) {
+  const firstTime = first ? new Date(first).getTime() : 0;
+  const secondTime = second ? new Date(second).getTime() : 0;
+  if (!Number.isFinite(firstTime) || secondTime > firstTime) return second || first || "";
+  return first || second || "";
 }
 
 function salesCustomerRows() {
   const rows = [
     ...(state.leadCrmRows || []).map((item) => ({
       id: item.id,
-      name: item.name,
-      document_id: item.document_id,
-      phone: item.phone,
-      email: item.email,
+      name: cleanCustomerValue(item.name),
+      document_id: cleanCustomerValue(item.document_id),
+      phone: cleanCustomerValue(item.phone),
+      email: cleanCustomerValue(item.email),
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
       purchase_count: Number(item.purchase_count || 0),
+      total_spent: customerMoneyValue(item.total_spent),
+      product_or_service: firstCustomerValue(item.top_product, item.product_or_service),
+      branch_name: cleanCustomerValue(item.branch_name),
+      event_date: item.last_purchase_at || item.last_interaction_at || item.created_at || "",
       is_affiliate: Boolean(item.is_affiliate),
       affiliate_id: item.affiliate_id || null,
+      affiliate_name: firstCustomerValue(item.affiliate_name, item.affiliate_code),
+      referral_points_awarded: customerMoneyValue(item.referral_points_awarded || item.points_total),
       source: Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead CRM",
     })),
     ...(state.contactFeed || []).map((item) => ({
       id: item.id,
-      name: item.name,
-      document_id: item.document_id,
-      phone: item.phone,
-      email: item.email,
+      name: cleanCustomerValue(item.name),
+      document_id: cleanCustomerValue(item.document_id),
+      phone: cleanCustomerValue(item.phone),
+      email: cleanCustomerValue(item.email),
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
+      purchase_count: customerMoneyValue(item.sale_amount) > 0 ? 1 : 0,
+      total_spent: customerMoneyValue(item.sale_amount),
+      payment_method: firstCustomerValue(item.payment_method, item.payment, item.sale_payment_method),
+      product_or_service: firstCustomerValue(item.product_or_service, item.product_name, item.reward_name, item.attribution_subject),
+      branch_name: firstCustomerValue(item.branch_name, item.store_branch, item.location),
+      event_date: item.sale_created_at || item.redeemed_at || item.created_at || "",
       is_affiliate: Boolean(item.is_affiliate),
       affiliate_id: item.affiliate_id || null,
+      affiliate_name: cleanCustomerValue(item.affiliate_name),
+      referral_points_awarded: customerMoneyValue(item.referral_points_awarded),
       source: item.attribution_source || "Lead",
     })),
     ...(state.selectedSales || []).map((item) => ({
       id: item.player_id || item.id,
-      name: item.player_name,
-      document_id: item.document_id,
-      phone: item.phone,
-      email: item.email,
+      name: cleanCustomerValue(item.player_name),
+      document_id: cleanCustomerValue(item.document_id),
+      phone: cleanCustomerValue(item.phone),
+      email: cleanCustomerValue(item.email),
       campaign_id: item.campaign_id,
       campaign_name: item.campaign_name,
       purchase_count: 1,
+      total_spent: customerMoneyValue(item.sale_amount),
+      payment_method: cleanCustomerValue(item.payment_method),
+      product_or_service: firstCustomerValue(item.product_or_service, item.product_name),
+      branch_name: cleanCustomerValue(item.branch_name),
+      event_date: item.created_at || "",
       is_affiliate: Boolean(item.referred_affiliate_id),
       affiliate_id: item.referred_affiliate_id || null,
+      affiliate_name: cleanCustomerValue(item.affiliate_name),
+      referral_points_awarded: customerMoneyValue(item.referral_points_awarded),
       source: "Cliente",
     })),
     ...(state.affiliates || []).map((item) => ({
       id: item.id,
-      name: item.full_name,
-      document_id: item.document_id,
-      phone: item.phone,
-      email: item.email,
+      name: cleanCustomerValue(item.full_name),
+      document_id: cleanCustomerValue(item.document_id),
+      phone: cleanCustomerValue(item.phone),
+      email: cleanCustomerValue(item.email),
       campaign_id: null,
       campaign_name: "",
       purchase_count: Number(item.purchase_count || item.sales_count || 0),
+      total_spent: customerMoneyValue(item.total_spent || item.sales_total),
+      product_or_service: firstCustomerValue(item.top_product, item.product_or_service, item.notes),
+      branch_name: firstCustomerValue(item.branch_name, item.store_branch),
+      event_date: item.last_purchase_at || item.last_activity_at || item.created_at || "",
       is_affiliate: true,
       affiliate_id: item.id,
+      affiliate_name: firstCustomerValue(item.full_name, item.name),
+      referral_points_awarded: customerMoneyValue(item.points_total || item.ledger_points),
       source: "Afiliado",
     })),
   ];
@@ -6823,15 +7229,22 @@ function salesCustomerRows() {
     byKey.set(key, {
       ...existing,
       ...row,
-      name: existing.name || row.name,
-      document_id: existing.document_id || row.document_id,
-      phone: existing.phone || row.phone,
-      email: existing.email || row.email,
-      campaign_id: existing.campaign_id || row.campaign_id,
-      campaign_name: existing.campaign_name || row.campaign_name,
+      name: firstCustomerValue(existing.name, row.name),
+      document_id: firstCustomerValue(existing.document_id, row.document_id),
+      phone: firstCustomerValue(existing.phone, row.phone),
+      email: firstCustomerValue(existing.email, row.email),
+      campaign_id: firstCustomerValue(existing.campaign_id, row.campaign_id),
+      campaign_name: firstCustomerValue(existing.campaign_name, row.campaign_name),
       purchase_count: Math.max(Number(existing.purchase_count || 0), Number(row.purchase_count || 0)),
+      total_spent: Math.max(Number(existing.total_spent || 0), Number(row.total_spent || 0)),
+      payment_method: firstCustomerValue(existing.payment_method, row.payment_method),
+      product_or_service: firstCustomerValue(existing.product_or_service, row.product_or_service),
+      branch_name: firstCustomerValue(existing.branch_name, row.branch_name),
+      event_date: latestDateValue(existing.event_date, row.event_date),
       is_affiliate: Boolean(existing.is_affiliate || row.is_affiliate),
-      affiliate_id: existing.affiliate_id || row.affiliate_id,
+      affiliate_id: firstCustomerValue(existing.affiliate_id, row.affiliate_id),
+      affiliate_name: firstCustomerValue(existing.affiliate_name, row.affiliate_name),
+      referral_points_awarded: Math.max(Number(existing.referral_points_awarded || 0), Number(row.referral_points_awarded || 0)),
       source: existing.source === "Cliente" || row.source === "Cliente" ? "Cliente" : (existing.source === "Afiliado" || row.source !== "Afiliado" ? existing.source : row.source),
     });
   });
@@ -6839,8 +7252,21 @@ function salesCustomerRows() {
 }
 
 function salesCustomerLookupValue(customer = {}) {
-  const refs = [customer.document_id, customer.phone, customer.email].filter(Boolean).join(" · ");
-  return refs ? `${customer.name || "Cliente"} | ${refs}` : (customer.name || "");
+  const affiliateSameAsCustomer = normalizeInventoryLookup(customer.affiliate_name) && normalizeInventoryLookup(customer.affiliate_name) === normalizeInventoryLookup(customer.name);
+  const refs = [
+    customer.phone ? `Teléfono: ${customer.phone}` : "",
+    customer.document_id ? `Cédula: ${customer.document_id}` : "",
+    Number(customer.total_spent || 0) > 0 ? `Valor: ${money(customer.total_spent || 0)}` : "",
+    customer.payment_method ? `Pago: ${customer.payment_method}` : "",
+    customer.source ? `Origen: ${acquisitionSourceLabel(customer.source)}` : "",
+    customer.product_or_service ? `Producto: ${customer.product_or_service}` : "",
+    customer.branch_name ? `Sucursal: ${customer.branch_name}` : "",
+    customer.event_date ? `Fecha: ${formatDate(customer.event_date)}` : "",
+    customer.affiliate_name ? (affiliateSameAsCustomer ? "Afiliado: mismo cliente" : `Afiliado: ${customer.affiliate_name}`) : (customer.is_affiliate ? "Afiliado" : ""),
+    Number(customer.referral_points_awarded || 0) > 0 ? `Puntos: ${Number(customer.referral_points_awarded || 0).toLocaleString("es-CO")}` : "",
+    customer.email ? `Email: ${customer.email}` : "",
+  ].filter(Boolean).join(" · ");
+  return refs ? `${customer.name || "Cliente"} · ${refs}` : (customer.name || "");
 }
 
 function salesCustomerKey(customer = {}) {
@@ -6855,6 +7281,12 @@ function salesCustomerSearchText(customer = {}) {
     customer.phone,
     customer.email,
     customer.campaign_name,
+    customer.product_or_service,
+    customer.branch_name,
+    customer.event_date,
+    customer.event_date ? formatDate(customer.event_date) : "",
+    customer.affiliate_name,
+    customer.referral_points_awarded,
     customer.source,
     customer.is_affiliate ? "afiliado" : "",
   ].map(normalizeInventoryLookup).filter(Boolean).join(" ");
@@ -6869,10 +7301,10 @@ function filteredSalesCustomerRows(filter = customerAcquisitionCustomerLookupInp
 
 function salesCustomerSelectLabel(customer = {}) {
   const flags = [
-    customer.is_affiliate ? "Afiliado" : "",
-    customer.campaign_name || customer.source || "",
+    customer.campaign_name || "",
   ].filter(Boolean).join(" · ");
-  return `${salesCustomerLookupValue(customer)}${flags ? ` (${flags})` : ""}`;
+  const customerLine = salesCustomerLookupValue(customer);
+  return flags ? `${customerLine} · ${flags}` : customerLine;
 }
 
 function renderSalesCustomerOptions() {
@@ -6880,12 +7312,20 @@ function renderSalesCustomerOptions() {
   if (!customerAcquisitionCustomerSelect) return;
   const current = customerAcquisitionCustomerSelect.value;
   const filtered = filteredSalesCustomerRows();
+  const isLoadingCustomers = !state.contactFeedLoaded || !state.leadCrmLoaded;
+  const emptyLabel = isLoadingCustomers
+    ? "Cargando clientes..."
+    : (customers.length ? "Sin coincidencias para el filtro" : "Sin clientes registrados");
   customerAcquisitionCustomerSelect.innerHTML = [
     '<option value="">Cliente nuevo / manual</option>',
-    ...filtered.map((customer) => `<option value="${escapeHtml(salesCustomerKey(customer))}">${escapeHtml(salesCustomerSelectLabel(customer))}</option>`),
+    ...(filtered.length
+      ? filtered.map((customer) => `<option value="${escapeHtml(salesCustomerKey(customer))}">${escapeHtml(salesCustomerSelectLabel(customer))}</option>`)
+      : [`<option value="" disabled>${escapeHtml(emptyLabel)}</option>`]),
   ].join("");
   if (current && filtered.some((customer) => salesCustomerKey(customer) === current)) {
     customerAcquisitionCustomerSelect.value = current;
+  } else if (current) {
+    customerAcquisitionCustomerSelect.value = "";
   }
 }
 
@@ -6938,7 +7378,7 @@ function renderSalesCustomerMatchesHint() {
   if (!search.trim()) return;
   const matches = filteredSalesCustomerRows(search);
   if (matches.length > 1) {
-    setInlineMessage(customerAcquisitionMessage, `${matches.length} clientes coinciden. Selecciona el correcto en el desplegable "Seleccionar cliente".`, "info");
+    setInlineMessage(customerAcquisitionMessage, `${matches.length} clientes coinciden. Selecciona el correcto en el desplegable "Cliente".`, "info");
   } else if (!matches.length) {
     setInlineMessage(customerAcquisitionMessage, "No hay cliente existente con esa busqueda. Puedes registrarlo como cliente nuevo/manual.", "info");
   }
@@ -7235,15 +7675,22 @@ function saleProductSummary(item = {}) {
     const lineTotal = Number(product.line_total || (Number(product.unit_price || 0) * quantity));
     return `${escapeHtml(product.name || "Producto")} <span class="table-secondary">x${quantity} · ${escapeHtml(money(lineTotal))}</span>`;
   }).join("<br>");
-  return `<strong>${escapeHtml(item.product_or_service || `${products.length} productos`)}</strong><br>${summary}`;
+  const title = cleanCustomerValue(item.product_or_service);
+  const firstProductName = cleanCustomerValue(products[0]?.name);
+  const duplicatesSingleProduct = products.length === 1 && normalizeInventoryLookup(title) === normalizeInventoryLookup(firstProductName);
+  const titleLooksLikeProductsList = products.length > 1 && products.every((product) => normalizeInventoryLookup(title).includes(normalizeInventoryLookup(`${product.name || ""} x${Number(product.quantity || 1)}`)));
+  if (!title || duplicatesSingleProduct || titleLooksLikeProductsList) return summary;
+  return `<strong>${escapeHtml(title || `${products.length} productos`)}</strong><br>${summary}`;
 }
 
 function saleAffiliateSummary(item = {}) {
   if (!item.referred_affiliate_id && !item.affiliate_name && !Number(item.referral_points_awarded || 0)) {
     return '<span class="table-secondary">Sin afiliado</span>';
   }
+  const sameAsCustomer = normalizeInventoryLookup(item.affiliate_name) && normalizeInventoryLookup(item.affiliate_name) === normalizeInventoryLookup(item.player_name);
+  const label = sameAsCustomer ? "Puntos asignados" : (item.affiliate_name || "Afiliado");
   return `
-    <strong>${escapeHtml(item.affiliate_name || "Afiliado")}</strong>
+    <strong>${escapeHtml(label)}</strong>
     <br><span class="status-chip ok">${Number(item.referral_points_awarded || 0).toLocaleString("es-CO")} pts</span>
   `;
 }
@@ -10670,6 +11117,14 @@ function renderNoCampaignState() {
   launchSetupStatus.textContent = "Bloqueado";
   launchSetupCopy.textContent = "Esta campaña aún no está lista para configuración por parte del cliente.";
   launchSetupForm.reset();
+  state.campaignCostCalculator = null;
+  state.campaignCostCalculatorCampaignId = null;
+  if (campaignCostSummary) campaignCostSummary.innerHTML = "";
+  if (campaignCostProductionList) campaignCostProductionList.innerHTML = "";
+  if (campaignCostBenefitsList) campaignCostBenefitsList.innerHTML = "";
+  if (campaignCostServicesList) campaignCostServicesList.innerHTML = "";
+  if (campaignCostFixedList) campaignCostFixedList.innerHTML = "";
+  if (campaignCostMessage) campaignCostMessage.textContent = "Selecciona una campaña para calcular costos.";
   Array.from(launchChannelGrid.querySelectorAll("input[type='checkbox']")).forEach((input) => {
     input.checked = false;
     input.disabled = true;
@@ -14016,6 +14471,7 @@ async function saveClientLaunchSetup(event) {
     return;
   }
   launchSetupMessage.textContent = "Guardando...";
+  syncCampaignCostCalculatorFromForm();
 
   try {
     const campaign = await api(`/api/business/campaigns/${state.selectedCampaignId}/client-setup`, {
@@ -14032,6 +14488,7 @@ async function saveClientLaunchSetup(event) {
         expected_leads_goal: launchLeadsGoalInput.value ? Number(launchLeadsGoalInput.value) : null,
         expected_redemptions_goal: launchRedemptionsGoalInput.value ? Number(launchRedemptionsGoalInput.value) : null,
         client_notes: launchClientNotesInput.value.trim() || null,
+        campaign_cost_calculator: state.campaignCostCalculator,
       }),
     });
     launchSetupMessage.textContent = "Preparacion guardada.";
@@ -16207,6 +16664,8 @@ function renderSalesView() {
   `).join("");
   renderCustomerAcquisitionAffiliateOptions();
   renderCustomerAcquisitionCampaignOptions();
+  renderSalesCustomerOptions();
+  renderCustomerSaleItems();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -16399,6 +16858,20 @@ exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);
 launchSetupForm.addEventListener("submit", saveClientLaunchSetup);
 confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
+campaignCostDurationInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm({ rerenderRows: true }));
+campaignCostProfitInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+campaignCostAverageTicketInput?.addEventListener("input", () => syncCampaignCostCalculatorFromForm());
+campaignCostUseDatesButton?.addEventListener("click", applyCampaignCostDurationFromDates);
+campaignCostApplyBudgetButton?.addEventListener("click", applyCampaignCostToLaunchBudget);
+campaignCostAddProductionButton?.addEventListener("click", () => addCampaignCostRow("production"));
+campaignCostAddBenefitButton?.addEventListener("click", () => addCampaignCostRow("benefit"));
+campaignCostAddServiceButton?.addEventListener("click", () => addCampaignCostRow("service"));
+campaignCostAddFixedButton?.addEventListener("click", () => addCampaignCostRow("fixed"));
+[campaignCostProductionList, campaignCostBenefitsList, campaignCostServicesList, campaignCostFixedList].forEach((list) => {
+  list?.addEventListener("input", handleCampaignCostListInput);
+  list?.addEventListener("change", handleCampaignCostListInput);
+  list?.addEventListener("click", handleCampaignCostListInput);
+});
 campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);

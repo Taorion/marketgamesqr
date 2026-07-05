@@ -2149,6 +2149,77 @@
                     <div class="asset-grid" id="campaignAssetsGrid"></div>
                   </article>
 
+                  <article class="surface-card campaign-cost-card">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Calculadora de campaña</span>
+                        <h3 class="subhead">Costo operativo y meta de ganancia</h3>
+                      </div>
+                      <button class="ghost-button" id="campaignCostApplyBudgetButton" type="button">
+                        <span class="material-symbols-outlined" aria-hidden="true">price_check</span>
+                        Aplicar al presupuesto
+                      </button>
+                    </div>
+                    <div class="campaign-cost-toolbar">
+                      <label>
+                        <span>Días de campaña</span>
+                        <input id="campaignCostDurationInput" type="number" min="1" step="1">
+                      </label>
+                      <label>
+                        <span>Ganancia esperada (%)</span>
+                        <input id="campaignCostProfitInput" type="number" min="0" step="1">
+                      </label>
+                      <label>
+                        <span>Ticket promedio esperado</span>
+                        <input id="campaignCostAverageTicketInput" type="number" min="0" step="1000">
+                      </label>
+                      <button class="ghost-button" id="campaignCostUseDatesButton" type="button">
+                        <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
+                        Usar fechas
+                      </button>
+                    </div>
+                    <section class="campaign-cost-summary" id="campaignCostSummary"></section>
+                    <div class="campaign-cost-sections">
+                      <section class="campaign-cost-section">
+                        <div class="campaign-cost-section-head">
+                          <h4>Materiales y producción</h4>
+                          <button class="icon-button" id="campaignCostAddProductionButton" type="button" title="Agregar material">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                          </button>
+                        </div>
+                        <div class="campaign-cost-list" id="campaignCostProductionList"></div>
+                      </section>
+                      <section class="campaign-cost-section">
+                        <div class="campaign-cost-section-head">
+                          <h4>Beneficios, regalos y descuentos</h4>
+                          <button class="icon-button" id="campaignCostAddBenefitButton" type="button" title="Agregar beneficio">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                          </button>
+                        </div>
+                        <div class="campaign-cost-list" id="campaignCostBenefitsList"></div>
+                      </section>
+                      <section class="campaign-cost-section">
+                        <div class="campaign-cost-section-head">
+                          <h4>Servicios mensuales</h4>
+                          <button class="icon-button" id="campaignCostAddServiceButton" type="button" title="Agregar servicio">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                          </button>
+                        </div>
+                        <div class="campaign-cost-list" id="campaignCostServicesList"></div>
+                      </section>
+                      <section class="campaign-cost-section">
+                        <div class="campaign-cost-section-head">
+                          <h4>Otros costos fijos</h4>
+                          <button class="icon-button" id="campaignCostAddFixedButton" type="button" title="Agregar costo fijo">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                          </button>
+                        </div>
+                        <div class="campaign-cost-list" id="campaignCostFixedList"></div>
+                      </section>
+                    </div>
+                    <p class="chart-note" id="campaignCostMessage"></p>
+                  </article>
+
                   <article class="surface-card campaign-affiliates-card">
                     <div class="card-head">
                       <div>
@@ -2645,7 +2716,7 @@
                 <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
                 <label><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
                 <label><span>Filtrar clientes</span><input id="customerAcquisitionCustomerLookupInput" type="search" placeholder="Nombre, cedula, telefono o correo"></label>
-                <label><span>Seleccionar cliente</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
+                <label><span>Cliente</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
                 <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
                 <label><span>Cédula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
                 <label><span>Teléfono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
