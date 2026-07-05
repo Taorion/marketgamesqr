@@ -5930,68 +5930,111 @@ function renderCampaignCostCalculator() {
 function renderCampaignCostRows(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
   if (campaignCostProductionList) {
     campaignCostProductionList.innerHTML = (calculator.production || []).map((item, index) => `
-      <div class="campaign-cost-row" data-campaign-cost-row="production" data-index="${index}">
-        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Volantes, cajas, impresión..."></label>
-        <label><span>Cantidad</span><input data-cost-field="quantity" type="number" min="0" step="1" value="${escapeHtml(item.quantity || 0)}"></label>
-        <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
-        <strong>${escapeHtml(money(campaignCostRowTotal("production", item, calculator)))}</strong>
-        <button class="icon-button" type="button" data-remove-campaign-cost="production" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      <div class="campaign-cost-row campaign-cost-row-card" data-campaign-cost-row="production" data-index="${index}">
+        <div class="campaign-cost-row-head">
+          <div>
+            <span class="mono-label">Material</span>
+            <strong>${escapeHtml(item.label || "Material de campaña")}</strong>
+          </div>
+          <button class="icon-button" type="button" data-remove-campaign-cost="production" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+        <div class="campaign-cost-row-fields">
+          <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Volantes, cajas, impresión..."></label>
+          <label><span>Cantidad</span><input data-cost-field="quantity" type="number" min="0" step="1" value="${escapeHtml(item.quantity || 0)}"></label>
+          <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
+        </div>
+        <div class="campaign-cost-row-total"><span>Total</span><strong>${escapeHtml(money(campaignCostRowTotal("production", item, calculator)))}</strong></div>
       </div>
     `).join("");
   }
   if (campaignCostBenefitsList) {
     campaignCostBenefitsList.innerHTML = (calculator.benefits || []).map((item, index) => `
-      <div class="campaign-cost-row campaign-cost-row-benefit" data-campaign-cost-row="benefit" data-index="${index}">
-        <label><span>Tipo</span><select data-cost-field="type"><option value="DISCOUNT_PERCENT" ${item.type === "DISCOUNT_PERCENT" ? "selected" : ""}>% descuento</option><option value="DISCOUNT_FIXED" ${item.type === "DISCOUNT_FIXED" ? "selected" : ""}>$ descuento</option><option value="GIFT" ${item.type === "GIFT" ? "selected" : ""}>Obsequio</option><option value="GIFTCARD" ${item.type === "GIFTCARD" ? "selected" : ""}>Bono</option><option value="EXPERIENCE" ${item.type === "EXPERIENCE" ? "selected" : ""}>Experiencia</option></select></label>
-        <label><span>Producto</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Producto o beneficio"></label>
-        <label><span>Precio normal</span><input data-cost-field="product_price" type="number" min="0" step="100" value="${escapeHtml(item.product_price || 0)}"></label>
-        <label><span>Costo producto</span><input data-cost-field="product_cost" type="number" min="0" step="100" value="${escapeHtml(item.product_cost || 0)}"></label>
-        <label><span>% descuento</span><input data-cost-field="discount_percent" type="number" min="0" max="100" step="1" value="${escapeHtml(item.discount_percent || 0)}"></label>
-        <label><span>$ descuento</span><input data-cost-field="discount_amount" type="number" min="0" step="100" value="${escapeHtml(item.discount_amount || 0)}"></label>
-        <label><span>Emitidos</span><input data-cost-field="issued_units" type="number" min="0" step="1" value="${escapeHtml(item.issued_units || 0)}"></label>
-        <label><span>Redención %</span><input data-cost-field="redemption_rate" type="number" min="0" max="100" step="0.1" value="${escapeHtml(item.redemption_rate ?? calculator.expected_redemption_rate ?? 0)}"></label>
-        <label><span>Comprados ya</span><input data-cost-field="prepaid_units" type="number" min="0" step="1" value="${escapeHtml(item.prepaid_units || 0)}"></label>
-        <div class="campaign-cost-mini">
-          <strong>${escapeHtml(money(campaignCostRowTotal("benefit", item, calculator)))}</strong>
-          ${campaignBenefitMetaHtml(item, calculator)}
+      <div class="campaign-cost-row campaign-cost-row-card campaign-cost-row-benefit" data-campaign-cost-row="benefit" data-index="${index}">
+        <div class="campaign-cost-row-head">
+          <div>
+            <span class="mono-label">Beneficio</span>
+            <strong>${escapeHtml(item.name || "Beneficio de campaña")}</strong>
+          </div>
+          <button class="icon-button" type="button" data-remove-campaign-cost="benefit" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
         </div>
-        <button class="icon-button" type="button" data-remove-campaign-cost="benefit" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        <div class="campaign-cost-row-fields campaign-cost-row-fields-wide">
+          <label><span>Tipo</span><select data-cost-field="type"><option value="DISCOUNT_PERCENT" ${item.type === "DISCOUNT_PERCENT" ? "selected" : ""}>% descuento</option><option value="DISCOUNT_FIXED" ${item.type === "DISCOUNT_FIXED" ? "selected" : ""}>$ descuento</option><option value="GIFT" ${item.type === "GIFT" ? "selected" : ""}>Obsequio</option><option value="GIFTCARD" ${item.type === "GIFTCARD" ? "selected" : ""}>Bono</option><option value="EXPERIENCE" ${item.type === "EXPERIENCE" ? "selected" : ""}>Experiencia</option></select></label>
+          <label class="campaign-cost-field-main"><span>Producto</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Producto o beneficio"></label>
+          <label><span>Precio normal</span><input data-cost-field="product_price" type="number" min="0" step="100" value="${escapeHtml(item.product_price || 0)}"></label>
+          <label><span>Costo producto</span><input data-cost-field="product_cost" type="number" min="0" step="100" value="${escapeHtml(item.product_cost || 0)}"></label>
+          <label><span>% descuento</span><input data-cost-field="discount_percent" type="number" min="0" max="100" step="1" value="${escapeHtml(item.discount_percent || 0)}"></label>
+          <label><span>$ descuento</span><input data-cost-field="discount_amount" type="number" min="0" step="100" value="${escapeHtml(item.discount_amount || 0)}"></label>
+          <label><span>Emitidos</span><input data-cost-field="issued_units" type="number" min="0" step="1" value="${escapeHtml(item.issued_units || 0)}"></label>
+          <label><span>Redención %</span><input data-cost-field="redemption_rate" type="number" min="0" max="100" step="0.1" value="${escapeHtml(item.redemption_rate ?? calculator.expected_redemption_rate ?? 0)}"></label>
+          <label><span>Comprados ya</span><input data-cost-field="prepaid_units" type="number" min="0" step="1" value="${escapeHtml(item.prepaid_units || 0)}"></label>
+        </div>
+        <div class="campaign-cost-row-total campaign-cost-row-total-rich">
+          <span>Total estimado</span>
+          <strong>${escapeHtml(money(campaignCostRowTotal("benefit", item, calculator)))}</strong>
+          <div class="campaign-cost-mini">
+            ${campaignBenefitMetaHtml(item, calculator)}
+          </div>
+        </div>
       </div>
     `).join("");
   }
   if (campaignCostServicesList) {
     campaignCostServicesList.innerHTML = (calculator.services || []).map((item, index) => `
-      <div class="campaign-cost-row" data-campaign-cost-row="service" data-index="${index}">
-        <label><span>Rol / servicio</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Promotor, diseñador, validador..."></label>
-        <label><span>Tipo pago</span><select data-cost-field="payment_type"><option value="monthly" ${item.payment_type === "monthly" ? "selected" : ""}>Mensual</option><option value="daily" ${item.payment_type === "daily" ? "selected" : ""}>Diario</option><option value="hourly" ${item.payment_type === "hourly" ? "selected" : ""}>Por hora</option><option value="commission" ${item.payment_type === "commission" ? "selected" : ""}>Comisión</option></select></label>
-        <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
-        <label><span>Días</span><input data-cost-field="days" type="number" min="0" step="1" value="${escapeHtml(item.days || 0)}"></label>
-        <label><span>Horas/día</span><input data-cost-field="hours_per_day" type="number" min="0" step="0.5" value="${escapeHtml(item.hours_per_day || 0)}"></label>
-        <label><span>% comisión</span><input data-cost-field="commission_percent" type="number" min="0" step="0.1" value="${escapeHtml(item.commission_percent || 0)}"></label>
-        <strong>${escapeHtml(money(campaignCostRowTotal("service", item, calculator)))}</strong>
-        <button class="icon-button" type="button" data-remove-campaign-cost="service" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      <div class="campaign-cost-row campaign-cost-row-card" data-campaign-cost-row="service" data-index="${index}">
+        <div class="campaign-cost-row-head">
+          <div>
+            <span class="mono-label">Servicio</span>
+            <strong>${escapeHtml(item.name || "Servicio")}</strong>
+          </div>
+          <button class="icon-button" type="button" data-remove-campaign-cost="service" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+        <div class="campaign-cost-row-fields">
+          <label class="campaign-cost-field-main"><span>Rol / servicio</span><input data-cost-field="name" type="text" value="${escapeHtml(item.name || "")}" placeholder="Promotor, diseñador, validador..."></label>
+          <label><span>Tipo pago</span><select data-cost-field="payment_type"><option value="monthly" ${item.payment_type === "monthly" ? "selected" : ""}>Mensual</option><option value="daily" ${item.payment_type === "daily" ? "selected" : ""}>Diario</option><option value="hourly" ${item.payment_type === "hourly" ? "selected" : ""}>Por hora</option><option value="commission" ${item.payment_type === "commission" ? "selected" : ""}>Comisión</option></select></label>
+          <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
+          <label><span>Días</span><input data-cost-field="days" type="number" min="0" step="1" value="${escapeHtml(item.days || 0)}"></label>
+          <label><span>Horas/día</span><input data-cost-field="hours_per_day" type="number" min="0" step="0.5" value="${escapeHtml(item.hours_per_day || 0)}"></label>
+          <label><span>% comisión</span><input data-cost-field="commission_percent" type="number" min="0" step="0.1" value="${escapeHtml(item.commission_percent || 0)}"></label>
+        </div>
+        <div class="campaign-cost-row-total"><span>Total</span><strong>${escapeHtml(money(campaignCostRowTotal("service", item, calculator)))}</strong></div>
       </div>
     `).join("");
   }
   if (campaignCostVariableList) {
     campaignCostVariableList.innerHTML = (calculator.variable || []).map((item, index) => `
-      <div class="campaign-cost-row" data-campaign-cost-row="variable" data-index="${index}">
-        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Domicilio, empaque, comisión..."></label>
-        <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
-        <label><span>Unidades</span><input data-cost-field="units" type="number" min="0" step="1" value="${escapeHtml(item.units || 0)}"></label>
-        <label class="campaign-cost-check"><input data-cost-field="apply_redemption_rate" type="checkbox" ${item.apply_redemption_rate ? "checked" : ""}> <span>Aplicar redención</span></label>
-        <strong>${escapeHtml(money(campaignCostRowTotal("variable", item, calculator)))}</strong>
-        <button class="icon-button" type="button" data-remove-campaign-cost="variable" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      <div class="campaign-cost-row campaign-cost-row-card" data-campaign-cost-row="variable" data-index="${index}">
+        <div class="campaign-cost-row-head">
+          <div>
+            <span class="mono-label">Variable</span>
+            <strong>${escapeHtml(item.label || "Costo variable")}</strong>
+          </div>
+          <button class="icon-button" type="button" data-remove-campaign-cost="variable" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+        <div class="campaign-cost-row-fields">
+          <label class="campaign-cost-field-main"><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Domicilio, empaque, comisión..."></label>
+          <label><span>Costo unitario</span><input data-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
+          <label><span>Unidades</span><input data-cost-field="units" type="number" min="0" step="1" value="${escapeHtml(item.units || 0)}"></label>
+          <label class="campaign-cost-check"><input data-cost-field="apply_redemption_rate" type="checkbox" ${item.apply_redemption_rate ? "checked" : ""}> <span>Aplicar redención</span></label>
+        </div>
+        <div class="campaign-cost-row-total"><span>Total</span><strong>${escapeHtml(money(campaignCostRowTotal("variable", item, calculator)))}</strong></div>
       </div>
     `).join("");
   }
   if (campaignCostFixedList) {
     campaignCostFixedList.innerHTML = (calculator.fixed || []).map((item, index) => `
-      <div class="campaign-cost-row" data-campaign-cost-row="fixed" data-index="${index}">
-        <label><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Transporte, pauta, permisos..."></label>
-        <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
-        <strong>${escapeHtml(money(campaignCostRowTotal("fixed", item, calculator)))}</strong>
-        <button class="icon-button" type="button" data-remove-campaign-cost="fixed" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      <div class="campaign-cost-row campaign-cost-row-card" data-campaign-cost-row="fixed" data-index="${index}">
+        <div class="campaign-cost-row-head">
+          <div>
+            <span class="mono-label">Fijo</span>
+            <strong>${escapeHtml(item.label || "Costo fijo")}</strong>
+          </div>
+          <button class="icon-button" type="button" data-remove-campaign-cost="fixed" title="Quitar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+        <div class="campaign-cost-row-fields">
+          <label class="campaign-cost-field-main"><span>Concepto</span><input data-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Transporte, pauta, permisos..."></label>
+          <label><span>Valor</span><input data-cost-field="amount" type="number" min="0" step="1000" value="${escapeHtml(item.amount || 0)}"></label>
+        </div>
+        <div class="campaign-cost-row-total"><span>Total</span><strong>${escapeHtml(money(campaignCostRowTotal("fixed", item, calculator)))}</strong></div>
       </div>
     `).join("");
   }
