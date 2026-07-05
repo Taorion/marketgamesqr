@@ -1998,6 +1998,10 @@
               <div class="head-actions">
                 <button class="ghost-button" id="exportCampaignReportButton" type="button">Exportar Reporte</button>
                 <button class="ghost-button hidden" id="markReadyCampaignButton" type="button">Marcar lista</button>
+                <button class="ghost-button" id="campaignStrategyAssistantButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
+                  Asistente de Estrategia
+                </button>
                 <button class="solid-button" id="editCampaignButton" type="button">Editar Campaña</button>
               </div>
             </div>
@@ -2160,105 +2164,120 @@
                         Aplicar al presupuesto
                       </button>
                     </div>
-                    <div class="campaign-cost-config">
-                      <label>
-                        <span>Nombre de campaña</span>
-                        <input id="campaignCostNameInput" type="text" placeholder="Nombre operativo">
-                      </label>
-                      <label>
-                        <span>Tipo de campaña</span>
-                        <select id="campaignCostTypeInput">
-                          <option value="MIXED">Mixta</option>
-                          <option value="LEAD_CAPTURE">Captación de leads</option>
-                          <option value="REDEMPTION">Redenciones</option>
-                          <option value="REFERRAL">Referidos</option>
-                          <option value="REBUY">Recompra</option>
-                          <option value="INVENTORY">Liquidar inventario</option>
-                          <option value="EVENT">Evento físico</option>
-                          <option value="LAUNCH">Lanzamiento</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Canal principal</span>
-                        <input id="campaignCostChannelInput" type="text" placeholder="Meta Ads, vitrina, WhatsApp...">
-                      </label>
-                      <label>
-                        <span>Sucursal / punto</span>
-                        <input id="campaignCostBranchInput" type="text" placeholder="Tienda norte, feria...">
-                      </label>
-                      <label>
-                        <span>Responsable</span>
-                        <input id="campaignCostOwnerInput" type="text" placeholder="Responsable comercial">
-                      </label>
-                      <label>
-                        <span>Objetivo principal</span>
-                        <select id="campaignCostGoalInput">
-                          <option value="sales">Quiero ventas</option>
-                          <option value="leads">Quiero leads</option>
-                          <option value="redemptions">Quiero redenciones</option>
-                          <option value="referrals">Quiero referidos</option>
-                          <option value="rebuy">Quiero recompra</option>
-                          <option value="visits">Quiero visitas al punto físico</option>
-                          <option value="registrations">Quiero registros</option>
-                          <option value="appointments">Quiero agendamientos</option>
-                          <option value="reactivation">Quiero activar clientes dormidos</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Dinámica gamificada</span>
-                        <select id="campaignCostDynamicInput">
-                          <option value="scratch">Raspa y gana</option>
-                          <option value="roulette">Ruleta</option>
-                          <option value="trivia">Trivia</option>
-                          <option value="battleship">Batalla naval</option>
-                          <option value="referrals">Referidos</option>
-                          <option value="points">Puntos</option>
-                          <option value="ranking">Ranking</option>
-                          <option value="giftcard">Giftcard</option>
-                          <option value="vip">Club VIP</option>
-                          <option value="rebuy_challenge">Reto de recompra</option>
-                          <option value="physical_activation">Activación en punto físico</option>
-                          <option value="post_sale">Campaña postventa</option>
-                          <option value="brand_alliance">Alianza entre marcas</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>Objetivo operativo</span>
-                        <input id="campaignCostObjectiveInput" type="text" placeholder="Ej: vender producto específico, recuperar clientes...">
-                      </label>
+                    <div class="campaign-cost-shell">
+                      <section class="campaign-cost-panel campaign-cost-planning">
+                        <div class="campaign-cost-panel-head">
+                          <span class="mono-label">Configuración</span>
+                          <strong>Datos base</strong>
+                        </div>
+                        <div class="campaign-cost-config">
+                          <label>
+                            <span>Nombre de campaña</span>
+                            <input id="campaignCostNameInput" type="text" placeholder="Nombre operativo">
+                          </label>
+                          <label>
+                            <span>Tipo de campaña</span>
+                            <select id="campaignCostTypeInput">
+                              <option value="MIXED">Mixta</option>
+                              <option value="LEAD_CAPTURE">Captación de leads</option>
+                              <option value="REDEMPTION">Redenciones</option>
+                              <option value="REFERRAL">Referidos</option>
+                              <option value="REBUY">Recompra</option>
+                              <option value="INVENTORY">Liquidar inventario</option>
+                              <option value="EVENT">Evento físico</option>
+                              <option value="LAUNCH">Lanzamiento</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span>Canal principal</span>
+                            <input id="campaignCostChannelInput" type="text" placeholder="Meta Ads, vitrina, WhatsApp...">
+                          </label>
+                          <label>
+                            <span>Sucursal / punto</span>
+                            <input id="campaignCostBranchInput" type="text" placeholder="Tienda norte, feria...">
+                          </label>
+                          <label>
+                            <span>Responsable</span>
+                            <input id="campaignCostOwnerInput" type="text" placeholder="Responsable comercial">
+                          </label>
+                          <label>
+                            <span>Objetivo principal</span>
+                            <select id="campaignCostGoalInput">
+                              <option value="sales">Quiero ventas</option>
+                              <option value="leads">Quiero leads</option>
+                              <option value="redemptions">Quiero redenciones</option>
+                              <option value="referrals">Quiero referidos</option>
+                              <option value="rebuy">Quiero recompra</option>
+                              <option value="visits">Quiero visitas al punto físico</option>
+                              <option value="registrations">Quiero registros</option>
+                              <option value="appointments">Quiero agendamientos</option>
+                              <option value="reactivation">Quiero activar clientes dormidos</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span>Dinámica gamificada</span>
+                            <select id="campaignCostDynamicInput">
+                              <option value="scratch">Raspa y gana</option>
+                              <option value="roulette">Ruleta</option>
+                              <option value="trivia">Trivia</option>
+                              <option value="battleship">Batalla naval</option>
+                              <option value="referrals">Referidos</option>
+                              <option value="points">Puntos</option>
+                              <option value="ranking">Ranking</option>
+                              <option value="giftcard">Giftcard</option>
+                              <option value="vip">Club VIP</option>
+                              <option value="rebuy_challenge">Reto de recompra</option>
+                              <option value="physical_activation">Activación en punto físico</option>
+                              <option value="post_sale">Campaña postventa</option>
+                              <option value="brand_alliance">Alianza entre marcas</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span>Objetivo operativo</span>
+                            <input id="campaignCostObjectiveInput" type="text" placeholder="Ej: vender producto específico, recuperar clientes...">
+                          </label>
+                        </div>
+                        <div class="campaign-cost-toolbar">
+                          <label>
+                            <span>Días</span>
+                            <input id="campaignCostDurationInput" type="number" min="1" step="1">
+                          </label>
+                          <label>
+                            <span>Ganancia %</span>
+                            <input id="campaignCostProfitInput" type="number" min="0" step="1">
+                          </label>
+                          <label>
+                            <span>Ticket promedio</span>
+                            <input id="campaignCostAverageTicketInput" type="number" min="0" step="1000">
+                          </label>
+                          <label>
+                            <span>Margen bruto</span>
+                            <input id="campaignCostGrossMarginInput" type="number" min="0" step="1000">
+                          </label>
+                          <label>
+                            <span>Conversión %</span>
+                            <input id="campaignCostConversionInput" type="number" min="0" max="100" step="0.1">
+                          </label>
+                          <label>
+                            <span>Redención %</span>
+                            <input id="campaignCostRedemptionInput" type="number" min="0" max="100" step="0.1">
+                          </label>
+                          <button class="ghost-button" id="campaignCostUseDatesButton" type="button">
+                            <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
+                            Usar fechas
+                          </button>
+                        </div>
+                      </section>
+                      <section class="campaign-cost-panel campaign-cost-results">
+                        <div class="campaign-cost-panel-head">
+                          <span class="mono-label">Resultado</span>
+                          <strong>Decisión financiera</strong>
+                        </div>
+                        <section class="campaign-cost-decision" id="campaignCostDecision"></section>
+                        <section class="campaign-cost-summary" id="campaignCostSummary"></section>
+                        <section class="campaign-cost-scenarios" id="campaignCostScenarios"></section>
+                      </section>
                     </div>
-                    <div class="campaign-cost-toolbar">
-                      <label>
-                        <span>Días de campaña</span>
-                        <input id="campaignCostDurationInput" type="number" min="1" step="1">
-                      </label>
-                      <label>
-                        <span>Ganancia esperada (%)</span>
-                        <input id="campaignCostProfitInput" type="number" min="0" step="1">
-                      </label>
-                      <label>
-                        <span>Ticket promedio esperado</span>
-                        <input id="campaignCostAverageTicketInput" type="number" min="0" step="1000">
-                      </label>
-                      <label>
-                        <span>Margen bruto por venta</span>
-                        <input id="campaignCostGrossMarginInput" type="number" min="0" step="1000">
-                      </label>
-                      <label>
-                        <span>Conversión lead a venta (%)</span>
-                        <input id="campaignCostConversionInput" type="number" min="0" max="100" step="0.1">
-                      </label>
-                      <label>
-                        <span>Redención esperada (%)</span>
-                        <input id="campaignCostRedemptionInput" type="number" min="0" max="100" step="0.1">
-                      </label>
-                      <button class="ghost-button" id="campaignCostUseDatesButton" type="button">
-                        <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
-                        Usar fechas
-                      </button>
-                    </div>
-                    <section class="campaign-cost-summary" id="campaignCostSummary"></section>
-                    <section class="campaign-cost-decision" id="campaignCostDecision"></section>
                     <div class="campaign-cost-sections">
                       <section class="campaign-cost-section">
                         <div class="campaign-cost-section-head">
@@ -2306,7 +2325,6 @@
                         <div class="campaign-cost-list" id="campaignCostFixedList"></div>
                       </section>
                     </div>
-                    <section class="campaign-cost-scenarios" id="campaignCostScenarios"></section>
                     <p class="chart-note" id="campaignCostMessage"></p>
                   </article>
 
@@ -3813,6 +3831,16 @@
         </button>
       </div>
       <form class="modal-form" id="campaignModalForm">
+        <div class="campaign-entry-switch span-2">
+          <button class="ghost-button" id="campaignManualEntryButton" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+            Crear campaña manualmente
+          </button>
+          <button class="solid-button" id="campaignWizardEntryButton" type="button">
+            <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+            Crear con ayudador estratégico
+          </button>
+        </div>
         <label>
           <span>Nombre</span>
           <input id="campaignFormName" type="text" required>
@@ -3928,6 +3956,50 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-shell hidden" id="campaignStrategyWizardModal" role="dialog" aria-modal="true" aria-labelledby="campaignStrategyWizardTitle">
+    <div class="modal-card campaign-strategy-wizard-card">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label">Reward Marketing System</span>
+          <h3 id="campaignStrategyWizardTitle">Ayudador Estratégico de Campañas</h3>
+        </div>
+        <button class="icon-button" id="campaignStrategyWizardCloseButton" type="button" aria-label="Cerrar ayudador estratégico">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="strategy-wizard-progress">
+        <span id="strategyWizardProgressText">Paso 1 de 14</span>
+        <div><span id="strategyWizardProgressBar"></span></div>
+      </div>
+      <div class="strategy-wizard-shell">
+        <section class="strategy-wizard-main">
+          <div class="strategy-wizard-step-head">
+            <span class="mono-label" id="strategyWizardStepKicker">Contexto</span>
+            <h4 id="strategyWizardStepTitle">Contexto del negocio</h4>
+            <p id="strategyWizardStepHelp">Responde lo mínimo para que el sistema estructure una campaña accionable.</p>
+          </div>
+          <div class="strategy-wizard-step-body" id="strategyWizardStepBody"></div>
+          <div class="strategy-wizard-actions">
+            <button class="ghost-button" id="strategyWizardBackButton" type="button">Volver</button>
+            <button class="ghost-button" id="strategyWizardSkipButton" type="button">Saltar paso</button>
+            <button class="ghost-button" id="strategyWizardDraftButton" type="button">Guardar borrador</button>
+            <button class="ghost-button" id="strategyWizardSuggestButton" type="button">Sugerir estrategia</button>
+            <button class="solid-button" id="strategyWizardNextButton" type="button">Continuar</button>
+          </div>
+        </section>
+        <aside class="strategy-wizard-summary">
+          <span class="mono-label">Campaña en construcción</span>
+          <div id="strategyWizardSummary"></div>
+          <div class="strategy-wizard-summary-actions">
+            <button class="ghost-button" id="strategyWizardOptimizeButton" type="button">Optimizar campaña</button>
+            <button class="solid-button" id="strategyWizardApplyButton" type="button">Generar campaña</button>
+          </div>
+          <p class="form-message" id="strategyWizardMessage"></p>
+        </aside>
+      </div>
     </div>
   </div>
 

@@ -686,6 +686,9 @@ const campaignModalForm = document.getElementById("campaignModalForm");
 const closeCampaignModalButton = document.getElementById("closeCampaignModalButton");
 const cancelCampaignModalButton = document.getElementById("cancelCampaignModalButton");
 const campaignModalMessage = document.getElementById("campaignModalMessage");
+const campaignStrategyAssistantButton = document.getElementById("campaignStrategyAssistantButton");
+const campaignManualEntryButton = document.getElementById("campaignManualEntryButton");
+const campaignWizardEntryButton = document.getElementById("campaignWizardEntryButton");
 const campaignFormName = document.getElementById("campaignFormName");
 const campaignFormSlug = document.getElementById("campaignFormSlug");
 const campaignFormType = document.getElementById("campaignFormType");
@@ -706,6 +709,23 @@ const campaignFormGameUrl = document.getElementById("campaignFormGameUrl");
 const campaignFormPrimaryLink = document.getElementById("campaignFormPrimaryLink");
 const campaignFormQrLandingUrl = document.getElementById("campaignFormQrLandingUrl");
 const campaignFormAssetNotes = document.getElementById("campaignFormAssetNotes");
+const campaignStrategyWizardModal = document.getElementById("campaignStrategyWizardModal");
+const campaignStrategyWizardCloseButton = document.getElementById("campaignStrategyWizardCloseButton");
+const strategyWizardProgressText = document.getElementById("strategyWizardProgressText");
+const strategyWizardProgressBar = document.getElementById("strategyWizardProgressBar");
+const strategyWizardStepKicker = document.getElementById("strategyWizardStepKicker");
+const strategyWizardStepTitle = document.getElementById("strategyWizardStepTitle");
+const strategyWizardStepHelp = document.getElementById("strategyWizardStepHelp");
+const strategyWizardStepBody = document.getElementById("strategyWizardStepBody");
+const strategyWizardBackButton = document.getElementById("strategyWizardBackButton");
+const strategyWizardSkipButton = document.getElementById("strategyWizardSkipButton");
+const strategyWizardDraftButton = document.getElementById("strategyWizardDraftButton");
+const strategyWizardSuggestButton = document.getElementById("strategyWizardSuggestButton");
+const strategyWizardNextButton = document.getElementById("strategyWizardNextButton");
+const strategyWizardSummary = document.getElementById("strategyWizardSummary");
+const strategyWizardOptimizeButton = document.getElementById("strategyWizardOptimizeButton");
+const strategyWizardApplyButton = document.getElementById("strategyWizardApplyButton");
+const strategyWizardMessage = document.getElementById("strategyWizardMessage");
 const snapshotModal = document.getElementById("snapshotModal");
 const closeSnapshotModalButton = document.getElementById("closeSnapshotModalButton");
 const cancelSnapshotModalButton = document.getElementById("cancelSnapshotModalButton");
@@ -850,6 +870,9 @@ let state = {
   affiliateScannerLastAt: 0,
   campaignModalMode: "edit",
   campaignModalInitialSnapshot: null,
+  strategyWizardStep: 0,
+  strategyWizardAnswers: {},
+  strategyWizardDraft: null,
   rangeDays: 30,
   validatorDetector: null,
   validatorStream: null,
@@ -5973,26 +5996,44 @@ function renderCampaignCostRows(calculator = state.campaignCostCalculator || def
 function renderCampaignCostSummary(calculator = state.campaignCostCalculator || defaultCampaignCostCalculator()) {
   if (!campaignCostSummary) return;
   const totals = calculateCampaignCosts(calculator);
-  campaignCostSummary.innerHTML = [
+  const primaryMetrics = [
+    { label: "Costo total", value: money(totals.totalCost), meta: `${money(totals.dailyCost)} por día`, icon: "paid", tone: "primary" },
+    { label: "Beneficios", value: money(totals.benefitsTotal), meta: `${money(totals.costPerRedemption)} por redención`, icon: "redeem", tone: "benefit" },
+    { label: "Equilibrio", value: totals.breakEvenSales ? `${totals.breakEvenSales.toLocaleString("es-CO")} ventas` : "-", meta: `${money(totals.breakEvenRevenue)} mínimo`, icon: "balance", tone: "break-even" },
+    { label: "Ventas necesarias", value: totals.requiredSales ? totals.requiredSales.toLocaleString("es-CO") : "-", meta: `${totals.leadsNeeded.toLocaleString("es-CO")} leads estimados`, icon: "shopping_cart", tone: "target" },
+    { label: "ROI esperado", value: `${Math.round(totals.roi)}%`, meta: `Neto ${money(totals.netProfit)}`, icon: "trending_up", tone: totals.roi < 0 ? "negative" : "positive" },
+  ];
+  const detailMetrics = [
     ["Costo fijo", money(totals.fixedCostTotal), "Se paga aunque nadie participe"],
-    ["Costo variable", money(totals.variableTotal + totals.benefitsTotal), `${money(totals.costPerRedemption)} por redención`],
-    ["Producción", money(totals.productionTotal), "Volantes, cajas, piezas físicas"],
-    ["Beneficios", money(totals.benefitsTotal), "Obsequios y descuentos asumidos"],
+    ["Costo variable", money(totals.variableTotal + totals.benefitsTotal), "Beneficios y costos por volumen"],
+    ["Producción", money(totals.productionTotal), "Materiales y piezas físicas"],
     ["Servicios", money(totals.servicesTotal), `${money(totals.servicesTotal / totals.durationDays)} diarios`],
     ["Otros costos", money(totals.fixedTotal), "Pauta, transporte, permisos"],
-    ["Costo total", money(totals.totalCost), `${money(totals.dailyCost)} por día`],
     ["Utilidad meta", money(totals.targetProfit), `${calculator.desired_profit_percent || 0}% sobre costo`],
-    ["Venta objetivo", money(totals.revenueGoal), totals.requiredSales ? `${totals.requiredSales.toLocaleString("es-CO")} ventas aprox.` : "Define ticket promedio"],
-    ["Equilibrio", totals.breakEvenSales ? `${totals.breakEvenSales.toLocaleString("es-CO")} ventas` : "-", `${money(totals.breakEvenRevenue)} mínimo`],
-    ["Leads necesarios", totals.leadsNeeded ? totals.leadsNeeded.toLocaleString("es-CO") : "-", `${totals.conversionRate || 0}% conversión`],
-    ["ROI esperado", `${Math.round(totals.roi)}%`, `Neto ${money(totals.netProfit)}`],
-  ].map(([label, value, meta]) => `
-    <div>
-      <span class="mono-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <small>${escapeHtml(meta)}</small>
+  ];
+  campaignCostSummary.innerHTML = `
+    <div class="campaign-cost-answer-grid">
+      ${primaryMetrics.map((item) => `
+        <article class="campaign-cost-answer ${escapeHtml(item.tone)}">
+          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(item.icon)}</span>
+          <div>
+            <span class="mono-label">${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(item.value)}</strong>
+            <small>${escapeHtml(item.meta)}</small>
+          </div>
+        </article>
+      `).join("")}
     </div>
-  `).join("");
+    <div class="campaign-cost-detail-grid">
+      ${detailMetrics.map(([label, value, meta]) => `
+        <div>
+          <span class="mono-label">${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+          <small>${escapeHtml(meta)}</small>
+        </div>
+      `).join("")}
+    </div>
+  `;
   renderCampaignCostDecision(calculator, totals);
   renderCampaignCostScenarios(calculator);
   if (campaignCostMessage) {
@@ -11521,6 +11562,573 @@ function renderNoCampaignState() {
     { key: "leads", color: NEON_CHART.cyan },
     { key: "sales", color: NEON_CHART.yellow },
   ]);
+}
+
+const STRATEGY_WIZARD_DRAFT_KEY = "marketgames:campaign-strategy-wizard:draft";
+const STRATEGY_WIZARD_OPTIONS = {
+  sectors: ["Restaurante", "Retail", "Moda", "Belleza", "Salud", "Educación", "Servicios profesionales", "Eventos", "Turismo", "Tecnología", "Agencia de marketing", "Centro comercial", "Marca de consumo", "Otro"],
+  scopes: ["Una sede física", "Varias sedes", "Digital", "Híbrida"],
+  audiences: ["Clientes actuales", "Clientes nuevos", "Ambos"],
+  objectives: ["Captar nuevos leads", "Aumentar ventas", "Aumentar recompra", "Conseguir referidos", "Fidelizar clientes", "Activar clientes dormidos", "Promocionar un producto específico", "Llevar personas a punto físico", "Medir una activación en evento", "Entregar beneficios o regalos", "Generar base de datos", "Crear alianza entre marcas", "Lanzar una giftcard o reward pass", "Otro"],
+  acquisitionModes: ["Manual", "Semimasiva", "Masiva", "Viral/referida"],
+  leadMagnets: ["Ebook descargable", "Mini curso gratuito", "Diagnóstico gratuito", "Batalla naval", "Ruleta de premios", "Trivia de marca", "Raspa y gana", "Evento físico", "Webinar", "Masterclass", "Giftcard", "Beneficio limitado", "Catálogo descargable", "Portafolio digital", "Muestra gratuita", "Sorteo", "Reto de referidos", "Club de puntos", "Ranking o competencia", "Alianza entre marcas"],
+  targetPublics: ["Clientes nuevos", "Clientes actuales", "Clientes inactivos", "Emprendedores", "Empresas", "Comercios físicos", "Restaurantes", "Agencias", "Inversionistas", "Aliados comerciales", "Compradores recurrentes", "Visitantes de evento", "Seguidores de redes sociales", "Tráfico de punto físico"],
+  funnelActions: ["Registrarse", "Jugar", "Descargar un activo digital", "Reclamar un beneficio", "Asistir a un evento", "Agendar diagnóstico", "Invitar a otra persona", "Comprar", "Visitar punto físico", "Responder una trivia", "Escanear desde una pieza física", "Completar un formulario", "Solicitar cotización"],
+  dataFields: ["Nombre", "WhatsApp", "Correo", "Empresa", "Sector", "Cargo", "Ciudad", "Necesidad principal", "Presupuesto aproximado", "Producto de interés", "Canal de origen", "Nivel de urgencia", "Consentimiento de contacto"],
+  filters: ["Por sector", "Por tamaño de empresa", "Por presupuesto", "Por urgencia", "Por interacción con el juego", "Por descarga de contenido", "Por solicitud de diagnóstico", "Por redención de beneficio", "Por agendamiento", "Por referido", "Por ciudad", "Por canal de llegada"],
+  hotActions: ["Descargó el ebook", "Pidió diagnóstico", "Agendó demo", "Redimió beneficio", "Compartió la campaña", "Invitó otro lead", "Respondió que tiene presupuesto", "Dijo que necesita campaña pronto", "Visitó punto físico", "Completó el juego", "Solicitó cotización", "Pidió hablar con asesor"],
+  nextActions: ["Enviar ebook", "Enviar WhatsApp automático", "Agendar demo", "Enviar caso de uso", "Asignar asesor", "Enviar oferta piloto", "Mandar cupón", "Activar beneficio", "Invitar a evento", "Enviar campaña de seguimiento", "Clasificar en CRM", "Crear tarea comercial"],
+  dynamics: ["Batalla naval", "Ruleta de premios", "Trivia de marca", "Raspa y gana", "Reto de referidos", "Club de puntos", "Ranking de clientes", "Giftcard / Reward Pass", "Captura relámpago de leads", "Alianza cruzada", "Activación elegante sin juego visible"],
+  rewards: ["Descuento porcentual", "Descuento fijo", "Obsequio físico", "Ebook / catálogo / activo digital", "Diagnóstico gratuito", "Sesión de asesoría", "Puntos acumulables", "Giftcard", "Entrada a sorteo", "Acceso VIP", "Producto de muestra", "Beneficio de aliado", "Segundo producto con descuento", "Otro"],
+  channels: ["Instagram", "Facebook", "TikTok", "Volantes", "Influencer", "Evento fisico", "WhatsApp", "Punto de venta", "Otro"],
+  validationMethods: ["Punto físico", "WhatsApp", "Web", "Asesor", "URL interna de validación"],
+  campaignCadence: ["Activación relámpago", "Semanal", "Mensual", "Permanente"],
+  ticketTypes: ["Lead ticket", "Reward ticket", "Redemption ticket", "Referral ticket", "Giftcard ticket", "Event ticket", "Post-sale ticket", "Digital asset ticket"],
+};
+
+const STRATEGY_WIZARD_TEMPLATES = [
+  { id: "ebook-leads", title: "Captura relámpago de leads con ebook", sector: "Servicios profesionales", objective: "Captar nuevos leads", dynamic: "Captura relámpago de leads", magnet: "Ebook descargable", channels: ["Instagram", "Facebook", "WhatsApp"], days: 21, tickets: ["Lead ticket", "Digital asset ticket"] },
+  { id: "battleship-asset", title: "Batalla naval para descargar activo digital", sector: "Eventos", objective: "Generar base de datos", dynamic: "Batalla naval", magnet: "Batalla naval", channels: ["Evento fisico", "Instagram", "WhatsApp"], days: 10, tickets: ["Lead ticket", "Reward ticket", "Digital asset ticket"] },
+  { id: "roulette-store", title: "Ruleta de premios en punto físico", sector: "Retail", objective: "Llevar personas a punto físico", dynamic: "Ruleta de premios", magnet: "Beneficio limitado", channels: ["Punto de venta", "Volantes", "Instagram"], days: 15, tickets: ["Lead ticket", "Reward ticket", "Redemption ticket"] },
+  { id: "trivia-brand", title: "Trivia de marca", sector: "Marca de consumo", objective: "Promocionar un producto específico", dynamic: "Trivia de marca", magnet: "Trivia de marca", channels: ["Instagram", "TikTok", "WhatsApp"], days: 21, tickets: ["Lead ticket", "Reward ticket"] },
+  { id: "rebuy-challenge", title: "Reto de recompra", sector: "Restaurante", objective: "Aumentar recompra", dynamic: "Club de puntos", magnet: "Beneficio limitado", channels: ["WhatsApp", "Punto de venta", "Instagram"], days: 45, tickets: ["Post-sale ticket", "Reward ticket", "Redemption ticket"] },
+  { id: "referral-growth", title: "Referidos gamificados", sector: "Retail", objective: "Conseguir referidos", dynamic: "Reto de referidos", magnet: "Reto de referidos", channels: ["WhatsApp", "Instagram"], days: 30, tickets: ["Lead ticket", "Referral ticket", "Reward ticket"] },
+  { id: "giftcard-pass", title: "Giftcard / Reward Pass", sector: "Moda", objective: "Entregar beneficios o regalos", dynamic: "Giftcard / Reward Pass", magnet: "Giftcard", channels: ["Instagram", "WhatsApp", "Punto de venta"], days: 60, tickets: ["Giftcard ticket", "Redemption ticket"] },
+  { id: "vip-points", title: "Club de puntos", sector: "Belleza", objective: "Fidelizar clientes", dynamic: "Club de puntos", magnet: "Club de puntos", channels: ["WhatsApp", "Punto de venta"], days: 90, tickets: ["Post-sale ticket", "Reward ticket"] },
+  { id: "event-activation", title: "Activación en evento físico", sector: "Eventos", objective: "Medir una activación en evento", dynamic: "Batalla naval", magnet: "Evento físico", channels: ["Evento fisico", "Punto de venta", "Instagram", "WhatsApp"], days: 7, tickets: ["Event ticket", "Lead ticket", "Reward ticket"] },
+  { id: "brand-alliance", title: "Alianza cruzada entre marcas", sector: "Marca de consumo", objective: "Crear alianza entre marcas", dynamic: "Alianza cruzada", magnet: "Beneficio de aliado", channels: ["Instagram", "WhatsApp", "Punto de venta"], days: 30, tickets: ["Lead ticket", "Reward ticket", "Redemption ticket"] },
+  { id: "post-sale", title: "Campaña postventa", sector: "Retail", objective: "Aumentar recompra", dynamic: "Activación elegante sin juego visible", magnet: "Beneficio limitado", channels: ["WhatsApp", "Punto de venta"], days: 30, tickets: ["Post-sale ticket", "Reward ticket"] },
+  { id: "premium-private", title: "Campaña premium sin juego visible", sector: "Servicios profesionales", objective: "Fidelizar clientes", dynamic: "Activación elegante sin juego visible", magnet: "Diagnóstico gratuito", channels: ["WhatsApp", "Instagram"], days: 30, tickets: ["Lead ticket", "Reward ticket"] },
+];
+
+const STRATEGY_WIZARD_STEPS = [
+  { id: "context", kicker: "Paso 1", title: "Contexto del negocio", help: "Define el punto de partida para sugerir nombre, slug y enfoque.", fields: [
+    { key: "template", label: "Plantillas rápidas", type: "templates" },
+    { key: "businessName", label: "Nombre del negocio o campaña", type: "text", placeholder: "Ej: Café Monte" },
+    { key: "mainProduct", label: "Qué vendes principalmente", type: "text", placeholder: "Ej: café, almuerzos, experiencias..." },
+    { key: "sector", label: "Sector", type: "single", optionsKey: "sectors" },
+    { key: "scope", label: "Alcance", type: "single", optionsKey: "scopes" },
+    { key: "audienceBase", label: "Base de clientes", type: "single", optionsKey: "audiences" },
+  ] },
+  { id: "objective", kicker: "Paso 2", title: "Objetivo principal", help: "Piensa en el comportamiento que quieres provocar: que te conozcan, vuelvan, compren, recomienden o rediman.", fields: [
+    { key: "objective", label: "Qué quieres lograr", type: "single", optionsKey: "objectives" },
+  ] },
+  { id: "massification", kicker: "Paso 3", title: "Estrategia de Masificación", help: "Una campaña poderosa atrae varias personas, captura datos, entrega valor, filtra interés y activa seguimiento comercial.", fields: [
+    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. MarketGames captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
+    { key: "acquisitionMode", label: "Modo de atracción", type: "single", optionsKey: "acquisitionModes" },
+    { key: "leadMagnet", label: "Excusa de valor", type: "single", optionsKey: "leadMagnets" },
+    { key: "targetPublic", label: "Público a atraer", type: "single", optionsKey: "targetPublics" },
+    { key: "funnelEntryAction", label: "Acción de entrada al embudo", type: "single", optionsKey: "funnelActions" },
+    { key: "captureFields", label: "Datos mínimos a capturar", type: "multi", optionsKey: "dataFields" },
+    { key: "qualificationFilters", label: "Cómo filtrar leads", type: "multi", optionsKey: "filters" },
+    { key: "hotLeadActions", label: "Qué vuelve caliente al lead", type: "multi", optionsKey: "hotActions" },
+    { key: "postCaptureAction", label: "Qué pasa después de capturar", type: "multi", optionsKey: "nextActions" },
+  ] },
+  { id: "type", kicker: "Paso 4", title: "Tipo de campaña", help: "El sistema traduce tu objetivo a un tipo compatible con el portal y conserva el detalle estratégico en la estrategia.", fields: [
+    { key: "campaignType", label: "Tipo recomendado", type: "single", options: ["GAME", "FORM", "LANDING", "EVENT", "SOCIAL", "MIXED"] },
+  ] },
+  { id: "dynamic", kicker: "Paso 5", title: "Dinámica gamificada", help: "Elige la experiencia que hará que la campaña sea recordable, medible y accionable.", fields: [
+    { key: "dynamic", label: "Experiencia", type: "single", optionsKey: "dynamics" },
+  ] },
+  { id: "reward", kicker: "Paso 6", title: "Beneficio o recompensa", help: "Define qué valor recibe el participante y cómo se valida.", fields: [
+    { key: "rewardType", label: "Beneficio", type: "single", optionsKey: "rewards" },
+    { key: "rewardValue", label: "Valor aproximado del beneficio", type: "number", placeholder: "50000" },
+    { key: "rewardCapacity", label: "Personas que podrán recibirlo", type: "number", placeholder: "100" },
+    { key: "rewardExpires", label: "Vencimiento", type: "text", placeholder: "Ej: 30 días después de emitido" },
+    { key: "requiresValidation", label: "Requiere validación interna", type: "single", options: ["Sí", "No"] },
+    { key: "redemptionMethod", label: "Dónde se redime", type: "single", optionsKey: "validationMethods" },
+  ] },
+  { id: "channels", kicker: "Paso 7", title: "Canales", help: "Selecciona dónde se moverá la campaña para generar volumen.", fields: [
+    { key: "channels", label: "Canales", type: "multi", optionsKey: "channels" },
+  ] },
+  { id: "dates", kicker: "Paso 8", title: "Fechas y duración", help: "La duración debe permitir suficiente volumen para medir comportamiento.", fields: [
+    { key: "startDate", label: "Fecha inicio", type: "date" },
+    { key: "endDate", label: "Fecha cierre", type: "date" },
+    { key: "cadence", label: "Tipo de duración", type: "single", optionsKey: "campaignCadence" },
+  ] },
+  { id: "budget", kicker: "Paso 9", title: "Presupuesto", help: "No incluyas solo dinero en caja: suma descuentos, regalos, productos entregados y tiempo del equipo.", fields: [
+    { key: "productionCost", label: "Producción", type: "number", placeholder: "0" },
+    { key: "benefitCost", label: "Beneficios", type: "number", placeholder: "0" },
+    { key: "serviceCost", label: "Servicios / personal", type: "number", placeholder: "0" },
+    { key: "otherCost", label: "Otros costos", type: "number", placeholder: "0" },
+  ] },
+  { id: "goals", kicker: "Paso 10", title: "Metas", help: "Una campaña no debe medirse solo por alcance. Define cuántos leads, ventas o redenciones necesitas para que valga la pena.", fields: [
+    { key: "salesGoal", label: "Meta comercial en ventas", type: "number", placeholder: "0" },
+    { key: "leadsGoal", label: "Leads esperados", type: "number", placeholder: "100" },
+    { key: "redemptionsGoal", label: "Redenciones esperadas", type: "number", placeholder: "30" },
+    { key: "avgTicket", label: "Ticket promedio esperado", type: "number", placeholder: "100000" },
+    { key: "profitPercent", label: "Ganancia esperada sobre costo (%)", type: "number", placeholder: "30" },
+    { key: "conversionRate", label: "Conversión lead a venta (%)", type: "number", placeholder: "10" },
+    { key: "redemptionRate", label: "Redención esperada (%)", type: "number", placeholder: "40" },
+  ] },
+  { id: "assets", kicker: "Paso 11", title: "URLs y activos", help: "Define los activos que necesita la experiencia para funcionar de forma trazable.", fields: [
+    { key: "hasLanding", label: "Tendrá landing", type: "single", options: ["Sí", "No"] },
+    { key: "hasGame", label: "Tendrá juego o formulario", type: "single", options: ["Sí", "No"] },
+    { key: "hasValidator", label: "Usará validación interna", type: "single", options: ["Sí", "No"] },
+    { key: "hasDigitalAsset", label: "Incluye activo descargable", type: "single", options: ["Sí", "No"] },
+    { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://..." },
+  ] },
+  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "MarketGames usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
+    { key: "maxParticipants", label: "Participaciones máximas", type: "number", placeholder: "300" },
+    { key: "participationFrequency", label: "Frecuencia", type: "single", options: ["Una vez por persona", "Varias veces", "Una vez por día", "Por compra"] },
+    { key: "ticketLogic", label: "Cuándo se genera ticket", type: "multi", optionsKey: "ticketTypes" },
+    { key: "ticketExpires", label: "Los tickets vencen", type: "single", options: ["Sí", "No"] },
+    { key: "ticketAfterUse", label: "Qué pasa al usarlo", type: "text", placeholder: "Ej: se marca redimido y se activa seguimiento" },
+  ] },
+  { id: "delivery", kicker: "Paso 13", title: "Notas de entrega", help: "Genera instrucciones operativas para que el equipo pueda ejecutar sin improvisar.", fields: [
+    { key: "deliveryNotes", label: "Observaciones operativas", type: "textarea", placeholder: "Piezas, validación, mensajes, fechas críticas..." },
+  ] },
+  { id: "summary", kicker: "Paso 14", title: "Resumen estratégico final", help: "Revisa, optimiza y genera la campaña en borrador.", fields: [
+    { key: "finalSummary", type: "summary" },
+  ] },
+];
+
+function defaultStrategyWizardAnswers() {
+  const start = new Date();
+  const end = new Date(start.getTime() + 30 * 86400000);
+  return {
+    acquisitionMode: "Masiva",
+    captureFields: ["Nombre", "WhatsApp", "Empresa", "Sector", "Necesidad principal"],
+    qualificationFilters: ["Por sector", "Por urgencia", "Por interacción con el juego"],
+    hotLeadActions: ["Pidió diagnóstico", "Agendó demo", "Solicitó cotización"],
+    postCaptureAction: ["Enviar WhatsApp automático", "Clasificar en CRM", "Crear tarea comercial"],
+    channels: ["Instagram", "WhatsApp"],
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+    cadence: "Mensual",
+    profitPercent: 30,
+    conversionRate: 10,
+    redemptionRate: 40,
+    maxParticipants: 300,
+    participationFrequency: "Una vez por persona",
+    ticketLogic: ["Lead ticket", "Reward ticket", "Redemption ticket"],
+    ticketExpires: "Sí",
+    requiresValidation: "Sí",
+    hasLanding: "Sí",
+    hasGame: "Sí",
+    hasValidator: "Sí",
+  };
+}
+
+function strategyWizardAnswer(key, fallback = "") {
+  return state.strategyWizardAnswers?.[key] ?? fallback;
+}
+
+function setStrategyWizardAnswer(key, value) {
+  state.strategyWizardAnswers = { ...(state.strategyWizardAnswers || {}), [key]: value };
+}
+
+function strategyWizardOptions(field) {
+  return field.options || STRATEGY_WIZARD_OPTIONS[field.optionsKey] || [];
+}
+
+function strategyWizardCurrentStep() {
+  return STRATEGY_WIZARD_STEPS[state.strategyWizardStep] || STRATEGY_WIZARD_STEPS[0];
+}
+
+function applyStrategyTemplate(templateId) {
+  const template = STRATEGY_WIZARD_TEMPLATES.find((item) => item.id === templateId);
+  if (!template) return;
+  state.strategyWizardAnswers = {
+    ...state.strategyWizardAnswers,
+    sector: template.sector,
+    objective: template.objective,
+    dynamic: template.dynamic,
+    leadMagnet: template.magnet,
+    channels: template.channels,
+    cadence: template.days <= 10 ? "Activación relámpago" : template.days >= 60 ? "Permanente" : "Mensual",
+    ticketLogic: template.tickets,
+  };
+  const start = new Date();
+  const end = new Date(start.getTime() + template.days * 86400000);
+  setStrategyWizardAnswer("startDate", start.toISOString().slice(0, 10));
+  setStrategyWizardAnswer("endDate", end.toISOString().slice(0, 10));
+}
+
+function strategyRecommendedType(objective = strategyWizardAnswer("objective")) {
+  const text = normalizeInventoryLookup(objective);
+  if (text.includes("refer")) return "GAME";
+  if (text.includes("recompra") || text.includes("fidel")) return "MIXED";
+  if (text.includes("evento") || text.includes("punto")) return "EVENT";
+  if (text.includes("giftcard") || text.includes("beneficio")) return "LANDING";
+  if (text.includes("lead") || text.includes("base")) return "FORM";
+  return "MIXED";
+}
+
+function strategyRecommendedDynamic(answers = state.strategyWizardAnswers || {}) {
+  const sector = normalizeInventoryLookup(answers.sector);
+  const objective = normalizeInventoryLookup(answers.objective);
+  if (objective.includes("refer")) return "Reto de referidos";
+  if (objective.includes("recompra") || objective.includes("fidel")) return sector.includes("restaurante") ? "Club de puntos" : "Activación elegante sin juego visible";
+  if (objective.includes("evento")) return "Batalla naval";
+  if (objective.includes("lead") || objective.includes("base")) return answers.leadMagnet?.includes("Ebook") ? "Captura relámpago de leads" : "Batalla naval";
+  if (sector.includes("restaurante") || sector.includes("retail")) return "Ruleta de premios";
+  return "Trivia de marca";
+}
+
+function internalGrowthNudge(answers = state.strategyWizardAnswers || {}) {
+  const suggestions = [];
+  const mode = normalizeInventoryLookup(answers.acquisitionMode);
+  const objective = normalizeInventoryLookup(answers.objective);
+  const dynamic = normalizeInventoryLookup(answers.dynamic);
+  if (mode.includes("manual")) suggestions.push({ key: "scale-mode", visible: "Convertir esta idea en una campaña semimasiva con una excusa de valor para atraer más participantes y priorizar los interesados." });
+  if (!answers.leadMagnet) suggestions.push({ key: "lead-magnet", visible: "Agregar un lead magnet para que la captura tenga una razón clara de participación." });
+  if (!dynamic || dynamic.includes("form")) suggestions.push({ key: "experience", visible: "Agregar una dinámica simple para aumentar participación, trazabilidad y recordación." });
+  if (objective.includes("crecimiento") || objective.includes("lead") || objective.includes("refer")) suggestions.push({ key: "referral", visible: "Incluir referidos o compartir campaña para ampliar alcance sin depender solo de pauta." });
+  if (objective.includes("venta") || objective.includes("punto") || objective.includes("recompra")) suggestions.push({ key: "redemption", visible: "Asociar un beneficio redimible para medir visitas, redenciones y cierre comercial." });
+  if (!answers.hasLanding || answers.hasLanding === "No") suggestions.push({ key: "landing", visible: "Crear una landing o link principal para centralizar tráfico y medir resultados." });
+  if (!answers.hasValidator || answers.hasValidator === "No") suggestions.push({ key: "validator", visible: "Definir un método de validación para controlar beneficios y redenciones." });
+  if (!Array.isArray(answers.postCaptureAction) || !answers.postCaptureAction.length) suggestions.push({ key: "follow-up", visible: "Agregar atención relámpago para separar leads fríos, tibios y calientes." });
+  return suggestions.slice(0, 5);
+}
+
+function strategyBudgetTotals(answers = state.strategyWizardAnswers || {}) {
+  const production = Number(answers.productionCost || 0);
+  const benefit = Number(answers.benefitCost || 0);
+  const services = Number(answers.serviceCost || 0);
+  const other = Number(answers.otherCost || 0);
+  const total = Math.max(0, production + benefit + services + other);
+  const profit = total * Number(answers.profitPercent || 30) / 100;
+  const salesGoal = Number(answers.salesGoal || 0) || total + profit;
+  const avgTicket = Number(answers.avgTicket || 0);
+  const conversion = Number(answers.conversionRate || 10);
+  const redemptions = Number(answers.redemptionsGoal || 0) || Math.ceil(Number(answers.maxParticipants || 100) * Number(answers.redemptionRate || 40) / 100);
+  const salesNeeded = avgTicket ? Math.ceil(salesGoal / avgTicket) : 0;
+  const leadsNeeded = conversion ? Math.ceil(salesNeeded / (conversion / 100)) : Number(answers.leadsGoal || 0);
+  return {
+    production,
+    benefit,
+    services,
+    other,
+    total,
+    salesGoal,
+    redemptions,
+    salesNeeded,
+    leadsNeeded: Number(answers.leadsGoal || 0) || leadsNeeded,
+    costPerLead: leadsNeeded ? total / leadsNeeded : 0,
+    costPerSale: salesNeeded ? total / salesNeeded : 0,
+    roi: total ? ((salesGoal - total) / total) * 100 : 0,
+  };
+}
+
+function strategyScore(answers = state.strategyWizardAnswers || {}) {
+  const totals = strategyBudgetTotals(answers);
+  let score = 45;
+  if (totals.total > 0) score += 10;
+  if (totals.salesGoal >= totals.total * 1.2) score += 15;
+  if (Number(answers.conversionRate || 0) >= 8) score += 10;
+  if (Number(answers.redemptionRate || 0) <= 70) score += 8;
+  if ((answers.channels || []).length >= 3) score += 8;
+  if ((answers.ticketLogic || []).length >= 2) score += 6;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return {
+    score,
+    label: score >= 75 ? "Verde" : score >= 50 ? "Amarillo" : "Rojo",
+    tone: score >= 75 ? "ok" : score >= 50 ? "warning" : "danger",
+  };
+}
+
+function buildStrategyText(answers = state.strategyWizardAnswers || {}) {
+  const name = strategyCampaignName(answers);
+  const channels = (answers.channels || []).join(", ") || "canales digitales y comerciales";
+  const tickets = (answers.ticketLogic || []).join(", ") || "Lead ticket, Reward ticket y Redemption ticket";
+  const filters = (answers.qualificationFilters || []).join(", ") || "interacción, urgencia e interés";
+  return `Título:\n${name}\n\nObjetivo:\n${strategyObjectiveText(answers)}\n\nInsight:\n${answers.businessName || "El negocio"} puede dejar de depender de acciones manuales si convierte su oferta en una experiencia que atrae, captura y filtra prospectos con intención.\n\nMecánica:\n${answers.dynamic || strategyRecommendedDynamic(answers)} con ${answers.leadMagnet || "beneficio desbloqueable"} para que la persona ${String(answers.funnelEntryAction || "se registre").toLowerCase()}, participe y avance hacia una acción comercial medible.\n\nRecompensa:\n${answers.rewardType || "Beneficio redimible"} con valor aproximado de ${money(answers.rewardValue || 0)} y capacidad estimada de ${answers.rewardCapacity || answers.redemptionsGoal || "por definir"} participantes.\n\nCanales:\n${channels}.\n\nFlujo del usuario:\n1. Ve la campaña.\n2. Entra al link o landing.\n3. Deja datos mínimos.\n4. Participa en la dinámica.\n5. Desbloquea beneficio o contenido.\n6. Redime, descarga o agenda.\n7. Recibe seguimiento.\n8. Puede comprar, volver o referir.\n\nFlujo interno:\n1. Se captura lead.\n2. Se genera ticket interno.\n3. Se registra participación.\n4. Se asigna beneficio.\n5. Se valida redención.\n6. Se mide resultado.\n7. Se activa seguimiento comercial.\n\nMétricas:\nLeads, participaciones, redenciones, ventas, recompra, referidos, costo por lead, costo por redención y ROI.\n\nScoring y calificación:\nLead frío 0-30, tibio 31-70 y caliente 71-100. Filtrar por ${filters}. Criterios calientes: ${(answers.hotLeadActions || []).join(", ") || "diagnóstico, demo, cotización o redención"}.\n\nTickets internos sugeridos:\n${tickets}.\n\nRecomendaciones:\n${internalGrowthNudge(answers).map((item) => `- ${item.visible}`).join("\n") || "- Lanzar como piloto medible y revisar conversión semanalmente."}`;
+}
+
+function strategyObjectiveText(answers = state.strategyWizardAnswers || {}) {
+  const objective = answers.objective || "Captar nuevos leads";
+  if (normalizeInventoryLookup(objective).includes("lead")) return "Captar nuevos leads y convertirlos en oportunidades calificadas mediante una experiencia gamificada con entrega de valor y seguimiento comercial.";
+  if (normalizeInventoryLookup(objective).includes("recompra")) return "Aumentar recompra activando clientes actuales con una dinámica de beneficio, trazabilidad y seguimiento postparticipación.";
+  if (normalizeInventoryLookup(objective).includes("refer")) return "Activar referidos medibles para que los participantes ayuden a traer nuevos prospectos con incentivo controlado.";
+  return `${objective} mediante una campaña RMS con captura, beneficio, activación gamificada y medición de resultados.`;
+}
+
+function strategyCampaignName(answers = state.strategyWizardAnswers || {}) {
+  if (answers.campaignName) return answers.campaignName;
+  const brand = answers.businessName || "MarketGames";
+  const objective = normalizeInventoryLookup(answers.objective || "");
+  const prefix = objective.includes("recompra") ? "Reto de Recompra" : objective.includes("refer") ? "Reto de Referidos" : objective.includes("lead") ? "Captura Relámpago" : "Campaña Gamificada";
+  return `${prefix} ${brand}`.trim();
+}
+
+function strategySlug(answers = state.strategyWizardAnswers || {}) {
+  return slugify(strategyCampaignName(answers));
+}
+
+function strategyClientNotes(answers = state.strategyWizardAnswers || {}) {
+  return [
+    `Contexto: ${answers.businessName || "Negocio"} vende ${answers.mainProduct || "productos o servicios"} en sector ${answers.sector || "por definir"}.`,
+    `Alcance: ${answers.scope || "por definir"} para ${answers.audienceBase || "clientes actuales y nuevos"}.`,
+    `Masificación: ${answers.acquisitionMode || "Masiva"} con ${answers.leadMagnet || "excusa de valor"} para atraer ${answers.targetPublic || "prospectos"}.`,
+    `Datos mínimos sugeridos: ${(answers.captureFields || []).join(", ") || "Nombre, WhatsApp, sector y necesidad principal"}.`,
+    `Acción posterior: ${(answers.postCaptureAction || []).join(", ") || "Clasificar en CRM y activar seguimiento"}.`,
+  ].join("\n");
+}
+
+function strategyAssetNotes(answers = state.strategyWizardAnswers || {}) {
+  const score = strategyScore(answers);
+  return [
+    "Qué debe configurarse: landing/link principal, dinámica, beneficio, validación y seguimiento comercial.",
+    `Piezas necesarias: ${answers.leadMagnet || "lead magnet"}, creativos para ${(answers.channels || []).join(", ") || "canales seleccionados"} y mensajes de WhatsApp.`,
+    `Beneficio: ${answers.rewardType || "por definir"} con vencimiento ${answers.rewardExpires || "por definir"}.`,
+    `Validación: ${answers.requiresValidation || "Sí"} por ${answers.redemptionMethod || "URL interna de validación"}.`,
+    `Tickets internos sugeridos: ${(answers.ticketLogic || []).join(", ") || "Lead ticket, Reward ticket, Redemption ticket"}.`,
+    `Métricas críticas: leads, participaciones, redenciones, ventas, referidos, costo por lead, costo por venta y ROI.`,
+    `Semáforo: ${score.label}. ${strategyScoreRecommendation(score, answers)}`,
+    `Atención relámpago: fríos reciben contenido educativo; tibios reciben caso de uso e invitación a diagnóstico; calientes se asignan a asesor con WhatsApp prioritario.`,
+    answers.deliveryNotes || "",
+  ].filter(Boolean).join("\n");
+}
+
+function strategyScoreRecommendation(score, answers = state.strategyWizardAnswers || {}) {
+  if (score.tone === "ok") return "Campaña viable; lanzar con seguimiento diario de leads calientes y redenciones.";
+  if (score.tone === "warning") return "Campaña posible; ajustar costo de beneficio, canales o conversión antes de escalar.";
+  return "Campaña riesgosa; conviene hacer piloto de 15 días, reducir descuento o usar activo digital en vez de obsequio físico.";
+}
+
+function strategyUrls(slug = strategySlug()) {
+  const base = "https://www.marketgamesqr.com";
+  return {
+    landing_url: `${base}/campana/${slug}`,
+    validator_url: `${base}/validar/${slug}`,
+    game_url: `${base}/jugar/${slug}`,
+    primary_link: `${base}/campana/${slug}`,
+    qr_landing_url: `${base}/ticket/${slug}`,
+  };
+}
+
+function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {}) {
+  const totals = strategyBudgetTotals(answers);
+  const slug = strategySlug(answers);
+  const urls = strategyUrls(slug);
+  return {
+    name: strategyCampaignName(answers),
+    slug,
+    type: answers.campaignType || strategyRecommendedType(answers.objective),
+    status: "DRAFT",
+    objective: strategyObjectiveText(answers),
+    strategy_summary: buildStrategyText(answers),
+    budget_total: totals.total,
+    expected_sales_goal: totals.salesGoal,
+    expected_leads_goal: totals.leadsNeeded,
+    expected_redemptions_goal: totals.redemptions,
+    starts_at: answers.startDate ? `${answers.startDate}T09:00` : "",
+    ends_at: answers.endDate ? `${answers.endDate}T18:00` : "",
+    launch_channels: answers.channels?.length ? answers.channels : ["Instagram", "WhatsApp"],
+    client_notes: strategyClientNotes(answers),
+    delivered_assets: {
+      landing_url: answers.hasLanding === "No" ? "" : urls.landing_url,
+      validator_url: answers.hasValidator === "No" ? "" : urls.validator_url,
+      game_url: answers.hasGame === "No" ? "" : urls.game_url,
+      primary_link: urls.primary_link,
+      qr_landing_url: urls.qr_landing_url,
+      creative_notes: strategyAssetNotes(answers),
+    },
+    score: strategyScore(answers),
+  };
+}
+
+function renderStrategyWizardField(field) {
+  const value = strategyWizardAnswer(field.key, field.type === "multi" ? [] : "");
+  if (field.type === "note") return `<div class="strategy-wizard-note">${escapeHtml(field.text || "")}</div>`;
+  if (field.type === "templates") {
+    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-template-grid">${STRATEGY_WIZARD_TEMPLATES.map((template) => `<button class="strategy-option-card" data-strategy-template="${escapeHtml(template.id)}" type="button"><strong>${escapeHtml(template.title)}</strong><small>${escapeHtml(template.objective)} · ${escapeHtml(template.dynamic)}</small></button>`).join("")}</div></div>`;
+  }
+  if (field.type === "single" || field.type === "multi") {
+    const values = Array.isArray(value) ? value : [value].filter(Boolean);
+    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-option-grid">${strategyWizardOptions(field).map((option) => `<button class="strategy-option-card ${values.includes(option) ? "selected" : ""}" data-strategy-field="${escapeHtml(field.key)}" data-strategy-mode="${field.type}" data-strategy-value="${escapeHtml(option)}" type="button">${escapeHtml(option)}</button>`).join("")}</div></div>`;
+  }
+  if (field.type === "summary") return `<div class="strategy-wizard-final">${renderStrategyWizardFinalSummary()}</div>`;
+  if (field.type === "textarea") return `<label class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><textarea data-strategy-input="${escapeHtml(field.key)}" rows="5" placeholder="${escapeHtml(field.placeholder || "")}">${escapeHtml(value || "")}</textarea></label>`;
+  return `<label class="strategy-wizard-field"><span>${escapeHtml(field.label)}</span><input data-strategy-input="${escapeHtml(field.key)}" type="${field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}" value="${escapeHtml(value || "")}" placeholder="${escapeHtml(field.placeholder || "")}"></label>`;
+}
+
+function renderStrategyWizard() {
+  if (!campaignStrategyWizardModal || !strategyWizardStepBody) return;
+  const step = strategyWizardCurrentStep();
+  const total = STRATEGY_WIZARD_STEPS.length;
+  strategyWizardProgressText.textContent = `Paso ${state.strategyWizardStep + 1} de ${total}`;
+  strategyWizardProgressBar.style.width = `${Math.round(((state.strategyWizardStep + 1) / total) * 100)}%`;
+  strategyWizardStepKicker.textContent = step.kicker;
+  strategyWizardStepTitle.textContent = step.title;
+  strategyWizardStepHelp.textContent = step.help;
+  strategyWizardStepBody.innerHTML = step.fields.map(renderStrategyWizardField).join("");
+  strategyWizardBackButton.disabled = state.strategyWizardStep === 0;
+  strategyWizardNextButton.textContent = state.strategyWizardStep === total - 1 ? "Aplicar al formulario" : "Continuar";
+  renderStrategyWizardSummary();
+  bindStrategyWizardStepEvents();
+}
+
+function renderStrategyWizardSummary() {
+  if (!strategyWizardSummary) return;
+  const payload = buildStrategyCampaignPayload();
+  const totals = strategyBudgetTotals();
+  const nudges = internalGrowthNudge();
+  strategyWizardSummary.innerHTML = `
+    <strong>${escapeHtml(payload.name)}</strong>
+    <dl>
+      <div><dt>Tipo</dt><dd>${escapeHtml(payload.type)}</dd></div>
+      <div><dt>Objetivo</dt><dd>${escapeHtml(payload.objective)}</dd></div>
+      <div><dt>Dinámica</dt><dd>${escapeHtml(strategyWizardAnswer("dynamic", strategyRecommendedDynamic()))}</dd></div>
+      <div><dt>Presupuesto</dt><dd>${escapeHtml(money(totals.total))}</dd></div>
+      <div><dt>Meta ventas</dt><dd>${escapeHtml(money(totals.salesGoal))}</dd></div>
+      <div><dt>Leads</dt><dd>${Number(totals.leadsNeeded || 0).toLocaleString("es-CO")}</dd></div>
+      <div><dt>Redenciones</dt><dd>${Number(totals.redemptions || 0).toLocaleString("es-CO")}</dd></div>
+      <div><dt>Semáforo</dt><dd><span class="status-chip ${payload.score.tone === "ok" ? "ok" : payload.score.tone === "danger" ? "danger" : "pending"}">${escapeHtml(payload.score.label)} · ${payload.score.score}/100</span></dd></div>
+    </dl>
+    <div class="strategy-wizard-recommendations">
+      <span class="mono-label">Mejoras sugeridas</span>
+      ${nudges.map((item) => `<p>${escapeHtml(item.visible)}</p>`).join("") || "<p>La estructura tiene una base suficiente para crear borrador.</p>"}
+    </div>
+  `;
+}
+
+function renderStrategyWizardFinalSummary() {
+  const payload = buildStrategyCampaignPayload();
+  const recommendations = internalGrowthNudge().map((item) => `<li>${escapeHtml(item.visible)}</li>`).join("");
+  return `
+    <section>
+      <h4>${escapeHtml(payload.name)}</h4>
+      <p>${escapeHtml(payload.objective)}</p>
+      <div class="strategy-final-grid">
+        <div><span class="mono-label">Slug</span><strong>${escapeHtml(payload.slug)}</strong></div>
+        <div><span class="mono-label">Tipo</span><strong>${escapeHtml(payload.type)}</strong></div>
+        <div><span class="mono-label">Presupuesto</span><strong>${escapeHtml(money(payload.budget_total))}</strong></div>
+        <div><span class="mono-label">Meta comercial</span><strong>${escapeHtml(money(payload.expected_sales_goal))}</strong></div>
+        <div><span class="mono-label">Leads</span><strong>${Number(payload.expected_leads_goal || 0).toLocaleString("es-CO")}</strong></div>
+        <div><span class="mono-label">Redenciones</span><strong>${Number(payload.expected_redemptions_goal || 0).toLocaleString("es-CO")}</strong></div>
+      </div>
+      <h4>Riesgos y recomendaciones</h4>
+      <ul>${recommendations || "<li>Lanzar como borrador y revisar presupuesto antes de activar.</li>"}</ul>
+    </section>
+  `;
+}
+
+function bindStrategyWizardStepEvents() {
+  strategyWizardStepBody?.querySelectorAll("[data-strategy-input]").forEach((input) => {
+    input.addEventListener("input", () => {
+      setStrategyWizardAnswer(input.dataset.strategyInput, input.value);
+      autoCompleteStrategyWizard();
+      renderStrategyWizardSummary();
+    });
+  });
+  strategyWizardStepBody?.querySelectorAll("[data-strategy-field]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.strategyField;
+      const option = button.dataset.strategyValue;
+      const mode = button.dataset.strategyMode;
+      if (mode === "multi") {
+        const current = Array.isArray(strategyWizardAnswer(key)) ? [...strategyWizardAnswer(key)] : [];
+        setStrategyWizardAnswer(key, current.includes(option) ? current.filter((item) => item !== option) : [...current, option]);
+      } else {
+        setStrategyWizardAnswer(key, option);
+      }
+      autoCompleteStrategyWizard();
+      renderStrategyWizard();
+    });
+  });
+  strategyWizardStepBody?.querySelectorAll("[data-strategy-template]").forEach((button) => {
+    button.addEventListener("click", () => {
+      applyStrategyTemplate(button.dataset.strategyTemplate);
+      autoCompleteStrategyWizard();
+      renderStrategyWizard();
+    });
+  });
+}
+
+function autoCompleteStrategyWizard() {
+  const answers = state.strategyWizardAnswers || {};
+  if (!answers.campaignType) setStrategyWizardAnswer("campaignType", strategyRecommendedType(answers.objective));
+  if (!answers.dynamic) setStrategyWizardAnswer("dynamic", strategyRecommendedDynamic(answers));
+  if (!answers.campaignName && answers.businessName) setStrategyWizardAnswer("campaignName", strategyCampaignName({ ...answers, campaignName: "" }));
+  if (!answers.leadsGoal && answers.avgTicket && answers.salesGoal && answers.conversionRate) {
+    const salesNeeded = Math.ceil(Number(answers.salesGoal || 0) / Number(answers.avgTicket || 1));
+    setStrategyWizardAnswer("leadsGoal", Math.ceil(salesNeeded / (Number(answers.conversionRate || 10) / 100)));
+  }
+}
+
+function saveStrategyWizardDraft() {
+  try {
+    window.localStorage?.setItem(STRATEGY_WIZARD_DRAFT_KEY, JSON.stringify(state.strategyWizardAnswers || {}));
+    setFormMessage(strategyWizardMessage, "Borrador guardado.", "success");
+  } catch (error) {
+    setFormMessage(strategyWizardMessage, "No se pudo guardar el borrador local.", "error");
+  }
+}
+
+function loadStrategyWizardDraft() {
+  try {
+    const raw = window.localStorage?.getItem(STRATEGY_WIZARD_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function openStrategyWizard({ fromScratch = false } = {}) {
+  state.strategyWizardStep = 0;
+  state.strategyWizardAnswers = fromScratch ? defaultStrategyWizardAnswers() : { ...defaultStrategyWizardAnswers(), ...(loadStrategyWizardDraft() || {}) };
+  autoCompleteStrategyWizard();
+  campaignStrategyWizardModal?.classList.remove("hidden");
+  setFormMessage(strategyWizardMessage, "", "info");
+  renderStrategyWizard();
+}
+
+function closeStrategyWizard() {
+  campaignStrategyWizardModal?.classList.add("hidden");
+  setFormMessage(strategyWizardMessage, "", "info");
+}
+
+function validateStrategyWizardPayload(payload = buildStrategyCampaignPayload()) {
+  if (!payload.name.trim()) return "El nombre de campaña es requerido.";
+  if (!payload.objective.trim()) return "El objetivo es requerido.";
+  if (payload.budget_total < 0 || payload.expected_leads_goal < 0 || payload.expected_redemptions_goal < 0) return "Presupuesto y metas no pueden ser negativos.";
+  if (payload.starts_at && payload.ends_at && new Date(payload.ends_at) <= new Date(payload.starts_at)) return "La fecha de cierre debe ser posterior a la fecha de inicio.";
+  const maxParticipants = Number(strategyWizardAnswer("maxParticipants") || 0);
+  if (maxParticipants && Number(payload.expected_redemptions_goal || 0) > maxParticipants) return "Meta redenciones no puede superar las participaciones máximas.";
+  if (strategyWizardAnswer("requiresValidation") === "Sí" && !payload.delivered_assets.validator_url && !strategyWizardAnswer("redemptionMethod")) return "Si hay beneficio redimible, define validación o método de validación.";
+  if (strategyWizardAnswer("hasDigitalAsset") === "Sí" && !strategyWizardAnswer("digitalAssetUrl")) return "Si hay activo digital, agrega URL o archivo de descarga.";
+  if (strategyWizardAnswer("hasGame") === "Sí" && !payload.delivered_assets.game_url) return "Si hay juego o formulario, debe existir una URL sugerida o generada.";
+  if (normalizeInventoryLookup(strategyWizardAnswer("objective")).includes("refer") && !(strategyWizardAnswer("ticketLogic") || []).includes("Referral ticket")) return "Si es campaña de referidos, incluye lógica de referido.";
+  if (normalizeInventoryLookup(strategyWizardAnswer("rewardType")).includes("giftcard") && (!strategyWizardAnswer("rewardValue") || !strategyWizardAnswer("rewardExpires"))) return "Si eliges giftcard, define valor nominal y vencimiento.";
+  return "";
+}
+
+function applyStrategyWizardToCampaignForm() {
+  autoCompleteStrategyWizard();
+  const payload = buildStrategyCampaignPayload();
+  const validationMessage = validateStrategyWizardPayload(payload);
+  if (validationMessage) {
+    setFormMessage(strategyWizardMessage, validationMessage, "error");
+    return false;
+  }
+  closeStrategyWizard();
+  openCampaignModal("create");
+  campaignFormName.value = payload.name;
+  campaignFormSlug.value = payload.slug;
+  campaignFormSlug.dataset.generatedFrom = payload.name;
+  campaignFormType.value = payload.type;
+  campaignFormStatus.value = payload.status;
+  campaignFormObjective.value = payload.objective;
+  campaignFormStrategy.value = payload.strategy_summary;
+  campaignFormBudget.value = Math.round(payload.budget_total || 0);
+  campaignFormGoal.value = Math.round(payload.expected_sales_goal || 0);
+  campaignFormLeadsGoal.value = Math.round(payload.expected_leads_goal || 0);
+  campaignFormRedemptionsGoal.value = Math.round(payload.expected_redemptions_goal || 0);
+  campaignFormStartsAt.value = payload.starts_at;
+  campaignFormEndsAt.value = payload.ends_at;
+  setCheckedValues(campaignFormLaunchChannels, payload.launch_channels);
+  campaignFormClientNotes.value = payload.client_notes;
+  campaignFormLandingUrl.value = payload.delivered_assets.landing_url;
+  campaignFormValidatorUrl.value = payload.delivered_assets.validator_url;
+  campaignFormGameUrl.value = payload.delivered_assets.game_url;
+  campaignFormPrimaryLink.value = payload.delivered_assets.primary_link;
+  campaignFormQrLandingUrl.value = payload.delivered_assets.qr_landing_url;
+  campaignFormAssetNotes.value = payload.delivered_assets.creative_notes;
+  state.campaignModalInitialSnapshot = campaignModalSnapshot();
+  setInlineMessage(campaignModalMessage, "Campaña generada por el ayudador. Revisa y guarda como borrador cuando esté lista.", "success");
+  return true;
 }
 
 function openCampaignModal(mode) {
@@ -17162,6 +17770,14 @@ searchInput.addEventListener("input", (event) => {
   if (isAdmin()) renderAdminView();
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
+campaignStrategyAssistantButton?.addEventListener("click", () => openStrategyWizard());
+campaignWizardEntryButton?.addEventListener("click", () => {
+  closeCampaignModal();
+  openStrategyWizard();
+});
+campaignManualEntryButton?.addEventListener("click", () => {
+  setInlineMessage(campaignModalMessage, "Completa el formulario manualmente o usa el ayudador para generar una estructura estratégica.", "info");
+});
 campaignFormName?.addEventListener("input", () => syncCampaignSlugFromName());
 campaignFormSlug?.addEventListener("input", () => {
   campaignFormSlug.value = slugify(campaignFormSlug.value);
@@ -17223,6 +17839,45 @@ campaignCostAddFixedButton?.addEventListener("click", () => addCampaignCostRow("
   list?.addEventListener("change", handleCampaignCostListInput);
   list?.addEventListener("click", handleCampaignCostListInput);
 });
+campaignStrategyWizardCloseButton?.addEventListener("click", closeStrategyWizard);
+campaignStrategyWizardModal?.addEventListener("click", (event) => {
+  if (event.target === campaignStrategyWizardModal) closeStrategyWizard();
+});
+strategyWizardBackButton?.addEventListener("click", () => {
+  state.strategyWizardStep = Math.max(0, state.strategyWizardStep - 1);
+  renderStrategyWizard();
+});
+strategyWizardSkipButton?.addEventListener("click", () => {
+  state.strategyWizardStep = Math.min(STRATEGY_WIZARD_STEPS.length - 1, state.strategyWizardStep + 1);
+  renderStrategyWizard();
+});
+strategyWizardNextButton?.addEventListener("click", () => {
+  autoCompleteStrategyWizard();
+  if (state.strategyWizardStep >= STRATEGY_WIZARD_STEPS.length - 1) {
+    applyStrategyWizardToCampaignForm();
+    return;
+  }
+  state.strategyWizardStep += 1;
+  renderStrategyWizard();
+});
+strategyWizardDraftButton?.addEventListener("click", saveStrategyWizardDraft);
+strategyWizardSuggestButton?.addEventListener("click", () => {
+  autoCompleteStrategyWizard();
+  setFormMessage(strategyWizardMessage, "Estrategia sugerida con dinámica, embudo, tickets internos y seguimiento comercial.", "success");
+  renderStrategyWizard();
+});
+strategyWizardOptimizeButton?.addEventListener("click", () => {
+  const answers = state.strategyWizardAnswers || {};
+  if (normalizeInventoryLookup(answers.acquisitionMode).includes("manual")) setStrategyWizardAnswer("acquisitionMode", "Semimasiva");
+  if (!answers.leadMagnet) setStrategyWizardAnswer("leadMagnet", "Diagnóstico gratuito");
+  if (!answers.dynamic) setStrategyWizardAnswer("dynamic", strategyRecommendedDynamic(answers));
+  if (!Array.isArray(answers.channels) || answers.channels.length < 3) setStrategyWizardAnswer("channels", Array.from(new Set([...(answers.channels || []), "Instagram", "WhatsApp", "Punto de venta"])).slice(0, 4));
+  if (!Array.isArray(answers.ticketLogic) || answers.ticketLogic.length < 3) setStrategyWizardAnswer("ticketLogic", ["Lead ticket", "Reward ticket", "Redemption ticket"]);
+  autoCompleteStrategyWizard();
+  setFormMessage(strategyWizardMessage, "Campaña optimizada para más alcance, mejor filtrado y mayor trazabilidad comercial.", "success");
+  renderStrategyWizard();
+});
+strategyWizardApplyButton?.addEventListener("click", applyStrategyWizardToCampaignForm);
 campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
