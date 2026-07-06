@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-ticket-inventory-v1";
+const APP_VERSION = "empresa-20260706-contact-center-ux-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -55,6 +55,15 @@ const leadExportScopeInput = document.getElementById("leadExportScopeInput");
 const contactCenterSummaryGrid = document.getElementById("contactCenterSummaryGrid");
 const contactCenterPanels = Array.from(document.querySelectorAll("[data-contact-center-panel]"));
 const contactCenterTabs = Array.from(document.querySelectorAll("[data-contact-center-tab]"));
+const contactActionFeed = document.getElementById("contactActionFeed");
+const contactCenterStageMeta = document.getElementById("contactCenterStageMeta");
+const contactCenterStageTitle = document.getElementById("contactCenterStageTitle");
+const contactCenterStageCopy = document.getElementById("contactCenterStageCopy");
+const contactCenterPrimaryAction = document.getElementById("contactCenterPrimaryAction");
+const contactCenterSecondaryAction = document.getElementById("contactCenterSecondaryAction");
+const contactTabOverviewCount = document.getElementById("contactTabOverviewCount");
+const contactTabCapturesCount = document.getElementById("contactTabCapturesCount");
+const contactTabSalesCount = document.getElementById("contactTabSalesCount");
 const leadCrmSearchInput = document.getElementById("leadCrmSearchInput");
 const leadCrmSearchButton = document.getElementById("leadCrmSearchButton");
 const leadCrmResetButton = document.getElementById("leadCrmResetButton");
@@ -16281,6 +16290,7 @@ function mountContactCenterLayout() {
 
   appendIfFound(overviewPanel, document.querySelector(".lead-crm-command"));
   appendIfFound(overviewPanel, leadFeedKpiGrid);
+  appendIfFound(overviewPanel, contactActionFeed);
   appendIfFound(overviewPanel, leadTicketInventoryBoard);
   appendIfFound(overviewPanel, leadAttentionBoard);
   appendIfFound(overviewPanel, document.querySelector(".lead-crm-card"));
@@ -16300,9 +16310,87 @@ function mountContactCenterLayout() {
   state.contactCenterMounted = true;
 }
 
+function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
+  const configs = {
+    overview: {
+      meta: "Paso 1 de 3 · Contactos",
+      title: "Contactos para atender",
+      copy: "Usa esta vista como bandeja principal: busca leads, revisa tickets, prioriza seguimiento y abre la ficha comercial.",
+      primaryLabel: "Agregar prospecto",
+      primaryAction: "manual-lead",
+      secondaryLabel: "Exportar contactos",
+      secondaryAction: "export-all",
+    },
+    captures: {
+      meta: "Paso 2 de 3 · Capturas",
+      title: "Capturas, formularios y activos",
+      copy: "Revisa las experiencias que capturan leads: landing, ebook, QR, consentimiento y descargas.",
+      primaryLabel: "Crear captura",
+      primaryAction: "create-capture",
+      secondaryLabel: "Ver contactos",
+      secondaryAction: "go-overview",
+    },
+    sales: {
+      meta: "Paso 3 de 3 · Conversion",
+      title: "Convertidos, ventas y cierre",
+      copy: "Registra compras, mide revenue y conecta clientes convertidos con campañas, tickets y seguimiento.",
+      primaryLabel: "Registrar venta",
+      primaryAction: "create-sale",
+      secondaryLabel: "Exportar base",
+      secondaryAction: "export-all",
+    },
+  };
+  return configs[tab] || configs.overview;
+}
+
+function updateContactCenterStage(tab = state.contactCenterTab || "overview") {
+  const config = contactCenterStageConfig(tab);
+  if (contactCenterStageMeta) contactCenterStageMeta.textContent = config.meta;
+  if (contactCenterStageTitle) contactCenterStageTitle.textContent = config.title;
+  if (contactCenterStageCopy) contactCenterStageCopy.textContent = config.copy;
+  if (contactCenterPrimaryAction) {
+    contactCenterPrimaryAction.textContent = config.primaryLabel;
+    contactCenterPrimaryAction.dataset.contactCenterAction = config.primaryAction;
+  }
+  if (contactCenterSecondaryAction) {
+    contactCenterSecondaryAction.textContent = config.secondaryLabel;
+    contactCenterSecondaryAction.dataset.contactCenterAction = config.secondaryAction;
+  }
+}
+
+function handleContactCenterStageAction(action = "") {
+  if (action === "manual-lead") {
+    setContactCenterTab("overview");
+    manualLeadForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+    manualLeadNameInput?.focus();
+    return;
+  }
+  if (action === "create-capture") {
+    setContactCenterTab("captures");
+    leadCaptureForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+    leadCaptureNameInput?.focus();
+    return;
+  }
+  if (action === "create-sale") {
+    setContactCenterTab("sales");
+    document.getElementById("customerAcquisitionForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    customerAcquisitionNameInput?.focus();
+    return;
+  }
+  if (action === "go-overview") {
+    setContactCenterTab("overview");
+    return;
+  }
+  if (action === "export-all") {
+    if (leadExportScopeInput) leadExportScopeInput.value = "all";
+    exportLeads();
+  }
+}
+
 function setContactCenterTab(tab = "overview") {
   const nextTab = ["overview", "captures", "sales"].includes(tab) ? tab : "overview";
   state.contactCenterTab = nextTab;
+  updateContactCenterStage(nextTab);
   if (state.currentView === "leads") {
     navButtons.forEach((button) => {
       const isSalesAlias = button.dataset.view === "sales" && nextTab === "sales";
@@ -16325,6 +16413,170 @@ function setContactCenterTab(tab = "overview") {
   if (nextTab === "sales") renderSalesView();
 }
 
+function updateContactCenterCounts({ totalContacts = 0, capturedLeads = 0, converted = 0 } = {}) {
+  if (contactTabOverviewCount) contactTabOverviewCount.textContent = Number(totalContacts || 0).toLocaleString("es-CO");
+  if (contactTabCapturesCount) contactTabCapturesCount.textContent = Number(capturedLeads || 0).toLocaleString("es-CO");
+  if (contactTabSalesCount) contactTabSalesCount.textContent = Number(converted || 0).toLocaleString("es-CO");
+}
+
+function contactActionDate(item = {}) {
+  return item.last_interaction_at
+    || item.last_ticket_at
+    || item.last_purchase_at
+    || item.updated_at
+    || item.created_at
+    || "";
+}
+
+function renderContactActionFeed(crmRows = [], feedRows = []) {
+  if (!contactActionFeed) return;
+  const items = [];
+  const seen = new Set();
+  const pushItem = (item) => {
+    if (!item?.leadId) return;
+    const key = `${item.kind}:${item.leadId}:${item.sourceType || "PLAYER"}:${item.ticketId || ""}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push(item);
+  };
+
+  crmRows.forEach((lead) => {
+    const sourceType = lead.source_type || "PLAYER";
+    const name = lead.name || "Lead sin nombre";
+    const base = {
+      leadId: lead.id,
+      sourceType,
+      phone: lead.phone || "",
+      name,
+      date: contactActionDate(lead),
+    };
+    if (String(lead.care_priority || "").toUpperCase() === "HIGH") {
+      pushItem({
+        ...base,
+        kind: "priority",
+        icon: "priority_high",
+        tone: "danger",
+        title: `Atender hoy a ${name}`,
+        detail: lead.recommended_action || "Abrir ficha, revisar contexto y definir siguiente accion.",
+        badge: Number(lead.attention_score || 0) ? `${Number(lead.attention_score || 0)} pts` : "Alta",
+        openTab: "summary",
+      });
+    }
+    if (Number(lead.active_tickets || 0) > 0) {
+      pushItem({
+        ...base,
+        kind: "active-ticket",
+        icon: "confirmation_number",
+        tone: "ok",
+        title: `${Number(lead.active_tickets || 0)} ticket activo sin redimir`,
+        detail: `${name} puede recibir recordatorio por WhatsApp o abrir ficha de tickets.`,
+        badge: "Recordar",
+        ticketId: lead.active_ticket_qr_id || "",
+        openTab: "benefits",
+      });
+    }
+    if (Number(lead.expired_tickets || 0) > 0) {
+      pushItem({
+        ...base,
+        kind: "expired-ticket",
+        icon: "event_busy",
+        tone: "danger",
+        title: `${Number(lead.expired_tickets || 0)} ticket expirado`,
+        detail: "Revisar si conviene crear una nueva oferta o cerrar seguimiento.",
+        badge: "Vencido",
+        openTab: "benefits",
+      });
+    }
+    if (Number(lead.purchase_count || 0) > 0) {
+      pushItem({
+        ...base,
+        kind: "buyer",
+        icon: "point_of_sale",
+        tone: "ok",
+        title: `${name} ya compro`,
+        detail: `${Number(lead.purchase_count || 0)} compras registradas · ${money(lead.total_spent || 0)}.`,
+        badge: "Cliente",
+        openTab: "purchases",
+      });
+    }
+    if (!lead.email && !lead.phone) {
+      pushItem({
+        ...base,
+        kind: "missing-contact",
+        icon: "contact_mail",
+        tone: "pending",
+        title: `Completar datos de ${name}`,
+        detail: "No tiene correo ni telefono visible; completa contacto antes de activar.",
+        badge: "Datos",
+        openTab: "personal",
+      });
+    }
+  });
+
+  feedRows.slice(0, 8).forEach((lead) => {
+    if (!lead.id) return;
+    pushItem({
+      leadId: lead.id,
+      sourceType: lead.source_type || "PLAYER",
+      phone: lead.phone || "",
+      name: lead.name || "Contacto",
+      date: contactActionDate(lead),
+      kind: "recent",
+      icon: "history",
+      tone: lead.lead_temperature === "buyer" ? "ok" : lead.lead_temperature === "hot" ? "warning" : "pending",
+      title: lead.name || "Contacto reciente",
+      detail: [lead.attribution_source || "Origen no definido", lead.recommended_action || lead.campaign_name || "Sin accion sugerida"].filter(Boolean).join(" · "),
+      badge: lead.lead_temperature || "Reciente",
+      openTab: "summary",
+    });
+  });
+
+  const priorityWeight = { danger: 3, ok: 2, warning: 1, pending: 0 };
+  const visibleItems = items
+    .sort((a, b) => {
+      const toneDelta = (priorityWeight[b.tone] || 0) - (priorityWeight[a.tone] || 0);
+      if (toneDelta) return toneDelta;
+      return new Date(b.date || 0) - new Date(a.date || 0);
+    })
+    .slice(0, 10);
+
+  contactActionFeed.innerHTML = `
+    <div class="contact-action-feed-head">
+      <div>
+        <span class="mono-label">Feed de interacción</span>
+        <h3>Qué atender ahora</h3>
+        <p>Ordenado por prioridad, tickets activos, vencimientos, compradores y datos incompletos.</p>
+      </div>
+      <span class="pill muted">${visibleItems.length.toLocaleString("es-CO")} acciones visibles</span>
+    </div>
+    <div class="contact-action-list">
+      ${visibleItems.map((item) => `
+        <article class="contact-action-item is-${escapeHtml(item.tone || "pending")}">
+          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(item.icon || "task_alt")}</span>
+          <button class="contact-action-main" type="button" data-contact-open-lead="${escapeHtml(item.leadId)}" data-source-type="${escapeHtml(item.sourceType || "PLAYER")}" data-open-tab="${escapeHtml(item.openTab || "summary")}">
+            <strong>${escapeHtml(item.title)}</strong>
+            <small>${escapeHtml(item.detail || "")}</small>
+          </button>
+          <div class="contact-action-side">
+            <span class="status-chip ${escapeHtml(item.tone || "pending")}">${escapeHtml(item.badge || "Accion")}</span>
+            <small>${escapeHtml(formatDate(item.date))}</small>
+            ${item.ticketId ? `<button class="ghost-button" type="button" data-contact-ticket-whatsapp="${escapeHtml(item.ticketId)}" data-lead-phone="${escapeHtml(item.phone || "")}" data-lead-name="${escapeHtml(item.name || "")}">WhatsApp</button>` : ""}
+          </div>
+        </article>
+      `).join("") || '<div class="empty-state compact">No hay acciones visibles con los filtros actuales.</div>'}
+    </div>
+  `;
+  contactActionFeed.querySelectorAll("[data-contact-open-lead]").forEach((button) => {
+    button.addEventListener("click", () => openLeadDetail({
+      id: button.dataset.contactOpenLead,
+      source_type: button.dataset.sourceType || "PLAYER",
+    }, { tab: button.dataset.openTab || "summary" }));
+  });
+  contactActionFeed.querySelectorAll("[data-contact-ticket-whatsapp]").forEach((button) => {
+    button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.contactTicketWhatsapp, button.dataset.leadPhone, button.dataset.leadName));
+  });
+}
+
 function renderContactCenterSummary(crmRows = []) {
   if (!contactCenterSummaryGrid) return;
   const totalContacts = Number(state.leadCrmPagination?.total ?? crmRows.length);
@@ -16337,6 +16589,7 @@ function renderContactCenterSummary(crmRows = []) {
   const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
   const inactiveTickets = crmRows.reduce((sum, item) => sum + Number(item.inactive_tickets || 0), 0);
   const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
+  updateContactCenterCounts({ totalContacts, capturedLeads, converted: buyers || sales.length });
   contactCenterSummaryGrid.innerHTML = [
     ["Contactos unificados", totalContacts, "CRM, manuales, compradores y capturas"],
     ["Capturados", capturedLeads, `${(state.leadCaptureActivations || []).length} capturas activas o historicas`],
@@ -16535,6 +16788,7 @@ function renderLeadsView() {
     `).join("");
   }
   renderContactCenterSummary(crmRows);
+  renderContactActionFeed(crmRows, feedRows);
   renderLeadTicketInventoryBoard(crmRows);
   if (leadAttentionBoard) {
     const customerPanel = `
@@ -18423,6 +18677,8 @@ contactCenterTabs.forEach((button) => {
     if (state.currentView === "leads") renderLeadsView();
   });
 });
+contactCenterPrimaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterPrimaryAction.dataset.contactCenterAction));
+contactCenterSecondaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterSecondaryAction.dataset.contactCenterAction));
 ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
 });

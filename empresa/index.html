@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=ticket-inventory-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=contact-center-ux-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -2595,25 +2595,52 @@
                 <h2>Centro de Contactos y Ventas</h2>
                 <p>Leads, capturas, compradores, ventas, tickets y seguimiento comercial en una sola sección operativa.</p>
               </div>
-              <div class="head-actions">
+              <div class="head-actions lead-export-actions">
                 <label class="compact-field">
-                  <span>Exportar</span>
+                  <span>Base CSV</span>
                   <select id="leadExportScopeInput">
                     <option value="all">Todos los leads</option>
                     <option value="active">Solo tickets activos sin redimir</option>
                     <option value="redeemed">Solo redimidos / inactivos</option>
                   </select>
                 </label>
-                <button class="ghost-button" id="exportLeadsButton" type="button">Exportar CSV</button>
+                <button class="ghost-button" id="exportLeadsButton" type="button">Descargar CSV</button>
               </div>
             </div>
             <section class="contact-center-shell" id="contactCenterShell">
+              <section class="contact-center-operator-panel surface-card">
+                <div>
+                  <span class="mono-label" id="contactCenterStageMeta">Vista operativa</span>
+                  <h3 id="contactCenterStageTitle">Contactos para atender</h3>
+                  <p id="contactCenterStageCopy">Gestiona leads, tickets activos, prospectos manuales y seguimiento comercial desde una sola bandeja.</p>
+                </div>
+                <div class="contact-center-stage-actions">
+                  <button class="solid-button" id="contactCenterPrimaryAction" type="button">Agregar prospecto</button>
+                  <button class="ghost-button" id="contactCenterSecondaryAction" type="button">Exportar contactos</button>
+                </div>
+              </section>
               <div class="segment-tabs contact-center-tabs" id="contactCenterTabs">
-                <button class="segment-tab active" data-contact-center-tab="overview" type="button">Contactos</button>
-                <button class="segment-tab" data-contact-center-tab="captures" type="button">Capturas</button>
-                <button class="segment-tab" data-contact-center-tab="sales" type="button">Convertidos y ventas</button>
+                <button class="segment-tab contact-center-tab-card active" data-contact-center-tab="overview" type="button">
+                  <span class="contact-tab-step">1</span>
+                  <strong>Contactos</strong>
+                  <small>CRM, tickets y seguimiento</small>
+                  <em id="contactTabOverviewCount">0</em>
+                </button>
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="captures" type="button">
+                  <span class="contact-tab-step">2</span>
+                  <strong>Capturas</strong>
+                  <small>Landing, ebook y formularios</small>
+                  <em id="contactTabCapturesCount">0</em>
+                </button>
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="sales" type="button">
+                  <span class="contact-tab-step">3</span>
+                  <strong>Convertidos y ventas</strong>
+                  <small>Compras, revenue y cierre</small>
+                  <em id="contactTabSalesCount">0</em>
+                </button>
               </div>
               <section class="contact-center-summary kpi-grid compact" id="contactCenterSummaryGrid"></section>
+              <section class="contact-action-feed" id="contactActionFeed"></section>
               <div class="contact-center-panel active" data-contact-center-panel="overview"></div>
               <div class="contact-center-panel hidden" data-contact-center-panel="captures"></div>
               <div class="contact-center-panel hidden" data-contact-center-panel="sales"></div>
@@ -4246,7 +4273,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=ticket-inventory-20260706" defer></script>
+  <script src="js/app.js?v=contact-center-ux-20260706" defer></script>
 </body>
 </html>
 
