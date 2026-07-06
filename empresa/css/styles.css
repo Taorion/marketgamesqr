@@ -12166,17 +12166,167 @@ body.chart-focus-open .command-center {
 
 .benefit-fulfillment-panel {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
-  padding: 16px;
-  border: 1px solid rgba(17, 133, 104, 0.22);
-  border-radius: 12px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid rgba(17, 133, 104, 0.24);
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(236, 255, 246, 0.92), rgba(255, 255, 255, 0.96));
+    linear-gradient(135deg, rgba(236, 255, 246, 0.96), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 10px 24px rgba(12, 57, 43, 0.07);
+}
+
+.benefit-fulfillment-panel[data-fulfillment-mode="ecommerce"] {
+  border-color: rgba(7, 89, 133, 0.26);
+  background:
+    linear-gradient(135deg, rgba(237, 248, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.benefit-fulfillment-panel .activation-config-head,
+.benefit-fulfillment-panel .benefit-product-head {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(17, 133, 104, 0.12);
+}
+
+.benefit-fulfillment-panel .activation-config-head strong,
+.benefit-fulfillment-panel .benefit-product-head strong {
+  color: #10251d;
+  font-size: 16px;
+}
+
+.benefit-fulfillment-panel .activation-config-head span,
+.benefit-fulfillment-panel .benefit-product-head span {
+  max-width: 840px;
+  color: #4d635a;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
 }
 
 .benefit-fulfillment-panel .survey-builder-grid {
-  align-items: end;
+  grid-template-columns: minmax(230px, 0.9fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.benefit-fulfillment-panel label {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(16, 91, 68, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.benefit-fulfillment-panel label > span {
+  color: #12352a;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.benefit-fulfillment-panel label small {
+  color: #566b61;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.benefit-fulfillment-panel input,
+.benefit-fulfillment-panel select {
+  width: 100%;
+  min-height: 44px;
+  color: #07111f;
+  background: #ffffff;
+  border-color: rgba(16, 91, 68, 0.2);
+}
+
+.benefit-mode-field {
+  grid-row: span 2;
+  border-color: rgba(17, 133, 104, 0.22) !important;
+  background:
+    linear-gradient(180deg, rgba(236, 255, 246, 0.98), rgba(255, 255, 255, 0.92)) !important;
+}
+
+.benefit-mode-field::before {
+  content: "Canal";
+  width: max-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #0d6b52;
+  background: rgba(17, 133, 104, 0.1);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ecommerce-code-field,
+.ecommerce-url-field,
+.ecommerce-instructions-field {
+  border-color: rgba(7, 89, 133, 0.16) !important;
+  background: rgba(248, 252, 255, 0.92) !important;
+}
+
+.ecommerce-code-field input {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ecommerce-instructions-field {
+  grid-column: 2 / -1;
+}
+
+.benefit-expiration-panel {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.9fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(232, 193, 112, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 250, 230, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.benefit-expiration-panel > div,
+.benefit-expiration-panel label {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(160, 117, 26, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.benefit-expiration-panel strong {
+  color: #2f2410;
+  font-size: 14px;
+}
+
+.benefit-expiration-panel span,
+.benefit-expiration-panel label > span {
+  color: #6b541d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.benefit-expiration-panel input,
+.benefit-expiration-panel select {
+  width: 100%;
+  min-height: 44px;
+  color: #07111f;
+  background: #ffffff;
+  border-color: rgba(160, 117, 26, 0.18);
 }
 
 .ecommerce-code-preview {
@@ -12700,9 +12850,17 @@ body.chart-focus-open .command-center {
   }
 
   .activation-type-picker,
+  .benefit-fulfillment-panel .survey-builder-grid,
+  .benefit-expiration-panel,
   .survey-builder-grid,
   .reveal-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .benefit-mode-field,
+  .ecommerce-instructions-field {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .activation-type-option {

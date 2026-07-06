@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-contact-center-ux-v1";
+const APP_VERSION = "empresa-20260706-benefit-delivery-ux-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -2187,6 +2187,7 @@ function syncBenefitFulfillmentFields() {
   document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((modeInput) => {
     const panel = modeInput.closest(".benefit-fulfillment-panel");
     const ecommerceMode = modeInput.value === "ECOMMERCE_CODE";
+    if (panel) panel.dataset.fulfillmentMode = ecommerceMode ? "ecommerce" : "physical";
     panel?.querySelectorAll("[data-benefit-fulfillment-field='ecommerce']").forEach((field) => {
       field.classList.toggle("hidden", !ecommerceMode);
       field.querySelectorAll("input, select, textarea").forEach((input) => {
