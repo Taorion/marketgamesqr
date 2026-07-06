@@ -9031,8 +9031,8 @@ async function submitQrCreditCheckout(event) {
   }
 
   setButtonLoading(qrCreditCheckoutButton, true, "Abriendo checkout...");
-  setInlineMessage(qrCreditCheckoutMessage, "Creando checkout seguro en Mercado Pago...", "info");
-  showFeedback("Creando preferencia de pago. En segundos se abrira Mercado Pago.", "loading", { title: "Preparando pago", timeout: 0 });
+  setInlineMessage(qrCreditCheckoutMessage, "Creando checkout digital en Mercado Pago: tarjetas, saldo y PSE cuando este disponible. Sin efectivo ni Efecty.", "info");
+  showFeedback("Creando preferencia de pago digital. En segundos se abrira Mercado Pago.", "loading", { title: "Preparando pago", timeout: 0 });
   try {
     const data = await api("/api/payments/qr-credits/checkout", {
       method: "POST",
@@ -9070,8 +9070,8 @@ async function submitSubscriptionRenewal(event) {
   }
 
   setButtonLoading(subscriptionRenewalButton, true, "Abriendo pago...");
-  setInlineMessage(subscriptionRenewalMessage, "Creando checkout seguro de mensualidad...", "info");
-  showFeedback("Preparando pago de renovación mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
+  setInlineMessage(subscriptionRenewalMessage, "Creando checkout digital de mensualidad: tarjetas, saldo y PSE cuando este disponible. Sin efectivo ni Efecty.", "info");
+  showFeedback("Preparando pago digital de renovación mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/checkout", {
       method: "POST",

@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=ticket-closeout-ux-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=mp-digital-payments-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -526,11 +526,11 @@
                   </div>
                   <span class="status-chip pending" id="accountBillingStatus">Mercado Pago</span>
                 </div>
-                <p class="table-secondary">Compra tickets cuando necesites más saldo. Si tienes portal mensual, renueva tu plan para extender el periodo activo.</p>
+                <p class="table-secondary">Compra tickets cuando necesites más saldo. Mercado Pago mostrará medios digitales como tarjetas, saldo y PSE; no se habilita pago en efectivo ni Efecty.</p>
                 <div class="account-billing-grid">
                   <div class="account-billing-panel">
                     <strong>Recarga de tickets</strong>
-                    <p class="table-secondary">Elige el paquete en la sección de tickets estratégicos y paga por Mercado Pago.</p>
+                    <p class="table-secondary">Elige el paquete en la sección de tickets estratégicos y paga por Mercado Pago con medios digitales.</p>
                     <button class="solid-button" id="accountOpenQrShopButton" type="button">Comprar paquetes de tickets</button>
                   </div>
                   <form class="account-billing-panel" id="subscriptionRenewalForm">
@@ -865,6 +865,7 @@
                 </div>
                 <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
               </div>
+              <p class="table-secondary">Pago digital: tarjetas, saldo Mercado Pago y PSE cuando esté disponible en tu cuenta. Efectivo y Efecty quedan excluidos.</p>
               <form class="qr-credit-shop-form" id="qrCreditCheckoutForm">
                 <label>
                   <span>Paquete</span>
@@ -4310,7 +4311,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=ticket-closeout-ux-20260706" defer></script>
+  <script src="js/app.js?v=mp-digital-payments-20260706" defer></script>
 </body>
 </html>
 

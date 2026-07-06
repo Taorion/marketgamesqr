@@ -32,6 +32,19 @@ function webhookUrl() {
   return env.mercadoPagoWebhookUrl || appUrl("/api/payments/mercadopago/webhook");
 }
 
+function digitalOnlyPaymentMethods() {
+  return {
+    excluded_payment_methods: [
+      { id: "efecty" },
+    ],
+    excluded_payment_types: [
+      { id: "ticket" },
+      { id: "atm" },
+    ],
+    installments: 12,
+  };
+}
+
 function nextSubscriptionChargeDate(currentPeriodEndsAt) {
   const now = new Date();
   const currentEnd = currentPeriodEndsAt ? new Date(currentPeriodEndsAt) : null;
@@ -331,6 +344,7 @@ async function createCreditCheckout(user, body) {
         business_id: user.business_id,
         package_code: offer.code,
       },
+      payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
   });
@@ -461,6 +475,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
         signup_type: "portal_monthly_subscription",
         renewal: true,
       },
+      payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
   });
@@ -694,6 +709,7 @@ async function createPrepaidSignupCheckout(client, payload) {
         package_code: offer.code,
         signup_type: "ticket_base_access",
       },
+      payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
   });
