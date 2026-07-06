@@ -308,6 +308,10 @@ const affiliateRewardPointsInput = document.getElementById("affiliateRewardPoint
 const affiliateRewardBenefitTypeInput = document.getElementById("affiliateRewardBenefitTypeInput");
 const affiliateRewardBenefitLabelInput = document.getElementById("affiliateRewardBenefitLabelInput");
 const affiliateRewardBenefitValueInput = document.getElementById("affiliateRewardBenefitValueInput");
+const affiliateRewardFulfillmentModeInput = document.getElementById("affiliateRewardFulfillmentModeInput");
+const affiliateRewardEcommerceCodeInput = document.getElementById("affiliateRewardEcommerceCodeInput");
+const affiliateRewardEcommerceUrlInput = document.getElementById("affiliateRewardEcommerceUrlInput");
+const affiliateRewardEcommerceInstructionsInput = document.getElementById("affiliateRewardEcommerceInstructionsInput");
 const affiliateRewardExpirationInput = document.getElementById("affiliateRewardExpirationInput");
 const affiliateRewardDescriptionInput = document.getElementById("affiliateRewardDescriptionInput");
 const affiliateRewardRuleMessage = document.getElementById("affiliateRewardRuleMessage");
@@ -320,6 +324,10 @@ const affiliateRewardTicketResult = document.getElementById("affiliateRewardTick
 const affiliateReferralQrQuantityInput = document.getElementById("affiliateReferralQrQuantityInput");
 const affiliateReferralQrCampaignInput = document.getElementById("affiliateReferralQrCampaignInput");
 const affiliateReferralQrBenefitInput = document.getElementById("affiliateReferralQrBenefitInput");
+const affiliateReferralQrFulfillmentModeInput = document.getElementById("affiliateReferralQrFulfillmentModeInput");
+const affiliateReferralQrEcommerceCodeInput = document.getElementById("affiliateReferralQrEcommerceCodeInput");
+const affiliateReferralQrEcommerceUrlInput = document.getElementById("affiliateReferralQrEcommerceUrlInput");
+const affiliateReferralQrEcommerceInstructionsInput = document.getElementById("affiliateReferralQrEcommerceInstructionsInput");
 const affiliateReferralQrNotesInput = document.getElementById("affiliateReferralQrNotesInput");
 const affiliateGenerateReferralQrButton = document.getElementById("affiliateGenerateReferralQrButton");
 const affiliateReferralQrMessage = document.getElementById("affiliateReferralQrMessage");
@@ -513,6 +521,10 @@ const postSaleBenefitTypeInput = document.getElementById("postSaleBenefitTypeInp
 const postSaleBenefitProductModeInput = document.getElementById("postSaleBenefitProductModeInput");
 const postSaleBenefitProductInput = document.getElementById("postSaleBenefitProductInput");
 const postSaleBenefitValueInput = document.getElementById("postSaleBenefitValueInput");
+const postSaleBenefitFulfillmentModeInput = document.getElementById("postSaleBenefitFulfillmentModeInput");
+const postSaleEcommerceCodeInput = document.getElementById("postSaleEcommerceCodeInput");
+const postSaleEcommerceUrlInput = document.getElementById("postSaleEcommerceUrlInput");
+const postSaleEcommerceInstructionsInput = document.getElementById("postSaleEcommerceInstructionsInput");
 const postSaleExpiresModeInput = document.getElementById("postSaleExpiresModeInput");
 const postSaleExpiresAtInput = document.getElementById("postSaleExpiresAtInput");
 const postSaleNotesInput = document.getElementById("postSaleNotesInput");
@@ -532,6 +544,10 @@ const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput")
 const triviaBenefitProductModeInput = document.getElementById("triviaBenefitProductModeInput");
 const triviaBenefitProductInput = document.getElementById("triviaBenefitProductInput");
 const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput");
+const triviaBenefitFulfillmentModeInput = document.getElementById("triviaBenefitFulfillmentModeInput");
+const triviaEcommerceCodeInput = document.getElementById("triviaEcommerceCodeInput");
+const triviaEcommerceUrlInput = document.getElementById("triviaEcommerceUrlInput");
+const triviaEcommerceInstructionsInput = document.getElementById("triviaEcommerceInstructionsInput");
 const triviaExpiresModeInput = document.getElementById("triviaExpiresModeInput");
 const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
 const triviaQuestionCountInput = document.getElementById("triviaQuestionCountInput");
@@ -628,6 +644,10 @@ const qrBatchBenefitTypeInput = document.getElementById("qrBatchBenefitTypeInput
 const qrBatchBenefitProductModeInput = document.getElementById("qrBatchBenefitProductModeInput");
 const qrBatchBenefitProductInput = document.getElementById("qrBatchBenefitProductInput");
 const qrBatchBenefitValueInput = document.getElementById("qrBatchBenefitValueInput");
+const qrBatchBenefitFulfillmentModeInput = document.getElementById("qrBatchBenefitFulfillmentModeInput");
+const qrBatchEcommerceCodeInput = document.getElementById("qrBatchEcommerceCodeInput");
+const qrBatchEcommerceUrlInput = document.getElementById("qrBatchEcommerceUrlInput");
+const qrBatchEcommerceInstructionsInput = document.getElementById("qrBatchEcommerceInstructionsInput");
 const qrBatchClaimRequiredInput = document.getElementById("qrBatchClaimRequiredInput");
 const qrBatchExpiresModeInput = document.getElementById("qrBatchExpiresModeInput");
 const qrBatchExpiresAtInput = document.getElementById("qrBatchExpiresAtInput");
@@ -2101,6 +2121,67 @@ function withBenefitProductScope(value = {}, productScope = benefitProductScope(
     product_name: value?.product_name || productScope.product_name,
     inventory_product_id: value?.inventory_product_id || productScope.inventory_product_id || null,
   };
+}
+
+function benefitFulfillmentFromInputs(modeInput, codeInput, urlInput, instructionsInput) {
+  const mode = String(modeInput?.value || "PHYSICAL_QR").trim() || "PHYSICAL_QR";
+  const code = String(codeInput?.value || "").trim();
+  const ecommerceUrl = String(urlInput?.value || "").trim();
+  const instructions = String(instructionsInput?.value || "").trim();
+  if (mode !== "ECOMMERCE_CODE") {
+    return {
+      mode: "PHYSICAL_QR",
+      channel: "physical_store",
+      label: "Premio físico / QR en tienda",
+      instructions: instructions || "Presenta el QR en el punto autorizado para redimir el beneficio.",
+    };
+  }
+  return {
+    mode: "ECOMMERCE_CODE",
+    channel: "ecommerce",
+    label: "Código para ecommerce",
+    ecommerce_code: code,
+    ecommerce_url: ecommerceUrl || null,
+    instructions: instructions || "Copia este código y aplícalo en el checkout de la tienda online.",
+  };
+}
+
+function withBenefitFulfillment(value = {}, fulfillment = null) {
+  if (!fulfillment) return value || {};
+  return {
+    ...(value || {}),
+    fulfillment,
+    redemption_channel: fulfillment.channel,
+    ecommerce_code: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_code : value?.ecommerce_code,
+    ecommerce_url: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_url : value?.ecommerce_url,
+  };
+}
+
+function benefitFulfillmentObject(value = {}, metadata = {}) {
+  return value?.fulfillment || value?.value?.fulfillment || metadata?.benefit_fulfillment || null;
+}
+
+function benefitFulfillmentLabel(value = {}, metadata = {}) {
+  const fulfillment = benefitFulfillmentObject(value, metadata);
+  if (!fulfillment) return "";
+  if (fulfillment.mode === "ECOMMERCE_CODE") {
+    return `Ecommerce: código ${fulfillment.ecommerce_code || "pendiente"}`;
+  }
+  return "Redención física con QR";
+}
+
+function syncBenefitFulfillmentFields() {
+  document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((modeInput) => {
+    const panel = modeInput.closest(".benefit-fulfillment-panel");
+    const ecommerceMode = modeInput.value === "ECOMMERCE_CODE";
+    panel?.querySelectorAll("[data-benefit-fulfillment-field='ecommerce']").forEach((field) => {
+      field.classList.toggle("hidden", !ecommerceMode);
+      field.querySelectorAll("input, select, textarea").forEach((input) => {
+        input.disabled = !ecommerceMode;
+        if (!ecommerceMode) input.required = false;
+      });
+    });
+  });
 }
 
 function productScopeFromValue(value = {}, metadata = {}) {
@@ -6899,9 +6980,11 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorGameValue.textContent = data?.game?.name || data?.qr_code?.origin_type || "-";
   const validatorBenefitValue = data?.reward?.value || data?.reward?.benefit_value || {};
   const validatorProductScope = benefitProductScopeLabel(validatorBenefitValue);
+  const validatorFulfillment = benefitFulfillmentLabel(validatorBenefitValue, data?.qr_code?.metadata || {});
   validatorRewardValue.textContent = [
     data?.reward?.display || data?.reward?.name || validatorBenefitValue?.label || "-",
     validatorProductScope,
+    validatorFulfillment,
   ].filter(Boolean).join(" | ");
   validatorPlayerValue.textContent = data?.player?.name || "-";
   validatorDocumentValue.textContent = data?.player?.document_id || "-";
@@ -7521,6 +7604,7 @@ function renderQrBatchResultCard(batch, options = {}) {
   const redeemedCount = Number(batch.redeemed_count || 0);
   const expiresAt = batch.expires_at ? formatDate(batch.expires_at) : "Sin expiración";
   const productScopeLabel = benefitProductScopeLabel(batch.benefit_value || {}, batch.metadata || {});
+  const fulfillmentLabel = benefitFulfillmentLabel(batch.benefit_value || {}, batch.metadata || {});
 
   qrBatchResult.classList.remove("hidden");
   qrBatchResult.className = "surface-card qr-batch-result-card";
@@ -7553,6 +7637,7 @@ function renderQrBatchResultCard(batch, options = {}) {
       <span class="table-secondary">Creado ${escapeHtml(createdAt)}${batch.channel_use ? ` | Canal ${escapeHtml(batch.channel_use)}` : ""}</span>
       <span class="table-secondary">${escapeHtml(batch.qr_origin_type || "-")} | ${escapeHtml(batch.benefit_value?.label || batch.benefit_type || "Beneficio")}</span>
       ${productScopeLabel ? `<span class="table-secondary">${escapeHtml(productScopeLabel)}</span>` : ""}
+      ${fulfillmentLabel ? `<span class="table-secondary">${escapeHtml(fulfillmentLabel)}</span>` : ""}
     </div>
     <div class="qr-batch-result-actions">
       <div class="inline-selects">
@@ -8714,6 +8799,7 @@ function renderStrategicQrView() {
           ${escapeHtml(item.qr_origin_type)}
           <br><span class="table-secondary">${escapeHtml(item.benefit_value?.label || item.benefit_type || "Beneficio")}</span>
           ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+          ${benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
         <td>
           ${escapeHtml(item.quantity)}
@@ -9640,12 +9726,13 @@ function collectOpenQuestions() {
 
 function collectRevealCards() {
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
+  const fulfillment = benefitFulfillmentFromInputs(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaEcommerceUrlInput, triviaEcommerceInstructionsInput);
   return Array.from(document.querySelectorAll("[data-reveal-card]"))
     .map((input) => ({
       label: input.dataset.revealCard || "Card",
       benefit_label: input.value.trim(),
       benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
-      benefit_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput?.value || "{}"), productScope),
+      benefit_value: withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput?.value || "{}"), productScope), fulfillment),
     }))
     .filter((item) => item.benefit_label);
 }
@@ -9658,6 +9745,7 @@ function collectThermometerDiscounts() {
 
 function collectFlatChoiceOptions(type) {
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
+  const fulfillment = benefitFulfillmentFromInputs(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaEcommerceUrlInput, triviaEcommerceInstructionsInput);
   return Array.from(document.querySelectorAll(`[data-flat-choice="${type}"] [data-flat-option]`))
     .map((input) => {
       const key = input.dataset.flatOption || input.value.trim();
@@ -9671,8 +9759,8 @@ function collectFlatChoiceOptions(type) {
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? withBenefitProductScope({ ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }, productScope)
-          : withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+          ? withBenefitFulfillment(withBenefitProductScope({ ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
+          : withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope), fulfillment),
       };
     })
     .filter((item) => item.label);
@@ -9680,6 +9768,7 @@ function collectFlatChoiceOptions(type) {
 
 function collectRouletteBenefits() {
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
+  const fulfillment = benefitFulfillmentFromInputs(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaEcommerceUrlInput, triviaEcommerceInstructionsInput);
   return Array.from(document.querySelectorAll("[data-roulette-benefit]"))
     .map((input, index) => {
       const label = input.value.trim();
@@ -9689,7 +9778,7 @@ function collectRouletteBenefits() {
         label,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: label,
-        reward_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+        reward_value: withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope), fulfillment),
       };
     })
     .filter((item) => item.label);
@@ -10143,13 +10232,32 @@ function validateActivationParticipantLock() {
   return true;
 }
 
+function validateBenefitFulfillment(modeInput, codeInput, messageNode, contextLabel = "beneficio") {
+  if (String(modeInput?.value || "PHYSICAL_QR") !== "ECOMMERCE_CODE") return true;
+  const code = String(codeInput?.value || "").trim();
+  if (code) return true;
+  setInlineMessage(messageNode, `Escribe el código ecommerce que recibirá el ganador del ${contextLabel}.`, "error");
+  codeInput?.focus();
+  return false;
+}
+
 function buildInteractiveActivationPayload(type, activationPayload) {
   const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
+  const fulfillment = benefitFulfillmentFromInputs(
+    triviaBenefitFulfillmentModeInput,
+    triviaEcommerceCodeInput,
+    triviaEcommerceUrlInput,
+    triviaEcommerceInstructionsInput
+  );
+  const rawBenefitValue = withBenefitFulfillment(
+    withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+    fulfillment
+  );
   const benefit = {
     reward_type: triviaBenefitTypeInput.value,
     reward_label: baseBenefitLabel,
-    reward_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+    reward_value: rawBenefitValue,
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
@@ -10163,6 +10271,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     reward_config: {
       ...benefit,
       product_scope: productScope,
+      fulfillment,
     },
     capture_config: {
       required_fields: ["name", "phone", "email", "document"],
@@ -10175,11 +10284,12 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     },
     metadata: {
       benefit_product_scope: productScope,
+      benefit_fulfillment: fulfillment,
     },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
       benefit_label: baseBenefitLabel,
-      benefit_value: withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+      benefit_value: rawBenefitValue,
     },
   };
 
@@ -10429,6 +10539,7 @@ function updateTriviaExpiryMode() {
 function validateTriviaLauncherForm() {
   updateTriviaExpiryMode();
   const type = currentActivationType();
+  if (!validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
   if (type === "TRIVIA") {
     updateTriviaQuestionVisibility();
@@ -11116,6 +11227,9 @@ async function submitPostSaleQr(event) {
   if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir un ticket generico")) {
     return;
   }
+  if (!validateBenefitFulfillment(postSaleBenefitFulfillmentModeInput, postSaleEcommerceCodeInput, postSaleQrMessage, "ticket")) {
+    return;
+  }
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando...");
   setInlineMessage(postSaleQrMessage, "Emitiendo ticket generico y descontando 1 ticket...", "info");
@@ -11133,6 +11247,12 @@ async function submitPostSaleQr(event) {
     const inventoryProduct = findInventoryProduct(postSaleProductInput.value || productName);
     const inventorySaleProduct = productSalePayload(inventoryProduct, 1, Number(postSaleAmountInput.value || inventoryProduct?.unit_price || 0));
     const productScope = benefitProductScope(postSaleBenefitProductModeInput, postSaleBenefitProductInput);
+    const fulfillment = benefitFulfillmentFromInputs(
+      postSaleBenefitFulfillmentModeInput,
+      postSaleEcommerceCodeInput,
+      postSaleEcommerceUrlInput,
+      postSaleEcommerceInstructionsInput
+    );
     const benefitValue = {
       ...parseJsonObject(postSaleBenefitValueInput.value),
       product_name: productName || null,
@@ -11140,7 +11260,7 @@ async function submitPostSaleQr(event) {
       ticket_use_case_label: ticketUseCaseLabel,
       occasion: ticketOccasion,
     };
-    const benefitValueWithProduct = withBenefitProductScope(benefitValue, productScope);
+    const benefitValueWithProduct = withBenefitFulfillment(withBenefitProductScope(benefitValue, productScope), fulfillment);
     const data = await api("/api/business/qr/generic-ticket", {
       method: "POST",
       headers: authHeaders(),
@@ -11166,6 +11286,7 @@ async function submitPostSaleQr(event) {
           intended_recipient_name: beneficiaryName || null,
           gift_product_name: productName || null,
           benefit_product_scope: productScope,
+          benefit_fulfillment: fulfillment,
           products: inventorySaleProduct ? [inventorySaleProduct] : [],
         },
         expires_mode: postSaleExpiresModeInput.value,
@@ -11193,13 +11314,18 @@ async function submitPostSaleQr(event) {
       beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
       `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
       ticketOccasion ? `Motivo: ${ticketOccasion}.` : "",
-      "Te envio la imagen QR del ticket para presentarla en el punto autorizado.",
+      fulfillment.mode === "ECOMMERCE_CODE"
+        ? `Tu código para la tienda online es ${fulfillment.ecommerce_code}.`
+        : "Te envio la imagen QR del ticket para presentarla en el punto autorizado.",
     ].filter(Boolean).join(" ");
     const genericTicketWhatsappText = [
       beneficiaryName ? `Hola ${beneficiaryName}.` : "Hola.",
       `Recibiste un ticket para reclamar ${productName || data.benefit?.label || benefitLabel || "un beneficio"}.`,
       ticketOccasion ? `Motivo: ${ticketOccasion}.` : "",
-      "Abre este ticket para ver el QR y presentarlo en el punto autorizado.",
+      fulfillment.mode === "ECOMMERCE_CODE"
+        ? `Código ecommerce: ${fulfillment.ecommerce_code}. ${fulfillment.instructions}`
+        : "Abre este ticket para ver el QR y presentarlo en el punto autorizado.",
+      fulfillment.mode === "ECOMMERCE_CODE" && fulfillment.ecommerce_url ? fulfillment.ecommerce_url : "",
       publicTicketUrl,
     ].filter(Boolean).join(" ");
     const genericTicketWhatsappUrl = whatsappPhone
@@ -11209,6 +11335,8 @@ async function submitPostSaleQr(event) {
     postSaleQrResult.innerHTML = `
       <p><strong>Uso:</strong> ${escapeHtml(ticketUseCaseLabel)}${ticketOccasion ? ` | ${escapeHtml(ticketOccasion)}` : ""}</p>
       <p><strong>Representa:</strong> ${escapeHtml(productName || data.benefit?.label || benefitLabel || "Beneficio")}</p>
+      ${benefitFulfillmentLabel(data.benefit || {}, data.qr_code?.metadata || {}) ? `<p><strong>Entrega:</strong> ${escapeHtml(benefitFulfillmentLabel(data.benefit || {}, data.qr_code?.metadata || {}))}</p>` : ""}
+      ${fulfillment.mode === "ECOMMERCE_CODE" ? `<div class="ecommerce-code-preview"><span>Código ecommerce</span><strong>${escapeHtml(fulfillment.ecommerce_code)}</strong>${fulfillment.ecommerce_url ? `<a href="${escapeHtml(fulfillment.ecommerce_url)}" target="_blank" rel="noopener">Abrir tienda online</a>` : ""}</div>` : ""}
       <p><strong>Estado:</strong> ${escapeHtml(data.qr_code.status)}</p>
       <p><strong>Link:</strong> <a href="${escapeHtml(publicTicketUrl)}" target="_blank" rel="noopener">Abrir ticket público</a></p>
       <img src="${escapeHtml(browserTicketDataUrl)}" alt="Ticket QR generado para compartir" style="max-width:220px;width:100%;border-radius:18px;">
@@ -11254,6 +11382,9 @@ async function submitQrBatch(event) {
   if (!requireCampaignAssociation(qrBatchCampaignInput, qrBatchMessage, "generar un paquete de tickets")) {
     return;
   }
+  if (!validateBenefitFulfillment(qrBatchBenefitFulfillmentModeInput, qrBatchEcommerceCodeInput, qrBatchMessage, "paquete")) {
+    return;
+  }
   const requestedQuantity = Number(qrBatchQuantityInput.value || 0);
   const submitButton = qrBatchForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando paquete...");
@@ -11266,7 +11397,13 @@ async function submitQrBatch(event) {
     const attributionSource = qrBatchAttributionSourceInput?.value.trim() || qrBatchChannelInput.value;
     const attributionSubject = qrBatchAttributionSubjectInput?.value.trim() || qrBatchNameInput.value.trim();
     const productScope = benefitProductScope(qrBatchBenefitProductModeInput, qrBatchBenefitProductInput);
-    const benefitValue = withBenefitProductScope(parseJsonObject(qrBatchBenefitValueInput.value), productScope);
+    const fulfillment = benefitFulfillmentFromInputs(
+      qrBatchBenefitFulfillmentModeInput,
+      qrBatchEcommerceCodeInput,
+      qrBatchEcommerceUrlInput,
+      qrBatchEcommerceInstructionsInput
+    );
+    const benefitValue = withBenefitFulfillment(withBenefitProductScope(parseJsonObject(qrBatchBenefitValueInput.value), productScope), fulfillment);
     const data = await api("/api/business/qr/batches", {
       method: "POST",
       headers: authHeaders(),
@@ -11286,6 +11423,7 @@ async function submitQrBatch(event) {
           campaign_id: qrBatchCampaignInput.value || null,
           qr_creation_context: "business_owner_batch",
           benefit_product_scope: productScope,
+          benefit_fulfillment: fulfillment,
         },
         benefit: {
           benefit_type: qrBatchBenefitTypeInput.value,
@@ -14810,15 +14948,18 @@ function renderAffiliateRewardRules() {
     affiliateRewardRuleList.innerHTML = '<div class="affiliate-selected-empty">Sin premios configurados.</div>';
     return;
   }
-  affiliateRewardRuleList.innerHTML = rules.map((rule) => `
-    <div class="affiliate-reward-row">
-      <div>
-        <strong>${escapeHtml(rule.title || rule.benefit_label || "Premio")}</strong>
-        <span>${escapeHtml(toNumber(rule.required_points || 0))} puntos · ${escapeHtml(rule.benefit_label || "-")}</span>
+  affiliateRewardRuleList.innerHTML = rules.map((rule) => {
+    const fulfillmentLabel = benefitFulfillmentLabel(rule.benefit_value || {}, rule.metadata || {});
+    return `
+      <div class="affiliate-reward-row">
+        <div>
+          <strong>${escapeHtml(rule.title || rule.benefit_label || "Premio")}</strong>
+          <span>${escapeHtml(toNumber(rule.required_points || 0))} puntos · ${escapeHtml(rule.benefit_label || "-")}${fulfillmentLabel ? ` · ${escapeHtml(fulfillmentLabel)}` : ""}</span>
+        </div>
+        <button class="ghost-button danger-button" type="button" data-affiliate-reward-archive="${escapeHtml(rule.id)}">Archivar</button>
       </div>
-      <button class="ghost-button danger-button" type="button" data-affiliate-reward-archive="${escapeHtml(rule.id)}">Archivar</button>
-    </div>
-  `).join("");
+    `;
+  }).join("");
   affiliateRewardRuleList.querySelectorAll("[data-affiliate-reward-archive]").forEach((button) => {
     button.addEventListener("click", () => archiveAffiliateRewardRule(button.dataset.affiliateRewardArchive));
   });
@@ -14842,11 +14983,12 @@ function renderAffiliateRewardUnlocks(unlocks = state.affiliateRewardUnlocks || 
   }
   affiliateRewardUnlockList.innerHTML = unlocks.map((item) => {
     const status = item.generated ? "Ticket generado" : item.unlocked ? "Desbloqueado" : `Faltan ${toNumber(item.points_remaining || 0)} puntos`;
+    const fulfillmentLabel = benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {});
     return `
       <div class="affiliate-reward-row ${item.unlocked ? "is-unlocked" : "is-locked"}">
         <div>
           <strong>${escapeHtml(item.title || item.benefit_label || "Premio")}</strong>
-          <span>${escapeHtml(status)} · requiere ${escapeHtml(toNumber(item.required_points || 0))} puntos</span>
+          <span>${escapeHtml(status)} · requiere ${escapeHtml(toNumber(item.required_points || 0))} puntos${fulfillmentLabel ? ` · ${escapeHtml(fulfillmentLabel)}` : ""}</span>
         </div>
         ${item.generated && item.public_ticket_url
           ? `<button class="ghost-button" type="button" data-affiliate-reward-open="${escapeHtml(item.public_ticket_url)}">Abrir</button>`
@@ -14873,9 +15015,19 @@ function resetAffiliateRewardResult() {
 async function submitAffiliateRewardRule(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
+  if (!validateBenefitFulfillment(affiliateRewardFulfillmentModeInput, affiliateRewardEcommerceCodeInput, affiliateRewardRuleMessage, "premio de afiliado")) {
+    return;
+  }
   setButtonLoading(affiliateRewardRuleSaveButton, true, "Guardando...");
   setInlineMessage(affiliateRewardRuleMessage, "Guardando premio de afiliado...", "info");
   try {
+    const fulfillment = benefitFulfillmentFromInputs(
+      affiliateRewardFulfillmentModeInput,
+      affiliateRewardEcommerceCodeInput,
+      affiliateRewardEcommerceUrlInput,
+      affiliateRewardEcommerceInstructionsInput
+    );
+    const benefitValue = withBenefitFulfillment(parseJsonObject(affiliateRewardBenefitValueInput.value), fulfillment);
     const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliate-rewards`, {
       method: "POST",
       headers: authHeaders(),
@@ -14885,13 +15037,14 @@ async function submitAffiliateRewardRule(event) {
         required_points: Number(affiliateRewardPointsInput.value || 0),
         benefit_type: affiliateRewardBenefitTypeInput.value || "CUSTOM",
         benefit_label: affiliateRewardBenefitLabelInput.value.trim(),
-        benefit_value: parseJsonObject(affiliateRewardBenefitValueInput.value),
+        benefit_value: benefitValue,
         expiration_days: affiliateRewardExpirationInput.value ? Number(affiliateRewardExpirationInput.value) : null,
       }),
     });
     state.affiliateRewardRules = [data.reward_rule, ...(state.affiliateRewardRules || []).filter((item) => item.id !== data.reward_rule.id)];
     affiliateRewardRuleForm.reset();
     if (affiliateRewardPointsInput) affiliateRewardPointsInput.value = "10";
+    syncBenefitFulfillmentFields();
     renderAffiliateRewardRules();
     await refreshSelectedAffiliateRewards();
     setInlineMessage(affiliateRewardRuleMessage, "Premio guardado.", "success");
@@ -14947,6 +15100,8 @@ async function generateAffiliateRewardTicket(ruleId) {
     });
     if (data.credit_account) state.qrCreditAccount = data.credit_account;
     const ticket = data.ticket || {};
+    const fulfillment = benefitFulfillmentObject(ticket.benefit || {});
+    const fulfillmentLabel = benefitFulfillmentLabel(ticket.benefit || {});
     if (affiliateRewardTicketResult) {
       affiliateRewardTicketResult.classList.remove("hidden");
       affiliateRewardTicketResult.innerHTML = `
@@ -14955,6 +15110,8 @@ async function generateAffiliateRewardTicket(ruleId) {
           <div>
             <strong>Ticket listo para enviar</strong>
             <p>${escapeHtml(ticket.benefit?.label || "Premio desbloqueado")}</p>
+            ${fulfillmentLabel ? `<p><strong>Entrega:</strong> ${escapeHtml(fulfillmentLabel)}</p>` : ""}
+            ${fulfillment?.mode === "ECOMMERCE_CODE" ? `<div class="ecommerce-code-preview"><span>Código ecommerce</span><strong>${escapeHtml(fulfillment.ecommerce_code || "pendiente")}</strong>${fulfillment.ecommerce_url ? `<a href="${escapeHtml(fulfillment.ecommerce_url)}" target="_blank" rel="noopener">Abrir tienda online</a>` : ""}</div>` : ""}
             <a class="ghost-button" href="${escapeHtml(ticket.public_ticket_url || ticket.validator_url || "#")}" target="_blank" rel="noopener">Abrir ticket</a>
           </div>
         </div>
@@ -15236,6 +15393,7 @@ function renderAffiliateReferralQrResult(batch, qrCodes = [], affiliate = state.
 
   const affiliateName = firstTextValue(batch.metadata?.affiliate_name, affiliate?.full_name, "Afiliado seleccionado");
   const affiliateDocument = firstTextValue(affiliate?.document_id, affiliate?.document, "Sin documento");
+  const fulfillmentLabel = benefitFulfillmentLabel(batch.benefit_value || {}, batch.metadata || {});
   affiliateReferralQrResult.classList.remove("hidden");
   affiliateReferralQrResult.innerHTML = `
     <div class="qr-batch-result-head">
@@ -15244,6 +15402,7 @@ function renderAffiliateReferralQrResult(batch, qrCodes = [], affiliate = state.
         <h4>${escapeHtml(batch.name || "tickets recomendación afiliado")}</h4>
         <p>${escapeHtml(Number(batch.quantity || qrCodes.length || 0).toLocaleString("es-CO"))} tickets unicos, de un solo uso, listos para entregar al afiliado.</p>
         <p><strong>Afiliado asignado:</strong> ${escapeHtml(affiliateName)} · ${escapeHtml(affiliateDocument)}</p>
+        ${fulfillmentLabel ? `<p><strong>Entrega:</strong> ${escapeHtml(fulfillmentLabel)}</p>` : ""}
       </div>
     </div>
     <div class="qr-batch-actions">
@@ -15273,12 +15432,21 @@ async function generateSelectedAffiliateReferralQr() {
     affiliateReferralQrCampaignInput?.focus();
     return;
   }
+  if (!validateBenefitFulfillment(affiliateReferralQrFulfillmentModeInput, affiliateReferralQrEcommerceCodeInput, affiliateReferralQrMessage, "ticket de referido")) {
+    return;
+  }
 
   setButtonLoading(affiliateGenerateReferralQrButton, true, "Generando...");
   setInlineMessage(affiliateReferralQrMessage, `Generando ${quantity.toLocaleString("es-CO")} tickets y descontando tickets disponibles...`, "info");
   renderAffiliateReferralQrResult(null);
   showFeedback(`Generando tickets de recomendación para ${state.selectedAffiliate.full_name || "el afiliado"}.`, "loading", { title: "tickets de recomendación", timeout: 0 });
   const referralAffiliate = { ...state.selectedAffiliate };
+  const fulfillment = benefitFulfillmentFromInputs(
+    affiliateReferralQrFulfillmentModeInput,
+    affiliateReferralQrEcommerceCodeInput,
+    affiliateReferralQrEcommerceUrlInput,
+    affiliateReferralQrEcommerceInstructionsInput
+  );
 
   try {
     const data = await api("/api/business/qr/affiliates/referral-batches", {
@@ -15293,7 +15461,7 @@ async function generateSelectedAffiliateReferralQr() {
         benefit: {
           benefit_type: "CUSTOM",
           benefit_label: affiliateReferralQrBenefitInput?.value.trim() || "Recomendación de afiliado",
-          benefit_value: {},
+          benefit_value: withBenefitFulfillment({}, fulfillment),
         },
       }),
     });
@@ -18163,6 +18331,10 @@ activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button
 });
 triviaQuestionCountInput?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaExpiresModeInput?.addEventListener("change", updateTriviaExpiryMode);
+document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((field) => {
+  field.addEventListener("change", syncBenefitFulfillmentFields);
+});
+syncBenefitFulfillmentFields();
 triviaQuestionBuilder?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaQuestionBuilder?.addEventListener("change", updateTriviaQuestionVisibility);
 document.querySelectorAll('[data-survey-field="type"]').forEach((field) => {

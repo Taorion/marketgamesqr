@@ -159,13 +159,24 @@ async function createOptionalPlayer(client, businessId, campaignId, customer = {
 }
 
 function buildBenefitPayload(benefit, reward) {
+  const value = benefit.benefit_value || {};
+  const fulfillment = normalizeBenefitFulfillment(value);
   return {
     type: benefit.benefit_type,
     label: benefit.benefit_label,
-    value: benefit.benefit_value || {},
+    value: {
+      ...value,
+      fulfillment,
+      redemption_channel: fulfillment.channel,
+      ...(fulfillment.mode === "ECOMMERCE_CODE" ? {
+        ecommerce_code: fulfillment.ecommerce_code,
+        ecommerce_url: fulfillment.ecommerce_url,
+      } : {}),
+    },
     reward_id: benefit.reward_id || null,
     reward_name: reward?.name || null,
     display: reward?.display_in_validator || null,
+    fulfillment,
   };
 }
 
@@ -212,11 +223,45 @@ function benefitProductLine(benefitValue = {}) {
   return `${modeLabel}: ${scope.product_name}`;
 }
 
+function normalizeBenefitFulfillment(value = {}) {
+  const source = value?.fulfillment || value?.value?.fulfillment || {};
+  const mode = String(source.mode || value.redemption_channel || "PHYSICAL_QR").toUpperCase();
+  if (mode === "ECOMMERCE_CODE" || mode === "ECOMMERCE") {
+    const ecommerceCode = String(source.ecommerce_code || value.ecommerce_code || "").trim();
+    return {
+      mode: "ECOMMERCE_CODE",
+      channel: "ecommerce",
+      label: "Código para ecommerce",
+      ecommerce_code: ecommerceCode,
+      ecommerce_url: String(source.ecommerce_url || value.ecommerce_url || "").trim() || null,
+      instructions: String(source.instructions || value.instructions || "Copia este código y aplícalo en el checkout de la tienda online.").trim(),
+    };
+  }
+  return {
+    mode: "PHYSICAL_QR",
+    channel: "physical_store",
+    label: "Premio físico / QR en tienda",
+    instructions: String(source.instructions || value.instructions || "Presenta el QR en el punto autorizado para redimir el beneficio.").trim(),
+  };
+}
+
+function benefitFulfillmentLines(benefitValue = {}) {
+  const fulfillment = normalizeBenefitFulfillment(benefitValue);
+  if (fulfillment.mode !== "ECOMMERCE_CODE") {
+    return ["Redención: QR en punto físico"];
+  }
+  return [
+    `Código ecommerce: ${fulfillment.ecommerce_code || "pendiente"}`,
+    fulfillment.ecommerce_url ? `Tienda: ${fulfillment.ecommerce_url}` : null,
+  ].filter(Boolean);
+}
+
 function buildTicketDetailLines({ label, expiresAt, code, benefitValue }) {
   const productLine = benefitProductLine(benefitValue);
   return [
     `Beneficio: ${truncateTicketLine(label || "Beneficio")}`,
     productLine ? truncateTicketLine(productLine) : null,
+    ...benefitFulfillmentLines(benefitValue).map((line) => truncateTicketLine(line)),
     `Vence: ${formatTicketDate(expiresAt)}`,
     `Codigo: ${String(code || "").trim() || "N/A"}`,
   ].filter(Boolean);

@@ -125,6 +125,28 @@ function brandedQrTextRows({ businessName, activationTitle, rewardLabel, publicC
   ].slice(0, 6);
 }
 
+function normalizeBenefitFulfillment(value = {}) {
+  const source = value?.fulfillment || value?.value?.fulfillment || {};
+  const mode = String(source.mode || value.redemption_channel || "PHYSICAL_QR").toUpperCase();
+  if (mode === "ECOMMERCE_CODE" || mode === "ECOMMERCE") {
+    const ecommerceCode = String(source.ecommerce_code || value.ecommerce_code || "").trim();
+    return {
+      mode: "ECOMMERCE_CODE",
+      channel: "ecommerce",
+      label: "Codigo para ecommerce",
+      ecommerce_code: ecommerceCode,
+      ecommerce_url: String(source.ecommerce_url || value.ecommerce_url || "").trim() || null,
+      instructions: String(source.instructions || value.instructions || "Copia este codigo y aplicalo en el checkout de la tienda online.").trim(),
+    };
+  }
+  return {
+    mode: "PHYSICAL_QR",
+    channel: "physical_store",
+    label: "Premio fisico / QR en tienda",
+    instructions: String(source.instructions || value.instructions || "Presenta el QR en el punto autorizado para redimir el beneficio.").trim(),
+  };
+}
+
 async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }) {
   const brand = brandStyle(activation.business_settings || {});
   const qrImage = await QRCode.toDataURL(validatorUrl, {
@@ -140,11 +162,15 @@ async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, rewa
   const qrY = 440;
   const frame = String(brand.ticketFrameUrl || "").trim();
   const logo = String(brand.logoUrl || "").trim();
+  const fulfillment = normalizeBenefitFulfillment(reward.reward_value || {});
+  const footerText = fulfillment.mode === "ECOMMERCE_CODE"
+    ? "Usa el codigo en la tienda online o conserva este QR como respaldo"
+    : "Presenta este QR en el punto fisico para redimir";
   const rows = brandedQrTextRows({
     businessName: activation.business_name,
     activationTitle: activation.title,
     rewardLabel: reward.reward_label,
-    publicCode: reward.public_code,
+    publicCode: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_code || reward.public_code : reward.public_code,
   });
   const textPanelY = 970;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -162,7 +188,7 @@ async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, rewa
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>
   <rect x="136" y="${textPanelY}" width="808" height="240" rx="34" fill="#ffffff" opacity="0.96"/>
   ${rows.map((row, index) => `<text x="${width / 2}" y="${textPanelY + 48 + index * 31}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${row.size}" font-weight="${row.weight}" fill="${escapeSvg(row.fill)}">${escapeSvg(row.text)}</text>`).join("\n  ")}
-  <text x="${width / 2}" y="1260" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#4b5563">Presenta este QR en el punto físico para redimir</text>
+  <text x="${width / 2}" y="1260" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#4b5563">${escapeSvg(footerText)}</text>
 </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -893,10 +919,13 @@ async function completeInteractiveParticipant(slug, body) {
     const reward = await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
       user_id: activation.user_id || null,
     });
+    const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },
       rewarded: true,
-      message: "Beneficio generado. El QR esta listo para redimir en tienda.",
+      message: fulfillment.mode === "ECOMMERCE_CODE"
+        ? "Beneficio generado. Tu codigo ecommerce esta listo para usar en la tienda online."
+        : "Beneficio generado. El QR esta listo para redimir en tienda.",
       reward: reward.reward,
       qr_code: reward.qr_code,
       validator_url: reward.validator_url,
@@ -1298,9 +1327,19 @@ function rewardFromAnswer(items = [], answers = {}) {
 function fixedRewardPayload(config = {}, source = "fixed", sourceData = {}) {
   const label = config.reward_label || config.benefit_label || config.label;
   if (!label) return null;
+  const rewardValue = config.reward_value || config.benefit_value || {};
+  const fulfillment = normalizeBenefitFulfillment(rewardValue);
   return {
     reward_type: normalizeRewardType(config.reward_type || config.benefit_type),
-    reward_value: config.reward_value || config.benefit_value || {},
+    reward_value: {
+      ...rewardValue,
+      fulfillment,
+      redemption_channel: fulfillment.channel,
+      ...(fulfillment.mode === "ECOMMERCE_CODE" ? {
+        ecommerce_code: fulfillment.ecommerce_code,
+        ecommerce_url: fulfillment.ecommerce_url,
+      } : {}),
+    },
     reward_label: label,
     reward_conditions: config.reward_conditions || config.conditions || null,
     reward_source: source,

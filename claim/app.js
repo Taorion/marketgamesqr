@@ -16,6 +16,11 @@ const finalTicketQrImage = document.getElementById("finalTicketQrImage");
 const finalTicketLink = document.getElementById("finalTicketLink");
 const downloadTicketImageButton = document.getElementById("downloadTicketImageButton");
 const shareTicketImageButton = document.getElementById("shareTicketImageButton");
+const ecommerceTicketBlock = document.getElementById("ecommerceTicketBlock");
+const ecommerceCodeValue = document.getElementById("ecommerceCodeValue");
+const ecommerceInstructions = document.getElementById("ecommerceInstructions");
+const copyEcommerceCodeButton = document.getElementById("copyEcommerceCodeButton");
+const openEcommerceStoreButton = document.getElementById("openEcommerceStoreButton");
 
 let currentTicketImageDataUrl = "";
 let currentTicketFilename = "ticket-qr.png";
@@ -59,6 +64,21 @@ function extensionForDataUrl(dataUrl) {
   if (header.includes("image/jpeg")) return "jpg";
   if (header.includes("image/webp")) return "webp";
   return "png";
+}
+
+function benefitFulfillment(data = {}) {
+  const value = data?.benefit?.value || {};
+  const source = value.fulfillment || value.value?.fulfillment || {};
+  const mode = String(source.mode || value.redemption_channel || "PHYSICAL_QR").toUpperCase();
+  if (mode === "ECOMMERCE_CODE" || mode === "ECOMMERCE") {
+    return {
+      mode: "ECOMMERCE_CODE",
+      ecommerce_code: source.ecommerce_code || value.ecommerce_code || "",
+      ecommerce_url: source.ecommerce_url || value.ecommerce_url || "",
+      instructions: source.instructions || value.instructions || "Copia el código y aplícalo en el checkout de la tienda online.",
+    };
+  }
+  return { mode: "PHYSICAL_QR" };
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -182,6 +202,8 @@ function setDownloadState(data) {
 }
 
 function renderStatus(data) {
+  const fulfillment = benefitFulfillment(data);
+  const isEcommerce = fulfillment.mode === "ECOMMERCE_CODE";
   claimMessage.textContent = data.message || "Estado actualizado.";
   businessName.textContent = data.business?.name || "-";
   qrType.textContent = data.qr_code?.origin_type || "-";
@@ -190,16 +212,27 @@ function renderStatus(data) {
   claimForm.classList.toggle("hidden", !data.allowed);
   const hasFinalTicket = Boolean(data.final_ticket?.qr_image_data_url && data.final_ticket?.validator_url);
   resultBlock.classList.toggle("hidden", data.allowed || hasFinalTicket);
-  finalTicketBlock.classList.toggle("hidden", !hasFinalTicket);
+  ecommerceTicketBlock?.classList.toggle("hidden", !(hasFinalTicket && isEcommerce));
+  finalTicketBlock.classList.toggle("hidden", !hasFinalTicket || isEcommerce);
+  if (hasFinalTicket && isEcommerce) {
+    ecommerceCodeValue.textContent = fulfillment.ecommerce_code || "Código pendiente";
+    ecommerceInstructions.textContent = fulfillment.instructions || "Copia el código y úsalo en la tienda online.";
+    if (openEcommerceStoreButton) {
+      openEcommerceStoreButton.href = fulfillment.ecommerce_url || "#";
+      openEcommerceStoreButton.classList.toggle("hidden", !fulfillment.ecommerce_url);
+    }
+    setDownloadState(data);
+  }
   if (hasFinalTicket) {
     finalTicketQrImage.src = data.final_ticket.qr_image_data_url;
-    finalTicketLink.textContent = "Presenta este QR para reclamar el beneficio";
+    finalTicketLink.textContent = isEcommerce ? "QR de respaldo del beneficio ecommerce" : "Presenta este QR para reclamar el beneficio";
     setDownloadState(data);
     resultBlock.textContent = "";
   } else {
     setDownloadState(null);
     finalTicketQrImage.removeAttribute("src");
     finalTicketLink.textContent = "";
+    ecommerceTicketBlock?.classList.add("hidden");
   }
   if (!data.allowed && !hasFinalTicket) {
     resultBlock.textContent = data.message || "Este QR no puede activarse.";
@@ -256,6 +289,18 @@ shareTicketImageButton?.addEventListener("click", async () => {
     resultBlock.classList.remove("hidden");
     resultBlock.textContent = error.message;
   }
+});
+
+copyEcommerceCodeButton?.addEventListener("click", async () => {
+  const code = ecommerceCodeValue?.textContent?.trim() || "";
+  if (!code || code === "-" || code.toLowerCase().includes("pendiente")) return;
+  try {
+    await navigator.clipboard?.writeText(code);
+  } catch (error) {
+    console.warn("No fue posible copiar el codigo ecommerce", error);
+  }
+  resultBlock.classList.remove("hidden");
+  resultBlock.textContent = "Código ecommerce copiado.";
 });
 
 loadClaim();

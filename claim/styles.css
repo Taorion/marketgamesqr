@@ -101,6 +101,42 @@ h1 {
   text-align: center;
 }
 
+.ecommerce-ticket {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding: 18px;
+  border: 1px solid rgba(19, 111, 84, 0.22);
+  border-radius: 18px;
+  background: #ecfff6;
+  text-align: center;
+}
+
+.ecommerce-ticket span {
+  display: block;
+  margin-bottom: 6px;
+  color: #0d6b52;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ecommerce-ticket strong {
+  color: #13212c;
+  font-size: clamp(28px, 8vw, 46px);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.ecommerce-ticket p {
+  max-width: 360px;
+  margin: 0;
+  color: #36564a;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .final-ticket span {
   display: block;
   margin-bottom: 4px;

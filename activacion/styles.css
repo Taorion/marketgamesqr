@@ -692,6 +692,36 @@ button:focus-visible {
   margin: 0;
 }
 
+.ecommerce-reward-card {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 420px);
+  padding: 16px;
+  border: 1px solid rgba(17, 133, 104, .22);
+  border-radius: 12px;
+  background: #ecfff6;
+}
+
+.ecommerce-reward-card span {
+  color: #0d6b52;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.ecommerce-reward-card strong {
+  color: #07111f;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: clamp(24px, 6vw, 38px);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.ecommerce-reward-card .submit-button {
+  width: fit-content;
+}
+
 .hidden {
   display: none !important;
 }

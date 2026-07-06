@@ -1404,6 +1404,7 @@ textarea {
 
 .affiliate-card-actions input[type="number"],
 .affiliate-card-actions input[type="text"],
+.affiliate-card-actions input[type="url"],
 .affiliate-card-actions select {
   width: 100%;
   min-height: 48px;
@@ -12161,6 +12162,53 @@ body.chart-focus-open .command-center {
   border: 1px solid #cbd8d0;
   border-radius: 12px;
   background: #f8fbf8;
+}
+
+.benefit-fulfillment-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(17, 133, 104, 0.22);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(236, 255, 246, 0.92), rgba(255, 255, 255, 0.96));
+}
+
+.benefit-fulfillment-panel .survey-builder-grid {
+  align-items: end;
+}
+
+.ecommerce-code-preview {
+  display: grid;
+  gap: 6px;
+  width: min(100%, 360px);
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid rgba(17, 133, 104, 0.24);
+  border-radius: 12px;
+  background: #ecfff6;
+}
+
+.ecommerce-code-preview span {
+  color: #0d6b52;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ecommerce-code-preview strong {
+  color: #07111f;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 28px;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.ecommerce-code-preview a {
+  color: #0d6b52;
+  font-weight: 900;
 }
 
 .activation-config-head {

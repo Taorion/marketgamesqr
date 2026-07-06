@@ -75,6 +75,32 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function rewardValueFromResult(data = {}) {
+  return data.reward?.reward_value
+    || data.reward?.value
+    || data.qr_code?.benefit_value?.value
+    || data.qr_code?.benefit_value
+    || {};
+}
+
+function benefitFulfillmentFromResult(data = {}) {
+  const value = rewardValueFromResult(data);
+  const source = value?.fulfillment || value?.value?.fulfillment || {};
+  const mode = String(source.mode || value.redemption_channel || "PHYSICAL_QR").toUpperCase();
+  if (mode === "ECOMMERCE_CODE" || mode === "ECOMMERCE") {
+    return {
+      mode: "ECOMMERCE_CODE",
+      ecommerce_code: source.ecommerce_code || value.ecommerce_code || "",
+      ecommerce_url: source.ecommerce_url || value.ecommerce_url || "",
+      instructions: source.instructions || value.instructions || "Copia este código y aplícalo en el checkout de la tienda online.",
+    };
+  }
+  return {
+    mode: "PHYSICAL_QR",
+    instructions: source.instructions || "Presenta este QR en el punto autorizado para redimir el beneficio.",
+  };
+}
+
 function slugFromPath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
   return parts[1] || parts[0] || "";
@@ -2912,8 +2938,25 @@ async function completeActivation(payload = {}) {
 async function renderResult(data) {
   const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
   const validatorUrl = data.validator_url || "";
+  const fulfillment = benefitFulfillmentFromResult(data);
+  const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
-  ticketResult.innerHTML = data.rewarded ? `
+  ticketResult.innerHTML = data.rewarded && isEcommerceReward ? `
+    <div class="result-copy">
+      <span>Beneficio desbloqueado</span>
+      <strong>${escapeHtml(data.reward?.reward_label || "Código ecommerce")}</strong>
+      <p>${escapeHtml(fulfillment.instructions)}</p>
+    </div>
+    <div class="ecommerce-reward-card">
+      <span>Código para usar en la tienda online</span>
+      <strong>${escapeHtml(fulfillment.ecommerce_code || data.reward?.public_code || "CODIGO")}</strong>
+      ${fulfillment.ecommerce_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.ecommerce_url)}" target="_blank" rel="noreferrer">Ir a la tienda</a>` : ""}
+    </div>
+    <div class="ticket-actions">
+      <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar código</button>
+      ${validatorUrl ? `<a class="submit-button secondary" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Ver respaldo QR</a>` : ""}
+    </div>
+  ` : data.rewarded ? `
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
@@ -2933,7 +2976,16 @@ async function renderResult(data) {
     </div>
   `;
   ticketResult.classList.remove("hidden");
-  if (data.rewarded) {
+  if (data.rewarded && isEcommerceReward) {
+    document.getElementById("copyEcommerceCodeButton")?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard?.writeText(fulfillment.ecommerce_code || data.reward?.public_code || "");
+      } catch (error) {
+        console.warn("No fue posible copiar el codigo ecommerce", error);
+      }
+      setStatus("Código copiado. Úsalo en el checkout de la tienda online.", "success");
+    });
+  } else if (data.rewarded) {
     const filename = rewardQrFilename();
     document.getElementById("downloadRewardQrButton")?.addEventListener("click", () => {
       downloadDataUrl(filename, rewardQrDataUrl);

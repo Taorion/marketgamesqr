@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=season-flow-contrast-20260701">
+  <link rel="stylesheet" href="css/styles.css?v=ecommerce-code-20260705">
 </head>
 <body>
   <main class="portal-shell">
@@ -960,6 +960,23 @@
                   </label>
                   <label><span>Producto del beneficio</span><select id="postSaleBenefitProductInput" data-product-select data-open-product-input="postSaleBenefitProductOpenInput"></select><input id="postSaleBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                   <label><span>Detalle estructurado</span><input id="postSaleBenefitValueInput" type="text" placeholder="{'product':'Hamburguesa clásica'}"></label>
+                  <section class="full benefit-fulfillment-panel">
+                    <div class="activation-config-head">
+                      <strong>Entrega del beneficio</strong>
+                      <span>Usa QR físico para redimir en tienda o código ecommerce para que el cliente compre en la web.</span>
+                    </div>
+                    <div class="survey-builder-grid">
+                      <label><span>Modo de entrega</span>
+                        <select id="postSaleBenefitFulfillmentModeInput" data-benefit-fulfillment-mode>
+                          <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
+                          <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                        </select>
+                      </label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="postSaleEcommerceCodeInput" type="text" maxlength="80" placeholder="MG15, ENVIOGRATIS..."></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="postSaleEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="postSaleEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
+                    </div>
+                  </section>
                   <label><span>Expiracion</span>
                     <select id="postSaleExpiresModeInput">
                       <option value="NONE">Sin expiración</option>
@@ -1044,6 +1061,23 @@
                   </label>
                   <label><span class="field-label">Producto del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre producto del beneficio" data-help="Selecciona un producto de inventario. Si no existe, usa producto abierto y escribe el nombre."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><select id="qrBatchBenefitProductInput" data-product-select data-open-product-input="qrBatchBenefitProductOpenInput"></select><input id="qrBatchBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                   <label><span class="field-label">Valor del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre valor del beneficio" data-help="Opcional: escribe datos estructurados del beneficio en JSON. Ejemplo para dinero: {'amount':10000}. Ejemplo para porcentaje: {'percent':15}."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
+                  <section class="full benefit-fulfillment-panel">
+                    <div class="activation-config-head">
+                      <strong>Entrega del beneficio</strong>
+                      <span>Este paquete puede llevar a una redención física o entregar un código para tienda online después del reclamo.</span>
+                    </div>
+                    <div class="survey-builder-grid">
+                      <label><span>Modo de entrega</span>
+                        <select id="qrBatchBenefitFulfillmentModeInput" data-benefit-fulfillment-mode>
+                          <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
+                          <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                        </select>
+                      </label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="qrBatchEcommerceCodeInput" type="text" maxlength="80" placeholder="MG15, ENVIOGRATIS..."></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="qrBatchEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="qrBatchEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
+                    </div>
+                  </section>
                   <label><span class="field-label">Flujo del paquete <button class="field-help" type="button" aria-label="Ayuda sobre flujo del paquete" data-help="Este flujo queda fijo: el QR impreso captura datos del lead y luego emite el ticket QR final que si se valida en tienda."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
                     <select id="qrBatchClaimRequiredInput" disabled>
                       <option value="true">QR inicial captura datos y emite ticket final</option>
@@ -1339,6 +1373,23 @@
                     </label>
                     <label><span>Producto del beneficio</span><select id="triviaBenefitProductInput" data-product-select data-open-product-input="triviaBenefitProductOpenInput"></select><input id="triviaBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                     <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder='{"percent":15}'></label>
+                    <section class="full benefit-fulfillment-panel">
+                      <div class="activation-config-head">
+                        <strong>Entrega del beneficio</strong>
+                        <span>El ganador puede recibir QR para tienda física o un código para usar en ecommerce.</span>
+                      </div>
+                      <div class="survey-builder-grid">
+                        <label><span>Modo de entrega</span>
+                          <select id="triviaBenefitFulfillmentModeInput" data-benefit-fulfillment-mode>
+                            <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
+                            <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                          </select>
+                        </label>
+                        <label data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="triviaEcommerceCodeInput" type="text" maxlength="80" placeholder="MG15, ENVIOGRATIS..."></label>
+                        <label data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="triviaEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                        <label data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="triviaEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
+                      </div>
+                    </section>
                     <label><span>Expiracion</span>
                       <select id="triviaExpiresModeInput">
                         <option value="NONE">Sin expiración</option>
@@ -3812,6 +3863,24 @@
                   <label><span>Beneficio del ticket</span><input id="affiliateRewardBenefitLabelInput" type="text" maxlength="180" placeholder="Ej: 20% en próxima compra" required></label>
                   <label><span>Valor JSON opcional</span><input id="affiliateRewardBenefitValueInput" type="text" placeholder='{"percent":20}'></label>
                   <label><span>Vence en días</span><input id="affiliateRewardExpirationInput" type="number" min="1" step="1" placeholder="Sin vencimiento"></label>
+                  <div class="benefit-fulfillment-panel span-2">
+                    <div class="benefit-product-head">
+                      <strong>Entrega del premio</strong>
+                      <span>El ticket desbloqueado puede redimir en punto físico o entregar un código para ecommerce.</span>
+                    </div>
+                    <div class="survey-builder-grid">
+                      <label>
+                        <span>Canal de redención</span>
+                        <select id="affiliateRewardFulfillmentModeInput" data-benefit-fulfillment-mode>
+                          <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
+                          <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                        </select>
+                      </label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="affiliateRewardEcommerceCodeInput" type="text" maxlength="80" placeholder="VIP20, PUNTOS15..."></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="affiliateRewardEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Instrucciones</span><input id="affiliateRewardEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Usa el código en el checkout antes de pagar."></label>
+                    </div>
+                  </div>
                   <label class="span-2"><span>Descripción interna</span><input id="affiliateRewardDescriptionInput" type="text" maxlength="800" placeholder="Condiciones o detalle operativo"></label>
                   <div class="modal-actions span-2">
                     <p class="form-message" id="affiliateRewardRuleMessage"></p>
@@ -3858,6 +3927,24 @@
                     <span>Texto del beneficio</span>
                     <input id="affiliateReferralQrBenefitInput" type="text" value="Recomendación de afiliado" maxlength="120">
                   </label>
+                  <div class="benefit-fulfillment-panel span-3">
+                    <div class="benefit-product-head">
+                      <strong>Entrega del beneficio</strong>
+                      <span>Sirve para tienda física o para ecommerce del negocio recomendado.</span>
+                    </div>
+                    <div class="survey-builder-grid">
+                      <label>
+                        <span>Canal de redención</span>
+                        <select id="affiliateReferralQrFulfillmentModeInput" data-benefit-fulfillment-mode>
+                          <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
+                          <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                        </select>
+                      </label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="affiliateReferralQrEcommerceCodeInput" type="text" maxlength="80" placeholder="REFERIDO15, ENVIOGRATIS..."></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="affiliateReferralQrEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                      <label data-benefit-fulfillment-field="ecommerce"><span>Instrucciones</span><input id="affiliateReferralQrEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Usa el código antes de pagar en la tienda online."></label>
+                    </div>
+                  </div>
                   <button class="solid-button" id="affiliateGenerateReferralQrButton" type="button" disabled>Generar tickets de referidos</button>
                 </div>
                 <label class="stacked-field">
@@ -4155,7 +4242,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=ticket-image-share-20260701" defer></script>
+  <script src="js/app.js?v=ecommerce-code-20260705" defer></script>
 </body>
 </html>
 
