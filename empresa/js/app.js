@@ -5898,17 +5898,56 @@ function campaignDynamicLabel(dynamic) {
 }
 
 function campaignDecisionStatus(totals = calculateCampaignCosts()) {
-  if (!totals.totalCost) return { tone: "pending", label: "Sin datos", action: "Completa costos, margen y ticket promedio antes de decidir." };
-  if (!totals.grossMarginPerSale || !totals.averageTicket || !totals.conversionRate) {
-    return { tone: "warning", label: "Amarillo", action: "Faltan margen, ticket o conversión para saber si la campaña se paga sola." };
+  const missingFields = campaignCostMissingViabilityFields(totals);
+  if (!totals.totalCost) {
+    return {
+      tone: "pending",
+      label: "Sin costos",
+      action: "Agrega al menos un costo de producción, beneficio, servicio, variable o fijo para calcular la viabilidad.",
+      missingFields: ["Costo total de campaña"],
+      isCalculable: false,
+    };
+  }
+  if (missingFields.length) {
+    return {
+      tone: "warning",
+      label: "No calculable aún",
+      action: "La calculadora necesita esos datos para comparar el costo de la campaña contra la utilidad que deja cada venta.",
+      missingFields,
+      isCalculable: false,
+    };
   }
   if (totals.roi >= 25 && totals.requiredSales >= totals.breakEvenSales) {
-    return { tone: "ok", label: "Verde", action: "Activar campaña con seguimiento diario de redenciones y ventas." };
+    return { tone: "ok", label: "Se paga sola", action: "Activar campaña con seguimiento diario de redenciones y ventas.", missingFields: [], isCalculable: true };
   }
   if (totals.roi >= 0) {
-    return { tone: "warning", label: "Amarillo", action: "Posible, pero conviene reducir costo de beneficios, subir ticket promedio o mejorar conversión." };
+    return { tone: "warning", label: "Puede pagar sus costos", action: "Posible, pero conviene reducir costo de beneficios, subir ticket promedio o mejorar conversión.", missingFields: [], isCalculable: true };
   }
-  return { tone: "danger", label: "Rojo", action: "Riesgosa: necesita más margen, menos descuento o menor costo fijo antes de ejecutarla." };
+  return { tone: "danger", label: "No se paga sola", action: "Riesgosa: necesita más margen, menos descuento o menor costo fijo antes de ejecutarla.", missingFields: [], isCalculable: true };
+}
+
+function campaignCostMissingViabilityFields(totals = calculateCampaignCosts()) {
+  const fields = [];
+  if (!totals.averageTicket) fields.push("Ticket promedio");
+  if (!totals.grossMarginPerSale) fields.push("Margen bruto por venta");
+  if (!totals.conversionRate) fields.push("Conversión de leads a ventas");
+  return fields;
+}
+
+function campaignCostFeedbackHtml({ tone = "idle", icon = "info", title = "", body = "", details = [] } = {}) {
+  const detailList = details.length
+    ? `<ul>${details.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : "";
+  return `
+    <div class="campaign-cost-feedback-card campaign-cost-feedback-${escapeHtml(tone)}">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(body)}</p>
+        ${detailList}
+      </div>
+    </div>
+  `;
 }
 
 function renderCampaignCostCalculator() {
@@ -6089,7 +6128,19 @@ function renderCampaignCostSummary(calculator = state.campaignCostCalculator || 
   renderCampaignCostDecision(calculator, totals);
   renderCampaignCostScenarios(calculator);
   if (campaignCostMessage) {
-    campaignCostMessage.textContent = `Para que esta campaña sea rentable, necesita al menos ${money(totals.revenueGoal)} en ventas, ${totals.requiredSales.toLocaleString("es-CO")} ventas con ticket promedio de ${money(totals.averageTicket)}, o ${totals.leadsNeeded.toLocaleString("es-CO")} leads si convierte al ${totals.conversionRate || 0}%.`;
+    const missingFields = campaignCostMissingViabilityFields(totals);
+    campaignCostMessage.innerHTML = campaignCostFeedbackHtml(missingFields.length ? {
+      tone: "warning",
+      icon: "edit_note",
+      title: "Faltan datos para decidir",
+      body: "Completa los campos pendientes y la calculadora podrá decir si la campaña recupera su inversión.",
+      details: missingFields,
+    } : {
+      tone: "idle",
+      icon: "payments",
+      title: "Meta financiera sugerida",
+      body: `Para que esta campaña sea rentable, necesita al menos ${money(totals.revenueGoal)} en ventas, ${totals.requiredSales.toLocaleString("es-CO")} ventas con ticket promedio de ${money(totals.averageTicket)} o ${totals.leadsNeeded.toLocaleString("es-CO")} leads si convierte al ${totals.conversionRate || 0}%.`,
+    });
   }
 }
 
@@ -6097,15 +6148,22 @@ function renderCampaignCostDecision(calculator = state.campaignCostCalculator ||
   if (!campaignCostDecision) return;
   const decision = campaignDecisionStatus(totals);
   const goalLabel = campaignGoalLabel(calculator.primary_goal);
+  const missingList = decision.missingFields?.length
+    ? `<ul class="campaign-cost-missing-list">${decision.missingFields.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : "";
+  const commercialDecision = decision.isCalculable
+    ? `Sí, si logra ${totals.requiredSales.toLocaleString("es-CO")} ventas, convierte al menos ${totals.conversionRate || 0}% de leads o sostiene un margen bruto de ${money(totals.grossMarginPerSale)} por venta.`
+    : `Aún no hay veredicto: completa ${decision.missingFields.map((item) => item.toLowerCase()).join(", ")} para calcular ventas necesarias, leads requeridos y punto de equilibrio.`;
   campaignCostDecision.innerHTML = `
     <div class="campaign-cost-status ${escapeHtml(decision.tone)}">
       <span class="mono-label">¿Esta campaña se paga sola?</span>
       <strong>${escapeHtml(decision.label)}</strong>
       <p>${escapeHtml(decision.action)}</p>
+      ${missingList}
     </div>
     <div>
       <span class="mono-label">Decisión comercial</span>
-      <p>Sí, si logra ${totals.requiredSales.toLocaleString("es-CO")} ventas, convierte al menos ${totals.conversionRate || 0}% de leads o sostiene un margen bruto de ${escapeHtml(money(totals.grossMarginPerSale))} por venta.</p>
+      <p>${escapeHtml(commercialDecision)}</p>
     </div>
     <div>
       <span class="mono-label">Meta por comportamiento</span>
@@ -6214,7 +6272,23 @@ function applyCampaignCostToLaunchBudget() {
   if (launchBudgetInput) launchBudgetInput.value = Math.round(totals.totalCost);
   if (launchSalesGoalInput) launchSalesGoalInput.value = Math.round(totals.revenueGoal);
   if (campaignCostMessage) {
-    campaignCostMessage.textContent = `Costo aplicado al presupuesto: ${money(totals.totalCost)}. Meta de ventas sugerida: ${money(totals.revenueGoal)}.`;
+    campaignCostMessage.innerHTML = campaignCostFeedbackHtml({
+      tone: "success",
+      icon: "check_circle",
+      title: "Presupuesto actualizado en el formulario",
+      body: `Se copiaron ${money(totals.totalCost)} al presupuesto de la campaña y ${money(totals.revenueGoal)} a la meta de ventas sugerida.`,
+      details: ["Revisa los campos del formulario principal antes de guardar.", "La calculadora sigue editable: si cambias números, vuelve a usar este botón."],
+    });
+  }
+  if (campaignCostApplyBudgetButton) {
+    const defaultHtml = campaignCostApplyBudgetButton.dataset.defaultHtml || campaignCostApplyBudgetButton.innerHTML;
+    campaignCostApplyBudgetButton.dataset.defaultHtml = defaultHtml;
+    campaignCostApplyBudgetButton.classList.add("campaign-cost-apply-done");
+    campaignCostApplyBudgetButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">check_circle</span>Aplicado al formulario';
+    window.setTimeout(() => {
+      campaignCostApplyBudgetButton.classList.remove("campaign-cost-apply-done");
+      campaignCostApplyBudgetButton.innerHTML = campaignCostApplyBudgetButton.dataset.defaultHtml || defaultHtml;
+    }, 2400);
   }
 }
 
