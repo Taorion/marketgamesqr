@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-sales-ux-refine-v1";
+const APP_VERSION = "empresa-20260706-contact-tab-logic-fix-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -703,7 +703,7 @@ const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalM
 const subscriptionTiming = document.getElementById("subscriptionTiming");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
-const segmentTabs = Array.from(document.querySelectorAll(".segment-tab"));
+const segmentTabs = Array.from(document.querySelectorAll("[data-redemption-sales-tab]"));
 const businessTrendChart = document.getElementById("businessTrendChart");
 const cacTrendChart = document.getElementById("cacTrendChart");
 const hourlyOperationsChart = document.getElementById("hourlyOperationsChart");
@@ -2904,7 +2904,10 @@ function setView(view) {
   workspace?.classList.remove("sidebar-open");
 
   segmentTabs.forEach((tab, index) => {
-    const active = (view === "redemptions" && index === 0) || (requestedView === "sales" && index === 1);
+    const targetView = tab.dataset.redemptionSalesTab || (index === 0 ? "redemptions" : "sales");
+    const active = targetView === "redemptions"
+      ? view === "redemptions"
+      : requestedView === "sales";
     tab.classList.toggle("active", active);
   });
 
@@ -18887,7 +18890,7 @@ ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
 });
 segmentTabs.forEach((tab, index) => {
-  tab.addEventListener("click", () => setView(index === 0 ? "redemptions" : "sales"));
+  tab.addEventListener("click", () => setView(tab.dataset.redemptionSalesTab || (index === 0 ? "redemptions" : "sales")));
 });
 exportCampaignReportButton.addEventListener("click", exportCampaignReport);
 markReadyCampaignButton.addEventListener("click", markCampaignReady);

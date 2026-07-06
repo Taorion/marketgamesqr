@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-ux-refine-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=contact-tab-logic-fix-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -2986,9 +2986,9 @@
               </div>
             </div>
 
-            <div class="segment-tabs">
-              <button class="segment-tab active" type="button">Redenciones</button>
-              <button class="segment-tab" type="button">Ventas atribuidas</button>
+            <div class="segment-tabs" id="redemptionSalesTabs">
+              <button class="segment-tab active" data-redemption-sales-tab="redemptions" type="button">Redenciones</button>
+              <button class="segment-tab" data-redemption-sales-tab="sales" type="button">Ventas atribuidas</button>
             </div>
 
             <article class="surface-card data-table-card">
@@ -4368,7 +4368,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-ux-refine-20260706" defer></script>
+  <script src="js/app.js?v=contact-tab-logic-fix-20260706" defer></script>
 </body>
 </html>
 
