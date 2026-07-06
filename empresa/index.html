@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=ecommerce-code-20260705">
+  <link rel="stylesheet" href="css/styles.css?v=ticket-inventory-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -1139,6 +1139,7 @@
                 <div class="table-card-head">
                   <span class="mono-label">Historial de tickets</span>
                 </div>
+                <section class="ticket-status-board" id="ticketStatusBoard"></section>
                 <div class="table-wrap">
                   <table>
                     <thead>
@@ -2656,7 +2657,9 @@
                 <label><span>Tickets</span>
                   <select id="leadCrmTicketFilter">
                     <option value="">Todos</option>
-                    <option value="active">Activos</option>
+                    <option value="active">Activos sin redimir</option>
+                    <option value="expired">Expirados</option>
+                    <option value="inactive">No activos</option>
                     <option value="redeemed">Redimidos</option>
                   </select>
                 </label>
@@ -2674,6 +2677,7 @@
               </div>
             </section>
             <section class="kpi-grid compact" id="leadFeedKpiGrid"></section>
+            <section class="lead-ticket-inventory-board" id="leadTicketInventoryBoard"></section>
             <section class="lead-attention-board" id="leadAttentionBoard"></section>
             <article class="surface-card data-table-card lead-crm-card">
               <div class="table-card-head">
@@ -4242,7 +4246,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=ecommerce-code-20260705" defer></script>
+  <script src="js/app.js?v=ticket-inventory-20260706" defer></script>
 </body>
 </html>
 

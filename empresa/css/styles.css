@@ -12918,6 +12918,184 @@ body.chart-focus-open .command-center {
   margin: 14px 0;
 }
 
+.lead-ticket-inventory-board,
+.ticket-status-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.ticket-status-board {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.lead-ticket-inventory-card,
+.ticket-status-card {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.028)),
+    rgba(8, 18, 28, 0.62);
+}
+
+.lead-ticket-inventory-card.is-active,
+.ticket-status-card.is-active {
+  border-color: rgba(111, 251, 190, 0.28);
+  background: rgba(111, 251, 190, 0.075);
+}
+
+.lead-ticket-inventory-card.is-expired,
+.ticket-status-card.is-expired {
+  border-color: rgba(251, 113, 133, 0.28);
+  background: rgba(251, 113, 133, 0.075);
+}
+
+.lead-ticket-inventory-card.is-inactive,
+.ticket-status-card.is-inactive {
+  border-color: rgba(250, 204, 21, 0.28);
+  background: rgba(250, 204, 21, 0.07);
+}
+
+.lead-ticket-inventory-head,
+.ticket-status-head {
+  display: grid;
+  gap: 4px;
+}
+
+.lead-ticket-inventory-head strong,
+.ticket-status-head strong {
+  color: var(--text);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.lead-ticket-inventory-head small,
+.ticket-status-head small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.lead-ticket-inventory-list,
+.ticket-status-list {
+  display: grid;
+  gap: 9px;
+}
+
+.lead-ticket-inventory-row,
+.ticket-status-row {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.lead-ticket-inventory-main,
+.ticket-status-main {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lead-ticket-inventory-main span,
+.ticket-status-main span {
+  min-width: 0;
+}
+
+.lead-ticket-inventory-main strong,
+.lead-ticket-inventory-main small,
+.ticket-status-main strong,
+.ticket-status-main small {
+  display: block;
+  min-width: 0;
+}
+
+.lead-ticket-inventory-main small,
+.ticket-status-main small {
+  margin-top: 3px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.lead-ticket-inventory-actions,
+.ticket-status-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lead-ticket-inventory-actions .ghost-button,
+.ticket-status-actions .ghost-button {
+  min-height: 36px;
+}
+
+.lead-ticket-inventory-row:hover,
+.ticket-status-row:hover {
+  border-color: rgba(111, 251, 190, 0.3);
+  background: rgba(111, 251, 190, 0.07);
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-card,
+:root[data-theme="light"] .ticket-status-card {
+  border-color: #d2dfd9;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-card.is-active,
+:root[data-theme="light"] .ticket-status-card.is-active {
+  border-color: #95d5b2;
+  background: #f3fbf7;
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-card.is-expired,
+:root[data-theme="light"] .ticket-status-card.is-expired {
+  border-color: #f0a3a6;
+  background: #fff6f6;
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-card.is-inactive,
+:root[data-theme="light"] .ticket-status-card.is-inactive {
+  border-color: #dfc46b;
+  background: #fffbea;
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-row,
+:root[data-theme="light"] .ticket-status-row {
+  border-color: #dce6e1;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-row:hover,
+:root[data-theme="light"] .ticket-status-row:hover {
+  border-color: #7eb69b;
+  background: #eef8f2;
+}
+
+:root[data-theme="light"] .lead-ticket-inventory-head small,
+:root[data-theme="light"] .ticket-status-head small,
+:root[data-theme="light"] .lead-ticket-inventory-main small,
+:root[data-theme="light"] .ticket-status-main small {
+  color: #49645a;
+}
+
 .lead-segment-card {
   display: grid;
   gap: 10px;
@@ -13302,7 +13480,7 @@ body.chart-focus-open .command-center {
 
 .lead-ticket-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260701-session-isolation-v1";
+const APP_VERSION = "empresa-20260706-ticket-inventory-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -50,6 +50,7 @@ const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
 const leadAttentionBoard = document.getElementById("leadAttentionBoard");
+const leadTicketInventoryBoard = document.getElementById("leadTicketInventoryBoard");
 const leadExportScopeInput = document.getElementById("leadExportScopeInput");
 const contactCenterSummaryGrid = document.getElementById("contactCenterSummaryGrid");
 const contactCenterPanels = Array.from(document.querySelectorAll("[data-contact-center-panel]"));
@@ -662,6 +663,7 @@ const qrBatchProgressMessage = document.getElementById("qrBatchProgressMessage")
 const qrBatchResult = document.getElementById("qrBatchResult");
 const qrBatchTable = document.getElementById("qrBatchTable");
 const strategicQrHistoryTable = document.getElementById("strategicQrHistoryTable");
+const ticketStatusBoard = document.getElementById("ticketStatusBoard");
 const qrCreditCheckoutForm = document.getElementById("qrCreditCheckoutForm");
 const qrCreditPackageSelect = document.getElementById("qrCreditPackageSelect");
 const qrCreditCheckoutButton = document.getElementById("qrCreditCheckoutButton");
@@ -1762,6 +1764,8 @@ function leadCrmQueryString() {
     if (!value) return;
     if (key === "ticket_filter") {
       if (value === "active") params.set("has_active_tickets", "true");
+      if (value === "expired") params.set("has_expired_tickets", "true");
+      if (value === "inactive") params.set("has_inactive_tickets", "true");
       if (value === "redeemed") params.set("has_redeemed_tickets", "true");
       return;
     }
@@ -8736,6 +8740,82 @@ async function exportLeadCapture(id) {
   triggerBlobDownload(blob, `captura-relampago-${id}.csv`);
 }
 
+function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
+  if (!ticketStatusBoard) return;
+  const rows = Array.isArray(tickets) ? tickets : [];
+  const groups = [
+    {
+      key: "active",
+      title: "Activos sin redimir",
+      meta: "Tickets vigentes listos para enviar o recordar",
+      rows: rows.filter(isActiveTicket),
+      tone: "ok",
+    },
+    {
+      key: "expired",
+      title: "Expirados",
+      meta: "Vencieron sin redencion registrada",
+      rows: rows.filter(isExpiredTicket),
+      tone: "danger",
+    },
+    {
+      key: "inactive",
+      title: "No activos",
+      meta: "Sin reclamar, cancelados o en estado no usable",
+      rows: rows.filter(isInactiveTicket),
+      tone: "pending",
+    },
+    {
+      key: "redeemed",
+      title: "Redimidos",
+      meta: "Ya usados o validados en el punto",
+      rows: rows.filter(isRedeemedTicket),
+      tone: "pending",
+    },
+  ];
+  ticketStatusBoard.innerHTML = groups.map((group) => `
+    <article class="ticket-status-card is-${escapeHtml(group.key)}">
+      <div class="ticket-status-head">
+        <span class="mono-label">${escapeHtml(group.title)}</span>
+        <strong>${group.rows.length.toLocaleString("es-CO")}</strong>
+        <small>${escapeHtml(group.meta)}</small>
+      </div>
+      <div class="ticket-status-list">
+        ${group.rows.slice(0, 8).map((item) => {
+          const person = item.player_name || item.player_phone || "Sin cliente";
+          const benefit = item.benefit_value?.label || item.benefit_type || item.origin_type || "Ticket";
+          return `
+            <div class="ticket-status-row">
+              <button class="ticket-status-main" type="button" data-open-ticket-row="${escapeHtml(item.id)}">
+                <span>
+                  <strong>${escapeHtml(person)}</strong>
+                  <small>${escapeHtml(benefit)} | ${escapeHtml(formatDate(item.created_at))}</small>
+                </span>
+                <span class="status-chip ${escapeHtml(group.tone)}">${escapeHtml(ticketStatusLabel(item))}</span>
+              </button>
+              ${group.key === "active" ? `
+                <div class="ticket-status-actions">
+                  <button class="ghost-button" type="button" data-ticket-status-send="${escapeHtml(item.id)}">Enviar ticket</button>
+                  <button class="ghost-button" type="button" data-ticket-status-whatsapp="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("") || '<div class="empty-state compact">Sin tickets en este estado.</div>'}
+      </div>
+    </article>
+  `).join("");
+  ticketStatusBoard.querySelectorAll("[data-open-ticket-row]").forEach((button) => {
+    button.addEventListener("click", () => downloadStrategicQr(button.dataset.openTicketRow));
+  });
+  ticketStatusBoard.querySelectorAll("[data-ticket-status-send]").forEach((button) => {
+    button.addEventListener("click", () => downloadStrategicQr(button.dataset.ticketStatusSend));
+  });
+  ticketStatusBoard.querySelectorAll("[data-ticket-status-whatsapp]").forEach((button) => {
+    button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.ticketStatusWhatsapp, button.dataset.leadPhone, button.dataset.leadName));
+  });
+}
+
 function renderStrategicQrView() {
   renderCampaignAssociationInputs();
   renderLeadCaptureFields();
@@ -8833,6 +8913,7 @@ function renderStrategicQrView() {
     `).join("")
     : '<tr><td colspan="5">No hay paquetes creados.</td></tr>';
 
+  renderTicketStatusBoard(state.strategicQrHistory || []);
   strategicQrHistoryTable.innerHTML = (state.strategicQrHistory || []).length
     ? state.strategicQrHistory.map((item) => `
       <tr>
@@ -8841,11 +8922,20 @@ function renderStrategicQrView() {
           ${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}
           ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
-        <td>${escapeHtml(item.status)}</td>
-        <td>${escapeHtml(item.player_name || "-")}</td>
+        <td>
+          <span class="status-chip ${ticketStatusClass(item)}">${escapeHtml(ticketStatusLabel(item))}</span>
+          <br><span class="table-secondary">${escapeHtml(item.expires_at ? `Vence ${formatDate(item.expires_at)}` : item.status || "-")}</span>
+        </td>
+        <td>
+          ${escapeHtml(item.player_name || "-")}
+          <br><span class="table-secondary">${escapeHtml(item.player_phone || item.player_email || "-")}</span>
+        </td>
         <td>
           ${escapeHtml(formatDate(item.created_at))}
-          <button class="ghost-button" type="button" data-download-strategic-qr="${escapeHtml(item.id)}">PNG</button>
+          <div class="activation-row-actions">
+            <button class="ghost-button" type="button" data-download-strategic-qr="${escapeHtml(item.id)}">Enviar ticket</button>
+            ${isActiveTicket(item) ? `<button class="ghost-button" type="button" data-share-strategic-qr-wa="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>` : ""}
+          </div>
         </td>
       </tr>
     `).join("")
@@ -8853,6 +8943,9 @@ function renderStrategicQrView() {
 
   strategicQrHistoryTable.querySelectorAll("[data-download-strategic-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadStrategicQr(button.dataset.downloadStrategicQr));
+  });
+  strategicQrHistoryTable.querySelectorAll("[data-share-strategic-qr-wa]").forEach((button) => {
+    button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.shareStrategicQrWa, button.dataset.leadPhone, button.dataset.leadName));
   });
   qrBatchTable.querySelectorAll("[data-download-batch]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -15604,9 +15697,12 @@ async function fetchLeadTicketDownload(qrId) {
 
 function leadTicketWhatsAppMessage(ticket = {}, name = "") {
   const publicUrl = ticket.public_ticket_url || ticket.share_url || ticket.claim_url || ticket.scan_url || "";
+  const expiresLine = ticket.expires_at ? `Vence: ${formatDate(ticket.expires_at)}.` : "";
   return [
     `Hola ${name || ticket.player_name || ""}`.trim(),
-    "te compartimos tu ticket activo de beneficio. Abre este enlace publico para ver la imagen con QR:",
+    "te recordamos que tienes un ticket activo sin redimir.",
+    expiresLine,
+    "Abre este enlace público para ver tu ticket y presentarlo cuando vayas a redimirlo:",
     publicUrl,
   ].filter(Boolean).join(" ");
 }
@@ -16048,9 +16144,24 @@ function leadBadges(item = {}) {
     item.is_affiliate ? "Afiliado" : "",
     item.purchase_count > 0 ? "Comprador" : "",
     item.active_tickets > 0 ? "Ticket activo" : "",
+    item.expired_tickets > 0 ? "Ticket vencido" : "",
+    item.inactive_tickets > 0 ? "Ticket no activo" : "",
     item.redeemed_tickets > 0 ? "Redimio" : "",
     item.source_type === "MANUAL" ? "Manual" : "",
   ].filter(Boolean);
+}
+
+function leadTicketInventoryParts(item = {}) {
+  return [
+    Number(item.active_tickets || 0) ? `${Number(item.active_tickets || 0)} activos` : "",
+    Number(item.expired_tickets || 0) ? `${Number(item.expired_tickets || 0)} expirados` : "",
+    Number(item.inactive_tickets || 0) ? `${Number(item.inactive_tickets || 0)} no activos` : "",
+    Number(item.redeemed_tickets || 0) ? `${Number(item.redeemed_tickets || 0)} redimidos` : "",
+  ].filter(Boolean);
+}
+
+function leadTicketInventoryText(item = {}) {
+  return leadTicketInventoryParts(item).join(" | ") || "Sin tickets";
 }
 
 function leadPriorityChipClass(priority = "") {
@@ -16090,14 +16201,14 @@ function renderLeadCrmTable() {
       <td><strong>${Number(item.score_total || 0).toLocaleString("es-CO")}</strong><br><span class="table-secondary">Mejor ${Number(item.best_score || 0)}</span></td>
       <td><strong>${money(item.total_spent || 0)}</strong><br><span class="table-secondary">${Number(item.purchase_count || 0)} compras</span></td>
       <td>${formatDate(item.last_interaction_at)}<br><span class="table-secondary">${escapeHtml(item.campaign_name || item.channel || "Sin campaña")}</span></td>
-      <td>${Number(item.activation_count || 0)} activaciones<br><span class="table-secondary">${Number(item.games_played || 0)} juegos</span></td>
+      <td>${Number(item.activation_count || 0)} activaciones<br><span class="table-secondary">${Number(item.games_played || 0)} juegos</span><br><span class="table-secondary">${escapeHtml(leadTicketInventoryText(item))}</span></td>
       <td><div class="lead-badge-wrap">${leadBadges(item).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("") || '<span class="table-secondary">Sin badges</span>'}</div></td>
       <td>
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
           ${item.active_ticket_qr_id ? `
-            <button class="ghost-button" type="button" data-lead-action="ticket-download">Ticket PNG</button>
-            <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">WhatsApp</button>
+            <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
+            <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">Recordar WhatsApp</button>
           ` : `<button class="ghost-button" type="button" data-lead-action="activation">Activar</button>`}
           <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
         </div>
@@ -16170,6 +16281,7 @@ function mountContactCenterLayout() {
 
   appendIfFound(overviewPanel, document.querySelector(".lead-crm-command"));
   appendIfFound(overviewPanel, leadFeedKpiGrid);
+  appendIfFound(overviewPanel, leadTicketInventoryBoard);
   appendIfFound(overviewPanel, leadAttentionBoard);
   appendIfFound(overviewPanel, document.querySelector(".lead-crm-card"));
   appendIfFound(overviewPanel, manualLeadForm?.closest("article"));
@@ -16222,6 +16334,8 @@ function renderContactCenterSummary(crmRows = []) {
   const sales = state.selectedSales || [];
   const revenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
+  const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
+  const inactiveTickets = crmRows.reduce((sum, item) => sum + Number(item.inactive_tickets || 0), 0);
   const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
   contactCenterSummaryGrid.innerHTML = [
     ["Contactos unificados", totalContacts, "CRM, manuales, compradores y capturas"],
@@ -16229,6 +16343,8 @@ function renderContactCenterSummary(crmRows = []) {
     ["Convertidos", buyers || sales.length, `${conversionRate} de conversion visible`],
     ["Revenue registrado", money(revenue), `${sales.length} ventas en la campaña`],
     ["Tickets activos", activeTickets, "Beneficios pendientes de redimir"],
+    ["Tickets vencidos", expiredTickets, "Requieren cierre o nueva oferta"],
+    ["Tickets no activos", inactiveTickets, "Sin reclamar, cancelados o no usables"],
   ].map(([label, value, meta]) => `
     <article class="kpi-card">
       <span class="mono-label">${escapeHtml(label)}</span>
@@ -16236,6 +16352,77 @@ function renderContactCenterSummary(crmRows = []) {
       <div class="kpi-meta">${escapeHtml(meta || "")}</div>
     </article>
   `).join("");
+}
+
+function renderLeadTicketInventoryBoard(crmRows = []) {
+  if (!leadTicketInventoryBoard) return;
+  const groups = [
+    {
+      key: "active",
+      title: "Tickets activos sin redimir",
+      meta: "Listos para enviar o recordar por WhatsApp",
+      rows: crmRows.filter((item) => Number(item.active_tickets || 0) > 0),
+      tone: "ok",
+    },
+    {
+      key: "expired",
+      title: "Tickets expirados",
+      meta: "Perdieron vigencia antes de redimirse",
+      rows: crmRows.filter((item) => Number(item.expired_tickets || 0) > 0),
+      tone: "danger",
+    },
+    {
+      key: "inactive",
+      title: "Tickets no activos",
+      meta: "Sin reclamar, cancelados, reclamados o en estado no usable",
+      rows: crmRows.filter((item) => Number(item.inactive_tickets || 0) > 0),
+      tone: "pending",
+    },
+    {
+      key: "redeemed",
+      title: "Tickets redimidos",
+      meta: "Ya usados o validados",
+      rows: crmRows.filter((item) => Number(item.redeemed_tickets || 0) > 0),
+      tone: "pending",
+    },
+  ];
+  leadTicketInventoryBoard.innerHTML = groups.map((group) => `
+    <article class="lead-ticket-inventory-card is-${escapeHtml(group.key)}">
+      <div class="lead-ticket-inventory-head">
+        <span class="mono-label">${escapeHtml(group.title)}</span>
+        <strong>${group.rows.reduce((sum, item) => sum + Number(item[`${group.key}_tickets`] || 0), 0).toLocaleString("es-CO")}</strong>
+        <small>${escapeHtml(group.meta)}</small>
+      </div>
+      <div class="lead-ticket-inventory-list">
+        ${group.rows.slice(0, 8).map((item) => `
+          <div class="lead-ticket-inventory-row">
+            <button class="lead-ticket-inventory-main" type="button" data-open-ticket-lead="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+              <span><strong>${escapeHtml(item.name || "Lead sin nombre")}</strong><small>${escapeHtml(leadTicketInventoryText(item))}</small></span>
+              <span class="status-chip ${escapeHtml(group.tone)}">${escapeHtml(group.key === "active" ? "Activo" : group.key === "expired" ? "Expirado" : group.key === "inactive" ? "No activo" : "Redimido")}</span>
+            </button>
+            ${group.key === "active" && item.active_ticket_qr_id ? `
+              <div class="lead-ticket-inventory-actions">
+                <button class="ghost-button" type="button" data-inventory-ticket-send="${escapeHtml(item.active_ticket_qr_id)}">Enviar ticket</button>
+                <button class="ghost-button" type="button" data-inventory-ticket-whatsapp="${escapeHtml(item.active_ticket_qr_id)}" data-lead-phone="${escapeHtml(item.phone || "")}" data-lead-name="${escapeHtml(item.name || "")}">Recordar WhatsApp</button>
+              </div>
+            ` : ""}
+          </div>
+        `).join("") || '<div class="empty-state compact">Sin registros en este estado.</div>'}
+      </div>
+    </article>
+  `).join("");
+  leadTicketInventoryBoard.querySelectorAll("[data-open-ticket-lead]").forEach((button) => {
+    button.addEventListener("click", () => openLeadDetail({
+      id: button.dataset.openTicketLead,
+      source_type: button.dataset.sourceType || "PLAYER",
+    }, { tab: "benefits" }));
+  });
+  leadTicketInventoryBoard.querySelectorAll("[data-inventory-ticket-send]").forEach((button) => {
+    button.addEventListener("click", () => downloadLeadQr(button.dataset.inventoryTicketSend));
+  });
+  leadTicketInventoryBoard.querySelectorAll("[data-inventory-ticket-whatsapp]").forEach((button) => {
+    button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.inventoryTicketWhatsapp, button.dataset.leadPhone, button.dataset.leadName));
+  });
 }
 
 function renderLegacyLeadTables(feedRows) {
@@ -16298,6 +16485,9 @@ function renderLeadsView() {
   const buyers = crmRows.filter((item) => Number(item.purchase_count || 0) > 0).length;
   const totalScore = crmRows.reduce((sum, item) => sum + Number(item.score_total || 0), 0);
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
+  const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
+  const inactiveTickets = crmRows.reduce((sum, item) => sum + Number(item.inactive_tickets || 0), 0);
+  const redeemedTickets = crmRows.reduce((sum, item) => sum + Number(item.redeemed_tickets || 0), 0);
   const highPriority = crmRows.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH").length;
   const withoutContact = crmRows.filter((item) => !item.email && !item.phone).length;
   const customers = crmRows
@@ -16331,7 +16521,10 @@ function renderLeadsView() {
       ["Leads CRM", state.leadCrmPagination?.total ?? crmRows.length, state.contactFeedRetention?.label || "Busqueda paginada"],
       ["Compradores", buyers, "Con venta registrada"],
       ["Score acumulado", totalScore.toLocaleString("es-CO"), "Juegos y trivias"],
-      ["Tickets activos", activeTickets, "Beneficios por redimir"],
+      ["Tickets activos", activeTickets, "Beneficios sin redimir"],
+      ["Tickets vencidos", expiredTickets, "Perdieron vigencia"],
+      ["Tickets no activos", inactiveTickets, "Sin reclamar o cancelados"],
+      ["Tickets redimidos", redeemedTickets, "Usados o validados"],
       ["Sin contacto", withoutContact, "Completar antes de activar"],
     ].map(([label, value, meta]) => `
       <article class="kpi-card">
@@ -16342,6 +16535,7 @@ function renderLeadsView() {
     `).join("");
   }
   renderContactCenterSummary(crmRows);
+  renderLeadTicketInventoryBoard(crmRows);
   if (leadAttentionBoard) {
     const customerPanel = `
       <article class="lead-segment-card">
@@ -16420,18 +16614,29 @@ function isRedeemedTicket(ticket = {}) {
   return String(ticket.status || "").toUpperCase() === "REDEEMED" || Boolean(ticket.redeemed_at);
 }
 
+function isExpiredTicket(ticket = {}) {
+  if (isRedeemedTicket(ticket)) return false;
+  const status = String(ticket.status || "").toUpperCase();
+  return status === "EXPIRED" || (status === "ACTIVE" && ticket.expires_at && new Date(ticket.expires_at) <= new Date());
+}
+
 function isActiveTicket(ticket = {}) {
   if (isRedeemedTicket(ticket)) return false;
+  if (isExpiredTicket(ticket)) return false;
   if (ticket.is_available === true) return true;
   if (ticket.is_available === false) return false;
   if (String(ticket.status || "").toUpperCase() !== "ACTIVE") return false;
   return !ticket.expires_at || new Date(ticket.expires_at) > new Date();
 }
 
+function isInactiveTicket(ticket = {}) {
+  return !isActiveTicket(ticket) && !isRedeemedTicket(ticket) && !isExpiredTicket(ticket);
+}
+
 function ticketStatusLabel(ticket = {}) {
   if (isRedeemedTicket(ticket)) return "Redimido";
   if (isActiveTicket(ticket)) return "Activo";
-  if (ticket.expires_at && new Date(ticket.expires_at) <= new Date()) return "Vencido";
+  if (isExpiredTicket(ticket)) return "Vencido";
   const status = String(ticket.status || "").toUpperCase();
   const labels = {
     UNCLAIMED: "Sin reclamar",
@@ -16445,7 +16650,8 @@ function ticketStatusLabel(ticket = {}) {
 function ticketStatusClass(ticket = {}) {
   if (isActiveTicket(ticket)) return "ok";
   if (isRedeemedTicket(ticket)) return "pending";
-  return "danger";
+  if (isExpiredTicket(ticket)) return "danger";
+  return "pending";
 }
 
 function ticketTitle(ticket = {}) {
@@ -16474,8 +16680,10 @@ function ticketPublicUrl(ticket = {}) {
 function ticketGroups(tickets = []) {
   return {
     active: tickets.filter(isActiveTicket),
+    expired: tickets.filter(isExpiredTicket),
+    inactive: tickets.filter(isInactiveTicket),
     redeemed: tickets.filter(isRedeemedTicket),
-    other: tickets.filter((ticket) => !isActiveTicket(ticket) && !isRedeemedTicket(ticket)),
+    other: tickets.filter(isInactiveTicket),
   };
 }
 
@@ -16516,7 +16724,7 @@ function renderTicketCards(tickets = [], empty = "Sin tickets en este grupo.") {
           <span><strong>ID</strong>${escapeHtml(ticket.id || "-")}</span>
         </div>
         <div class="activation-row-actions">
-          ${isActiveTicket(ticket) ? `<button class="solid-button compact" type="button" data-share-ticket-whatsapp="${escapeHtml(ticket.id)}">Enviar WhatsApp</button>` : ""}
+          ${isActiveTicket(ticket) ? `<button class="solid-button compact" type="button" data-share-ticket-whatsapp="${escapeHtml(ticket.id)}">Recordar WhatsApp</button>` : ""}
           ${isActiveTicket(ticket) ? `<button class="ghost-button" type="button" data-download-ticket="${escapeHtml(ticket.id)}">Descargar imagen</button>` : ""}
           ${publicUrl ? `<a class="ghost-button" href="${escapeHtml(publicUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
           ${publicUrl ? `<button class="ghost-button" type="button" data-copy-link="${escapeHtml(publicUrl)}">Copiar ticket</button>` : ""}
@@ -16664,8 +16872,10 @@ function renderLeadDetailHeader(detail) {
       <div class="lead-header-metrics">
         <span><strong>${Number(summary.score_total || 0).toLocaleString("es-CO")}</strong>Score</span>
         <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
-        <span><strong>${groupedTickets.active.length}</strong>Tickets disponibles</span>
-        <span><strong>${groupedTickets.redeemed.length}</strong>Tickets redimidos</span>
+        <span><strong>${groupedTickets.active.length}</strong>Activos sin redimir</span>
+        <span><strong>${groupedTickets.expired.length}</strong>Tickets vencidos</span>
+        <span><strong>${groupedTickets.inactive.length}</strong>No activos</span>
+        <span><strong>${groupedTickets.redeemed.length}</strong>Redimidos</span>
       </div>
       <div class="lead-next-actions">
         ${analysis.nextActions.map((item) => `
@@ -16706,7 +16916,9 @@ function renderLeadTab(detail) {
         ["Score total", Number(summary.score_total || 0).toLocaleString("es-CO"), `Promedio ${Number(summary.score_average || 0).toFixed(1)}`],
         ["Compras", summary.purchase_count || 0, money(summary.total_spent || 0)],
         ["Ticket promedio", money(summary.avg_ticket || 0), `Ultima ${formatDate(summary.last_purchase_at)}`],
-        ["Tickets disponibles", groupedTickets.active.length, "Listos para validar"],
+        ["Tickets activos", groupedTickets.active.length, "Listos para enviar o recordar"],
+        ["Tickets vencidos", groupedTickets.expired.length, "Perdieron vigencia sin redencion"],
+        ["Tickets no activos", groupedTickets.inactive.length, "Sin reclamar, cancelados o no usables"],
         ["Tickets redimidos", groupedTickets.redeemed.length, "Ya usados en punto fisico"],
         ["Activaciones", summary.activations_count || 0, `Ultima ${formatDate(summary.last_activation_at)}`],
         ["Segmento sugerido", lead.commercial_status_label || summary.commercial_status, lead.level || ""],
@@ -16808,21 +17020,26 @@ function renderLeadTab(detail) {
     `), "Sin juegos o trivias registrados."),
     benefits: () => `
       <section class="lead-ticket-summary">
-        <article><span>Disponibles</span><strong>${groupedTickets.active.length}</strong></article>
+        <article><span>Activos</span><strong>${groupedTickets.active.length}</strong></article>
+        <article><span>Vencidos</span><strong>${groupedTickets.expired.length}</strong></article>
+        <article><span>No activos</span><strong>${groupedTickets.inactive.length}</strong></article>
         <article><span>Redimidos</span><strong>${groupedTickets.redeemed.length}</strong></article>
-        <article><span>Otros</span><strong>${groupedTickets.other.length}</strong></article>
       </section>
       <section class="lead-ticket-section">
-        <h4>Tickets disponibles</h4>
-        ${renderTicketCards(groupedTickets.active, "Este lead no tiene tickets disponibles.")}
+        <h4>Tickets activos sin redimir</h4>
+        ${renderTicketCards(groupedTickets.active, "Este lead no tiene tickets activos sin redimir.")}
+      </section>
+      <section class="lead-ticket-section">
+        <h4>Tickets vencidos</h4>
+        ${renderTicketCards(groupedTickets.expired, "Este lead no tiene tickets vencidos.")}
+      </section>
+      <section class="lead-ticket-section">
+        <h4>Tickets no activos</h4>
+        ${renderTicketCards(groupedTickets.inactive, "Este lead no tiene tickets sin reclamar, cancelados o no usables.")}
       </section>
       <section class="lead-ticket-section">
         <h4>Tickets redimidos</h4>
         ${renderTicketCards(groupedTickets.redeemed, "Este lead no ha redimido tickets.")}
-      </section>
-      <section class="lead-ticket-section">
-        <h4>Otros tickets</h4>
-        ${renderTicketCards(groupedTickets.other, "No hay tickets vencidos, cancelados o pendientes.")}
       </section>
       ${(detail.reward_passes || []).length ? `
         <section class="lead-ticket-section">
@@ -16978,11 +17195,12 @@ function runLeadFastAction(action) {
 
 async function openLeadDetail(leadRef, options = {}) {
   state.selectedLeadRef = leadRef;
-  setLeadDetailTab(options.keepTab ? state.selectedLeadTab : "summary", { render: false });
+  const nextTab = options.tab || (options.keepTab ? state.selectedLeadTab || "summary" : "summary");
+  setLeadDetailTab(nextTab, { render: false });
   if (leadDetailModal) leadDetailModal.classList.remove("hidden");
   if (leadDetailContent) leadDetailContent.innerHTML = '<div class="empty-state compact">Cargando ficha del lead...</div>';
   try {
-    await reloadSelectedLeadDetail({ keepTab: Boolean(options.keepTab) });
+    await reloadSelectedLeadDetail({ keepTab: true, scrollTab: Boolean(options.tab) });
     leadDetailModal?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     if (leadDetailContent) leadDetailContent.innerHTML = `<div class="empty-state compact">${escapeHtml(error.message)}</div>`;

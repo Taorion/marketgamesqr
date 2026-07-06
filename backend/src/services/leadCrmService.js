@@ -216,6 +216,8 @@ function listWhere(filters, params) {
   if (filters.is_affiliate === "false") clauses.push("is_affiliate = false");
   if (filters.has_gifts === "true") clauses.push("benefits_received > 0");
   if (filters.has_active_tickets === "true") clauses.push("active_tickets > 0");
+  if (filters.has_expired_tickets === "true") clauses.push("expired_tickets > 0");
+  if (filters.has_inactive_tickets === "true") clauses.push("inactive_tickets > 0");
   if (filters.has_redeemed_tickets === "true") clauses.push("redeemed_tickets > 0");
   if (filters.channel) {
     params.push(`%${normalizeSearch(filters.channel)}%`);
@@ -287,6 +289,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
+         coalesce(q.expired_tickets, 0)::int as expired_tickets,
+         coalesce(q.inactive_tickets, 0)::int as inactive_tickets,
          coalesce(q.benefits_received, 0)::int as benefits_received,
          q.active_ticket_qr_id,
          coalesce(t.games_played, 0)::int + coalesce(ls.score_events, 0)::int as games_played,
@@ -328,10 +332,12 @@ async function listLeadCrmRows(businessId, filters = {}) {
            )
        ) s on true
        left join lateral (
-         select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
+         select count(*) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
                 count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
+                count(*) filter (where (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())) and q.redeemed_at is null)::int as expired_tickets,
+                count(*) filter (where q.redeemed_at is null and q.status <> 'REDEEMED' and not (q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())) and not (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())))::int as inactive_tickets,
                 count(*)::int as benefits_received,
-                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
                 max(q.created_at) as last_ticket_at
          from qr_codes q
          where q.business_id = p.business_id and q.player_id = p.id
@@ -413,6 +419,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
+         coalesce(q.expired_tickets, 0)::int as expired_tickets,
+         coalesce(q.inactive_tickets, 0)::int as inactive_tickets,
          coalesce(q.benefits_received, 0)::int as benefits_received,
          q.active_ticket_qr_id,
          0::int as games_played,
@@ -441,10 +449,12 @@ async function listLeadCrmRows(businessId, filters = {}) {
              or (bs.metadata->>'crm_source_type' = 'MANUAL' and bs.metadata->>'crm_source_id' = ml.id::text))
        ) s on true
        left join lateral (
-         select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
+         select count(*) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
                 count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
+                count(*) filter (where (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())) and q.redeemed_at is null)::int as expired_tickets,
+                count(*) filter (where q.redeemed_at is null and q.status <> 'REDEEMED' and not (q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())) and not (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())))::int as inactive_tickets,
                 count(*)::int as benefits_received,
-                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
                 max(q.created_at) as last_ticket_at
          from lead_activations la
          join qr_codes q on q.id = la.qr_code_id and q.business_id = la.business_id
@@ -482,6 +492,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
+         coalesce(q.expired_tickets, 0)::int as expired_tickets,
+         coalesce(q.inactive_tickets, 0)::int as inactive_tickets,
          coalesce(q.benefits_received, 0)::int as benefits_received,
          q.active_ticket_qr_id,
          0::int as games_played,
@@ -530,10 +542,12 @@ async function listLeadCrmRows(businessId, filters = {}) {
            )
        ) s on true
        left join lateral (
-         select count(*) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
+         select count(*) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now()))::int as active_tickets,
                 count(*) filter (where q.status = 'REDEEMED' or q.redeemed_at is not null)::int as redeemed_tickets,
+                count(*) filter (where (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())) and q.redeemed_at is null)::int as expired_tickets,
+                count(*) filter (where q.redeemed_at is null and q.status <> 'REDEEMED' and not (q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())) and not (q.status = 'EXPIRED' or (q.status = 'ACTIVE' and q.expires_at is not null and q.expires_at <= now())))::int as inactive_tickets,
                 count(*)::int as benefits_received,
-                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
+                (array_agg(q.id order by q.created_at desc) filter (where q.status = 'ACTIVE' and q.redeemed_at is null and (q.expires_at is null or q.expires_at > now())))[1] as active_ticket_qr_id,
                 max(q.created_at) as last_ticket_at
          from qr_codes q
          where q.business_id = fa.business_id and q.affiliate_id = fa.id
@@ -654,6 +668,11 @@ async function listLeadCrmRows(businessId, filters = {}) {
       score_average: Number(row.score_average || 0),
       best_score: Number(row.best_score || 0),
       purchase_count: Number(row.purchase_count || 0),
+      active_tickets: Number(row.active_tickets || 0),
+      expired_tickets: Number(row.expired_tickets || 0),
+      inactive_tickets: Number(row.inactive_tickets || 0),
+      redeemed_tickets: Number(row.redeemed_tickets || 0),
+      benefits_received: Number(row.benefits_received || 0),
       total_spent: moneyNumber(row.total_spent),
       avg_ticket: moneyNumber(row.avg_ticket),
       commercial_status: row.commercial_status || suggestedStatus(row),
@@ -1040,8 +1059,14 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
   const scoreTotal = gameRows.reduce((sum, item) => sum + Number(item.score || 0), 0);
   const scoreAverage = gameRows.length ? scoreTotal / gameRows.length : 0;
   const bestScore = gameRows.reduce((max, item) => Math.max(max, Number(item.score || 0)), 0);
-  const activeTickets = ticketRows.filter((item) => item.status === "ACTIVE" && (!item.expires_at || new Date(item.expires_at) > new Date())).length;
+  const activeTickets = ticketRows.filter((item) => item.status === "ACTIVE" && !item.redeemed_at && (!item.expires_at || new Date(item.expires_at) > new Date())).length;
   const redeemedTickets = ticketRows.filter((item) => item.status === "REDEEMED" || item.redeemed_at).length;
+  const expiredTickets = ticketRows.filter((item) => !item.redeemed_at && (item.status === "EXPIRED" || (item.status === "ACTIVE" && item.expires_at && new Date(item.expires_at) <= new Date()))).length;
+  const inactiveTickets = ticketRows.filter((item) => (
+    !(item.status === "ACTIVE" && !item.redeemed_at && (!item.expires_at || new Date(item.expires_at) > new Date()))
+    && !(item.status === "REDEEMED" || item.redeemed_at)
+    && !(item.status === "EXPIRED" || (item.status === "ACTIVE" && item.expires_at && new Date(item.expires_at) <= new Date()))
+  )).length;
   const lastPurchase = purchaseRows[0]?.created_at || null;
   const lastGame = gameRows[0]?.created_at || null;
   const lastActivation = activationRows[0]?.created_at || null;
@@ -1060,11 +1085,14 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     activations_count: activationRows.length,
     benefits_received: ticketRows.length + rewardPasses.rows.length,
     benefits_redeemed: redeemedTickets + rewardPasses.rows.filter((item) => item.status === "REDEEMED" || Number(item.current_balance_cop || 0) < Number(item.initial_value_cop || 0)).length,
-    benefits_expired: ticketRows.filter((item) => item.status === "EXPIRED" || (item.expires_at && new Date(item.expires_at) <= new Date())).length,
+    benefits_expired: expiredTickets,
+    benefits_inactive: inactiveTickets,
     score_total: scoreTotal,
     score_average: scoreAverage,
     best_score: bestScore,
     active_tickets: activeTickets,
+    expired_tickets: expiredTickets,
+    inactive_tickets: inactiveTickets,
     redeemed_tickets: redeemedTickets,
     redemption_rate: ticketRows.length ? Math.round((redeemedTickets / ticketRows.length) * 1000) / 10 : 0,
     top_interest: interestRows[0]?.interest_name || null,
