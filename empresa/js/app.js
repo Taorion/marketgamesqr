@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-benefit-delivery-ux-v1";
+const APP_VERSION = "empresa-20260706-contact-center-tabs-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -62,7 +62,10 @@ const contactCenterStageCopy = document.getElementById("contactCenterStageCopy")
 const contactCenterPrimaryAction = document.getElementById("contactCenterPrimaryAction");
 const contactCenterSecondaryAction = document.getElementById("contactCenterSecondaryAction");
 const contactTabOverviewCount = document.getElementById("contactTabOverviewCount");
+const contactTabDirectoryCount = document.getElementById("contactTabDirectoryCount");
+const contactTabTicketsCount = document.getElementById("contactTabTicketsCount");
 const contactTabCapturesCount = document.getElementById("contactTabCapturesCount");
+const contactTabManualCount = document.getElementById("contactTabManualCount");
 const contactTabSalesCount = document.getElementById("contactTabSalesCount");
 const leadCrmSearchInput = document.getElementById("leadCrmSearchInput");
 const leadCrmSearchButton = document.getElementById("leadCrmSearchButton");
@@ -16375,31 +16378,41 @@ function appendIfFound(parent, node) {
   if (parent && node && node.parentElement !== parent) parent.appendChild(node);
 }
 
+const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "captures", "manual", "sales"];
+
 function mountContactCenterLayout() {
   if (state.contactCenterMounted) return;
+  const contactCenterShell = document.getElementById("contactCenterShell");
   const overviewPanel = document.querySelector('[data-contact-center-panel="overview"]');
+  const directoryPanel = document.querySelector('[data-contact-center-panel="directory"]');
+  const ticketsPanel = document.querySelector('[data-contact-center-panel="tickets"]');
   const capturesPanel = document.querySelector('[data-contact-center-panel="captures"]');
+  const manualPanel = document.querySelector('[data-contact-center-panel="manual"]');
   const salesPanel = document.querySelector('[data-contact-center-panel="sales"]');
-  if (!overviewPanel || !capturesPanel || !salesPanel) return;
+  if (!overviewPanel || !directoryPanel || !ticketsPanel || !capturesPanel || !manualPanel || !salesPanel) return;
 
-  appendIfFound(overviewPanel, document.querySelector(".lead-crm-command"));
   appendIfFound(overviewPanel, leadFeedKpiGrid);
   appendIfFound(overviewPanel, contactActionFeed);
-  appendIfFound(overviewPanel, leadTicketInventoryBoard);
   appendIfFound(overviewPanel, leadAttentionBoard);
-  appendIfFound(overviewPanel, document.querySelector(".lead-crm-card"));
-  appendIfFound(overviewPanel, manualLeadForm?.closest("article"));
-  appendIfFound(overviewPanel, leadFeedTable?.closest("article"));
-  appendIfFound(overviewPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
-  appendIfFound(overviewPanel, leadDetailModal);
-  appendIfFound(overviewPanel, leadActivationModal);
+
+  appendIfFound(directoryPanel, document.querySelector(".lead-crm-command"));
+  appendIfFound(directoryPanel, document.querySelector(".lead-crm-card"));
+  appendIfFound(directoryPanel, leadFeedTable?.closest("article"));
+  appendIfFound(directoryPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
+
+  appendIfFound(ticketsPanel, leadTicketInventoryBoard);
 
   appendIfFound(capturesPanel, leadCaptureForm?.closest("article"));
   appendIfFound(capturesPanel, leadCaptureTable?.closest("article"));
 
+  appendIfFound(manualPanel, manualLeadForm?.closest("article"));
+
   appendIfFound(salesPanel, salesKpiGrid);
   appendIfFound(salesPanel, document.getElementById("customerAcquisitionForm")?.closest("article"));
   appendIfFound(salesPanel, campaignSalesTable?.closest("article"));
+
+  appendIfFound(contactCenterShell, leadDetailModal);
+  appendIfFound(contactCenterShell, leadActivationModal);
 
   state.contactCenterMounted = true;
 }
@@ -16407,25 +16420,52 @@ function mountContactCenterLayout() {
 function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
   const configs = {
     overview: {
-      meta: "Paso 1 de 3 · Contactos",
-      title: "Contactos para atender",
-      copy: "Usa esta vista como bandeja principal: busca leads, revisa tickets, prioriza seguimiento y abre la ficha comercial.",
+      meta: "Vista 1 de 6 · Resumen",
+      title: "Resumen operativo de contactos",
+      copy: "Mira primero las prioridades, señales comerciales, leads con probabilidad de compra y acciones urgentes.",
+      primaryLabel: "Ver CRM",
+      primaryAction: "go-directory",
+      secondaryLabel: "Exportar contactos",
+      secondaryAction: "export-all",
+    },
+    directory: {
+      meta: "Vista 2 de 6 · Contactos CRM",
+      title: "Directorio CRM y fichas comerciales",
+      copy: "Busca, filtra y abre la ficha de cada contacto sin mezclar formularios, ventas ni capturas.",
       primaryLabel: "Agregar prospecto",
       primaryAction: "manual-lead",
       secondaryLabel: "Exportar contactos",
       secondaryAction: "export-all",
     },
+    tickets: {
+      meta: "Vista 3 de 6 · Tickets",
+      title: "Seguimiento por estado de ticket",
+      copy: "Separa activos sin redimir, expirados, no activos y redimidos para enviar recordatorios o revisar la ficha.",
+      primaryLabel: "Exportar activos",
+      primaryAction: "export-active",
+      secondaryLabel: "Ver CRM",
+      secondaryAction: "go-directory",
+    },
     captures: {
-      meta: "Paso 2 de 3 · Capturas",
+      meta: "Vista 4 de 6 · Capturas",
       title: "Capturas, formularios y activos",
       copy: "Revisa las experiencias que capturan leads: landing, ebook, QR, consentimiento y descargas.",
       primaryLabel: "Crear captura",
       primaryAction: "create-capture",
-      secondaryLabel: "Ver contactos",
-      secondaryAction: "go-overview",
+      secondaryLabel: "Ver CRM",
+      secondaryAction: "go-directory",
+    },
+    manual: {
+      meta: "Vista 5 de 6 · Prospecto manual",
+      title: "Registrar contacto manual",
+      copy: "Agrega contactos que llegan por WhatsApp, llamada, correo, feria o referido y envíalos al CRM unificado.",
+      primaryLabel: "Completar formulario",
+      primaryAction: "manual-lead",
+      secondaryLabel: "Ver CRM",
+      secondaryAction: "go-directory",
     },
     sales: {
-      meta: "Paso 3 de 3 · Conversion",
+      meta: "Vista 6 de 6 · Conversion",
       title: "Convertidos, ventas y cierre",
       copy: "Registra compras, mide revenue y conecta clientes convertidos con campañas, tickets y seguimiento.",
       primaryLabel: "Registrar venta",
@@ -16471,8 +16511,17 @@ function handleContactCenterStageAction(action = "") {
     customerAcquisitionNameInput?.focus();
     return;
   }
-  if (action === "go-overview") {
-    setContactCenterTab("overview");
+  if (action === "go-overview" || action === "go-directory") {
+    setContactCenterTab(action === "go-directory" ? "directory" : "overview");
+    return;
+  }
+  if (action === "go-tickets") {
+    setContactCenterTab("tickets");
+    return;
+  }
+  if (action === "export-active") {
+    if (leadExportScopeInput) leadExportScopeInput.value = "active";
+    exportLeads();
     return;
   }
   if (action === "export-all") {
@@ -16482,7 +16531,7 @@ function handleContactCenterStageAction(action = "") {
 }
 
 function setContactCenterTab(tab = "overview") {
-  const nextTab = ["overview", "captures", "sales"].includes(tab) ? tab : "overview";
+  const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
   state.contactCenterTab = nextTab;
   updateContactCenterStage(nextTab);
   if (state.currentView === "leads") {
@@ -16507,9 +16556,12 @@ function setContactCenterTab(tab = "overview") {
   if (nextTab === "sales") renderSalesView();
 }
 
-function updateContactCenterCounts({ totalContacts = 0, capturedLeads = 0, converted = 0 } = {}) {
+function updateContactCenterCounts({ totalContacts = 0, visibleContacts = 0, ticketTotal = 0, capturedLeads = 0, manualContacts = 0, converted = 0 } = {}) {
   if (contactTabOverviewCount) contactTabOverviewCount.textContent = Number(totalContacts || 0).toLocaleString("es-CO");
+  if (contactTabDirectoryCount) contactTabDirectoryCount.textContent = Number(visibleContacts || totalContacts || 0).toLocaleString("es-CO");
+  if (contactTabTicketsCount) contactTabTicketsCount.textContent = Number(ticketTotal || 0).toLocaleString("es-CO");
   if (contactTabCapturesCount) contactTabCapturesCount.textContent = Number(capturedLeads || 0).toLocaleString("es-CO");
+  if (contactTabManualCount) contactTabManualCount.textContent = Number(manualContacts || 0).toLocaleString("es-CO");
   if (contactTabSalesCount) contactTabSalesCount.textContent = Number(converted || 0).toLocaleString("es-CO");
 }
 
@@ -16682,8 +16734,17 @@ function renderContactCenterSummary(crmRows = []) {
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
   const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
   const inactiveTickets = crmRows.reduce((sum, item) => sum + Number(item.inactive_tickets || 0), 0);
+  const redeemedTickets = crmRows.reduce((sum, item) => sum + Number(item.redeemed_tickets || 0), 0);
+  const manualContacts = crmRows.filter((item) => String(item.source_type || "").toUpperCase() === "MANUAL").length;
   const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
-  updateContactCenterCounts({ totalContacts, capturedLeads, converted: buyers || sales.length });
+  updateContactCenterCounts({
+    totalContacts,
+    visibleContacts: crmRows.length,
+    ticketTotal: activeTickets + expiredTickets + inactiveTickets + redeemedTickets,
+    capturedLeads,
+    manualContacts,
+    converted: buyers || sales.length,
+  });
   contactCenterSummaryGrid.innerHTML = [
     ["Contactos unificados", totalContacts, "CRM, manuales, compradores y capturas"],
     ["Capturados", capturedLeads, `${(state.leadCaptureActivations || []).length} capturas activas o historicas`],

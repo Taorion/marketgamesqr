@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=mp-digital-payments-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=contact-center-tabs-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -2658,18 +2658,36 @@
               <div class="segment-tabs contact-center-tabs" id="contactCenterTabs">
                 <button class="segment-tab contact-center-tab-card active" data-contact-center-tab="overview" type="button">
                   <span class="contact-tab-step">1</span>
-                  <strong>Contactos</strong>
-                  <small>CRM, tickets y seguimiento</small>
+                  <strong>Resumen</strong>
+                  <small>Prioridades y señales clave</small>
                   <em id="contactTabOverviewCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="captures" type="button">
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="directory" type="button">
                   <span class="contact-tab-step">2</span>
+                  <strong>Contactos CRM</strong>
+                  <small>Búsqueda, filtros y ficha</small>
+                  <em id="contactTabDirectoryCount">0</em>
+                </button>
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="tickets" type="button">
+                  <span class="contact-tab-step">3</span>
+                  <strong>Tickets</strong>
+                  <small>Activos, expirados y redimidos</small>
+                  <em id="contactTabTicketsCount">0</em>
+                </button>
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="captures" type="button">
+                  <span class="contact-tab-step">4</span>
                   <strong>Capturas</strong>
                   <small>Landing, ebook y formularios</small>
                   <em id="contactTabCapturesCount">0</em>
                 </button>
+                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="manual" type="button">
+                  <span class="contact-tab-step">5</span>
+                  <strong>Prospecto manual</strong>
+                  <small>Correos, llamadas y referidos</small>
+                  <em id="contactTabManualCount">0</em>
+                </button>
                 <button class="segment-tab contact-center-tab-card" data-contact-center-tab="sales" type="button">
-                  <span class="contact-tab-step">3</span>
+                  <span class="contact-tab-step">6</span>
                   <strong>Convertidos y ventas</strong>
                   <small>Compras, revenue y cierre</small>
                   <em id="contactTabSalesCount">0</em>
@@ -2678,7 +2696,10 @@
               <section class="contact-center-summary kpi-grid compact" id="contactCenterSummaryGrid"></section>
               <section class="contact-action-feed" id="contactActionFeed"></section>
               <div class="contact-center-panel active" data-contact-center-panel="overview"></div>
+              <div class="contact-center-panel hidden" data-contact-center-panel="directory"></div>
+              <div class="contact-center-panel hidden" data-contact-center-panel="tickets"></div>
               <div class="contact-center-panel hidden" data-contact-center-panel="captures"></div>
+              <div class="contact-center-panel hidden" data-contact-center-panel="manual"></div>
               <div class="contact-center-panel hidden" data-contact-center-panel="sales"></div>
             </section>
             <section class="lead-crm-command surface-card">
@@ -4311,7 +4332,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=mp-digital-payments-20260706" defer></script>
+  <script src="js/app.js?v=contact-center-tabs-20260706" defer></script>
 </body>
 </html>
 
