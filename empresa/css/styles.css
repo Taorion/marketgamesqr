@@ -3630,6 +3630,11 @@ td {
   grid-column: 1 / -1;
 }
 
+.modal-form .full {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .field-label {
   display: inline-flex;
   align-items: center;
@@ -5809,6 +5814,16 @@ textarea {
 
 .view-section[data-view="strategic-qr"] .qr-batch-progress-fill {
   background: linear-gradient(90deg, #00e5ff, #00d8a0);
+}
+
+.view-section[data-view="strategic-qr"] .strategic-ticket-generators {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+
+.view-section[data-view="strategic-qr"] .strategic-ticket-generators .data-table-card {
+  width: 100%;
+  min-width: 0;
 }
 
 .view-section[data-view="strategic-qr"] table,
@@ -12329,6 +12344,143 @@ body.chart-focus-open .command-center {
   border-color: rgba(160, 117, 26, 0.18);
 }
 
+.ticket-closeout-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid rgba(21, 94, 117, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(239, 249, 255, 0.98), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 10px 24px rgba(8, 47, 73, 0.07);
+}
+
+.ticket-closeout-head {
+  display: grid;
+  gap: 5px;
+  max-width: 880px;
+}
+
+.ticket-closeout-head strong {
+  color: #102a3a;
+  font-size: 17px;
+}
+
+.ticket-closeout-head p {
+  margin: 0;
+  color: #496578;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.ticket-closeout-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ticket-closeout-panel label {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(21, 94, 117, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.ticket-closeout-panel label > span {
+  color: #123246;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.ticket-closeout-panel label small {
+  color: #4f6676;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ticket-closeout-panel input,
+.ticket-closeout-panel select,
+.ticket-closeout-panel textarea {
+  width: 100%;
+  color: #07111f;
+  background: #ffffff;
+  border-color: rgba(21, 94, 117, 0.18);
+}
+
+.expiration-mode-card,
+.expiration-date-card {
+  min-height: 92px;
+}
+
+.expiration-date-card.is-disabled {
+  opacity: 0.78;
+}
+
+.ticket-closeout-panel input:disabled {
+  cursor: not-allowed;
+  color: #64748b;
+  background: #edf3f7;
+  border-color: rgba(100, 116, 139, 0.24);
+}
+
+.view-section[data-view="strategic-qr"] .ticket-closeout-panel input:disabled {
+  color: #8aa2b5 !important;
+  background: rgba(15, 23, 42, 0.64) !important;
+  border-color: rgba(124, 251, 255, 0.12) !important;
+}
+
+.ticket-closeout-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 11px 13px;
+  border: 1px solid rgba(14, 116, 144, 0.18);
+  border-radius: 8px;
+  color: #0d3d4e;
+  background: rgba(224, 247, 253, 0.86);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.internal-instructions-field {
+  grid-column: 1 / -1;
+}
+
+.internal-instructions-field textarea {
+  min-height: 126px;
+  line-height: 1.45;
+}
+
+.ticket-closeout-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.ticket-closeout-actions .error-line {
+  min-height: 22px;
+  margin: 0;
+}
+
+.ticket-closeout-actions .solid-button {
+  min-width: 180px;
+  justify-content: center;
+}
+
 .ecommerce-code-preview {
   display: grid;
   gap: 6px;
@@ -12852,13 +13004,16 @@ body.chart-focus-open .command-center {
   .activation-type-picker,
   .benefit-fulfillment-panel .survey-builder-grid,
   .benefit-expiration-panel,
+  .ticket-closeout-grid,
+  .ticket-closeout-actions,
   .survey-builder-grid,
   .reveal-card-grid {
     grid-template-columns: 1fr;
   }
 
   .benefit-mode-field,
-  .ecommerce-instructions-field {
+  .ecommerce-instructions-field,
+  .internal-instructions-field {
     grid-column: auto;
     grid-row: auto;
   }
@@ -12924,6 +13079,13 @@ body.chart-focus-open .command-center {
   border-color: #087a5e !important;
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(8, 122, 94, 0.16) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .ticket-closeout-panel input:disabled {
+  color: #60756f !important;
+  background: #eef5f1 !important;
+  border-color: #c7d8d1 !important;
+  box-shadow: none !important;
 }
 
 :root[data-theme="light"] .view-section[data-view="strategic-qr"] .modal-form label {

@@ -537,6 +537,9 @@ const postSaleEcommerceUrlInput = document.getElementById("postSaleEcommerceUrlI
 const postSaleEcommerceInstructionsInput = document.getElementById("postSaleEcommerceInstructionsInput");
 const postSaleExpiresModeInput = document.getElementById("postSaleExpiresModeInput");
 const postSaleExpiresAtInput = document.getElementById("postSaleExpiresAtInput");
+const postSaleExpiryHint = document.getElementById("postSaleExpiryHint");
+const postSaleExpiryDateHint = document.getElementById("postSaleExpiryDateHint");
+const postSaleExpirySummary = document.getElementById("postSaleExpirySummary");
 const postSaleNotesInput = document.getElementById("postSaleNotesInput");
 const postSaleQrMessage = document.getElementById("postSaleQrMessage");
 const postSaleQrResult = document.getElementById("postSaleQrResult");
@@ -661,6 +664,9 @@ const qrBatchEcommerceInstructionsInput = document.getElementById("qrBatchEcomme
 const qrBatchClaimRequiredInput = document.getElementById("qrBatchClaimRequiredInput");
 const qrBatchExpiresModeInput = document.getElementById("qrBatchExpiresModeInput");
 const qrBatchExpiresAtInput = document.getElementById("qrBatchExpiresAtInput");
+const qrBatchExpiryHint = document.getElementById("qrBatchExpiryHint");
+const qrBatchExpiryDateHint = document.getElementById("qrBatchExpiryDateHint");
+const qrBatchExpirySummary = document.getElementById("qrBatchExpirySummary");
 const qrBatchNotesInput = document.getElementById("qrBatchNotesInput");
 const qrBatchMessage = document.getElementById("qrBatchMessage");
 const qrBatchProgress = document.getElementById("qrBatchProgress");
@@ -10639,6 +10645,84 @@ function updateTriviaExpiryMode() {
   if (!custom) triviaExpiresAtInput.value = "";
 }
 
+const CLOSEOUT_EXPIRY_COPY = {
+  NONE: {
+    hint: "Sin fecha limite: queda vigente hasta redencion o anulacion.",
+    dateHint: "Activa fecha personalizada para elegir un cierre exacto.",
+    ticket: "Sin expiracion activa. El equipo puede redimir el ticket hasta que sea usado o anulado.",
+    batch: "Sin expiracion activa. El paquete queda disponible hasta que sus tickets se usen o se anulen.",
+  },
+  "7_DAYS": {
+    hint: "Vence automaticamente 7 dias despues de emitirse.",
+    dateHint: "No necesitas fecha exacta; el sistema calcula los 7 dias.",
+    ticket: "Vigencia automatica: este ticket vencera 7 dias despues de emitirse.",
+    batch: "Vigencia automatica: cada ticket del paquete vencera 7 dias despues de emitirse.",
+  },
+  "15_DAYS": {
+    hint: "Vence automaticamente 15 dias despues de emitirse.",
+    dateHint: "No necesitas fecha exacta; el sistema calcula los 15 dias.",
+    ticket: "Vigencia automatica: este ticket vencera 15 dias despues de emitirse.",
+    batch: "Vigencia automatica: cada ticket del paquete vencera 15 dias despues de emitirse.",
+  },
+  "30_DAYS": {
+    hint: "Vence automaticamente 30 dias despues de emitirse.",
+    dateHint: "No necesitas fecha exacta; el sistema calcula los 30 dias.",
+    ticket: "Vigencia automatica: este ticket vencera 30 dias despues de emitirse.",
+    batch: "Vigencia automatica: cada ticket del paquete vencera 30 dias despues de emitirse.",
+  },
+  CUSTOM_DATE: {
+    hint: "Elige una fecha y hora exacta de cierre.",
+    dateHint: "Campo requerido para emitir con fecha personalizada.",
+    ticket: "Fecha personalizada activa. Selecciona dia y hora antes de emitir el ticket.",
+    batch: "Fecha personalizada activa. Selecciona dia y hora antes de generar el paquete.",
+  },
+};
+
+function updateCloseoutExpiryMode({ modeInput, dateInput, hint, dateHint, summary, context }) {
+  if (!modeInput || !dateInput) return;
+  const mode = modeInput.value || "NONE";
+  const copy = CLOSEOUT_EXPIRY_COPY[mode] || CLOSEOUT_EXPIRY_COPY.NONE;
+  const custom = mode === "CUSTOM_DATE";
+  dateInput.disabled = !custom;
+  dateInput.required = custom;
+  dateInput.closest(".expiration-date-card")?.classList.toggle("is-disabled", !custom);
+  if (!custom) dateInput.value = "";
+  if (hint) hint.textContent = copy.hint;
+  if (dateHint) dateHint.textContent = copy.dateHint;
+  if (summary) summary.textContent = copy[context] || copy.ticket;
+}
+
+function updatePostSaleExpiryMode() {
+  updateCloseoutExpiryMode({
+    modeInput: postSaleExpiresModeInput,
+    dateInput: postSaleExpiresAtInput,
+    hint: postSaleExpiryHint,
+    dateHint: postSaleExpiryDateHint,
+    summary: postSaleExpirySummary,
+    context: "ticket",
+  });
+}
+
+function updateQrBatchExpiryMode() {
+  updateCloseoutExpiryMode({
+    modeInput: qrBatchExpiresModeInput,
+    dateInput: qrBatchExpiresAtInput,
+    hint: qrBatchExpiryHint,
+    dateHint: qrBatchExpiryDateHint,
+    summary: qrBatchExpirySummary,
+    context: "batch",
+  });
+}
+
+function requireCloseoutExpiryDate({ modeInput, dateInput, messageEl, actionLabel }) {
+  if (!modeInput || !dateInput) return true;
+  if (modeInput.value !== "CUSTOM_DATE") return true;
+  if (dateInput.value) return true;
+  setInlineMessage(messageEl, `Selecciona la fecha personalizada antes de ${actionLabel}.`, "error");
+  dateInput.focus();
+  return false;
+}
+
 function validateTriviaLauncherForm() {
   updateTriviaExpiryMode();
   const type = currentActivationType();
@@ -11333,6 +11417,10 @@ async function submitPostSaleQr(event) {
   if (!validateBenefitFulfillment(postSaleBenefitFulfillmentModeInput, postSaleEcommerceCodeInput, postSaleQrMessage, "ticket")) {
     return;
   }
+  updatePostSaleExpiryMode();
+  if (!requireCloseoutExpiryDate({ modeInput: postSaleExpiresModeInput, dateInput: postSaleExpiresAtInput, messageEl: postSaleQrMessage, actionLabel: "emitir el ticket" })) {
+    return;
+  }
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando...");
   setInlineMessage(postSaleQrMessage, "Emitiendo ticket generico y descontando 1 ticket...", "info");
@@ -11488,6 +11576,10 @@ async function submitQrBatch(event) {
   if (!validateBenefitFulfillment(qrBatchBenefitFulfillmentModeInput, qrBatchEcommerceCodeInput, qrBatchMessage, "paquete")) {
     return;
   }
+  updateQrBatchExpiryMode();
+  if (!requireCloseoutExpiryDate({ modeInput: qrBatchExpiresModeInput, dateInput: qrBatchExpiresAtInput, messageEl: qrBatchMessage, actionLabel: "generar el paquete" })) {
+    return;
+  }
   const requestedQuantity = Number(qrBatchQuantityInput.value || 0);
   const submitButton = qrBatchForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando paquete...");
@@ -11570,6 +11662,7 @@ async function submitQrBatch(event) {
     qrBatchQuantityInput.value = "50";
     qrBatchClaimRequiredInput.value = "true";
     qrBatchExpiresModeInput.value = "NONE";
+    updateQrBatchExpiryMode();
     renderCampaignAssociationInputs();
     showFeedback("Paquete creado. La descarga del ZIP fue iniciada y los tickets quedaron actualizados.", "success", { title: "Paquete de tickets listo" });
   } catch (error) {
@@ -18784,6 +18877,7 @@ customerAcquisitionAffiliateInput?.addEventListener("change", () => {
 secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
+postSaleExpiresModeInput?.addEventListener("change", updatePostSaleExpiryMode);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
 activationShareSearchButton?.addEventListener("click", () => {
   searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));
@@ -18806,10 +18900,13 @@ activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button
 });
 triviaQuestionCountInput?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaExpiresModeInput?.addEventListener("change", updateTriviaExpiryMode);
+qrBatchExpiresModeInput?.addEventListener("change", updateQrBatchExpiryMode);
 document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((field) => {
   field.addEventListener("change", syncBenefitFulfillmentFields);
 });
 syncBenefitFulfillmentFields();
+updatePostSaleExpiryMode();
+updateQrBatchExpiryMode();
 triviaQuestionBuilder?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaQuestionBuilder?.addEventListener("change", updateTriviaQuestionVisibility);
 document.querySelectorAll('[data-survey-field="type"]').forEach((field) => {

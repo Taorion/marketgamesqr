@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=benefit-delivery-ux-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=ticket-closeout-ux-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -904,7 +904,7 @@
               <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
             </article>
 
-            <section class="charts-grid dashboard-charts">
+            <section class="charts-grid dashboard-charts strategic-ticket-generators">
               <article class="surface-card data-table-card">
                 <div class="table-card-head">
                   <span class="mono-label">Emisor generico</span>
@@ -978,25 +978,32 @@
                       <label class="ecommerce-instructions-field" data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="postSaleEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
                     </div>
                   </section>
-                  <section class="full benefit-expiration-panel">
-                    <div>
-                      <strong>Vigencia</strong>
-                      <span>Define hasta cuándo se puede usar el beneficio.</span>
+                  <section class="full ticket-closeout-panel">
+                    <div class="ticket-closeout-head">
+                      <span class="mono-label">Cierre del ticket</span>
+                      <strong>Vigencia, operación interna y emisión</strong>
+                      <p>Define la fecha límite, deja instrucciones para el equipo y emite el ticket desde un cierre limpio.</p>
                     </div>
-                    <label><span>Expiración</span>
-                      <select id="postSaleExpiresModeInput">
-                        <option value="NONE">Sin expiración</option>
-                        <option value="7_DAYS">7 días</option>
-                        <option value="15_DAYS">15 días</option>
-                        <option value="30_DAYS">30 días</option>
-                        <option value="CUSTOM_DATE">Fecha personalizada</option>
-                      </select>
-                    </label>
-                    <label><span>Fecha personalizada</span><input id="postSaleExpiresAtInput" type="datetime-local"></label>
+                    <div class="ticket-closeout-grid">
+                      <label class="expiration-mode-card"><span>Expiración</span>
+                        <select id="postSaleExpiresModeInput">
+                          <option value="NONE">Sin expiración</option>
+                          <option value="7_DAYS">7 días</option>
+                          <option value="15_DAYS">15 días</option>
+                          <option value="30_DAYS">30 días</option>
+                          <option value="CUSTOM_DATE">Fecha personalizada</option>
+                        </select>
+                        <small id="postSaleExpiryHint">Sin fecha límite: el ticket queda vigente hasta redención o anulación.</small>
+                      </label>
+                      <label class="expiration-date-card"><span>Fecha personalizada</span><input id="postSaleExpiresAtInput" type="datetime-local"><small id="postSaleExpiryDateHint">Activa fecha personalizada para elegir un cierre exacto.</small></label>
+                      <p class="ticket-closeout-summary" id="postSaleExpirySummary" aria-live="polite">Sin expiración activa. El equipo puede redimir el ticket hasta que sea usado o anulado.</p>
+                      <label class="internal-instructions-field"><span>Instrucciones internas</span><textarea id="postSaleNotesInput" rows="4" placeholder="Ej: reclamar en sede norte, no transferible, válido por un producto especifico"></textarea></label>
+                    </div>
+                    <div class="ticket-closeout-actions">
+                      <p class="error-line" id="postSaleQrMessage"></p>
+                      <button class="solid-button" type="submit">Emitir ticket</button>
+                    </div>
                   </section>
-                  <label><span>Instrucciones internas</span><textarea id="postSaleNotesInput" rows="3" placeholder="Ej: reclamar en sede norte, no transferible, válido por un producto especifico"></textarea></label>
-                  <button class="solid-button" type="submit">Emitir ticket</button>
-                  <p class="error-line" id="postSaleQrMessage"></p>
                 </form>
                 <div class="surface-card hidden" id="postSaleQrResult"></div>
               </article>
@@ -1091,25 +1098,32 @@
                       <option value="true">QR inicial captura datos y emite ticket final</option>
                     </select>
                   </label>
-                  <section class="full benefit-expiration-panel">
-                    <div>
-                      <strong>Vigencia del paquete</strong>
-                      <span>Controla hasta cuándo el lead puede reclamar el beneficio.</span>
+                  <section class="full ticket-closeout-panel">
+                    <div class="ticket-closeout-head">
+                      <span class="mono-label">Cierre del paquete</span>
+                      <strong>Vigencia, notas y generación</strong>
+                      <p>Controla hasta cuándo el lead puede reclamar, agrega condiciones internas y genera el paquete desde un cierre amplio.</p>
                     </div>
-                    <label><span class="field-label">Expiración <button class="field-help" type="button" aria-label="Ayuda sobre expiración" data-help="Define hasta cuándo el lead puede reclamar el beneficio. Ejemplo: 7 días para activación relámpago, 30 días para empaques, sin expiración para fidelización."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
-                      <select id="qrBatchExpiresModeInput">
-                        <option value="NONE">Sin expiración</option>
-                        <option value="7_DAYS">7 días</option>
-                        <option value="15_DAYS">15 días</option>
-                        <option value="30_DAYS">30 días</option>
-                        <option value="CUSTOM_DATE">Fecha personalizada</option>
-                      </select>
-                    </label>
-                    <label><span class="field-label">Fecha personalizada <button class="field-help" type="button" aria-label="Ayuda sobre fecha personalizada" data-help="Usa este campo solo si elegiste fecha personalizada. Ejemplo: 2026-07-31 11:59 p. m. para cerrar la campaña ese día."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchExpiresAtInput" type="datetime-local"></label>
+                    <div class="ticket-closeout-grid">
+                      <label class="expiration-mode-card"><span class="field-label">Expiración <button class="field-help" type="button" aria-label="Ayuda sobre expiración" data-help="Define hasta cuándo el lead puede reclamar el beneficio. Ejemplo: 7 días para activación relámpago, 30 días para empaques, sin expiración para fidelización."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span>
+                        <select id="qrBatchExpiresModeInput">
+                          <option value="NONE">Sin expiración</option>
+                          <option value="7_DAYS">7 días</option>
+                          <option value="15_DAYS">15 días</option>
+                          <option value="30_DAYS">30 días</option>
+                          <option value="CUSTOM_DATE">Fecha personalizada</option>
+                        </select>
+                        <small id="qrBatchExpiryHint">Sin fecha límite: cada ticket del paquete queda vigente hasta redención o anulación.</small>
+                      </label>
+                      <label class="expiration-date-card"><span class="field-label">Fecha personalizada <button class="field-help" type="button" aria-label="Ayuda sobre fecha personalizada" data-help="Usa este campo solo si elegiste fecha personalizada. Ejemplo: 2026-07-31 11:59 p. m. para cerrar la campaña ese día."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchExpiresAtInput" type="datetime-local"><small id="qrBatchExpiryDateHint">Activa fecha personalizada para elegir un cierre exacto.</small></label>
+                      <p class="ticket-closeout-summary" id="qrBatchExpirySummary" aria-live="polite">Sin expiración activa. El paquete queda disponible hasta que sus tickets se usen o se anulen.</p>
+                      <label class="internal-instructions-field"><span class="field-label">Notas <button class="field-help" type="button" aria-label="Ayuda sobre notas" data-help="Agrega instrucciones internas para el equipo. Ejemplo: entregar solo a compradores de vitrina, no acumulable con otras promociones."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><textarea id="qrBatchNotesInput" rows="4"></textarea></label>
+                    </div>
+                    <div class="ticket-closeout-actions">
+                      <p class="error-line" id="qrBatchMessage"></p>
+                      <button class="solid-button" type="submit">Generar paquete</button>
+                    </div>
                   </section>
-                  <label><span class="field-label">Notas <button class="field-help" type="button" aria-label="Ayuda sobre notas" data-help="Agrega instrucciones internas para el equipo. Ejemplo: entregar solo a compradores de vitrina, no acumulable con otras promociones."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><textarea id="qrBatchNotesInput" rows="3"></textarea></label>
-                  <button class="solid-button" type="submit">Generar paquete</button>
-                  <p class="error-line" id="qrBatchMessage"></p>
                 </form>
                 <div class="surface-card hidden qr-batch-progress-card" id="qrBatchProgress">
                   <div class="qr-batch-progress-head">
@@ -4296,7 +4310,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=benefit-delivery-ux-20260706" defer></script>
+  <script src="js/app.js?v=ticket-closeout-ux-20260706" defer></script>
 </body>
 </html>
 
