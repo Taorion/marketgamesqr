@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-contact-tab-logic-fix-v1";
+const APP_VERSION = "empresa-20260706-ticket-history-ux-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -8839,7 +8839,8 @@ function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
               <button class="ticket-status-main" type="button" data-open-ticket-row="${escapeHtml(item.id)}">
                 <span>
                   <strong>${escapeHtml(person)}</strong>
-                  <small>${escapeHtml(benefit)} | ${escapeHtml(formatDate(item.created_at))}</small>
+                  <small class="ticket-status-benefit">${escapeHtml(benefit)}</small>
+                  <small class="ticket-status-date">Creado ${escapeHtml(formatDate(item.created_at))}</small>
                 </span>
                 <span class="status-chip ${escapeHtml(group.tone)}">${escapeHtml(ticketStatusLabel(item))}</span>
               </button>
@@ -8920,44 +8921,50 @@ function renderStrategicQrView() {
 
   qrBatchTable.innerHTML = (state.strategicQrBatches || []).length
     ? state.strategicQrBatches.map((item) => `
-      <tr class="${item.id === state.strategicQrRecentBatchId ? "recent-row" : ""}">
-        <td>
-          ${escapeHtml(item.name)}
-          <br><span class="table-secondary">Creado ${escapeHtml(formatDate(item.created_at))} | ${escapeHtml(item.channel_use || "sin canal")}</span>
+      <tr class="qr-batch-list-row ${item.id === state.strategicQrRecentBatchId ? "recent-row" : ""}">
+        <td class="qr-batch-package-cell">
+          <strong>${escapeHtml(item.name || "Paquete sin nombre")}</strong>
+          <span class="table-secondary">Creado ${escapeHtml(formatDate(item.created_at))}</span>
+          <span class="table-secondary">${escapeHtml(item.channel_use || "Sin canal")}</span>
         </td>
-        <td>
-          ${escapeHtml(item.qr_origin_type)}
-          <br><span class="table-secondary">${escapeHtml(item.benefit_value?.label || item.benefit_type || "Beneficio")}</span>
-          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
-          ${benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+        <td class="qr-batch-type-cell">
+          <strong>${escapeHtml(item.qr_origin_type || "Ticket")}</strong>
+          <span class="table-secondary">${escapeHtml(item.benefit_value?.label || item.benefit_type || "Beneficio")}</span>
+          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+          ${benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
-        <td>
-          ${escapeHtml(item.quantity)}
-          <br><span class="table-secondary">${escapeHtml(item.generated_count || item.quantity || 0)} registrados</span>
+        <td class="qr-batch-number-cell">
+          <strong>${Number(item.quantity || 0).toLocaleString("es-CO")}</strong>
+          <span class="table-secondary">${Number(item.generated_count || item.quantity || 0).toLocaleString("es-CO")} registrados</span>
         </td>
-        <td>
+        <td class="qr-batch-status-cell">
           <span class="status-chip ${strategicBatchStatusClass(item.status)}">${escapeHtml(item.status)}</span>
-          <br><span class="table-secondary">${escapeHtml(item.unclaimed_count || 0)} por reclamar | ${escapeHtml(item.active_count || 0)} activos</span>
+          <span class="table-secondary">${Number(item.unclaimed_count || 0).toLocaleString("es-CO")} por reclamar</span>
+          <span class="table-secondary">${Number(item.active_count || 0).toLocaleString("es-CO")} activos</span>
         </td>
-        <td>
-          <select data-batch-format="${escapeHtml(item.id)}">
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-            <option value="html">HTML imprimible</option>
-            <option value="zip">ZIP con PNG</option>
-            <option value="pdf">PDF etiquetas</option>
-          </select>
-          <select data-batch-template="${escapeHtml(item.id)}">
-            <option value="sticker">Sticker</option>
-            <option value="shelf">Shelf</option>
-            <option value="card">Card</option>
-          </select>
-          <select data-batch-paper="${escapeHtml(item.id)}">
-            <option value="a4">A4</option>
-            <option value="letter">Letter</option>
-          </select>
-          <button class="ghost-button" type="button" data-download-batch="${escapeHtml(item.id)}">Descargar</button>
-          <button class="ghost-button" type="button" data-open-batch="${escapeHtml(item.id)}">Detalle</button>
+        <td class="qr-batch-download-cell">
+          <div class="qr-batch-download-panel">
+            <select data-batch-format="${escapeHtml(item.id)}" aria-label="Formato de descarga">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+              <option value="html">HTML imprimible</option>
+              <option value="zip">ZIP con PNG</option>
+              <option value="pdf">PDF etiquetas</option>
+            </select>
+            <select data-batch-template="${escapeHtml(item.id)}" aria-label="Plantilla de descarga">
+              <option value="sticker">Sticker</option>
+              <option value="shelf">Shelf</option>
+              <option value="card">Card</option>
+            </select>
+            <select data-batch-paper="${escapeHtml(item.id)}" aria-label="Papel de descarga">
+              <option value="a4">A4</option>
+              <option value="letter">Letter</option>
+            </select>
+            <div class="qr-batch-actions">
+              <button class="ghost-button" type="button" data-open-batch="${escapeHtml(item.id)}">Detalle</button>
+              <button class="solid-button" type="button" data-download-batch="${escapeHtml(item.id)}">Descargar</button>
+            </div>
+          </div>
         </td>
       </tr>
     `).join("")
@@ -8966,22 +8973,25 @@ function renderStrategicQrView() {
   renderTicketStatusBoard(state.strategicQrHistory || []);
   strategicQrHistoryTable.innerHTML = (state.strategicQrHistory || []).length
     ? state.strategicQrHistory.map((item) => `
-      <tr>
-        <td>${escapeHtml(item.origin_type)}</td>
-        <td>
-          ${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}
-          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<br><span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+      <tr class="strategic-ticket-history-row">
+        <td class="strategic-ticket-type-cell">
+          <strong>${escapeHtml(item.origin_type || "Ticket")}</strong>
+          <span class="table-secondary">${escapeHtml(item.qr_origin_type || "")}</span>
         </td>
-        <td>
+        <td class="strategic-ticket-benefit-cell">
+          <strong>${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}</strong>
+          ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
+        </td>
+        <td class="strategic-ticket-status-cell">
           <span class="status-chip ${ticketStatusClass(item)}">${escapeHtml(ticketStatusLabel(item))}</span>
-          <br><span class="table-secondary">${escapeHtml(item.expires_at ? `Vence ${formatDate(item.expires_at)}` : item.status || "-")}</span>
+          <span class="table-secondary">${escapeHtml(item.expires_at ? `Vence ${formatDate(item.expires_at)}` : item.status || "-")}</span>
         </td>
-        <td>
-          ${escapeHtml(item.player_name || "-")}
-          <br><span class="table-secondary">${escapeHtml(item.player_phone || item.player_email || "-")}</span>
+        <td class="strategic-ticket-client-cell">
+          <strong>${escapeHtml(item.player_name || "Sin cliente")}</strong>
+          <span class="table-secondary">${escapeHtml(item.player_phone || item.player_email || "Sin contacto")}</span>
         </td>
-        <td>
-          ${escapeHtml(formatDate(item.created_at))}
+        <td class="strategic-ticket-actions-cell">
+          <span class="table-secondary">Creado ${escapeHtml(formatDate(item.created_at))}</span>
           <div class="activation-row-actions">
             <button class="ghost-button" type="button" data-download-strategic-qr="${escapeHtml(item.id)}">Enviar ticket</button>
             ${isActiveTicket(item) ? `<button class="ghost-button" type="button" data-share-strategic-qr-wa="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>` : ""}
