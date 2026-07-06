@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-contact-center-tabs-v1";
+const APP_VERSION = "empresa-20260706-sales-ux-refine-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -611,6 +611,7 @@ const customerAcquisitionCampaignInput = document.getElementById("customerAcquis
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
 const customerAcquisitionCustomerLookupInput = document.getElementById("customerAcquisitionCustomerLookupInput");
 const customerAcquisitionCustomerSelect = document.getElementById("customerAcquisitionCustomerSelect");
+const customerAcquisitionCustomerStatus = document.getElementById("customerAcquisitionCustomerStatus");
 const customerAcquisitionNameInput = document.getElementById("customerAcquisitionNameInput");
 const customerAcquisitionDocumentInput = document.getElementById("customerAcquisitionDocumentInput");
 const customerAcquisitionPhoneInput = document.getElementById("customerAcquisitionPhoneInput");
@@ -7934,6 +7935,21 @@ function salesCustomerSelectLabel(customer = {}) {
   return flags ? `${customerLine} · ${flags}` : customerLine;
 }
 
+function setSalesCustomerStatus(title, detail = "", tone = "neutral", icon = "person_add") {
+  if (!customerAcquisitionCustomerStatus) return;
+  customerAcquisitionCustomerStatus.classList.remove("is-success", "is-warning", "is-error");
+  if (tone === "success") customerAcquisitionCustomerStatus.classList.add("is-success");
+  if (tone === "warning") customerAcquisitionCustomerStatus.classList.add("is-warning");
+  if (tone === "error") customerAcquisitionCustomerStatus.classList.add("is-error");
+  customerAcquisitionCustomerStatus.innerHTML = `
+    <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
+    <div>
+      <strong>${escapeHtml(title || "Cliente nuevo / manual")}</strong>
+      <small>${escapeHtml(detail || "Completa los datos del cliente si no viene de la base CRM.")}</small>
+    </div>
+  `;
+}
+
 function renderSalesCustomerOptions() {
   const customers = salesCustomerRows();
   if (!customerAcquisitionCustomerSelect) return;
@@ -7992,8 +8008,10 @@ function applySalesCustomer(customerOrValue) {
   }
   const affiliate = syncCustomerAffiliateSelection(customer);
   if (affiliate) {
+    setSalesCustomerStatus("Cliente afiliado detectado", `La venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "success", "verified");
     setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
   } else {
+    setSalesCustomerStatus("Cliente CRM seleccionado", "Datos cargados en el formulario. Esta venta no tiene afiliado asociado.", "success", "check_circle");
     setInlineMessage(customerAcquisitionMessage, "Cliente seleccionado. No tiene afiliado activo asociado, por eso esta venta no sumara puntos de afiliado.", "info");
   }
   return true;
@@ -8002,12 +8020,21 @@ function applySalesCustomer(customerOrValue) {
 function renderSalesCustomerMatchesHint() {
   if (!customerAcquisitionMessage) return;
   const search = customerAcquisitionCustomerLookupInput?.value || "";
-  if (!search.trim()) return;
+  if (!search.trim()) {
+    if (!customerAcquisitionCustomerSelect?.value) {
+      setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base CRM.", "neutral", "person_add");
+    }
+    return;
+  }
   const matches = filteredSalesCustomerRows(search);
   if (matches.length > 1) {
+    setSalesCustomerStatus(`${matches.length} coincidencias encontradas`, "Selecciona el contacto correcto en Coincidencia CRM.", "warning", "manage_search");
     setInlineMessage(customerAcquisitionMessage, `${matches.length} clientes coinciden. Selecciona el correcto en el desplegable "Cliente".`, "info");
   } else if (!matches.length) {
+    setSalesCustomerStatus("Cliente nuevo / manual", "No hay coincidencias en CRM. Puedes registrar los datos manualmente.", "warning", "person_add");
     setInlineMessage(customerAcquisitionMessage, "No hay cliente existente con esa busqueda. Puedes registrarlo como cliente nuevo/manual.", "info");
+  } else {
+    setSalesCustomerStatus("Coincidencia lista", "Puedes confirmar el cliente o seguir escribiendo para acotar la busqueda.", "success", "person_search");
   }
 }
 
@@ -8036,6 +8063,7 @@ function handleSalesCustomerSelectChange() {
       customerAcquisitionAffiliateInput.value = "";
       customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     }
+    setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base CRM.", "neutral", "person_add");
     return;
   }
   applySalesCustomer(customer);
@@ -9157,6 +9185,7 @@ async function submitCustomerAcquisitionSale(event) {
     affiliate_match_source: matchedAffiliate ? "customer_identity_frontend" : null,
   };
   setButtonLoading(submitButton, true, "Registrando...");
+  setSalesCustomerStatus("Registrando venta", "Estamos guardando cliente, productos y atribucion comercial.", "success", "sync");
   setInlineMessage(customerAcquisitionMessage, "Registrando venta real y medio de llegada...", "info");
   try {
     const data = await api("/api/business/customer-acquisition-sales", {
@@ -9186,6 +9215,7 @@ async function submitCustomerAcquisitionSale(event) {
     customerAcquisitionForm.reset();
     if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     customerAcquisitionCurrencyInput.value = "COP";
+    setSalesCustomerStatus("Cliente nuevo / manual", "Formulario listo para registrar otra venta.", "success", "task_alt");
     state.customerSaleItems = [defaultCustomerSaleItem()];
     renderCustomerAcquisitionCampaignOptions();
     renderCustomerSaleItems();
@@ -9200,6 +9230,7 @@ async function submitCustomerAcquisitionSale(event) {
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
   } catch (error) {
+    setSalesCustomerStatus("No se pudo registrar", error.message, "error", "error");
     setInlineMessage(customerAcquisitionMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo registrar" });
   } finally {
@@ -16494,7 +16525,7 @@ function updateContactCenterStage(tab = state.contactCenterTab || "overview") {
 
 function handleContactCenterStageAction(action = "") {
   if (action === "manual-lead") {
-    setContactCenterTab("overview");
+    setContactCenterTab("manual");
     manualLeadForm?.scrollIntoView({ behavior: "smooth", block: "start" });
     manualLeadNameInput?.focus();
     return;
@@ -16542,12 +16573,16 @@ function setContactCenterTab(tab = "overview") {
     });
   }
   contactCenterTabs.forEach((button) => {
-    button.classList.toggle("active", button.dataset.contactCenterTab === nextTab);
+    const active = button.dataset.contactCenterTab === nextTab;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+    button.tabIndex = active ? 0 : -1;
   });
   contactCenterPanels.forEach((panel) => {
     const active = panel.dataset.contactCenterPanel === nextTab;
     panel.classList.toggle("active", active);
     panel.classList.toggle("hidden", !active);
+    panel.hidden = !active;
   });
   if (nextTab === "captures") {
     renderLeadCaptureTable();
@@ -18829,7 +18864,21 @@ navButtons.forEach((button) => {
 contactCenterTabs.forEach((button) => {
   button.addEventListener("click", () => {
     setContactCenterTab(button.dataset.contactCenterTab);
-    if (state.currentView === "leads") renderLeadsView();
+  });
+  button.addEventListener("keydown", (event) => {
+    const currentIndex = contactCenterTabs.indexOf(button);
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || currentIndex < 0) return;
+    event.preventDefault();
+    const lastIndex = contactCenterTabs.length - 1;
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowLeft") nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+    if (event.key === "ArrowRight") nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = lastIndex;
+    const nextButton = contactCenterTabs[nextIndex];
+    if (!nextButton) return;
+    setContactCenterTab(nextButton.dataset.contactCenterTab);
+    nextButton.focus();
   });
 });
 contactCenterPrimaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterPrimaryAction.dataset.contactCenterAction));

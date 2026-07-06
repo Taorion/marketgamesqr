@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=contact-center-tabs-20260706">
+  <link rel="stylesheet" href="css/styles.css?v=sales-ux-refine-20260706">
 </head>
 <body>
   <main class="portal-shell">
@@ -2655,52 +2655,46 @@
                   <button class="ghost-button" id="contactCenterSecondaryAction" type="button">Exportar contactos</button>
                 </div>
               </section>
-              <div class="segment-tabs contact-center-tabs" id="contactCenterTabs">
-                <button class="segment-tab contact-center-tab-card active" data-contact-center-tab="overview" type="button">
-                  <span class="contact-tab-step">1</span>
-                  <strong>Resumen</strong>
-                  <small>Prioridades y señales clave</small>
+              <div class="segment-tabs contact-center-tabs" id="contactCenterTabs" role="tablist" aria-label="Secciones del centro de contactos">
+                <button class="segment-tab contact-center-tab-card active" id="contactTabOverview" data-contact-center-tab="overview" type="button" role="tab" aria-selected="true" aria-controls="contactPanelOverview">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">dashboard</span>
+                  <span class="contact-tab-copy"><strong>Resumen</strong><small>Prioridades</small></span>
                   <em id="contactTabOverviewCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="directory" type="button">
-                  <span class="contact-tab-step">2</span>
-                  <strong>Contactos CRM</strong>
-                  <small>Búsqueda, filtros y ficha</small>
+                <button class="segment-tab contact-center-tab-card" id="contactTabDirectory" data-contact-center-tab="directory" type="button" role="tab" aria-selected="false" aria-controls="contactPanelDirectory" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">contacts</span>
+                  <span class="contact-tab-copy"><strong>Contactos CRM</strong><small>Búsqueda y ficha</small></span>
                   <em id="contactTabDirectoryCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="tickets" type="button">
-                  <span class="contact-tab-step">3</span>
-                  <strong>Tickets</strong>
-                  <small>Activos, expirados y redimidos</small>
+                <button class="segment-tab contact-center-tab-card" id="contactTabTickets" data-contact-center-tab="tickets" type="button" role="tab" aria-selected="false" aria-controls="contactPanelTickets" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">confirmation_number</span>
+                  <span class="contact-tab-copy"><strong>Tickets</strong><small>Estados y recordación</small></span>
                   <em id="contactTabTicketsCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="captures" type="button">
-                  <span class="contact-tab-step">4</span>
-                  <strong>Capturas</strong>
-                  <small>Landing, ebook y formularios</small>
+                <button class="segment-tab contact-center-tab-card" id="contactTabCaptures" data-contact-center-tab="captures" type="button" role="tab" aria-selected="false" aria-controls="contactPanelCaptures" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">how_to_reg</span>
+                  <span class="contact-tab-copy"><strong>Capturas</strong><small>Landing y formularios</small></span>
                   <em id="contactTabCapturesCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="manual" type="button">
-                  <span class="contact-tab-step">5</span>
-                  <strong>Prospecto manual</strong>
-                  <small>Correos, llamadas y referidos</small>
+                <button class="segment-tab contact-center-tab-card" id="contactTabManual" data-contact-center-tab="manual" type="button" role="tab" aria-selected="false" aria-controls="contactPanelManual" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">person_add</span>
+                  <span class="contact-tab-copy"><strong>Prospecto manual</strong><small>Llamadas y referidos</small></span>
                   <em id="contactTabManualCount">0</em>
                 </button>
-                <button class="segment-tab contact-center-tab-card" data-contact-center-tab="sales" type="button">
-                  <span class="contact-tab-step">6</span>
-                  <strong>Convertidos y ventas</strong>
-                  <small>Compras, revenue y cierre</small>
+                <button class="segment-tab contact-center-tab-card" id="contactTabSales" data-contact-center-tab="sales" type="button" role="tab" aria-selected="false" aria-controls="contactPanelSales" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">payments</span>
+                  <span class="contact-tab-copy"><strong>Ventas</strong><small>Convertidos y cierre</small></span>
                   <em id="contactTabSalesCount">0</em>
                 </button>
               </div>
               <section class="contact-center-summary kpi-grid compact" id="contactCenterSummaryGrid"></section>
               <section class="contact-action-feed" id="contactActionFeed"></section>
-              <div class="contact-center-panel active" data-contact-center-panel="overview"></div>
-              <div class="contact-center-panel hidden" data-contact-center-panel="directory"></div>
-              <div class="contact-center-panel hidden" data-contact-center-panel="tickets"></div>
-              <div class="contact-center-panel hidden" data-contact-center-panel="captures"></div>
-              <div class="contact-center-panel hidden" data-contact-center-panel="manual"></div>
-              <div class="contact-center-panel hidden" data-contact-center-panel="sales"></div>
+              <div class="contact-center-panel active" id="contactPanelOverview" data-contact-center-panel="overview" role="tabpanel" aria-labelledby="contactTabOverview"></div>
+              <div class="contact-center-panel hidden" id="contactPanelDirectory" data-contact-center-panel="directory" role="tabpanel" aria-labelledby="contactTabDirectory" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelTickets" data-contact-center-panel="tickets" role="tabpanel" aria-labelledby="contactTabTickets" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelCaptures" data-contact-center-panel="captures" role="tabpanel" aria-labelledby="contactTabCaptures" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelManual" data-contact-center-panel="manual" role="tabpanel" aria-labelledby="contactTabManual" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelSales" data-contact-center-panel="sales" role="tabpanel" aria-labelledby="contactTabSales" hidden></div>
             </section>
             <section class="lead-crm-command surface-card">
               <div class="lead-crm-search-row">
@@ -3059,18 +3053,47 @@
                 <span class="status-chip ok">Ventas reales</span>
               </div>
               <p class="chart-explainer">Registra el cliente, los productos comprados, el medio de llegada y la atribucion comercial. Si el producto existe en inventario se descuenta automaticamente; si no existe queda como producto abierto.</p>
-              <form class="modal-form" id="customerAcquisitionForm">
-                <label><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
-                <label><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
-                <label><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
-                <label><span>Filtrar clientes</span><input id="customerAcquisitionCustomerLookupInput" type="search" placeholder="Nombre, cedula, telefono o correo"></label>
-                <label><span>Cliente</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
-                <label><span>Cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
-                <label><span>Cédula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
-                <label><span>Teléfono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
-                <label><span>Correo</span><input id="customerAcquisitionEmailInput" type="email"></label>
+              <form class="modal-form customer-sale-form" id="customerAcquisitionForm">
+                <section class="sale-form-block sale-form-block-summary">
+                  <div class="sale-form-block-head">
+                    <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+                    <div>
+                      <span class="mono-label">Venta</span>
+                      <strong>Importe y campaña</strong>
+                    </div>
+                  </div>
+                  <div class="sale-form-grid sale-form-grid-summary">
+                    <label class="sale-field sale-field-total"><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
+                    <label class="sale-field sale-field-currency"><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
+                    <label class="sale-field sale-field-campaign"><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
+                  </div>
+                </section>
+                <section class="sale-form-block sale-form-block-customer">
+                  <div class="sale-form-block-head">
+                    <span class="material-symbols-outlined" aria-hidden="true">person_search</span>
+                    <div>
+                      <span class="mono-label">Cliente</span>
+                      <strong>Identificación comercial</strong>
+                    </div>
+                  </div>
+                  <div class="sale-form-grid sale-form-grid-customer">
+                    <label class="sale-field sale-field-search"><span>Buscar cliente existente</span><input id="customerAcquisitionCustomerLookupInput" type="search" placeholder="Nombre, cedula, telefono o correo"></label>
+                    <label class="sale-field sale-field-existing"><span>Coincidencia CRM</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
+                    <div class="sale-customer-status" id="customerAcquisitionCustomerStatus" role="status" aria-live="polite">
+                      <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+                      <div>
+                        <strong>Cliente nuevo / manual</strong>
+                        <small>Completa los datos del cliente si no viene de la base CRM.</small>
+                      </div>
+                    </div>
+                    <label class="sale-field sale-field-name"><span>Nombre del cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
+                    <label class="sale-field"><span>Cédula</span><input id="customerAcquisitionDocumentInput" type="text" placeholder="Opcional"></label>
+                    <label class="sale-field"><span>Teléfono</span><input id="customerAcquisitionPhoneInput" type="text"></label>
+                    <label class="sale-field"><span>Correo</span><input id="customerAcquisitionEmailInput" type="email"></label>
+                  </div>
+                </section>
                 <input id="customerAcquisitionProductInput" type="hidden">
-                <div class="span-2 sales-item-builder">
+                <div class="sales-item-builder">
                   <div class="sales-item-builder-head">
                     <div>
                       <span class="mono-label">Detalle de compra</span>
@@ -3084,23 +3107,36 @@
                     <strong id="customerSaleTotalPreview">$0</strong>
                   </div>
                 </div>
-                <label><span>Medio de llegada</span>
-                  <select id="customerAcquisitionSourceInput" required>
-                    <option value="STORE_WALK_IN">Vio el almacen</option>
-                    <option value="FRIEND_REFERRAL">Recomendación de un amigo</option>
-                    <option value="FAIR_EVENT">Feria o evento</option>
-                    <option value="INTERNET_SEARCH">Internet / buscador</option>
-                    <option value="SOCIAL_MEDIA">Redes sociales</option>
-                    <option value="PAID_ADS">Pauta digital</option>
-                    <option value="QR_SCAN">Ticket / pieza impresa</option>
-                    <option value="OTHER">Otro</option>
-                  </select>
-                </label>
-                <label><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
-                <label><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
-                <label><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
-                <button class="solid-button" type="submit">Registrar venta</button>
-                <p class="error-line" id="customerAcquisitionMessage"></p>
+                <section class="sale-form-block sale-form-block-attribution">
+                  <div class="sale-form-block-head">
+                    <span class="material-symbols-outlined" aria-hidden="true">conversion_path</span>
+                    <div>
+                      <span class="mono-label">Atribución</span>
+                      <strong>Origen de la venta</strong>
+                    </div>
+                  </div>
+                  <div class="sale-form-grid sale-form-grid-attribution">
+                    <label class="sale-field"><span>Medio de llegada</span>
+                      <select id="customerAcquisitionSourceInput" required>
+                        <option value="STORE_WALK_IN">Vio el almacen</option>
+                        <option value="FRIEND_REFERRAL">Recomendación de un amigo</option>
+                        <option value="FAIR_EVENT">Feria o evento</option>
+                        <option value="INTERNET_SEARCH">Internet / buscador</option>
+                        <option value="SOCIAL_MEDIA">Redes sociales</option>
+                        <option value="PAID_ADS">Pauta digital</option>
+                        <option value="QR_SCAN">Ticket / pieza impresa</option>
+                        <option value="OTHER">Otro</option>
+                      </select>
+                    </label>
+                    <label class="sale-field"><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
+                    <label class="sale-field"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
+                    <label class="sale-field sale-field-notes"><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
+                  </div>
+                </section>
+                <div class="sale-form-actions">
+                  <button class="solid-button" type="submit">Registrar venta</button>
+                  <p class="error-line" id="customerAcquisitionMessage"></p>
+                </div>
               </form>
             </article>
 
@@ -4332,7 +4368,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=contact-center-tabs-20260706" defer></script>
+  <script src="js/app.js?v=sales-ux-refine-20260706" defer></script>
 </body>
 </html>
 
