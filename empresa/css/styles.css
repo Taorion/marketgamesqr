@@ -4245,6 +4245,117 @@ td {
   justify-content: flex-start;
 }
 
+.strategic-ticket-operations .table-wrap {
+  overflow: visible;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.strategic-ticket-operations table,
+.strategic-ticket-operations thead,
+.strategic-ticket-operations tbody,
+.strategic-ticket-operations tr,
+.strategic-ticket-operations td {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.strategic-ticket-operations table {
+  border: 0;
+  border-spacing: 0;
+}
+
+.strategic-ticket-operations thead {
+  display: none;
+}
+
+.strategic-ticket-operations tbody {
+  display: grid;
+  gap: 12px;
+}
+
+.strategic-ticket-operations tbody > tr {
+  display: grid;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(124, 251, 255, 0.16) !important;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.028)),
+    rgba(5, 15, 31, 0.56) !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+#qrBatchTable > tr.qr-batch-list-row {
+  grid-template-columns: minmax(220px, 1.2fr) minmax(190px, 1fr) minmax(104px, 0.48fr) minmax(150px, 0.72fr) minmax(280px, 1.18fr);
+}
+
+#strategicQrHistoryTable > tr.strategic-ticket-history-row {
+  grid-template-columns: minmax(140px, 0.68fr) minmax(220px, 1.18fr) minmax(160px, 0.75fr) minmax(190px, 0.95fr) minmax(260px, 1.15fr);
+}
+
+.strategic-ticket-operations tbody > tr.empty-list-row {
+  grid-template-columns: 1fr;
+}
+
+.strategic-ticket-operations tbody > tr:hover {
+  border-color: rgba(111, 251, 190, 0.34) !important;
+  background:
+    linear-gradient(180deg, rgba(111, 251, 190, 0.085), rgba(255, 255, 255, 0.028)),
+    rgba(5, 15, 31, 0.62) !important;
+}
+
+.strategic-ticket-operations td {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  border: 0 !important;
+}
+
+.strategic-ticket-operations td[data-label]::before {
+  content: attr(data-label);
+  display: block;
+  color: #7cfbff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.strategic-ticket-operations td[colspan]::before {
+  display: none;
+}
+
+.strategic-ticket-operations .qr-batch-download-panel {
+  padding: 10px;
+  border: 1px solid rgba(124, 251, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(2, 8, 23, 0.34);
+}
+
+.strategic-ticket-operations .qr-batch-actions,
+.strategic-ticket-operations .activation-row-actions,
+.ticket-status-actions {
+  align-items: center;
+}
+
+.strategic-ticket-operations .qr-batch-actions .danger-button,
+.strategic-ticket-operations .activation-row-actions .danger-button,
+.ticket-status-actions .danger-button {
+  border-color: rgba(255, 77, 141, 0.34) !important;
+  color: #ffadc9 !important;
+}
+
+.strategic-ticket-operations .qr-batch-actions .danger-button:hover,
+.strategic-ticket-operations .activation-row-actions .danger-button:hover,
+.ticket-status-actions .danger-button:hover {
+  background: rgba(255, 77, 141, 0.12) !important;
+}
+
 @media (max-width: 1120px) {
   .ticket-status-board {
     grid-template-columns: 1fr;
@@ -4286,6 +4397,31 @@ td {
 
   .qr-batch-download-panel {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1220px) {
+  #qrBatchTable > tr.qr-batch-list-row,
+  #strategicQrHistoryTable > tr.strategic-ticket-history-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .qr-batch-download-cell,
+  .strategic-ticket-actions-cell {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .strategic-ticket-operations tbody > tr {
+    grid-template-columns: 1fr !important;
+    padding: 12px;
+  }
+
+  .qr-batch-download-cell,
+  .strategic-ticket-actions-cell {
+    min-width: 0;
   }
 }
 
@@ -13474,6 +13610,37 @@ body.chart-focus-open .command-center {
   background: #ffffff !important;
   color: #06372e !important;
   border-color: #abc8bd !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations tbody > tr {
+  border-color: #c5d9d2 !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.07);
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations tbody > tr:hover {
+  border-color: #7eb69b !important;
+  background: #f5fbf8 !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations td[data-label]::before {
+  color: #087a5e !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations .qr-batch-download-panel {
+  background: #f7fffb !important;
+  border-color: #d4e6df !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations .danger-button,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .ticket-status-actions .danger-button {
+  color: #b4234d !important;
+  border-color: rgba(180, 35, 77, 0.34) !important;
+}
+
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .strategic-ticket-operations .danger-button:hover,
+:root[data-theme="light"] .view-section[data-view="strategic-qr"] .ticket-status-actions .danger-button:hover {
+  background: #fff1f4 !important;
 }
 
 /* Lead CRM/RMS */

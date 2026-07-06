@@ -7,6 +7,8 @@ const {
   listQrBatches,
   getQrBatch,
   getQrHistory,
+  cancelQrBatch,
+  cancelStrategicQr,
   getQrMetrics,
   getIndividualQrDownload,
   getBatchCsvDownload,
@@ -122,6 +124,22 @@ async function qrHistory(req, res, next) {
   }
 }
 
+async function deleteBatch(req, res, next) {
+  try {
+    res.json(await cancelQrBatch(businessIdFor(req), req.params.id, req.user));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteQr(req, res, next) {
+  try {
+    res.json(await cancelStrategicQr(businessIdFor(req), req.params.id, req.user));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function qrMetrics(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -203,6 +221,8 @@ module.exports = {
   listBatches,
   batchDetail,
   qrHistory,
+  deleteBatch,
+  deleteQr,
   qrMetrics,
   downloadQr,
   downloadBatchCsv,

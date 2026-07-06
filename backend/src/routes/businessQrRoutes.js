@@ -11,6 +11,8 @@ const {
   listBatches,
   batchDetail,
   qrHistory,
+  deleteBatch,
+  deleteQr,
   qrMetrics,
   downloadQr,
   downloadBatchCsv,
@@ -32,7 +34,9 @@ router.get("/batches", listBatches);
 router.get("/batches/:id", batchDetail);
 router.get("/batches/:id/download.csv", downloadBatchCsv);
 router.get("/batches/:id/download", downloadBatch);
+router.delete("/batches/:id", deleteBatch);
 router.get("/history", qrHistory);
+router.delete("/history/:id", deleteQr);
 router.get("/metrics", qrMetrics);
 router.get("/:id/download", downloadQr);
 

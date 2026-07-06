@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-ticket-history-ux-v1";
+const APP_VERSION = "empresa-20260706-ticket-cleanup-ux-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -8811,7 +8811,7 @@ function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
     {
       key: "inactive",
       title: "No activos",
-      meta: "Sin reclamar, cancelados o en estado no usable",
+      meta: "Sin reclamar o en estado no usable",
       rows: rows.filter(isInactiveTicket),
       tone: "pending",
     },
@@ -8844,10 +8844,11 @@ function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
                 </span>
                 <span class="status-chip ${escapeHtml(group.tone)}">${escapeHtml(ticketStatusLabel(item))}</span>
               </button>
-              ${group.key === "active" ? `
+              ${group.key !== "redeemed" ? `
                 <div class="ticket-status-actions">
-                  <button class="ghost-button" type="button" data-ticket-status-send="${escapeHtml(item.id)}">Enviar ticket</button>
-                  <button class="ghost-button" type="button" data-ticket-status-whatsapp="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>
+                  ${group.key === "active" ? `<button class="ghost-button" type="button" data-ticket-status-send="${escapeHtml(item.id)}">Enviar ticket</button>` : ""}
+                  ${group.key === "active" ? `<button class="ghost-button" type="button" data-ticket-status-whatsapp="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>` : ""}
+                  <button class="ghost-button danger-button" type="button" data-ticket-status-delete="${escapeHtml(item.id)}">Eliminar</button>
                 </div>
               ` : ""}
             </div>
@@ -8864,6 +8865,9 @@ function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
   });
   ticketStatusBoard.querySelectorAll("[data-ticket-status-whatsapp]").forEach((button) => {
     button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.ticketStatusWhatsapp, button.dataset.leadPhone, button.dataset.leadName));
+  });
+  ticketStatusBoard.querySelectorAll("[data-ticket-status-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteStrategicQr(button.dataset.ticketStatusDelete));
   });
 }
 
@@ -8922,27 +8926,27 @@ function renderStrategicQrView() {
   qrBatchTable.innerHTML = (state.strategicQrBatches || []).length
     ? state.strategicQrBatches.map((item) => `
       <tr class="qr-batch-list-row ${item.id === state.strategicQrRecentBatchId ? "recent-row" : ""}">
-        <td class="qr-batch-package-cell">
+        <td class="qr-batch-package-cell" data-label="Paquete">
           <strong>${escapeHtml(item.name || "Paquete sin nombre")}</strong>
           <span class="table-secondary">Creado ${escapeHtml(formatDate(item.created_at))}</span>
           <span class="table-secondary">${escapeHtml(item.channel_use || "Sin canal")}</span>
         </td>
-        <td class="qr-batch-type-cell">
+        <td class="qr-batch-type-cell" data-label="Tipo">
           <strong>${escapeHtml(item.qr_origin_type || "Ticket")}</strong>
           <span class="table-secondary">${escapeHtml(item.benefit_value?.label || item.benefit_type || "Beneficio")}</span>
           ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
           ${benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitFulfillmentLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
-        <td class="qr-batch-number-cell">
+        <td class="qr-batch-number-cell" data-label="Cantidad">
           <strong>${Number(item.quantity || 0).toLocaleString("es-CO")}</strong>
           <span class="table-secondary">${Number(item.generated_count || item.quantity || 0).toLocaleString("es-CO")} registrados</span>
         </td>
-        <td class="qr-batch-status-cell">
+        <td class="qr-batch-status-cell" data-label="Estado">
           <span class="status-chip ${strategicBatchStatusClass(item.status)}">${escapeHtml(item.status)}</span>
           <span class="table-secondary">${Number(item.unclaimed_count || 0).toLocaleString("es-CO")} por reclamar</span>
           <span class="table-secondary">${Number(item.active_count || 0).toLocaleString("es-CO")} activos</span>
         </td>
-        <td class="qr-batch-download-cell">
+        <td class="qr-batch-download-cell" data-label="Acciones">
           <div class="qr-batch-download-panel">
             <select data-batch-format="${escapeHtml(item.id)}" aria-label="Formato de descarga">
               <option value="csv">CSV</option>
@@ -8963,49 +8967,54 @@ function renderStrategicQrView() {
             <div class="qr-batch-actions">
               <button class="ghost-button" type="button" data-open-batch="${escapeHtml(item.id)}">Detalle</button>
               <button class="solid-button" type="button" data-download-batch="${escapeHtml(item.id)}">Descargar</button>
+              <button class="ghost-button danger-button" type="button" data-delete-batch="${escapeHtml(item.id)}">Eliminar</button>
             </div>
           </div>
         </td>
       </tr>
     `).join("")
-    : '<tr><td colspan="5">No hay paquetes creados.</td></tr>';
+    : '<tr class="empty-list-row"><td colspan="5"><div class="empty-state compact">No hay paquetes creados.</div></td></tr>';
 
   renderTicketStatusBoard(state.strategicQrHistory || []);
   strategicQrHistoryTable.innerHTML = (state.strategicQrHistory || []).length
     ? state.strategicQrHistory.map((item) => `
       <tr class="strategic-ticket-history-row">
-        <td class="strategic-ticket-type-cell">
+        <td class="strategic-ticket-type-cell" data-label="Tipo">
           <strong>${escapeHtml(item.origin_type || "Ticket")}</strong>
           <span class="table-secondary">${escapeHtml(item.qr_origin_type || "")}</span>
         </td>
-        <td class="strategic-ticket-benefit-cell">
+        <td class="strategic-ticket-benefit-cell" data-label="Beneficio">
           <strong>${escapeHtml(item.benefit_value?.label || item.benefit_type || "-")}</strong>
           ${benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}) ? `<span class="table-secondary">${escapeHtml(benefitProductScopeLabel(item.benefit_value || {}, item.metadata || {}))}</span>` : ""}
         </td>
-        <td class="strategic-ticket-status-cell">
+        <td class="strategic-ticket-status-cell" data-label="Estado">
           <span class="status-chip ${ticketStatusClass(item)}">${escapeHtml(ticketStatusLabel(item))}</span>
           <span class="table-secondary">${escapeHtml(item.expires_at ? `Vence ${formatDate(item.expires_at)}` : item.status || "-")}</span>
         </td>
-        <td class="strategic-ticket-client-cell">
+        <td class="strategic-ticket-client-cell" data-label="Cliente">
           <strong>${escapeHtml(item.player_name || "Sin cliente")}</strong>
           <span class="table-secondary">${escapeHtml(item.player_phone || item.player_email || "Sin contacto")}</span>
         </td>
-        <td class="strategic-ticket-actions-cell">
+        <td class="strategic-ticket-actions-cell" data-label="Acciones">
           <span class="table-secondary">Creado ${escapeHtml(formatDate(item.created_at))}</span>
           <div class="activation-row-actions">
-            <button class="ghost-button" type="button" data-download-strategic-qr="${escapeHtml(item.id)}">Enviar ticket</button>
+            <button class="ghost-button" type="button" data-download-strategic-qr="${escapeHtml(item.id)}">${isActiveTicket(item) ? "Enviar ticket" : "Descargar ticket"}</button>
             ${isActiveTicket(item) ? `<button class="ghost-button" type="button" data-share-strategic-qr-wa="${escapeHtml(item.id)}" data-lead-phone="${escapeHtml(item.player_phone || "")}" data-lead-name="${escapeHtml(item.player_name || "")}">Recordar WhatsApp</button>` : ""}
+            ${!isRedeemedTicket(item) ? `<button class="ghost-button danger-button" type="button" data-delete-strategic-qr="${escapeHtml(item.id)}">Eliminar</button>` : ""}
           </div>
         </td>
       </tr>
     `).join("")
-    : '<tr><td colspan="5">No hay tickets estratégicos generados.</td></tr>';
+    : '<tr class="empty-list-row"><td colspan="5"><div class="empty-state compact">No hay tickets estratégicos generados.</div></td></tr>';
 
   strategicQrHistoryTable.querySelectorAll("[data-download-strategic-qr]").forEach((button) => {
     button.addEventListener("click", () => downloadStrategicQr(button.dataset.downloadStrategicQr));
   });
   strategicQrHistoryTable.querySelectorAll("[data-share-strategic-qr-wa]").forEach((button) => {
     button.addEventListener("click", () => shareLeadQrWhatsApp(button.dataset.shareStrategicQrWa, button.dataset.leadPhone, button.dataset.leadName));
+  });
+  strategicQrHistoryTable.querySelectorAll("[data-delete-strategic-qr]").forEach((button) => {
+    button.addEventListener("click", () => deleteStrategicQr(button.dataset.deleteStrategicQr));
   });
   qrBatchTable.querySelectorAll("[data-download-batch]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -9018,6 +9027,9 @@ function renderStrategicQrView() {
   });
   qrBatchTable.querySelectorAll("[data-open-batch]").forEach((button) => {
     button.addEventListener("click", () => inspectQrBatch(button.dataset.openBatch));
+  });
+  qrBatchTable.querySelectorAll("[data-delete-batch]").forEach((button) => {
+    button.addEventListener("click", () => deleteQrBatch(button.dataset.deleteBatch));
   });
   renderTicketCenterModules();
 }
@@ -11763,6 +11775,70 @@ async function inspectQrBatch(batchId) {
     state.strategicQrRecentBatchId = batchId;
   } catch (error) {
     showFeedback(error.message, "error");
+  }
+}
+
+async function refreshTicketOperationsAfterDelete(groups = ["metrics", "batches", "history"]) {
+  markTicketCenterDataStale(groups);
+  renderStrategicQrView();
+  await loadStrategicQrData({ groups, force: true, quiet: true });
+  renderStrategicQrView();
+}
+
+async function deleteQrBatch(batchId) {
+  if (!batchId) return;
+  const batch = (state.strategicQrBatches || []).find((item) => String(item.id) === String(batchId));
+  const batchName = batch?.name || "este paquete";
+  const accepted = window.confirm(`Eliminar ${batchName}? Se anularan los tickets no redimidos del paquete. Los tickets ya redimidos se conservan por trazabilidad.`);
+  if (!accepted) {
+    showFeedback("Eliminacion cancelada.", "info", { title: "Paquetes" });
+    return;
+  }
+
+  showFeedback("Eliminando paquete y anulando tickets pendientes.", "loading", { title: "Paquetes", timeout: 0 });
+  try {
+    const data = await api(`/api/business/qr/batches/${encodeURIComponent(batchId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.strategicQrBatches = (state.strategicQrBatches || []).filter((item) => String(item.id) !== String(batchId));
+    state.strategicQrHistory = (state.strategicQrHistory || []).filter((item) => (
+      String(item.batch_id || "") !== String(batchId) || isRedeemedTicket(item)
+    ));
+    await refreshTicketOperationsAfterDelete();
+    const cancelledCount = Number(data.cancelled_qr_count || 0).toLocaleString("es-CO");
+    const redeemedCount = Number(data.redeemed_preserved_count || 0).toLocaleString("es-CO");
+    showFeedback(`Paquete eliminado. ${cancelledCount} tickets pendientes anulados; ${redeemedCount} redimidos conservados.`, "success", { title: "Paquetes" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo eliminar el paquete" });
+  }
+}
+
+async function deleteStrategicQr(qrId) {
+  if (!qrId) return;
+  const ticket = (state.strategicQrHistory || []).find((item) => String(item.id) === String(qrId));
+  if (ticket && isRedeemedTicket(ticket)) {
+    showFeedback("Un ticket redimido no se elimina desde el portal porque soporta una redencion.", "info", { title: "Ticket protegido" });
+    return;
+  }
+  const ticketLabel = ticket?.benefit_value?.label || ticket?.benefit_type || ticket?.origin_type || "este ticket";
+  const accepted = window.confirm(`Eliminar ${ticketLabel}? El ticket quedara anulado y no podra redimirse.`);
+  if (!accepted) {
+    showFeedback("Eliminacion cancelada.", "info", { title: "Tickets" });
+    return;
+  }
+
+  showFeedback("Eliminando ticket y actualizando el historial.", "loading", { title: "Tickets", timeout: 0 });
+  try {
+    await api(`/api/business/qr/history/${encodeURIComponent(qrId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.strategicQrHistory = (state.strategicQrHistory || []).filter((item) => String(item.id) !== String(qrId));
+    await refreshTicketOperationsAfterDelete();
+    showFeedback("Ticket eliminado. Ya no aparece como activo ni disponible para redimir.", "success", { title: "Tickets" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo eliminar el ticket" });
   }
 }
 

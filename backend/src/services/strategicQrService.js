@@ -642,6 +642,7 @@ async function listQrBatches(businessId, options = {}) {
        select *
        from qr_batches
        where business_id = $1
+         and status <> 'CANCELLED'
        order by created_at desc
        limit $2
      )
@@ -733,6 +734,7 @@ async function getQrHistory(businessId, options = {}) {
      left join affiliates a on a.id = q.affiliate_id
      where q.business_id = $1
        and q.origin_type in ('POST_SALE', 'PRODUCT_LABEL', 'BULK_PACKAGE', 'MANUAL_BENEFIT', 'LOYALTY', 'SURPRISE_REWARD', 'AFFILIATE_REFERRAL', 'TRIVIA_LAUNCHER', 'INTERACTIVE_ACTIVATION')
+       and q.status <> 'CANCELLED'
      order by q.created_at desc
      limit $2`,
     [businessId, limit]
@@ -741,6 +743,135 @@ async function getQrHistory(businessId, options = {}) {
     ...qr,
     ...buildPublicQrLinks(qr),
   }));
+}
+
+async function cancelQrBatch(businessId, batchId, user = {}) {
+  return withTransaction(async (client) => {
+    const batchResult = await client.query(
+      `select *
+       from qr_batches
+       where id = $1 and business_id = $2
+       for update`,
+      [batchId, businessId]
+    );
+    const batch = batchResult.rows[0];
+    if (!batch) {
+      throw notFound("QR batch not found.");
+    }
+
+    const countsResult = await client.query(
+      `select
+         count(*) filter (where status = 'REDEEMED')::int as redeemed_count,
+         count(*) filter (where status not in ('REDEEMED', 'CANCELLED'))::int as cancellable_count
+       from qr_codes
+       where batch_id = $1 and business_id = $2`,
+      [batchId, businessId]
+    );
+    const counts = countsResult.rows[0] || {};
+    const metadataPatch = {
+      portal_deleted: true,
+      cancelled_at: new Date().toISOString(),
+      cancelled_by_user_id: user?.id || null,
+      cancelled_source: "business_portal",
+    };
+
+    const qrResult = await client.query(
+      `update qr_codes
+       set status = 'CANCELLED',
+           metadata = coalesce(metadata, '{}'::jsonb) || $3::jsonb
+       where batch_id = $1
+         and business_id = $2
+         and status not in ('REDEEMED', 'CANCELLED')
+       returning id`,
+      [batchId, businessId, JSON.stringify(metadataPatch)]
+    );
+
+    const updatedBatchResult = await client.query(
+      `update qr_batches
+       set status = 'CANCELLED',
+           metadata = coalesce(metadata, '{}'::jsonb) || $3::jsonb
+       where id = $1 and business_id = $2
+       returning *`,
+      [batchId, businessId, JSON.stringify(metadataPatch)]
+    );
+
+    await logQrEvent(client, {
+      business_id: businessId,
+      campaign_id: batch.campaign_id || null,
+      batch_id: batch.id,
+      user_id: user?.id || null,
+      event_type: "QR_BATCH_CANCELLED",
+      message: "QR batch hidden from business portal operations.",
+      metadata: {
+        batch_name: batch.name,
+        cancelled_qr_count: qrResult.rowCount,
+        redeemed_preserved_count: Number(counts.redeemed_count || 0),
+      },
+    });
+
+    return {
+      deleted: true,
+      batch: updatedBatchResult.rows[0],
+      cancelled_qr_count: qrResult.rowCount,
+      redeemed_preserved_count: Number(counts.redeemed_count || 0),
+      cancellable_count: Number(counts.cancellable_count || 0),
+    };
+  });
+}
+
+async function cancelStrategicQr(businessId, qrId, user = {}) {
+  return withTransaction(async (client) => {
+    const qrResult = await client.query(
+      `select id, business_id, campaign_id, player_id, batch_id, status, benefit_type, benefit_value, metadata
+       from qr_codes
+       where id = $1 and business_id = $2
+       for update`,
+      [qrId, businessId]
+    );
+    const qr = qrResult.rows[0];
+    if (!qr) {
+      throw notFound("QR not found.");
+    }
+    if (qr.status === "REDEEMED") {
+      throw badRequest("No se puede eliminar un ticket redimido porque soporta una redencion o venta.");
+    }
+    if (qr.status === "CANCELLED") {
+      return { deleted: true, qr, already_cancelled: true };
+    }
+
+    const metadataPatch = {
+      portal_deleted: true,
+      cancelled_at: new Date().toISOString(),
+      cancelled_by_user_id: user?.id || null,
+      cancelled_source: "business_portal",
+    };
+    const updatedResult = await client.query(
+      `update qr_codes
+       set status = 'CANCELLED',
+           metadata = coalesce(metadata, '{}'::jsonb) || $3::jsonb
+       where id = $1 and business_id = $2
+       returning id, business_id, campaign_id, player_id, batch_id, status, benefit_type, benefit_value, metadata`,
+      [qrId, businessId, JSON.stringify(metadataPatch)]
+    );
+    const updated = updatedResult.rows[0];
+
+    await logQrEvent(client, {
+      business_id: businessId,
+      campaign_id: qr.campaign_id || null,
+      qr_code_id: qr.id,
+      batch_id: qr.batch_id || null,
+      player_id: qr.player_id || null,
+      user_id: user?.id || null,
+      event_type: "QR_CANCELLED",
+      message: "QR ticket hidden from business portal operations.",
+      metadata: {
+        previous_status: qr.status,
+        benefit_type: qr.benefit_type || null,
+      },
+    });
+
+    return { deleted: true, qr: updated };
+  });
 }
 
 async function getQrMetrics(businessId) {
@@ -1901,6 +2032,8 @@ module.exports = {
   listQrBatches,
   getQrBatch,
   getQrHistory,
+  cancelQrBatch,
+  cancelStrategicQr,
   getQrMetrics,
   getIndividualQrDownload,
   getBatchCsvDownload,
