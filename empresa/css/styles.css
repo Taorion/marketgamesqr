@@ -15012,6 +15012,21 @@ body.chart-focus-open .command-center {
   background: rgba(0, 0, 0, 0.12);
 }
 
+.digital-asset-landing-template {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(124, 251, 255, 0.07);
+}
+
+.digital-asset-landing-template span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .digital-asset-landings {
   display: grid;
   gap: 10px;

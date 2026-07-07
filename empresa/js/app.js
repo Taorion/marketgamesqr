@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-digital-asset-management-v2";
+const APP_VERSION = "empresa-20260707-digital-asset-management-v4";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -8454,22 +8454,24 @@ function leadCaptureDefaultBadge(asset = {}) {
 }
 
 function leadCaptureDetailBadges(asset = {}) {
+  const assetMessage = digitalAssetLandingMessage(asset);
   return [
-    leadCaptureBadgeOneInput?.value.trim() || leadCaptureDefaultBadge(asset) || "Material digital",
-    leadCaptureBadgeTwoInput?.value.trim() || "Acceso inmediato",
-    leadCaptureBadgeThreeInput?.value.trim() || "Enlace seguro",
+    leadCaptureBadgeOneInput?.value.trim() || assetMessage.detail_badges[0] || leadCaptureDefaultBadge(asset) || "Material digital",
+    leadCaptureBadgeTwoInput?.value.trim() || assetMessage.detail_badges[1] || "Acceso inmediato",
+    leadCaptureBadgeThreeInput?.value.trim() || assetMessage.detail_badges[2] || "Enlace seguro",
   ].filter(Boolean).slice(0, 3);
 }
 
 function leadCapturePublicMessage(asset = {}, options = {}) {
+  const assetMessage = digitalAssetLandingMessage(asset);
   const titleSource = options.title || leadCaptureAssetTitleInput?.value.trim() || asset.title || leadCaptureNameInput?.value.trim();
   const subtitleSource = options.subtitle || leadCaptureAssetDescriptionInput?.value.trim() || asset.description || "Completa tus datos y recibe el material digital de inmediato.";
   return {
     title: String(titleSource || "Material digital").slice(0, 180),
     subtitle: String(subtitleSource || "").slice(0, 800),
     success_message: options.success_message || "Listo. Ya puedes descargar tu material digital.",
-    details_title: leadCaptureDetailsTitleInput?.value.trim() || "Qué recibes",
-    details_description: leadCaptureDetailsDescriptionInput?.value.trim() || asset.description || "Un recurso listo para descargar apenas completes el formulario.",
+    details_title: leadCaptureDetailsTitleInput?.value.trim() || assetMessage.details_title,
+    details_description: leadCaptureDetailsDescriptionInput?.value.trim() || assetMessage.details_description,
     detail_badges: leadCaptureDetailBadges(asset),
   };
 }
@@ -8612,6 +8614,7 @@ function renderDigitalAssetLandings(asset = {}) {
 }
 
 function renderDigitalAssetEditor(asset = {}) {
+  const landingMessage = digitalAssetLandingMessage(asset);
   return `
     <form class="modal-form digital-asset-edit-form" data-digital-asset-edit-form="${escapeHtml(asset.id || "")}">
       <label><span>Título del activo</span><input name="title" type="text" maxlength="180" required value="${escapeHtml(asset.title || "")}"></label>
@@ -8620,6 +8623,15 @@ function renderDigitalAssetEditor(asset = {}) {
       <label><span>Reemplazar archivo digital</span><input name="asset_file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp"><small>Déjalo vacío para conservar el archivo actual.</small></label>
       <label><span>Reemplazar portada</span><input name="cover_file" type="file" accept="image/png,image/jpeg,image/webp"><small>Déjalo vacío para conservar la portada actual.</small></label>
       <label><span>Texto del botón</span><input name="download_button_text" type="text" maxlength="80" value="${escapeHtml(asset.download_button_text || "Descargar ahora")}"></label>
+      <div class="span-2 digital-asset-landing-template">
+        <strong>Bloque editable de la landing</strong>
+        <span>Estos textos reemplazan “Qué recibes”, “Un recurso listo...” y las etiquetas automáticas en las nuevas landings de este activo.</span>
+      </div>
+      <label><span>Título del bloque</span><input name="landing_details_title" type="text" maxlength="80" value="${escapeHtml(landingMessage.details_title)}"></label>
+      <label><span>Etiqueta 1</span><input name="landing_badge_1" type="text" maxlength="80" value="${escapeHtml(landingMessage.detail_badges[0] || "")}"></label>
+      <label class="span-2"><span>Texto del bloque de detalle</span><textarea name="landing_details_description" rows="3" maxlength="800">${escapeHtml(landingMessage.details_description)}</textarea></label>
+      <label><span>Etiqueta 2</span><input name="landing_badge_2" type="text" maxlength="80" value="${escapeHtml(landingMessage.detail_badges[1] || "")}"></label>
+      <label><span>Etiqueta 3</span><input name="landing_badge_3" type="text" maxlength="80" value="${escapeHtml(landingMessage.detail_badges[2] || "")}"></label>
       <div class="modal-actions">
         <p class="error-line" data-digital-asset-edit-message></p>
         <button class="ghost-button" type="button" data-cancel-digital-asset-edit>Cancelar</button>
@@ -8629,9 +8641,27 @@ function renderDigitalAssetEditor(asset = {}) {
   `;
 }
 
+function digitalAssetLandingMessage(asset = {}) {
+  const metadataMessage = asset.metadata?.landing_message || {};
+  const badges = Array.isArray(metadataMessage.detail_badges)
+    ? metadataMessage.detail_badges.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 3)
+    : [];
+  const fallbackBadges = [
+    leadCaptureDefaultBadge(asset) || "Material digital",
+    "Acceso inmediato",
+    "Enlace seguro",
+  ].filter(Boolean).slice(0, 3);
+  return {
+    details_title: String(metadataMessage.details_title || "Qué recibes").slice(0, 80),
+    details_description: String(metadataMessage.details_description || "Un recurso listo para descargar apenas completes el formulario.").slice(0, 800),
+    detail_badges: badges.length ? badges : fallbackBadges,
+  };
+}
+
 async function createShareLinkForDigitalAsset(assetId) {
   const asset = (state.digitalAssets || []).find((item) => item.id === assetId);
   if (!asset) return;
+  const landingMessage = digitalAssetLandingMessage(asset);
   try {
     showFeedback("Creando link público de Captura Relámpago.", "loading", { title: "Activo digital", timeout: 0 });
     const result = await api("/api/business/lead-capture-activations", {
@@ -8647,9 +8677,9 @@ async function createShareLinkForDigitalAsset(assetId) {
           title: asset.title || "Activo digital",
           subtitle: String(asset.description || "Completa tus datos para descargar este material.").slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
-          details_title: "Qué recibes",
-          details_description: "Un recurso listo para descargar apenas completes el formulario.",
-          detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Acceso inmediato", "Enlace seguro"],
+          details_title: landingMessage.details_title,
+          details_description: landingMessage.details_description,
+          detail_badges: landingMessage.detail_badges,
         },
         asset_id: asset.id,
       }),
@@ -8690,6 +8720,7 @@ async function submitFlyerQr(event) {
   }
   const submitButton = flyerQrForm?.querySelector("button[type='submit']");
   try {
+    const landingMessage = digitalAssetLandingMessage(asset);
     if (submitButton) submitButton.disabled = true;
     setInlineMessage(flyerQrMessage, "Generando QR reutilizable para material impreso...", "info");
     const name = flyerQrNameInput?.value.trim() || `QR reutilizable ${asset.title || "activo digital"}`;
@@ -8707,9 +8738,9 @@ async function submitFlyerQr(event) {
           title: asset.title || name,
           subtitle: String(publicText).slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
-          details_title: "Qué recibes",
-          details_description: "Un recurso listo para descargar apenas completes el formulario.",
-          detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Escaneable por muchos", "Ideal para volante"],
+          details_title: landingMessage.details_title,
+          details_description: landingMessage.details_description,
+          detail_badges: landingMessage.detail_badges,
         },
         asset_id: asset.id,
       }),
@@ -8806,11 +8837,20 @@ function renderLeadCaptureAssetPreview() {
   if (leadCaptureButtonTextInput && !leadCaptureButtonTextInput.value.trim()) {
     leadCaptureButtonTextInput.value = asset.download_button_text || "Descargar ahora";
   }
+  if (leadCaptureDetailsTitleInput && (!leadCaptureDetailsTitleInput.value.trim() || leadCaptureDetailsTitleInput.value.trim() === "Qué recibes")) {
+    leadCaptureDetailsTitleInput.value = digitalAssetLandingMessage(asset).details_title;
+  }
   if (leadCaptureBadgeOneInput && !leadCaptureBadgeOneInput.value.trim()) {
-    leadCaptureBadgeOneInput.value = leadCaptureDefaultBadge(asset);
+    leadCaptureBadgeOneInput.value = digitalAssetLandingMessage(asset).detail_badges[0] || leadCaptureDefaultBadge(asset);
+  }
+  if (leadCaptureBadgeTwoInput && !leadCaptureBadgeTwoInput.value.trim()) {
+    leadCaptureBadgeTwoInput.value = digitalAssetLandingMessage(asset).detail_badges[1] || "Acceso inmediato";
+  }
+  if (leadCaptureBadgeThreeInput && !leadCaptureBadgeThreeInput.value.trim()) {
+    leadCaptureBadgeThreeInput.value = digitalAssetLandingMessage(asset).detail_badges[2] || "Enlace seguro";
   }
   if (leadCaptureDetailsDescriptionInput && !leadCaptureDetailsDescriptionInput.value.trim()) {
-    leadCaptureDetailsDescriptionInput.value = "Un recurso listo para descargar apenas completes el formulario.";
+    leadCaptureDetailsDescriptionInput.value = digitalAssetLandingMessage(asset).details_description;
   }
   leadCaptureAssetPreview.innerHTML = `
     <article class="digital-asset-selected">
@@ -8841,6 +8881,17 @@ async function submitDigitalAssetEdit(event, assetId) {
       description: field("description")?.value.trim() || null,
       category: field("category")?.value.trim() || "catalogo",
       download_button_text: field("download_button_text")?.value.trim() || "Descargar ahora",
+      metadata: {
+        landing_message: {
+          details_title: field("landing_details_title")?.value.trim() || "Qué recibes",
+          details_description: field("landing_details_description")?.value.trim() || "Un recurso listo para descargar apenas completes el formulario.",
+          detail_badges: [
+            field("landing_badge_1")?.value.trim(),
+            field("landing_badge_2")?.value.trim(),
+            field("landing_badge_3")?.value.trim(),
+          ].filter(Boolean).slice(0, 3),
+        },
+      },
     };
     if (assetFile) {
       payload.file_name = assetFile.name;
