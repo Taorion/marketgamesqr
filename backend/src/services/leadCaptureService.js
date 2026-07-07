@@ -262,8 +262,8 @@ async function createLeadCaptureActivation(businessId, user, body) {
         JSON.stringify(formConfig),
         JSON.stringify({
           title: cleanText(body.public_message?.title || libraryAsset?.title || body.asset?.title || body.name, 180),
-          subtitle: cleanText(body.public_message?.subtitle || "Entrega un activo digital a cambio de los datos del cliente.", 240),
-          success_message: cleanText(body.public_message?.success_message || "Listo. Ya puedes descargar tu activo digital.", 300),
+          subtitle: cleanText(body.public_message?.subtitle || "Completa tus datos y recibe el material digital de inmediato.", 240),
+          success_message: cleanText(body.public_message?.success_message || "Listo. Ya puedes descargar tu material digital.", 300),
         }),
         user.id,
         libraryAsset?.id || null,
@@ -482,6 +482,7 @@ async function getPublicLeadCapture(token, reqMeta = {}) {
     business: {
       name: row.business_name,
       logo_data_url: row.business_settings?.logo_data_url || "",
+      logo_url: row.business_settings?.logo_url || "",
       privacy_url: row.business_settings?.privacy_url || "",
     },
     activation: mapActivation(row),
