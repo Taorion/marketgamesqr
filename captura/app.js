@@ -52,6 +52,44 @@ function assetLabel(asset = {}) {
   return [category, fileType].filter(Boolean).join(" - ");
 }
 
+function normalizeText(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function sameText(a, b) {
+  return normalizeText(a) && normalizeText(a) === normalizeText(b);
+}
+
+function formatFileSize(bytes) {
+  const value = Number(bytes || 0);
+  if (!value) return "";
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${Math.round((value / (1024 * 1024)) * 10) / 10} MB`;
+}
+
+function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, businessName = "MarketGamesQR") {
+  const title = publicMessage.title || activation.name || asset.title || "Recibe tu material digital";
+  const subtitle = publicMessage.subtitle || "";
+  const assetDescription = asset.description || activation.description || "";
+  const description = assetDescription && !sameText(assetDescription, title)
+    ? assetDescription
+    : `${businessName} preparo este recurso para que puedas revisarlo de inmediato.`;
+  const fileInfo = [assetLabel(asset), formatFileSize(asset.file_size)].filter(Boolean).join(" - ");
+  return `
+    <section class="resource-panel">
+      <div>
+        <p class="section-kicker">Que recibes</p>
+        <p class="resource-description">${escapeHtml(sameText(description, subtitle) ? "Un recurso listo para descargar apenas completes el formulario." : description)}</p>
+      </div>
+      <div class="trust-strip" aria-label="Detalles del recurso">
+        <span>${escapeHtml(fileInfo || "Material digital")}</span>
+        <span>Acceso inmediato</span>
+        <span>Enlace seguro</span>
+      </div>
+    </section>
+  `;
+}
+
 function render(payload) {
   currentPayload = payload;
   const { business, activation } = payload;
@@ -59,7 +97,13 @@ function render(payload) {
   const formConfig = activation.form_config || {};
   const publicMessage = activation.public_message || {};
   const businessName = business.name || "MarketGamesQR";
-  document.title = `${asset.title || publicMessage.title || activation.name || "Material digital"} | ${businessName}`;
+  const pageTitle = publicMessage.title || asset.title || activation.name || "Recibe tu material digital";
+  const rawSubtitle = publicMessage.subtitle || "";
+  const rawAssetDescription = asset.description || activation.description || "";
+  const heroSubtitle = sameText(rawSubtitle, rawAssetDescription)
+    ? `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`
+    : (rawSubtitle || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`);
+  document.title = `${pageTitle} | ${businessName}`;
   captureCard.innerHTML = `
     <div class="brand-row">
       <img src="${escapeHtml(logoSource(business))}" alt="${escapeHtml(logoAlt(business))}" onerror="this.onerror=null;this.src='${MARKET_GAMES_LOGO}';">
@@ -71,13 +115,10 @@ function render(payload) {
     ${asset.cover_image_data_url ? `<img class="asset-cover" src="${escapeHtml(asset.cover_image_data_url)}" alt="${escapeHtml(asset.title || "")}">` : ""}
     <div class="hero-copy">
       <p class="eyebrow">${escapeHtml(assetLabel(asset) || "Contenido digital")}</p>
-      <h1>${escapeHtml(publicMessage.title || activation.name || asset.title || "Recibe tu material digital")}</h1>
-      <p>${escapeHtml(publicMessage.subtitle || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`)}</p>
+      <h1>${escapeHtml(pageTitle)}</h1>
+      <p>${escapeHtml(heroSubtitle)}</p>
     </div>
-    <section class="asset-summary">
-      <h2>${escapeHtml(asset.title || "Contenido descargable")}</h2>
-      <p class="asset-meta">${escapeHtml(asset.description || activation.description || "Completa el formulario para recibir el recurso solicitado.")}</p>
-    </section>
+    ${renderResourceDetails(asset, activation, publicMessage, businessName)}
     <form class="capture-form" id="captureForm">
       ${(formConfig.fields || []).map(fieldInput).join("")}
       ${formConfig.consent_required !== false ? `
