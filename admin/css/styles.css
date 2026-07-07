@@ -146,7 +146,8 @@ body {
 .access-card small,
 td small,
 .kpi-meta,
-.credit-strip-card small {
+.credit-strip-card small,
+.service-card small {
   color: var(--muted);
   font-weight: 600;
 }
@@ -367,6 +368,37 @@ tbody tr.danger-row { background: var(--danger-bg); }
   border-bottom: 1px solid var(--border);
 }
 
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.service-card {
+  min-height: 92px;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.service-card strong {
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.service-form {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.client-search {
+  min-width: min(100%, 280px);
+}
+
 .credit-strip { margin: -2px 0 12px; }
 
 .credit-strip-card,
@@ -501,6 +533,7 @@ tbody tr.danger-row { background: var(--danger-bg); }
   .agreement-form,
   .access-grid,
   .kpi-grid,
+  .service-grid,
   .credit-meter {
     grid-template-columns: 1fr;
   }

@@ -15,6 +15,7 @@ const {
   addBusinessCredits,
   businessCredits,
   createUser,
+  patchUser,
   listUsers,
 } = require("../controllers/adminController");
 const {
@@ -33,6 +34,7 @@ router.post("/agreement-clients", createAgreementClient);
 router.patch("/businesses/:id/subscription", updateBusinessSubscription);
 router.get("/users", listUsers);
 router.post("/users", createUser);
+router.patch("/users/:id", patchUser);
 router.get("/package-requests", listPackageRequests);
 router.patch("/package-requests/:id", patchPackageRequest);
 router.get("/businesses/:id/credits", businessCredits);

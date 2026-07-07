@@ -101,6 +101,15 @@ const adminUserSchema = z.object({
   can_redeem_cross_business: z.boolean().optional(),
 });
 
+const patchAdminUserSchema = z.object({
+  business_id: z.string().uuid().optional().nullable(),
+  password: z.string().min(8).optional(),
+  full_name: z.string().trim().min(2).max(160).optional(),
+  role: z.enum(["ADMIN_MARKET_GAMES", "BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"]).optional(),
+  can_redeem_cross_business: z.boolean().optional(),
+  is_active: z.boolean().optional(),
+});
+
 const agreementClientSchema = z.object({
   business_name: z.string().trim().min(2).max(160),
   slug: slugSchema.optional(),
@@ -546,6 +555,74 @@ async function createUser(req, res, next) {
   }
 }
 
+async function patchUser(req, res, next) {
+  try {
+    requireMarketAdmin(req.user);
+    const body = validate(patchAdminUserSchema, req.body);
+    const existing = await query("select * from app_users where id = $1", [req.params.id]);
+    if (!existing.rowCount) {
+      throw notFound("User not found.");
+    }
+
+    const current = existing.rows[0];
+    const nextRole = body.role || current.role;
+    const nextBusinessId = nextRole === "ADMIN_MARKET_GAMES" ? null : (body.business_id === undefined ? current.business_id : body.business_id);
+    const nextActive = body.is_active === undefined ? current.is_active : body.is_active;
+
+    if (nextRole === "ADMIN_MARKET_GAMES" && nextBusinessId) {
+      throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");
+    }
+    if (["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"].includes(nextRole) && !nextBusinessId) {
+      throw badRequest("Selecciona un cliente para usuarios owner, manager o validador.");
+    }
+
+    if (["ADMIN", "ADMIN_MARKET_GAMES"].includes(current.role) && (nextRole !== current.role || nextActive === false)) {
+      const adminCount = await query(
+        `select count(*)::int as total
+         from app_users
+         where role in ('ADMIN', 'ADMIN_MARKET_GAMES')
+           and is_active = true
+           and id <> $1`,
+        [current.id]
+      );
+      if (!Number(adminCount.rows[0]?.total || 0)) {
+        throw badRequest("No puedes desactivar o degradar la ultima cuenta admin activa.");
+      }
+    }
+
+    let passwordHash = current.password_hash;
+    if (body.password) {
+      passwordHash = await bcrypt.hash(body.password, 12);
+    }
+
+    const result = await query(
+      `update app_users
+       set business_id = $2,
+           password_hash = $3,
+           full_name = $4,
+           role = $5,
+           can_redeem_cross_business = $6,
+           is_active = $7,
+           updated_at = now()
+       where id = $1
+       returning id, business_id, email, full_name, role, can_redeem_cross_business, is_active, created_at, updated_at`,
+      [
+        current.id,
+        nextBusinessId,
+        passwordHash,
+        body.full_name || current.full_name,
+        nextRole,
+        nextRole === "VALIDATOR" ? (body.can_redeem_cross_business === undefined ? current.can_redeem_cross_business : body.can_redeem_cross_business) : false,
+        nextActive,
+      ]
+    );
+
+    res.json({ user: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function listUsers(req, res, next) {
   try {
     requireMarketAdmin(req.user);
@@ -911,5 +988,6 @@ module.exports = {
   addBusinessCredits,
   businessCredits,
   createUser,
+  patchUser,
   listUsers,
 };

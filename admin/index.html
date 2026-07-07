@@ -38,6 +38,7 @@
         <a href="#convenios">Convenios</a>
         <a href="#solicitudes">Solicitudes</a>
         <a href="#clientes">Clientes</a>
+        <a href="#operacion">Operacion</a>
         <a href="#reportes">Reportes</a>
         <a href="#entrega">Entrega</a>
         <a href="#campanas-globales">Campanas</a>
@@ -203,6 +204,7 @@
               <select id="userRole" required>
                 <option value="ADMIN_MARKET_GAMES">Empleado interno</option>
                 <option value="BUSINESS_OWNER">Owner cliente</option>
+                <option value="BUSINESS_MANAGER">Manager cliente</option>
                 <option value="VALIDATOR">Validador cliente</option>
               </select>
             </label>
@@ -218,11 +220,28 @@
                   <th>Usuario</th>
                   <th>Rol</th>
                   <th>Cliente</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody id="usersTable"></tbody>
             </table>
           </div>
+          <form id="userAccessForm" class="grid-form service-form">
+            <label class="full"><span>Usuario existente</span><select id="userAccessId"></select></label>
+            <label><span>Rol</span>
+              <select id="userAccessRole">
+                <option value="ADMIN_MARKET_GAMES">Empleado interno</option>
+                <option value="BUSINESS_OWNER">Owner cliente</option>
+                <option value="BUSINESS_MANAGER">Manager cliente</option>
+                <option value="VALIDATOR">Validador cliente</option>
+              </select>
+            </label>
+            <label><span>Password temporal nuevo</span><input id="userAccessPassword" type="text" minlength="8" placeholder="Opcional"></label>
+            <label class="checkbox-row full"><input id="userAccessActive" type="checkbox" checked><span>Usuario activo</span></label>
+            <label class="checkbox-row full"><input id="userAccessCrossBusiness" type="checkbox"><span>Validador con acceso cruzado</span></label>
+            <button class="secondary-button" type="submit">Actualizar acceso</button>
+          </form>
+          <p class="message" id="userAccessMessage"></p>
         </article>
 
         <article class="panel">
@@ -231,6 +250,10 @@
               <p class="eyebrow">Cartera QR</p>
               <h2>Clientes y saldo operativo</h2>
             </div>
+            <label class="compact-field client-search">
+              <span>Buscar cliente</span>
+              <input id="clientSearchInput" type="search" placeholder="Nombre, slug, estado o plan">
+            </label>
           </div>
           <div class="table-wrap">
             <table>
@@ -248,6 +271,46 @@
             </table>
           </div>
         </article>
+      </section>
+
+      <section class="panel" id="operacion">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Centro de operacion</p>
+            <h2 id="selectedClientName">Selecciona un cliente</h2>
+            <p id="selectedClientMeta">Elige un cliente de la cartera para ver estado y acciones de servicio.</p>
+          </div>
+          <div class="inline-actions">
+            <a class="secondary-button link-button" href="/empresa/" target="_blank" rel="noopener">Abrir portal cliente</a>
+          </div>
+        </div>
+        <div class="service-grid" id="selectedClientStats"></div>
+        <form id="subscriptionForm" class="grid-form service-form">
+          <label><span>Plan</span>
+            <select id="subscriptionPlanCode">
+              <option value="STARTER">Starter</option>
+              <option value="GROWTH">Growth</option>
+              <option value="PRO">Premium</option>
+              <option value="GLOBAL">Global</option>
+              <option value="TICKET_BASE">Portal Base</option>
+              <option value="PREPAID_QR">Legacy</option>
+            </select>
+          </label>
+          <label><span>Estado suscripcion</span>
+            <select id="subscriptionStatus">
+              <option value="ACTIVE">Activa</option>
+              <option value="PENDING_PAYMENT">Pago pendiente</option>
+              <option value="PAST_DUE">Vencida</option>
+              <option value="CANCELLED">Cancelada</option>
+              <option value="LOCKED">Bloqueada</option>
+            </select>
+          </label>
+          <label><span>Vence / siguiente revision</span><input id="subscriptionEndsAt" type="date"></label>
+          <label class="checkbox-row"><input id="subscriptionIsActive" type="checkbox" checked><span>Cliente activo</span></label>
+          <label class="checkbox-row full"><input id="subscriptionActivateUsers" type="checkbox"><span>Reactivar usuarios del cliente al guardar</span></label>
+          <button class="primary-button" type="submit">Guardar plan y acceso</button>
+        </form>
+        <p class="message" id="subscriptionMessage"></p>
       </section>
 
       <section class="panel" id="reportes">

@@ -1,5 +1,5 @@
 const SESSION_KEY = "market_games_admin_session_v1";
-const APP_VERSION = "admin-20260707-operations-ux-v1";
+const APP_VERSION = "admin-20260707-admin-ops-v2";
 const APP_VERSION_KEY = "market_games_admin_app_version";
 const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 
@@ -12,6 +12,8 @@ const campaignForm = document.getElementById("campaignForm");
 const deliveryForm = document.getElementById("deliveryForm");
 const creditForm = document.getElementById("creditForm");
 const userForm = document.getElementById("userForm");
+const userAccessForm = document.getElementById("userAccessForm");
+const subscriptionForm = document.getElementById("subscriptionForm");
 const logoutButton = document.getElementById("logoutButton");
 const refreshButton = document.getElementById("refreshButton");
 const markReadyButton = document.getElementById("markReadyButton");
@@ -33,12 +35,19 @@ const userBusinessId = document.getElementById("userBusinessId");
 const userBusinessField = document.getElementById("userBusinessField");
 const userRole = document.getElementById("userRole");
 const userCrossBusiness = document.getElementById("userCrossBusiness");
+const userAccessId = document.getElementById("userAccessId");
+const userAccessRole = document.getElementById("userAccessRole");
+const userAccessActive = document.getElementById("userAccessActive");
+const userAccessCrossBusiness = document.getElementById("userAccessCrossBusiness");
+const clientSearchInput = document.getElementById("clientSearchInput");
 const loginMessage = document.getElementById("loginMessage");
 const agreementClientMessage = document.getElementById("agreementClientMessage");
 const businessMessage = document.getElementById("businessMessage");
 const campaignMessage = document.getElementById("campaignMessage");
 const creditMessage = document.getElementById("creditMessage");
 const userMessage = document.getElementById("userMessage");
+const userAccessMessage = document.getElementById("userAccessMessage");
+const subscriptionMessage = document.getElementById("subscriptionMessage");
 const packageRequestMessage = document.getElementById("packageRequestMessage");
 const deliveryMessage = document.getElementById("deliveryMessage");
 const selectedCampaignLabel = document.getElementById("selectedCampaignLabel");
@@ -47,6 +56,14 @@ const agreementLifetime = document.getElementById("agreementLifetime");
 const agreementMonthlyRequired = document.getElementById("agreementMonthlyRequired");
 const agreementBusinessName = document.getElementById("agreementBusinessName");
 const agreementSlug = document.getElementById("agreementSlug");
+const selectedClientName = document.getElementById("selectedClientName");
+const selectedClientMeta = document.getElementById("selectedClientMeta");
+const selectedClientStats = document.getElementById("selectedClientStats");
+const subscriptionPlanCode = document.getElementById("subscriptionPlanCode");
+const subscriptionStatus = document.getElementById("subscriptionStatus");
+const subscriptionEndsAt = document.getElementById("subscriptionEndsAt");
+const subscriptionIsActive = document.getElementById("subscriptionIsActive");
+const subscriptionActivateUsers = document.getElementById("subscriptionActivateUsers");
 
 const state = {
   businesses: [],
@@ -58,6 +75,7 @@ const state = {
   selectedBusinessSummary: null,
   selectedCampaignReport: null,
   selectedCredits: null,
+  clientSearch: "",
 };
 
 const INTERNAL_UNIT_PRICE_COP = 1000;
@@ -134,6 +152,13 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   });
+}
+
+function dateInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
 }
 
 function statusLabel(status) {
@@ -343,6 +368,65 @@ async function createUser(event) {
   }
 }
 
+async function updateUserAccess(event) {
+  event.preventDefault();
+  if (!userAccessId.value) {
+    userAccessMessage.textContent = "Selecciona un usuario.";
+    return;
+  }
+  const selectedUser = state.users.find((user) => user.id === userAccessId.value);
+  const role = userAccessRole.value;
+  userAccessMessage.textContent = "Actualizando acceso...";
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(userAccessId.value)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        full_name: selectedUser?.full_name,
+        role,
+        business_id: role === "ADMIN_MARKET_GAMES" ? null : (selectedUser?.business_id || state.selectedBusinessId || null),
+        password: document.getElementById("userAccessPassword").value.trim() || undefined,
+        is_active: userAccessActive.checked,
+        can_redeem_cross_business: role === "VALIDATOR" && userAccessCrossBusiness.checked,
+      }),
+    });
+    userAccessMessage.textContent = "Acceso actualizado.";
+    document.getElementById("userAccessPassword").value = "";
+    await loadUsers();
+    await loadBusinesses();
+    if (state.selectedBusinessId) await loadBusinessSummary(state.selectedBusinessId);
+  } catch (error) {
+    userAccessMessage.textContent = error.message;
+  }
+}
+
+async function updateSubscription(event) {
+  event.preventDefault();
+  if (!state.selectedBusinessId) {
+    subscriptionMessage.textContent = "Selecciona un cliente.";
+    return;
+  }
+  subscriptionMessage.textContent = "Guardando plan...";
+  try {
+    const endsAt = subscriptionEndsAt.value ? new Date(`${subscriptionEndsAt.value}T23:59:59.000Z`).toISOString() : null;
+    await api(`/api/admin/businesses/${state.selectedBusinessId}/subscription`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        plan_code: subscriptionPlanCode.value,
+        subscription_status: subscriptionStatus.value,
+        subscription_current_period_ends_at: endsAt,
+        is_active: subscriptionIsActive.checked,
+        activate_business_users: subscriptionActivateUsers.checked,
+      }),
+    });
+    subscriptionMessage.textContent = "Plan y acceso actualizados.";
+    subscriptionActivateUsers.checked = false;
+    await loadBusinesses();
+    await loadBusinessSummary(state.selectedBusinessId);
+  } catch (error) {
+    subscriptionMessage.textContent = error.message;
+  }
+}
+
 async function loadWorkspace() {
   await Promise.all([loadBusinesses(), loadUsers(), loadPackageRequests()]);
   const businessId = state.selectedBusinessId || state.businesses[0]?.id || "";
@@ -351,6 +435,7 @@ async function loadWorkspace() {
     state.selectedBusinessId = businessId;
     campaignBusinessId.value = businessId;
     userBusinessId.value = businessId;
+    renderUsers();
     await Promise.all([loadBusinessSummary(businessId), loadCampaigns()]);
   } else {
     await loadCampaigns();
@@ -399,6 +484,22 @@ function renderBusinessOptions() {
   }
 }
 
+function selectedBusiness() {
+  return state.businesses.find((business) => business.id === state.selectedBusinessId) || null;
+}
+
+function filteredBusinesses() {
+  const term = state.clientSearch.trim().toLowerCase();
+  if (!term) return state.businesses;
+  return state.businesses.filter((business) => [
+    business.name,
+    business.slug,
+    business.plan_code,
+    business.subscription_status,
+    business.is_active ? "activo" : "inactivo",
+  ].some((value) => String(value || "").toLowerCase().includes(term)));
+}
+
 function renderAdminStats() {
   const totals = state.businesses.reduce((acc, business) => {
     const balance = Number(business.qr_balance || 0);
@@ -431,7 +532,8 @@ function renderAdminStats() {
 }
 
 function renderClientsTable() {
-  clientsTable.innerHTML = state.businesses.map((business) => {
+  const businesses = filteredBusinesses();
+  clientsTable.innerHTML = businesses.map((business) => {
     const balance = Number(business.qr_balance || 0);
     const purchased = Number(business.qr_purchased_total || 0);
     const used = Number(business.qr_used_total || 0);
@@ -442,14 +544,14 @@ function renderClientsTable() {
     return `
       <tr class="${rowClass}" data-business-id="${escapeHtml(business.id)}">
         <td><strong>${escapeHtml(business.name)}</strong><br><small>${escapeHtml(business.slug)}</small></td>
-        <td>${business.current_package_size ? `${number(business.current_package_size)} QR` : "Legacy"}</td>
+        <td>${escapeHtml(business.plan_code || "-")}<br><small>${business.current_package_size ? `${number(business.current_package_size)} QR` : "Sin paquete"}</small></td>
         <td>${number(balance)} trafico</td>
         <td>${number(used)} / ${number(purchased)}<br><small>${usedRate}% usado</small></td>
         <td>${money(internalValue(balance, unit))}</td>
         <td>${number(business.validators_count || 0)}<br><small>${number(business.users_count || 0)} usuarios</small></td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="6">Sin clientes registrados.</td></tr>';
+  }).join("") || '<tr><td colspan="6">Sin clientes con ese filtro.</td></tr>';
 
   clientsTable.querySelectorAll("[data-business-id]").forEach((row) => {
     row.addEventListener("click", async () => {
@@ -464,13 +566,44 @@ function renderClientsTable() {
 }
 
 function renderUsers() {
-  usersTable.innerHTML = state.users.slice(0, 12).map((user) => `
+  const selectedUsers = state.selectedBusinessId
+    ? state.users.filter((user) => user.business_id === state.selectedBusinessId || user.role === "ADMIN_MARKET_GAMES")
+    : state.users;
+
+  usersTable.innerHTML = selectedUsers.slice(0, 18).map((user) => `
     <tr>
       <td><strong>${escapeHtml(user.full_name)}</strong><br><small>${escapeHtml(user.email)}</small></td>
       <td>${escapeHtml(user.role)}</td>
       <td>${escapeHtml(user.business_name || "Interno")}</td>
+      <td><span class="status-chip ${user.is_active ? "" : "danger"}">${user.is_active ? "Activo" : "Inactivo"}</span></td>
     </tr>
-  `).join("") || '<tr><td colspan="3">Sin usuarios cargados.</td></tr>';
+  `).join("") || '<tr><td colspan="4">Sin usuarios cargados.</td></tr>';
+
+  renderUserAccessOptions(selectedUsers);
+}
+
+function renderUserAccessOptions(users = state.users) {
+  const currentValue = userAccessId.value;
+  userAccessId.innerHTML = users.map((user) => `
+    <option value="${escapeHtml(user.id)}">${escapeHtml(user.full_name)} - ${escapeHtml(user.email)}</option>
+  `).join("") || '<option value="">Sin usuarios</option>';
+  if (currentValue && users.some((user) => user.id === currentValue)) {
+    userAccessId.value = currentValue;
+  }
+  syncUserAccessFields();
+}
+
+function syncUserAccessFields() {
+  const user = state.users.find((item) => item.id === userAccessId.value);
+  if (!user) {
+    userAccessRole.value = "BUSINESS_OWNER";
+    userAccessActive.checked = true;
+    userAccessCrossBusiness.checked = false;
+    return;
+  }
+  userAccessRole.value = user.role === "ADMIN" ? "ADMIN_MARKET_GAMES" : user.role;
+  userAccessActive.checked = Boolean(user.is_active);
+  userAccessCrossBusiness.checked = Boolean(user.can_redeem_cross_business);
 }
 
 function requestStatusChip(isDone, doneLabel, pendingLabel) {
@@ -651,6 +784,7 @@ async function loadBusinessSummary(businessId) {
 
 function renderBusinessSummary() {
   const summary = state.selectedBusinessSummary?.summary;
+  renderSelectedClientPanel();
   if (!summary) {
     summaryGrid.innerHTML = "";
     creditStrip.innerHTML = "";
@@ -689,6 +823,40 @@ function renderBusinessSummary() {
       <small>Asigna un paquete para activar control de saldo.</small>
     </article>
   `;
+}
+
+function renderSelectedClientPanel() {
+  const business = selectedBusiness();
+  const subscription = state.selectedBusinessSummary?.subscription?.plan;
+  const account = state.selectedBusinessSummary?.credit_account || state.selectedCredits?.credit_account;
+  if (!business) {
+    selectedClientName.textContent = "Selecciona un cliente";
+    selectedClientMeta.textContent = "Elige un cliente de la cartera para ver estado y acciones de servicio.";
+    selectedClientStats.innerHTML = "";
+    return;
+  }
+
+  selectedClientName.textContent = business.name;
+  selectedClientMeta.textContent = `${business.slug} · ${business.is_active ? "Cliente activo" : "Cliente inactivo"} · ${business.plan_code || "Sin plan"}`;
+  subscriptionPlanCode.value = business.plan_code || subscription?.code || "GROWTH";
+  subscriptionStatus.value = business.subscription_status || subscription?.status || "ACTIVE";
+  subscriptionEndsAt.value = dateInputValue(business.subscription_current_period_ends_at || subscription?.current_period_ends_at);
+  subscriptionIsActive.checked = Boolean(business.is_active);
+
+  const selectedUsers = state.users.filter((user) => user.business_id === business.id);
+  const inactiveUsers = selectedUsers.filter((user) => !user.is_active).length;
+  selectedClientStats.innerHTML = [
+    ["Plan", business.plan_code || "-", subscription?.access_status || business.subscription_status || "-"],
+    ["Tickets", number(account?.qr_balance || business.qr_balance || 0), `${number(account?.qr_used_total || business.qr_used_total || 0)} usados`],
+    ["Usuarios", number(selectedUsers.length), inactiveUsers ? `${inactiveUsers} inactivos` : "Todos activos"],
+    ["Campañas", number(business.campaigns_count || 0), `${number(business.active_campaigns_count || 0)} activas`],
+  ].map(([label, value, meta]) => `
+    <article class="service-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(meta)}</small>
+    </article>
+  `).join("");
 }
 
 function renderCredits() {
@@ -913,12 +1081,15 @@ campaignForm.addEventListener("submit", createCampaign);
 deliveryForm.addEventListener("submit", saveDelivery);
 creditForm.addEventListener("submit", addCredits);
 userForm.addEventListener("submit", createUser);
+userAccessForm.addEventListener("submit", updateUserAccess);
+subscriptionForm.addEventListener("submit", updateSubscription);
 refreshButton.addEventListener("click", loadWorkspace);
 businessFilter.addEventListener("change", async (event) => {
   state.selectedBusinessId = event.target.value;
   campaignBusinessId.value = event.target.value;
   userBusinessId.value = event.target.value;
   await loadBusinessSummary(state.selectedBusinessId);
+  renderUsers();
   await loadCampaigns();
 });
 markReadyButton.addEventListener("click", markReady);
@@ -932,6 +1103,11 @@ agreementBusinessName.addEventListener("input", () => {
 agreementSlug.addEventListener("input", () => {
   agreementSlug.dataset.edited = "true";
 });
+clientSearchInput.addEventListener("input", () => {
+  state.clientSearch = clientSearchInput.value;
+  renderClientsTable();
+});
+userAccessId.addEventListener("change", syncUserAccessFields);
 logoutButton.addEventListener("click", () => {
   clearSession();
   renderShell();
