@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-digital-asset-management-v1";
+const APP_VERSION = "empresa-20260707-digital-asset-management-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -8504,12 +8504,13 @@ function renderDigitalAssets() {
         <strong>${escapeHtml(asset.title || "Activo digital")}</strong>
         <p>${escapeHtml(asset.description || asset.file_name || "")}</p>
         <small>${escapeHtml(digitalAssetLabel(asset))}</small>
+        <small class="digital-asset-edit-note">Puedes editar título, descripción, categoría, botón, archivo digital y portada.</small>
         ${digitalAssetShareUrl(asset.id) ? `
           <a class="digital-asset-share-link" href="${escapeHtml(digitalAssetShareUrl(asset.id))}" target="_blank" rel="noopener">${escapeHtml(digitalAssetShareUrl(asset.id))}</a>
         ` : '<small class="digital-asset-share-note">Sin link público todavía. Crea uno para compartirlo sin perder la captura del lead.</small>'}
       </div>
       <div class="activation-row-actions">
-        <button class="ghost-button" type="button" data-edit-digital-asset="${escapeHtml(asset.id)}">Editar activo</button>
+        <button class="solid-button" type="button" data-edit-digital-asset="${escapeHtml(asset.id)}">Editar información y archivo</button>
         <button class="ghost-button" type="button" data-use-digital-asset="${escapeHtml(asset.id)}">Usar en Ticket Relámpago</button>
         ${digitalAssetShareUrl(asset.id)
           ? `<button class="ghost-button" type="button" data-copy-digital-asset-link="${escapeHtml(digitalAssetShareUrl(asset.id))}">Copiar link</button>`

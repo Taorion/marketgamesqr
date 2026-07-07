@@ -14973,6 +14973,14 @@ body.chart-focus-open .command-center {
   color: var(--muted);
 }
 
+.digital-asset-edit-note {
+  display: block;
+  margin-top: 6px;
+  color: var(--secondary-soft) !important;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .digital-asset-share-link,
 .digital-asset-share-note {
   display: block;
