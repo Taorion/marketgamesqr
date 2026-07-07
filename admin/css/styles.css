@@ -94,6 +94,13 @@ td small { color: var(--muted); font-weight: 600; }
 .kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .admin-stats { margin-bottom: 0; }
 .kpi-grid.compact { margin-bottom: 18px; }
+.agreement-panel {
+  border-color: rgba(15, 118, 110, 0.28);
+  background: linear-gradient(180deg, #ffffff 0%, #f2fbf9 100%);
+}
+.agreement-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .kpi-card {
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -211,6 +218,7 @@ td small { color: var(--muted); font-weight: 600; }
 @media (max-width: 980px) {
   .split,
   .grid-form,
+  .agreement-form,
   .kpi-grid,
   .credit-meter {
     grid-template-columns: 1fr;

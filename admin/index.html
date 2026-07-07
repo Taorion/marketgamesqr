@@ -34,6 +34,40 @@
 
       <section class="kpi-grid admin-stats" id="adminStatsGrid"></section>
 
+      <section class="panel agreement-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Convenios MarketGamesQR</p>
+            <h2>Inscribir cliente con condiciones especiales</h2>
+          </div>
+        </div>
+        <form id="agreementClientForm" class="grid-form agreement-form">
+          <label><span>Empresa cliente</span><input id="agreementBusinessName" type="text" required></label>
+          <label><span>Slug</span><input id="agreementSlug" type="text" pattern="[a-z0-9-]+" placeholder="se genera si lo dejas vacio"></label>
+          <label><span>Administrador</span><input id="agreementOwnerName" type="text" required></label>
+          <label><span>Correo administrador</span><input id="agreementOwnerEmail" type="email" required></label>
+          <label><span>Password temporal</span><input id="agreementOwnerPassword" type="text" minlength="8" required></label>
+          <label><span>Documento/NIT</span><input id="agreementOwnerDocument" type="text"></label>
+          <label><span>Telefono</span><input id="agreementPhone" type="text"></label>
+          <label><span>Ciudad</span><input id="agreementCity" type="text"></label>
+          <label><span>Plan</span>
+            <select id="agreementPlanCode">
+              <option value="GROWTH">Growth</option>
+              <option value="PRO">Premium</option>
+              <option value="GLOBAL">Global</option>
+              <option value="STARTER">Starter</option>
+            </select>
+          </label>
+          <label><span>Meses sin pago inicial</span><input id="agreementFreeMonths" type="number" min="0" max="60" value="0"></label>
+          <label><span>Tickets iniciales</span><input id="agreementInitialTickets" type="number" min="0" max="100000" value="0"></label>
+          <label class="checkbox-row full"><input id="agreementLifetime" type="checkbox"><span>Convenio vitalicio / sin mensualidad</span></label>
+          <label class="checkbox-row full"><input id="agreementMonthlyRequired" type="checkbox" checked><span>Requiere mensualidad al terminar el convenio</span></label>
+          <label class="full"><span>Notas del convenio</span><textarea id="agreementNotes" placeholder="Ej: 3 meses sin pago inicial por alianza comercial, 2.000 tickets de arranque, responsable interno..."></textarea></label>
+          <button class="primary-button" type="submit">Inscribir cliente con convenio</button>
+        </form>
+        <p class="message" id="agreementClientMessage"></p>
+      </section>
+
       <section class="panel">
         <div class="panel-head">
           <div>
@@ -369,6 +403,6 @@
       </section>
     </section>
   </main>
-  <script src="js/app.js?v=session-enforced-20260622"></script>
+  <script src="js/app.js?v=agreement-clients-20260707"></script>
 </body>
 </html>

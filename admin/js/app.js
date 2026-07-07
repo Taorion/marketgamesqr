@@ -1,11 +1,12 @@
 const SESSION_KEY = "market_games_admin_session_v1";
-const APP_VERSION = "admin-20260622-session-enforced-v1";
+const APP_VERSION = "admin-20260707-agreement-clients-v1";
 const APP_VERSION_KEY = "market_games_admin_app_version";
 const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 
 const loginPanel = document.getElementById("loginPanel");
 const workspace = document.getElementById("workspace");
 const loginForm = document.getElementById("loginForm");
+const agreementClientForm = document.getElementById("agreementClientForm");
 const businessForm = document.getElementById("businessForm");
 const campaignForm = document.getElementById("campaignForm");
 const deliveryForm = document.getElementById("deliveryForm");
@@ -33,6 +34,7 @@ const userBusinessField = document.getElementById("userBusinessField");
 const userRole = document.getElementById("userRole");
 const userCrossBusiness = document.getElementById("userCrossBusiness");
 const loginMessage = document.getElementById("loginMessage");
+const agreementClientMessage = document.getElementById("agreementClientMessage");
 const businessMessage = document.getElementById("businessMessage");
 const campaignMessage = document.getElementById("campaignMessage");
 const creditMessage = document.getElementById("creditMessage");
@@ -41,6 +43,10 @@ const packageRequestMessage = document.getElementById("packageRequestMessage");
 const deliveryMessage = document.getElementById("deliveryMessage");
 const selectedCampaignLabel = document.getElementById("selectedCampaignLabel");
 const campaignBusinessId = document.getElementById("campaignBusinessId");
+const agreementLifetime = document.getElementById("agreementLifetime");
+const agreementMonthlyRequired = document.getElementById("agreementMonthlyRequired");
+const agreementBusinessName = document.getElementById("agreementBusinessName");
+const agreementSlug = document.getElementById("agreementSlug");
 
 const state = {
   businesses: [],
@@ -234,6 +240,50 @@ async function createBusiness(event) {
     }
   } catch (error) {
     businessMessage.textContent = error.message;
+  }
+}
+
+async function createAgreementClient(event) {
+  event.preventDefault();
+  agreementClientMessage.textContent = "Inscribiendo cliente...";
+  try {
+    const data = await api("/api/admin/agreement-clients", {
+      method: "POST",
+      body: JSON.stringify({
+        business_name: agreementBusinessName.value.trim(),
+        slug: agreementSlug.value.trim() || undefined,
+        owner_name: document.getElementById("agreementOwnerName").value.trim(),
+        owner_email: document.getElementById("agreementOwnerEmail").value.trim(),
+        owner_password: document.getElementById("agreementOwnerPassword").value.trim(),
+        owner_document: document.getElementById("agreementOwnerDocument").value.trim() || undefined,
+        contact_phone: document.getElementById("agreementPhone").value.trim() || undefined,
+        city: document.getElementById("agreementCity").value.trim() || undefined,
+        plan_code: document.getElementById("agreementPlanCode").value,
+        free_months: Number(document.getElementById("agreementFreeMonths").value || 0),
+        initial_tickets: Number(document.getElementById("agreementInitialTickets").value || 0),
+        lifetime_access: agreementLifetime.checked,
+        monthly_payment_required: agreementLifetime.checked ? false : agreementMonthlyRequired.checked,
+        agreement_notes: document.getElementById("agreementNotes").value.trim() || undefined,
+      }),
+    });
+    const balance = data.credit_account?.qr_balance ?? 0;
+    agreementClientMessage.textContent = `Cliente inscrito: ${data.business.name}. Saldo inicial: ${number(balance)} tickets.`;
+    agreementClientForm.reset();
+    delete agreementSlug.dataset.edited;
+    agreementMonthlyRequired.checked = true;
+    syncAgreementFields();
+    await loadBusinesses();
+    await loadUsers();
+    if (data.business?.id) {
+      state.selectedBusinessId = data.business.id;
+      businessFilter.value = data.business.id;
+      campaignBusinessId.value = data.business.id;
+      userBusinessId.value = data.business.id;
+      await loadBusinessSummary(data.business.id);
+      await loadCampaigns();
+    }
+  } catch (error) {
+    agreementClientMessage.textContent = error.message;
   }
 }
 
@@ -526,6 +576,18 @@ function syncUserRoleFields() {
   userBusinessField.classList.toggle("hidden", isInternal);
   userCrossBusiness.closest("label").classList.toggle("hidden", userRole.value !== "VALIDATOR");
   userBusinessId.required = !isInternal;
+}
+
+function syncAgreementFields() {
+  if (agreementLifetime.checked) {
+    agreementMonthlyRequired.checked = false;
+    agreementMonthlyRequired.disabled = true;
+    document.getElementById("agreementFreeMonths").value = "0";
+    document.getElementById("agreementFreeMonths").disabled = true;
+  } else {
+    agreementMonthlyRequired.disabled = false;
+    document.getElementById("agreementFreeMonths").disabled = false;
+  }
 }
 
 async function loadCampaigns() {
@@ -845,6 +907,7 @@ async function markReady() {
 }
 
 loginForm.addEventListener("submit", login);
+agreementClientForm.addEventListener("submit", createAgreementClient);
 businessForm.addEventListener("submit", createBusiness);
 campaignForm.addEventListener("submit", createCampaign);
 deliveryForm.addEventListener("submit", saveDelivery);
@@ -860,10 +923,20 @@ businessFilter.addEventListener("change", async (event) => {
 });
 markReadyButton.addEventListener("click", markReady);
 userRole.addEventListener("change", syncUserRoleFields);
+agreementLifetime.addEventListener("change", syncAgreementFields);
+agreementBusinessName.addEventListener("input", () => {
+  if (!agreementSlug.dataset.edited) {
+    agreementSlug.value = slugify(agreementBusinessName.value);
+  }
+});
+agreementSlug.addEventListener("input", () => {
+  agreementSlug.dataset.edited = "true";
+});
 logoutButton.addEventListener("click", () => {
   clearSession();
   renderShell();
 });
 
 syncUserRoleFields();
+syncAgreementFields();
 renderShell();

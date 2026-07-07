@@ -2,6 +2,7 @@ const express = require("express");
 const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   createBusiness,
+  createAgreementClient,
   createCampaign,
   patchCampaign,
   markCampaignReady,
@@ -28,6 +29,7 @@ router.use(requireRoles("ADMIN", "ADMIN_MARKET_GAMES"));
 router.get("/subscription-plans", listSubscriptionPlans);
 router.get("/businesses", listBusinesses);
 router.post("/businesses", createBusiness);
+router.post("/agreement-clients", createAgreementClient);
 router.patch("/businesses/:id/subscription", updateBusinessSubscription);
 router.get("/users", listUsers);
 router.post("/users", createUser);

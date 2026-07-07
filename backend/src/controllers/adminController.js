@@ -101,6 +101,29 @@ const adminUserSchema = z.object({
   can_redeem_cross_business: z.boolean().optional(),
 });
 
+const agreementClientSchema = z.object({
+  business_name: z.string().trim().min(2).max(160),
+  slug: slugSchema.optional(),
+  owner_name: z.string().trim().min(2).max(160),
+  owner_email: z.string().email(),
+  owner_password: z.string().min(8),
+  owner_document: z.string().trim().min(4).max(40).optional().nullable(),
+  contact_phone: z.string().trim().max(40).optional().nullable(),
+  city: z.string().trim().max(120).optional().nullable(),
+  plan_code: z.enum(["STARTER", "GROWTH", "PRO", "GLOBAL"]).default("GROWTH"),
+  free_months: z.number().int().min(0).max(60).default(0),
+  initial_tickets: z.number().int().min(0).max(100000).default(0),
+  lifetime_access: z.boolean().default(false),
+  monthly_payment_required: z.boolean().default(true),
+  agreement_notes: z.string().trim().max(1200).optional().nullable(),
+});
+
+function addMonths(date, months) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + Number(months || 0));
+  return next;
+}
+
 function normalizeDeliveredAssets(value) {
   const deliveredAssets = value && typeof value === "object" ? { ...value } : {};
   const checklist = deliveredAssets.checklist && typeof deliveredAssets.checklist === "object"
@@ -173,6 +196,230 @@ async function createBusiness(req, res, next) {
       }
 
       return { business: business.rows[0], owner, credit_account };
+    });
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function ensureBaseBusinessRecords(client, businessId, businessName) {
+  const baseSlug = slugify(businessName) || "cliente";
+  const branch = await client.query(
+    `insert into branches (business_id, name, slug, address, is_active)
+     values ($1, 'Sede principal', 'sede-principal', $2, true)
+     on conflict (business_id, slug) do update
+     set name = excluded.name,
+         address = excluded.address,
+         is_active = true,
+         updated_at = now()
+     returning id, name`,
+    [businessId, businessName]
+  );
+
+  const game = await client.query(
+    `insert into games (business_id, name, slug, metadata, is_active)
+     values ($1, $2, $3, $4::jsonb, true)
+     on conflict (business_id, slug) do update
+     set name = excluded.name,
+         metadata = excluded.metadata,
+         is_active = true,
+         updated_at = now()
+     returning id, name`,
+    [
+      businessId,
+      `Motor Comercial ${businessName}`,
+      `${baseSlug}-rms`,
+      JSON.stringify({ type: "agreement_client", source: "admin_agreement_provisioning" }),
+    ]
+  );
+
+  const reward = await client.query(
+    `insert into rewards (business_id, name, description, display_in_validator, metadata, is_active)
+     values ($1, $2, $3, $4, $5::jsonb, true)
+     on conflict (business_id, name) do update
+     set description = excluded.description,
+         display_in_validator = excluded.display_in_validator,
+         metadata = excluded.metadata,
+         is_active = true,
+         updated_at = now()
+     returning id, name`,
+    [
+      businessId,
+      `Beneficio ${businessName}`,
+      `Beneficio configurable para operaciones RMS de ${businessName}.`,
+      `Validar beneficio ${businessName}.`,
+      JSON.stringify({ agreement_default: true }),
+    ]
+  );
+
+  return {
+    branch: branch.rows[0],
+    game: game.rows[0],
+    reward: reward.rows[0],
+  };
+}
+
+async function assignInitialAgreementTickets(client, businessId, quantity, userId, notes) {
+  const amount = Number(quantity || 0);
+  if (!amount) {
+    const existing = await client.query(
+      "select * from business_qr_credit_accounts where business_id = $1",
+      [businessId]
+    );
+    return existing.rows[0] || null;
+  }
+
+  const existing = await client.query(
+    "select * from business_qr_credit_accounts where business_id = $1 for update",
+    [businessId]
+  );
+  const currentBalance = Number(existing.rows[0]?.qr_balance || 0);
+  const currentUsed = Number(existing.rows[0]?.qr_used_total || 0);
+  const nextBalance = currentBalance + amount;
+  const nextPurchased = Number(existing.rows[0]?.qr_purchased_total || 0) + amount;
+  const label = `${amount.toLocaleString("es-CO")} tickets iniciales por convenio`;
+
+  const account = await client.query(
+    `insert into business_qr_credit_accounts
+      (business_id, current_package_size, qr_balance, qr_purchased_total,
+       public_label, internal_unit_price_cop, last_purchase_at)
+     values ($1, $2, $3, $4, $5, 0, now())
+     on conflict (business_id) do update
+     set current_package_size = $2,
+         qr_balance = $3,
+         qr_purchased_total = $4,
+         public_label = $5,
+         internal_unit_price_cop = 0,
+         last_purchase_at = now(),
+         updated_at = now()
+     returning *`,
+    [businessId, amount, nextBalance, Math.max(nextPurchased, currentUsed + nextBalance), label]
+  );
+
+  await client.query(
+    `insert into business_qr_credit_ledger
+      (business_id, account_id, entry_type, package_size, delta_qr, balance_after,
+       internal_unit_price_cop, internal_total_cop, public_label, notes, created_by_user_id)
+     values ($1, $2, 'MANUAL_ADJUSTMENT', $3, $4, $5, 0, 0, $6, $7, $8)`,
+    [
+      businessId,
+      account.rows[0].id,
+      amount,
+      amount,
+      account.rows[0].qr_balance,
+      label,
+      notes || "Tickets iniciales asignados por convenio comercial.",
+      userId,
+    ]
+  );
+
+  return account.rows[0];
+}
+
+async function createAgreementClient(req, res, next) {
+  try {
+    requireMarketAdmin(req.user);
+    const body = validate(agreementClientSchema, {
+      ...req.body,
+      slug: req.body.slug || req.body.business_name,
+    });
+    const planCode = normalizePlanCode(body.plan_code || "GROWTH");
+    const lifetimeAccess = Boolean(body.lifetime_access);
+    const monthlyPaymentRequired = lifetimeAccess ? false : Boolean(body.monthly_payment_required);
+    const freeMonths = Number(body.free_months || 0);
+    const now = new Date();
+    const currentPeriodEndsAt = lifetimeAccess || !monthlyPaymentRequired
+      ? null
+      : addMonths(now, freeMonths).toISOString();
+
+    const result = await withTransaction(async (client) => {
+      const [existingSlug, existingUser] = await Promise.all([
+        client.query("select id, name from businesses where slug = $1", [body.slug]),
+        client.query("select id, email, business_id from app_users where lower(email) = lower($1)", [body.owner_email]),
+      ]);
+      if (existingSlug.rowCount) {
+        throw badRequest(`Ya existe un cliente con slug ${body.slug}.`);
+      }
+      if (existingUser.rowCount) {
+        throw badRequest(`Ya existe un usuario con el correo ${body.owner_email}.`);
+      }
+
+      const settings = {
+        nit: body.owner_document || null,
+        contact_name: body.owner_name,
+        contact_email: body.owner_email,
+        phone: body.contact_phone || null,
+        city: body.city || null,
+        account_document_type: body.owner_document ? "CEDULA" : null,
+        account_document_id: body.owner_document || null,
+        signup_type: "admin_agreement_client",
+        manual_provisioning: true,
+        commercial_deal: {
+          deal_type: lifetimeAccess ? "lifetime" : monthlyPaymentRequired ? "free_months" : "no_monthly_payment",
+          free_months: freeMonths,
+          initial_tickets: Number(body.initial_tickets || 0),
+          monthly_payment_required: monthlyPaymentRequired,
+          lifetime_access: lifetimeAccess,
+          notes: body.agreement_notes || null,
+          created_by_user_id: req.user.id,
+          created_at: now.toISOString(),
+        },
+        subscription: {
+          plan_code: planCode,
+          status: "ACTIVE",
+          billing_cycle: lifetimeAccess ? "lifetime" : monthlyPaymentRequired ? "monthly_after_grace" : "no_monthly_payment",
+          monthly_payment_required: monthlyPaymentRequired,
+          lifetime_access: lifetimeAccess,
+          free_months: freeMonths,
+          current_period_ends_at: currentPeriodEndsAt,
+          notes: body.agreement_notes || null,
+        },
+        access: {
+          plan_type: "premium_monthly",
+          portal_status: "ACTIVE",
+          lifetime_access: lifetimeAccess,
+          source: "admin_agreement_provisioning",
+          provisioned_at: now.toISOString(),
+        },
+      };
+
+      const business = await client.query(
+        `insert into businesses
+          (name, slug, settings, plan_code, plan_type, portal_status,
+           portal_activated_at, subscription_status, subscription_started_at,
+           subscription_current_period_ends_at, subscription_auto_renew_enabled,
+           subscription_auto_renew_status, is_active)
+         values ($1, $2, $3::jsonb, $4, 'premium_monthly', 'ACTIVE',
+           now(), 'ACTIVE', now(), $5, false, 'DISABLED', true)
+         returning *`,
+        [body.business_name, body.slug, JSON.stringify(settings), planCode, currentPeriodEndsAt]
+      );
+
+      const passwordHash = await bcrypt.hash(body.owner_password, 12);
+      const owner = await client.query(
+        `insert into app_users (business_id, email, password_hash, full_name, role, is_active)
+         values ($1, lower($2), $3, $4, 'BUSINESS_OWNER', true)
+         returning id, business_id, email, full_name, role, is_active`,
+        [business.rows[0].id, body.owner_email, passwordHash, body.owner_name]
+      );
+
+      const base = await ensureBaseBusinessRecords(client, business.rows[0].id, body.business_name);
+      const creditAccount = await assignInitialAgreementTickets(
+        client,
+        business.rows[0].id,
+        body.initial_tickets,
+        req.user.id,
+        body.agreement_notes || "Tickets iniciales asignados al crear cliente con convenio."
+      );
+
+      return {
+        business: business.rows[0],
+        owner: owner.rows[0],
+        base,
+        credit_account: mapCreditAccount(creditAccount),
+      };
     });
 
     res.status(201).json(result);
@@ -651,6 +898,7 @@ async function campaignReport(req, res, next) {
 
 module.exports = {
   createBusiness,
+  createAgreementClient,
   createCampaign,
   patchCampaign,
   markCampaignReady,
