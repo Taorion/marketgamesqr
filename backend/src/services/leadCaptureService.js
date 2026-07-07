@@ -31,6 +31,19 @@ function cleanText(value, max = 500) {
   return text.slice(0, max);
 }
 
+function digitalAssetSourceLabel() {
+  return "Descarga de activo digital";
+}
+
+function digitalAssetSubjectLabel(activation = {}) {
+  const parts = [
+    activation.asset_title ? `Activo: ${activation.asset_title}` : "",
+    activation.campaign_name ? `Campaña: ${activation.campaign_name}` : "",
+    !activation.campaign_name && activation.name ? `Landing: ${activation.name}` : "",
+  ].filter(Boolean);
+  return parts.join(" · ") || "Activo digital descargado";
+}
+
 function parseDataUrl(value, allowedTypes, maxBytes) {
   const text = String(value || "");
   const match = text.match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
@@ -623,7 +636,9 @@ async function findOrCreateLead(client, activation, formData) {
   const documentId = cleanText(formData.document_id, 80);
   const email = cleanText(formData.email, 180).toLowerCase();
   const phone = cleanText(formData.phone, 40);
-  const name = [formData.first_name, formData.last_name].map((value) => cleanText(value, 120)).filter(Boolean).join(" ") || cleanText(formData.name, 160) || "Lead captura relampago";
+  const name = [formData.first_name, formData.last_name].map((value) => cleanText(value, 120)).filter(Boolean).join(" ") || cleanText(formData.name, 160) || "Lead por activo digital";
+  const sourceLabel = digitalAssetSourceLabel();
+  const subjectLabel = digitalAssetSubjectLabel(activation);
   const existing = await client.query(
     `select * from players
      where business_id = $1 and (
@@ -636,17 +651,27 @@ async function findOrCreateLead(client, activation, formData) {
     [activation.business_id, documentId, email, phone]
   );
   const metadataPatch = {
-    source: "captura_relampago",
-    lead_source: "Captura Relámpago",
+    source: sourceLabel,
+    source_key: "descarga_activo_digital",
+    lead_source: sourceLabel,
     channel: activation.channel,
+    source_detail: subjectLabel,
+    attribution_source: sourceLabel,
+    attribution_subject: subjectLabel,
+    asset_id: activation.asset_id,
+    asset_title: activation.asset_title,
+    lead_capture_activation_id: activation.id,
+    lead_capture_name: activation.name,
+    campaign_id: activation.campaign_id || null,
+    campaign_name: activation.campaign_name || null,
     city: cleanText(formData.city, 120),
     company: cleanText(formData.company, 160),
     role: cleanText(formData.role, 120),
     interest: cleanText(formData.interest, 200),
     budget: cleanText(formData.budget, 120),
-    source_detail: cleanText(formData.source_detail, 200),
+    form_source_detail: cleanText(formData.source_detail, 200),
     commercial_status: "INTERESTED",
-    tags: ["captura-relampago", "descargo-catalogo", "lead-presencial", "interesado", "activo-digital"],
+    tags: ["descarga-activo-digital", "descargo-catalogo", "interesado", "activo-digital"],
   };
   if (existing.rowCount) {
     const updated = await client.query(
@@ -675,8 +700,9 @@ async function findOrCreateLead(client, activation, formData) {
 async function submitPublicLeadCapture(token, body, reqMeta = {}) {
   return withTransaction(async (client) => {
     const result = await client.query(
-      `select a.*, da.id as asset_id, da.title as asset_title, da.file_name
+      `select a.*, c.name as campaign_name, da.id as asset_id, da.title as asset_title, da.file_name
        from lead_capture_activations a
+       left join campaigns c on c.id = a.campaign_id
        join lateral (
          select da.*
          from digital_assets da
@@ -706,7 +732,7 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
       `insert into lead_capture_submissions
         (business_id, activation_id, asset_id, lead_id, campaign_id, branch_id, source, channel,
          form_data, consent_accepted, consent_text, lead_was_existing, ip_address, user_agent)
-       values ($1, $2, $3, $4, $5, $6, 'captura_relampago', $7, $8::jsonb, $9, $10, $11, $12, $13)
+       values ($1, $2, $3, $4, $5, $6, 'descarga_activo_digital', $7, $8::jsonb, $9, $10, $11, $12, $13)
        returning *`,
       [
         activation.business_id,
@@ -738,7 +764,15 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
         downloadToken,
         reqMeta.ip || null,
         reqMeta.userAgent || null,
-        JSON.stringify({ file_name: activation.file_name }),
+        JSON.stringify({
+          file_name: activation.file_name,
+          asset_id: activation.asset_id,
+          asset_title: activation.asset_title,
+          campaign_id: activation.campaign_id || null,
+          campaign_name: activation.campaign_name || null,
+          source_label: digitalAssetSourceLabel(),
+          attribution_subject: digitalAssetSubjectLabel(activation),
+        }),
       ]
     );
     const eventType = existing ? "lead_existing_updated" : "lead_captured";
@@ -750,12 +784,16 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
         activation.business_id,
         lead.id,
         eventType,
-        `${lead.name} desbloqueo "${activation.asset_title}" desde "${activation.name}".`,
+        `${lead.name} descargó "${activation.asset_title}"${activation.campaign_name ? ` de la campaña "${activation.campaign_name}"` : ""} desde "${activation.name}".`,
         activation.campaign_id || null,
         JSON.stringify({
           activation_id: activation.id,
           asset_id: activation.asset_id,
+          asset_title: activation.asset_title,
           submission_id: submission.rows[0].id,
+          source_label: digitalAssetSourceLabel(),
+          attribution_subject: digitalAssetSubjectLabel(activation),
+          campaign_name: activation.campaign_name || null,
           channel: activation.channel,
           consent_accepted: Boolean(body.consent_accepted),
         }),
@@ -782,11 +820,12 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
 async function downloadDigitalAsset(token, reqMeta = {}) {
   return withTransaction(async (client) => {
     const result = await client.query(
-      `select d.*, da.file_name, da.file_type, da.file_data_url, da.file_size,
-              a.status, a.starts_at, a.expires_at, a.name as activation_name
+      `select d.*, da.file_name, da.file_type, da.file_data_url, da.file_size, da.title as asset_title,
+              a.status, a.starts_at, a.expires_at, a.name as activation_name, c.name as campaign_name
        from digital_asset_downloads d
        join digital_assets da on da.id = d.asset_id and da.is_active = true
        join lead_capture_activations a on a.id = d.activation_id
+       left join campaigns c on c.id = a.campaign_id
        where d.download_token = $1
        for update`,
       [token]
@@ -813,8 +852,16 @@ async function downloadDigitalAsset(token, reqMeta = {}) {
       [
         row.business_id,
         row.lead_id || null,
-        `El lead descargo ${row.file_name} desde ${row.activation_name}.`,
-        JSON.stringify({ activation_id: row.activation_id, asset_id: row.asset_id, submission_id: row.submission_id, file_name: row.file_name }),
+        `El lead descargó "${row.asset_title || row.file_name}"${row.campaign_name ? ` de la campaña "${row.campaign_name}"` : ""} desde "${row.activation_name}".`,
+        JSON.stringify({
+          activation_id: row.activation_id,
+          asset_id: row.asset_id,
+          asset_title: row.asset_title,
+          submission_id: row.submission_id,
+          file_name: row.file_name,
+          campaign_name: row.campaign_name || null,
+          source_label: digitalAssetSourceLabel(),
+        }),
       ]
     );
     return {

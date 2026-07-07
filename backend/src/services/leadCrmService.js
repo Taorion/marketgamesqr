@@ -273,9 +273,20 @@ async function listLeadCrmRows(businessId, filters = {}) {
          p.email,
          p.phone,
          p.created_at,
-         p.campaign_id,
-         c.name as campaign_name,
-         coalesce(p.metadata->>'source', p.metadata->>'lead_source', c.type, 'QR / Activacion') as channel,
+         coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
+         coalesce(latest_capture.campaign_name, c.name) as campaign_name,
+         coalesce(
+           case when latest_capture.id is not null then 'Descarga de activo digital' end,
+           case
+             when p.metadata->>'source_key' = 'descarga_activo_digital'
+               or (lower(coalesce(p.metadata->>'source', '')) = 'captura_relampago' and nullif(p.metadata->>'asset_title', '') is not null)
+             then 'Descarga de activo digital'
+           end,
+           p.metadata->>'source',
+           p.metadata->>'lead_source',
+           c.type,
+           'QR / Activacion'
+         ) as channel,
          coalesce(p.metadata->>'city', '') as city,
          null::text as crm_priority,
          null::text as preferred_channel,
@@ -310,9 +321,28 @@ async function listLeadCrmRows(businessId, filters = {}) {
          af.qr_token as affiliate_code,
          af.status as affiliate_status,
          (af.id is not null) as is_affiliate,
-         li.top_interest
+         coalesce(latest_capture.asset_title, li.top_interest) as top_interest
        from players p
        left join campaigns c on c.id = p.campaign_id
+       left join lateral (
+         select
+           s.id,
+           s.activation_id,
+           s.asset_id,
+           s.campaign_id,
+           s.channel,
+           s.created_at,
+           lca.name as activation_name,
+           da.title as asset_title,
+           lcc.name as campaign_name
+         from lead_capture_submissions s
+         left join lead_capture_activations lca on lca.id = s.activation_id
+         left join digital_assets da on da.id = s.asset_id
+         left join campaigns lcc on lcc.id = s.campaign_id
+         where s.business_id = p.business_id and s.lead_id = p.id
+         order by s.created_at desc
+         limit 1
+       ) latest_capture on true
        left join lateral (
          select count(*)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
@@ -734,11 +764,61 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
   const result = await client.query(
     `select p.id, p.business_id, p.id as lead_id, 'PLAYER'::text as source_type,
             p.name, p.document_id, p.email, p.phone, null::text as organization,
-            coalesce(p.metadata->>'source', p.metadata->>'lead_source', c.type, 'QR / Activacion') as channel,
-            c.name as campaign_name, p.campaign_id, p.metadata, p.created_at, p.created_at as updated_at,
+            coalesce(
+              case when latest_capture.id is not null then 'Descarga de activo digital' end,
+              case
+                when p.metadata->>'source_key' = 'descarga_activo_digital'
+                  or (lower(coalesce(p.metadata->>'source', '')) = 'captura_relampago' and nullif(p.metadata->>'asset_title', '') is not null)
+                then 'Descarga de activo digital'
+              end,
+              p.metadata->>'source',
+              p.metadata->>'lead_source',
+              c.type,
+              'QR / Activacion'
+            ) as channel,
+            coalesce(
+              case when latest_capture.id is not null then concat_ws(' · ',
+                case when nullif(latest_capture.asset_title, '') is not null then 'Activo: ' || latest_capture.asset_title end,
+                case when nullif(latest_capture.campaign_name, '') is not null then 'Campaña: ' || latest_capture.campaign_name end,
+                case when nullif(latest_capture.activation_name, '') is not null then 'Landing: ' || latest_capture.activation_name end
+              ) end,
+              p.metadata->>'attribution_subject',
+              p.metadata->>'source_detail'
+            ) as source_detail,
+            coalesce(latest_capture.campaign_name, c.name) as campaign_name,
+            coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
+            coalesce(p.metadata, '{}'::jsonb) || case when latest_capture.id is not null then jsonb_build_object(
+              'digital_asset_origin', true,
+              'source_key', 'descarga_activo_digital',
+              'source_label', 'Descarga de activo digital',
+              'asset_id', latest_capture.asset_id,
+              'asset_title', latest_capture.asset_title,
+              'lead_capture_activation_id', latest_capture.activation_id,
+              'lead_capture_name', latest_capture.activation_name,
+              'campaign_id', latest_capture.campaign_id,
+              'campaign_name', latest_capture.campaign_name
+            ) else '{}'::jsonb end as metadata,
+            p.created_at, p.created_at as updated_at,
             coalesce(p.metadata->>'commercial_status', '') as stored_status
      from players p
      left join campaigns c on c.id = p.campaign_id
+     left join lateral (
+       select
+         s.id,
+         s.activation_id,
+         s.asset_id,
+         s.campaign_id,
+         lca.name as activation_name,
+         da.title as asset_title,
+         lcc.name as campaign_name
+       from lead_capture_submissions s
+       left join lead_capture_activations lca on lca.id = s.activation_id
+       left join digital_assets da on da.id = s.asset_id
+       left join campaigns lcc on lcc.id = s.campaign_id
+       where s.business_id = p.business_id and s.lead_id = p.id
+       order by s.created_at desc
+       limit 1
+     ) latest_capture on true
      where p.id = $1 and p.business_id = $2`,
     [leadId, businessId]
   );

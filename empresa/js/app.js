@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-contact-language-v1";
+const APP_VERSION = "empresa-20260707-digital-asset-origin-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -16780,8 +16780,10 @@ function commercialChipClass(status = "") {
 }
 
 function leadBadges(item = {}) {
+  const digitalAssetOrigin = String(item.channel || "").toLowerCase().includes("descarga de activo digital");
   return [
     item.is_affiliate ? "Afiliado" : "",
+    digitalAssetOrigin ? "Activo digital" : "",
     item.purchase_count > 0 ? "Comprador" : "",
     item.active_tickets > 0 ? "Ticket activo" : "",
     item.expired_tickets > 0 ? "Ticket vencido" : "",
@@ -16789,6 +16791,18 @@ function leadBadges(item = {}) {
     item.redeemed_tickets > 0 ? "Redimio" : "",
     item.source_type === "MANUAL" ? "Manual" : "",
   ].filter(Boolean);
+}
+
+function leadOriginText(item = {}) {
+  const parts = [];
+  const channel = String(item.channel || "").trim();
+  const campaign = String(item.campaign_name || "").trim();
+  const asset = String(item.top_interest || "").trim();
+  const isDigitalAsset = channel.toLowerCase().includes("descarga de activo digital");
+  if (channel) parts.push(channel);
+  if (isDigitalAsset && asset) parts.push(`Activo: ${asset}`);
+  if (campaign) parts.push(`Campaña: ${campaign}`);
+  return parts.filter((value, index, array) => value && array.indexOf(value) === index).join(" · ") || "Sin origen";
 }
 
 function leadTicketInventoryParts(item = {}) {
@@ -16840,7 +16854,7 @@ function renderLeadCrmTable() {
       </td>
       <td><strong>${Number(item.score_total || 0).toLocaleString("es-CO")}</strong><br><span class="table-secondary">Mejor ${Number(item.best_score || 0)}</span></td>
       <td><strong>${money(item.total_spent || 0)}</strong><br><span class="table-secondary">${Number(item.purchase_count || 0)} compras</span></td>
-      <td>${formatDate(item.last_interaction_at)}<br><span class="table-secondary">${escapeHtml(item.campaign_name || item.channel || "Sin campaña")}</span></td>
+      <td>${formatDate(item.last_interaction_at)}<br><span class="table-secondary">${escapeHtml(leadOriginText(item))}</span></td>
       <td>${Number(item.activation_count || 0)} activaciones<br><span class="table-secondary">${Number(item.games_played || 0)} juegos</span><br><span class="table-secondary">${escapeHtml(leadTicketInventoryText(item))}</span></td>
       <td><div class="lead-badge-wrap">${leadBadges(item).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("") || '<span class="table-secondary">Sin badges</span>'}</div></td>
       <td>
@@ -17908,6 +17922,7 @@ function renderLeadTab(detail) {
       `<strong>Email</strong><span>${escapeHtml(lead.email || "-")}</span>`,
       `<strong>Telefono</strong><span>${escapeHtml(lead.phone || "-")}</span>`,
       `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
+      `<strong>Detalle de origen</strong><span>${escapeHtml(lead.source_detail || lead.metadata?.attribution_subject || "-")}</span>`,
       `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
       `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
       `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,

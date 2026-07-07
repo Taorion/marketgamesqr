@@ -307,7 +307,20 @@ async function getCampaignLeadRows(businessId, campaignId, limit = null) {
   const params = limit ? [businessId, campaignId, limit] : [businessId, campaignId];
   const result = await query(
     `select p.id, p.name, p.document_id, p.phone, p.email, p.created_at,
-            coalesce(qn.answers->>'source', p.metadata->>'source', '-') as lead_source,
+            coalesce(
+              case when latest_capture.id is not null then concat_ws(' · ',
+                'Descarga de activo digital',
+                case when nullif(latest_capture.asset_title, '') is not null then 'Activo: ' || latest_capture.asset_title end
+              ) end,
+              case
+                when p.metadata->>'source_key' = 'descarga_activo_digital'
+                  or (lower(coalesce(p.metadata->>'source', '')) = 'captura_relampago' and nullif(p.metadata->>'asset_title', '') is not null)
+                then concat_ws(' · ', 'Descarga de activo digital', case when nullif(p.metadata->>'asset_title', '') is not null then 'Activo: ' || (p.metadata->>'asset_title') end)
+              end,
+              qn.answers->>'source',
+              p.metadata->>'source',
+              '-'
+            ) as lead_source,
             coalesce(qn.answers->>'favorite_product', p.metadata->>'favorite_product', '-') as favorite_product,
             coalesce(qn.answers->>'purchase_intent', p.metadata->>'purchase_intent', '-') as purchase_intent,
             coalesce(qn.answers->>'gift_budget', p.metadata->>'gift_budget', '-') as gift_budget,
@@ -321,6 +334,16 @@ async function getCampaignLeadRows(businessId, campaignId, limit = null) {
      from players p
      left join qr_codes q on q.player_id = p.id
      left join lateral (
+       select s.id, s.campaign_id, da.title as asset_title
+       from lead_capture_submissions s
+       left join digital_assets da on da.id = s.asset_id
+       where s.business_id = p.business_id
+         and s.lead_id = p.id
+         and s.campaign_id = $2
+       order by s.created_at desc
+       limit 1
+     ) latest_capture on true
+     left join lateral (
        select answers
        from questionnaires
        where player_id = p.id
@@ -328,7 +351,7 @@ async function getCampaignLeadRows(businessId, campaignId, limit = null) {
        limit 1
      ) qn on true
      left join rewards r on r.id = q.reward_id
-     where p.business_id = $1 and p.campaign_id = $2
+     where p.business_id = $1 and (p.campaign_id = $2 or latest_capture.id is not null)
      order by p.created_at desc
      ${limitClause}`,
     params
@@ -1566,9 +1589,15 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
          p.phone,
          p.email,
          p.created_at,
-         c.id as campaign_id,
-         c.name as campaign_name,
+         coalesce(latest_capture.campaign_id, c.id) as campaign_id,
+         coalesce(latest_capture.campaign_name, c.name) as campaign_name,
          coalesce(
+           case when latest_capture.id is not null then 'Descarga de activo digital' end,
+           case
+             when p.metadata->>'source_key' = 'descarga_activo_digital'
+               or (lower(coalesce(p.metadata->>'source', '')) = 'captura_relampago' and nullif(p.metadata->>'asset_title', '') is not null)
+             then 'Descarga de activo digital'
+           end,
            qn.answers->>'source',
            q.metadata->>'attribution_source',
            nullif(p.metadata->>'source', ''),
@@ -1577,6 +1606,11 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
            'Sin origen'
          ) as attribution_source,
          coalesce(
+           case when latest_capture.id is not null then concat_ws(' · ',
+             case when nullif(latest_capture.asset_title, '') is not null then 'Activo: ' || latest_capture.asset_title end,
+             case when nullif(latest_capture.campaign_name, '') is not null then 'Campaña: ' || latest_capture.campaign_name end,
+             case when nullif(latest_capture.activation_name, '') is not null then 'Landing: ' || latest_capture.activation_name end
+           ) end,
            qn.answers->>'campaign_label',
            q.metadata->>'attribution_subject',
            q.metadata->>'package_name',
@@ -1604,9 +1638,38 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
          s.currency,
          s.product_name,
          s.created_at as sale_created_at,
-         p.metadata as metadata
+         coalesce(p.metadata, '{}'::jsonb) || case when latest_capture.id is not null then jsonb_build_object(
+           'digital_asset_origin', true,
+           'source_key', 'descarga_activo_digital',
+           'source_label', 'Descarga de activo digital',
+           'asset_id', latest_capture.asset_id,
+           'asset_title', latest_capture.asset_title,
+           'lead_capture_activation_id', latest_capture.activation_id,
+           'lead_capture_name', latest_capture.activation_name,
+           'campaign_id', latest_capture.campaign_id,
+           'campaign_name', latest_capture.campaign_name
+         ) else '{}'::jsonb end as metadata
        from players p
        left join campaigns c on c.id = p.campaign_id
+       left join lateral (
+         select
+           s.id,
+           s.activation_id,
+           s.asset_id,
+           s.campaign_id,
+           s.channel,
+           s.created_at,
+           lca.name as activation_name,
+           da.title as asset_title,
+           lcc.name as campaign_name
+         from lead_capture_submissions s
+         left join lead_capture_activations lca on lca.id = s.activation_id
+         left join digital_assets da on da.id = s.asset_id
+         left join campaigns lcc on lcc.id = s.campaign_id
+         where s.business_id = p.business_id and s.lead_id = p.id
+         order by s.created_at desc
+         limit 1
+       ) latest_capture on true
        left join lateral (
          select *
          from qr_codes

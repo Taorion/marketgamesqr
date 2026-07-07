@@ -560,9 +560,10 @@ async function getSeriesAndCharts(businessId, filters) {
     query(
       `with sales as (${salesUnionSql()}),
        lead_events as (
-         select p.campaign_id,
-                coalesce(c.name, 'Sin campana') as campaign_name,
+         select coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
+                coalesce(latest_capture.campaign_name, c.name, 'Sin campana') as campaign_name,
                 coalesce(
+                  case when latest_capture.id is not null then 'Descarga de activo digital' end,
                   nullif(qn.answers->>'preferred_channel', ''),
                   nullif(qn.answers->>'source', ''),
                   nullif(p.metadata->>'preferred_channel', ''),
@@ -577,6 +578,14 @@ async function getSeriesAndCharts(businessId, filters) {
          from players p
          left join campaigns c on c.id = p.campaign_id and c.business_id = p.business_id
          left join lateral (
+           select s.id, s.campaign_id, lc.name as campaign_name
+           from lead_capture_submissions s
+           left join campaigns lc on lc.id = s.campaign_id and lc.business_id = s.business_id
+           where s.business_id = p.business_id and s.lead_id = p.id
+           order by s.created_at desc
+           limit 1
+         ) latest_capture on true
+         left join lateral (
            select answers
            from questionnaires
            where player_id = p.id and business_id = p.business_id
@@ -586,8 +595,8 @@ async function getSeriesAndCharts(businessId, filters) {
          where p.business_id = $${matrixParams.push(businessId)}
            and p.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and p.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
-           and ($${matrixParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${matrixParams.length}::uuid)
-         group by p.campaign_id, c.name, channel
+           and ($${matrixParams.push(filters.campaignId)}::uuid is null or coalesce(latest_capture.campaign_id, p.campaign_id) = $${matrixParams.length}::uuid)
+         group by coalesce(latest_capture.campaign_id, p.campaign_id), coalesce(latest_capture.campaign_name, c.name, 'Sin campana'), channel
        ),
        qr_events as (
          select q.campaign_id,
