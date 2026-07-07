@@ -92,6 +92,7 @@ body {
 .field-help,
 .secure-note {
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .asset-cover {
@@ -107,6 +108,7 @@ body {
 .resource-panel {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -129,6 +131,12 @@ h1 {
   line-height: 1.02;
   letter-spacing: 0;
   color: var(--ink);
+}
+
+.hero-copy > p:last-child {
+  max-width: 68ch;
+  line-height: 1.62;
+  white-space: pre-wrap;
 }
 
 h2 {
@@ -156,6 +164,8 @@ h2 {
   margin-top: 5px;
   font-size: 1.02rem;
   line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .trust-strip {

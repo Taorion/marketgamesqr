@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-reusable-flyer-qr-v1";
+const APP_VERSION = "empresa-20260707-asset-description-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -8465,7 +8465,7 @@ function leadCapturePublicMessage(asset = {}, options = {}) {
   const subtitleSource = options.subtitle || leadCaptureAssetDescriptionInput?.value.trim() || asset.description || "Completa tus datos y recibe el material digital de inmediato.";
   return {
     title: String(titleSource || "Material digital").slice(0, 180),
-    subtitle: String(subtitleSource || "").slice(0, 240),
+    subtitle: String(subtitleSource || "").slice(0, 800),
     success_message: options.success_message || "Listo. Ya puedes descargar tu material digital.",
     details_title: leadCaptureDetailsTitleInput?.value.trim() || "Que recibes",
     details_description: leadCaptureDetailsDescriptionInput?.value.trim() || asset.description || "Un recurso listo para descargar apenas completes el formulario.",
@@ -8554,7 +8554,7 @@ async function createShareLinkForDigitalAsset(assetId) {
         form_config: defaultLeadCaptureFormConfig(),
         public_message: {
           title: asset.title || "Activo digital",
-          subtitle: String(asset.description || "Completa tus datos para descargar este material.").slice(0, 240),
+          subtitle: String(asset.description || "Completa tus datos para descargar este material.").slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
           details_title: "Que recibes",
           details_description: "Un recurso listo para descargar apenas completes el formulario.",
@@ -8586,7 +8586,7 @@ function syncFlyerQrAssetDefaults() {
     flyerQrNameInput.value = `QR volante ${asset.title || "activo digital"}`.slice(0, 160);
   }
   if (flyerQrPublicTextInput && !flyerQrPublicTextInput.value.trim()) {
-    flyerQrPublicTextInput.value = String(asset.description || "Completa tus datos y descarga el material de inmediato.").slice(0, 240);
+    flyerQrPublicTextInput.value = String(asset.description || "Completa tus datos y descarga el material de inmediato.").slice(0, 800);
   }
 }
 
@@ -8614,7 +8614,7 @@ async function submitFlyerQr(event) {
         form_config: defaultLeadCaptureFormConfig(),
         public_message: {
           title: asset.title || name,
-          subtitle: String(publicText).slice(0, 240),
+          subtitle: String(publicText).slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
           details_title: "Que recibes",
           details_description: "Un recurso listo para descargar apenas completes el formulario.",
@@ -8921,8 +8921,8 @@ async function openLeadCaptureDetail(id, options = {}) {
     <form class="modal-form lead-capture-content-editor" id="leadCaptureContentEditor">
       <label><span>Título público</span><input id="leadCaptureEditTitleInput" type="text" maxlength="180" value="${escapeHtml(publicMessage.title || asset.title || activation.name || "")}"></label>
       <label><span>Título del bloque</span><input id="leadCaptureEditDetailsTitleInput" type="text" maxlength="80" value="${escapeHtml(publicMessage.details_title || "Que recibes")}"></label>
-      <label class="span-2"><span>Descripción pública</span><textarea id="leadCaptureEditSubtitleInput" rows="2" maxlength="240">${escapeHtml(publicMessage.subtitle || asset.description || "")}</textarea></label>
-      <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureEditDetailsDescriptionInput" rows="2" maxlength="500">${escapeHtml(publicMessage.details_description || "Un recurso listo para descargar apenas completes el formulario.")}</textarea></label>
+      <label class="span-2"><span>Descripción pública</span><textarea id="leadCaptureEditSubtitleInput" rows="3" maxlength="800">${escapeHtml(publicMessage.subtitle || asset.description || "")}</textarea></label>
+      <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureEditDetailsDescriptionInput" rows="3" maxlength="800">${escapeHtml(publicMessage.details_description || "Un recurso listo para descargar apenas completes el formulario.")}</textarea></label>
       <label><span>Etiqueta 1</span><input id="leadCaptureEditBadgeOneInput" type="text" maxlength="80" value="${escapeHtml(badges[0] || leadCaptureDefaultBadge(asset) || "Material digital")}"></label>
       <label><span>Etiqueta 2</span><input id="leadCaptureEditBadgeTwoInput" type="text" maxlength="80" value="${escapeHtml(badges[1] || "Acceso inmediato")}"></label>
       <label><span>Etiqueta 3</span><input id="leadCaptureEditBadgeThreeInput" type="text" maxlength="80" value="${escapeHtml(badges[2] || "Enlace seguro")}"></label>

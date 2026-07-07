@@ -39,10 +39,10 @@ const createSchema = z.object({
   expires_at: z.string().datetime().optional().nullable(),
   public_message: z.object({
     title: z.string().trim().max(180).optional().nullable(),
-    subtitle: z.string().trim().max(240).optional().nullable(),
+    subtitle: z.string().trim().max(800).optional().nullable(),
     success_message: z.string().trim().max(300).optional().nullable(),
     details_title: z.string().trim().max(80).optional().nullable(),
-    details_description: z.string().trim().max(500).optional().nullable(),
+    details_description: z.string().trim().max(800).optional().nullable(),
     detail_badges: z.array(z.string().trim().max(80)).max(3).optional(),
   }).optional().default({}),
   form_config: z.object({
@@ -70,10 +70,10 @@ const statusSchema = z.object({
 const contentSchema = z.object({
   public_message: z.object({
     title: z.string().trim().max(180).optional().nullable(),
-    subtitle: z.string().trim().max(240).optional().nullable(),
+    subtitle: z.string().trim().max(800).optional().nullable(),
     success_message: z.string().trim().max(300).optional().nullable(),
     details_title: z.string().trim().max(80).optional().nullable(),
-    details_description: z.string().trim().max(500).optional().nullable(),
+    details_description: z.string().trim().max(800).optional().nullable(),
     detail_badges: z.array(z.string().trim().max(80)).max(3).optional(),
   }).default({}),
 });

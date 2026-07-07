@@ -60,6 +60,12 @@ function sameText(a, b) {
   return normalizeText(a) && normalizeText(a) === normalizeText(b);
 }
 
+function isPrefixText(shortText, longText) {
+  const shortValue = normalizeText(shortText);
+  const longValue = normalizeText(longText);
+  return Boolean(shortValue && longValue && longValue.startsWith(shortValue) && shortValue.length < longValue.length);
+}
+
 function formatFileSize(bytes) {
   const value = Number(bytes || 0);
   if (!value) return "";
@@ -102,9 +108,9 @@ function render(payload) {
   const pageTitle = publicMessage.title || asset.title || activation.name || "Recibe tu material digital";
   const rawSubtitle = publicMessage.subtitle || "";
   const rawAssetDescription = asset.description || activation.description || "";
-  const heroSubtitle = sameText(rawSubtitle, rawAssetDescription)
-    ? `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`
-    : (rawSubtitle || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`);
+  const heroSubtitle = isPrefixText(rawSubtitle, rawAssetDescription)
+    ? rawAssetDescription
+    : (rawSubtitle || rawAssetDescription || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`);
   document.title = `${pageTitle} | ${businessName}`;
   captureCard.innerHTML = `
     <div class="brand-row">

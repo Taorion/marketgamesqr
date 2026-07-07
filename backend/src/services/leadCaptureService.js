@@ -133,10 +133,10 @@ function publicMessagePayload(message = {}, defaults = {}) {
       : [];
   return {
     title: cleanText(message.title || defaults.title || "", 180),
-    subtitle: cleanText(message.subtitle || defaults.subtitle || "", 240),
+    subtitle: cleanText(message.subtitle || defaults.subtitle || "", 800),
     success_message: cleanText(message.success_message || defaults.success_message || "", 300),
     details_title: cleanText(message.details_title || defaults.details_title || "Que recibes", 80),
-    details_description: cleanText(message.details_description || defaults.details_description || "", 500),
+    details_description: cleanText(message.details_description || defaults.details_description || "", 800),
     detail_badges: badges,
   };
 }
