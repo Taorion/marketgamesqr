@@ -23,18 +23,47 @@
       <header class="topbar">
         <div>
           <p class="eyebrow">Admin estrategico</p>
-          <h1>Campanas y clientes</h1>
-          <p>Gestion interna de entregables, activacion y reportes por cliente.</p>
+          <h1>Operaciones MarketGamesQR</h1>
+          <p>Clientes, convenios, tickets, campanas y entregables en un solo panel interno.</p>
         </div>
         <div class="toolbar">
+          <a class="secondary-button link-button" href="/empresa/" target="_blank" rel="noopener">Portal empresa</a>
+          <a class="secondary-button link-button" href="/paquetes/" target="_blank" rel="noopener">Paquetes</a>
           <button class="secondary-button" id="refreshButton" type="button">Actualizar</button>
           <button class="secondary-button" id="logoutButton" type="button">Salir</button>
         </div>
       </header>
 
+      <nav class="section-nav" aria-label="Secciones internas">
+        <a href="#convenios">Convenios</a>
+        <a href="#solicitudes">Solicitudes</a>
+        <a href="#clientes">Clientes</a>
+        <a href="#reportes">Reportes</a>
+        <a href="#entrega">Entrega</a>
+        <a href="#campanas-globales">Campanas</a>
+      </nav>
+
       <section class="kpi-grid admin-stats" id="adminStatsGrid"></section>
 
-      <section class="panel agreement-panel">
+      <section class="access-grid" aria-label="Accesos operativos">
+        <a class="access-card" href="/admin/" target="_blank" rel="noopener">
+          <span>Admin interno</span>
+          <strong>/admin/</strong>
+          <small>Equipo MarketGamesQR</small>
+        </a>
+        <a class="access-card" href="/empresa/" target="_blank" rel="noopener">
+          <span>Portal cliente</span>
+          <strong>/empresa/</strong>
+          <small>Owners, managers y validadores</small>
+        </a>
+        <a class="access-card" href="/paquetes/" target="_blank" rel="noopener">
+          <span>Venta publica</span>
+          <strong>/paquetes/</strong>
+          <small>Solicitudes y pagos</small>
+        </a>
+      </section>
+
+      <section class="panel agreement-panel" id="convenios">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Convenios MarketGamesQR</p>
@@ -68,7 +97,7 @@
         <p class="message" id="agreementClientMessage"></p>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="solicitudes">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Ventas de paquetes</p>
@@ -94,7 +123,7 @@
         <p class="message" id="packageRequestMessage"></p>
       </section>
 
-      <section class="split split-top">
+      <section class="split split-top" id="clientes">
         <article class="panel">
           <p class="eyebrow">Nuevo negocio</p>
           <h2>Crear empresa cliente</h2>
@@ -221,7 +250,7 @@
         </article>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="reportes">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Cliente</p>
@@ -303,7 +332,7 @@
         </article>
       </section>
 
-      <section class="split">
+      <section class="split" id="entrega">
         <article class="panel">
           <div class="panel-head">
             <div>
@@ -377,7 +406,7 @@
         </article>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="campanas-globales">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Global</p>
@@ -403,6 +432,6 @@
       </section>
     </section>
   </main>
-  <script src="js/app.js?v=agreement-clients-20260707"></script>
+  <script src="js/app.js?v=admin-ux-20260707"></script>
 </body>
 </html>
