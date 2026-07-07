@@ -1009,6 +1009,39 @@
                 <div class="surface-card hidden" id="postSaleQrResult"></div>
               </article>
 
+              <article class="surface-card data-table-card flyer-qr-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">QR reutilizable</span>
+                    <h3>Volante, vitrina o material impreso</h3>
+                  </div>
+                  <span class="status-chip ok">Un QR · Muchos escaneos</span>
+                </div>
+                <p class="chart-explainer">Genera un QR permanente para que muchas personas escaneen el mismo volante y reciban un activo digital. Cada registro queda medido como lead y descarga, sin crear tickets únicos por cada impresión.</p>
+                <form class="modal-form" id="flyerQrForm">
+                  <label class="full"><span>Activo digital a entregar</span><select id="flyerQrAssetInput" required></select><small>Usa los activos cargados en Cuenta → Activos digitales.</small></label>
+                  <label><span>Nombre interno</span><input id="flyerQrNameInput" type="text" maxlength="160" required placeholder="Volante ebook feria julio"></label>
+                  <label><span>Canal físico</span>
+                    <select id="flyerQrChannelInput">
+                      <option value="volante">Volante</option>
+                      <option value="vitrina">Vitrina</option>
+                      <option value="mostrador">Mostrador</option>
+                      <option value="feria">Feria</option>
+                      <option value="stand">Stand</option>
+                      <option value="empaque">Empaque</option>
+                      <option value="evento">Evento</option>
+                      <option value="link_compartido">Link compartido</option>
+                    </select>
+                  </label>
+                  <label class="full"><span>Texto público</span><textarea id="flyerQrPublicTextInput" rows="2" maxlength="240" placeholder="Completa tus datos y descarga el material de inmediato."></textarea></label>
+                  <div class="ticket-closeout-actions full">
+                    <p class="error-line" id="flyerQrMessage"></p>
+                    <button class="solid-button" type="submit">Generar QR reutilizable</button>
+                  </div>
+                </form>
+                <div class="surface-card hidden flyer-qr-result" id="flyerQrResult"></div>
+              </article>
+
               <article class="surface-card data-table-card">
                 <div class="table-card-head">
                   <span class="mono-label">Paquetes de tickets</span>
@@ -4373,7 +4406,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=ticket-cleanup-ux-20260706" defer></script>
+  <script src="js/app.js?v=reusable-flyer-qr-20260707" defer></script>
 </body>
 </html>
 

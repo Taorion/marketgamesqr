@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260706-ticket-cleanup-ux-v2";
+const APP_VERSION = "empresa-20260707-reusable-flyer-qr-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -551,6 +551,13 @@ const postSaleExpirySummary = document.getElementById("postSaleExpirySummary");
 const postSaleNotesInput = document.getElementById("postSaleNotesInput");
 const postSaleQrMessage = document.getElementById("postSaleQrMessage");
 const postSaleQrResult = document.getElementById("postSaleQrResult");
+const flyerQrForm = document.getElementById("flyerQrForm");
+const flyerQrAssetInput = document.getElementById("flyerQrAssetInput");
+const flyerQrNameInput = document.getElementById("flyerQrNameInput");
+const flyerQrChannelInput = document.getElementById("flyerQrChannelInput");
+const flyerQrPublicTextInput = document.getElementById("flyerQrPublicTextInput");
+const flyerQrMessage = document.getElementById("flyerQrMessage");
+const flyerQrResult = document.getElementById("flyerQrResult");
 const triviaLauncherForm = document.getElementById("triviaLauncherForm");
 const activationTypeInput = document.getElementById("activationTypeInput");
 const activationTypePicker = document.getElementById("activationTypePicker");
@@ -2925,6 +2932,7 @@ function setView(view) {
       ]).then(() => {
         renderDigitalAssets();
         renderLeadCaptureAssetOptions();
+        renderFlyerQrAssetOptions();
         renderLeadCaptureTable();
       });
     }
@@ -2982,6 +2990,14 @@ function setView(view) {
   if (view === "redemptions") renderRedemptionsView();
   if (view === "strategic-qr") {
     if (!state.inventoryLoaded) loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
+    if (!state.digitalAssetsLoaded) {
+      loadDigitalAssets({ quiet: true }).then(() => {
+        renderFlyerQrAssetOptions();
+        renderLeadCaptureAssetOptions();
+      });
+    } else {
+      renderFlyerQrAssetOptions();
+    }
     renderStrategicQrView();
     loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
       showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
@@ -8551,6 +8567,7 @@ async function createShareLinkForDigitalAsset(assetId) {
     await loadLeadCaptureActivations({ force: true });
     renderDigitalAssets();
     renderLeadCaptureTable();
+    renderFlyerQrAssetOptions();
     const link = result.activation?.public_url || digitalAssetShareUrl(asset.id);
     if (link) {
       await navigator.clipboard?.writeText(link);
@@ -8559,6 +8576,94 @@ async function createShareLinkForDigitalAsset(assetId) {
     }
   } catch (error) {
     showFeedback(error.message || "No se pudo crear el link del activo.", "error", { title: "Activo digital" });
+  }
+}
+
+function syncFlyerQrAssetDefaults() {
+  const asset = selectedFlyerQrAsset();
+  if (!asset) return;
+  if (flyerQrNameInput && !flyerQrNameInput.value.trim()) {
+    flyerQrNameInput.value = `QR volante ${asset.title || "activo digital"}`.slice(0, 160);
+  }
+  if (flyerQrPublicTextInput && !flyerQrPublicTextInput.value.trim()) {
+    flyerQrPublicTextInput.value = String(asset.description || "Completa tus datos y descarga el material de inmediato.").slice(0, 240);
+  }
+}
+
+async function submitFlyerQr(event) {
+  event.preventDefault();
+  const asset = selectedFlyerQrAsset();
+  if (!asset) {
+    setInlineMessage(flyerQrMessage, "Selecciona el activo digital que recibira la persona.", "error");
+    return;
+  }
+  const submitButton = flyerQrForm?.querySelector("button[type='submit']");
+  try {
+    if (submitButton) submitButton.disabled = true;
+    setInlineMessage(flyerQrMessage, "Generando QR reutilizable para material impreso...", "info");
+    const name = flyerQrNameInput?.value.trim() || `QR reutilizable ${asset.title || "activo digital"}`;
+    const publicText = flyerQrPublicTextInput?.value.trim() || asset.description || "Completa tus datos y descarga el material de inmediato.";
+    const result = await api("/api/business/lead-capture-activations", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name: name.slice(0, 160),
+        description: `QR reutilizable para ${flyerQrChannelInput?.value || "volante"}: ${asset.title || "activo digital"}`.slice(0, 1200),
+        channel: flyerQrChannelInput?.value || "volante",
+        status: "ACTIVE",
+        form_config: defaultLeadCaptureFormConfig(),
+        public_message: {
+          title: asset.title || name,
+          subtitle: String(publicText).slice(0, 240),
+          success_message: "Listo. Ya puedes descargar tu material digital.",
+          details_title: "Que recibes",
+          details_description: "Un recurso listo para descargar apenas completes el formulario.",
+          detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Escaneable por muchos", "Ideal para volante"],
+        },
+        asset_id: asset.id,
+      }),
+    });
+    state.leadCaptureLoaded = false;
+    await loadLeadCaptureActivations({ force: true });
+    renderLeadCaptureTable();
+    renderDigitalAssets();
+    const activation = result.activation || {};
+    const link = activation.public_url || "";
+    if (flyerQrResult) {
+      flyerQrResult.classList.remove("hidden");
+      flyerQrResult.innerHTML = `
+        <div class="qr-batch-result-head">
+          <div>
+            <span class="mono-label">QR reutilizable listo</span>
+            <h4>${escapeHtml(activation.name || name)}</h4>
+          </div>
+          <span class="status-chip ok">Multi-escaneo</span>
+        </div>
+        <div class="reusable-qr-result-grid">
+          ${result.qr_image_data_url ? `<img class="qr-preview" src="${escapeHtml(result.qr_image_data_url)}" alt="QR reutilizable para volante">` : ""}
+          <div>
+            <p class="table-secondary">Este QR puede ir en volantes, vitrinas, empaques o material impreso. Cada escaneo abre la landing del activo y registra un lead independiente.</p>
+            <a class="digital-asset-share-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">${escapeHtml(link)}</a>
+            <div class="activation-row-actions">
+              <button class="ghost-button" id="flyerQrCopyButton" type="button">Copiar link</button>
+              <button class="solid-button" id="flyerQrDownloadButton" type="button">Descargar PNG</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById("flyerQrCopyButton")?.addEventListener("click", async () => {
+        await navigator.clipboard?.writeText(link);
+        showFeedback("Link del QR reutilizable copiado.", "success");
+      });
+      document.getElementById("flyerQrDownloadButton")?.addEventListener("click", () => {
+        downloadDataUrl(`qr-reutilizable-${activation.public_code || Date.now()}.png`, result.qr_image_data_url);
+      });
+    }
+    setInlineMessage(flyerQrMessage, "QR reutilizable creado. Puedes descargarlo y ponerlo en el volante.", "success");
+  } catch (error) {
+    setInlineMessage(flyerQrMessage, error.message, "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
   }
 }
 
@@ -8574,6 +8679,24 @@ function renderLeadCaptureAssetOptions() {
     leadCaptureAssetSelect.value = current;
   }
   renderLeadCaptureAssetPreview();
+}
+
+function renderFlyerQrAssetOptions() {
+  if (!flyerQrAssetInput) return;
+  const current = flyerQrAssetInput.value;
+  const assets = state.digitalAssets || [];
+  flyerQrAssetInput.innerHTML = [
+    '<option value="">Selecciona un activo digital</option>',
+    ...assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(digitalAssetLabel(asset))}</option>`),
+  ].join("");
+  if (current && assets.some((asset) => asset.id === current)) {
+    flyerQrAssetInput.value = current;
+  }
+}
+
+function selectedFlyerQrAsset() {
+  const id = flyerQrAssetInput?.value || "";
+  return (state.digitalAssets || []).find((asset) => asset.id === id) || null;
 }
 
 function selectedLeadCaptureAsset() {
@@ -8637,6 +8760,7 @@ async function submitDigitalAsset(event) {
     await loadDigitalAssets({ force: true });
     renderDigitalAssets();
     renderLeadCaptureAssetOptions();
+    renderFlyerQrAssetOptions();
     const savedAsset = result.asset || (state.digitalAssets || [])[0] || null;
     setInlineMessage(digitalAssetMessage, savedAsset?.id
       ? "Activo guardado. Usa Crear link para compartir si necesitas enviar este material por WhatsApp o correo."
@@ -8658,6 +8782,7 @@ async function updateDigitalAssetStatus(assetId, isActive) {
   await loadDigitalAssets({ force: true });
   renderDigitalAssets();
   renderLeadCaptureAssetOptions();
+  renderFlyerQrAssetOptions();
   showFeedback("Biblioteca de activos actualizada.", "success");
 }
 
@@ -19178,6 +19303,8 @@ secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTic
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
 postSaleExpiresModeInput?.addEventListener("change", updatePostSaleExpiryMode);
+flyerQrForm?.addEventListener("submit", submitFlyerQr);
+flyerQrAssetInput?.addEventListener("change", syncFlyerQrAssetDefaults);
 triviaLauncherForm?.addEventListener("submit", submitTriviaLauncher);
 activationShareSearchButton?.addEventListener("click", () => {
   searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));

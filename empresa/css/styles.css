@@ -4134,6 +4134,21 @@ td {
   gap: 12px;
 }
 
+.flyer-qr-card {
+  border-color: rgba(124, 251, 255, 0.22);
+}
+
+.flyer-qr-result {
+  margin-top: 14px;
+}
+
+.reusable-qr-result-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
 .qr-batch-stat {
   border-radius: 14px;
   background: #f8faf9;
