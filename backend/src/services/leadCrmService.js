@@ -823,7 +823,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
               qb.name as batch_name,
               qb.channel_use as batch_channel_use,
               coalesce(
-                case when la.id is not null then 'Accion CRM' end,
+                case when la.id is not null then 'Acción de seguimiento' end,
                 case when ia.id is not null then 'Activacion interactiva' end,
                 case when qb.id is not null then 'Paquete de tickets' end,
                 q.metadata->>'origin_label',
@@ -1180,13 +1180,13 @@ async function ensurePlayerForAction(client, businessId, leadId, sourceType) {
       JSON.stringify({
         crm_created_from: lead.source_type,
         crm_source_id: lead.id,
-        source: lead.channel || "CRM",
+        source: lead.channel || "Base de contactos",
       }),
     ]
   );
   await client.query(
     `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
-     values ($1, $2, $3, $4, 'lead_created', 'Lead CRM creado', 'Contacto convertido a lead accionable para activaciones.', null, $5::jsonb)`,
+     values ($1, $2, $3, $4, 'lead_created', 'Lead creado', 'Contacto convertido a lead accionable para activaciones.', null, $5::jsonb)`,
     [businessId, created.rows[0].id, lead.source_type, lead.id, JSON.stringify({ original_source_type: lead.source_type, original_source_id: lead.id })]
   );
   return created.rows[0];
@@ -1451,7 +1451,7 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
         businessId,
         source,
         sourceId,
-        `${lead.name || "Contacto"} fue eliminado del CRM unificado.`,
+        `${lead.name || "Contacto"} fue eliminado de la base unificada.`,
         user?.id || null,
         JSON.stringify({ deleted_player_id: playerId, cleanup: deleted }),
       ]
@@ -1539,8 +1539,8 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         payload.currency || "COP",
         user?.id || null,
         payload.branch_id || null,
-        payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CRM_LEAD"),
-        payload.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || "CRM"),
+        payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CONTACT_LEAD"),
+        payload.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || "Base de contactos"),
         relatedAffiliate?.id || null,
         referralPoints,
         payload.notes || null,
@@ -1770,7 +1770,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         lead.source_type,
         lead.id,
         payload.name,
-        payload.description || `Activacion ${payload.activation_type} creada desde Leads CRM.`,
+        payload.description || `Activación ${payload.activation_type} creada desde seguimiento.`,
         payload.campaign_id || null,
         qr?.id || null,
         communication.rows[0].id,

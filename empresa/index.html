@@ -2701,7 +2701,7 @@
                 </button>
                 <button class="segment-tab contact-center-tab-card" id="contactTabDirectory" data-contact-center-tab="directory" type="button" role="tab" aria-selected="false" aria-controls="contactPanelDirectory" tabindex="-1">
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">contacts</span>
-                  <span class="contact-tab-copy"><strong>Contactos CRM</strong><small>Búsqueda y ficha</small></span>
+                  <span class="contact-tab-copy"><strong>Directorio de contactos</strong><small>Búsqueda y ficha</small></span>
                   <em id="contactTabDirectoryCount">0</em>
                 </button>
                 <button class="segment-tab contact-center-tab-card" id="contactTabTickets" data-contact-center-tab="tickets" type="button" role="tab" aria-selected="false" aria-controls="contactPanelTickets" tabindex="-1">
@@ -2734,16 +2734,16 @@
               <div class="contact-center-panel hidden" id="contactPanelManual" data-contact-center-panel="manual" role="tabpanel" aria-labelledby="contactTabManual" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelSales" data-contact-center-panel="sales" role="tabpanel" aria-labelledby="contactTabSales" hidden></div>
             </section>
-            <section class="lead-crm-command surface-card">
-              <div class="lead-crm-search-row">
-                <label class="lead-crm-search">
+            <section class="lead-directory-command surface-card">
+              <div class="lead-directory-search-row">
+                <label class="lead-directory-search">
                   <span class="material-symbols-outlined" aria-hidden="true">search</span>
                   <input id="leadCrmSearchInput" type="search" placeholder="Buscar por cedula, nombre, correo, telefono, afiliado o ID">
                 </label>
                 <button class="solid-button" id="leadCrmSearchButton" type="button">Buscar lead</button>
                 <button class="ghost-button" id="leadCrmResetButton" type="button">Limpiar</button>
               </div>
-              <div class="lead-crm-filter-grid">
+              <div class="lead-directory-filter-grid">
                 <label><span>Campaña</span><select id="leadCrmCampaignFilter"><option value="">Todas</option></select></label>
                 <label><span>Estado comercial</span>
                   <select id="leadCrmStatusFilter">
@@ -2795,10 +2795,10 @@
             <section class="kpi-grid compact" id="leadFeedKpiGrid"></section>
             <section class="lead-ticket-inventory-board" id="leadTicketInventoryBoard"></section>
             <section class="lead-attention-board" id="leadAttentionBoard"></section>
-            <article class="surface-card data-table-card lead-crm-card">
+            <article class="surface-card data-table-card lead-directory-card">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">CRM/RMS de leads</span>
+                  <span class="mono-label">RMS de leads</span>
                   <h3>Centro de inteligencia comercial</h3>
                 </div>
                 <span class="pill muted" id="leadCrmPaginationLabel">Sin cargar</span>
@@ -2821,7 +2821,7 @@
                   <tbody id="leadCrmTable"></tbody>
                 </table>
               </div>
-              <div class="lead-crm-pagination">
+              <div class="lead-directory-pagination">
                 <button class="ghost-button" id="leadCrmPrevButton" type="button">Anterior</button>
                 <button class="ghost-button" id="leadCrmNextButton" type="button">Siguiente</button>
               </div>
@@ -2832,7 +2832,7 @@
                   <span class="mono-label">Prospecto manual</span>
                   <h3>Agregar lead para seguimiento</h3>
                 </div>
-                <span class="pill muted">CRM operativo</span>
+                <span class="pill muted">Seguimiento operativo</span>
               </div>
               <p class="chart-explainer">Registra contactos que llegan por correo, WhatsApp, llamada, feria o la página de contacto. Quedan mezclados en el feed comercial y en la exportación.</p>
               <form class="modal-form" id="manualLeadForm">
@@ -3116,12 +3116,12 @@
                   </div>
                   <div class="sale-form-grid sale-form-grid-customer">
                     <label class="sale-field sale-field-search"><span>Buscar cliente existente</span><input id="customerAcquisitionCustomerLookupInput" type="search" placeholder="Nombre, cedula, telefono o correo"></label>
-                    <label class="sale-field sale-field-existing"><span>Coincidencia CRM</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
+                    <label class="sale-field sale-field-existing"><span>Coincidencia en base</span><select id="customerAcquisitionCustomerSelect"><option value="">Cliente nuevo / manual</option></select></label>
                     <div class="sale-customer-status" id="customerAcquisitionCustomerStatus" role="status" aria-live="polite">
                       <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
                       <div>
                         <strong>Cliente nuevo / manual</strong>
-                        <small>Completa los datos del cliente si no viene de la base CRM.</small>
+                        <small>Completa los datos del cliente si no viene de la base de contactos.</small>
                       </div>
                     </div>
                     <label class="sale-field sale-field-name"><span>Nombre del cliente</span><input id="customerAcquisitionNameInput" type="text"></label>
@@ -4406,7 +4406,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=digital-asset-management-v4-20260707" defer></script>
+  <script src="js/app.js?v=contact-language-20260707" defer></script>
 </body>
 </html>
 

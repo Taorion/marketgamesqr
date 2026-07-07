@@ -13658,7 +13658,7 @@ body.chart-focus-open .command-center {
   background: #fff1f4 !important;
 }
 
-/* Lead CRM/RMS */
+/* Lead RMS */
 .contact-center-shell {
   display: grid;
   gap: 16px;
@@ -14019,13 +14019,13 @@ body.chart-focus-open .command-center {
   display: none;
 }
 
-.lead-crm-command {
+.lead-directory-command {
   display: grid;
   gap: 16px;
 }
 
-.lead-crm-search-row,
-.lead-crm-pagination,
+.lead-directory-search-row,
+.lead-directory-pagination,
 .lead-quick-actions,
 .lead-inline-form,
 .lead-note-form {
@@ -14071,7 +14071,7 @@ body.chart-focus-open .command-center {
   resize: vertical;
 }
 
-.lead-crm-search {
+.lead-directory-search {
   flex: 1 1 340px;
   display: flex;
   align-items: center;
@@ -14083,7 +14083,7 @@ body.chart-focus-open .command-center {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.lead-crm-search input {
+.lead-directory-search input {
   width: 100%;
   min-height: 44px;
   border: 0;
@@ -14092,22 +14092,22 @@ body.chart-focus-open .command-center {
   outline: 0;
 }
 
-.lead-crm-filter-grid {
+.lead-directory-filter-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
   gap: 12px;
 }
 
-.lead-crm-filter-grid label {
+.lead-directory-filter-grid label {
   display: grid;
   gap: 6px;
 }
 
-.lead-crm-row {
+.lead-directory-row {
   cursor: pointer;
 }
 
-.lead-crm-row:hover {
+.lead-directory-row:hover {
   background: rgba(255, 255, 255, 0.045);
 }
 
@@ -15104,7 +15104,7 @@ body.chart-focus-open .command-center {
   .contact-center-operator-panel,
   .contact-center-tabs,
   .contact-action-item,
-  .lead-crm-filter-grid,
+  .lead-directory-filter-grid,
   .lead-profile-header,
   .lead-header-metrics,
   .lead-summary-grid,

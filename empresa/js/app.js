@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-digital-asset-management-v4";
+const APP_VERSION = "empresa-20260707-contact-language-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1817,7 +1817,7 @@ async function loadLeadCrmData(options = {}) {
   if (state.leadCrmLoaded && !options.force) return;
   state.leadCrmLoading = true;
   if (!options.quiet && leadCrmTable) {
-    leadCrmTable.innerHTML = '<tr><td colspan="9">Cargando CRM de leads...</td></tr>';
+    leadCrmTable.innerHTML = '<tr><td colspan="9">Cargando base de leads...</td></tr>';
   }
   const scopeKey = businessScopeKey();
   const data = await apiSafe(`/api/business/leads/crm?${leadCrmQueryString()}`, { headers: authHeaders() }, { leads: [], pagination: { total: 0, limit: 40, offset: 0 } });
@@ -7808,7 +7808,7 @@ function salesCustomerRows() {
       affiliate_id: item.affiliate_id || null,
       affiliate_name: firstCustomerValue(item.affiliate_name, item.affiliate_code),
       referral_points_awarded: customerMoneyValue(item.referral_points_awarded || item.points_total),
-      source: Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead CRM",
+      source: Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead capturado",
     })),
     ...(state.contactFeed || []).map((item) => ({
       id: item.id,
@@ -7970,7 +7970,7 @@ function setSalesCustomerStatus(title, detail = "", tone = "neutral", icon = "pe
     <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
     <div>
       <strong>${escapeHtml(title || "Cliente nuevo / manual")}</strong>
-      <small>${escapeHtml(detail || "Completa los datos del cliente si no viene de la base CRM.")}</small>
+      <small>${escapeHtml(detail || "Completa los datos del cliente si no viene de la base de contactos.")}</small>
     </div>
   `;
 }
@@ -8036,7 +8036,7 @@ function applySalesCustomer(customerOrValue) {
     setSalesCustomerStatus("Cliente afiliado detectado", `La venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "success", "verified");
     setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
   } else {
-    setSalesCustomerStatus("Cliente CRM seleccionado", "Datos cargados en el formulario. Esta venta no tiene afiliado asociado.", "success", "check_circle");
+    setSalesCustomerStatus("Cliente seleccionado", "Datos cargados en el formulario. Esta venta no tiene afiliado asociado.", "success", "check_circle");
     setInlineMessage(customerAcquisitionMessage, "Cliente seleccionado. No tiene afiliado activo asociado, por eso esta venta no sumara puntos de afiliado.", "info");
   }
   return true;
@@ -8047,16 +8047,16 @@ function renderSalesCustomerMatchesHint() {
   const search = customerAcquisitionCustomerLookupInput?.value || "";
   if (!search.trim()) {
     if (!customerAcquisitionCustomerSelect?.value) {
-      setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base CRM.", "neutral", "person_add");
+      setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base de contactos.", "neutral", "person_add");
     }
     return;
   }
   const matches = filteredSalesCustomerRows(search);
   if (matches.length > 1) {
-    setSalesCustomerStatus(`${matches.length} coincidencias encontradas`, "Selecciona el contacto correcto en Coincidencia CRM.", "warning", "manage_search");
+    setSalesCustomerStatus(`${matches.length} coincidencias encontradas`, "Selecciona el contacto correcto en Coincidencia en base.", "warning", "manage_search");
     setInlineMessage(customerAcquisitionMessage, `${matches.length} clientes coinciden. Selecciona el correcto en el desplegable "Cliente".`, "info");
   } else if (!matches.length) {
-    setSalesCustomerStatus("Cliente nuevo / manual", "No hay coincidencias en CRM. Puedes registrar los datos manualmente.", "warning", "person_add");
+    setSalesCustomerStatus("Cliente nuevo / manual", "No hay coincidencias en la base. Puedes registrar los datos manualmente.", "warning", "person_add");
     setInlineMessage(customerAcquisitionMessage, "No hay cliente existente con esa busqueda. Puedes registrarlo como cliente nuevo/manual.", "info");
   } else {
     setSalesCustomerStatus("Coincidencia lista", "Puedes confirmar el cliente o seguir escribiendo para acotar la busqueda.", "success", "person_search");
@@ -8088,7 +8088,7 @@ function handleSalesCustomerSelectChange() {
       customerAcquisitionAffiliateInput.value = "";
       customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     }
-    setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base CRM.", "neutral", "person_add");
+    setSalesCustomerStatus("Cliente nuevo / manual", "Completa los datos del cliente si no viene de la base de contactos.", "neutral", "person_add");
     return;
   }
   applySalesCustomer(customer);
@@ -9139,18 +9139,18 @@ async function openLeadCaptureDetail(id, options = {}) {
               <td>${formatDate(lead.created_at)}</td>
               <td>${lead.consent_accepted ? "Sí" : "No"}</td>
               <td>${Number(lead.download_count || 0)}</td>
-              <td><button class="ghost-button" type="button" data-open-crm-lead="${escapeHtml(lead.lead_id || "")}">Ver lead</button></td>
+              <td><button class="ghost-button" type="button" data-open-contact-lead="${escapeHtml(lead.lead_id || "")}">Ver lead</button></td>
             </tr>
           `).join("") || '<tr><td colspan="6">Sin leads capturados todavía.</td></tr>'}
         </tbody>
       </table>
     </div>
   `;
-  leadCaptureDetail.querySelectorAll("[data-open-crm-lead]").forEach((button) => {
+  leadCaptureDetail.querySelectorAll("[data-open-contact-lead]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (!button.dataset.openCrmLead) return;
+      if (!button.dataset.openContactLead) return;
       setView("leads");
-      openLeadDetail({ id: button.dataset.openCrmLead, source_type: "PLAYER" });
+      openLeadDetail({ id: button.dataset.openContactLead, source_type: "PLAYER" });
     });
   });
   document.getElementById("leadCaptureContentEditor")?.addEventListener("submit", (event) => updateLeadCaptureContentFromEditor(event, id));
@@ -12675,7 +12675,7 @@ const STRATEGY_WIZARD_OPTIONS = {
   dataFields: ["Nombre", "WhatsApp", "Correo", "Empresa", "Sector", "Cargo", "Ciudad", "Necesidad principal", "Presupuesto aproximado", "Producto de interés", "Canal de origen", "Nivel de urgencia", "Consentimiento de contacto"],
   filters: ["Por sector", "Por tamaño de empresa", "Por presupuesto", "Por urgencia", "Por interacción con el juego", "Por descarga de contenido", "Por solicitud de diagnóstico", "Por redención de beneficio", "Por agendamiento", "Por referido", "Por ciudad", "Por canal de llegada"],
   hotActions: ["Descargó el ebook", "Pidió diagnóstico", "Agendó demo", "Redimió beneficio", "Compartió la campaña", "Invitó otro lead", "Respondió que tiene presupuesto", "Dijo que necesita campaña pronto", "Visitó punto físico", "Completó el juego", "Solicitó cotización", "Pidió hablar con asesor"],
-  nextActions: ["Enviar ebook", "Enviar WhatsApp automático", "Agendar demo", "Enviar caso de uso", "Asignar asesor", "Enviar oferta piloto", "Mandar cupón", "Activar beneficio", "Invitar a evento", "Enviar campaña de seguimiento", "Clasificar en CRM", "Crear tarea comercial"],
+  nextActions: ["Enviar ebook", "Enviar WhatsApp automático", "Agendar demo", "Enviar caso de uso", "Asignar asesor", "Enviar oferta piloto", "Mandar cupón", "Activar beneficio", "Invitar a evento", "Enviar campaña de seguimiento", "Clasificar en seguimiento", "Crear tarea comercial"],
   dynamics: ["Batalla naval", "Ruleta de premios", "Trivia de marca", "Raspa y gana", "Reto de referidos", "Club de puntos", "Ranking de clientes", "Giftcard / Reward Pass", "Captura relámpago de leads", "Alianza cruzada", "Activación elegante sin juego visible"],
   rewards: ["Descuento porcentual", "Descuento fijo", "Obsequio físico", "Ebook / catálogo / activo digital", "Diagnóstico gratuito", "Sesión de asesoría", "Puntos acumulables", "Giftcard", "Entrada a sorteo", "Acceso VIP", "Producto de muestra", "Beneficio de aliado", "Segundo producto con descuento", "Otro"],
   channels: ["Instagram", "Facebook", "TikTok", "Volantes", "Influencer", "Evento fisico", "WhatsApp", "Punto de venta", "Otro"],
@@ -12789,7 +12789,7 @@ function defaultStrategyWizardAnswers() {
     captureFields: ["Nombre", "WhatsApp", "Empresa", "Sector", "Necesidad principal"],
     qualificationFilters: ["Por sector", "Por urgencia", "Por interacción con el juego"],
     hotLeadActions: ["Pidió diagnóstico", "Agendó demo", "Solicitó cotización"],
-    postCaptureAction: ["Enviar WhatsApp automático", "Clasificar en CRM", "Crear tarea comercial"],
+    postCaptureAction: ["Enviar WhatsApp automático", "Clasificar en seguimiento", "Crear tarea comercial"],
     channels: ["Instagram", "WhatsApp"],
     startDate: start.toISOString().slice(0, 10),
     endDate: end.toISOString().slice(0, 10),
@@ -12960,7 +12960,7 @@ function strategyClientNotes(answers = state.strategyWizardAnswers || {}) {
     `Alcance: ${answers.scope || "por definir"} para ${answers.audienceBase || "clientes actuales y nuevos"}.`,
     `Masificación: ${answers.acquisitionMode || "Masiva"} con ${answers.leadMagnet || "excusa de valor"} para atraer ${answers.targetPublic || "prospectos"}.`,
     `Datos mínimos sugeridos: ${(answers.captureFields || []).join(", ") || "Nombre, WhatsApp, sector y necesidad principal"}.`,
-    `Acción posterior: ${(answers.postCaptureAction || []).join(", ") || "Clasificar en CRM y activar seguimiento"}.`,
+    `Acción posterior: ${(answers.postCaptureAction || []).join(", ") || "Clasificar en seguimiento y activar atención comercial"}.`,
   ].join("\n");
 }
 
@@ -16823,7 +16823,7 @@ function renderLeadCrmTable() {
   if (leadCrmPrevButton) leadCrmPrevButton.disabled = Number(pagination.offset || 0) <= 0;
   if (leadCrmNextButton) leadCrmNextButton.disabled = !pagination.has_more;
   leadCrmTable.innerHTML = rows.map((item) => `
-    <tr class="lead-crm-row" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+    <tr class="lead-directory-row" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
       <td>
         <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
         <br><span class="table-secondary">${escapeHtml(item.document_id || item.email || item.phone || item.id)}</span>
@@ -16883,7 +16883,7 @@ async function deleteLeadContact(leadRef, label = "este contacto") {
   const confirmation = window.prompt(`Vas a eliminar ${label} del centro de contactos. Escribe ELIMINAR para confirmar.`);
   if (confirmation !== "ELIMINAR") return;
   try {
-    showFeedback("Eliminando contacto y limpiando el CRM.", "loading", { title: "Contactos", timeout: 0 });
+    showFeedback("Eliminando contacto y limpiando la base unificada.", "loading", { title: "Contactos", timeout: 0 });
     await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}?source_type=${encodeURIComponent(sourceType)}`, {
       method: "DELETE",
       headers: authHeaders(),
@@ -16929,8 +16929,8 @@ function mountContactCenterLayout() {
   appendIfFound(overviewPanel, contactActionFeed);
   appendIfFound(overviewPanel, leadAttentionBoard);
 
-  appendIfFound(directoryPanel, document.querySelector(".lead-crm-command"));
-  appendIfFound(directoryPanel, document.querySelector(".lead-crm-card"));
+  appendIfFound(directoryPanel, document.querySelector(".lead-directory-command"));
+  appendIfFound(directoryPanel, document.querySelector(".lead-directory-card"));
   appendIfFound(directoryPanel, leadFeedTable?.closest("article"));
   appendIfFound(directoryPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
 
@@ -16957,14 +16957,14 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       meta: "Vista 1 de 6 · Resumen",
       title: "Resumen operativo de contactos",
       copy: "Mira primero las prioridades, señales comerciales, leads con probabilidad de compra y acciones urgentes.",
-      primaryLabel: "Ver CRM",
+      primaryLabel: "Ver directorio",
       primaryAction: "go-directory",
       secondaryLabel: "Exportar contactos",
       secondaryAction: "export-all",
     },
     directory: {
-      meta: "Vista 2 de 6 · Contactos CRM",
-      title: "Directorio CRM y fichas comerciales",
+      meta: "Vista 2 de 6 · Directorio",
+      title: "Directorio de contactos y fichas comerciales",
       copy: "Busca, filtra y abre la ficha de cada contacto sin mezclar formularios, ventas ni capturas.",
       primaryLabel: "Agregar prospecto",
       primaryAction: "manual-lead",
@@ -16977,7 +16977,7 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       copy: "Separa activos sin redimir, expirados, no activos y redimidos para enviar recordatorios o revisar la ficha.",
       primaryLabel: "Exportar activos",
       primaryAction: "export-active",
-      secondaryLabel: "Ver CRM",
+      secondaryLabel: "Ver directorio",
       secondaryAction: "go-directory",
     },
     captures: {
@@ -16986,16 +16986,16 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       copy: "Revisa las experiencias que capturan leads: landing, ebook, QR, consentimiento y descargas.",
       primaryLabel: "Crear captura",
       primaryAction: "create-capture",
-      secondaryLabel: "Ver CRM",
+      secondaryLabel: "Ver directorio",
       secondaryAction: "go-directory",
     },
     manual: {
       meta: "Vista 5 de 6 · Prospecto manual",
       title: "Registrar contacto manual",
-      copy: "Agrega contactos que llegan por WhatsApp, llamada, correo, feria o referido y envíalos al CRM unificado.",
+      copy: "Agrega contactos que llegan por WhatsApp, llamada, correo, feria o referido y envíalos a la base unificada.",
       primaryLabel: "Completar formulario",
       primaryAction: "manual-lead",
-      secondaryLabel: "Ver CRM",
+      secondaryLabel: "Ver directorio",
       secondaryAction: "go-directory",
     },
     sales: {
@@ -17284,7 +17284,7 @@ function renderContactCenterSummary(crmRows = []) {
     converted: buyers || sales.length,
   });
   contactCenterSummaryGrid.innerHTML = [
-    ["Contactos unificados", totalContacts, "CRM, manuales, compradores y capturas"],
+    ["Contactos unificados", totalContacts, "Manuales, compradores y capturas"],
     ["Capturados", capturedLeads, `${(state.leadCaptureActivations || []).length} capturas activas o historicas`],
     ["Convertidos", buyers || sales.length, `${conversionRate} de conversion visible`],
     ["Revenue registrado", money(revenue), `${sales.length} ventas en la campaña`],
@@ -17464,7 +17464,7 @@ function renderLeadsView() {
   if (leadFeedKpiGrid) {
     leadFeedKpiGrid.innerHTML = [
       ["Atender hoy", highPriority, "Tickets activos, seguimiento o conversion"],
-      ["Leads CRM", state.leadCrmPagination?.total ?? crmRows.length, state.contactFeedRetention?.label || "Busqueda paginada"],
+      ["Leads y contactos", state.leadCrmPagination?.total ?? crmRows.length, state.contactFeedRetention?.label || "Busqueda paginada"],
       ["Compradores", buyers, "Con venta registrada"],
       ["Score acumulado", totalScore.toLocaleString("es-CO"), "Juegos y trivias"],
       ["Tickets activos", activeTickets, "Beneficios sin redimir"],
@@ -17922,7 +17922,7 @@ function renderLeadTab(detail) {
         <label><span>Valor</span><input id="leadPurchaseAmountInput" type="number" min="1" step="100" required placeholder="0"></label>
         <label><span>Categoria</span><input id="leadPurchaseCategoryInput" type="text" maxlength="160" placeholder="Categoria o linea"></label>
         <label><span>Fecha</span><input id="leadPurchaseDateInput" type="datetime-local"></label>
-        <label><span>Canal</span><input id="leadPurchaseChannelInput" type="text" maxlength="120" value="CRM" placeholder="Tienda, WhatsApp, feria..."></label>
+        <label><span>Canal</span><input id="leadPurchaseChannelInput" type="text" maxlength="120" value="Base de contactos" placeholder="Tienda, WhatsApp, feria..."></label>
         <label><span>Moneda</span><input id="leadPurchaseCurrencyInput" type="text" maxlength="8" value="COP"></label>
         <label class="span-2"><span>Notas</span><textarea id="leadPurchaseNotesInput" rows="2" maxlength="1200" placeholder="Detalle de la compra, referencia, vendedor o contexto"></textarea></label>
         <p class="form-message span-2" id="leadPurchaseMessage"></p>
@@ -18268,7 +18268,7 @@ async function createLeadPurchaseFromForm(event) {
     sale_amount: amount,
     currency: String(document.getElementById("leadPurchaseCurrencyInput")?.value || "COP").trim() || "COP",
     category: String(document.getElementById("leadPurchaseCategoryInput")?.value || "").trim() || null,
-    acquisition_channel: String(document.getElementById("leadPurchaseChannelInput")?.value || "").trim() || "CRM",
+    acquisition_channel: String(document.getElementById("leadPurchaseChannelInput")?.value || "").trim() || "Base de contactos",
     notes: String(document.getElementById("leadPurchaseNotesInput")?.value || "").trim() || null,
     created_at: dateValue ? new Date(dateValue).toISOString() : null,
   };
