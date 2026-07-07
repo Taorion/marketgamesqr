@@ -71,20 +71,22 @@ function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, 
   const title = publicMessage.title || activation.name || asset.title || "Recibe tu material digital";
   const subtitle = publicMessage.subtitle || "";
   const assetDescription = asset.description || activation.description || "";
-  const description = assetDescription && !sameText(assetDescription, title)
+  const generatedDescription = assetDescription && !sameText(assetDescription, title)
     ? assetDescription
     : `${businessName} preparo este recurso para que puedas revisarlo de inmediato.`;
   const fileInfo = [assetLabel(asset), formatFileSize(asset.file_size)].filter(Boolean).join(" - ");
+  const description = publicMessage.details_description || generatedDescription;
+  const badges = Array.isArray(publicMessage.detail_badges) && publicMessage.detail_badges.length
+    ? publicMessage.detail_badges
+    : [fileInfo || "Material digital", "Acceso inmediato", "Enlace seguro"];
   return `
     <section class="resource-panel">
       <div>
-        <p class="section-kicker">Que recibes</p>
+        <p class="section-kicker">${escapeHtml(publicMessage.details_title || "Que recibes")}</p>
         <p class="resource-description">${escapeHtml(sameText(description, subtitle) ? "Un recurso listo para descargar apenas completes el formulario." : description)}</p>
       </div>
       <div class="trust-strip" aria-label="Detalles del recurso">
-        <span>${escapeHtml(fileInfo || "Material digital")}</span>
-        <span>Acceso inmediato</span>
-        <span>Enlace seguro</span>
+        ${badges.filter(Boolean).slice(0, 3).map((badge) => `<span>${escapeHtml(badge)}</span>`).join("")}
       </div>
     </section>
   `;

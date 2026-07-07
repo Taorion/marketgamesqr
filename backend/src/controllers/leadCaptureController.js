@@ -9,6 +9,7 @@ const {
   listLeadCaptureActivations,
   submissionsToCsv,
   submitPublicLeadCapture,
+  updateLeadCaptureContent,
   updateLeadCaptureStatus,
 } = require("../services/leadCaptureService");
 
@@ -40,6 +41,9 @@ const createSchema = z.object({
     title: z.string().trim().max(180).optional().nullable(),
     subtitle: z.string().trim().max(240).optional().nullable(),
     success_message: z.string().trim().max(300).optional().nullable(),
+    details_title: z.string().trim().max(80).optional().nullable(),
+    details_description: z.string().trim().max(500).optional().nullable(),
+    detail_badges: z.array(z.string().trim().max(80)).max(3).optional(),
   }).optional().default({}),
   form_config: z.object({
     fields: z.array(formFieldSchema).optional(),
@@ -61,6 +65,17 @@ const createSchema = z.object({
 
 const statusSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "PAUSED", "ENDED"]),
+});
+
+const contentSchema = z.object({
+  public_message: z.object({
+    title: z.string().trim().max(180).optional().nullable(),
+    subtitle: z.string().trim().max(240).optional().nullable(),
+    success_message: z.string().trim().max(300).optional().nullable(),
+    details_title: z.string().trim().max(80).optional().nullable(),
+    details_description: z.string().trim().max(500).optional().nullable(),
+    detail_badges: z.array(z.string().trim().max(80)).max(3).optional(),
+  }).default({}),
 });
 
 const publicSubmissionSchema = z.object({
@@ -104,6 +119,15 @@ async function patchStatus(req, res, next) {
   try {
     const body = validate(statusSchema, req.body);
     res.json({ activation: await updateLeadCaptureStatus(businessIdFor(req), req.params.id, body.status) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function patchContent(req, res, next) {
+  try {
+    const body = validate(contentSchema, req.body);
+    res.json({ activation: await updateLeadCaptureContent(businessIdFor(req), req.params.id, body) });
   } catch (error) {
     next(error);
   }
@@ -154,6 +178,7 @@ module.exports = {
   detail,
   exportCsv,
   list,
+  patchContent,
   patchStatus,
   publicDownload,
   publicGet,

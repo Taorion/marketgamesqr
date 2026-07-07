@@ -5,6 +5,7 @@ const {
   detail,
   exportCsv,
   list,
+  patchContent,
   patchStatus,
 } = require("../controllers/leadCaptureController");
 
@@ -16,6 +17,7 @@ router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MA
 router.get("/", list);
 router.post("/", create);
 router.get("/:id", detail);
+router.patch("/:id/content", patchContent);
 router.patch("/:id/status", patchStatus);
 router.get("/:id/export.csv", exportCsv);
 

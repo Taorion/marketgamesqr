@@ -14888,6 +14888,13 @@ body.chart-focus-open .command-center {
   gap: 14px;
 }
 
+.lead-capture-content-editor {
+  padding: 14px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(124, 251, 255, 0.055);
+}
+
 .digital-assets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

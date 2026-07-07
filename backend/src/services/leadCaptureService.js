@@ -125,6 +125,22 @@ function mapDigitalAsset(row) {
   };
 }
 
+function publicMessagePayload(message = {}, defaults = {}) {
+  const badges = Array.isArray(message.detail_badges)
+    ? message.detail_badges.map((item) => cleanText(item, 80)).filter(Boolean).slice(0, 3)
+    : Array.isArray(defaults.detail_badges)
+      ? defaults.detail_badges.map((item) => cleanText(item, 80)).filter(Boolean).slice(0, 3)
+      : [];
+  return {
+    title: cleanText(message.title || defaults.title || "", 180),
+    subtitle: cleanText(message.subtitle || defaults.subtitle || "", 240),
+    success_message: cleanText(message.success_message || defaults.success_message || "", 300),
+    details_title: cleanText(message.details_title || defaults.details_title || "Que recibes", 80),
+    details_description: cleanText(message.details_description || defaults.details_description || "", 500),
+    detail_badges: badges,
+  };
+}
+
 async function listDigitalAssets(businessId, options = {}) {
   const includeInactive = ["1", "true", "yes"].includes(String(options.include_inactive || "").toLowerCase());
   const result = await query(
@@ -260,11 +276,13 @@ async function createLeadCaptureActivation(businessId, user, body) {
         body.starts_at || null,
         body.expires_at || null,
         JSON.stringify(formConfig),
-        JSON.stringify({
-          title: cleanText(body.public_message?.title || libraryAsset?.title || body.asset?.title || body.name, 180),
-          subtitle: cleanText(body.public_message?.subtitle || "Completa tus datos y recibe el material digital de inmediato.", 240),
-          success_message: cleanText(body.public_message?.success_message || "Listo. Ya puedes descargar tu material digital.", 300),
-        }),
+        JSON.stringify(publicMessagePayload(body.public_message || {}, {
+          title: libraryAsset?.title || body.asset?.title || body.name,
+          subtitle: "Completa tus datos y recibe el material digital de inmediato.",
+          success_message: "Listo. Ya puedes descargar tu material digital.",
+          details_title: "Que recibes",
+          details_description: libraryAsset?.description || body.asset?.description || body.description || "",
+        })),
         user.id,
         libraryAsset?.id || null,
       ]
@@ -436,6 +454,48 @@ async function updateLeadCaptureStatus(businessId, activationId, status) {
     [activationId, businessId, status]
   );
   if (!result.rowCount) throw notFound("Captura Relampago no encontrada.");
+  return mapActivation(result.rows[0]);
+}
+
+async function updateLeadCaptureContent(businessId, activationId, body) {
+  const current = await query(
+    `select a.*, da.title as asset_title, da.description as asset_description
+     from lead_capture_activations a
+     left join lateral (
+       select da.*
+       from digital_assets da
+       where da.business_id = a.business_id
+         and (da.id = a.asset_id or (a.asset_id is null and da.activation_id = a.id and da.is_active = true))
+       order by case when da.id = a.asset_id then 0 else 1 end, da.created_at desc
+       limit 1
+     ) da on true
+     where a.id = $1 and a.business_id = $2`,
+    [activationId, businessId]
+  );
+  if (!current.rowCount) throw notFound("Captura Relampago no encontrada.");
+  const row = current.rows[0];
+  const nextPublicMessage = {
+    ...(row.public_message || {}),
+    ...(body.public_message || {}),
+  };
+  const result = await query(
+    `update lead_capture_activations
+     set public_message = $3::jsonb,
+         updated_at = now()
+     where id = $1 and business_id = $2
+     returning *`,
+    [
+      activationId,
+      businessId,
+      JSON.stringify(publicMessagePayload(nextPublicMessage, {
+        title: row.asset_title || row.name,
+        subtitle: "Completa tus datos y recibe el material digital de inmediato.",
+        success_message: "Listo. Ya puedes descargar tu material digital.",
+        details_title: "Que recibes",
+        details_description: row.asset_description || row.description || "",
+      })),
+    ]
+  );
   return mapActivation(result.rows[0]);
 }
 
@@ -739,5 +799,6 @@ module.exports = {
   submissionsToCsv,
   submitPublicLeadCapture,
   updateDigitalAssetStatus,
+  updateLeadCaptureContent,
   updateLeadCaptureStatus,
 };

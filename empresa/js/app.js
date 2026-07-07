@@ -377,6 +377,11 @@ const leadCaptureAssetPreview = document.getElementById("leadCaptureAssetPreview
 const leadCaptureAssetTitleInput = document.getElementById("leadCaptureAssetTitleInput");
 const leadCaptureAssetCategoryInput = document.getElementById("leadCaptureAssetCategoryInput");
 const leadCaptureAssetDescriptionInput = document.getElementById("leadCaptureAssetDescriptionInput");
+const leadCaptureDetailsTitleInput = document.getElementById("leadCaptureDetailsTitleInput");
+const leadCaptureDetailsDescriptionInput = document.getElementById("leadCaptureDetailsDescriptionInput");
+const leadCaptureBadgeOneInput = document.getElementById("leadCaptureBadgeOneInput");
+const leadCaptureBadgeTwoInput = document.getElementById("leadCaptureBadgeTwoInput");
+const leadCaptureBadgeThreeInput = document.getElementById("leadCaptureBadgeThreeInput");
 const leadCaptureAssetFileInput = document.getElementById("leadCaptureAssetFileInput");
 const leadCaptureCoverInput = document.getElementById("leadCaptureCoverInput");
 const leadCaptureOpenAssetsButton = document.getElementById("leadCaptureOpenAssetsButton");
@@ -8424,6 +8429,34 @@ function digitalAssetLabel(asset = {}) {
   return [asset.title || "Activo digital", asset.category || "", type, sizeMb].filter(Boolean).join(" · ");
 }
 
+function leadCaptureDefaultBadge(asset = {}) {
+  const category = String(asset.category || "Material").replace(/[_-]/g, " ");
+  const type = String(asset.file_type || "").split("/").pop()?.toUpperCase() || "";
+  const sizeMb = Number(asset.file_size || 0) ? `${(Number(asset.file_size || 0) / 1024 / 1024).toFixed(1)} MB` : "";
+  return [category, type, sizeMb].filter(Boolean).join(" - ");
+}
+
+function leadCaptureDetailBadges(asset = {}) {
+  return [
+    leadCaptureBadgeOneInput?.value.trim() || leadCaptureDefaultBadge(asset) || "Material digital",
+    leadCaptureBadgeTwoInput?.value.trim() || "Acceso inmediato",
+    leadCaptureBadgeThreeInput?.value.trim() || "Enlace seguro",
+  ].filter(Boolean).slice(0, 3);
+}
+
+function leadCapturePublicMessage(asset = {}, options = {}) {
+  const titleSource = options.title || leadCaptureAssetTitleInput?.value.trim() || asset.title || leadCaptureNameInput?.value.trim();
+  const subtitleSource = options.subtitle || leadCaptureAssetDescriptionInput?.value.trim() || asset.description || "Completa tus datos y recibe el material digital de inmediato.";
+  return {
+    title: String(titleSource || "Material digital").slice(0, 180),
+    subtitle: String(subtitleSource || "").slice(0, 240),
+    success_message: options.success_message || "Listo. Ya puedes descargar tu material digital.",
+    details_title: leadCaptureDetailsTitleInput?.value.trim() || "Que recibes",
+    details_description: leadCaptureDetailsDescriptionInput?.value.trim() || asset.description || "Un recurso listo para descargar apenas completes el formulario.",
+    detail_badges: leadCaptureDetailBadges(asset),
+  };
+}
+
 function leadCaptureForDigitalAsset(assetId) {
   if (!assetId) return null;
   return (state.leadCaptureActivations || []).find((activation) => (
@@ -8505,8 +8538,11 @@ async function createShareLinkForDigitalAsset(assetId) {
         form_config: defaultLeadCaptureFormConfig(),
         public_message: {
           title: asset.title || "Activo digital",
-          subtitle: String(asset.description || "Deja tus datos para descargar este material.").slice(0, 240),
-          success_message: "Listo. Ya puedes descargar tu activo digital.",
+          subtitle: String(asset.description || "Completa tus datos para descargar este material.").slice(0, 240),
+          success_message: "Listo. Ya puedes descargar tu material digital.",
+          details_title: "Que recibes",
+          details_description: "Un recurso listo para descargar apenas completes el formulario.",
+          detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Acceso inmediato", "Enlace seguro"],
         },
         asset_id: asset.id,
       }),
@@ -8555,6 +8591,12 @@ function renderLeadCaptureAssetPreview() {
   if (leadCaptureAssetCategoryInput) leadCaptureAssetCategoryInput.value = asset.category || "catalogo";
   if (leadCaptureButtonTextInput && !leadCaptureButtonTextInput.value.trim()) {
     leadCaptureButtonTextInput.value = asset.download_button_text || "Descargar ahora";
+  }
+  if (leadCaptureBadgeOneInput && !leadCaptureBadgeOneInput.value.trim()) {
+    leadCaptureBadgeOneInput.value = leadCaptureDefaultBadge(asset);
+  }
+  if (leadCaptureDetailsDescriptionInput && !leadCaptureDetailsDescriptionInput.value.trim()) {
+    leadCaptureDetailsDescriptionInput.value = "Un recurso listo para descargar apenas completes el formulario.";
   }
   leadCaptureAssetPreview.innerHTML = `
     <article class="digital-asset-selected">
@@ -8649,6 +8691,7 @@ function renderLeadCaptureTable() {
           <button class="ghost-button" type="button" data-copy-lead-capture="${escapeHtml(item.public_url)}">Copiar link</button>
           <button class="ghost-button" type="button" data-download-lead-capture-qr="${escapeHtml(item.id)}">Descargar QR</button>
           <button class="ghost-button" type="button" data-open-lead-capture="${escapeHtml(item.id)}">Ver leads</button>
+          <button class="ghost-button" type="button" data-edit-lead-capture="${escapeHtml(item.id)}">Editar landing</button>
           <button class="ghost-button" type="button" data-export-lead-capture="${escapeHtml(item.id)}">Exportar</button>
         </div>
       </td>
@@ -8665,6 +8708,9 @@ function renderLeadCaptureTable() {
   });
   leadCaptureTable.querySelectorAll("[data-open-lead-capture]").forEach((button) => {
     button.addEventListener("click", () => openLeadCaptureDetail(button.dataset.openLeadCapture));
+  });
+  leadCaptureTable.querySelectorAll("[data-edit-lead-capture]").forEach((button) => {
+    button.addEventListener("click", () => openLeadCaptureDetail(button.dataset.editLeadCapture, { focusContent: true }));
   });
   leadCaptureTable.querySelectorAll("[data-export-lead-capture]").forEach((button) => {
     button.addEventListener("click", () => exportLeadCapture(button.dataset.exportLeadCapture));
@@ -8687,10 +8733,7 @@ async function submitLeadCapture(event) {
       starts_at: leadCaptureStartsInput?.value ? new Date(leadCaptureStartsInput.value).toISOString() : null,
       expires_at: leadCaptureExpiresInput?.value ? new Date(leadCaptureExpiresInput.value).toISOString() : null,
       form_config: leadCaptureFormConfig(),
-      public_message: {
-        title: leadCaptureAssetTitleInput.value.trim() || selectedAsset.title || leadCaptureNameInput.value.trim(),
-        subtitle: "Entrega un activo digital a cambio de los datos del cliente.",
-      },
+      public_message: leadCapturePublicMessage(selectedAsset),
       asset_id: selectedAsset.id,
     };
     const result = await api("/api/business/lead-capture-activations", {
@@ -8739,13 +8782,29 @@ async function downloadLeadCaptureQr(id) {
   showFeedback("No se pudo generar el QR; copie el link para imprimirlo.", "info");
 }
 
-async function openLeadCaptureDetail(id) {
+async function openLeadCaptureDetail(id, options = {}) {
   const data = await api(`/api/business/lead-capture-activations/${encodeURIComponent(id)}`, { headers: authHeaders() });
   state.selectedLeadCaptureId = id;
   state.selectedLeadCaptureDetail = data;
   if (!leadCaptureDetail) return;
   const metrics = data.metrics || {};
+  const activation = data.activation || {};
+  const publicMessage = activation.public_message || {};
+  const asset = activation.asset || {};
+  const badges = Array.isArray(publicMessage.detail_badges) ? publicMessage.detail_badges : [];
   leadCaptureDetail.innerHTML = `
+    <form class="modal-form lead-capture-content-editor" id="leadCaptureContentEditor">
+      <label><span>Título público</span><input id="leadCaptureEditTitleInput" type="text" maxlength="180" value="${escapeHtml(publicMessage.title || asset.title || activation.name || "")}"></label>
+      <label><span>Título del bloque</span><input id="leadCaptureEditDetailsTitleInput" type="text" maxlength="80" value="${escapeHtml(publicMessage.details_title || "Que recibes")}"></label>
+      <label class="span-2"><span>Descripción pública</span><textarea id="leadCaptureEditSubtitleInput" rows="2" maxlength="240">${escapeHtml(publicMessage.subtitle || asset.description || "")}</textarea></label>
+      <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureEditDetailsDescriptionInput" rows="2" maxlength="500">${escapeHtml(publicMessage.details_description || "Un recurso listo para descargar apenas completes el formulario.")}</textarea></label>
+      <label><span>Etiqueta 1</span><input id="leadCaptureEditBadgeOneInput" type="text" maxlength="80" value="${escapeHtml(badges[0] || leadCaptureDefaultBadge(asset) || "Material digital")}"></label>
+      <label><span>Etiqueta 2</span><input id="leadCaptureEditBadgeTwoInput" type="text" maxlength="80" value="${escapeHtml(badges[1] || "Acceso inmediato")}"></label>
+      <label><span>Etiqueta 3</span><input id="leadCaptureEditBadgeThreeInput" type="text" maxlength="80" value="${escapeHtml(badges[2] || "Enlace seguro")}"></label>
+      <label><span>Mensaje al completar</span><input id="leadCaptureEditSuccessInput" type="text" maxlength="300" value="${escapeHtml(publicMessage.success_message || "Listo. Ya puedes descargar tu material digital.")}"></label>
+      <p class="form-message span-2" id="leadCaptureContentMessage"></p>
+      <button class="solid-button" type="submit">Guardar textos de landing</button>
+    </form>
     <div class="lead-capture-metrics">
       ${[
         ["Visitas", metrics.visits],
@@ -8781,6 +8840,48 @@ async function openLeadCaptureDetail(id) {
       openLeadDetail({ id: button.dataset.openCrmLead, source_type: "PLAYER" });
     });
   });
+  document.getElementById("leadCaptureContentEditor")?.addEventListener("submit", (event) => updateLeadCaptureContentFromEditor(event, id));
+  if (options.focusContent) {
+    document.getElementById("leadCaptureContentEditor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+async function updateLeadCaptureContentFromEditor(event, id) {
+  event.preventDefault();
+  const message = document.getElementById("leadCaptureContentMessage");
+  const submitButton = event.currentTarget.querySelector("button[type='submit']");
+  try {
+    if (submitButton) submitButton.disabled = true;
+    setInlineMessage(message, "Guardando textos de landing...", "info");
+    const detailBadges = [
+      document.getElementById("leadCaptureEditBadgeOneInput")?.value.trim(),
+      document.getElementById("leadCaptureEditBadgeTwoInput")?.value.trim(),
+      document.getElementById("leadCaptureEditBadgeThreeInput")?.value.trim(),
+    ].filter(Boolean).slice(0, 3);
+    await api(`/api/business/lead-capture-activations/${encodeURIComponent(id)}/content`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        public_message: {
+          title: document.getElementById("leadCaptureEditTitleInput")?.value.trim() || null,
+          subtitle: document.getElementById("leadCaptureEditSubtitleInput")?.value.trim() || null,
+          details_title: document.getElementById("leadCaptureEditDetailsTitleInput")?.value.trim() || "Que recibes",
+          details_description: document.getElementById("leadCaptureEditDetailsDescriptionInput")?.value.trim() || null,
+          detail_badges: detailBadges,
+          success_message: document.getElementById("leadCaptureEditSuccessInput")?.value.trim() || "Listo. Ya puedes descargar tu material digital.",
+        },
+      }),
+    });
+    state.leadCaptureLoaded = false;
+    await loadLeadCaptureActivations({ force: true });
+    renderLeadCaptureTable();
+    await openLeadCaptureDetail(id, { focusContent: true });
+    showFeedback("Textos de landing actualizados.", "success");
+  } catch (error) {
+    setInlineMessage(message, error.message, "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 async function exportLeadCapture(id) {
