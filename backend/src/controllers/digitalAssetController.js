@@ -4,6 +4,7 @@ const { validate } = require("../utils/validators");
 const {
   createDigitalAsset,
   listDigitalAssets,
+  updateDigitalAsset,
   updateDigitalAssetStatus,
 } = require("../services/leadCaptureService");
 
@@ -23,6 +24,17 @@ const assetSchema = z.object({
   download_button_text: z.string().trim().max(80).optional().nullable(),
   category: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const updateAssetSchema = z.object({
+  title: z.string().trim().min(2).max(180).optional(),
+  description: z.string().trim().max(800).optional().nullable(),
+  category: z.string().trim().max(80).optional().nullable(),
+  download_button_text: z.string().trim().max(80).optional().nullable(),
+  file_name: z.string().trim().min(2).max(180).optional(),
+  file_data_url: z.string().min(32).optional().nullable(),
+  cover_image_data_url: z.string().optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const statusSchema = z.object({
@@ -46,6 +58,15 @@ async function create(req, res, next) {
   }
 }
 
+async function patch(req, res, next) {
+  try {
+    const body = validate(updateAssetSchema, req.body);
+    res.json({ asset: await updateDigitalAsset(businessIdFor(req), req.params.id, body) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function patchStatus(req, res, next) {
   try {
     const body = validate(statusSchema, req.body);
@@ -58,5 +79,6 @@ async function patchStatus(req, res, next) {
 module.exports = {
   create,
   list,
+  patch,
   patchStatus,
 };

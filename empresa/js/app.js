@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-asset-description-v1";
+const APP_VERSION = "empresa-20260707-digital-asset-management-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -875,6 +875,7 @@ let state = {
   rewardPassContext: null,
   digitalAssets: [],
   digitalAssetsLoaded: false,
+  editingDigitalAssetId: null,
   leadCaptureActivations: [],
   leadCaptureLoaded: false,
   selectedLeadCaptureId: null,
@@ -8402,7 +8403,7 @@ function renderLeadCaptureFields() {
 function leadCaptureFormConfig() {
   return {
     consent_required: true,
-    consent_text: leadCaptureConsentTextInput?.value.trim() || "Autorizo el tratamiento de mis datos personales para recibir informacion comercial relacionada con esta marca.",
+    consent_text: leadCaptureConsentTextInput?.value.trim() || "Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca.",
     fields: LEAD_CAPTURE_FIELD_DEFS.map(([name, label]) => ({
       name,
       label,
@@ -8416,7 +8417,7 @@ function leadCaptureFormConfig() {
 function defaultLeadCaptureFormConfig() {
   return {
     consent_required: true,
-    consent_text: "Autorizo el tratamiento de mis datos personales para recibir informacion comercial relacionada con esta marca.",
+    consent_text: "Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca.",
     fields: LEAD_CAPTURE_FIELD_DEFS.map(([name, label, visible, required]) => ({
       name,
       label,
@@ -8467,7 +8468,7 @@ function leadCapturePublicMessage(asset = {}, options = {}) {
     title: String(titleSource || "Material digital").slice(0, 180),
     subtitle: String(subtitleSource || "").slice(0, 800),
     success_message: options.success_message || "Listo. Ya puedes descargar tu material digital.",
-    details_title: leadCaptureDetailsTitleInput?.value.trim() || "Que recibes",
+    details_title: leadCaptureDetailsTitleInput?.value.trim() || "Qué recibes",
     details_description: leadCaptureDetailsDescriptionInput?.value.trim() || asset.description || "Un recurso listo para descargar apenas completes el formulario.",
     detail_badges: leadCaptureDetailBadges(asset),
   };
@@ -8497,7 +8498,7 @@ function renderDigitalAssets() {
   if (!digitalAssetsGrid) return;
   const assets = state.digitalAssets || [];
   digitalAssetsGrid.innerHTML = assets.map((asset) => `
-    <article class="digital-asset-card">
+    <article class="digital-asset-card ${state.editingDigitalAssetId === asset.id ? "is-editing" : ""}">
       ${asset.cover_image_data_url ? `<img src="${escapeHtml(asset.cover_image_data_url)}" alt="${escapeHtml(asset.title || "")}">` : '<span class="material-symbols-outlined">description</span>'}
       <div>
         <strong>${escapeHtml(asset.title || "Activo digital")}</strong>
@@ -8505,22 +8506,57 @@ function renderDigitalAssets() {
         <small>${escapeHtml(digitalAssetLabel(asset))}</small>
         ${digitalAssetShareUrl(asset.id) ? `
           <a class="digital-asset-share-link" href="${escapeHtml(digitalAssetShareUrl(asset.id))}" target="_blank" rel="noopener">${escapeHtml(digitalAssetShareUrl(asset.id))}</a>
-        ` : '<small class="digital-asset-share-note">Sin link publico todavía. Crea uno para compartirlo sin perder la captura del lead.</small>'}
+        ` : '<small class="digital-asset-share-note">Sin link público todavía. Crea uno para compartirlo sin perder la captura del lead.</small>'}
       </div>
       <div class="activation-row-actions">
+        <button class="ghost-button" type="button" data-edit-digital-asset="${escapeHtml(asset.id)}">Editar activo</button>
         <button class="ghost-button" type="button" data-use-digital-asset="${escapeHtml(asset.id)}">Usar en Ticket Relámpago</button>
         ${digitalAssetShareUrl(asset.id)
           ? `<button class="ghost-button" type="button" data-copy-digital-asset-link="${escapeHtml(digitalAssetShareUrl(asset.id))}">Copiar link</button>`
           : `<button class="ghost-button" type="button" data-create-digital-asset-link="${escapeHtml(asset.id)}">Crear link para compartir</button>`}
         <button class="ghost-button" type="button" data-disable-digital-asset="${escapeHtml(asset.id)}">Desactivar</button>
       </div>
+      ${state.editingDigitalAssetId === asset.id ? renderDigitalAssetEditor(asset) : ""}
+      ${renderDigitalAssetLandings(asset)}
     </article>
   `).join("") || '<div class="empty-state compact">Aún no hay activos digitales. Carga aquí el catálogo, portafolio o brochure antes de crear un Ticket Relámpago.</div>';
+  digitalAssetsGrid.querySelectorAll("[data-edit-digital-asset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingDigitalAssetId = button.dataset.editDigitalAsset || null;
+      renderDigitalAssets();
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-cancel-digital-asset-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingDigitalAssetId = null;
+      renderDigitalAssets();
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-digital-asset-edit-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => submitDigitalAssetEdit(event, form.dataset.digitalAssetEditForm));
+  });
   digitalAssetsGrid.querySelectorAll("[data-copy-digital-asset-link]").forEach((button) => {
     button.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(button.dataset.copyDigitalAssetLink || "");
-      showFeedback("Link publico del activo copiado.", "success", { title: "Activo digital" });
+      showFeedback("Link público del activo copiado.", "success", { title: "Activo digital" });
     });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-copy-asset-landing]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyAssetLanding || "");
+      showFeedback("Link de landing copiado.", "success", { title: "Activo digital" });
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-edit-asset-landing]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.contactCenterTab = "captures";
+      setView("leads");
+      setContactCenterTab?.("captures");
+      openLeadCaptureDetail(button.dataset.editAssetLanding, { focusContent: true }).catch((error) => showFeedback(error.message, "error"));
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-download-asset-landing-qr]").forEach((button) => {
+    button.addEventListener("click", () => downloadLeadCaptureQr(button.dataset.downloadAssetLandingQr));
   });
   digitalAssetsGrid.querySelectorAll("[data-create-digital-asset-link]").forEach((button) => {
     button.addEventListener("click", () => createShareLinkForDigitalAsset(button.dataset.createDigitalAssetLink));
@@ -8538,11 +8574,65 @@ function renderDigitalAssets() {
   });
 }
 
+function leadCapturesForDigitalAsset(assetId) {
+  if (!assetId) return [];
+  return (state.leadCaptureActivations || []).filter((activation) => activation.asset?.id === assetId);
+}
+
+function renderDigitalAssetLandings(asset = {}) {
+  const landings = leadCapturesForDigitalAsset(asset.id);
+  return `
+    <section class="digital-asset-landings">
+      <div class="digital-asset-landings-head">
+        <strong>Landings de descarga</strong>
+        <span>${landings.length} creadas</span>
+      </div>
+      ${landings.length ? landings.map((landing) => `
+        <article class="digital-asset-landing-row">
+          <div>
+            <strong>${escapeHtml(landing.name || "Landing del activo")}</strong>
+            <p>${Number(landing.metrics?.leads_captured || 0)} leads · ${Number(landing.metrics?.downloads || 0)} descargas · ${Number(landing.metrics?.visits || 0)} visitas</p>
+            <a class="digital-asset-share-link" href="${escapeHtml(landing.public_url || "")}" target="_blank" rel="noopener">${escapeHtml(landing.public_url || "")}</a>
+          </div>
+          <div class="activation-row-actions">
+            <button class="ghost-button" type="button" data-edit-asset-landing="${escapeHtml(landing.id)}">Editar landing</button>
+            <button class="ghost-button" type="button" data-copy-asset-landing="${escapeHtml(landing.public_url || "")}">Copiar link</button>
+            <button class="ghost-button" type="button" data-download-asset-landing-qr="${escapeHtml(landing.id)}">Descargar QR</button>
+          </div>
+        </article>
+      `).join("") : `
+        <div class="digital-asset-landing-empty">
+          <span>Aún no hay landing creada para este activo.</span>
+          <button class="ghost-button" type="button" data-create-digital-asset-link="${escapeHtml(asset.id || "")}">Crear landing de descarga</button>
+        </div>
+      `}
+    </section>
+  `;
+}
+
+function renderDigitalAssetEditor(asset = {}) {
+  return `
+    <form class="modal-form digital-asset-edit-form" data-digital-asset-edit-form="${escapeHtml(asset.id || "")}">
+      <label><span>Título del activo</span><input name="title" type="text" maxlength="180" required value="${escapeHtml(asset.title || "")}"></label>
+      <label><span>Categoría</span><input name="category" type="text" maxlength="80" value="${escapeHtml(asset.category || "catalogo")}"></label>
+      <label class="span-2"><span>Descripción visible</span><textarea name="description" rows="3" maxlength="800">${escapeHtml(asset.description || "")}</textarea></label>
+      <label><span>Reemplazar archivo digital</span><input name="asset_file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp"><small>Déjalo vacío para conservar el archivo actual.</small></label>
+      <label><span>Reemplazar portada</span><input name="cover_file" type="file" accept="image/png,image/jpeg,image/webp"><small>Déjalo vacío para conservar la portada actual.</small></label>
+      <label><span>Texto del botón</span><input name="download_button_text" type="text" maxlength="80" value="${escapeHtml(asset.download_button_text || "Descargar ahora")}"></label>
+      <div class="modal-actions">
+        <p class="error-line" data-digital-asset-edit-message></p>
+        <button class="ghost-button" type="button" data-cancel-digital-asset-edit>Cancelar</button>
+        <button class="solid-button" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  `;
+}
+
 async function createShareLinkForDigitalAsset(assetId) {
   const asset = (state.digitalAssets || []).find((item) => item.id === assetId);
   if (!asset) return;
   try {
-    showFeedback("Creando link publico de Captura Relampago.", "loading", { title: "Activo digital", timeout: 0 });
+    showFeedback("Creando link público de Captura Relámpago.", "loading", { title: "Activo digital", timeout: 0 });
     const result = await api("/api/business/lead-capture-activations", {
       method: "POST",
       headers: authHeaders(),
@@ -8556,7 +8646,7 @@ async function createShareLinkForDigitalAsset(assetId) {
           title: asset.title || "Activo digital",
           subtitle: String(asset.description || "Completa tus datos para descargar este material.").slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
-          details_title: "Que recibes",
+          details_title: "Qué recibes",
           details_description: "Un recurso listo para descargar apenas completes el formulario.",
           detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Acceso inmediato", "Enlace seguro"],
         },
@@ -8571,7 +8661,7 @@ async function createShareLinkForDigitalAsset(assetId) {
     const link = result.activation?.public_url || digitalAssetShareUrl(asset.id);
     if (link) {
       await navigator.clipboard?.writeText(link);
-      showFeedback("Link publico creado y copiado. Ya puedes compartirlo.", "success", { title: "Activo digital", timeout: 7000 });
+      showFeedback("Link público creado y copiado. Ya puedes compartirlo.", "success", { title: "Activo digital", timeout: 7000 });
       setInlineMessage(digitalAssetMessage, `Link listo para compartir: ${link}`, "success");
     }
   } catch (error) {
@@ -8594,7 +8684,7 @@ async function submitFlyerQr(event) {
   event.preventDefault();
   const asset = selectedFlyerQrAsset();
   if (!asset) {
-    setInlineMessage(flyerQrMessage, "Selecciona el activo digital que recibira la persona.", "error");
+    setInlineMessage(flyerQrMessage, "Selecciona el activo digital que recibirá la persona.", "error");
     return;
   }
   const submitButton = flyerQrForm?.querySelector("button[type='submit']");
@@ -8616,7 +8706,7 @@ async function submitFlyerQr(event) {
           title: asset.title || name,
           subtitle: String(publicText).slice(0, 800),
           success_message: "Listo. Ya puedes descargar tu material digital.",
-          details_title: "Que recibes",
+          details_title: "Qué recibes",
           details_description: "Un recurso listo para descargar apenas completes el formulario.",
           detail_badges: [leadCaptureDefaultBadge(asset) || "Material digital", "Escaneable por muchos", "Ideal para volante"],
         },
@@ -8625,8 +8715,8 @@ async function submitFlyerQr(event) {
     });
     state.leadCaptureLoaded = false;
     await loadLeadCaptureActivations({ force: true });
-    renderLeadCaptureTable();
     renderDigitalAssets();
+    renderLeadCaptureTable();
     const activation = result.activation || {};
     const link = activation.public_url || "";
     if (flyerQrResult) {
@@ -8733,6 +8823,51 @@ function renderLeadCaptureAssetPreview() {
   `;
 }
 
+async function submitDigitalAssetEdit(event, assetId) {
+  event.preventDefault();
+  if (!assetId) return;
+  const form = event.currentTarget;
+  const message = form.querySelector("[data-digital-asset-edit-message]");
+  const submitButton = form.querySelector("button[type='submit']");
+  const field = (name) => form.elements.namedItem(name);
+  const assetFile = field("asset_file")?.files?.[0] || null;
+  const coverFile = field("cover_file")?.files?.[0] || null;
+  try {
+    if (submitButton) submitButton.disabled = true;
+    setInlineMessage(message, "Guardando cambios del activo digital...", "info");
+    const payload = {
+      title: field("title")?.value.trim(),
+      description: field("description")?.value.trim() || null,
+      category: field("category")?.value.trim() || "catalogo",
+      download_button_text: field("download_button_text")?.value.trim() || "Descargar ahora",
+    };
+    if (assetFile) {
+      payload.file_name = assetFile.name;
+      payload.file_data_url = await readFileAsDataUrl(assetFile, 5 * 1024 * 1024, ["application/pdf", "image/png", "image/jpeg", "image/webp"]);
+    }
+    if (coverFile) {
+      payload.cover_image_data_url = await readFileAsDataUrl(coverFile, 2 * 1024 * 1024, ["image/png", "image/jpeg", "image/webp"]);
+    }
+    await api(`/api/business/digital-assets/${encodeURIComponent(assetId)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.editingDigitalAssetId = null;
+    await loadDigitalAssets({ force: true });
+    if (!state.leadCaptureLoaded) await loadLeadCaptureActivations({ force: true });
+    renderDigitalAssets();
+    renderLeadCaptureAssetOptions();
+    renderFlyerQrAssetOptions();
+    renderLeadCaptureTable();
+    showFeedback("Activo digital actualizado.", "success", { title: "Biblioteca de activos" });
+  } catch (error) {
+    setInlineMessage(message, error.message, "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
 async function submitDigitalAsset(event) {
   event.preventDefault();
   try {
@@ -8821,11 +8956,11 @@ function renderLeadCaptureTable() {
         </div>
       </td>
     </tr>
-  `).join("") || '<tr><td colspan="5">Aun no hay capturas relampago creadas.</td></tr>';
+  `).join("") || '<tr><td colspan="5">Aún no hay capturas Relámpago creadas.</td></tr>';
   leadCaptureTable.querySelectorAll("[data-copy-lead-capture]").forEach((button) => {
     button.addEventListener("click", async () => {
       await navigator.clipboard?.writeText(button.dataset.copyLeadCapture || "");
-      showFeedback("Link de Captura Relampago copiado.", "success");
+      showFeedback("Link de Captura Relámpago copiado.", "success");
     });
   });
   leadCaptureTable.querySelectorAll("[data-download-lead-capture-qr]").forEach((button) => {
@@ -8846,9 +8981,9 @@ async function submitLeadCapture(event) {
   event.preventDefault();
   try {
     const selectedAsset = selectedLeadCaptureAsset();
-    if (!selectedAsset) throw new Error("Selecciona el activo digital que recibira el visitante.");
+    if (!selectedAsset) throw new Error("Selecciona el activo digital que recibirá el visitante.");
     leadCaptureSubmitButton.disabled = true;
-    setInlineMessage(leadCaptureMessage, "Creando Captura Relampago y generando QR...", "info");
+    setInlineMessage(leadCaptureMessage, "Creando Captura Relámpago y generando QR...", "info");
     const payload = {
       name: leadCaptureNameInput.value.trim(),
       description: leadCaptureDescriptionInput?.value.trim() || null,
@@ -8868,12 +9003,13 @@ async function submitLeadCapture(event) {
     });
     state.leadCaptureLoaded = false;
     await loadLeadCaptureActivations({ force: true });
+    renderDigitalAssets();
     renderLeadCaptureTable();
     leadCaptureResult.innerHTML = `
       <div class="qr-result">
-        <strong>Captura Relampago creada</strong>
+        <strong>Captura Relámpago creada</strong>
         <p>${escapeHtml(result.activation.public_url)}</p>
-        ${result.qr_image_data_url ? `<img class="qr-preview" src="${escapeHtml(result.qr_image_data_url)}" alt="QR Captura Relampago">` : ""}
+        ${result.qr_image_data_url ? `<img class="qr-preview" src="${escapeHtml(result.qr_image_data_url)}" alt="QR Captura Relámpago">` : ""}
         <div class="activation-row-actions">
           <button class="ghost-button" id="leadCaptureCopyResultButton" type="button">Copiar link</button>
           <button class="ghost-button" id="leadCaptureDownloadQrResultButton" type="button">Descargar QR</button>
@@ -8904,7 +9040,7 @@ async function downloadLeadCaptureQr(id) {
     return;
   }
   await navigator.clipboard?.writeText(item.public_url);
-  showFeedback("No se pudo generar el QR; copie el link para imprimirlo.", "info");
+  showFeedback("No se pudo generar el QR; se copió el link para imprimirlo.", "info");
 }
 
 async function openLeadCaptureDetail(id, options = {}) {
@@ -8920,7 +9056,7 @@ async function openLeadCaptureDetail(id, options = {}) {
   leadCaptureDetail.innerHTML = `
     <form class="modal-form lead-capture-content-editor" id="leadCaptureContentEditor">
       <label><span>Título público</span><input id="leadCaptureEditTitleInput" type="text" maxlength="180" value="${escapeHtml(publicMessage.title || asset.title || activation.name || "")}"></label>
-      <label><span>Título del bloque</span><input id="leadCaptureEditDetailsTitleInput" type="text" maxlength="80" value="${escapeHtml(publicMessage.details_title || "Que recibes")}"></label>
+      <label><span>Título del bloque</span><input id="leadCaptureEditDetailsTitleInput" type="text" maxlength="80" value="${escapeHtml(publicMessage.details_title || "Qué recibes")}"></label>
       <label class="span-2"><span>Descripción pública</span><textarea id="leadCaptureEditSubtitleInput" rows="3" maxlength="800">${escapeHtml(publicMessage.subtitle || asset.description || "")}</textarea></label>
       <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureEditDetailsDescriptionInput" rows="3" maxlength="800">${escapeHtml(publicMessage.details_description || "Un recurso listo para descargar apenas completes el formulario.")}</textarea></label>
       <label><span>Etiqueta 1</span><input id="leadCaptureEditBadgeOneInput" type="text" maxlength="80" value="${escapeHtml(badges[0] || leadCaptureDefaultBadge(asset) || "Material digital")}"></label>
@@ -8935,9 +9071,9 @@ async function openLeadCaptureDetail(id, options = {}) {
         ["Visitas", metrics.visits],
         ["Leads capturados", metrics.leads_captured],
         ["Descargas", metrics.downloads],
-        ["Conversion", `${metrics.conversion_rate || 0}%`],
+        ["Conversión", `${metrics.conversion_rate || 0}%`],
         ["Con email", metrics.with_email],
-        ["Con telefono", metrics.with_phone],
+        ["Con teléfono", metrics.with_phone],
       ].map(([label, value]) => `<article class="kpi-card"><span class="mono-label">${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 0)}</strong></article>`).join("")}
     </div>
     <div class="table-wrap">
@@ -8949,11 +9085,11 @@ async function openLeadCaptureDetail(id, options = {}) {
               <td>${escapeHtml(lead.name || lead.form_data?.first_name || "-")}<br><span class="table-secondary">${escapeHtml(lead.document_id || lead.form_data?.document_id || "-")}</span></td>
               <td>${escapeHtml(lead.phone || lead.form_data?.phone || "-")}<br><span class="table-secondary">${escapeHtml(lead.email || lead.form_data?.email || "-")}</span></td>
               <td>${formatDate(lead.created_at)}</td>
-              <td>${lead.consent_accepted ? "Si" : "No"}</td>
+              <td>${lead.consent_accepted ? "Sí" : "No"}</td>
               <td>${Number(lead.download_count || 0)}</td>
               <td><button class="ghost-button" type="button" data-open-crm-lead="${escapeHtml(lead.lead_id || "")}">Ver lead</button></td>
             </tr>
-          `).join("") || '<tr><td colspan="6">Sin leads capturados todavia.</td></tr>'}
+          `).join("") || '<tr><td colspan="6">Sin leads capturados todavía.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -8990,7 +9126,7 @@ async function updateLeadCaptureContentFromEditor(event, id) {
         public_message: {
           title: document.getElementById("leadCaptureEditTitleInput")?.value.trim() || null,
           subtitle: document.getElementById("leadCaptureEditSubtitleInput")?.value.trim() || null,
-          details_title: document.getElementById("leadCaptureEditDetailsTitleInput")?.value.trim() || "Que recibes",
+          details_title: document.getElementById("leadCaptureEditDetailsTitleInput")?.value.trim() || "Qué recibes",
           details_description: document.getElementById("leadCaptureEditDetailsDescriptionInput")?.value.trim() || null,
           detail_badges: detailBadges,
           success_message: document.getElementById("leadCaptureEditSuccessInput")?.value.trim() || "Listo. Ya puedes descargar tu material digital.",
@@ -9011,7 +9147,7 @@ async function updateLeadCaptureContentFromEditor(event, id) {
 
 async function exportLeadCapture(id) {
   const response = await fetch(`/api/business/lead-capture-activations/${encodeURIComponent(id)}/export.csv`, { headers: authHeaders() });
-  if (!response.ok) throw new Error("No se pudo exportar Captura Relampago.");
+  if (!response.ok) throw new Error("No se pudo exportar Captura Relámpago.");
   const blob = await response.blob();
   triggerBlobDownload(blob, `captura-relampago-${id}.csv`);
 }
@@ -19601,9 +19737,14 @@ refreshLeadCaptureButton?.addEventListener("click", async () => {
   renderLeadCaptureTable();
 });
 refreshDigitalAssetsButton?.addEventListener("click", async () => {
-  await loadDigitalAssets({ force: true });
+  await Promise.all([
+    loadDigitalAssets({ force: true }),
+    loadLeadCaptureActivations({ force: true }),
+  ]);
   renderDigitalAssets();
   renderLeadCaptureAssetOptions();
+  renderFlyerQrAssetOptions();
+  renderLeadCaptureTable();
 });
 rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
 rewardPassCreateForm?.addEventListener("submit", submitRewardPass);

@@ -79,7 +79,7 @@ function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, 
   const assetDescription = asset.description || activation.description || "";
   const generatedDescription = assetDescription && !sameText(assetDescription, title)
     ? assetDescription
-    : `${businessName} preparo este recurso para que puedas revisarlo de inmediato.`;
+    : `${businessName} preparó este recurso para que puedas revisarlo de inmediato.`;
   const fileInfo = [assetLabel(asset), formatFileSize(asset.file_size)].filter(Boolean).join(" - ");
   const description = publicMessage.details_description || generatedDescription;
   const badges = Array.isArray(publicMessage.detail_badges) && publicMessage.detail_badges.length
@@ -88,7 +88,7 @@ function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, 
   return `
     <section class="resource-panel">
       <div>
-        <p class="section-kicker">${escapeHtml(publicMessage.details_title || "Que recibes")}</p>
+        <p class="section-kicker">${escapeHtml(publicMessage.details_title || "Qué recibes")}</p>
         <p class="resource-description">${escapeHtml(sameText(description, subtitle) ? "Un recurso listo para descargar apenas completes el formulario." : description)}</p>
       </div>
       <div class="trust-strip" aria-label="Detalles del recurso">
@@ -110,7 +110,7 @@ function render(payload) {
   const rawAssetDescription = asset.description || activation.description || "";
   const heroSubtitle = isPrefixText(rawSubtitle, rawAssetDescription)
     ? rawAssetDescription
-    : (rawSubtitle || rawAssetDescription || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`);
+    : (rawSubtitle || rawAssetDescription || `${businessName} preparó este material para ti. Completa tus datos y accede al contenido de inmediato.`);
   document.title = `${pageTitle} | ${businessName}`;
   captureCard.innerHTML = `
     <div class="brand-row">
@@ -135,9 +135,9 @@ function render(payload) {
           <span>${escapeHtml(formConfig.consent_text || `Autorizo a ${businessName} a tratar mis datos para entregar este material y contactarme sobre esta solicitud.`)}</span>
         </label>
       ` : ""}
-      ${formConfig.privacy_url ? `<a class="field-help" href="${escapeHtml(formConfig.privacy_url)}" target="_blank" rel="noreferrer">Ver politica de datos</a>` : ""}
+      ${formConfig.privacy_url ? `<a class="field-help" href="${escapeHtml(formConfig.privacy_url)}" target="_blank" rel="noreferrer">Ver política de datos</a>` : ""}
       <button class="primary-button" type="submit">${escapeHtml(asset.download_button_text || "Acceder al contenido")}</button>
-      <p class="secure-note">Tus datos se envian directamente al equipo de ${escapeHtml(businessName)}.</p>
+      <p class="secure-note">Tus datos se envían directamente al equipo de ${escapeHtml(businessName)}.</p>
       <p class="message" id="captureMessage" role="status" aria-live="polite"></p>
     </form>
   `;

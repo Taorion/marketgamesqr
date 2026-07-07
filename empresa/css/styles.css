@@ -14933,6 +14933,11 @@ body.chart-focus-open .command-center {
   grid-template-columns: 76px minmax(0, 1fr);
 }
 
+.digital-asset-card.is-editing {
+  border-color: rgba(124, 251, 255, 0.36);
+  background: rgba(124, 251, 255, 0.055);
+}
+
 .digital-asset-card .activation-row-actions {
   grid-column: 1 / -1;
 }
@@ -14985,6 +14990,56 @@ body.chart-focus-open .command-center {
 .digital-asset-share-note {
   font-size: 12px;
   line-height: 1.35;
+}
+
+.digital-asset-edit-form,
+.digital-asset-landings {
+  grid-column: 1 / -1;
+}
+
+.digital-asset-edit-form {
+  padding: 12px;
+  border: 1px solid rgba(124, 251, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.digital-asset-landings {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.digital-asset-landings-head,
+.digital-asset-landing-row,
+.digital-asset-landing-empty {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.digital-asset-landings-head span,
+.digital-asset-landing-row p,
+.digital-asset-landing-empty span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.digital-asset-landing-row,
+.digital-asset-landing-empty {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.digital-asset-landing-row > div:first-child {
+  min-width: 0;
+}
+
+.digital-asset-landing-row p {
+  margin: 3px 0;
 }
 
 .lead-capture-asset-preview {

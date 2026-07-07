@@ -61,7 +61,7 @@ function defaultFormConfig(config = {}) {
   return {
     fields: base,
     consent_required: config.consent_required !== false,
-    consent_text: cleanText(config.consent_text || "Autorizo el tratamiento de mis datos personales para recibir informacion comercial relacionada con esta marca.", 1000),
+    consent_text: cleanText(config.consent_text || "Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca.", 1000),
     privacy_url: cleanText(config.privacy_url || "", 300),
   };
 }
@@ -135,7 +135,7 @@ function publicMessagePayload(message = {}, defaults = {}) {
     title: cleanText(message.title || defaults.title || "", 180),
     subtitle: cleanText(message.subtitle || defaults.subtitle || "", 800),
     success_message: cleanText(message.success_message || defaults.success_message || "", 300),
-    details_title: cleanText(message.details_title || defaults.details_title || "Que recibes", 80),
+    details_title: cleanText(message.details_title || defaults.details_title || "Qué recibes", 80),
     details_description: cleanText(message.details_description || defaults.details_description || "", 800),
     detail_badges: badges,
   };
@@ -212,6 +212,72 @@ async function updateDigitalAssetStatus(businessId, assetId, isActive) {
   return mapDigitalAsset(result.rows[0]);
 }
 
+async function updateDigitalAsset(businessId, assetId, body = {}) {
+  const current = await query(
+    `select *
+     from digital_assets
+     where id = $1 and business_id = $2 and asset_scope = 'library'`,
+    [assetId, businessId]
+  );
+  if (!current.rowCount) throw notFound("Activo digital no encontrado.");
+
+  let assetFile = null;
+  if (body.file_data_url) {
+    assetFile = parseDataUrl(body.file_data_url, ALLOWED_ASSET_TYPES, MAX_ASSET_BYTES);
+  }
+  let coverDataUrl;
+  if (Object.prototype.hasOwnProperty.call(body, "cover_image_data_url")) {
+    coverDataUrl = body.cover_image_data_url
+      ? parseDataUrl(body.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES).dataUrl
+      : null;
+  }
+  const nextValue = (key, fallback, max) => (
+    Object.prototype.hasOwnProperty.call(body, key)
+      ? cleanText(body[key], max)
+      : cleanText(fallback, max)
+  );
+  const fileName = cleanText(body.file_name || current.rows[0].file_name || "activo-digital", 180);
+  const token = createSecureToken(12);
+  const result = await query(
+    `update digital_assets
+     set title = $3,
+         description = $4,
+         download_button_text = $5,
+         category = $6,
+         file_name = $7,
+         file_type = $8,
+         file_size = $9,
+         storage_path = $10,
+         file_data_url = $11,
+         cover_image_data_url = $12,
+         metadata = coalesce(metadata, '{}'::jsonb) || $13::jsonb,
+         updated_at = now()
+     where id = $1 and business_id = $2 and asset_scope = 'library'
+     returning id, business_id, title, description, file_name, file_type, file_size, storage_path,
+               cover_image_data_url, download_button_text, category, asset_scope, is_active,
+               created_at, updated_at, metadata`,
+    [
+      assetId,
+      businessId,
+      nextValue("title", current.rows[0].title, 180),
+      nextValue("description", current.rows[0].description, 800),
+      nextValue("download_button_text", current.rows[0].download_button_text || "Descargar ahora", 80),
+      nextValue("category", current.rows[0].category || "catalogo", 80),
+      fileName,
+      assetFile?.mime || current.rows[0].file_type,
+      assetFile?.size || current.rows[0].file_size,
+      assetFile ? `business/${businessId}/digital-assets/${token}/${cleanText(fileName || "asset", 120)}` : current.rows[0].storage_path,
+      assetFile?.dataUrl || current.rows[0].file_data_url,
+      coverDataUrl === undefined ? current.rows[0].cover_image_data_url : coverDataUrl,
+      JSON.stringify({
+        last_asset_edit_at: new Date().toISOString(),
+        ...(body.metadata || {}),
+      }),
+    ]
+  );
+  return mapDigitalAsset(result.rows[0]);
+}
+
 async function getLibraryAssetForBusiness(client, businessId, assetId) {
   if (!assetId) return null;
   const result = await client.query(
@@ -280,7 +346,7 @@ async function createLeadCaptureActivation(businessId, user, body) {
           title: libraryAsset?.title || body.asset?.title || body.name,
           subtitle: "Completa tus datos y recibe el material digital de inmediato.",
           success_message: "Listo. Ya puedes descargar tu material digital.",
-          details_title: "Que recibes",
+          details_title: "Qué recibes",
           details_description: libraryAsset?.description || body.asset?.description || body.description || "",
         })),
         user.id,
@@ -315,7 +381,7 @@ async function createLeadCaptureActivation(businessId, user, body) {
     }
     await client.query(
       `insert into lead_events (business_id, event_type, event_title, event_description, campaign_id, metadata, created_by)
-       values ($1, 'capture_activation_created', 'Captura Relampago creada', $2, $3, $4::jsonb, $5)`,
+       values ($1, 'capture_activation_created', 'Captura Relámpago creada', $2, $3, $4::jsonb, $5)`,
       [
         businessId,
         `Activacion creada: ${activation.name}`,
@@ -408,7 +474,7 @@ async function getLeadCaptureActivation(businessId, activationId) {
      where a.id = $1 and a.business_id = $2`,
     [activationId, businessId]
   );
-  if (!result.rowCount) throw notFound("Captura Relampago no encontrada.");
+  if (!result.rowCount) throw notFound("Captura Relámpago no encontrada.");
   const leads = await query(
     `select s.*, p.name, p.phone, p.email, p.document_id
      from lead_capture_submissions s
@@ -453,7 +519,7 @@ async function updateLeadCaptureStatus(businessId, activationId, status) {
      returning *`,
     [activationId, businessId, status]
   );
-  if (!result.rowCount) throw notFound("Captura Relampago no encontrada.");
+  if (!result.rowCount) throw notFound("Captura Relámpago no encontrada.");
   return mapActivation(result.rows[0]);
 }
 
@@ -472,7 +538,7 @@ async function updateLeadCaptureContent(businessId, activationId, body) {
      where a.id = $1 and a.business_id = $2`,
     [activationId, businessId]
   );
-  if (!current.rowCount) throw notFound("Captura Relampago no encontrada.");
+  if (!current.rowCount) throw notFound("Captura Relámpago no encontrada.");
   const row = current.rows[0];
   const nextPublicMessage = {
     ...(row.public_message || {}),
@@ -491,7 +557,7 @@ async function updateLeadCaptureContent(businessId, activationId, body) {
         title: row.asset_title || row.name,
         subtitle: "Completa tus datos y recibe el material digital de inmediato.",
         success_message: "Listo. Ya puedes descargar tu material digital.",
-        details_title: "Que recibes",
+        details_title: "Qué recibes",
         details_description: row.asset_description || row.description || "",
       })),
     ]
@@ -530,7 +596,7 @@ async function getPublicLeadCapture(token, reqMeta = {}) {
   activationAvailable(row);
   await query(
     `insert into lead_events (business_id, event_type, event_title, event_description, campaign_id, metadata)
-     values ($1, 'capture_link_viewed', 'Link de Captura Relampago visto', $2, $3, $4::jsonb)`,
+     values ($1, 'capture_link_viewed', 'Link de Captura Relámpago visto', $2, $3, $4::jsonb)`,
     [
       row.business_id,
       `Vista publica de ${row.name}`,
@@ -571,7 +637,7 @@ async function findOrCreateLead(client, activation, formData) {
   );
   const metadataPatch = {
     source: "captura_relampago",
-    lead_source: "Captura Relampago",
+    lead_source: "Captura Relámpago",
     channel: activation.channel,
     city: cleanText(formData.city, 120),
     company: cleanText(formData.company, 160),
@@ -798,6 +864,7 @@ module.exports = {
   listLeadCaptureActivations,
   submissionsToCsv,
   submitPublicLeadCapture,
+  updateDigitalAsset,
   updateDigitalAssetStatus,
   updateLeadCaptureContent,
   updateLeadCaptureStatus,
