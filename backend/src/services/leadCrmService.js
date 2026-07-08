@@ -321,7 +321,18 @@ async function listLeadCrmRows(businessId, filters = {}) {
          af.qr_token as affiliate_code,
          af.status as affiliate_status,
          (af.id is not null) as is_affiliate,
-         coalesce(latest_capture.asset_title, li.top_interest) as top_interest
+         coalesce(latest_capture.asset_title, li.top_interest) as top_interest,
+         coalesce(p.metadata, '{}'::jsonb) || case when latest_capture.id is not null then jsonb_build_object(
+           'digital_asset_origin', true,
+           'source_key', 'descarga_activo_digital',
+           'source_label', 'Descarga de activo digital',
+           'asset_id', latest_capture.asset_id,
+           'asset_title', latest_capture.asset_title,
+           'lead_capture_activation_id', latest_capture.activation_id,
+           'lead_capture_name', latest_capture.activation_name,
+           'campaign_id', latest_capture.campaign_id,
+           'campaign_name', latest_capture.campaign_name
+         ) else '{}'::jsonb end as metadata
        from players p
        left join campaigns c on c.id = p.campaign_id
        left join lateral (
@@ -463,7 +474,16 @@ async function listLeadCrmRows(businessId, filters = {}) {
          null::text as affiliate_code,
          null::text as affiliate_status,
          false as is_affiliate,
-         ml.interest as top_interest
+         ml.interest as top_interest,
+         ml.metadata
+           || jsonb_build_object(
+                'manual_status', ml.status,
+                'manual_priority', ml.priority,
+                'manual_notes', ml.notes,
+                'manual_company', ml.company,
+                'manual_job_title', ml.job_title,
+                'manual_importance_reason', ml.importance_reason
+              ) as metadata
        from business_manual_leads ml
        left join lateral (
          select count(*)::int as purchase_count,
@@ -542,7 +562,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.qr_token as affiliate_code,
          fa.status as affiliate_status,
          true as is_affiliate,
-         fa.notes as top_interest
+         fa.notes as top_interest,
+         fa.card_metadata as metadata
        from affiliates fa
        left join lateral (
          select c.id as campaign_id, c.name as campaign_name
@@ -752,7 +773,17 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
       `select id, business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
               name, null::text as document_id, email, phone, company as organization,
               source as channel, source_detail, interest, preferred_channel,
-              status as stored_status, priority, notes, metadata, created_at, updated_at
+              status as stored_status, priority, notes,
+              metadata
+                || jsonb_build_object(
+                     'manual_status', status,
+                     'manual_priority', priority,
+                     'manual_notes', notes,
+                     'manual_company', company,
+                     'manual_job_title', job_title,
+                     'manual_importance_reason', importance_reason
+                   ) as metadata,
+              created_at, updated_at
        from business_manual_leads
        where id = $1 and business_id = $2`,
       [leadId, businessId]

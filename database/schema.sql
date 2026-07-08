@@ -436,9 +436,11 @@ create table if not exists business_manual_leads (
   email text,
   phone text,
   company text,
+  job_title text,
   source text not null default 'Manual',
   source_detail text,
   interest text,
+  importance_reason text,
   preferred_channel text,
   preferred_contact_time text,
   status text not null default 'NEW' check (status in ('NEW', 'CONTACTED', 'FOLLOW_UP', 'CONVERTED', 'LOST')),
@@ -448,6 +450,9 @@ create table if not exists business_manual_leads (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table business_manual_leads add column if not exists job_title text;
+alter table business_manual_leads add column if not exists importance_reason text;
 
 create table if not exists redemptions (
   id uuid primary key default gen_random_uuid(),

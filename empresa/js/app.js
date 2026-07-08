@@ -114,6 +114,7 @@ const leadActivationResult = document.getElementById("leadActivationResult");
 const manualLeadForm = document.getElementById("manualLeadForm");
 const manualLeadNameInput = document.getElementById("manualLeadNameInput");
 const manualLeadCompanyInput = document.getElementById("manualLeadCompanyInput");
+const manualLeadJobTitleInput = document.getElementById("manualLeadJobTitleInput");
 const manualLeadPhoneInput = document.getElementById("manualLeadPhoneInput");
 const manualLeadEmailInput = document.getElementById("manualLeadEmailInput");
 const manualLeadSourceInput = document.getElementById("manualLeadSourceInput");
@@ -123,6 +124,7 @@ const manualLeadStatusInput = document.getElementById("manualLeadStatusInput");
 const manualLeadPreferredChannelInput = document.getElementById("manualLeadPreferredChannelInput");
 const manualLeadPreferredTimeInput = document.getElementById("manualLeadPreferredTimeInput");
 const manualLeadInterestInput = document.getElementById("manualLeadInterestInput");
+const manualLeadImportanceInput = document.getElementById("manualLeadImportanceInput");
 const manualLeadNotesInput = document.getElementById("manualLeadNotesInput");
 const manualLeadMessage = document.getElementById("manualLeadMessage");
 const manualLeadSubmitButton = document.getElementById("manualLeadSubmitButton");
@@ -2371,11 +2373,16 @@ function initials(value) {
     .join("") || "MG";
 }
 
+function nestedValue(row, key) {
+  if (!String(key || "").includes(".")) return row?.[key];
+  return String(key).split(".").reduce((value, part) => value?.[part], row);
+}
+
 function filterRows(rows, keys) {
   const term = state.filter.trim().toLowerCase();
   if (!term) return rows;
   return rows.filter((row) =>
-    keys.some((key) => String(row?.[key] ?? "").toLowerCase().includes(term))
+    keys.some((key) => String(nestedValue(row, key) ?? "").toLowerCase().includes(term))
   );
 }
 
@@ -6749,6 +6756,8 @@ function renderLeadsView() {
     "attribution_subject",
     "lead_temperature",
     "recommended_action",
+    "metadata.manual_job_title",
+    "metadata.manual_importance_reason",
   ]);
   const buyers = feedRows.filter((item) => item.lead_temperature === "buyer").length;
   const hot = feedRows.filter((item) => item.lead_temperature === "hot").length;
@@ -6783,11 +6792,13 @@ function renderLeadsView() {
         <td>
           <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
           <br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>
+          ${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}
         </td>
         <td>${escapeHtml(item.attribution_source || "-")}</td>
         <td>
           ${escapeHtml(item.campaign_name || "Sin campaña")}
           <br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>
+          ${item.metadata?.manual_importance_reason ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_importance_reason)}</span>` : ""}
         </td>
         <td>
           <span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span>
@@ -16419,6 +16430,7 @@ async function createManualLead(event) {
   const payload = {
     name: String(manualLeadNameInput?.value || "").trim(),
     company: optionalInputValue(manualLeadCompanyInput),
+    job_title: optionalInputValue(manualLeadJobTitleInput),
     phone: optionalInputValue(manualLeadPhoneInput),
     email: optionalInputValue(manualLeadEmailInput),
     source: String(manualLeadSourceInput?.value || "Manual").trim(),
@@ -16428,6 +16440,7 @@ async function createManualLead(event) {
     preferred_channel: optionalInputValue(manualLeadPreferredChannelInput),
     preferred_contact_time: optionalInputValue(manualLeadPreferredTimeInput),
     interest: optionalInputValue(manualLeadInterestInput),
+    importance_reason: optionalInputValue(manualLeadImportanceInput),
     notes: optionalInputValue(manualLeadNotesInput),
   };
   if (!payload.name || (!payload.phone && !payload.email)) {
@@ -16798,8 +16811,12 @@ function leadOriginText(item = {}) {
   const channel = String(item.channel || "").trim();
   const campaign = String(item.campaign_name || "").trim();
   const asset = String(item.top_interest || "").trim();
+  const jobTitle = String(item.metadata?.manual_job_title || "").trim();
+  const importance = String(item.metadata?.manual_importance_reason || "").trim();
   const isDigitalAsset = channel.toLowerCase().includes("descarga de activo digital");
   if (channel) parts.push(channel);
+  if (jobTitle) parts.push(`Cargo: ${jobTitle}`);
+  if (importance) parts.push(`Clave: ${importance}`);
   if (isDigitalAsset && asset) parts.push(`Activo: ${asset}`);
   if (campaign) parts.push(`Campaña: ${campaign}`);
   return parts.filter((value, index, array) => value && array.indexOf(value) === index).join(" · ") || "Sin origen";
@@ -16841,6 +16858,7 @@ function renderLeadCrmTable() {
       <td>
         <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
         <br><span class="table-secondary">${escapeHtml(item.document_id || item.email || item.phone || item.id)}</span>
+        ${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}
         <br><span class="table-secondary">${escapeHtml(item.email || "-")} · ${escapeHtml(item.phone || "-")}</span>
       </td>
       <td>
@@ -16860,6 +16878,7 @@ function renderLeadCrmTable() {
       <td>
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
+          ${item.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="edit">Editar</button>` : ""}
           ${item.active_ticket_qr_id ? `
             <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
             <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">Recordar WhatsApp</button>
@@ -16876,6 +16895,8 @@ function renderLeadCrmTable() {
       const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
       if (action === "activation") {
         openLeadActivationModal(leadRef);
+      } else if (action === "edit") {
+        openLeadDetail(leadRef, { tab: "personal" });
       } else if (action === "ticket-download") {
         const item = (state.leadCrmRows || []).find((lead) => String(lead.id) === String(leadRef.id) && String(lead.source_type || "PLAYER") === String(leadRef.source_type || "PLAYER"));
         downloadLeadQr(item?.active_ticket_qr_id);
@@ -17389,9 +17410,9 @@ function renderLegacyLeadTables(feedRows) {
   if (leadFeedTable) {
     leadFeedTable.innerHTML = feedRows.slice(0, 40).map((item) => `
       <tr>
-        <td><strong>${escapeHtml(item.name || "Sin nombre")}</strong><br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span></td>
+        <td><strong>${escapeHtml(item.name || "Sin nombre")}</strong><br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}</td>
         <td>${escapeHtml(prettyLeadValue(item.attribution_source || "-"))}</td>
-        <td>${escapeHtml(item.campaign_name || "Sin campaña")}<br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span></td>
+        <td>${escapeHtml(item.campaign_name || "Sin campaña")}<br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>${item.metadata?.manual_importance_reason ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_importance_reason)}</span>` : ""}</td>
         <td><span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span><br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span></td>
         <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
         <td>${escapeHtml(item.recommended_action || "-")}</td>
@@ -17809,6 +17830,7 @@ function renderLeadDetailHeader(detail) {
         <span class="pill muted">${escapeHtml(analysis.stage)}</span>
         <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
         <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
+        ${lead.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-edit-manual-lead>Editar datos</button>` : ""}
         <button class="ghost-button danger-button" type="button" data-delete-lead-detail>Eliminar contacto</button>
       </div>
       <h4>${escapeHtml(lead.name || "Lead")}</h4>
@@ -17854,6 +17876,142 @@ function renderLeadDetailHeader(detail) {
       lead.name || "este contacto"
     );
   });
+  leadDetailHeader.querySelector("[data-edit-manual-lead]")?.addEventListener("click", () => {
+    setLeadDetailTab("personal", { scrollTab: true });
+    document.getElementById("manualLeadEditNameInput")?.focus();
+  });
+}
+
+async function updateManualLeadFromForm(event) {
+  event.preventDefault();
+  const leadRef = state.selectedLeadRef || {};
+  if (!leadRef.id || String(leadRef.source_type || "").toUpperCase() !== "MANUAL") return;
+  const message = document.getElementById("manualLeadEditMessage");
+  const submitButton = document.getElementById("manualLeadEditSubmitButton");
+  const payload = {
+    name: String(document.getElementById("manualLeadEditNameInput")?.value || "").trim(),
+    company: optionalInputValue(document.getElementById("manualLeadEditCompanyInput")),
+    job_title: optionalInputValue(document.getElementById("manualLeadEditJobTitleInput")),
+    phone: optionalInputValue(document.getElementById("manualLeadEditPhoneInput")),
+    email: optionalInputValue(document.getElementById("manualLeadEditEmailInput")),
+    source: String(document.getElementById("manualLeadEditSourceInput")?.value || "Manual").trim(),
+    source_detail: optionalInputValue(document.getElementById("manualLeadEditSourceDetailInput")),
+    priority: document.getElementById("manualLeadEditPriorityInput")?.value || "MEDIUM",
+    status: document.getElementById("manualLeadEditStatusInput")?.value || "NEW",
+    preferred_channel: optionalInputValue(document.getElementById("manualLeadEditPreferredChannelInput")),
+    preferred_contact_time: optionalInputValue(document.getElementById("manualLeadEditPreferredTimeInput")),
+    interest: optionalInputValue(document.getElementById("manualLeadEditInterestInput")),
+    importance_reason: optionalInputValue(document.getElementById("manualLeadEditImportanceInput")),
+    notes: optionalInputValue(document.getElementById("manualLeadEditNotesInput")),
+  };
+  if (!payload.name || (!payload.phone && !payload.email)) {
+    setFormMessage(message, "Agrega nombre y al menos telefono o correo.", "error");
+    return;
+  }
+  try {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Guardando...";
+    }
+    setFormMessage(message, "Actualizando prospecto...", "info");
+    await api(`/api/business/contacts/manual/${encodeURIComponent(leadRef.id)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+    ]);
+    renderLeadsView();
+    await reloadSelectedLeadDetail({ keepTab: true });
+    setFormMessage(document.getElementById("manualLeadEditMessage"), "Prospecto actualizado.", "success");
+    showFeedback("Prospecto actualizado en el directorio.", "success");
+  } catch (error) {
+    setFormMessage(message, error.message || "No se pudo actualizar el prospecto.", "error");
+    showFeedback(error.message || "No se pudo actualizar el prospecto.", "error");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Guardar cambios";
+    }
+  }
+}
+
+function manualLeadEditValue(lead = {}, field = "") {
+  const metadata = lead.metadata || {};
+  const values = {
+    name: lead.name,
+    company: lead.organization || metadata.manual_company,
+    job_title: metadata.manual_job_title,
+    phone: lead.phone,
+    email: lead.email,
+    source: lead.channel || "Manual",
+    source_detail: lead.source_detail,
+    priority: lead.priority || metadata.manual_priority || "MEDIUM",
+    status: lead.stored_status || metadata.manual_status || "NEW",
+    preferred_channel: lead.preferred_channel,
+    preferred_contact_time: lead.preferred_contact_time,
+    interest: lead.interest,
+    importance_reason: metadata.manual_importance_reason,
+    notes: lead.notes || metadata.manual_notes,
+  };
+  return values[field] || "";
+}
+
+function selectedOption(value, expected) {
+  return String(value || "").toUpperCase() === String(expected || "").toUpperCase() ? " selected" : "";
+}
+
+function renderManualLeadEditForm(lead = {}) {
+  if (lead.source_type !== "MANUAL") return "";
+  const sourceValue = manualLeadEditValue(lead, "source") || "Manual";
+  const priorityValue = manualLeadEditValue(lead, "priority") || "MEDIUM";
+  const statusValue = manualLeadEditValue(lead, "status") || "NEW";
+  return `
+    <form class="modal-form lead-manual-edit-form" id="manualLeadEditForm">
+      <div class="span-2">
+        <span class="mono-label">Prospecto manual</span>
+        <strong>Editar datos del directorio</strong>
+      </div>
+      <label><span>Nombre</span><input id="manualLeadEditNameInput" type="text" maxlength="160" required value="${escapeHtml(manualLeadEditValue(lead, "name"))}"></label>
+      <label><span>Empresa</span><input id="manualLeadEditCompanyInput" type="text" maxlength="180" value="${escapeHtml(manualLeadEditValue(lead, "company"))}"></label>
+      <label><span>Cargo</span><input id="manualLeadEditJobTitleInput" type="text" maxlength="160" value="${escapeHtml(manualLeadEditValue(lead, "job_title"))}"></label>
+      <label><span>Teléfono</span><input id="manualLeadEditPhoneInput" type="text" maxlength="40" value="${escapeHtml(manualLeadEditValue(lead, "phone"))}"></label>
+      <label><span>Correo</span><input id="manualLeadEditEmailInput" type="email" maxlength="180" value="${escapeHtml(manualLeadEditValue(lead, "email"))}"></label>
+      <label><span>Origen</span>
+        <select id="manualLeadEditSourceInput">
+          ${["Formulario home", "WhatsApp", "Llamada", "Referido", "Evento", "Manual"].map((option) => `<option value="${escapeHtml(option)}"${String(sourceValue) === option ? " selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+        </select>
+      </label>
+      <label><span>Detalle origen</span><input id="manualLeadEditSourceDetailInput" type="text" maxlength="220" value="${escapeHtml(manualLeadEditValue(lead, "source_detail"))}"></label>
+      <label><span>Prioridad</span>
+        <select id="manualLeadEditPriorityInput">
+          <option value="HIGH"${selectedOption(priorityValue, "HIGH")}>Alta</option>
+          <option value="MEDIUM"${selectedOption(priorityValue, "MEDIUM")}>Media</option>
+          <option value="LOW"${selectedOption(priorityValue, "LOW")}>Baja</option>
+        </select>
+      </label>
+      <label><span>Estado</span>
+        <select id="manualLeadEditStatusInput">
+          <option value="NEW"${selectedOption(statusValue, "NEW")}>Nuevo</option>
+          <option value="CONTACTED"${selectedOption(statusValue, "CONTACTED")}>Contactado</option>
+          <option value="FOLLOW_UP"${selectedOption(statusValue, "FOLLOW_UP")}>Seguimiento</option>
+          <option value="CONVERTED"${selectedOption(statusValue, "CONVERTED")}>Convertido</option>
+          <option value="LOST"${selectedOption(statusValue, "LOST")}>Perdido</option>
+        </select>
+      </label>
+      <label><span>Canal preferido</span><input id="manualLeadEditPreferredChannelInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_channel"))}"></label>
+      <label><span>Hora o momento</span><input id="manualLeadEditPreferredTimeInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_contact_time"))}"></label>
+      <label class="span-2"><span>Interés</span><input id="manualLeadEditInterestInput" type="text" maxlength="500" value="${escapeHtml(manualLeadEditValue(lead, "interest"))}"></label>
+      <label class="span-2"><span>Por qué es importante</span><textarea id="manualLeadEditImportanceInput" rows="2" maxlength="1000">${escapeHtml(manualLeadEditValue(lead, "importance_reason"))}</textarea></label>
+      <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadEditNotesInput" rows="3" maxlength="2000">${escapeHtml(manualLeadEditValue(lead, "notes"))}</textarea></label>
+      <p class="form-message span-2" id="manualLeadEditMessage"></p>
+      <button class="solid-button" id="manualLeadEditSubmitButton" type="submit">Guardar cambios</button>
+    </form>
+  `;
 }
 
 function renderLeadTab(detail) {
@@ -17916,17 +18074,23 @@ function renderLeadTab(detail) {
         </div>
       </article>
     `,
-    personal: () => detailList([
-      `<strong>Nombre</strong><span>${escapeHtml(lead.name || "-")}</span>`,
-      `<strong>Documento</strong><span>${escapeHtml(lead.document_id || "-")}</span>`,
-      `<strong>Email</strong><span>${escapeHtml(lead.email || "-")}</span>`,
-      `<strong>Telefono</strong><span>${escapeHtml(lead.phone || "-")}</span>`,
-      `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
-      `<strong>Detalle de origen</strong><span>${escapeHtml(lead.source_detail || lead.metadata?.attribution_subject || "-")}</span>`,
-      `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
-      `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
-      `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,
-    ]),
+    personal: () => `
+      ${detailList([
+        `<strong>Nombre</strong><span>${escapeHtml(lead.name || "-")}</span>`,
+        `<strong>Documento</strong><span>${escapeHtml(lead.document_id || "-")}</span>`,
+        `<strong>Email</strong><span>${escapeHtml(lead.email || "-")}</span>`,
+        `<strong>Telefono</strong><span>${escapeHtml(lead.phone || "-")}</span>`,
+        `<strong>Empresa</strong><span>${escapeHtml(lead.organization || lead.metadata?.manual_company || "-")}</span>`,
+        `<strong>Cargo</strong><span>${escapeHtml(lead.metadata?.manual_job_title || "-")}</span>`,
+        `<strong>Por qué es importante</strong><span>${escapeHtml(lead.metadata?.manual_importance_reason || "-")}</span>`,
+        `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
+        `<strong>Detalle de origen</strong><span>${escapeHtml(lead.source_detail || lead.metadata?.attribution_subject || "-")}</span>`,
+        `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
+        `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
+        `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,
+      ])}
+      ${renderManualLeadEditForm(lead)}
+    `,
     purchases: () => `
       <form class="lead-purchase-form" id="leadPurchaseForm">
         <div>
@@ -18098,6 +18262,7 @@ function bindLeadDetailPanelActions() {
   });
   document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
   document.getElementById("leadPurchaseForm")?.addEventListener("submit", createLeadPurchaseFromForm);
+  document.getElementById("manualLeadEditForm")?.addEventListener("submit", updateManualLeadFromForm);
   document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
   leadDetailContent?.querySelectorAll("[data-product-select]").forEach((select) => {
     renderProductSelect(select);

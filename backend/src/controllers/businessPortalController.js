@@ -200,15 +200,19 @@ const manualLeadSchema = z.object({
   ),
   phone: nullableText(40),
   company: nullableText(180),
+  job_title: nullableText(160),
   source: z.string().trim().min(2).max(120).default("Manual"),
   source_detail: nullableText(220),
   interest: nullableText(500),
+  importance_reason: nullableText(1000),
   preferred_channel: nullableText(120),
   preferred_contact_time: nullableText(120),
   status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"]).default("NEW"),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
   notes: nullableText(2000),
 });
+
+const manualLeadPatchSchema = manualLeadSchema;
 
 const PREPAID_LEAD_SAMPLE_LIMIT = 20;
 
@@ -1413,9 +1417,9 @@ async function createManualLead(req, res, next) {
     }
     const result = await query(
       `insert into business_manual_leads
-         (business_id, created_by_user_id, name, email, phone, company, source, source_detail,
-          interest, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb)
+         (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+          interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
        returning *`,
       [
         businessId,
@@ -1424,9 +1428,11 @@ async function createManualLead(req, res, next) {
         body.email,
         body.phone,
         body.company,
+        body.job_title,
         body.source || "Manual",
         body.source_detail,
         body.interest,
+        body.importance_reason,
         body.preferred_channel,
         body.preferred_contact_time,
         body.status,
@@ -1435,10 +1441,88 @@ async function createManualLead(req, res, next) {
         JSON.stringify({
           source: "manual_portal_entry",
           created_by_email: req.user.email || null,
+          manual_job_title: body.job_title || null,
+          manual_importance_reason: body.importance_reason || null,
         }),
       ]
     );
     res.status(201).json({ lead: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateManualLead(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para actualizar tus prospectos.`);
+    }
+
+    const body = validate(manualLeadPatchSchema, req.body);
+    if (!body.email && !body.phone) {
+      throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
+    }
+
+    const result = await query(
+      `update business_manual_leads
+          set name = $3,
+              email = $4,
+              phone = $5,
+              company = $6,
+              job_title = $7,
+              source = $8,
+              source_detail = $9,
+              interest = $10,
+              importance_reason = $11,
+              preferred_channel = $12,
+              preferred_contact_time = $13,
+              status = $14,
+              priority = $15,
+              notes = $16,
+              metadata = coalesce(metadata, '{}'::jsonb)
+                || jsonb_build_object(
+                     'manual_job_title', $7::text,
+                     'manual_importance_reason', $11::text,
+                     'manual_company', $6::text,
+                     'manual_status', $14::text,
+                     'manual_priority', $15::text,
+                     'manual_notes', $16::text,
+                     'updated_by_email', $17::text
+                   ),
+              updated_at = now()
+        where id = $1
+          and business_id = $2
+        returning *`,
+      [
+        req.params.manualLeadId,
+        businessId,
+        body.name,
+        body.email,
+        body.phone,
+        body.company,
+        body.job_title,
+        body.source || "Manual",
+        body.source_detail,
+        body.interest,
+        body.importance_reason,
+        body.preferred_channel,
+        body.preferred_contact_time,
+        body.status,
+        body.priority,
+        body.notes,
+        req.user.email || null,
+      ]
+    );
+
+    if (!result.rowCount) {
+      throw notFound("Prospecto manual no encontrado.");
+    }
+    res.json({ lead: result.rows[0] });
   } catch (error) {
     next(error);
   }
@@ -1477,6 +1561,8 @@ function contactFeedToCsv(rows) {
     "ultima_redencion",
     "valor_compra",
     "producto",
+    "cargo",
+    "importancia",
     "canal_preferido",
     "hora_contacto",
     "qr_code_id",
@@ -1500,6 +1586,8 @@ function contactFeedToCsv(rows) {
     row.redeemed_at,
     row.sale_amount,
     row.product_name,
+    row.metadata?.manual_job_title || "",
+    row.metadata?.manual_importance_reason || "",
     row.preferred_channel,
     row.preferred_contact_time,
     row.qr_code_id,
@@ -1792,7 +1880,9 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
                 'manual_status', ml.status,
                 'manual_priority', ml.priority,
                 'manual_notes', ml.notes,
-                'manual_company', ml.company
+                'manual_company', ml.company,
+                'manual_job_title', ml.job_title,
+                'manual_importance_reason', ml.importance_reason
               ) as metadata
        from business_manual_leads ml
        where ml.business_id = $1
@@ -2369,6 +2459,7 @@ module.exports = {
   campaignReport,
   campaignLeads,
   createManualLead,
+  updateManualLead,
   contactFeed,
   exportContactFeed,
   exportCampaignLeads,
