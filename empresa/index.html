@@ -2826,6 +2826,31 @@
                 <button class="ghost-button" id="leadCrmNextButton" type="button">Siguiente</button>
               </div>
             </article>
+            <article class="surface-card data-table-card" id="manualContactsDirectoryCard">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Directorio interno</span>
+                  <h3>Contactos agregados</h3>
+                </div>
+                <span class="pill muted" id="manualContactsCount">0 contactos</span>
+              </div>
+              <p class="chart-explainer">Aquí quedan solo los contactos que agregaste manualmente o decidiste guardar desde leads capturados por otros medios.</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Contacto</th>
+                      <th>Empresa / cargo</th>
+                      <th>Origen</th>
+                      <th>Importancia</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="manualContactsTable"></tbody>
+                </table>
+              </div>
+            </article>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
                 <div>
@@ -4409,7 +4434,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=manual-lead-edit-20260708-v2" defer></script>
+  <script src="js/app.js?v=contacts-directory-20260708-v3" defer></script>
 </body>
 </html>
 

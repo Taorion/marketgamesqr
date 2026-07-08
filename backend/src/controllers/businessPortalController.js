@@ -27,6 +27,7 @@ const {
   rulesFromSettings,
 } = require("../services/affiliatePointRulesService");
 const { getIndividualQrDownload } = require("../services/strategicQrService");
+const { getLeadCrmDetail } = require("../services/leadCrmService");
 
 const launchChannelOptions = [
   "Instagram",
@@ -1452,6 +1453,28 @@ async function createManualLead(req, res, next) {
   }
 }
 
+async function listManualLeads(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    const limit = boundedLimit(req.query.limit, 500, 1000);
+    const result = await query(
+      `select *
+         from business_manual_leads
+        where business_id = $1
+        order by updated_at desc, created_at desc
+        limit $2`,
+      [businessId, limit]
+    );
+    res.json({ contacts: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateManualLead(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -1523,6 +1546,100 @@ async function updateManualLead(req, res, next) {
       throw notFound("Prospecto manual no encontrado.");
     }
     res.json({ lead: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createManualLeadFromExistingLead(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para agregar contactos al directorio.`);
+    }
+
+    const sourceType = String(req.body?.source_type || req.query.source_type || "PLAYER").toUpperCase();
+    if (sourceType === "MANUAL") {
+      throw badRequest("Este contacto ya pertenece al directorio interno.");
+    }
+
+    const detail = await getLeadCrmDetail(businessId, req.params.leadId, sourceType);
+    const lead = detail.lead || {};
+    const summary = detail.summary || {};
+    if (!lead.email && !lead.phone) {
+      throw badRequest("Este lead no tiene telefono ni correo para guardarlo como contacto.");
+    }
+
+    const existing = await query(
+      `select *
+         from business_manual_leads
+        where business_id = $1
+          and (
+            ($2::text is not null and lower(email) = lower($2::text))
+            or ($3::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = regexp_replace($3::text, '\\D', '', 'g'))
+          )
+        order by updated_at desc
+        limit 1`,
+      [businessId, lead.email || null, lead.phone || null]
+    );
+    if (existing.rowCount) {
+      return res.status(200).json({ lead: existing.rows[0], existed: true });
+    }
+
+    const sourceLabel = lead.channel || lead.source_type || "Lead externo";
+    const sourceDetail = [
+      lead.source_detail,
+      lead.campaign_name ? `Campaña: ${lead.campaign_name}` : "",
+      sourceType ? `Origen CRM: ${sourceType}` : "",
+    ].filter(Boolean).join(" | ").slice(0, 220) || "Agregado desde directorio unificado.";
+    const status = Number(summary.purchase_count || 0) > 0 ? "CONVERTED" : "NEW";
+    const priority = Number(summary.active_tickets || 0) > 0 || Number(summary.score_total || 0) >= 50 ? "HIGH" : "MEDIUM";
+    const importanceReason = req.body?.importance_reason
+      || (Number(summary.purchase_count || 0) > 0
+        ? "Lead con compra registrada; conservar para seguimiento comercial."
+        : "Lead agregado desde otra fuente para seguimiento interno.");
+
+    const result = await query(
+      `insert into business_manual_leads
+         (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+          interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+       values ($1, $2, $3, $4, $5, $6, null, $7, $8, $9, $10, $11, null, $12, $13, $14, $15::jsonb)
+       returning *`,
+      [
+        businessId,
+        req.user.id,
+        lead.name || "Contacto agregado",
+        lead.email || null,
+        lead.phone || null,
+        lead.organization || lead.metadata?.manual_company || null,
+        sourceLabel,
+        sourceDetail,
+        summary.top_interest || lead.interest || lead.metadata?.asset_title || null,
+        importanceReason,
+        lead.preferred_channel || "WhatsApp/email",
+        status,
+        priority,
+        req.body?.notes || `Agregado al directorio interno desde ${sourceLabel}.`,
+        JSON.stringify({
+          source: "lead_promoted_to_manual_contact",
+          created_by_email: req.user.email || null,
+          original_source_type: sourceType,
+          original_source_id: lead.id,
+          original_lead_id: lead.lead_id || null,
+          original_campaign_id: lead.campaign_id || null,
+          original_campaign_name: lead.campaign_name || null,
+          manual_importance_reason: importanceReason,
+          manual_status: status,
+          manual_priority: priority,
+          manual_company: lead.organization || null,
+        }),
+      ]
+    );
+    res.status(201).json({ lead: result.rows[0], existed: false });
   } catch (error) {
     next(error);
   }
@@ -2458,8 +2575,10 @@ module.exports = {
   confirmLaunch,
   campaignReport,
   campaignLeads,
+  listManualLeads,
   createManualLead,
   updateManualLead,
+  createManualLeadFromExistingLead,
   contactFeed,
   exportContactFeed,
   exportCampaignLeads,

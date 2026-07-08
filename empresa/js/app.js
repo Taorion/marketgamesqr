@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260708-manual-lead-edit-v2";
+const APP_VERSION = "empresa-20260708-contact-directory-v3";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -67,6 +67,8 @@ const contactTabTicketsCount = document.getElementById("contactTabTicketsCount")
 const contactTabCapturesCount = document.getElementById("contactTabCapturesCount");
 const contactTabManualCount = document.getElementById("contactTabManualCount");
 const contactTabSalesCount = document.getElementById("contactTabSalesCount");
+const manualContactsTable = document.getElementById("manualContactsTable");
+const manualContactsCount = document.getElementById("manualContactsCount");
 const leadCrmSearchInput = document.getElementById("leadCrmSearchInput");
 const leadCrmSearchButton = document.getElementById("leadCrmSearchButton");
 const leadCrmResetButton = document.getElementById("leadCrmResetButton");
@@ -897,6 +899,9 @@ let state = {
   contactFeedRetention: null,
   contactFeedGate: null,
   contactFeedLoaded: false,
+  manualContacts: [],
+  manualContactsLoaded: false,
+  manualContactsLoading: false,
   contactCenterMounted: false,
   contactCenterTab: "overview",
   leadCrmRows: [],
@@ -1575,6 +1580,9 @@ function resetBusinessScopedState(options = {}) {
   state.contactFeedRetention = null;
   state.contactFeedGate = null;
   state.contactFeedLoaded = false;
+  state.manualContacts = [];
+  state.manualContactsLoaded = false;
+  state.manualContactsLoading = false;
   state.contactCenterTab = "overview";
   state.selectedRedemptions = [];
   state.selectedSales = [];
@@ -1778,6 +1786,30 @@ async function loadContactFeedData(options = {}) {
   state.contactFeedGate = data.lead_gate || null;
   state.contactFeedLoaded = true;
   if (!options.quiet) hideFeedback();
+}
+
+async function loadManualContactsData(options = {}) {
+  if (!session?.user?.business_id) {
+    state.manualContacts = [];
+    state.manualContactsLoaded = true;
+    return;
+  }
+  if (state.manualContactsLoaded && !options.force) return;
+  if (state.manualContactsLoading && !options.force) return;
+  if (!options.quiet) {
+    showFeedback("Cargando directorio interno de contactos.", "loading", { title: "Contactos", timeout: 0 });
+  }
+  const scopeKey = businessScopeKey();
+  state.manualContactsLoading = true;
+  try {
+    const data = await apiSafe("/api/business/contacts/manual?limit=500", { headers: authHeaders() }, { contacts: [] });
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.manualContacts = data.contacts || [];
+    state.manualContactsLoaded = true;
+  } finally {
+    state.manualContactsLoading = false;
+    if (!options.quiet) hideFeedback();
+  }
 }
 
 function leadCrmQueryString() {
@@ -3451,6 +3483,9 @@ async function loadWorkspace() {
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
     state.contactFeedLoaded = false;
+    state.manualContacts = [];
+    state.manualContactsLoaded = false;
+    state.manualContactsLoading = false;
     state.businessUsers = businessUsersData.users || [];
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
@@ -16465,12 +16500,16 @@ async function createManualLead(event) {
     if (manualLeadStatusInput) manualLeadStatusInput.value = "NEW";
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
+    state.manualContactsLoaded = false;
     state.leadCrmPagination.offset = 0;
     if (leadCrmSearchInput && result?.lead?.name) {
       leadCrmSearchInput.value = result.lead.name;
     }
-    await loadContactFeedData({ force: true, quiet: true });
-    await loadLeadCrmData({ force: true, quiet: true });
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+      loadManualContactsData({ force: true, quiet: true }),
+    ]);
     renderLeadsView();
     setFormMessage(manualLeadMessage, "Prospecto guardado en el feed comercial.", "success");
     showFeedback("Lead manual agregado al feed.", "success", { title: "Prospecto guardado" });
@@ -16843,6 +16882,60 @@ function leadPriorityChipClass(priority = "") {
   return "pending";
 }
 
+function manualContactRows() {
+  return (state.manualContacts || [])
+    .slice()
+    .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+}
+
+function renderManualContactsDirectory() {
+  if (!manualContactsTable) return;
+  if (!state.manualContactsLoaded && !state.manualContactsLoading && session?.user?.business_id) {
+    loadManualContactsData({ quiet: true }).then(renderManualContactsDirectory).catch(() => {});
+  }
+  const rows = manualContactRows();
+  if (manualContactsCount) {
+    manualContactsCount.textContent = `${rows.length.toLocaleString("es-CO")} contactos`;
+  }
+  if (state.manualContactsLoading && !state.manualContactsLoaded) {
+    manualContactsTable.innerHTML = '<tr><td colspan="6">Cargando directorio interno...</td></tr>';
+    return;
+  }
+  manualContactsTable.innerHTML = rows.map((item) => `
+    <tr>
+      <td>
+        <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
+        <br><span class="table-secondary">${escapeHtml(item.email || "-")} · ${escapeHtml(item.phone || "-")}</span>
+      </td>
+      <td>
+        ${escapeHtml(item.company || item.metadata?.manual_company || "-")}
+        <br><span class="table-secondary">${escapeHtml(item.job_title || item.metadata?.manual_job_title || "-")}</span>
+      </td>
+      <td>
+        ${escapeHtml(item.source || "Manual")}
+        <br><span class="table-secondary">${escapeHtml(item.source_detail || "-")}</span>
+      </td>
+      <td>${escapeHtml(item.importance_reason || item.metadata?.manual_importance_reason || item.interest || "-")}</td>
+      <td>
+        <span class="status-chip ${commercialChipClass(item.status)}">${escapeHtml(item.status || "NEW")}</span>
+        <br><span class="table-secondary">${escapeHtml(item.priority || "MEDIUM")}</span>
+      </td>
+      <td>
+        <div class="activation-row-actions">
+          <button class="ghost-button" type="button" data-manual-contact-action="view" data-lead-id="${escapeHtml(item.id)}">Ver</button>
+          <button class="solid-button" type="button" data-manual-contact-action="edit" data-lead-id="${escapeHtml(item.id)}">Editar</button>
+        </div>
+      </td>
+    </tr>
+  `).join("") || '<tr><td colspan="6">Aún no hay contactos agregados al directorio interno.</td></tr>';
+  manualContactsTable.querySelectorAll("[data-manual-contact-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const leadRef = { id: button.dataset.leadId, source_type: "MANUAL" };
+      openLeadDetail(leadRef, { tab: button.dataset.manualContactAction === "edit" ? "personal" : "summary" });
+    });
+  });
+}
+
 function renderLeadCrmTable() {
   if (!leadCrmTable) return;
   const rows = state.leadCrmRows || [];
@@ -16880,6 +16973,7 @@ function renderLeadCrmTable() {
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
           ${item.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="edit">Editar</button>` : ""}
+          ${item.source_type !== "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="add-contact">Agregar a contactos</button>` : ""}
           ${item.active_ticket_qr_id ? `
             <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
             <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">Recordar WhatsApp</button>
@@ -16898,6 +16992,8 @@ function renderLeadCrmTable() {
         openLeadActivationModal(leadRef);
       } else if (action === "edit") {
         openLeadDetail(leadRef, { tab: "personal" });
+      } else if (action === "add-contact") {
+        addLeadToManualContacts(leadRef);
       } else if (action === "ticket-download") {
         const item = (state.leadCrmRows || []).find((lead) => String(lead.id) === String(leadRef.id) && String(lead.source_type || "PLAYER") === String(leadRef.source_type || "PLAYER"));
         downloadLeadQr(item?.active_ticket_qr_id);
@@ -16928,6 +17024,10 @@ async function deleteLeadContact(leadRef, label = "este contacto") {
     state.contactFeed = (state.contactFeed || []).filter((item) => String(item.id) !== String(leadRef.id));
     state.leadCrmLoaded = false;
     state.contactFeedLoaded = false;
+    if (String(sourceType || "").toUpperCase() === "MANUAL") {
+      state.manualContacts = (state.manualContacts || []).filter((item) => String(item.id) !== String(leadRef.id));
+      state.manualContactsLoaded = false;
+    }
     if (state.selectedLeadRef && String(state.selectedLeadRef.id) === String(leadRef.id)) {
       closeLeadDetail();
       state.selectedLeadRef = null;
@@ -16936,11 +17036,42 @@ async function deleteLeadContact(leadRef, label = "este contacto") {
     await Promise.all([
       loadContactFeedData({ force: true, quiet: true }),
       loadLeadCrmData({ force: true, quiet: true }),
+      String(sourceType || "").toUpperCase() === "MANUAL"
+        ? loadManualContactsData({ force: true, quiet: true })
+        : Promise.resolve(),
     ]);
     renderLeadsView();
     showFeedback("Contacto eliminado del centro unificado.", "success", { title: "Contactos" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo eliminar" });
+  }
+}
+
+async function addLeadToManualContacts(leadRef = state.selectedLeadRef) {
+  if (!leadRef?.id || String(leadRef.source_type || "").toUpperCase() === "MANUAL") return;
+  try {
+    showFeedback("Agregando al directorio interno de contactos...", "loading", { title: "Contactos", timeout: 0 });
+    const result = await api(`/api/business/contacts/manual/from-lead/${encodeURIComponent(leadRef.id)}`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ source_type: leadRef.source_type || "PLAYER" }),
+    });
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    state.manualContactsLoaded = false;
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+      loadManualContactsData({ force: true, quiet: true }),
+    ]);
+    renderLeadsView();
+    setContactCenterTab("manual");
+    if (result?.lead?.id) {
+      await openLeadDetail({ id: result.lead.id, source_type: "MANUAL" }, { tab: result.existed ? "summary" : "personal" });
+    }
+    showFeedback(result.existed ? "Ese lead ya estaba en contactos agregados." : "Lead agregado al directorio interno.", "success");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo agregar el lead al directorio interno.", "error");
   }
 }
 
@@ -16975,6 +17106,7 @@ function mountContactCenterLayout() {
   appendIfFound(capturesPanel, leadCaptureForm?.closest("article"));
   appendIfFound(capturesPanel, leadCaptureTable?.closest("article"));
 
+  appendIfFound(manualPanel, document.getElementById("manualContactsDirectoryCard"));
   appendIfFound(manualPanel, manualLeadForm?.closest("article"));
 
   appendIfFound(salesPanel, salesKpiGrid);
@@ -17026,10 +17158,10 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "go-directory",
     },
     manual: {
-      meta: "Vista 5 de 6 · Prospecto manual",
-      title: "Registrar contacto manual",
-      copy: "Agrega contactos que llegan por WhatsApp, llamada, correo, feria o referido y envíalos a la base unificada.",
-      primaryLabel: "Completar formulario",
+      meta: "Vista 5 de 6 · Contactos agregados",
+      title: "Directorio interno de contactos agregados",
+      copy: "Revisa contactos guardados manualmente o promovidos desde otros leads, edítalos y registra nuevos prospectos.",
+      primaryLabel: "Nuevo contacto",
       primaryAction: "manual-lead",
       secondaryLabel: "Ver directorio",
       secondaryAction: "go-directory",
@@ -17309,7 +17441,9 @@ function renderContactCenterSummary(crmRows = []) {
   const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
   const inactiveTickets = crmRows.reduce((sum, item) => sum + Number(item.inactive_tickets || 0), 0);
   const redeemedTickets = crmRows.reduce((sum, item) => sum + Number(item.redeemed_tickets || 0), 0);
-  const manualContacts = crmRows.filter((item) => String(item.source_type || "").toUpperCase() === "MANUAL").length;
+  const manualContacts = state.manualContactsLoaded
+    ? (state.manualContacts || []).length
+    : crmRows.filter((item) => String(item.source_type || "").toUpperCase() === "MANUAL").length;
   const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
   updateContactCenterCounts({
     totalContacts,
@@ -17574,6 +17708,7 @@ function renderLeadsView() {
     leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
   }
   renderLeadCrmTable();
+  renderManualContactsDirectory();
   renderLeadCaptureTable();
   if (state.contactCenterTab === "sales") renderSalesView();
   renderLegacyLeadTables(feedRows);
@@ -17835,6 +17970,7 @@ function renderLeadDetailHeader(detail) {
         <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
         <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
         ${lead.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-edit-manual-lead>Editar datos</button>` : ""}
+        ${lead.source_type !== "MANUAL" ? `<button class="solid-button" type="button" data-add-lead-contact>Agregar a contactos</button>` : ""}
         <button class="ghost-button danger-button" type="button" data-delete-lead-detail>Eliminar contacto</button>
       </div>
       <h4>${escapeHtml(lead.name || "Lead")}</h4>
@@ -17884,6 +18020,9 @@ function renderLeadDetailHeader(detail) {
     setLeadDetailTab("personal", { scrollTab: true });
     document.getElementById("manualLeadEditNameInput")?.focus();
   });
+  leadDetailHeader.querySelector("[data-add-lead-contact]")?.addEventListener("click", () => {
+    addLeadToManualContacts({ id: lead.id, source_type: lead.source_type || "PLAYER" });
+  });
 }
 
 async function updateManualLeadFromForm(event) {
@@ -17925,9 +18064,11 @@ async function updateManualLeadFromForm(event) {
     });
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
+    state.manualContactsLoaded = false;
     await Promise.all([
       loadContactFeedData({ force: true, quiet: true }),
       loadLeadCrmData({ force: true, quiet: true }),
+      loadManualContactsData({ force: true, quiet: true }),
     ]);
     renderLeadsView();
     await reloadSelectedLeadDetail({ keepTab: true });
