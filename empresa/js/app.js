@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260707-digital-asset-origin-v1";
+const APP_VERSION = "empresa-20260708-manual-lead-edit-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -91,6 +91,7 @@ const leadDetailEyebrow = document.getElementById("leadDetailEyebrow");
 const leadDetailHeader = document.getElementById("leadDetailHeader");
 const leadDetailTabs = document.getElementById("leadDetailTabs");
 const leadDetailContent = document.getElementById("leadDetailContent");
+const leadEditManualButton = document.getElementById("leadEditManualButton");
 const leadSendActivationButton = document.getElementById("leadSendActivationButton");
 const leadSendBenefitButton = document.getElementById("leadSendBenefitButton");
 const leadCreateNoteButton = document.getElementById("leadCreateNoteButton");
@@ -17822,6 +17823,9 @@ function renderLeadDetailHeader(detail) {
   if (leadDetailEyebrow) {
     leadDetailEyebrow.textContent = `${lead.source_type || "PLAYER"} · ${lead.level || "Lead"}`;
   }
+  if (leadEditManualButton) {
+    leadEditManualButton.classList.toggle("hidden", lead.source_type !== "MANUAL");
+  }
   if (!leadDetailHeader) return;
   leadDetailHeader.innerHTML = `
     <div class="lead-identity-block">
@@ -19804,6 +19808,10 @@ leadDetailTabs?.addEventListener("click", (event) => {
   event.preventDefault();
   event.stopPropagation();
   setLeadDetailTab(button.dataset.leadTab || "summary", { scrollTab: true });
+});
+leadEditManualButton?.addEventListener("click", () => {
+  setLeadDetailTab("personal", { scrollTab: true });
+  document.getElementById("manualLeadEditNameInput")?.focus();
 });
 leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
 leadSendBenefitButton?.addEventListener("click", () => {
