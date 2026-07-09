@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-campaign-create-inside-section-v22";
+const APP_VERSION = "empresa-20260709-session-isolation-v23";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1330,6 +1330,31 @@ function isSessionExpired(value, skewMs = 30_000) {
   return Boolean(expiresAt && Date.now() + skewMs >= expiresAt);
 }
 
+function removeLocalStorageByPredicate(predicate) {
+  try {
+    if (!window.localStorage) return;
+    const keys = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key && predicate(key)) keys.push(key);
+    }
+    keys.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    // Storage cleanup is best-effort; in-memory state is still reset.
+  }
+}
+
+function clearBusinessScopedStorage(businessId = "", options = {}) {
+  const id = String(businessId || "").trim();
+  const clearAll = options.all === true || !id;
+  removeLocalStorageByPredicate((key) => {
+    if (key === "marketgames:campaign-strategy-wizard:draft") return true;
+    if (key.startsWith("marketgames:strategy-wizard:draft:")) return clearAll || key === `marketgames:strategy-wizard:draft:${id}`;
+    if (key.startsWith("marketgames:campaign-cost:")) return clearAll || key.startsWith(`marketgames:campaign-cost:${id}:`);
+    return false;
+  });
+}
+
 function normalizeSession(value) {
   if (!value?.token || !value?.user) return null;
   const decoded = decodeJwtPayload(value.token);
@@ -1351,6 +1376,7 @@ function loadSession() {
     const rawSession = localStorage.getItem(SESSION_KEY);
     const storedVersion = localStorage.getItem(APP_VERSION_KEY);
     if (rawSession && storedVersion !== APP_VERSION) {
+      clearBusinessScopedStorage("", { all: true });
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(VALIDATOR_SESSION_KEY);
       localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Por seguridad cerramos tu sesión anterior; inicia sesión de nuevo para cargar la version vigente.");
@@ -1360,6 +1386,7 @@ function loadSession() {
     localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
     const parsed = normalizeSession(JSON.parse(rawSession));
     if (parsed && isSessionExpired(parsed, 0)) {
+      clearBusinessScopedStorage(parsed.user?.business_id || "", { all: false });
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(VALIDATOR_SESSION_KEY);
       localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Tu sesión expiro. Inicia sesión de nuevo para continuar.");
@@ -1374,10 +1401,15 @@ function loadSession() {
 
 function saveSession(value) {
   const nextSession = normalizeSession(value);
+  if (!nextSession) {
+    clearSession();
+    return;
+  }
   const identityChanged = !session
     || session.user?.id !== nextSession?.user?.id
     || session.user?.business_id !== nextSession?.user?.business_id;
   if (identityChanged) {
+    clearBusinessScopedStorage(session?.user?.business_id || "", { all: !session?.user?.business_id });
     resetBusinessScopedState({ session: nextSession });
   }
   session = nextSession;
@@ -1393,6 +1425,7 @@ function clearSession() {
   stopActivityPolling();
   stopValidatorScanner();
   stopAffiliateFinderScanner();
+  clearBusinessScopedStorage(session?.user?.business_id || "", { all: !session?.user?.business_id });
   resetBusinessScopedState({ session: null });
   session = null;
   closeFeatureUpgradeInterstitial();
@@ -1578,8 +1611,16 @@ function clearCanvas(canvas) {
 }
 
 function clearBusinessWorkspaceUi() {
+  document.querySelectorAll(".modal-shell, .lead-detail-workspace, .chart-focus-overlay").forEach((element) => {
+    element.classList.add("hidden");
+  });
+  document.querySelectorAll(".modal-form, form[data-digital-asset-edit-form], #leadCaptureContentEditor, #manualLeadEditForm").forEach((form) => {
+    if (typeof form.reset === "function") form.reset();
+  });
   if (profileName) profileName.textContent = "Sesión";
   if (profileAvatar) profileAvatar.textContent = "MG";
+  if (passwordInput) passwordInput.value = "";
+  if (searchInput) searchInput.value = "";
   if (requestCampaignButton) requestCampaignButton.textContent = "Nueva campaña";
   if (subscriptionBanner) subscriptionBanner.classList.add("hidden");
   if (campaignBreadcrumb) campaignBreadcrumb.textContent = "Campaña";
@@ -1666,11 +1707,29 @@ function resetBusinessScopedState(options = {}) {
   state.dashboard = null;
   state.activityVersion = "";
   state.activityRefreshInFlight = false;
-  state.commandCenter = null;
   state.summary = null;
   state.businessProfile = null;
   state.subscription = targetSession.user?.subscription || null;
   state.access = null;
+  state.filter = "";
+  state.commandCenter = null;
+  state.commandCenterFilters = {
+    range: "30d",
+    startDate: "",
+    endDate: "",
+    campaignId: "",
+    channel: "",
+    branchId: "",
+    qrStatus: "",
+    qrType: "",
+    sellerId: "",
+    affiliateId: "",
+    comparePrevious: true,
+    matrixMetric: "revenue",
+    tableSearch: "",
+    tableSort: "revenue",
+    expandedCampaignId: "",
+  };
   state.businessUsers = [];
   state.campaignGroups = null;
   state.campaigns = [];
@@ -1681,6 +1740,7 @@ function resetBusinessScopedState(options = {}) {
   state.rewardPassContext = null;
   state.digitalAssets = [];
   state.digitalAssetsLoaded = false;
+  state.editingDigitalAssetId = null;
   state.leadCaptureActivations = [];
   state.leadCaptureLoaded = false;
   state.selectedLeadCaptureId = null;
@@ -1689,6 +1749,11 @@ function resetBusinessScopedState(options = {}) {
   state.selectedRewardPass = null;
   state.selectedCampaignId = null;
   state.selectedCampaign = null;
+  state.selectedCampaignAffiliates = [];
+  state.campaignCostCalculator = null;
+  state.campaignCostCalculatorCampaignId = null;
+  state.campaignModalMode = "edit";
+  state.campaignModalInitialSnapshot = null;
   state.selectedReport = null;
   state.selectedLeads = [];
   state.contactFeed = [];
@@ -1710,17 +1775,44 @@ function resetBusinessScopedState(options = {}) {
   state.leadAgendaRange = null;
   state.editingAgendaId = null;
   state.contactCenterTab = "overview";
+  state.leadCrmRows = [];
+  state.leadCrmPagination = { total: 0, limit: 40, offset: 0, has_more: false };
+  state.leadCrmLoaded = false;
+  state.leadCrmLoading = false;
+  state.selectedLeadDetail = null;
+  state.selectedLeadTab = "summary";
+  state.selectedLeadRef = null;
+  state.lastLeadActivationLink = "";
   state.selectedRedemptions = [];
   state.selectedSales = [];
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
+  state.affiliateScannerLastValue = "";
+  state.affiliateScannerLastAt = 0;
+  state.strategyWizardStep = 0;
+  state.strategyWizardAnswers = {};
+  state.strategyWizardDraft = null;
+  state.validatorLastToken = "";
+  state.validatorLastValidation = null;
+  state.validatorLastRedemption = null;
+  state.validatorLastScanValue = "";
+  state.validatorLastScanAt = 0;
+  state.snapshotEditingId = null;
+  state.adminSelectedCampaignId = null;
+  state.adminSelectedCampaign = null;
+  state.adminSelectedReport = null;
   state.strategicQrMetrics = null;
   state.qrCreditAccount = null;
   state.qrCreditOrders = [];
   state.strategicQrBatches = [];
   state.strategicQrHistory = [];
   state.triviaLaunchers = [];
+  state.currentLauncherActivationId = null;
+  state.activationShareId = null;
+  state.activationShareLeads = [];
+  state.activationShareSelectedKey = "";
+  state.activationShareLoading = false;
   state.affiliatesLoaded = false;
   state.affiliateRewardRules = [];
   state.affiliateRewardUnlocks = [];
@@ -13518,6 +13610,10 @@ function renderNoCampaignState() {
 }
 
 const STRATEGY_WIZARD_DRAFT_KEY = "marketgames:campaign-strategy-wizard:draft";
+function strategyWizardDraftKey() {
+  const businessId = session?.user?.business_id || state.loadedBusinessId || "anonymous";
+  return `marketgames:strategy-wizard:draft:${businessId}`;
+}
 const STRATEGY_WIZARD_OPTIONS = {
   sectors: ["Restaurante", "Retail", "Moda", "Belleza", "Salud", "Educación", "Servicios profesionales", "Eventos", "Turismo", "Tecnología", "Agencia de marketing", "Centro comercial", "Marca de consumo", "Otro"],
   scopes: ["Una sede física", "Varias sedes", "Digital", "Híbrida"],
@@ -14003,7 +14099,8 @@ function autoCompleteStrategyWizard() {
 
 function saveStrategyWizardDraft() {
   try {
-    window.localStorage?.setItem(STRATEGY_WIZARD_DRAFT_KEY, JSON.stringify(state.strategyWizardAnswers || {}));
+    window.localStorage?.removeItem(STRATEGY_WIZARD_DRAFT_KEY);
+    window.localStorage?.setItem(strategyWizardDraftKey(), JSON.stringify(state.strategyWizardAnswers || {}));
     setFormMessage(strategyWizardMessage, "Borrador guardado.", "success");
   } catch (error) {
     setFormMessage(strategyWizardMessage, "No se pudo guardar el borrador local.", "error");
@@ -14012,7 +14109,8 @@ function saveStrategyWizardDraft() {
 
 function loadStrategyWizardDraft() {
   try {
-    const raw = window.localStorage?.getItem(STRATEGY_WIZARD_DRAFT_KEY);
+    window.localStorage?.removeItem(STRATEGY_WIZARD_DRAFT_KEY);
+    const raw = window.localStorage?.getItem(strategyWizardDraftKey());
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
