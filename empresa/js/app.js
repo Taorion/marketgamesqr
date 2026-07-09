@@ -1083,9 +1083,35 @@ function activeBusinessId() {
 
 function sessionBusinessProfileForActiveBusiness() {
   const business = session?.user?.business || null;
-  const businessId = business?.id || business?.business_id || session?.user?.business_id || null;
+  const businessId = business?.id || business?.business_id || null;
   const currentBusinessId = activeBusinessId();
   return currentBusinessId && businessId === currentBusinessId ? business : null;
+}
+
+function sanitizeSessionForBusinessScope(value) {
+  if (!value?.user) return value;
+  const userBusinessId = value.user.business_id || null;
+  const userBusiness = value.user.business || null;
+  const userBusinessIdFromObject = userBusiness?.id || userBusiness?.business_id || null;
+  const scopedBusiness = userBusiness && userBusinessId && userBusinessIdFromObject === userBusinessId
+    ? {
+      ...userBusiness,
+      id: userBusinessIdFromObject,
+      business_id: userBusinessIdFromObject,
+    }
+    : null;
+  const nextUser = {
+    ...value.user,
+    business: scopedBusiness || undefined,
+  };
+  if (!scopedBusiness) {
+    delete nextUser.business;
+    delete nextUser.business_name;
+  }
+  return {
+    ...value,
+    user: nextUser,
+  };
 }
 
 function mergeBusinessProfile(nextProfile) {
@@ -1094,18 +1120,19 @@ function mergeBusinessProfile(nextProfile) {
   }
   const nextBusinessId = nextProfile.id || nextProfile.business_id || session?.user?.business_id || null;
   const existingProfileBusinessId = state.businessProfile?.id || state.businessProfile?.business_id || null;
-  const sessionBusinessId = session?.user?.business_id || session?.user?.business?.id || session?.user?.business?.business_id || null;
+  const sessionBusiness = sessionBusinessProfileForActiveBusiness();
+  const sessionBusinessId = sessionBusiness?.id || sessionBusiness?.business_id || null;
   const canReuseProfileBranding = Boolean(nextBusinessId && existingProfileBusinessId && existingProfileBusinessId === nextBusinessId);
   const canReuseSessionBranding = Boolean(nextBusinessId && sessionBusinessId && sessionBusinessId === nextBusinessId);
   const existingLogo = canReuseProfileBranding
     ? (state.businessProfile?.logo_data_url || "")
     : (canReuseSessionBranding
-      ? (session?.user?.business?.logo_data_url || session?.user?.business?.settings?.logo_data_url || "")
+      ? (sessionBusiness?.logo_data_url || sessionBusiness?.settings?.logo_data_url || "")
       : "");
   const existingTicketFrame = canReuseProfileBranding
     ? (state.businessProfile?.ticket_frame_data_url || state.businessProfile?.settings?.ticket_frame_data_url || "")
     : (canReuseSessionBranding
-      ? (session?.user?.business?.ticket_frame_data_url || session?.user?.business?.settings?.ticket_frame_data_url || "")
+      ? (sessionBusiness?.ticket_frame_data_url || sessionBusiness?.settings?.ticket_frame_data_url || "")
       : "");
   const merged = {
     ...(state.businessProfile || {}),
@@ -1308,7 +1335,7 @@ function normalizeSession(value) {
   const decoded = decodeJwtPayload(value.token);
   const expiresAt = value.session?.expires_at
     || (decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : null);
-  return {
+  return sanitizeSessionForBusinessScope({
     ...value,
     session: {
       token_type: "Bearer",
@@ -1316,7 +1343,7 @@ function normalizeSession(value) {
       expires_at: expiresAt,
     },
     saved_at: value.saved_at || new Date().toISOString(),
-  };
+  });
 }
 
 function loadSession() {
@@ -2207,10 +2234,7 @@ async function refreshSessionIdentity() {
   const data = await api("/api/auth/me", { headers: authHeaders() });
   const nextSession = {
     ...session,
-    user: {
-      ...(session.user || {}),
-      ...(data.user || {}),
-    },
+    user: data.user || {},
   };
   saveSession(nextSession);
   return session;
@@ -12287,7 +12311,7 @@ function activationById(id) {
 }
 
 function activationBusinessName() {
-  return state.businessProfile?.name || session?.user?.business?.name || "nuestro negocio";
+  return state.businessProfile?.name || sessionBusinessProfileForActiveBusiness()?.name || "nuestro negocio";
 }
 
 function defaultActivationInviteTemplate(activation = {}) {
