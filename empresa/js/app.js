@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-operational-agenda-v12";
+const APP_VERSION = "empresa-20260709-client-agenda-v13";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17978,7 +17978,7 @@ function bindLeadAgendaActions() {
   leadAgendaBoard?.querySelectorAll("[data-agenda-open-lead]").forEach((button) => {
     button.addEventListener("click", () => {
       if (!button.dataset.agendaOpenLead) return;
-      openLeadDetail({ id: button.dataset.agendaOpenLead, source_type: button.dataset.sourceType || "PLAYER" }, { tab: "notes" });
+      openLeadDetail({ id: button.dataset.agendaOpenLead, source_type: button.dataset.sourceType || "PLAYER" }, { tab: "tasks" });
     });
   });
   leadAgendaBoard?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
@@ -19327,6 +19327,47 @@ function renderManualLeadEditForm(lead = {}) {
   `;
 }
 
+function leadDetailAgendaRows(detail = {}) {
+  const lead = detail.lead || {};
+  return (detail.notes || [])
+    .filter((item) => item.reminder_at)
+    .map((item) => ({
+      ...item,
+      lead_name: lead.name || item.lead_name || "Contacto",
+      lead_email: lead.email || item.lead_email || null,
+      lead_phone: lead.phone || item.lead_phone || null,
+      lead_company: lead.organization || lead.metadata?.manual_company || item.lead_company || null,
+      campaign_name: item.campaign_name || lead.campaign_name || item.metadata?.campaign_name || null,
+      agenda_status: item.agenda_status || "OPEN",
+      agenda_priority: item.agenda_priority || "MEDIUM",
+      progress_percent: Number(item.progress_percent || 0),
+      checklist: Array.isArray(item.checklist) ? item.checklist : [],
+    }))
+    .sort((a, b) => new Date(a.reminder_at || 0) - new Date(b.reminder_at || 0));
+}
+
+function renderLeadDetailAgenda(detail = {}) {
+  const rows = leadDetailAgendaRows(detail);
+  const openRows = rows.filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
+  const doneRows = rows.filter((item) => String(item.agenda_status || "").toUpperCase() === "DONE");
+  const overdueRows = openRows.filter((item) => new Date(item.reminder_at).getTime() < Date.now() && dateInputValue(item.reminder_at) !== dateInputValue(new Date()));
+  return `
+    <section class="lead-client-agenda">
+      <div class="lead-client-agenda-head">
+        <div>
+          <span class="mono-label">Tareas del cliente</span>
+          <strong>${openRows.length.toLocaleString("es-CO")} pendiente(s)</strong>
+          <small>${doneRows.length.toLocaleString("es-CO")} hecha(s) · ${overdueRows.length.toLocaleString("es-CO")} vencida(s)</small>
+        </div>
+        <button class="ghost-button" type="button" data-lead-fast-action="NOTE">Crear seguimiento</button>
+      </div>
+      <div class="lead-agenda-list">
+        ${rows.length ? rows.map((item) => agendaCardMarkup(item)).join("") : '<div class="empty-state compact">Este cliente no tiene tareas agendadas.</div>'}
+      </div>
+    </section>
+  `;
+}
+
 function renderLeadTab(detail) {
   if (!leadDetailContent) return;
   const lead = detail.lead || {};
@@ -19502,6 +19543,7 @@ function renderLeadTab(detail) {
       <span>${escapeHtml(item.channel || "-")} · ${escapeHtml(item.status || "-")} · ${formatDate(item.created_at)}</span>
       <small>${escapeHtml(item.activation_name || item.campaign_name || "-")}</small>
     `), "Sin comunicaciones registradas."),
+    tasks: () => renderLeadDetailAgenda(detail),
     notes: () => `
       <form class="lead-note-form" id="leadNoteForm">
         <textarea id="leadNoteInput" rows="3" maxlength="3000" placeholder="Escribe una nota interna"></textarea>
@@ -19516,10 +19558,16 @@ function renderLeadTab(detail) {
         <input id="leadNoteReminderInput" type="datetime-local" aria-label="Fecha y hora de recordatorio">
         <button class="solid-button" type="submit">Guardar nota</button>
       </form>
-      ${detailList((detail.notes || []).map((item) => `
+      ${leadDetailAgendaRows(detail).length ? `
+        <section class="lead-client-agenda-inline">
+          <strong>${leadDetailAgendaRows(detail).length.toLocaleString("es-CO")} tarea(s) agendada(s)</strong>
+          <button class="ghost-button" type="button" data-open-lead-tasks>Ver tareas del cliente</button>
+        </section>
+      ` : ""}
+      ${detailList((detail.notes || []).filter((item) => !item.reminder_at).map((item) => `
         <strong>${escapeHtml(item.note_type || "Nota")}</strong>
         <span>${escapeHtml(item.note)}</span>
-        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""} ${item.reminder_at ? `· agenda ${escapeHtml(formatDate(item.reminder_at))}` : ""}</small>
+        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""}</small>
       `), "Sin notas internas.")}
     `,
     timeline: () => `<div class="lead-timeline">${(detail.timeline || []).map((item) => `
@@ -19567,6 +19615,31 @@ function bindLeadDetailPanelActions() {
       const lead = state.selectedLeadDetail?.lead || {};
       shareLeadQrWhatsApp(button.dataset.shareTicketWhatsapp, lead.phone, lead.name);
     });
+  });
+  leadDetailContent?.querySelector("[data-open-lead-tasks]")?.addEventListener("click", () => setLeadDetailTab("tasks", { scrollTab: true }));
+  leadDetailContent?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingAgendaId = button.dataset.agendaEdit;
+      renderLeadTab(state.selectedLeadDetail);
+    });
+  });
+  leadDetailContent?.querySelectorAll("[data-agenda-cancel-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingAgendaId = null;
+      renderLeadTab(state.selectedLeadDetail);
+    });
+  });
+  leadDetailContent?.querySelectorAll("[data-agenda-edit-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => updateAgendaItemFromForm(event, form.dataset.agendaEditForm));
+  });
+  leadDetailContent?.querySelectorAll("[data-agenda-check]").forEach((input) => {
+    input.addEventListener("change", () => updateAgendaChecklistItem(input.dataset.agendaCheck, Number(input.dataset.checkIndex), input.checked));
+  });
+  leadDetailContent?.querySelectorAll("[data-agenda-status]").forEach((button) => {
+    button.addEventListener("click", () => updateAgendaStatus(button.dataset.agendaStatus, button.dataset.nextStatus || "DONE"));
+  });
+  leadDetailContent?.querySelectorAll("[data-agenda-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteAgendaItem(button.dataset.agendaDelete));
   });
   const interestForm = document.getElementById("leadInterestForm");
   interestForm?.addEventListener("submit", addLeadInterestFromForm);
