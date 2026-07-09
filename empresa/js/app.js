@@ -2386,8 +2386,8 @@ function subscriptionTimingText(plan = {}) {
       || deal.terms?.special_price_until
       || null;
     const freeText = freeEndsAt ? ` Beneficio sin pago hasta ${formatDateOnly(freeEndsAt)}.` : "";
-    const discountedText = discountedEndsAt ? ` Luego mantiene Premium con tarifa especial hasta ${formatDateOnly(discountedEndsAt)}.` : "";
-    return `Convenio premium activo: acceso completo por acuerdo comercial temporal, no vitalicio.${freeText}${discountedText} Al terminar el convenio puede pagar Premium normal o escoger el plan que se acomode a su presupuesto.`;
+    const discountedText = discountedEndsAt ? ` Tarifa especial activa hasta ${formatDateOnly(discountedEndsAt)}.` : "";
+    return `Convenio premium activo: acceso completo por acuerdo comercial temporal.${freeText}${discountedText}`;
   }
   if (!plan.official_payment_due_at) {
     return "Mensualidad activa sin fecha oficial de renovación configurada.";
