@@ -280,7 +280,6 @@ const PLAN_CATALOG = {
       "10 tickets de cortesia en primera suscripcion",
     ],
     not_included: [
-      "Compra publica de tickets",
       "Gaming center con historial de tickets",
       "Branding en ticket",
       "Gift cards",

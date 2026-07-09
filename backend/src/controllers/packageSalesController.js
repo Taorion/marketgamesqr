@@ -160,7 +160,7 @@ async function listPackageOffers(_req, res, next) {
       packages: [],
       ticket_purchase_policy: {
         public_sales_enabled: false,
-        message: "Los tickets adicionales se compran unicamente dentro del portal, despues de iniciar sesion y tener una suscripcion activa.",
+        message: "Para recargar tickets, inicia sesion y elige el paquete desde tu cuenta.",
       },
       pricing: {
         display_currency: "COP",
@@ -185,7 +185,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
       subscriber_packages: [],
       ticket_purchase_policy: {
         public_sales_enabled: false,
-        message: "Los tickets adicionales se compran unicamente dentro del portal, despues de iniciar sesion y tener una suscripcion activa.",
+        message: "Para recargar tickets, inicia sesion y elige el paquete desde tu cuenta.",
       },
       pricing: {
         display_currency: "COP",
