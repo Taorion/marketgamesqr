@@ -2372,8 +2372,22 @@ function subscriptionTimingText(plan = {}) {
   if (plan.category !== "subscription") {
     return "Portal Base: no tiene fecha mensual de renovación.";
   }
-  if (plan.lifetime_access || plan.monthly_payment_required === false) {
+  if (plan.lifetime_access) {
     return "Plan vitalicio activo: no requiere pago mensual ni fecha de renovación.";
+  }
+  if (plan.monthly_payment_required === false) {
+    const deal = state.businessProfile?.commercial_deal || {};
+    const freeEndsAt = deal.free_period_ends_at
+      || deal.terms?.free_period_ends_at
+      || plan.official_payment_due_at
+      || plan.current_period_ends_at;
+    const discountedEndsAt = deal.discounted_period_ends_at
+      || deal.terms?.discounted_period_ends_at
+      || deal.terms?.special_price_until
+      || null;
+    const freeText = freeEndsAt ? ` Beneficio sin pago hasta ${formatDateOnly(freeEndsAt)}.` : "";
+    const discountedText = discountedEndsAt ? ` Luego mantiene Premium con tarifa especial hasta ${formatDateOnly(discountedEndsAt)}.` : "";
+    return `Convenio premium activo: acceso completo por acuerdo comercial temporal, no vitalicio.${freeText}${discountedText} Al terminar el convenio puede pagar Premium normal o escoger el plan que se acomode a su presupuesto.`;
   }
   if (!plan.official_payment_due_at) {
     return "Mensualidad activa sin fecha oficial de renovación configurada.";
