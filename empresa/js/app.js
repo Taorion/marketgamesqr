@@ -2783,6 +2783,7 @@ function renderSubscriptionBanner() {
     ["Exportaciones", limits.lead_exports_month],
     ["Afiliados", limits.affiliates],
   ].map(([label, value]) => `<span class="subscription-limit-chip">${label}: ${formatLimitValue(value)}</span>`).join("");
+  syncActivationTypeAccess();
 }
 
 function publicSubscriptionPlan(code) {
@@ -2794,7 +2795,21 @@ function publicSubscriptionPlan(code) {
       code: "STARTER",
       name: "Started",
       monthly_price_cop: 1000000,
-      included: ["Acceso al portal", "1 campaña activa", "1 sede", "Agenda para programar tareas"],
+      included: [
+        "Acceso al portal",
+        "Gráficas de redención",
+        "Visualización de últimos 50 leads",
+        "2 exportaciones mensuales",
+        "Validador de tickets",
+        "Creación de campañas",
+        "Ver capacidad completa",
+        "1 campaña activa en línea",
+        "1 sede",
+        "1 usuario",
+        "Gaming center: trivia y pregunta abierta sin historial de tickets",
+        "Agenda para programar tareas",
+        "10 tickets de cortesía en primera suscripción",
+      ],
     },
     GROWTH: {
       code: "GROWTH",
@@ -10765,14 +10780,51 @@ function currentActivationType() {
   return activationTypeInput?.value || "TRIVIA";
 }
 
+function allowedInteractiveActivationTypes() {
+  const allowed = currentPlan().limits?.allowed_interactive_activation_types;
+  return Array.isArray(allowed) ? allowed : null;
+}
+
+function isActivationTypeAllowedByPlan(type = "") {
+  const allowed = allowedInteractiveActivationTypes();
+  if (!allowed) return true;
+  return allowed.includes(interactiveTypeForLegacyType(type));
+}
+
+function suggestedPlanForActivationType(type = "") {
+  return isActivationTypeAllowedByPlan(type) ? currentPlan().code : "GROWTH";
+}
+
+function syncActivationTypeAccess() {
+  activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
+    const locked = !isActivationTypeAllowedByPlan(button.dataset.activationType);
+    button.classList.toggle("plan-locked", locked);
+    button.setAttribute("aria-disabled", locked ? "true" : "false");
+    if (locked) {
+      button.title = "Tu plan actual no incluye este tipo de activación.";
+    } else {
+      button.removeAttribute("title");
+    }
+  });
+}
+
 function setActivationType(type) {
   const nextType = type || "TRIVIA";
+  if (!isActivationTypeAllowedByPlan(nextType)) {
+    showFeatureUpgradeInterstitial("qr_batch_generator", {
+      suggestedPlanCode: suggestedPlanForActivationType(nextType),
+      title: "Activación bloqueada por plan",
+      message: `Started solo incluye trivia y pregunta abierta. Sube de plan para usar ${activationTypeLabel(nextType)}.`,
+    });
+    return;
+  }
   if (activationTypeInput) activationTypeInput.value = nextType;
   activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
     const active = button.dataset.activationType === nextType;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
+  syncActivationTypeAccess();
   document.querySelectorAll("[data-activation-config]").forEach((panel) => {
     const configs = String(panel.dataset.activationConfig || "").split(/\s+/).filter(Boolean);
     const active = configs.includes(nextType);

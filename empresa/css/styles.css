@@ -824,6 +824,24 @@ textarea {
   background: #fef3c7;
 }
 
+.activation-type-option.plan-locked {
+  opacity: 0.58;
+  position: relative;
+}
+
+.activation-type-option.plan-locked::after {
+  content: "Upgrade";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #92400e;
+  background: #fef3c7;
+}
+
 .action-feedback {
   position: sticky;
   top: calc(var(--topbar-height) + 12px);

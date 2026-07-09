@@ -20,7 +20,12 @@ const {
   startInteractiveParticipant,
   updateInteractiveActivation,
 } = require("../services/interactiveActivationService");
-const { assertFeatureForRequest, recordUsage } = require("../services/subscriptionService");
+const {
+  assertFeatureForRequest,
+  assertInteractiveActivationTypeForBusiness,
+  getBusinessSubscription,
+  recordUsage,
+} = require("../services/subscriptionService");
 
 function businessIdFor(req) {
   if (!req.user.business_id) {
@@ -29,9 +34,12 @@ function businessIdFor(req) {
   return req.user.business_id;
 }
 
-async function catalog(_req, res, next) {
+async function catalog(req, res, next) {
   try {
-    res.json(listActivationCatalog());
+    const subscription = await getBusinessSubscription(businessIdFor(req));
+    res.json(listActivationCatalog({
+      allowedTypes: subscription.plan.limits?.allowed_interactive_activation_types,
+    }));
   } catch (error) {
     next(error);
   }
@@ -42,6 +50,7 @@ async function create(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "qr_batch_generator");
     const body = validate(interactiveActivationCreateSchema, req.body);
+    await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
     const result = await createInteractiveActivation(businessId, req.user, body);
     await recordUsage({
       business_id: businessId,

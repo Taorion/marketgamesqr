@@ -121,6 +121,7 @@ const PLAN_CATALOG = {
       history_days: 30,
       activation_types_month: 1,
       active_interactive_activations: 1,
+      allowed_interactive_activation_types: ["TRIVIA_QUIZ", "OPEN_QUESTION"],
     },
   },
   [PLAN_CODES.GROWTH_TEMPORAL]: {
@@ -270,10 +271,11 @@ const PLAN_CATALOG = {
       "2 exportaciones mensuales",
       "Validador de tickets",
       "Creacion de campanas",
+      "Ver capacidad completa",
       "1 campana activa en linea",
       "1 sede",
       "1 usuario",
-      "Gaming center sin historial de tickets",
+      "Gaming center: trivia y pregunta abierta sin historial de tickets",
       "Agenda para programar tareas",
       "10 tickets de cortesia en primera suscripcion",
     ],
@@ -303,7 +305,7 @@ const PLAN_CATALOG = {
       automations: false,
       api_access: false,
       white_label: false,
-      campaign_comparison: true,
+      campaign_comparison: false,
       focus_mode: false,
       data_explorer: false,
       advanced_reports: false,
@@ -330,6 +332,7 @@ const PLAN_CATALOG = {
       history_days: 30,
       activation_types_month: 1,
       active_interactive_activations: 1,
+      allowed_interactive_activation_types: ["TRIVIA_QUIZ", "OPEN_QUESTION"],
     },
   },
   [PLAN_CODES.DEMO_AUTO_3D]: {
@@ -496,6 +499,7 @@ const PLAN_CATALOG = {
       activation_types_month: 5,
       active_interactive_activations: 3,
       executive_reports_month: 0,
+      allowed_interactive_activation_types: unlimited,
     },
   },
   [PLAN_CODES.PRO]: {
@@ -599,6 +603,7 @@ const PLAN_CATALOG = {
       activation_types_month: unlimited,
       active_interactive_activations: unlimited,
       executive_reports_month: 2,
+      allowed_interactive_activation_types: unlimited,
     },
   },
   [PLAN_CODES.GLOBAL]: {
@@ -659,6 +664,7 @@ const PLAN_CATALOG = {
       lead_exports_month: unlimited,
       affiliates: unlimited,
       history_days: unlimited,
+      allowed_interactive_activation_types: unlimited,
     },
   },
 };
@@ -800,6 +806,7 @@ function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
       activation_types_month: unlimited,
       active_interactive_activations: unlimited,
       executive_reports_month: unlimited,
+      allowed_interactive_activation_types: unlimited,
     },
   };
 }
@@ -922,6 +929,17 @@ function suggestedPlanForLimit(currentPlan = {}, limitKey = "", current = 0) {
     const value = PLAN_CATALOG[code]?.limits?.[limitKey];
     return value === null || value === undefined || Number(value) >= Number(current || 0);
   }) || PLAN_CODES.GLOBAL;
+}
+
+function interactiveActivationTypeAllowed(plan = {}, activationType = "") {
+  const allowedTypes = plan.limits?.allowed_interactive_activation_types;
+  if (allowedTypes === null || allowedTypes === undefined) return true;
+  return Array.isArray(allowedTypes) && allowedTypes.includes(activationType);
+}
+
+function suggestedPlanForInteractiveActivation(currentPlan = {}, activationType = "") {
+  const start = Math.max(0, upgradeOrderIndex(currentPlan.code) + 1);
+  return PUBLIC_UPGRADE_ORDER.slice(start).find((code) => interactiveActivationTypeAllowed(PLAN_CATALOG[code], activationType)) || PLAN_CODES.GLOBAL;
 }
 
 function planGateDetails(plan = {}, payload = {}) {
@@ -1067,6 +1085,24 @@ async function assertLimitForBusiness(businessId, limitKey, current, label) {
         current,
         limit,
         suggested_plan_code: suggestedPlanForLimit(subscription.plan, limitKey, Number(current) + 1),
+      })
+    );
+  }
+  return subscription;
+}
+
+async function assertInteractiveActivationTypeForBusiness(businessId, activationType) {
+  const subscription = await getBusinessSubscription(businessId);
+  if (!interactiveActivationTypeAllowed(subscription.plan, activationType)) {
+    throw forbidden(
+      "Tu plan actual no incluye este tipo de activacion.",
+      planGateDetails(subscription.plan, {
+        reason: "activation_type_locked",
+        feature: "qr_batch_generator",
+        limit_key: "allowed_interactive_activation_types",
+        label: "activaciones de Gaming Center",
+        current: activationType,
+        suggested_plan_code: suggestedPlanForInteractiveActivation(subscription.plan, activationType),
       })
     );
   }
@@ -1219,6 +1255,7 @@ module.exports = {
   setBusinessSubscription,
   assertBusinessFeature,
   assertFeatureForRequest,
+  assertInteractiveActivationTypeForBusiness,
   assertPortalAccess,
   assertLimitForBusiness,
   assertLimitValue,

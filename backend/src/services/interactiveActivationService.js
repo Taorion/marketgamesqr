@@ -389,8 +389,12 @@ function mapTouchZone(row) {
   };
 }
 
-function listActivationCatalog() {
-  const groups = ACTIVATION_CATALOG.reduce((acc, item) => {
+function listActivationCatalog(options = {}) {
+  const allowedTypes = options.allowedTypes;
+  const items = Array.isArray(allowedTypes)
+    ? ACTIVATION_CATALOG.filter((item) => allowedTypes.includes(item.type))
+    : ACTIVATION_CATALOG;
+  const groups = items.reduce((acc, item) => {
     const group = acc.find((entry) => entry.label === item.group);
     if (group) {
       group.items.push(item);
@@ -399,7 +403,7 @@ function listActivationCatalog() {
     }
     return acc;
   }, []);
-  return { groups, items: ACTIVATION_CATALOG };
+  return { groups, items };
 }
 
 async function assertCampaign(client, businessId, campaignId) {
