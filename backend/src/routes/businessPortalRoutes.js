@@ -42,12 +42,15 @@ const {
 const {
   addInterest,
   addPurchase,
+  agenda,
   createNote,
+  deleteAgendaItem,
   deleteContact,
   leadDetail,
   listLeadsCrm,
   removeInterest,
   sendActivation,
+  updateAgendaItem,
 } = require("../controllers/leadCrmController");
 
 const router = express.Router();
@@ -70,6 +73,9 @@ router.patch("/contacts/manual/:manualLeadId", updateManualLead);
 router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/leads/crm", listLeadsCrm);
+router.get("/leads/agenda", agenda);
+router.patch("/leads/agenda/:noteId", updateAgendaItem);
+router.delete("/leads/agenda/:noteId", deleteAgendaItem);
 router.get("/leads/:leadId", leadDetail);
 router.delete("/leads/:leadId", deleteContact);
 router.post("/leads/:leadId/notes", createNote);

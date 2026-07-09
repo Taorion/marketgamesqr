@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260708-contact-directory-v3";
+const APP_VERSION = "empresa-20260708-lead-agenda-board-v7";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -64,11 +64,30 @@ const contactCenterSecondaryAction = document.getElementById("contactCenterSecon
 const contactTabOverviewCount = document.getElementById("contactTabOverviewCount");
 const contactTabDirectoryCount = document.getElementById("contactTabDirectoryCount");
 const contactTabTicketsCount = document.getElementById("contactTabTicketsCount");
+const contactTabAgendaCount = document.getElementById("contactTabAgendaCount");
 const contactTabCapturesCount = document.getElementById("contactTabCapturesCount");
 const contactTabManualCount = document.getElementById("contactTabManualCount");
 const contactTabSalesCount = document.getElementById("contactTabSalesCount");
 const manualContactsTable = document.getElementById("manualContactsTable");
 const manualContactsCount = document.getElementById("manualContactsCount");
+const leadAgendaCard = document.getElementById("leadAgendaCard");
+const leadAgendaCount = document.getElementById("leadAgendaCount");
+const leadAgendaKpis = document.getElementById("leadAgendaKpis");
+const leadAgendaBoard = document.getElementById("leadAgendaBoard");
+const leadAgendaDateInput = document.getElementById("leadAgendaDateInput");
+const leadAgendaPrevButton = document.getElementById("leadAgendaPrevButton");
+const leadAgendaNextButton = document.getElementById("leadAgendaNextButton");
+const leadAgendaStatusFilter = document.getElementById("leadAgendaStatusFilter");
+const leadAgendaViewButtons = Array.from(document.querySelectorAll("[data-agenda-view]"));
+const leadAgendaCreateForm = document.getElementById("leadAgendaCreateForm");
+const leadAgendaLeadInput = document.getElementById("leadAgendaLeadInput");
+const leadAgendaActionInput = document.getElementById("leadAgendaActionInput");
+const leadAgendaReminderInput = document.getElementById("leadAgendaReminderInput");
+const leadAgendaNoteInput = document.getElementById("leadAgendaNoteInput");
+const leadAgendaPriorityInput = document.getElementById("leadAgendaPriorityInput");
+const leadAgendaProgressInput = document.getElementById("leadAgendaProgressInput");
+const leadAgendaChecklistInput = document.getElementById("leadAgendaChecklistInput");
+const leadAgendaTemplateButtons = Array.from(document.querySelectorAll("[data-agenda-template]"));
 const leadCrmSearchInput = document.getElementById("leadCrmSearchInput");
 const leadCrmSearchButton = document.getElementById("leadCrmSearchButton");
 const leadCrmResetButton = document.getElementById("leadCrmResetButton");
@@ -902,6 +921,14 @@ let state = {
   manualContacts: [],
   manualContactsLoaded: false,
   manualContactsLoading: false,
+  leadAgenda: [],
+  leadAgendaLoaded: false,
+  leadAgendaLoading: false,
+  leadAgendaView: "list",
+  leadAgendaStatus: "OPEN",
+  leadAgendaAnchorDate: new Date().toISOString().slice(0, 10),
+  leadAgendaRange: null,
+  editingAgendaId: null,
   contactCenterMounted: false,
   contactCenterTab: "overview",
   leadCrmRows: [],
@@ -1583,6 +1610,14 @@ function resetBusinessScopedState(options = {}) {
   state.manualContacts = [];
   state.manualContactsLoaded = false;
   state.manualContactsLoading = false;
+  state.leadAgenda = [];
+  state.leadAgendaLoaded = false;
+  state.leadAgendaLoading = false;
+  state.leadAgendaView = "list";
+  state.leadAgendaStatus = "OPEN";
+  state.leadAgendaAnchorDate = new Date().toISOString().slice(0, 10);
+  state.leadAgendaRange = null;
+  state.editingAgendaId = null;
   state.contactCenterTab = "overview";
   state.selectedRedemptions = [];
   state.selectedSales = [];
@@ -1808,6 +1843,38 @@ async function loadManualContactsData(options = {}) {
     state.manualContactsLoaded = true;
   } finally {
     state.manualContactsLoading = false;
+    if (!options.quiet) hideFeedback();
+  }
+}
+
+async function loadLeadAgendaData(options = {}) {
+  if (!session?.user?.business_id) {
+    state.leadAgenda = [];
+    state.leadAgendaLoaded = true;
+    return;
+  }
+  if (state.leadAgendaLoaded && !options.force) return;
+  if (state.leadAgendaLoading && !options.force) return;
+  const range = agendaRangeForView();
+  const params = new URLSearchParams({
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
+    status: state.leadAgendaStatus || "OPEN",
+    limit: "1000",
+  });
+  if (!options.quiet) {
+    showFeedback("Cargando agenda comercial.", "loading", { title: "Agenda", timeout: 0 });
+  }
+  const scopeKey = businessScopeKey();
+  state.leadAgendaLoading = true;
+  try {
+    const data = await apiSafe(`/api/business/leads/agenda?${params.toString()}`, { headers: authHeaders() }, { agenda: [], range: null });
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.leadAgenda = data.agenda || [];
+    state.leadAgendaRange = data.range || { from: range.from.toISOString(), to: range.to.toISOString() };
+    state.leadAgendaLoaded = true;
+  } finally {
+    state.leadAgendaLoading = false;
     if (!options.quiet) hideFeedback();
   }
 }
@@ -2107,6 +2174,61 @@ function formatDateOnly(value) {
   return new Date(value).toLocaleDateString("es-CO", {
     dateStyle: "medium",
   });
+}
+
+function dateInputValue(date = new Date()) {
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return new Date().toISOString().slice(0, 10);
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function datetimeLocalValue(date = new Date()) {
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return "";
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function startOfLocalDay(date = new Date()) {
+  const value = date instanceof Date ? new Date(date) : new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+}
+
+function endOfLocalDay(date = new Date()) {
+  const value = startOfLocalDay(date);
+  value.setHours(23, 59, 59, 999);
+  return value;
+}
+
+function addDays(date, days = 0) {
+  const value = new Date(date);
+  value.setDate(value.getDate() + Number(days || 0));
+  return value;
+}
+
+function agendaRangeForView(view = state.leadAgendaView, anchorValue = state.leadAgendaAnchorDate) {
+  const anchor = startOfLocalDay(anchorValue || new Date());
+  if (view === "day") return { from: anchor, to: endOfLocalDay(anchor) };
+  if (view === "week") {
+    const start = addDays(anchor, -((anchor.getDay() + 6) % 7));
+    return { from: start, to: endOfLocalDay(addDays(start, 6)) };
+  }
+  if (view === "year") {
+    return {
+      from: new Date(anchor.getFullYear(), 0, 1, 0, 0, 0, 0),
+      to: new Date(anchor.getFullYear(), 11, 31, 23, 59, 59, 999),
+    };
+  }
+  if (view === "month") {
+    return {
+      from: new Date(anchor.getFullYear(), anchor.getMonth(), 1, 0, 0, 0, 0),
+      to: new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 23, 59, 59, 999),
+    };
+  }
+  if (view === "board") return { from: startOfLocalDay(new Date()), to: endOfLocalDay(addDays(new Date(), 60)) };
+  return { from: startOfLocalDay(new Date()), to: endOfLocalDay(addDays(new Date(), 60)) };
 }
 
 function subscriptionAccessLabel(plan = {}) {
@@ -3000,6 +3122,12 @@ function setView(view) {
         renderContactCenterSummary(state.leadCrmRows || []);
       });
     }
+    if (!state.leadAgendaLoaded) {
+      loadLeadAgendaData({ quiet: true }).then(() => {
+        renderLeadAgenda();
+        renderContactCenterSummary(state.leadCrmRows || []);
+      });
+    }
     if (state.contactCenterTab === "sales" && !state.affiliatesLoaded) {
       loadAffiliatesData().then(renderSalesView);
     }
@@ -3486,6 +3614,11 @@ async function loadWorkspace() {
     state.manualContacts = [];
     state.manualContactsLoaded = false;
     state.manualContactsLoading = false;
+    state.leadAgenda = [];
+    state.leadAgendaLoaded = false;
+    state.leadAgendaLoading = false;
+    state.leadAgendaRange = null;
+    state.editingAgendaId = null;
     state.businessUsers = businessUsersData.users || [];
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
@@ -17075,11 +17208,673 @@ async function addLeadToManualContacts(leadRef = state.selectedLeadRef) {
   }
 }
 
+function agendaStatusClass(item = {}) {
+  const status = String(item.agenda_status || "OPEN").toUpperCase();
+  if (status === "DONE") return "ok";
+  if (status === "CANCELLED") return "danger";
+  const due = new Date(item.reminder_at).getTime();
+  if (Number.isFinite(due) && due < Date.now()) return "danger";
+  return "warning";
+}
+
+function agendaLabelForRange() {
+  const range = agendaRangeForView();
+  if (state.leadAgendaView === "day") return formatDateOnly(range.from);
+  if (state.leadAgendaView === "week") return `${formatDateOnly(range.from)} - ${formatDateOnly(range.to)}`;
+  if (state.leadAgendaView === "year") return String(range.from.getFullYear());
+  if (state.leadAgendaView === "month") {
+    return range.from.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  }
+  return "Próximos 60 días";
+}
+
+function agendaRows() {
+  return (state.leadAgenda || [])
+    .slice()
+    .sort((a, b) => new Date(a.reminder_at || 0) - new Date(b.reminder_at || 0));
+}
+
+function agendaGroupedByDay(rows = agendaRows()) {
+  return rows.reduce((groups, item) => {
+    const key = dateInputValue(item.reminder_at);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+    return groups;
+  }, new Map());
+}
+
+const AGENDA_TEMPLATES = {
+  CALL: {
+    action: "Llamar al cliente",
+    note: "Validar necesidad, fecha tentativa y responsable.",
+    priority: "HIGH",
+    checklist: ["Confirmar contacto", "Registrar respuesta", "Definir siguiente paso"],
+  },
+  PROPOSAL: {
+    action: "Enviar propuesta comercial",
+    note: "Preparar propuesta, compartir condiciones y dejar fecha de seguimiento.",
+    priority: "HIGH",
+    checklist: ["Revisar necesidad", "Enviar propuesta", "Agendar seguimiento"],
+  },
+  PACKAGE: {
+    action: "Preparar paquete de tickets",
+    note: "Confirmar cantidad, condiciones, emisión y fecha de entrega.",
+    priority: "MEDIUM",
+    checklist: ["Validar saldo", "Definir paquete", "Emitir o asignar tickets"],
+  },
+  ACTIVATION: {
+    action: "Coordinar activación",
+    note: "Definir experiencia, recompensa, fecha de lanzamiento y responsables.",
+    priority: "URGENT",
+    checklist: ["Configurar activación", "Probar link o QR", "Confirmar lanzamiento"],
+  },
+  MARKETING: {
+    action: "Ejecutar acción de marketing",
+    note: "Organizar copy, pieza, canal, emisión y medición de resultados.",
+    priority: "MEDIUM",
+    checklist: ["Preparar mensaje", "Publicar o enviar", "Revisar métricas"],
+  },
+};
+
+function agendaChecklistItems(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => ({
+        label: String(item?.label || "").trim(),
+        done: Boolean(item?.done),
+      }))
+      .filter((item) => item.label);
+  }
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 20)
+    .map((label) => ({ label, done: false }));
+}
+
+function agendaChecklistText(value) {
+  return agendaChecklistItems(value).map((item) => item.label).join("\n");
+}
+
+function agendaChecklistSummary(item = {}) {
+  const checklist = agendaChecklistItems(item.checklist);
+  const done = checklist.filter((entry) => entry.done).length;
+  return { checklist, done, total: checklist.length };
+}
+
+function agendaPriorityLabel(priority = "MEDIUM") {
+  return {
+    LOW: "Baja",
+    MEDIUM: "Media",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+  }[String(priority || "MEDIUM").toUpperCase()] || "Media";
+}
+
+function applyAgendaTemplate(templateKey = "") {
+  const template = AGENDA_TEMPLATES[templateKey];
+  if (!template) return;
+  if (leadAgendaActionInput) leadAgendaActionInput.value = template.action;
+  if (leadAgendaNoteInput) leadAgendaNoteInput.value = template.note;
+  if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = template.priority;
+  if (leadAgendaProgressInput) leadAgendaProgressInput.value = "0";
+  if (leadAgendaChecklistInput) leadAgendaChecklistInput.value = template.checklist.join("\n");
+}
+
+function agendaLeadOptionValue(lead = {}) {
+  return `${String(lead.source_type || "PLAYER").toUpperCase()}::${lead.id || lead.lead_id || ""}`;
+}
+
+function parseAgendaLeadValue(value = "") {
+  const [sourceType, ...idParts] = String(value || "").split("::");
+  return {
+    source_type: sourceType || "PLAYER",
+    id: idParts.join("::"),
+  };
+}
+
+function renderLeadAgendaLeadOptions() {
+  if (!leadAgendaLeadInput) return;
+  const rows = (state.leadCrmRows || []).filter((item) => item.id || item.lead_id);
+  const selectedValue = state.selectedLeadRef?.id
+    ? `${String(state.selectedLeadRef.source_type || "PLAYER").toUpperCase()}::${state.selectedLeadRef.id}`
+    : leadAgendaLeadInput.value;
+  leadAgendaLeadInput.innerHTML = rows.map((item) => {
+    const value = agendaLeadOptionValue(item);
+    const label = [
+      item.name || item.full_name || "Contacto sin nombre",
+      item.phone || item.email || item.document_id || "",
+      item.source_type || "",
+    ].filter(Boolean).join(" - ");
+    return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+  }).join("") || '<option value="">Sin contactos cargados</option>';
+  if (selectedValue && Array.from(leadAgendaLeadInput.options).some((option) => option.value === selectedValue)) {
+    leadAgendaLeadInput.value = selectedValue;
+  }
+}
+
+function agendaCardMarkup(item = {}, options = {}) {
+  const leadRef = {
+    id: item.source_id || item.lead_id,
+    source_type: item.source_type || "PLAYER",
+  };
+  const status = String(item.agenda_status || "OPEN").toUpperCase();
+  const done = status === "DONE";
+  const priority = String(item.agenda_priority || "MEDIUM").toUpperCase();
+  const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
+  const checklistSummary = agendaChecklistSummary(item);
+  if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
+    return `
+      <article class="lead-agenda-item is-editing">
+        <form class="lead-agenda-edit-form" data-agenda-edit-form="${escapeHtml(item.id || "")}">
+          <label class="span-2">
+            <span>Qué hay que hacer</span>
+            <input name="next_action" type="text" maxlength="500" value="${escapeHtml(item.next_action || "")}" placeholder="Próxima acción" required>
+          </label>
+          <label>
+            <span>Fecha y hora</span>
+            <input name="reminder_at" type="datetime-local" value="${escapeHtml(datetimeLocalValue(item.reminder_at))}" required>
+          </label>
+          <label>
+            <span>Estado</span>
+            <select name="agenda_status">
+              <option value="OPEN" ${status === "OPEN" ? "selected" : ""}>Pendiente</option>
+              <option value="DONE" ${status === "DONE" ? "selected" : ""}>Hecha</option>
+              <option value="CANCELLED" ${status === "CANCELLED" ? "selected" : ""}>Cancelada</option>
+            </select>
+          </label>
+          <label>
+            <span>Prioridad</span>
+            <select name="agenda_priority">
+              <option value="LOW" ${priority === "LOW" ? "selected" : ""}>Baja</option>
+              <option value="MEDIUM" ${priority === "MEDIUM" ? "selected" : ""}>Media</option>
+              <option value="HIGH" ${priority === "HIGH" ? "selected" : ""}>Alta</option>
+              <option value="URGENT" ${priority === "URGENT" ? "selected" : ""}>Urgente</option>
+            </select>
+          </label>
+          <label>
+            <span>% completado</span>
+            <input name="progress_percent" type="number" min="0" max="100" step="5" value="${escapeHtml(String(progress))}">
+          </label>
+          <label>
+            <span>Tipo</span>
+            <select name="note_type">
+              <option value="commercial" ${item.note_type === "commercial" ? "selected" : ""}>Comercial</option>
+              <option value="follow_up" ${item.note_type === "follow_up" ? "selected" : ""}>Seguimiento</option>
+              <option value="vip" ${item.note_type === "vip" ? "selected" : ""}>VIP</option>
+              <option value="support" ${item.note_type === "support" ? "selected" : ""}>Soporte</option>
+              <option value="observation" ${item.note_type === "observation" ? "selected" : ""}>Observación</option>
+            </select>
+          </label>
+          <label class="span-2">
+            <span>Detalle</span>
+            <textarea name="note" rows="3" maxlength="3000" required>${escapeHtml(item.note || "")}</textarea>
+          </label>
+          <label class="span-2">
+            <span>Checklist</span>
+            <textarea name="checklist" rows="3" maxlength="1200">${escapeHtml(agendaChecklistText(item.checklist))}</textarea>
+          </label>
+          <div class="lead-agenda-edit-actions">
+            <button class="solid-button" type="submit">Guardar</button>
+            <button class="ghost-button" type="button" data-agenda-cancel-edit>Cancelar</button>
+            <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+          </div>
+        </form>
+      </article>
+    `;
+  }
+  return `
+    <article class="lead-agenda-item ${done ? "is-done" : ""}">
+      <div class="lead-agenda-item-main">
+        <div class="lead-agenda-meta-row">
+          <span class="status-chip ${agendaStatusClass(item)}">${escapeHtml(done ? "Hecha" : status === "CANCELLED" ? "Cancelada" : "Pendiente")}</span>
+          <span class="status-chip priority-${escapeHtml(priority.toLowerCase())}">${escapeHtml(agendaPriorityLabel(priority))}</span>
+          <span class="table-secondary">${progress}%</span>
+        </div>
+        <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
+        <p>${escapeHtml(item.note || "")}</p>
+        <div class="lead-agenda-progress" aria-label="Avance ${escapeHtml(String(progress))}%">
+          <span style="width: ${escapeHtml(String(progress))}%"></span>
+        </div>
+        ${checklistSummary.total ? `
+          <div class="lead-agenda-checklist">
+            ${checklistSummary.checklist.map((entry, index) => `
+              <label>
+                <input type="checkbox" data-agenda-check="${escapeHtml(item.id || "")}" data-check-index="${index}" ${entry.done ? "checked" : ""}>
+                <span>${escapeHtml(entry.label)}</span>
+              </label>
+            `).join("")}
+          </div>
+        ` : ""}
+        <small>${escapeHtml(formatDate(item.reminder_at))} · ${escapeHtml(item.lead_name || "Contacto")} ${item.lead_phone ? `· ${escapeHtml(item.lead_phone)}` : ""}</small>
+      </div>
+      <div class="lead-agenda-item-side">
+        ${item.lead_company ? `<span class="table-secondary">${escapeHtml(item.lead_company)}</span>` : ""}
+        <div class="activation-row-actions">
+          <button class="ghost-button" type="button" data-agenda-open-lead="${escapeHtml(leadRef.id || "")}" data-source-type="${escapeHtml(leadRef.source_type)}">Ficha</button>
+          <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
+          ${done
+            ? `<button class="ghost-button" type="button" data-agenda-status="${escapeHtml(item.id)}" data-next-status="OPEN">Reabrir</button>`
+            : `<button class="solid-button" type="button" data-agenda-status="${escapeHtml(item.id)}" data-next-status="DONE">Hecha</button>`}
+          <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderAgendaKpis(rows = agendaRows()) {
+  if (!leadAgendaKpis) return;
+  const now = Date.now();
+  const todayKey = dateInputValue(new Date());
+  const openRows = rows.filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
+  const overdue = openRows.filter((item) => new Date(item.reminder_at).getTime() < now && dateInputValue(item.reminder_at) !== todayKey).length;
+  const today = openRows.filter((item) => dateInputValue(item.reminder_at) === todayKey).length;
+  const urgent = openRows.filter((item) => String(item.agenda_priority || "").toUpperCase() === "URGENT").length;
+  const averageProgress = rows.length ? Math.round(rows.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / rows.length) : 0;
+  leadAgendaKpis.innerHTML = [
+    ["Pendientes", openRows.length, agendaLabelForRange()],
+    ["Hoy", today, "Llamadas o tareas del día"],
+    ["Vencidas", overdue, "Requieren acción inmediata"],
+    ["Urgentes", urgent, `${averageProgress}% avance promedio`],
+  ].map(([label, value, meta]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${Number(value || 0).toLocaleString("es-CO")}</strong>
+      <div class="kpi-meta">${escapeHtml(meta)}</div>
+    </article>
+  `).join("");
+}
+
+function renderAgendaList(rows = agendaRows()) {
+  const grouped = agendaGroupedByDay(rows);
+  return Array.from(grouped.entries()).map(([dateKey, items]) => `
+    <section class="lead-agenda-day">
+      <div class="lead-agenda-day-head">
+        <strong>${escapeHtml(formatDateOnly(dateKey))}</strong>
+        <span class="pill muted">${items.length.toLocaleString("es-CO")} tarea(s)</span>
+      </div>
+      <div class="lead-agenda-list">${items.map((item) => agendaCardMarkup(item)).join("")}</div>
+    </section>
+  `).join("") || '<div class="empty-state compact">Sin tareas agendadas en este rango.</div>';
+}
+
+function agendaCompactCardMarkup(item = {}) {
+  const priority = String(item.agenda_priority || "MEDIUM").toUpperCase();
+  const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
+  return `
+    <button class="lead-agenda-compact-card" type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+      <span>${escapeHtml(formatTimeOnly(item.reminder_at))}</span>
+      <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
+      <small>${escapeHtml(item.lead_name || "Contacto")} · ${escapeHtml(agendaPriorityLabel(priority))} · ${progress}%</small>
+    </button>
+  `;
+}
+
+function formatTimeOnly(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--:--";
+  return date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
+function renderAgendaDay(rows = agendaRows()) {
+  const grouped = rows.reduce((map, item) => {
+    const date = new Date(item.reminder_at);
+    const hour = Number.isNaN(date.getTime()) ? 0 : date.getHours();
+    map.set(hour, [...(map.get(hour) || []), item]);
+    return map;
+  }, new Map());
+  const activeHours = Array.from(grouped.keys());
+  const startHour = Math.min(8, ...(activeHours.length ? activeHours : [8]));
+  const endHour = Math.max(18, ...(activeHours.length ? activeHours : [18]));
+  return `
+    <div class="lead-agenda-timeline">
+      ${Array.from({ length: endHour - startHour + 1 }, (_, index) => startHour + index).map((hour) => {
+        const items = (grouped.get(hour) || []).sort((a, b) => new Date(a.reminder_at) - new Date(b.reminder_at));
+        return `
+          <section class="lead-agenda-hour-row">
+            <strong>${String(hour).padStart(2, "0")}:00</strong>
+            <div>${items.map((item) => agendaCompactCardMarkup(item)).join("") || '<span class="lead-agenda-empty-hour">Sin tareas</span>'}</div>
+          </section>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAgendaWeek(rows = agendaRows()) {
+  const range = agendaRangeForView("week");
+  const grouped = agendaGroupedByDay(rows);
+  return `
+    <div class="lead-week-board">
+      ${Array.from({ length: 7 }, (_, index) => addDays(range.from, index)).map((day) => {
+        const key = dateInputValue(day);
+        const items = grouped.get(key) || [];
+        return `
+          <section class="lead-week-column">
+            <div class="lead-week-column-head">
+              <strong>${day.toLocaleDateString("es-CO", { weekday: "short" })}</strong>
+              <span>${day.getDate()}</span>
+            </div>
+            <div class="lead-week-column-list">
+              ${items.map((item) => agendaCompactCardMarkup(item)).join("") || '<span class="lead-agenda-empty-hour">Sin tareas</span>'}
+            </div>
+          </section>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAgendaBoardView(rows = agendaRows()) {
+  const columns = [
+    ["URGENT", "Urgente", rows.filter((item) => String(item.agenda_priority || "").toUpperCase() === "URGENT")],
+    ["OVERDUE", "Vencidas", rows.filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN" && new Date(item.reminder_at).getTime() < Date.now() && dateInputValue(item.reminder_at) !== dateInputValue(new Date()))],
+    ["TODAY", "Hoy", rows.filter((item) => dateInputValue(item.reminder_at) === dateInputValue(new Date()))],
+    ["NEXT", "Próximas", rows.filter((item) => dateInputValue(item.reminder_at) !== dateInputValue(new Date()) && new Date(item.reminder_at).getTime() >= Date.now())],
+    ["DONE", "Hechas", rows.filter((item) => String(item.agenda_status || "").toUpperCase() === "DONE")],
+  ];
+  return `
+    <div class="lead-agenda-kanban">
+      ${columns.map(([key, title, items]) => `
+        <section class="lead-agenda-kanban-column" data-agenda-column="${escapeHtml(key)}">
+          <div class="lead-agenda-kanban-head">
+            <strong>${escapeHtml(title)}</strong>
+            <span>${items.length.toLocaleString("es-CO")}</span>
+          </div>
+          <div class="lead-agenda-kanban-list">
+            ${items.map((item) => agendaCardMarkup(item)).join("") || '<div class="empty-state compact">Sin tareas.</div>'}
+          </div>
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderAgendaMonth(rows = agendaRows()) {
+  const range = agendaRangeForView("month");
+  const grouped = agendaGroupedByDay(rows);
+  const first = range.from;
+  const gridStart = addDays(first, -((first.getDay() + 6) % 7));
+  const days = Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
+  return `
+    <div class="lead-calendar-grid">
+      ${["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((day) => `<strong class="lead-calendar-weekday">${day}</strong>`).join("")}
+      ${days.map((day) => {
+        const key = dateInputValue(day);
+        const items = grouped.get(key) || [];
+        const outside = day.getMonth() !== first.getMonth();
+        return `
+          <section class="lead-calendar-cell ${outside ? "is-muted" : ""}">
+            <span>${day.getDate()}</span>
+            ${items.slice(0, 3).map((item) => `<button type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">${escapeHtml(item.next_action || item.lead_name || "Seguimiento")}</button>`).join("")}
+            ${items.length > 3 ? `<small>+${items.length - 3} más</small>` : ""}
+          </section>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAgendaYear(rows = agendaRows()) {
+  const grouped = rows.reduce((map, item) => {
+    const date = new Date(item.reminder_at);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+  const anchor = new Date(state.leadAgendaAnchorDate || new Date());
+  return `<div class="lead-year-grid">${Array.from({ length: 12 }, (_, month) => {
+    const key = `${anchor.getFullYear()}-${String(month + 1).padStart(2, "0")}`;
+    const count = grouped.get(key) || 0;
+    const date = new Date(anchor.getFullYear(), month, 1);
+    return `
+      <button class="lead-year-month" type="button" data-agenda-month="${dateInputValue(date)}">
+        <strong>${date.toLocaleDateString("es-CO", { month: "long" })}</strong>
+        <span>${count.toLocaleString("es-CO")} tarea(s)</span>
+      </button>
+    `;
+  }).join("")}</div>`;
+}
+
+function renderLeadAgenda() {
+  if (!leadAgendaBoard) return;
+  renderLeadAgendaLeadOptions();
+  if (leadAgendaReminderInput && !leadAgendaReminderInput.value) {
+    const nextHour = new Date();
+    nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+    leadAgendaReminderInput.value = datetimeLocalValue(nextHour);
+  }
+  if (leadAgendaDateInput && leadAgendaDateInput.value !== state.leadAgendaAnchorDate) {
+    leadAgendaDateInput.value = state.leadAgendaAnchorDate;
+  }
+  leadAgendaViewButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.agendaView === state.leadAgendaView);
+  });
+  if (leadAgendaStatusFilter && leadAgendaStatusFilter.value !== state.leadAgendaStatus) {
+    leadAgendaStatusFilter.value = state.leadAgendaStatus;
+  }
+  if (!state.leadAgendaLoaded && !state.leadAgendaLoading && session?.user?.business_id) {
+    loadLeadAgendaData({ quiet: true }).then(renderLeadAgenda).catch(() => {});
+  }
+  const rows = agendaRows();
+  if (leadAgendaCount) leadAgendaCount.textContent = `${rows.length.toLocaleString("es-CO")} tarea(s)`;
+  if (contactTabAgendaCount) {
+    contactTabAgendaCount.textContent = rows.filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length.toLocaleString("es-CO");
+  }
+  renderAgendaKpis(rows);
+  if (state.leadAgendaLoading && !state.leadAgendaLoaded) {
+    leadAgendaBoard.innerHTML = '<div class="empty-state compact">Cargando agenda comercial...</div>';
+    return;
+  }
+  if (state.leadAgendaView === "board") {
+    leadAgendaBoard.innerHTML = renderAgendaBoardView(rows);
+  } else if (state.leadAgendaView === "day") {
+    leadAgendaBoard.innerHTML = renderAgendaDay(rows);
+  } else if (state.leadAgendaView === "week") {
+    leadAgendaBoard.innerHTML = renderAgendaWeek(rows);
+  } else if (state.leadAgendaView === "month") {
+    leadAgendaBoard.innerHTML = renderAgendaMonth(rows);
+  } else if (state.leadAgendaView === "year") {
+    leadAgendaBoard.innerHTML = renderAgendaYear(rows);
+  } else {
+    leadAgendaBoard.innerHTML = renderAgendaList(rows);
+  }
+  bindLeadAgendaActions();
+}
+
+function bindLeadAgendaActions() {
+  leadAgendaBoard?.querySelectorAll("[data-agenda-open-lead]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!button.dataset.agendaOpenLead) return;
+      openLeadDetail({ id: button.dataset.agendaOpenLead, source_type: button.dataset.sourceType || "PLAYER" }, { tab: "notes" });
+    });
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingAgendaId = button.dataset.agendaEdit;
+      renderLeadAgenda();
+    });
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-cancel-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingAgendaId = null;
+      renderLeadAgenda();
+    });
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-edit-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => updateAgendaItemFromForm(event, form.dataset.agendaEditForm));
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-check]").forEach((input) => {
+    input.addEventListener("change", () => updateAgendaChecklistItem(input.dataset.agendaCheck, Number(input.dataset.checkIndex), input.checked));
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-status]").forEach((button) => {
+    button.addEventListener("click", () => updateAgendaStatus(button.dataset.agendaStatus, button.dataset.nextStatus || "DONE"));
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteAgendaItem(button.dataset.agendaDelete));
+  });
+  leadAgendaBoard?.querySelectorAll("[data-agenda-month]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.leadAgendaAnchorDate = button.dataset.agendaMonth;
+      state.leadAgendaView = "month";
+      state.leadAgendaLoaded = false;
+      loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+    });
+  });
+}
+
+async function refreshLeadAgendaAfterMutation() {
+  state.leadAgendaLoaded = false;
+  await loadLeadAgendaData({ force: true, quiet: true });
+  renderLeadAgenda();
+  renderContactCenterSummary(state.leadCrmRows || []);
+  if (state.selectedLeadRef) await reloadSelectedLeadDetail({ keepTab: true });
+}
+
+async function updateAgendaItem(noteId, payload = {}, message = "Tarea de agenda actualizada.") {
+  if (!noteId) return null;
+  const result = await api(`/api/business/leads/agenda/${encodeURIComponent(noteId)}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  state.editingAgendaId = null;
+  await refreshLeadAgendaAfterMutation();
+  showFeedback(message, "success");
+  return result;
+}
+
+async function updateAgendaStatus(noteId, status) {
+  try {
+    await updateAgendaItem(
+      noteId,
+      { agenda_status: status },
+      status === "DONE" ? "Tarea marcada como hecha." : "Tarea de agenda actualizada."
+    );
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar la agenda.", "error");
+  }
+}
+
+async function updateAgendaItemFromForm(event, noteId) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const reminderValue = data.get("reminder_at");
+  const nextAction = String(data.get("next_action") || "").trim();
+  const note = String(data.get("note") || "").trim();
+  const progress = Math.max(0, Math.min(100, Number(data.get("progress_percent") || 0)));
+  if (!nextAction || !note || !reminderValue) {
+    showFeedback("Completa acción, detalle y fecha para guardar la tarea.", "error");
+    return;
+  }
+  try {
+    await updateAgendaItem(noteId, {
+      next_action: nextAction,
+      note,
+      note_type: data.get("note_type") || "commercial",
+      reminder_at: new Date(reminderValue).toISOString(),
+      agenda_status: data.get("agenda_status") || "OPEN",
+      agenda_priority: data.get("agenda_priority") || "MEDIUM",
+      progress_percent: progress,
+      checklist: agendaChecklistItems(data.get("checklist")),
+    }, "Tarea editada.");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo editar la tarea.", "error");
+  }
+}
+
+async function updateAgendaChecklistItem(noteId, index, checked) {
+  const item = (state.leadAgenda || []).find((entry) => String(entry.id) === String(noteId));
+  if (!item || !Number.isInteger(index)) return;
+  const checklist = agendaChecklistItems(item.checklist);
+  if (!checklist[index]) return;
+  checklist[index] = { ...checklist[index], done: Boolean(checked) };
+  const progress = checklist.length ? Math.round((checklist.filter((entry) => entry.done).length / checklist.length) * 100) : Number(item.progress_percent || 0);
+  try {
+    await updateAgendaItem(noteId, { checklist, progress_percent: progress }, "Checklist actualizado.");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el checklist.", "error");
+  }
+}
+
+async function deleteAgendaItem(noteId) {
+  if (!noteId) return;
+  const confirmation = window.confirm("¿Eliminar esta tarea de la agenda?");
+  if (!confirmation) return;
+  try {
+    await api(`/api/business/leads/agenda/${encodeURIComponent(noteId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.editingAgendaId = null;
+    await refreshLeadAgendaAfterMutation();
+    showFeedback("Tarea eliminada de la agenda.", "success");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar la tarea.", "error");
+  }
+}
+
+async function createAgendaItemFromForm(event) {
+  event.preventDefault();
+  const leadRef = parseAgendaLeadValue(leadAgendaLeadInput?.value || "");
+  const reminderValue = leadAgendaReminderInput?.value || "";
+  const nextAction = String(leadAgendaActionInput?.value || "").trim();
+  const noteDetail = String(leadAgendaNoteInput?.value || "").trim();
+  const progress = Math.max(0, Math.min(100, Number(leadAgendaProgressInput?.value || 0)));
+  if (!leadRef.id || !reminderValue || !nextAction) {
+    showFeedback("Selecciona contacto, acción y fecha para crear la tarea.", "error");
+    return;
+  }
+  try {
+    await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}/notes`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_type: leadRef.source_type || "PLAYER",
+        note: noteDetail || nextAction,
+        note_type: "follow_up",
+        next_action: nextAction,
+        reminder_at: new Date(reminderValue).toISOString(),
+        agenda_priority: leadAgendaPriorityInput?.value || "MEDIUM",
+        progress_percent: progress,
+        checklist: agendaChecklistItems(leadAgendaChecklistInput?.value || ""),
+      }),
+    });
+    leadAgendaActionInput.value = "";
+    leadAgendaNoteInput.value = "";
+    if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = "MEDIUM";
+    if (leadAgendaProgressInput) leadAgendaProgressInput.value = "0";
+    if (leadAgendaChecklistInput) leadAgendaChecklistInput.value = "";
+    const nextHour = new Date();
+    nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+    leadAgendaReminderInput.value = datetimeLocalValue(nextHour);
+    await refreshLeadAgendaAfterMutation();
+    showFeedback("Tarea creada en la agenda.", "success");
+  } catch (error) {
+    showFeedback(error.message || "No se pudo crear la tarea.", "error");
+  }
+}
+
+function moveLeadAgendaAnchor(direction = 1) {
+  const current = startOfLocalDay(state.leadAgendaAnchorDate || new Date());
+  if (state.leadAgendaView === "year") current.setFullYear(current.getFullYear() + direction);
+  else if (state.leadAgendaView === "month") current.setMonth(current.getMonth() + direction);
+  else if (state.leadAgendaView === "week") current.setDate(current.getDate() + (7 * direction));
+  else if (state.leadAgendaView === "board" || state.leadAgendaView === "list") current.setDate(current.getDate() + (30 * direction));
+  else current.setDate(current.getDate() + direction);
+  state.leadAgendaAnchorDate = dateInputValue(current);
+  state.leadAgendaLoaded = false;
+  loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+}
+
 function appendIfFound(parent, node) {
   if (parent && node && node.parentElement !== parent) parent.appendChild(node);
 }
 
-const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "captures", "manual", "sales"];
+const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "agenda", "captures", "manual", "sales"];
 
 function mountContactCenterLayout() {
   if (state.contactCenterMounted) return;
@@ -17087,10 +17882,11 @@ function mountContactCenterLayout() {
   const overviewPanel = document.querySelector('[data-contact-center-panel="overview"]');
   const directoryPanel = document.querySelector('[data-contact-center-panel="directory"]');
   const ticketsPanel = document.querySelector('[data-contact-center-panel="tickets"]');
+  const agendaPanel = document.querySelector('[data-contact-center-panel="agenda"]');
   const capturesPanel = document.querySelector('[data-contact-center-panel="captures"]');
   const manualPanel = document.querySelector('[data-contact-center-panel="manual"]');
   const salesPanel = document.querySelector('[data-contact-center-panel="sales"]');
-  if (!overviewPanel || !directoryPanel || !ticketsPanel || !capturesPanel || !manualPanel || !salesPanel) return;
+  if (!overviewPanel || !directoryPanel || !ticketsPanel || !agendaPanel || !capturesPanel || !manualPanel || !salesPanel) return;
 
   appendIfFound(overviewPanel, leadFeedKpiGrid);
   appendIfFound(overviewPanel, contactActionFeed);
@@ -17102,6 +17898,8 @@ function mountContactCenterLayout() {
   appendIfFound(directoryPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
 
   appendIfFound(ticketsPanel, leadTicketInventoryBoard);
+
+  appendIfFound(agendaPanel, leadAgendaCard);
 
   appendIfFound(capturesPanel, leadCaptureForm?.closest("article"));
   appendIfFound(capturesPanel, leadCaptureTable?.closest("article"));
@@ -17122,7 +17920,7 @@ function mountContactCenterLayout() {
 function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
   const configs = {
     overview: {
-      meta: "Vista 1 de 6 · Resumen",
+      meta: "Vista 1 de 7 · Resumen",
       title: "Resumen operativo de contactos",
       copy: "Mira primero las prioridades, señales comerciales, leads con probabilidad de compra y acciones urgentes.",
       primaryLabel: "Ver directorio",
@@ -17131,7 +17929,7 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "export-all",
     },
     directory: {
-      meta: "Vista 2 de 6 · Directorio",
+      meta: "Vista 2 de 7 · Directorio",
       title: "Directorio de contactos y fichas comerciales",
       copy: "Busca, filtra y abre la ficha de cada contacto sin mezclar formularios, ventas ni capturas.",
       primaryLabel: "Agregar prospecto",
@@ -17140,7 +17938,7 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "export-all",
     },
     tickets: {
-      meta: "Vista 3 de 6 · Tickets",
+      meta: "Vista 3 de 7 · Tickets",
       title: "Seguimiento por estado de ticket",
       copy: "Separa activos sin redimir, expirados, no activos y redimidos para enviar recordatorios o revisar la ficha.",
       primaryLabel: "Exportar activos",
@@ -17148,8 +17946,17 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryLabel: "Ver directorio",
       secondaryAction: "go-directory",
     },
+    agenda: {
+      meta: "Vista 4 de 7 · Agenda",
+      title: "Agenda de manejo de clientes",
+      copy: "Organiza llamadas, seguimientos y tareas por día, semana, mes, año o lista operativa.",
+      primaryLabel: "Nueva tarea",
+      primaryAction: "create-agenda",
+      secondaryLabel: "Ver directorio",
+      secondaryAction: "go-directory",
+    },
     captures: {
-      meta: "Vista 4 de 6 · Capturas",
+      meta: "Vista 5 de 7 · Capturas",
       title: "Capturas, formularios y activos",
       copy: "Revisa las experiencias que capturan leads: landing, ebook, QR, consentimiento y descargas.",
       primaryLabel: "Crear captura",
@@ -17158,7 +17965,7 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "go-directory",
     },
     manual: {
-      meta: "Vista 5 de 6 · Contactos agregados",
+      meta: "Vista 6 de 7 · Contactos agregados",
       title: "Directorio interno de contactos agregados",
       copy: "Revisa contactos guardados manualmente o promovidos desde otros leads, edítalos y registra nuevos prospectos.",
       primaryLabel: "Nuevo contacto",
@@ -17167,7 +17974,7 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "go-directory",
     },
     sales: {
-      meta: "Vista 6 de 6 · Conversion",
+      meta: "Vista 7 de 7 · Conversion",
       title: "Convertidos, ventas y cierre",
       copy: "Registra compras, mide revenue y conecta clientes convertidos con campañas, tickets y seguimiento.",
       primaryLabel: "Registrar venta",
@@ -17207,6 +18014,13 @@ function handleContactCenterStageAction(action = "") {
     leadCaptureNameInput?.focus();
     return;
   }
+  if (action === "create-agenda") {
+    setContactCenterTab("agenda");
+    renderLeadAgendaLeadOptions();
+    leadAgendaCard?.scrollIntoView({ behavior: "smooth", block: "start" });
+    leadAgendaActionInput?.focus();
+    return;
+  }
   if (action === "create-sale") {
     setContactCenterTab("sales");
     document.getElementById("customerAcquisitionForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -17219,6 +18033,10 @@ function handleContactCenterStageAction(action = "") {
   }
   if (action === "go-tickets") {
     setContactCenterTab("tickets");
+    return;
+  }
+  if (action === "go-agenda") {
+    setContactCenterTab("agenda");
     return;
   }
   if (action === "export-active") {
@@ -17259,13 +18077,15 @@ function setContactCenterTab(tab = "overview") {
     renderLeadCaptureTable();
     renderLeadCaptureAssetOptions();
   }
+  if (nextTab === "agenda") renderLeadAgenda();
   if (nextTab === "sales") renderSalesView();
 }
 
-function updateContactCenterCounts({ totalContacts = 0, visibleContacts = 0, ticketTotal = 0, capturedLeads = 0, manualContacts = 0, converted = 0 } = {}) {
+function updateContactCenterCounts({ totalContacts = 0, visibleContacts = 0, ticketTotal = 0, agendaTotal = 0, capturedLeads = 0, manualContacts = 0, converted = 0 } = {}) {
   if (contactTabOverviewCount) contactTabOverviewCount.textContent = Number(totalContacts || 0).toLocaleString("es-CO");
   if (contactTabDirectoryCount) contactTabDirectoryCount.textContent = Number(visibleContacts || totalContacts || 0).toLocaleString("es-CO");
   if (contactTabTicketsCount) contactTabTicketsCount.textContent = Number(ticketTotal || 0).toLocaleString("es-CO");
+  if (contactTabAgendaCount) contactTabAgendaCount.textContent = Number(agendaTotal || 0).toLocaleString("es-CO");
   if (contactTabCapturesCount) contactTabCapturesCount.textContent = Number(capturedLeads || 0).toLocaleString("es-CO");
   if (contactTabManualCount) contactTabManualCount.textContent = Number(manualContacts || 0).toLocaleString("es-CO");
   if (contactTabSalesCount) contactTabSalesCount.textContent = Number(converted || 0).toLocaleString("es-CO");
@@ -17444,11 +18264,13 @@ function renderContactCenterSummary(crmRows = []) {
   const manualContacts = state.manualContactsLoaded
     ? (state.manualContacts || []).length
     : crmRows.filter((item) => String(item.source_type || "").toUpperCase() === "MANUAL").length;
+  const agendaTotal = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
   const conversionRate = totalContacts ? safeRate(buyers || sales.length, totalContacts) : "0%";
   updateContactCenterCounts({
     totalContacts,
     visibleContacts: crmRows.length,
     ticketTotal: activeTickets + expiredTickets + inactiveTickets + redeemedTickets,
+    agendaTotal,
     capturedLeads,
     manualContacts,
     converted: buyers || sales.length,
@@ -17709,6 +18531,7 @@ function renderLeadsView() {
   }
   renderLeadCrmTable();
   renderManualContactsDirectory();
+  renderLeadAgenda();
   renderLeadCaptureTable();
   if (state.contactCenterTab === "sales") renderSalesView();
   renderLegacyLeadTables(feedRows);
@@ -18345,12 +19168,13 @@ function renderLeadTab(detail) {
           <option value="observation">Observacion</option>
         </select>
         <input id="leadNoteNextActionInput" type="text" maxlength="500" placeholder="Proxima accion sugerida">
+        <input id="leadNoteReminderInput" type="datetime-local" aria-label="Fecha y hora de recordatorio">
         <button class="solid-button" type="submit">Guardar nota</button>
       </form>
       ${detailList((detail.notes || []).map((item) => `
         <strong>${escapeHtml(item.note_type || "Nota")}</strong>
         <span>${escapeHtml(item.note)}</span>
-        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""}</small>
+        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""} ${item.reminder_at ? `· agenda ${escapeHtml(formatDate(item.reminder_at))}` : ""}</small>
       `), "Sin notas internas.")}
     `,
     timeline: () => `<div class="lead-timeline">${(detail.timeline || []).map((item) => `
@@ -18559,6 +19383,7 @@ async function createLeadNoteFromForm(event) {
   if (!state.selectedLeadRef) return;
   const note = String(document.getElementById("leadNoteInput")?.value || "").trim();
   if (!note) return;
+  const reminderValue = document.getElementById("leadNoteReminderInput")?.value || "";
   await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
     method: "POST",
     headers: authHeaders(),
@@ -18567,8 +19392,12 @@ async function createLeadNoteFromForm(event) {
       note,
       note_type: document.getElementById("leadNoteTypeInput")?.value || "commercial",
       next_action: String(document.getElementById("leadNoteNextActionInput")?.value || "").trim() || null,
+      reminder_at: reminderValue ? new Date(reminderValue).toISOString() : null,
     }),
   });
+  state.leadAgendaLoaded = false;
+  await loadLeadAgendaData({ force: true, quiet: true });
+  renderLeadAgenda();
   await reloadSelectedLeadDetail({ keepTab: true });
 }
 
@@ -19711,6 +20540,32 @@ contactCenterTabs.forEach((button) => {
 });
 contactCenterPrimaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterPrimaryAction.dataset.contactCenterAction));
 contactCenterSecondaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterSecondaryAction.dataset.contactCenterAction));
+leadAgendaCreateForm?.addEventListener("submit", createAgendaItemFromForm);
+leadAgendaTemplateButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    applyAgendaTemplate(button.dataset.agendaTemplate);
+    leadAgendaActionInput?.focus();
+  });
+});
+leadAgendaViewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.leadAgendaView = button.dataset.agendaView || "list";
+    state.leadAgendaLoaded = false;
+    loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+  });
+});
+leadAgendaDateInput?.addEventListener("change", () => {
+  state.leadAgendaAnchorDate = leadAgendaDateInput.value || dateInputValue(new Date());
+  state.leadAgendaLoaded = false;
+  loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+});
+leadAgendaStatusFilter?.addEventListener("change", () => {
+  state.leadAgendaStatus = leadAgendaStatusFilter.value || "OPEN";
+  state.leadAgendaLoaded = false;
+  loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+});
+leadAgendaPrevButton?.addEventListener("click", () => moveLeadAgendaAnchor(-1));
+leadAgendaNextButton?.addEventListener("click", () => moveLeadAgendaAnchor(1));
 ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
 });

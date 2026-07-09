@@ -1307,8 +1307,8 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
   const lead = await resolveLead(businessId, leadId, sourceType);
   const result = await query(
     `insert into lead_notes
-      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, created_by)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, created_by)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
      returning *`,
     [
       businessId,
@@ -1319,6 +1319,9 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
       payload.note_type || "commercial",
       payload.next_action || null,
       payload.reminder_at || null,
+      payload.agenda_priority || "MEDIUM",
+      Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : 0,
+      JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
       user.id,
     ]
   );
@@ -1328,6 +1331,218 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
     [businessId, lead.lead_id || null, lead.source_type, lead.id, payload.note.slice(0, 500), user.id, JSON.stringify({ note_id: result.rows[0].id, note_type: payload.note_type || "commercial" })]
   );
   return result.rows[0];
+}
+
+function agendaDateRange(params = {}) {
+  const now = new Date();
+  const from = params.from ? new Date(params.from) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = params.to ? new Date(params.to) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
+    const error = new Error("Rango de agenda invalido.");
+    error.status = 400;
+    throw error;
+  }
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function agendaLimit(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 500;
+  return Math.min(parsed, 1000);
+}
+
+async function listLeadAgenda(businessId, params = {}) {
+  const { from, to } = agendaDateRange(params);
+  const status = String(params.status || "OPEN").toUpperCase();
+  const allowedStatus = ["OPEN", "DONE", "CANCELLED", "ALL"].includes(status) ? status : "OPEN";
+  const result = await query(
+    `select
+        ln.id,
+        ln.business_id,
+        ln.lead_id,
+        ln.source_type,
+        ln.source_id,
+        ln.note,
+        ln.note_type,
+        ln.next_action,
+        ln.reminder_at,
+        ln.agenda_status,
+        ln.agenda_priority,
+        ln.progress_percent,
+        ln.checklist,
+        ln.completed_at,
+        ln.created_at,
+        ln.updated_at,
+        u.full_name as author_name,
+        coalesce(p.name, ml.name, fa.name, 'Contacto sin nombre') as lead_name,
+        coalesce(p.email, ml.email, fa.email) as lead_email,
+        coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
+        coalesce(p.document_id, fa.document_id) as lead_document_id,
+        coalesce(ml.company, fa.company_name, p.metadata->>'company') as lead_company,
+        coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
+        coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
+       from lead_notes ln
+       left join app_users u on u.id = ln.created_by
+       left join players p on p.business_id = ln.business_id
+        and (p.id = ln.lead_id or (ln.source_type = 'PLAYER' and p.id = ln.source_id))
+       left join business_manual_leads ml on ml.business_id = ln.business_id
+        and ln.source_type = 'MANUAL'
+        and ml.id = ln.source_id
+       left join affiliates fa on fa.business_id = ln.business_id
+        and ln.source_type = 'AFFILIATE'
+        and fa.id = ln.source_id
+       left join campaigns c on c.id = p.campaign_id
+      where ln.business_id = $1
+        and ln.reminder_at is not null
+        and ln.reminder_at >= $2::timestamptz
+        and ln.reminder_at <= $3::timestamptz
+        and ($4::text = 'ALL' or ln.agenda_status = $4::text)
+      order by ln.reminder_at asc, ln.created_at asc
+      limit $5`,
+    [businessId, from, to, allowedStatus, agendaLimit(params.limit)]
+  );
+  return {
+    agenda: result.rows,
+    range: { from, to },
+    status: allowedStatus,
+  };
+}
+
+async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
+  const hasNote = Object.prototype.hasOwnProperty.call(payload, "note");
+  const hasNoteType = Object.prototype.hasOwnProperty.call(payload, "note_type");
+  const hasNextAction = Object.prototype.hasOwnProperty.call(payload, "next_action");
+  const hasReminder = Object.prototype.hasOwnProperty.call(payload, "reminder_at");
+  const hasStatus = Object.prototype.hasOwnProperty.call(payload, "agenda_status");
+  const hasPriority = Object.prototype.hasOwnProperty.call(payload, "agenda_priority");
+  const hasProgress = Object.prototype.hasOwnProperty.call(payload, "progress_percent");
+  const hasChecklist = Object.prototype.hasOwnProperty.call(payload, "checklist");
+  const nextStatus = hasStatus ? String(payload.agenda_status || "").toUpperCase() : null;
+  if (hasStatus && !["OPEN", "DONE", "CANCELLED"].includes(nextStatus)) {
+    const error = new Error("Estado de agenda invalido.");
+    error.status = 400;
+    throw error;
+  }
+  if (!hasNote && !hasNoteType && !hasNextAction && !hasReminder && !hasStatus && !hasPriority && !hasProgress && !hasChecklist) {
+    const error = new Error("No hay cambios para actualizar en la agenda.");
+    error.status = 400;
+    throw error;
+  }
+  const result = await query(
+    `update lead_notes
+        set note = case when $3 then $4 else note end,
+            note_type = case when $5 then $6 else note_type end,
+            next_action = case when $7 then $8 else next_action end,
+            reminder_at = case when $9 then $10::timestamptz else reminder_at end,
+            agenda_status = case when $11 then $12 else agenda_status end,
+            agenda_priority = case when $14 then $15 else agenda_priority end,
+            progress_percent = case when $16 then $17 else progress_percent end,
+            checklist = case when $18 then $19::jsonb else checklist end,
+            completed_at = case
+              when $11 and $12 = 'DONE' then coalesce(completed_at, now())
+              when $11 and $12 <> 'DONE' then null
+              else completed_at
+            end,
+            completed_by = case
+              when $11 and $12 = 'DONE' then $13
+              when $11 and $12 <> 'DONE' then null
+              else completed_by
+            end,
+            updated_by = $13,
+            updated_at = now()
+      where id = $1
+        and business_id = $2
+        and reminder_at is not null
+      returning *`,
+    [
+      noteId,
+      businessId,
+      hasNote,
+      payload.note || null,
+      hasNoteType,
+      payload.note_type || null,
+      hasNextAction,
+      payload.next_action || null,
+      hasReminder,
+      payload.reminder_at || null,
+      hasStatus,
+      nextStatus,
+      user.id,
+      hasPriority,
+      payload.agenda_priority || null,
+      hasProgress,
+      Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : null,
+      hasChecklist,
+      JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
+    ]
+  );
+  if (!result.rowCount) {
+    throw notFound("Tarea de agenda no encontrada.");
+  }
+  const eventTitle = hasStatus
+    ? nextStatus === "DONE"
+      ? "Agenda completada"
+      : nextStatus === "CANCELLED"
+        ? "Agenda cancelada"
+        : "Agenda reabierta"
+    : "Agenda editada";
+  await query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'agenda_status_updated', $5, $6, $7, $8::jsonb)`,
+    [
+      businessId,
+      result.rows[0].lead_id || null,
+      result.rows[0].source_type,
+      result.rows[0].source_id,
+      eventTitle,
+      result.rows[0].next_action || result.rows[0].note,
+      user.id,
+      JSON.stringify({
+        note_id: noteId,
+        agenda_status: result.rows[0].agenda_status,
+        changed_fields: Object.keys(payload),
+      }),
+    ]
+  );
+  return result.rows[0];
+}
+
+async function deleteLeadAgendaItem(businessId, user, noteId) {
+  const existing = await query(
+    `select *
+       from lead_notes
+      where id = $1
+        and business_id = $2
+        and reminder_at is not null`,
+    [noteId, businessId]
+  );
+  if (!existing.rowCount) {
+    throw notFound("Tarea de agenda no encontrada.");
+  }
+  const item = existing.rows[0];
+  await query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'agenda_deleted', 'Agenda eliminada', $5, $6, $7::jsonb)`,
+    [
+      businessId,
+      item.lead_id || null,
+      item.source_type,
+      item.source_id,
+      item.next_action || item.note,
+      user.id,
+      JSON.stringify({ note_id: noteId, agenda_status: item.agenda_status, reminder_at: item.reminder_at }),
+    ]
+  );
+  await query(
+    `delete from lead_notes
+      where id = $1
+        and business_id = $2
+        and reminder_at is not null`,
+    [noteId, businessId]
+  );
+  return { deleted: true, id: noteId };
 }
 
 async function addLeadInterest(businessId, user, leadId, sourceType, payload) {
@@ -1904,8 +2119,11 @@ module.exports = {
   addLeadInterest,
   createLeadActivation,
   createLeadNote,
+  deleteLeadAgendaItem,
   deleteLeadContact,
   deleteLeadInterest,
   getLeadCrmDetail,
+  listLeadAgenda,
   listLeadCrmRows,
+  updateLeadAgendaItem,
 };

@@ -2709,6 +2709,11 @@
                   <span class="contact-tab-copy"><strong>Tickets</strong><small>Estados y recordación</small></span>
                   <em id="contactTabTicketsCount">0</em>
                 </button>
+                <button class="segment-tab contact-center-tab-card" id="contactTabAgenda" data-contact-center-tab="agenda" type="button" role="tab" aria-selected="false" aria-controls="contactPanelAgenda" tabindex="-1">
+                  <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">event_note</span>
+                  <span class="contact-tab-copy"><strong>Agenda</strong><small>Llamadas y tareas</small></span>
+                  <em id="contactTabAgendaCount">0</em>
+                </button>
                 <button class="segment-tab contact-center-tab-card" id="contactTabCaptures" data-contact-center-tab="captures" type="button" role="tab" aria-selected="false" aria-controls="contactPanelCaptures" tabindex="-1">
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">how_to_reg</span>
                   <span class="contact-tab-copy"><strong>Capturas</strong><small>Landing y formularios</small></span>
@@ -2730,10 +2735,86 @@
               <div class="contact-center-panel active" id="contactPanelOverview" data-contact-center-panel="overview" role="tabpanel" aria-labelledby="contactTabOverview"></div>
               <div class="contact-center-panel hidden" id="contactPanelDirectory" data-contact-center-panel="directory" role="tabpanel" aria-labelledby="contactTabDirectory" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelTickets" data-contact-center-panel="tickets" role="tabpanel" aria-labelledby="contactTabTickets" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelAgenda" data-contact-center-panel="agenda" role="tabpanel" aria-labelledby="contactTabAgenda" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelCaptures" data-contact-center-panel="captures" role="tabpanel" aria-labelledby="contactTabCaptures" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelManual" data-contact-center-panel="manual" role="tabpanel" aria-labelledby="contactTabManual" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelSales" data-contact-center-panel="sales" role="tabpanel" aria-labelledby="contactTabSales" hidden></div>
             </section>
+            <article class="surface-card data-table-card" id="leadAgendaCard">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Agenda comercial</span>
+                  <h3>Cuándo llamar y qué hacer</h3>
+                </div>
+                <span class="pill muted" id="leadAgendaCount">0 pendientes</span>
+              </div>
+              <div class="lead-agenda-toolbar">
+                <div class="segment-tabs lead-agenda-view-tabs" role="tablist" aria-label="Visualizaciones de agenda">
+                  <button class="segment-tab active" data-agenda-view="list" type="button">Lista</button>
+                  <button class="segment-tab" data-agenda-view="board" type="button">Tablero</button>
+                  <button class="segment-tab" data-agenda-view="day" type="button">Horario</button>
+                  <button class="segment-tab" data-agenda-view="week" type="button">Semana</button>
+                  <button class="segment-tab" data-agenda-view="month" type="button">Mes</button>
+                  <button class="segment-tab" data-agenda-view="year" type="button">Año</button>
+                </div>
+                <div class="lead-agenda-controls">
+                  <button class="ghost-button" id="leadAgendaPrevButton" type="button">Anterior</button>
+                  <input id="leadAgendaDateInput" type="date">
+                  <button class="ghost-button" id="leadAgendaNextButton" type="button">Siguiente</button>
+                  <select id="leadAgendaStatusFilter">
+                    <option value="OPEN">Pendientes</option>
+                    <option value="DONE">Hechas</option>
+                    <option value="CANCELLED">Canceladas</option>
+                    <option value="ALL">Todas</option>
+                  </select>
+                </div>
+              </div>
+              <div class="lead-agenda-fast-actions" aria-label="Acciones rápidas de agenda">
+                <button class="ghost-button" type="button" data-agenda-template="CALL">Llamar</button>
+                <button class="ghost-button" type="button" data-agenda-template="PROPOSAL">Propuesta</button>
+                <button class="ghost-button" type="button" data-agenda-template="PACKAGE">Paquete</button>
+                <button class="ghost-button" type="button" data-agenda-template="ACTIVATION">Activación</button>
+                <button class="ghost-button" type="button" data-agenda-template="MARKETING">Marketing</button>
+              </div>
+              <form class="lead-agenda-create-form" id="leadAgendaCreateForm">
+                <label>
+                  <span>Contacto</span>
+                  <select id="leadAgendaLeadInput" required></select>
+                </label>
+                <label>
+                  <span>Qué hay que hacer</span>
+                  <input id="leadAgendaActionInput" type="text" maxlength="500" placeholder="Ej: llamar, enviar propuesta, confirmar activación" required>
+                </label>
+                <label>
+                  <span>Fecha y hora</span>
+                  <input id="leadAgendaReminderInput" type="datetime-local" required>
+                </label>
+                <label>
+                  <span>Prioridad</span>
+                  <select id="leadAgendaPriorityInput">
+                    <option value="MEDIUM">Media</option>
+                    <option value="HIGH">Alta</option>
+                    <option value="URGENT">Urgente</option>
+                    <option value="LOW">Baja</option>
+                  </select>
+                </label>
+                <label>
+                  <span>% completado</span>
+                  <input id="leadAgendaProgressInput" type="number" min="0" max="100" step="5" value="0">
+                </label>
+                <label class="span-2">
+                  <span>Detalle</span>
+                  <textarea id="leadAgendaNoteInput" rows="2" maxlength="3000" placeholder="Contexto de la tarea, paquete, emisión, seguimiento o acción de marketing"></textarea>
+                </label>
+                <label class="span-2">
+                  <span>Checklist</span>
+                  <textarea id="leadAgendaChecklistInput" rows="2" maxlength="1200" placeholder="Una tarea por línea: llamar, enviar link, confirmar pago"></textarea>
+                </label>
+                <button class="solid-button" type="submit">Crear tarea</button>
+              </form>
+              <section class="lead-agenda-kpis" id="leadAgendaKpis"></section>
+              <section class="lead-agenda-board" id="leadAgendaBoard"></section>
+            </article>
             <section class="lead-directory-command surface-card">
               <div class="lead-directory-search-row">
                 <label class="lead-directory-search">
