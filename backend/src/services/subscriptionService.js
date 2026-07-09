@@ -34,7 +34,7 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: null,
     portal_access_fee_cop: STARTED_PORTAL_COP,
-    pricing_note: "Started activa el acceso mensual al portal. Los tickets adicionales se compran dentro del portal con sesion iniciada.",
+    pricing_note: "Started activa el acceso mensual al portal para operar campanas, leads, agenda y beneficios desde una cuenta privada.",
   },
   GROWTH: {
     recommended_start_package: null,
@@ -1115,7 +1115,7 @@ function featurePrompts(plan = {}) {
   return {
     portal_locked: {
       title: "Activa tu Portal RMS",
-      message: "Activa un plan mensual para usar MarketGamesQR. Los tickets adicionales se compran dentro del portal con sesion iniciada.",
+      message: "Activa un plan mensual para usar MarketGamesQR desde el portal privado de tu negocio.",
       cta: "Ver planes",
       url: "/paquetes/",
     },

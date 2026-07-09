@@ -242,7 +242,7 @@ function renderPlans() {
             </ul>
           </details>
         ` : ""}
-        <p class="ticket-balance-note">Incluye 10 tickets de cortesía solo en la primera suscripción. Los tickets adicionales se compran dentro del portal.</p>
+        <p class="ticket-balance-note">Incluye 10 tickets de cortesía solo en la primera suscripción.</p>
         <button type="button" data-plan-code="${escapeHtml(plan.code)}" aria-label="${escapeHtml(CTA_LABELS[plan.code] || `Elegir ${plan.name}`)}">${escapeHtml(CTA_LABELS[plan.code] || "Elegir plan")}</button>
       </article>
     `;
@@ -257,7 +257,7 @@ function renderSelection() {
   const title = selectedPlan ? `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}` : "Suscripción primero";
   const copy = selectedPlan
     ? `Vas a activar el plan ${selectedPlan.name}. Al confirmar tu primera suscripción recibes 10 tickets de cortesía.`
-    : "Los tickets adicionales se compran únicamente dentro del portal, una vez el usuario haya iniciado sesión y tenga una suscripción activa.";
+    : "Contrata tu plan mensual y opera MarketGamesQR desde una cuenta privada para tu negocio.";
   [selectedBox, signupPlanSummary].forEach((box) => {
     if (!box) return;
     box.innerHTML = `
