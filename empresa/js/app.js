@@ -18829,6 +18829,53 @@ function renderContactActionFeed(crmRows = [], feedRows = []) {
   });
 }
 
+function kpiCardHtml([label, value, meta]) {
+  return `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value ?? 0)}</strong>
+      <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+    </article>
+  `;
+}
+
+function collapsibleKpiPanelHtml({
+  title,
+  meta,
+  summary = [],
+  items = [],
+  open = false,
+  key = "",
+}) {
+  return `
+    <details class="collapsible-kpi-panel" data-kpi-panel="${escapeHtml(key)}" ${open ? "open" : ""}>
+      <summary>
+        <span class="collapsible-kpi-title">
+          <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(meta || "")}</small>
+        </span>
+        <span class="collapsible-kpi-summary">
+          ${summary.map(([label, value]) => `
+            <span><b>${escapeHtml(value ?? 0)}</b>${escapeHtml(label)}</span>
+          `).join("")}
+        </span>
+      </summary>
+      <div class="collapsible-kpi-grid">
+        ${items.map(kpiCardHtml).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function bindCollapsibleKpiState(container, stateKey) {
+  const panel = container?.querySelector?.(".collapsible-kpi-panel");
+  if (!panel || !stateKey) return;
+  panel.addEventListener("toggle", () => {
+    state[stateKey] = panel.open;
+  });
+}
+
 function renderContactCenterSummary(crmRows = []) {
   if (!contactCenterSummaryGrid) return;
   const totalContacts = Number(state.leadCrmPagination?.total ?? crmRows.length);
@@ -18855,7 +18902,7 @@ function renderContactCenterSummary(crmRows = []) {
     manualContacts,
     converted: buyers || sales.length,
   });
-  contactCenterSummaryGrid.innerHTML = [
+  const kpis = [
     ["Contactos unificados", totalContacts, "Manuales, compradores y capturas"],
     ["Capturados", capturedLeads, `${(state.leadCaptureActivations || []).length} capturas activas o historicas`],
     ["Convertidos", buyers || sales.length, `${conversionRate} de conversion visible`],
@@ -18863,13 +18910,20 @@ function renderContactCenterSummary(crmRows = []) {
     ["Tickets activos", activeTickets, "Beneficios pendientes de redimir"],
     ["Tickets vencidos", expiredTickets, "Requieren cierre o nueva oferta"],
     ["Tickets no activos", inactiveTickets, "Sin reclamar, cancelados o no usables"],
-  ].map(([label, value, meta]) => `
-    <article class="kpi-card">
-      <span class="mono-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value ?? 0)}</strong>
-      <div class="kpi-meta">${escapeHtml(meta || "")}</div>
-    </article>
-  `).join("");
+  ];
+  contactCenterSummaryGrid.innerHTML = collapsibleKpiPanelHtml({
+    key: "contact-center-summary",
+    title: "Metricas generales de contactos",
+    meta: "Contactos, conversion, revenue y estado de tickets",
+    open: Boolean(state.contactCenterMetricsOpen),
+    summary: [
+      ["contactos", totalContacts],
+      ["convertidos", buyers || sales.length],
+      ["revenue", money(revenue)],
+    ],
+    items: kpis,
+  });
+  bindCollapsibleKpiState(contactCenterSummaryGrid, "contactCenterMetricsOpen");
 }
 
 function renderLeadTicketInventoryBoard(crmRows = []) {
@@ -19034,7 +19088,7 @@ function renderLeadsView() {
   ];
 
   if (leadFeedKpiGrid) {
-    leadFeedKpiGrid.innerHTML = [
+    const leadFeedKpis = [
       ["Atender hoy", highPriority, "Tickets activos, seguimiento o conversion"],
       ["Leads y contactos", state.leadCrmPagination?.total ?? crmRows.length, state.contactFeedRetention?.label || "Busqueda paginada"],
       ["Compradores", buyers, "Con venta registrada"],
@@ -19044,13 +19098,20 @@ function renderLeadsView() {
       ["Tickets no activos", inactiveTickets, "Sin reclamar o cancelados"],
       ["Tickets redimidos", redeemedTickets, "Usados o validados"],
       ["Sin contacto", withoutContact, "Completar antes de activar"],
-    ].map(([label, value, meta]) => `
-      <article class="kpi-card">
-        <span class="mono-label">${escapeHtml(label)}</span>
-        <strong>${escapeHtml(value ?? 0)}</strong>
-        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
-      </article>
-    `).join("");
+    ];
+    leadFeedKpiGrid.innerHTML = collapsibleKpiPanelHtml({
+      key: "lead-feed-summary",
+      title: "Metricas del directorio comercial",
+      meta: "Prioridad, compradores, score y estado de tickets",
+      open: Boolean(state.leadFeedMetricsOpen),
+      summary: [
+        ["hoy", highPriority],
+        ["compradores", buyers],
+        ["tickets activos", activeTickets],
+      ],
+      items: leadFeedKpis,
+    });
+    bindCollapsibleKpiState(leadFeedKpiGrid, "leadFeedMetricsOpen");
   }
   renderContactCenterSummary(crmRows);
   renderContactActionFeed(crmRows, feedRows);

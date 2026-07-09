@@ -2498,6 +2498,101 @@ th,
   color: rgba(255, 255, 255, 0.8);
 }
 
+.collapsible-kpi-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid rgba(111, 251, 190, 0.18);
+  border-radius: 14px;
+  background: rgba(8, 16, 24, 0.72);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+
+.collapsible-kpi-panel summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 64px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible-kpi-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-kpi-title {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.collapsible-kpi-title .material-symbols-outlined {
+  grid-row: span 2;
+  color: var(--secondary);
+  transition: transform 0.18s ease;
+}
+
+.collapsible-kpi-panel[open] .collapsible-kpi-title .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+
+.collapsible-kpi-title strong {
+  min-width: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.collapsible-kpi-title small {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.collapsible-kpi-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.collapsible-kpi-summary span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid rgba(111, 251, 190, 0.16);
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: rgba(111, 251, 190, 0.08);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.collapsible-kpi-summary b {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.collapsible-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.collapsible-kpi-grid .kpi-card {
+  min-height: 124px;
+}
+
 .kpi-value.highlight {
   color: var(--primary);
 }
@@ -7651,6 +7746,19 @@ textarea {
 }
 
 @media (max-width: 720px) {
+  .collapsible-kpi-panel summary {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .collapsible-kpi-summary {
+    justify-content: flex-start;
+  }
+
+  .collapsible-kpi-summary span {
+    white-space: normal;
+  }
+
   .view-section[data-view="campaigns"] {
     padding: 12px;
   }
@@ -7755,6 +7863,27 @@ textarea {
 :root[data-theme="light"] .campaign-cost-detail-grid > div {
   background: rgba(255, 255, 255, 0.82) !important;
   border-color: rgba(20, 93, 120, 0.18) !important;
+}
+
+:root[data-theme="light"] .collapsible-kpi-panel {
+  background: #ffffff !important;
+  border-color: rgba(8, 122, 94, 0.14) !important;
+  box-shadow: 0 12px 28px rgba(15, 35, 29, 0.06) !important;
+}
+
+:root[data-theme="light"] .collapsible-kpi-title strong,
+:root[data-theme="light"] .collapsible-kpi-summary b {
+  color: var(--text) !important;
+}
+
+:root[data-theme="light"] .collapsible-kpi-title small,
+:root[data-theme="light"] .collapsible-kpi-summary span {
+  color: var(--text-muted) !important;
+}
+
+:root[data-theme="light"] .collapsible-kpi-summary span {
+  background: #f1fbf6 !important;
+  border-color: #c7e8d7 !important;
 }
 
 .theme-switch {
