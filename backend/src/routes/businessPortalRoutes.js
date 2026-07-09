@@ -14,6 +14,8 @@ const {
   updateBusinessUser,
   listBranches,
   createBranch,
+  updateBranch,
+  deleteBranch,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
@@ -93,6 +95,8 @@ router.get("/activity", businessActivity);
 router.get("/analytics/command-center", commandCenterAnalytics);
 router.get("/branches", listBranches);
 router.post("/branches", createBranch);
+router.patch("/branches/:branchId", updateBranch);
+router.delete("/branches/:branchId", deleteBranch);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/inventory/products", listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);

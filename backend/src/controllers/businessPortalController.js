@@ -201,6 +201,17 @@ const branchSchema = z.object({
   is_active: z.boolean().optional().default(true),
 });
 
+const branchPatchSchema = z.object({
+  name: z.string().trim().min(2).max(160).optional(),
+  slug: slugSchema.optional(),
+  branch_type: z.enum(["BRANCH", "CONSIGNMENT"]).optional(),
+  address: nullableText(220).optional(),
+  contact_name: nullableText(160).optional(),
+  contact_phone: nullableText(40).optional(),
+  notes: nullableText(1000).optional(),
+  is_active: z.boolean().optional(),
+});
+
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.preprocess(
@@ -789,6 +800,81 @@ async function createBranch(req, res, next) {
       ]
     );
     res.status(201).json({ branch: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateBranch(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const body = validate(branchPatchSchema, req.body);
+    const existing = await query(
+      "select id, is_active, metadata from branches where id = $1 and business_id = $2",
+      [req.params.branchId, businessId]
+    );
+    if (!existing.rowCount) {
+      throw notFound("Branch not found.");
+    }
+    if (body.is_active === true && existing.rows[0].is_active === false) {
+      await assertLimitForBusiness(
+        businessId,
+        "branches",
+        await activeBranchCountForBusiness(businessId),
+        "sedes o puntos de consignación"
+      );
+    }
+    const slug = body.slug ? await uniqueBranchSlug(businessId, body.slug) : null;
+    const metadataPatch = {};
+    if (Object.prototype.hasOwnProperty.call(body, "branch_type")) metadataPatch.branch_type = body.branch_type;
+    if (Object.prototype.hasOwnProperty.call(body, "contact_name")) metadataPatch.contact_name = body.contact_name || "";
+    if (Object.prototype.hasOwnProperty.call(body, "contact_phone")) metadataPatch.contact_phone = body.contact_phone || "";
+    if (Object.prototype.hasOwnProperty.call(body, "notes")) metadataPatch.notes = body.notes || "";
+    const result = await query(
+      `update branches
+       set name = coalesce($3, name),
+           slug = coalesce($4, slug),
+           address = case when $5 then $6 else address end,
+           is_active = case when $7 then $8 else is_active end,
+           metadata = coalesce(metadata, '{}'::jsonb) || $9::jsonb,
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning id, business_id, name, slug, address, is_active, metadata, created_at, updated_at`,
+      [
+        req.params.branchId,
+        businessId,
+        body.name || null,
+        slug,
+        Object.prototype.hasOwnProperty.call(body, "address"),
+        body.address || null,
+        Object.prototype.hasOwnProperty.call(body, "is_active"),
+        body.is_active === true,
+        JSON.stringify(metadataPatch),
+      ]
+    );
+    res.json({ branch: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteBranch(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const result = await query(
+      `update branches
+       set is_active = false,
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning id, business_id, name, slug, address, is_active, metadata, created_at, updated_at`,
+      [req.params.branchId, businessId]
+    );
+    if (!result.rowCount) {
+      throw notFound("Branch not found.");
+    }
+    res.json({ branch: result.rows[0], deleted: false, archived: true });
   } catch (error) {
     next(error);
   }
@@ -2651,6 +2737,8 @@ module.exports = {
   updateBusinessUser,
   listBranches,
   createBranch,
+  updateBranch,
+  deleteBranch,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,

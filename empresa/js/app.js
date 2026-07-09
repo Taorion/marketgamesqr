@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-branch-create-v19";
+const APP_VERSION = "empresa-20260709-branch-edit-delete-v20";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -465,6 +465,8 @@ const branchAddressInput = document.getElementById("branchAddressInput");
 const branchContactInput = document.getElementById("branchContactInput");
 const branchPhoneInput = document.getElementById("branchPhoneInput");
 const branchNotesInput = document.getElementById("branchNotesInput");
+const branchSubmitButton = document.getElementById("branchSubmitButton");
+const branchCancelEditButton = document.getElementById("branchCancelEditButton");
 const branchCreateMessage = document.getElementById("branchCreateMessage");
 const redemptionInsightTitle = document.getElementById("redemptionInsightTitle");
 const adminPanelMessage = document.getElementById("adminPanelMessage");
@@ -1032,6 +1034,7 @@ let state = {
   businessBranches: [],
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
+  branchEditingId: null,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
   ticketCenterLoading: false,
@@ -1663,6 +1666,7 @@ function resetBusinessScopedState(options = {}) {
   state.businessBranches = [];
   state.businessBranchesLoaded = false;
   state.businessBranchesLoading = false;
+  state.branchEditingId = null;
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
   state.ticketCenterLoading = false;
@@ -3701,6 +3705,7 @@ async function loadWorkspace() {
     state.businessBranches = [];
     state.businessBranchesLoaded = false;
     state.businessBranchesLoading = false;
+    state.branchEditingId = null;
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
     state.strategicQrMetrics = null;
@@ -7178,7 +7183,7 @@ function renderBranchesView() {
       <td>${escapeHtml(row.sales)}</td>
       <td>${escapeHtml(money(row.revenue))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="7">Sin datos por sucursal.</td></tr>';
+  `).join("") || '<tr><td colspan="8">Sin datos por sucursal.</td></tr>';
 }
 
 function renderAdminView() {
@@ -12884,7 +12889,7 @@ function renderNoCampaignState() {
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
   campaignSalesTable.innerHTML = '<tr><td colspan="10">Sin ventas.</td></tr>';
-  branchTable.innerHTML = '<tr><td colspan="7">Sin branches registrados ni actividad por sucursal.</td></tr>';
+  branchTable.innerHTML = '<tr><td colspan="8">Sin branches registrados ni actividad por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
   dashboardInsightTitle.textContent = "Esperando datos del negocio.";
@@ -20933,6 +20938,35 @@ function branchTypeLabel(value = "") {
   }[String(value || "BRANCH").toUpperCase()] || "Sede / punto de venta";
 }
 
+function branchById(branchId = "") {
+  return (state.businessBranches || []).find((branch) => String(branch.id) === String(branchId)) || null;
+}
+
+function resetBranchForm() {
+  state.branchEditingId = null;
+  branchCreateForm?.reset();
+  if (branchSubmitButton) branchSubmitButton.textContent = "Agregar branch";
+  branchCancelEditButton?.classList.add("hidden");
+  setInlineMessage(branchCreateMessage, "", "info");
+}
+
+function editBranch(branchId = "") {
+  const branch = branchById(branchId);
+  if (!branch) return;
+  const metadata = branchMetadata(branch);
+  state.branchEditingId = branch.id;
+  if (branchTypeInput) branchTypeInput.value = metadata.branch_type || "BRANCH";
+  if (branchNameInput) branchNameInput.value = branch.name || "";
+  if (branchAddressInput) branchAddressInput.value = branch.address || "";
+  if (branchContactInput) branchContactInput.value = metadata.contact_name || "";
+  if (branchPhoneInput) branchPhoneInput.value = metadata.contact_phone || "";
+  if (branchNotesInput) branchNotesInput.value = metadata.notes || "";
+  if (branchSubmitButton) branchSubmitButton.textContent = "Guardar branch";
+  branchCancelEditButton?.classList.remove("hidden");
+  setInlineMessage(branchCreateMessage, "Editando branch existente.", "info");
+  branchNameInput?.focus();
+}
+
 async function loadBusinessBranches(options = {}) {
   if (!session?.user?.business_id) {
     state.businessBranches = [];
@@ -21031,8 +21065,20 @@ function renderBranchesView() {
       <td>${escapeHtml(row.sales)}</td>
       <td>${escapeHtml(money(row.revenue))}</td>
       <td>${row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin branch registrado"}</td>
+      <td>
+        ${row.id ? `
+          <button class="ghost-button" type="button" data-branch-edit="${escapeHtml(row.id)}">Editar</button>
+          <button class="ghost-button danger" type="button" data-branch-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Eliminar" : "Reactivar"}</button>
+        ` : "-"}
+      </td>
     </tr>
-  `).join("") || `<tr><td colspan="7">${state.businessBranchesLoading ? "Cargando branches..." : "Sin branches registrados ni actividad por sucursal."}</td></tr>`;
+  `).join("") || `<tr><td colspan="8">${state.businessBranchesLoading ? "Cargando branches..." : "Sin branches registrados ni actividad por sucursal."}</td></tr>`;
+  branchTable.querySelectorAll("[data-branch-edit]").forEach((button) => {
+    button.addEventListener("click", () => editBranch(button.dataset.branchEdit));
+  });
+  branchTable.querySelectorAll("[data-branch-toggle]").forEach((button) => {
+    button.addEventListener("click", () => toggleBranchActive(button.dataset.branchToggle, button.dataset.branchNextActive === "true"));
+  });
 }
 
 async function submitBranchCreate(event) {
@@ -21042,6 +21088,8 @@ async function submitBranchCreate(event) {
     setInlineMessage(branchCreateMessage, "Escribe el nombre del branch.", "error");
     return;
   }
+  const editingId = state.branchEditingId;
+  const editingBranch = editingId ? branchById(editingId) : null;
   const payload = {
     branch_type: branchTypeInput?.value || "BRANCH",
     name,
@@ -21049,11 +21097,12 @@ async function submitBranchCreate(event) {
     contact_name: branchContactInput?.value.trim() || null,
     contact_phone: branchPhoneInput?.value.trim() || null,
     notes: branchNotesInput?.value.trim() || null,
+    is_active: editingBranch ? editingBranch.is_active !== false : true,
   };
   try {
-    setInlineMessage(branchCreateMessage, "Creando branch...", "info");
-    const data = await api("/api/business/branches", {
-      method: "POST",
+    setInlineMessage(branchCreateMessage, editingId ? "Guardando branch..." : "Creando branch...", "info");
+    const data = await api(editingId ? `/api/business/branches/${encodeURIComponent(editingId)}` : "/api/business/branches", {
+      method: editingId ? "PATCH" : "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
@@ -21066,13 +21115,38 @@ async function submitBranchCreate(event) {
     } else {
       await loadBusinessBranches({ force: true });
     }
-    branchCreateForm?.reset();
-    setInlineMessage(branchCreateMessage, "Branch agregado. Ya puedes usarlo para medir sedes, ventas o consignación.", "success");
-    showFeedback("Branch agregado correctamente.", "success", { title: "Branches" });
+    resetBranchForm();
+    setInlineMessage(branchCreateMessage, editingId ? "Branch actualizado." : "Branch agregado. Ya puedes usarlo para medir sedes, ventas o consignación.", "success");
+    showFeedback(editingId ? "Branch actualizado correctamente." : "Branch agregado correctamente.", "success", { title: "Branches" });
     renderBranchesView();
   } catch (error) {
-    setInlineMessage(branchCreateMessage, error.message || "No se pudo crear el branch.", "error");
-    showFeedback(error.message || "No se pudo crear el branch.", "error", { title: "Branches" });
+    setInlineMessage(branchCreateMessage, error.message || "No se pudo guardar el branch.", "error");
+    showFeedback(error.message || "No se pudo guardar el branch.", "error", { title: "Branches" });
+  }
+}
+
+async function toggleBranchActive(branchId = "", nextActive = false) {
+  const branch = branchById(branchId);
+  if (!branch) return;
+  if (!nextActive && !window.confirm(`¿Eliminar/desactivar "${branch.name}"? El historial de ventas y redenciones se conserva.`)) return;
+  try {
+    const data = await api(`/api/business/branches/${encodeURIComponent(branchId)}`, {
+      method: nextActive ? "PATCH" : "DELETE",
+      headers: authHeaders(),
+      body: nextActive ? JSON.stringify({ is_active: true }) : undefined,
+    });
+    if (data?.branch) {
+      state.businessBranches = (state.businessBranches || []).map((item) => (
+        String(item.id) === String(data.branch.id) ? data.branch : item
+      ));
+    } else {
+      await loadBusinessBranches({ force: true });
+    }
+    if (String(state.branchEditingId || "") === String(branchId) && !nextActive) resetBranchForm();
+    showFeedback(nextActive ? "Branch reactivado." : "Branch eliminado de la operación activa.", "success", { title: "Branches" });
+    renderBranchesView();
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el branch.", "error", { title: "Branches" });
   }
 }
 
@@ -21677,6 +21751,7 @@ rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardP
 rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("pdf").catch((error) => showFeedback(error.message, "error")));
 rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
 branchCreateForm?.addEventListener("submit", submitBranchCreate);
+branchCancelEditButton?.addEventListener("click", resetBranchForm);
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);
