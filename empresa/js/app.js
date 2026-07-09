@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-agenda-contact-reassign-v15";
+const APP_VERSION = "empresa-20260709-agenda-empty-options-v16";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17413,18 +17413,23 @@ function agendaPriorityLabel(priority = "MEDIUM") {
 
 function agendaScopeLabel(value = "CONTACT") {
   return {
+    GENERAL: "Sin alcance",
     CONTACT: "Contacto",
     CAMPAIGN: "Campaña",
     MARKETING: "Marketing",
     ACTIVATION_STRATEGY: "Estrategia de activación",
     BULK_ACTIVATION: "Activación en masa",
-  }[String(value || "CONTACT").toUpperCase()] || "Contacto";
+  }[String(value || "").toUpperCase()] || "Sin alcance";
 }
 
 function agendaSourceTypeForScope(scope = "CONTACT", leadSourceType = "PLAYER") {
-  const value = String(scope || "CONTACT").toUpperCase();
+  const value = String(scope || "GENERAL").toUpperCase();
   if (value === "CONTACT") return String(leadSourceType || "PLAYER").toUpperCase();
   return value;
+}
+
+function isOperationalAgendaSource(value = "") {
+  return ["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(value || "").toUpperCase());
 }
 
 function agendaMetadata(item = {}) {
@@ -17449,15 +17454,15 @@ function agendaCampaignOptionsMarkup(selectedValue = "") {
 function agendaCampaignIdForItem(item = {}) {
   const metadata = agendaMetadata(item);
   if (metadata.campaign_id) return metadata.campaign_id;
-  if (["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase())) return item.source_id || "";
+  if (isOperationalAgendaSource(item.source_type)) return item.source_id || "";
   return "";
 }
 
 function agendaScopeForItem(item = {}) {
   const metadata = agendaMetadata(item);
   if (metadata.agenda_scope) return String(metadata.agenda_scope).toUpperCase();
-  const sourceType = String(item.source_type || "CONTACT").toUpperCase();
-  return ["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType) ? sourceType : "CONTACT";
+  const sourceType = String(item.source_type || "").toUpperCase();
+  return isOperationalAgendaSource(sourceType) ? sourceType : "CONTACT";
 }
 
 function selectedAgendaCampaignFromData(data = null) {
@@ -17519,8 +17524,8 @@ function agendaMeetingPayloadFromFields(data = null) {
 }
 
 function agendaOperationalPayloadFromFields(data = null) {
-  const scope = String(data ? data.get("agenda_scope") || "CONTACT" : leadAgendaScopeInput?.value || "CONTACT").toUpperCase();
-  const campaign = selectedAgendaCampaignFromData(data);
+  const scope = String(data ? data.get("agenda_scope") || "GENERAL" : leadAgendaScopeInput?.value || "GENERAL").toUpperCase();
+  const campaign = scope === "GENERAL" ? null : selectedAgendaCampaignFromData(data);
   return {
     ...agendaMeetingPayloadFromFields(data),
     agenda_scope: scope,
@@ -17622,7 +17627,7 @@ function agendaLeadLabel(item = {}) {
 function agendaLeadFromItem(item = {}) {
   const sourceType = String(item.source_type || "PLAYER").toUpperCase();
   const leadId = item.source_id || item.lead_id || "";
-  if (!leadId || ["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType)) return null;
+  if (!leadId || isOperationalAgendaSource(sourceType)) return null;
   return {
     id: leadId,
     lead_id: item.lead_id || null,
@@ -17642,10 +17647,11 @@ function agendaLeadOptionsMarkup(selectedValue = "", extraRows = []) {
     }).catch(() => {});
   }
   const rows = leadAgendaContactRows(extraRows);
-  return rows.map((item) => {
+  const placeholder = `<option value="" ${!selectedValue ? "selected" : ""}>Elegir contacto</option>`;
+  return placeholder + rows.map((item) => {
     const value = agendaLeadOptionValue(item);
     return `<option value="${escapeHtml(value)}" ${String(value) === String(selectedValue) ? "selected" : ""}>${escapeHtml(agendaLeadLabel(item))}</option>`;
-  }).join("") || `<option value="">${state.leadAgendaContactsLoading ? "Cargando contactos..." : "Sin contactos cargados"}</option>`;
+  }).join("") + (rows.length ? "" : `<option value="" disabled>${state.leadAgendaContactsLoading ? "Cargando contactos..." : "Sin contactos cargados"}</option>`);
 }
 
 function renderLeadAgendaLeadOptions() {
@@ -17679,7 +17685,7 @@ function agendaCardMarkup(item = {}, options = {}) {
   const currentLeadValue = currentLead ? agendaLeadOptionValue(currentLead) : "";
   const meetingSummary = agendaMeetingSummary(item);
   const isMeeting = metadata.agenda_activity_type === "MEETING" || Boolean(metadata.meeting_mode || metadata.meeting_url || metadata.meeting_address);
-  const hasLeadRef = !["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase());
+  const hasLeadRef = !isOperationalAgendaSource(item.source_type);
   if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
     return `
       <article class="lead-agenda-item is-editing">
@@ -17712,7 +17718,9 @@ function agendaCardMarkup(item = {}, options = {}) {
           <label>
             <span>Alcance</span>
             <select name="agenda_scope">
+              <option value="" ${!scope ? "selected" : ""}>Elegir alcance</option>
               <option value="CONTACT" ${scope === "CONTACT" ? "selected" : ""}>Contacto</option>
+              <option value="GENERAL" ${scope === "GENERAL" ? "selected" : ""}>Sin alcance / tarea interna</option>
               <option value="CAMPAIGN" ${scope === "CAMPAIGN" ? "selected" : ""}>Campaña</option>
               <option value="MARKETING" ${scope === "MARKETING" ? "selected" : ""}>Marketing</option>
               <option value="ACTIVATION_STRATEGY" ${scope === "ACTIVATION_STRATEGY" ? "selected" : ""}>Estrategia de activación</option>
@@ -17882,7 +17890,7 @@ function agendaCompactCardMarkup(item = {}) {
   const isDone = status === "DONE";
   const meetingSummary = agendaMeetingSummary(item);
   const scope = agendaScopeForItem(item);
-  const hasLeadRef = !["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase());
+  const hasLeadRef = !isOperationalAgendaSource(item.source_type);
   const mainActionAttributes = hasLeadRef
     ? `data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}"`
     : `data-agenda-edit="${escapeHtml(item.id || "")}"`;
@@ -18183,12 +18191,16 @@ async function updateAgendaItemFromForm(event, noteId) {
   const reminderValue = data.get("reminder_at");
   const nextAction = String(data.get("next_action") || "").trim();
   const note = String(data.get("note") || "").trim();
-  const scope = String(data.get("agenda_scope") || "CONTACT").toUpperCase();
+  const scope = String(data.get("agenda_scope") || "").toUpperCase();
   const leadRef = parseAgendaLeadValue(data.get("lead_ref") || "");
   const campaign = selectedAgendaCampaignFromData(data);
   const progress = Math.max(0, Math.min(100, Number(data.get("progress_percent") || 0)));
   if (!nextAction || !note || !reminderValue) {
     showFeedback("Completa acción, detalle y fecha para guardar la tarea.", "error");
+    return;
+  }
+  if (!scope) {
+    showFeedback("Elige un alcance o usa Sin alcance / tarea interna.", "error");
     return;
   }
   if (scope === "CONTACT" && !leadRef.id) {
@@ -18198,7 +18210,7 @@ async function updateAgendaItemFromForm(event, noteId) {
   try {
     await updateAgendaItem(noteId, {
       lead_id: scope === "CONTACT" ? leadRef.id : null,
-      source_id: scope === "CONTACT" ? null : campaign?.id || null,
+      source_id: scope === "CONTACT" || scope === "GENERAL" ? null : campaign?.id || null,
       source_type: agendaSourceTypeForScope(scope, leadRef.source_type || "PLAYER"),
       next_action: nextAction,
       note,
@@ -18249,18 +18261,22 @@ async function deleteAgendaItem(noteId) {
 async function createAgendaItemFromForm(event) {
   event.preventDefault();
   const leadRef = parseAgendaLeadValue(leadAgendaLeadInput?.value || "");
-  const scope = String(leadAgendaScopeInput?.value || "CONTACT").toUpperCase();
+  const scope = String(leadAgendaScopeInput?.value || "").toUpperCase();
   const campaign = selectedAgendaCampaign();
   const reminderValue = leadAgendaReminderInput?.value || "";
   const nextAction = String(leadAgendaActionInput?.value || "").trim();
   const noteDetail = String(leadAgendaNoteInput?.value || "").trim();
   const progress = Math.max(0, Math.min(100, Number(leadAgendaProgressInput?.value || 0)));
+  if (!scope) {
+    showFeedback("Elige un alcance o usa Sin alcance / tarea interna.", "error");
+    return;
+  }
   if (scope === "CONTACT" && !leadRef.id) {
     showFeedback("Selecciona contacto o cambia el alcance a campaña, marketing o activación.", "error");
     return;
   }
   if (!reminderValue || !nextAction) {
-    showFeedback("Selecciona contacto, acción y fecha para crear la tarea.", "error");
+    showFeedback("Completa alcance, acción y fecha para crear la tarea.", "error");
     return;
   }
   try {
@@ -18269,7 +18285,7 @@ async function createAgendaItemFromForm(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         lead_id: scope === "CONTACT" ? leadRef.id : null,
-        source_id: scope === "CONTACT" ? null : campaign?.id || null,
+        source_id: scope === "CONTACT" || scope === "GENERAL" ? null : campaign?.id || null,
         source_type: agendaSourceTypeForScope(scope, leadRef.source_type || "PLAYER"),
         note: noteDetail || nextAction,
         note_type: "follow_up",
@@ -18294,7 +18310,7 @@ async function createAgendaItemFromForm(event) {
     }
     leadAgendaActionInput.value = "";
     leadAgendaNoteInput.value = "";
-    if (leadAgendaScopeInput) leadAgendaScopeInput.value = "CONTACT";
+    if (leadAgendaScopeInput) leadAgendaScopeInput.value = "";
     if (leadAgendaCampaignInput) leadAgendaCampaignInput.value = "";
     if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = "MEDIUM";
     if (leadAgendaActivityTypeInput) leadAgendaActivityTypeInput.value = "TASK";

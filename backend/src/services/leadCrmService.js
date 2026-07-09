@@ -9,7 +9,7 @@ const {
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
 
-const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
+const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
 function normalizeSearch(value) {
   return String(value || "")
@@ -1363,7 +1363,7 @@ async function getLeadAgendaItem(businessId, noteId) {
           fa.full_name,
           nullif(ln.metadata->>'agenda_owner', ''),
           case
-            when ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+            when ln.source_type in ('GENERAL', 'CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
             then coalesce(ac.name, ln.metadata->>'campaign_name', 'Tarea interna')
           end,
           'Contacto sin nombre'
@@ -1386,7 +1386,7 @@ async function getLeadAgendaItem(businessId, noteId) {
         and fa.id = ln.source_id
        left join campaigns c on c.id = p.campaign_id
        left join campaigns ac on ac.business_id = ln.business_id
-        and ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+        and ln.source_type in ('GENERAL', 'CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
         and ac.id = ln.source_id
       where ln.business_id = $1
         and ln.id = $2
@@ -1533,7 +1533,7 @@ async function listLeadAgenda(businessId, params = {}) {
           fa.full_name,
           nullif(ln.metadata->>'agenda_owner', ''),
           case
-            when ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+            when ln.source_type in ('GENERAL', 'CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
             then coalesce(ac.name, ln.metadata->>'campaign_name', 'Tarea interna')
           end,
           'Contacto sin nombre'
@@ -1556,7 +1556,7 @@ async function listLeadAgenda(businessId, params = {}) {
         and fa.id = ln.source_id
        left join campaigns c on c.id = p.campaign_id
        left join campaigns ac on ac.business_id = ln.business_id
-        and ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+        and ln.source_type in ('GENERAL', 'CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
         and ac.id = ln.source_id
       where ln.business_id = $1
         and ln.reminder_at is not null
