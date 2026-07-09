@@ -927,6 +927,29 @@ async function getBusinessSubscription(businessId) {
 async function setBusinessSubscription(businessId, payload) {
   const planCode = normalizePlanCode(payload.plan_code);
   const status = payload.subscription_status || "ACTIVE";
+  const current = await query(
+    `select id, name, settings
+     from businesses
+     where id = $1 and is_active = true`,
+    [businessId]
+  );
+  if (!current.rowCount) {
+    throw notFound("Business not found.");
+  }
+  const currentSettings = current.rows[0].settings || {};
+  const hasLifetimeAccess = Boolean(
+    currentSettings.subscription?.lifetime_access
+      || currentSettings.access?.lifetime_access
+      || currentSettings.commercial_deal?.lifetime_access
+      || String(currentSettings.commercial_deal?.deal_type || "").toLowerCase().includes("lifetime")
+  );
+  if (hasLifetimeAccess && (
+    planCode !== PLAN_CODES.GLOBAL
+    || status !== "ACTIVE"
+    || payload.subscription_current_period_ends_at
+  )) {
+    throw badRequest("Este negocio tiene acceso premium vitalicio. No se puede cambiar su plan, estado ni vencimiento desde este flujo.");
+  }
   const result = await query(
     `update businesses
      set plan_code = $2,
