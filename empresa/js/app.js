@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-agenda-empty-options-v16";
+const APP_VERSION = "empresa-20260709-checklist-comma-v17";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17385,7 +17385,7 @@ function agendaChecklistItems(value) {
       .filter((item) => item.label);
   }
   return String(value || "")
-    .split(/\r?\n/)
+    .split(/[\r\n,]+/)
     .map((line) => line.trim())
     .filter(Boolean)
     .slice(0, 20)
