@@ -4423,6 +4423,28 @@
     </section>
   </main>
 
+  <div class="modal-shell hidden" id="featureUpgradeModal" role="dialog" aria-modal="true" aria-labelledby="featureUpgradeTitle">
+    <article class="modal-card feature-upgrade-card">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label" id="featureUpgradeEyebrow">Feature bloqueado</span>
+          <h3 id="featureUpgradeTitle">Activa el siguiente plan</h3>
+        </div>
+        <button class="icon-button" id="featureUpgradeCloseButton" type="button" aria-label="Cerrar pantalla de upgrade">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="feature-upgrade-body">
+        <p id="featureUpgradeCopy">Este modulo requiere un plan superior para operar con todas sus herramientas.</p>
+        <div class="feature-upgrade-plan" id="featureUpgradePlanBox"></div>
+        <div class="modal-button-row feature-upgrade-actions">
+          <button class="ghost-button" id="featureUpgradeSecondaryButton" type="button">Seguir en el portal</button>
+          <a class="solid-button" id="featureUpgradePrimaryLink" href="/paquetes/" target="_blank" rel="noopener">Ver plan</a>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <div class="modal-shell hidden" id="campaignModal" role="dialog" aria-modal="true" aria-labelledby="campaignModalTitle">
     <div class="modal-card">
       <div class="modal-head">

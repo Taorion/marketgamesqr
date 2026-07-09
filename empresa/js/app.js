@@ -762,6 +762,14 @@ const subscriptionAutoRenewStatus = document.getElementById("subscriptionAutoRen
 const subscriptionAutoRenewClarity = document.getElementById("subscriptionAutoRenewClarity");
 const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalMessage");
 const subscriptionTiming = document.getElementById("subscriptionTiming");
+const featureUpgradeModal = document.getElementById("featureUpgradeModal");
+const featureUpgradeEyebrow = document.getElementById("featureUpgradeEyebrow");
+const featureUpgradeTitle = document.getElementById("featureUpgradeTitle");
+const featureUpgradeCopy = document.getElementById("featureUpgradeCopy");
+const featureUpgradePlanBox = document.getElementById("featureUpgradePlanBox");
+const featureUpgradePrimaryLink = document.getElementById("featureUpgradePrimaryLink");
+const featureUpgradeCloseButton = document.getElementById("featureUpgradeCloseButton");
+const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSecondaryButton");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll("[data-redemption-sales-tab]"));
@@ -2769,6 +2777,121 @@ function renderSubscriptionBanner() {
   ].map(([label, value]) => `<span class="subscription-limit-chip">${label}: ${formatLimitValue(value)}</span>`).join("");
 }
 
+function publicSubscriptionPlan(code) {
+  const planCode = String(code || "").toUpperCase();
+  const plan = (state.subscriptionPlans || []).find((item) => item.code === planCode);
+  if (plan) return plan;
+  const fallback = {
+    STARTER: {
+      code: "STARTER",
+      name: "Started",
+      monthly_price_cop: 1000000,
+      included: ["Acceso al portal", "1 campaña activa", "1 sede", "Agenda para programar tareas"],
+    },
+    GROWTH: {
+      code: "GROWTH",
+      name: "Medium",
+      monthly_price_cop: 2500000,
+      included: ["3 campañas activas", "2 sedes", "Dashboard completo", "10 afiliados"],
+    },
+    PRO: {
+      code: "PRO",
+      name: "Premium",
+      monthly_price_cop: 4500000,
+      included: ["Campañas ilimitadas", "Tareas + Customer Journey", "Afiliados ilimitados + Carnet digital", "Analítica predictiva"],
+    },
+    GLOBAL: {
+      code: "GLOBAL",
+      name: "Global",
+      price_label: "Por cotización",
+      included: ["Marca blanca", "Sedes y usuarios por escala", "API e integraciones", "Soporte estrategico"],
+    },
+  };
+  return fallback[planCode] || fallback.GROWTH;
+}
+
+function nextSubscriptionPlanCode(feature = "") {
+  const currentCode = String(currentPlan().code || "").toUpperCase();
+  if (["journey", "predictive_analytics", "advanced_analytics", "digital_affiliate_card"].includes(feature)) return "PRO";
+  if (["GROWTH", "MEDIUM"].includes(currentCode)) return "PRO";
+  if (["PRO", "GLOBAL", "ENTERPRISE"].includes(currentCode)) return "GLOBAL";
+  if (["STARTER", "STARTED"].includes(currentCode)) return "GROWTH";
+  return "STARTER";
+}
+
+function featureUpgradePrompt(feature = "") {
+  const promptKey = {
+    affiliates: "affiliates",
+    multi_branch: "branches",
+    qr_batch_generator: "gamified_campaign",
+    leads_export: "exports",
+    data_explorer: "advanced_analytics",
+    focus_mode: "advanced_analytics",
+    advanced_reports: "advanced_analytics",
+    predictive_analytics: "advanced_analytics",
+    portal_access: "portal_locked",
+  }[feature] || feature;
+  return state.access?.prompts?.[promptKey] || null;
+}
+
+function featureUpgradeLabel(feature = "", requestedView = "") {
+  const labels = {
+    affiliates: "Afiliados",
+    multi_branch: "Sedes",
+    qr_batch_generator: "Gaming Center",
+    leads_view: "Contactos",
+    portal_access: "Portal operativo",
+    predictive_analytics: "Analítica predictiva",
+    journey: "Customer Journey",
+  };
+  if (labels[feature]) return labels[feature];
+  if (requestedView) {
+    return requestedView.replace(/-/g, " ").replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+  return "esta funcionalidad";
+}
+
+function showFeatureUpgradeInterstitial(feature = "", options = {}) {
+  const prompt = featureUpgradePrompt(feature) || {};
+  const nextCode = nextSubscriptionPlanCode(feature);
+  const nextPlan = publicSubscriptionPlan(nextCode);
+  const featureLabel = featureUpgradeLabel(feature, options.requestedView);
+  const currentName = currentPlan().name || "tu plan actual";
+  const bullets = (Array.isArray(nextPlan.included) && nextPlan.included.length ? nextPlan.included : [])
+    .slice(0, 5);
+  const planUrl = nextPlan.code === "GLOBAL"
+    ? "/paquetes/#contacto"
+    : `/paquetes/?plan=${encodeURIComponent(nextPlan.code)}`;
+  const price = nextPlan.monthly_price_cop ? planMonthlyLabel(nextPlan) : (nextPlan.price_label || "Plan superior");
+
+  if (!featureUpgradeModal) {
+    showFeedback(prompt.message || `${featureLabel} requiere un plan superior.`, "info", { title: prompt.title || "Feature bloqueado" });
+    return;
+  }
+
+  featureUpgradeEyebrow.textContent = "Feature bloqueado por plan";
+  featureUpgradeTitle.textContent = prompt.title || `Desbloquea ${featureLabel}`;
+  featureUpgradeCopy.textContent = prompt.message || `${currentName} no incluye ${featureLabel}. El siguiente plan recomendado es ${nextPlan.name}.`;
+  featureUpgradePlanBox.innerHTML = `
+    <span class="mono-label">Siguiente plan recomendado</span>
+    <div class="feature-upgrade-plan-head">
+      <strong>${escapeHtml(nextPlan.name || nextPlan.code || "Plan superior")}</strong>
+      <span>${escapeHtml(price)}</span>
+    </div>
+    <ul>
+      ${bullets.map((item) => `<li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>${escapeHtml(item)}</li>`).join("")}
+    </ul>
+  `;
+  featureUpgradePrimaryLink.href = planUrl;
+  featureUpgradePrimaryLink.textContent = nextPlan.code === "GLOBAL" ? "Contactar plan Global" : `Ver ${nextPlan.name || "plan"}`;
+  featureUpgradeModal.classList.remove("hidden");
+  featureUpgradeCloseButton?.focus();
+}
+
+function closeFeatureUpgradeInterstitial() {
+  featureUpgradeModal?.classList.add("hidden");
+}
+
 function planBenefitList(plan) {
   if (Array.isArray(plan?.included) && plan.included.length) {
     return plan.included.slice(0, plan.code === "GLOBAL" ? 8 : 7);
@@ -3103,11 +3226,13 @@ function applyPlanNavigation() {
     button.classList.toggle("hidden", adminOnly && !isAdmin());
     const locked = !hasPlanFeature(feature);
     button.classList.toggle("plan-locked", locked);
-    button.disabled = locked;
+    button.disabled = false;
     if (locked) {
       button.title = "Tu plan actual no incluye este módulo.";
+      button.setAttribute("aria-disabled", "true");
     } else {
       button.removeAttribute("title");
+      button.removeAttribute("aria-disabled");
     }
   });
   requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
@@ -3145,7 +3270,7 @@ function setView(view) {
     return;
   }
   if (!hasPlanFeature(viewFeatureMap[view])) {
-    showFeedback("Tu plan actual no incluye este módulo. Puedes solicitar un upgrade para activarlo.", "info", { title: "Módulo bloqueado" });
+    showFeatureUpgradeInterstitial(viewFeatureMap[view], { requestedView });
     return;
   }
   if (state.currentView === "validator" && view !== "validator") {
@@ -13692,7 +13817,7 @@ function openCampaignModal(mode) {
   }
 
   if (!canManageCampaigns()) {
-    showFeedback("Tu plan actual no permite crear o editar campañas desde el portal.", "info", { title: "Campañas bloqueadas" });
+    showFeatureUpgradeInterstitial("portal_access", { requestedView: "campaigns" });
     return;
   }
 
@@ -21744,6 +21869,11 @@ accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
+featureUpgradeCloseButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
+featureUpgradeSecondaryButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
+featureUpgradeModal?.addEventListener("click", (event) => {
+  if (event.target === featureUpgradeModal) closeFeatureUpgradeInterstitial();
+});
 refreshAdminWorkspaceButton.addEventListener("click", loadWorkspace);
 newAdminCampaignButton.addEventListener("click", startNewAdminCampaign);
 adminCampaignForm.addEventListener("submit", saveAdminCampaign);
@@ -21896,6 +22026,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !activationShareModal?.classList.contains("hidden")) {
     closeActivationShareModal();
+    return;
+  }
+  if (event.key === "Escape" && !featureUpgradeModal?.classList.contains("hidden")) {
+    closeFeatureUpgradeInterstitial();
     return;
   }
   if (event.key === "Escape" && !leadDetailModal?.classList.contains("hidden")) {

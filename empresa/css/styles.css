@@ -3566,6 +3566,72 @@ td {
   line-height: 1.1;
 }
 
+.feature-upgrade-card {
+  width: min(100%, 620px);
+}
+
+.feature-upgrade-body {
+  display: grid;
+  gap: 18px;
+}
+
+.feature-upgrade-body p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.feature-upgrade-plan {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.feature-upgrade-plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.feature-upgrade-plan-head strong {
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.feature-upgrade-plan-head span {
+  color: var(--accent);
+  font-weight: 800;
+  text-align: right;
+}
+
+.feature-upgrade-plan ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature-upgrade-plan li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.feature-upgrade-plan li .material-symbols-outlined {
+  color: var(--success);
+  font-size: 18px;
+}
+
+.feature-upgrade-actions {
+  justify-content: flex-end;
+}
+
 .modal-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5168,6 +5234,16 @@ td {
 
   .modal-head h3 {
     font-size: 22px;
+  }
+
+  .feature-upgrade-plan-head,
+  .feature-upgrade-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .feature-upgrade-plan-head span {
+    text-align: left;
   }
 
   #campaignModal .modal-card {

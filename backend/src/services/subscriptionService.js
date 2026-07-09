@@ -281,7 +281,7 @@ const PLAN_CATALOG = {
       "Gaming center con historial de tickets",
       "Branding en ticket",
       "Gift cards",
-      "Afiliados con carnet digital",
+      "Afiliados ilimitados + Carnet digital",
     ],
     qr_monthly_included: 0,
     features: {
@@ -296,8 +296,8 @@ const PLAN_CATALOG = {
       leads_view: true,
       leads_export: true,
       campaign_reports: true,
-      affiliates: true,
-      referrals: true,
+      affiliates: false,
+      referrals: false,
       multi_branch: false,
       automations: false,
       api_access: false,
@@ -432,6 +432,7 @@ const PLAN_CATALOG = {
       "Sales tracker",
       "Asistencia de marketing al lanzamiento de MarketGamesQR",
       "Agenda para programar tareas",
+      "10 afiliados",
       "10 tickets de cortesia en primera suscripcion",
     ],
     not_included: [
@@ -486,7 +487,7 @@ const PLAN_CATALOG = {
       lead_export_rows_month: 100,
       lead_exports_month: 10,
       metric_exports_month: 10,
-      affiliates: 50,
+      affiliates: 10,
       loyalty_contacts: 50,
       gift_cards_month: 10,
       gift_inventory_products: 4,
@@ -532,10 +533,9 @@ const PLAN_CATALOG = {
       "Inventario de obsequios con productos ilimitados",
       "Sales tracker",
       "Asistencia de marketing al lanzamiento de MarketGamesQR 2 veces al mes",
-      "Agenda para programar tareas",
-      "Journey de clientes",
+      "Tareas + Customer Journey",
       "Contactos con tickets pendientes por redimir",
-      "Afiliados con carnet digital",
+      "Afiliados ilimitados + Carnet digital",
       "Programa de premios",
       "Analitica de prediccion de redencion de campanas",
       "10 tickets de cortesia en primera suscripcion",
@@ -1006,14 +1006,14 @@ function featurePrompts(plan = {}) {
       url: "/empresa/",
     },
     affiliates: {
-      title: "Afiliados y referidos son Premium",
+      title: "Afiliados y referidos por plan",
       message: isEnterpriseOrGlobal
         ? "Tu plan ya incluye afiliados y referidos a escala. Usa el limite disponible para operar voz a voz medible."
         : plan.features?.affiliates
-        ? `Tu ${plan.name || "plan"} incluye una muestra limitada de afiliados. Sube a Premium o Enterprise para operar voz a voz con mas volumen.`
-        : "Growth te deja probar afiliados y referidos; Premium los convierte en un canal comercial medible.",
+        ? `Tu ${plan.name || "plan"} incluye afiliados limitados. Premium desbloquea afiliados ilimitados y carnet digital.`
+        : "Medium incluye 10 afiliados; Premium desbloquea afiliados ilimitados y carnet digital.",
       cta: "Ver Premium",
-      url: "/paquetes/?plan=GROWTH",
+      url: "/paquetes/?plan=PRO",
     },
     active_campaigns: {
       title: "Mas campanas simultaneas",
