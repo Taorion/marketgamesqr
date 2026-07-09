@@ -1348,6 +1348,7 @@ function clearSession() {
   stopAffiliateFinderScanner();
   resetBusinessScopedState({ session: null });
   session = null;
+  closeFeatureUpgradeInterstitial();
   hideFeedback();
   hideBusyOverlay(true);
   localStorage.removeItem(SESSION_KEY);
@@ -2985,6 +2986,11 @@ function featureUpgradeLabel(feature = "", requestedView = "") {
 }
 
 function showFeatureUpgradeInterstitial(feature = "", options = {}) {
+  const canShowUpgrade = Boolean(session?.token) && !workspace?.classList.contains("hidden");
+  if (!canShowUpgrade) {
+    closeFeatureUpgradeInterstitial();
+    return;
+  }
   const prompt = featureUpgradePrompt(feature) || {};
   const gate = options.planGate || {};
   const nextCode = gate.suggested_plan_code || options.suggestedPlanCode || nextSubscriptionPlanCode(feature);
@@ -3578,6 +3584,7 @@ function renderShell() {
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
+    closeFeatureUpgradeInterstitial();
     const updateNotice = consumeAppUpdateNotice();
     if (updateNotice) {
       setInlineMessage(loginError, updateNotice, "info");
