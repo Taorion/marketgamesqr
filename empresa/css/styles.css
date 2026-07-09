@@ -418,6 +418,7 @@ textarea {
   padding: 0 12px;
   cursor: pointer;
   text-align: left;
+  position: relative;
 }
 
 .nav-item.active {
@@ -810,36 +811,54 @@ textarea {
   margin-top: 10px;
 }
 
-.nav-item.plan-locked {
-  opacity: 0.45;
-}
-
-.nav-item.plan-locked::after {
-  content: "Upgrade";
-  margin-left: auto;
-  padding: 3px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  color: #92400e;
-  background: #fef3c7;
-}
-
+.nav-item.plan-locked,
 .activation-type-option.plan-locked {
-  opacity: 0.58;
+  opacity: 0.56;
+}
+
+.activation-type-option.feature-tier-applied {
   position: relative;
 }
 
-.activation-type-option.plan-locked::after {
-  content: "Upgrade";
+.feature-tier-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 18px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.feature-tier-badge .material-symbols-outlined {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.feature-tier-badge.is-medium {
+  color: #0f5132;
+  background: #d1fae5;
+  border-color: #86efac;
+}
+
+.feature-tier-badge.is-premium {
+  color: #5b21b6;
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+.activation-type-option > .feature-tier-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #92400e;
-  background: #fef3c7;
+  margin-left: 0;
 }
 
 .action-feedback {
@@ -8419,7 +8438,7 @@ textarea {
 }
 
 .view-section .status-chip.pending,
-.view-section .nav-item.plan-locked::after {
+.view-section .feature-tier-badge.is-medium {
   background: rgba(255, 242, 138, 0.16) !important;
   color: #fff28a !important;
 }
@@ -8474,7 +8493,7 @@ textarea {
 }
 
 :root[data-theme="light"] .view-section .status-chip.pending,
-:root[data-theme="light"] .view-section .nav-item.plan-locked::after {
+:root[data-theme="light"] .view-section .feature-tier-badge.is-medium {
   background: #fff8d7 !important;
   color: #7c5800 !important;
 }
@@ -8832,7 +8851,7 @@ textarea {
 }
 
 :root[data-theme="light"] .view-section .status-chip.pending,
-:root[data-theme="light"] .view-section .nav-item.plan-locked::after {
+:root[data-theme="light"] .view-section .feature-tier-badge.is-medium {
   background: #fff8d7 !important;
   color: #745500 !important;
 }

@@ -1,6 +1,6 @@
 const express = require("express");
 const { authRequired } = require("../middleware/auth");
-const { requirePortalAccess } = require("../middleware/subscription");
+const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   acquisitionReceipt,
   cancel,
@@ -16,18 +16,19 @@ const {
 } = require("../controllers/rewardPassController");
 
 const router = express.Router();
+const requirePrizeProgram = requireBusinessFeature("prize_program");
 
 router.use(authRequired);
-router.get("/context", rewardPassContext);
-router.get("/", requirePortalAccess, list);
-router.get("/metrics", requirePortalAccess, metrics);
-router.post("/", requirePortalAccess, create);
+router.get("/context", requirePrizeProgram, rewardPassContext);
+router.get("/", requirePortalAccess, requirePrizeProgram, list);
+router.get("/metrics", requirePortalAccess, requirePrizeProgram, metrics);
+router.post("/", requirePortalAccess, requirePrizeProgram, create);
 router.get("/validator/:token", validateToken);
 router.post("/validator/:token/redeem", redeemToken);
-router.get("/:id", requirePortalAccess, get);
-router.get("/:id/pdf", requirePortalAccess, downloadPdf);
-router.get("/:id/acquisition-receipt.pdf", requirePortalAccess, acquisitionReceipt);
-router.post("/:id/cancel", requirePortalAccess, cancel);
-router.post("/:id/extend", requirePortalAccess, extend);
+router.get("/:id", requirePortalAccess, requirePrizeProgram, get);
+router.get("/:id/pdf", requirePortalAccess, requirePrizeProgram, downloadPdf);
+router.get("/:id/acquisition-receipt.pdf", requirePortalAccess, requirePrizeProgram, acquisitionReceipt);
+router.post("/:id/cancel", requirePortalAccess, requirePrizeProgram, cancel);
+router.post("/:id/extend", requirePortalAccess, requirePrizeProgram, extend);
 
 module.exports = router;

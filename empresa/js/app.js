@@ -2697,14 +2697,56 @@ const viewFeatureMap = {
   campaigns: "portal_access",
   leads: "leads_view",
   affiliates: "affiliates",
-  inventory: "portal_access",
-  "reward-passes": "portal_access",
+  inventory: "gift_inventory",
+  "reward-passes": "prize_program",
   redemptions: "portal_access",
-  sales: "portal_access",
+  sales: "sales_tracker",
   "strategic-qr": "qr_batch_generator",
   validator: "qr_validator",
   branches: "multi_branch",
   admin: "admin_workspace",
+};
+
+const planTierOrder = ["STARTER", "GROWTH", "PRO", "GLOBAL"];
+const planTierBadges = {
+  GROWTH: { label: "Medium", icon: "workspace_premium" },
+  PRO: { label: "Premium", icon: "diamond" },
+};
+const featureRequiredPlanFallback = {
+  portal_access: "STARTER",
+  leads_view: "STARTER",
+  leads_export: "STARTER",
+  qr_validator: "STARTER",
+  qr_batch_generator: "STARTER",
+  template_games: "STARTER",
+  dashboard_basic: "STARTER",
+  campaign_reports: "STARTER",
+  affiliates: "GROWTH",
+  referrals: "GROWTH",
+  multi_branch: "GROWTH",
+  sales_tracker: "GROWTH",
+  ticket_branding: "GROWTH",
+  gift_cards: "GROWTH",
+  contact_directory: "GROWTH",
+  gift_inventory: "GROWTH",
+  dashboard_full: "GROWTH",
+  campaign_comparison: "GROWTH",
+  journey: "PRO",
+  prize_program: "PRO",
+  predictive_analytics: "PRO",
+  digital_affiliate_card: "PRO",
+  automations: "PRO",
+  api_access: "PRO",
+  white_label: "PRO",
+  branded_portal: "PRO",
+  custom_domain: "PRO",
+  advanced_branding: "PRO",
+  focus_mode: "PRO",
+  data_explorer: "PRO",
+  advanced_reports: "PRO",
+  post_sale_automation: "PRO",
+  executive_reports: "PRO",
+  dedicated_support: "PRO",
 };
 
 function planFeatures() {
@@ -2724,11 +2766,73 @@ function hasPlanFeature(feature) {
   if (plan.category === "subscription" && plan.portal_access_allowed === false) {
     return false;
   }
-  return Boolean(planFeatures()[feature]);
+  if (planTierIndex(plan.code) < 0) return Boolean(planFeatures()[feature]);
+  return planMeetsTier(requiredPlanForFeature(feature), plan) && Boolean(planFeatures()[feature]);
 }
 
 function currentPlan() {
   return state.subscription?.plan || session?.user?.subscription?.plan || {};
+}
+
+function normalizePlanTierCode(value = "") {
+  const code = String(value || "").toUpperCase();
+  if (code === "MEDIUM") return "GROWTH";
+  if (code === "PREMIUM") return "PRO";
+  if (code === "STARTED") return "STARTER";
+  if (code === "ENTERPRISE") return "GLOBAL";
+  return code;
+}
+
+function planTierIndex(value = "") {
+  const index = planTierOrder.indexOf(normalizePlanTierCode(value));
+  return index >= 0 ? index : -1;
+}
+
+function planMeetsTier(requiredCode = "STARTER", plan = currentPlan()) {
+  const requiredIndex = planTierIndex(requiredCode);
+  const currentIndex = planTierIndex(plan.code || "STARTER");
+  if (requiredIndex < 0) return true;
+  if (["GLOBAL", "ENTERPRISE"].includes(String(plan.code || "").toUpperCase())) return true;
+  return currentIndex >= requiredIndex;
+}
+
+function requiredPlanForFeature(feature = "") {
+  if (!feature || feature === "admin_workspace") return null;
+  const fallbackCode = featureRequiredPlanFallback[feature] || "STARTER";
+  const publicPlans = (state.subscriptionPlans || []).filter((plan) => planTierOrder.includes(plan.code));
+  const dynamicPlan = publicPlans
+    .sort((a, b) => planTierIndex(a.code) - planTierIndex(b.code))
+    .find((plan) => Boolean(plan.features?.[feature]));
+  return normalizePlanTierCode(dynamicPlan?.code || fallbackCode);
+}
+
+function requiredPlanForActivationType(type = "") {
+  const legacyType = String(type || "").toUpperCase();
+  const interactiveType = interactiveTypeForLegacyType(legacyType);
+  if (["TRIVIA", "TRIVIA_QUIZ", "OPEN_QUESTION"].includes(legacyType) || ["TRIVIA_QUIZ", "OPEN_QUESTION"].includes(interactiveType)) {
+    return "STARTER";
+  }
+  return interactiveCategoryForType(legacyType) === "premium" ? "PRO" : "GROWTH";
+}
+
+function applyFeatureTierBadge(element, requiredCode, options = {}) {
+  if (!element) return;
+  const code = normalizePlanTierCode(requiredCode);
+  const meta = planTierBadges[code];
+  element.querySelector(":scope > .feature-tier-badge")?.remove();
+  element.classList.remove("feature-tier-medium", "feature-tier-premium", "feature-tier-applied");
+  delete element.dataset.featureTier;
+  if (!meta) return;
+  const badge = document.createElement("span");
+  badge.className = `feature-tier-badge ${code === "PRO" ? "is-premium" : "is-medium"}`;
+  badge.setAttribute("aria-label", `Feature ${meta.label}`);
+  badge.innerHTML = `
+    <span class="material-symbols-outlined" aria-hidden="true">${meta.icon}</span>
+    <span>${escapeHtml(options.short ? meta.label.charAt(0) : meta.label)}</span>
+  `;
+  element.appendChild(badge);
+  element.dataset.featureTier = code;
+  element.classList.add("feature-tier-applied", code === "PRO" ? "feature-tier-premium" : "feature-tier-medium");
 }
 
 function isPrepaidValidatorOnly() {
@@ -3278,11 +3382,16 @@ function applyPlanNavigation() {
     const feature = viewFeatureMap[button.dataset.view];
     const adminOnly = button.dataset.view === "admin";
     button.classList.toggle("hidden", adminOnly && !isAdmin());
+    const requiredCode = requiredPlanForFeature(feature);
+    applyFeatureTierBadge(button, requiredCode);
     const locked = !hasPlanFeature(feature);
     button.classList.toggle("plan-locked", locked);
     button.disabled = false;
     if (locked) {
-      button.title = "Tu plan actual no incluye este módulo.";
+      const requiredPlan = publicSubscriptionPlan(requiredCode);
+      button.title = requiredPlan?.name
+        ? `Tu plan actual no incluye este módulo. Requiere ${requiredPlan.name}.`
+        : "Tu plan actual no incluye este módulo.";
       button.setAttribute("aria-disabled", "true");
     } else {
       button.removeAttribute("title");
@@ -3324,7 +3433,10 @@ function setView(view) {
     return;
   }
   if (!hasPlanFeature(viewFeatureMap[view])) {
-    showFeatureUpgradeInterstitial(viewFeatureMap[view], { requestedView });
+    showFeatureUpgradeInterstitial(viewFeatureMap[view], {
+      requestedView,
+      suggestedPlanCode: requiredPlanForFeature(viewFeatureMap[view]),
+    });
     return;
   }
   if (state.currentView === "validator" && view !== "validator") {
@@ -10786,22 +10898,26 @@ function allowedInteractiveActivationTypes() {
 }
 
 function isActivationTypeAllowedByPlan(type = "") {
+  if (planTierIndex(currentPlan().code) >= 0 && !planMeetsTier(requiredPlanForActivationType(type))) return false;
   const allowed = allowedInteractiveActivationTypes();
   if (!allowed) return true;
   return allowed.includes(interactiveTypeForLegacyType(type));
 }
 
 function suggestedPlanForActivationType(type = "") {
-  return isActivationTypeAllowedByPlan(type) ? currentPlan().code : "GROWTH";
+  return isActivationTypeAllowedByPlan(type) ? currentPlan().code : requiredPlanForActivationType(type);
 }
 
 function syncActivationTypeAccess() {
   activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {
+    const requiredCode = requiredPlanForActivationType(button.dataset.activationType);
+    applyFeatureTierBadge(button, requiredCode, { short: true });
     const locked = !isActivationTypeAllowedByPlan(button.dataset.activationType);
     button.classList.toggle("plan-locked", locked);
     button.setAttribute("aria-disabled", locked ? "true" : "false");
     if (locked) {
-      button.title = "Tu plan actual no incluye este tipo de activación.";
+      const requiredPlan = publicSubscriptionPlan(requiredCode);
+      button.title = `Tu plan actual no incluye este tipo de activación. Requiere ${requiredPlan.name || requiredCode}.`;
     } else {
       button.removeAttribute("title");
     }
@@ -10814,7 +10930,7 @@ function setActivationType(type) {
     showFeatureUpgradeInterstitial("qr_batch_generator", {
       suggestedPlanCode: suggestedPlanForActivationType(nextType),
       title: "Activación bloqueada por plan",
-      message: `Started solo incluye trivia y pregunta abierta. Sube de plan para usar ${activationTypeLabel(nextType)}.`,
+      message: `${activationTypeLabel(nextType)} requiere ${publicSubscriptionPlan(suggestedPlanForActivationType(nextType)).name || "un plan superior"}.`,
     });
     return;
   }

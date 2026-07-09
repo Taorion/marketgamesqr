@@ -8,6 +8,7 @@ const {
   getAffiliatePointRules,
   referralPointsForAmount,
 } = require("../services/affiliatePointRulesService");
+const { assertFeatureForRequest } = require("../services/subscriptionService");
 
 const attributedSaleSchema = z.object({
   had_sale: z.boolean().default(true),
@@ -45,6 +46,7 @@ async function createAttributedSale(req, res, next) {
     if (!canAccessBusiness(req.user, row.business_id)) {
       throw forbidden("You cannot register sales for this business.");
     }
+    await assertFeatureForRequest(req, row.business_id, "sales_tracker");
     if (!body.had_sale) {
       return res.json({ sale: null, message: "Redemption marked without sale." });
     }

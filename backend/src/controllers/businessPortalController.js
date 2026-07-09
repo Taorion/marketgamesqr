@@ -896,6 +896,7 @@ async function deleteBranch(req, res, next) {
 async function createCustomerAcquisitionSale(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "sales_tracker");
     const body = validate(customerAcquisitionSaleSchema, req.body);
 
     const result = await withTransaction(async (client) => {
@@ -1167,6 +1168,7 @@ function mapInventoryPayload(body, userId) {
 async function listInventoryProducts(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
     const limit = boundedLimit(req.query.limit, 200, 500);
     const params = [businessId];
     const searchWhere = inventorySearchWhere(req.query.search, params);
@@ -1192,6 +1194,17 @@ async function listInventoryProducts(req, res, next) {
 async function createInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const productCount = await query(
+      "select count(*)::int as total from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
+      [businessId]
+    );
+    await assertLimitForBusiness(
+      businessId,
+      "gift_inventory_products",
+      Number(productCount.rows[0]?.total || 0),
+      "productos de inventario"
+    );
     const body = validate(inventoryProductSchema, req.body);
     const payload = mapInventoryPayload(body, req.user.id);
     const result = await withTransaction(async (client) => {
@@ -1231,12 +1244,25 @@ async function createInventoryProduct(req, res, next) {
 async function updateInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
     const body = validate(inventoryProductPatchSchema, req.body);
     const existing = await query(
       "select * from business_inventory_products where id = $1 and business_id = $2",
       [req.params.productId, businessId]
     );
     if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
+    if (existing.rows[0].status === "ARCHIVED" && body.status && body.status !== "ARCHIVED") {
+      const productCount = await query(
+        "select count(*)::int as total from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
+        [businessId]
+      );
+      await assertLimitForBusiness(
+        businessId,
+        "gift_inventory_products",
+        Number(productCount.rows[0]?.total || 0),
+        "productos de inventario"
+      );
+    }
     const payload = mapInventoryPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
       await ensureInventoryProductUnique(client, businessId, payload, req.params.productId);
@@ -1277,6 +1303,7 @@ async function updateInventoryProduct(req, res, next) {
 async function archiveInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
     const result = await query(
       `update business_inventory_products
        set status = 'ARCHIVED', updated_at = now()
@@ -2686,6 +2713,7 @@ async function campaignSales(req, res, next) {
 async function createSalesSnapshot(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "sales_tracker");
     await requireCampaignForBusiness(req.params.id, businessId);
     const body = validate(salesSnapshotSchema, req.body);
     if (new Date(body.end_date) < new Date(body.start_date)) {

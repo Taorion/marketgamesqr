@@ -22,6 +22,56 @@ const STARTED_PORTAL_COP = 1000000;
 const MEDIUM_PORTAL_COP = 2500000;
 const PREMIUM_PORTAL_COP = 4500000;
 const ANNUAL_BENEFIT_RATE = 0.3;
+const STARTER_INTERACTIVE_ACTIVATION_TYPES = ["TRIVIA_QUIZ", "OPEN_QUESTION"];
+const MEDIUM_INTERACTIVE_ACTIVATION_TYPES = [
+  "TRIVIA_QUIZ",
+  "OPEN_QUESTION",
+  "FLEX_SURVEY",
+  "QUICK_VOTE",
+  "QUICK_DIAGNOSTIC",
+  "BENEFIT_SELECTOR",
+  "SPIN_DISCOVER",
+  "SCRATCH_WIN",
+  "TAP_REVEAL",
+  "CHOOSE_DOOR",
+  "DISCOUNT_THERMOMETER",
+  "LUCK_METER",
+  "REWARD_TRAFFIC_LIGHT",
+  "HIDDEN_CODE",
+  "SPACE_SHOOTER",
+  "BREAKOUT",
+  "SNAKE",
+  "CATCH_PRIZE",
+  "MEMORY_PAIRS",
+  "FAST_TAP",
+  "MINI_MAZE",
+  "WHACK_A_MOLE",
+  "DODGE_RUNNER",
+  "BALLOON_POP",
+  "ROULETTE_SPIN",
+  "TOUCH_CATCH",
+  "TRUE_FALSE",
+  "ORDER_OPTIONS",
+  "CONNECTORS",
+  "BATTLESHIP_COORDS",
+  "STORE_CHECKIN",
+  "CHECKOUT_REWARD",
+  "TOUCH_SATISFACTION",
+  "PREFERENCE_WALL",
+  "NEXT_PURCHASE_PICKER",
+  "INVOICE_UNLOCK",
+  "PURCHASE_AMOUNT_ACTIVATION",
+  "PURCHASED_PRODUCT_ACTIVATION",
+  "TIME_BASED_ACTIVATION",
+  "BRANCH_BASED_ACTIVATION",
+  "REFERRAL_CHALLENGE",
+  "RECOMMENDATION_CHAIN",
+  "GROUP_BENEFIT",
+  "DOUBLE_PASS",
+  "BRAND_ALLIANCE",
+  "WAITLIST",
+  "PRESALE_BENEFIT",
+];
 function roundCop(value) {
   return Math.round(Number(value || 0) / 1000) * 1000;
 }
@@ -121,7 +171,7 @@ const PLAN_CATALOG = {
       history_days: 30,
       activation_types_month: 1,
       active_interactive_activations: 1,
-      allowed_interactive_activation_types: ["TRIVIA_QUIZ", "OPEN_QUESTION"],
+      allowed_interactive_activation_types: STARTER_INTERACTIVE_ACTIVATION_TYPES,
     },
   },
   [PLAN_CODES.GROWTH_TEMPORAL]: {
@@ -331,7 +381,7 @@ const PLAN_CATALOG = {
       history_days: 30,
       activation_types_month: 1,
       active_interactive_activations: 1,
-      allowed_interactive_activation_types: ["TRIVIA_QUIZ", "OPEN_QUESTION"],
+      allowed_interactive_activation_types: STARTER_INTERACTIVE_ACTIVATION_TYPES,
     },
   },
   [PLAN_CODES.DEMO_AUTO_3D]: {
@@ -499,7 +549,7 @@ const PLAN_CATALOG = {
       activation_types_month: 5,
       active_interactive_activations: 3,
       executive_reports_month: 0,
-      allowed_interactive_activation_types: unlimited,
+      allowed_interactive_activation_types: MEDIUM_INTERACTIVE_ACTIVATION_TYPES,
     },
   },
   [PLAN_CODES.PRO]: {
