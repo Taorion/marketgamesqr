@@ -149,6 +149,7 @@ const acquisitionSourceOptions = [
 
 const customerAcquisitionSaleSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
+  branch_id: z.string().uuid().optional().nullable(),
   customer_name: z.string().trim().max(160).optional().nullable(),
   customer_phone: z.string().trim().max(40).optional().nullable(),
   customer_email: z.string().trim().email().optional().nullable(),
@@ -895,6 +896,16 @@ async function createCustomerAcquisitionSale(req, res, next) {
           throw badRequest("La campana atribuida no existe para este negocio.");
         }
       }
+      let saleBranchId = body.branch_id || req.user.branch_id || null;
+      if (saleBranchId) {
+        const branch = await client.query(
+          "select id from branches where id = $1 and business_id = $2 and is_active = true",
+          [saleBranchId, businessId]
+        );
+        if (!branch.rowCount) {
+          throw badRequest("La sede o punto de consignación seleccionado no pertenece a este negocio o no está activo.");
+        }
+      }
 
       let referredAffiliate = null;
       const affiliateResult = await client.query(
@@ -949,7 +960,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
           body.sale_amount,
           body.currency || "COP",
           req.user.id,
-          req.user.branch_id || null,
+          saleBranchId,
           body.acquisition_source,
           body.acquisition_channel || null,
           referredAffiliate?.id || null,

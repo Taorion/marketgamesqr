@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-branch-edit-delete-v20";
+const APP_VERSION = "empresa-20260709-sale-branch-assignment-v21";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -661,6 +661,7 @@ const customerAcquisitionForm = document.getElementById("customerAcquisitionForm
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
 const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
+const customerAcquisitionBranchInput = document.getElementById("customerAcquisitionBranchInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
 const customerAcquisitionCustomerLookupInput = document.getElementById("customerAcquisitionCustomerLookupInput");
 const customerAcquisitionCustomerSelect = document.getElementById("customerAcquisitionCustomerSelect");
@@ -7128,6 +7129,7 @@ function renderSalesView() {
   `).join("");
   renderCustomerAcquisitionAffiliateOptions();
   renderCustomerAcquisitionCampaignOptions();
+  renderCustomerAcquisitionBranchOptions();
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
 
@@ -9899,6 +9901,7 @@ async function submitCustomerAcquisitionSale(event) {
       body: JSON.stringify({
         sale_amount: saleTotal,
         campaign_id: customerAcquisitionCampaignInput?.value || null,
+        branch_id: customerAcquisitionBranchInput?.value || null,
         currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
         product_name: productSummary || null,
         customer_name: customerAcquisitionNameInput.value.trim() || null,
@@ -9920,6 +9923,7 @@ async function submitCustomerAcquisitionSale(event) {
     customerAcquisitionForm.reset();
     if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     customerAcquisitionCurrencyInput.value = "COP";
+    renderCustomerAcquisitionBranchOptions();
     setSalesCustomerStatus("Cliente nuevo / manual", "Formulario listo para registrar otra venta.", "success", "task_alt");
     state.customerSaleItems = [defaultCustomerSaleItem()];
     renderCustomerAcquisitionCampaignOptions();
@@ -9932,6 +9936,7 @@ async function submitCustomerAcquisitionSale(event) {
     ]);
     renderSalesCustomerOptions();
     await refreshLiveBusinessData();
+    if (state.currentView === "branches") renderBranchesView();
     setView("sales");
     showFeedback(message, "success", { title: "Venta registrada" });
   } catch (error) {
@@ -20938,6 +20943,26 @@ function branchTypeLabel(value = "") {
   }[String(value || "BRANCH").toUpperCase()] || "Sede / punto de venta";
 }
 
+function renderCustomerAcquisitionBranchOptions() {
+  if (!customerAcquisitionBranchInput) return;
+  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
+    loadBusinessBranches().then(renderCustomerAcquisitionBranchOptions).catch(() => {});
+  }
+  const selected = customerAcquisitionBranchInput.value || "";
+  const rows = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  customerAcquisitionBranchInput.innerHTML = [
+    `<option value="">${state.businessBranchesLoading ? "Cargando branches..." : "Sin sede asignada"}</option>`,
+    ...rows.map((branch) => {
+      const metadata = branchMetadata(branch);
+      const type = branchTypeLabel(metadata.branch_type);
+      return `<option value="${escapeHtml(branch.id)}" ${String(selected) === String(branch.id) ? "selected" : ""}>${escapeHtml(`${branch.name} · ${type}`)}</option>`;
+    }),
+  ].join("");
+  if (selected && rows.some((branch) => String(branch.id) === String(selected))) {
+    customerAcquisitionBranchInput.value = selected;
+  }
+}
+
 function branchById(branchId = "") {
   return (state.businessBranches || []).find((branch) => String(branch.id) === String(branchId)) || null;
 }
@@ -21119,6 +21144,7 @@ async function submitBranchCreate(event) {
     setInlineMessage(branchCreateMessage, editingId ? "Branch actualizado." : "Branch agregado. Ya puedes usarlo para medir sedes, ventas o consignación.", "success");
     showFeedback(editingId ? "Branch actualizado correctamente." : "Branch agregado correctamente.", "success", { title: "Branches" });
     renderBranchesView();
+    renderCustomerAcquisitionBranchOptions();
   } catch (error) {
     setInlineMessage(branchCreateMessage, error.message || "No se pudo guardar el branch.", "error");
     showFeedback(error.message || "No se pudo guardar el branch.", "error", { title: "Branches" });
@@ -21145,6 +21171,7 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
     if (String(state.branchEditingId || "") === String(branchId) && !nextActive) resetBranchForm();
     showFeedback(nextActive ? "Branch reactivado." : "Branch eliminado de la operación activa.", "success", { title: "Branches" });
     renderBranchesView();
+    renderCustomerAcquisitionBranchOptions();
   } catch (error) {
     showFeedback(error.message || "No se pudo actualizar el branch.", "error", { title: "Branches" });
   }
