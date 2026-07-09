@@ -57,6 +57,7 @@ const FALLBACK_PLANS = [
       "10 exportaciones mensuales",
       "Validador de tickets",
       "Creación de campañas",
+      "Ver capacidad completa",
       "3 campañas activas en línea",
       "2 sedes",
       "2 usuarios",
