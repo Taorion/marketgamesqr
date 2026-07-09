@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-lead-agenda-calendar-v8";
+const APP_VERSION = "empresa-20260709-lead-agenda-create-fix-v9";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17744,7 +17744,31 @@ function bindLeadAgendaActions() {
   });
 }
 
-async function refreshLeadAgendaAfterMutation() {
+function agendaItemFromCreatedNote(note = {}, leadRef = {}) {
+  const lead = (state.leadCrmRows || []).find((item) => {
+    return String(item.id || item.lead_id || "") === String(leadRef.id || note.source_id || note.lead_id || "")
+      && String(item.source_type || "PLAYER").toUpperCase() === String(leadRef.source_type || note.source_type || "PLAYER").toUpperCase();
+  }) || {};
+  return {
+    ...note,
+    lead_name: lead.name || lead.full_name || "Contacto",
+    lead_email: lead.email || null,
+    lead_phone: lead.phone || null,
+    lead_company: lead.company || lead.lead_company || null,
+    agenda_status: note.agenda_status || "OPEN",
+    agenda_priority: note.agenda_priority || "MEDIUM",
+    progress_percent: Number(note.progress_percent || 0),
+    checklist: Array.isArray(note.checklist) ? note.checklist : [],
+  };
+}
+
+async function refreshLeadAgendaAfterMutation(options = {}) {
+  if (options.anchorDate) {
+    state.leadAgendaAnchorDate = dateInputValue(options.anchorDate);
+  }
+  if (options.status) {
+    state.leadAgendaStatus = options.status;
+  }
   state.leadAgendaLoaded = false;
   await loadLeadAgendaData({ force: true, quiet: true });
   renderLeadAgenda();
@@ -17848,7 +17872,7 @@ async function createAgendaItemFromForm(event) {
     return;
   }
   try {
-    await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}/notes`, {
+    const result = await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}/notes`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -17862,6 +17886,17 @@ async function createAgendaItemFromForm(event) {
         checklist: agendaChecklistItems(leadAgendaChecklistInput?.value || ""),
       }),
     });
+    if (result?.note?.id) {
+      const createdItem = agendaItemFromCreatedNote(result.note, leadRef);
+      state.leadAgenda = [
+        createdItem,
+        ...(state.leadAgenda || []).filter((item) => String(item.id) !== String(createdItem.id)),
+      ];
+      state.leadAgendaLoaded = true;
+      state.leadAgendaAnchorDate = dateInputValue(result.note.reminder_at || reminderValue);
+      state.leadAgendaStatus = "OPEN";
+      renderLeadAgenda();
+    }
     leadAgendaActionInput.value = "";
     leadAgendaNoteInput.value = "";
     if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = "MEDIUM";
@@ -17870,7 +17905,7 @@ async function createAgendaItemFromForm(event) {
     const nextHour = new Date();
     nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
     leadAgendaReminderInput.value = datetimeLocalValue(nextHour);
-    await refreshLeadAgendaAfterMutation();
+    await refreshLeadAgendaAfterMutation({ anchorDate: result?.note?.reminder_at || reminderValue, status: "OPEN" });
     showFeedback("Tarea creada en la agenda.", "success");
   } catch (error) {
     showFeedback(error.message || "No se pudo crear la tarea.", "error");
@@ -19403,7 +19438,7 @@ async function createLeadNoteFromForm(event) {
   const note = String(document.getElementById("leadNoteInput")?.value || "").trim();
   if (!note) return;
   const reminderValue = document.getElementById("leadNoteReminderInput")?.value || "";
-  await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
+  const result = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
@@ -19414,9 +19449,16 @@ async function createLeadNoteFromForm(event) {
       reminder_at: reminderValue ? new Date(reminderValue).toISOString() : null,
     }),
   });
-  state.leadAgendaLoaded = false;
-  await loadLeadAgendaData({ force: true, quiet: true });
-  renderLeadAgenda();
+  if (result?.note?.reminder_at) {
+    const createdItem = agendaItemFromCreatedNote(result.note, state.selectedLeadRef);
+    state.leadAgenda = [
+      createdItem,
+      ...(state.leadAgenda || []).filter((item) => String(item.id) !== String(createdItem.id)),
+    ];
+    state.leadAgendaLoaded = true;
+    renderLeadAgenda();
+    await refreshLeadAgendaAfterMutation({ anchorDate: result.note.reminder_at, status: "OPEN" });
+  }
   await reloadSelectedLeadDetail({ keepTab: true });
 }
 
