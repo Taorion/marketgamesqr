@@ -66,7 +66,7 @@ const FALLBACK_PLANS = [
       "Branding en ticket",
       "Gift cards: 10 unidades al mes",
       "Directorio de contactos",
-      "Inventario de obsequios hasta 4 productos",
+      "Inventario de obsequios hasta 4 productos diferentes",
       "Sales tracker",
       "Asistencia de marketing al lanzamiento de MarketGamesQR",
       "Agenda para programar tareas",
