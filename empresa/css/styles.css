@@ -2875,6 +2875,111 @@ td {
   text-underline-offset: 3px;
 }
 
+.campaign-relations-card {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 14px;
+}
+
+.campaign-relations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+
+.campaign-related-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid #e5ebe7;
+  border-radius: 12px;
+  background: #fbfcfb;
+  padding: 14px;
+}
+
+.campaign-related-affiliates {
+  grid-column: span 1;
+}
+
+.campaign-related-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.campaign-related-head strong {
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.campaign-related-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.campaign-related-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(8, 122, 94, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.campaign-related-item div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.campaign-related-item strong,
+.campaign-related-item span,
+.campaign-related-item small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.campaign-related-item strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.campaign-related-item span,
+.campaign-related-item small,
+.campaign-related-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.campaign-related-item b {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.campaign-affiliate-form.compact {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.campaign-affiliate-form.compact .solid-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.compact-table {
+  max-height: 320px;
+  overflow: auto;
+}
+
 .campaign-affiliate-form {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
@@ -6853,6 +6958,8 @@ textarea {
 .view-section[data-view="campaigns"] .channel-option,
 .view-section[data-view="campaigns"] .asset-card,
 .view-section[data-view="campaigns"] .campaign-config-grid > article,
+.view-section[data-view="campaigns"] .campaign-related-panel,
+.view-section[data-view="campaigns"] .campaign-related-item,
 .view-section[data-view="campaigns"] .funnel-row,
 .view-section[data-view="campaigns"] .campaign-meta-grid > div {
   background:
@@ -6892,6 +6999,9 @@ textarea {
 .view-section[data-view="campaigns"] .campaign-item h3,
 .view-section[data-view="campaigns"] .campaign-item-row strong,
 .view-section[data-view="campaigns"] .campaign-config-grid strong,
+.view-section[data-view="campaigns"] .campaign-related-head strong,
+.view-section[data-view="campaigns"] .campaign-related-item strong,
+.view-section[data-view="campaigns"] .campaign-related-item b,
 .view-section[data-view="campaigns"] .dark-hero-card strong,
 .view-section[data-view="campaigns"] .roi-row strong {
   color: var(--campaign-ink) !important;
@@ -6902,7 +7012,10 @@ textarea {
 .view-section[data-view="campaigns"] .asset-card span,
 .view-section[data-view="campaigns"] .asset-card a,
 .view-section[data-view="campaigns"] .campaign-config-grid span,
-.view-section[data-view="campaigns"] .campaign-config-grid a {
+.view-section[data-view="campaigns"] .campaign-config-grid a,
+.view-section[data-view="campaigns"] .campaign-related-item span,
+.view-section[data-view="campaigns"] .campaign-related-item small,
+.view-section[data-view="campaigns"] .campaign-related-empty {
   color: var(--campaign-muted) !important;
 }
 
@@ -7721,6 +7834,10 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .campaign-relations-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .campaign-cost-metric-groups {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -7782,7 +7899,8 @@ textarea {
 
   .view-section[data-view="campaigns"] .campaign-overview-grid,
   .view-section[data-view="campaigns"] .modal-form,
-  .campaign-config-grid {
+  .campaign-config-grid,
+  .campaign-relations-grid {
     grid-template-columns: 1fr;
   }
 
@@ -8070,6 +8188,8 @@ textarea {
 :root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .funnel-row,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-config-grid > article,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-panel,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-item,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-meta-grid > div {
   background: #ffffff !important;
   border-color: #d5e4df !important;
@@ -8393,6 +8513,8 @@ textarea {
 :root[data-theme="light"] .view-section[data-view="campaigns"] .channel-option,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-config-grid > article,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-panel,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-item,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-meta-grid > div,
 :root[data-theme="light"] .view-section[data-view="strategic-qr"] .portal-plan-card {
   background: #ffffff !important;
@@ -8869,6 +8991,8 @@ textarea {
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-item,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .asset-card,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-config-grid > article,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-panel,
+:root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-related-item,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .campaign-meta-grid > div,
 :root[data-theme="light"] .view-section[data-view="campaigns"] .channel-option {
   background: #ffffff !important;

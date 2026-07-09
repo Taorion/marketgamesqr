@@ -224,6 +224,11 @@ const campaignCostMessage = document.getElementById("campaignCostMessage");
 const campaignStrategyTabOpenButton = document.getElementById("campaignStrategyTabOpenButton");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
 const campaignConfigurationGrid = document.getElementById("campaignConfigurationGrid");
+const campaignRelatedLeadsCount = document.getElementById("campaignRelatedLeadsCount");
+const campaignRelatedLeadsList = document.getElementById("campaignRelatedLeadsList");
+const campaignRelatedCustomersCount = document.getElementById("campaignRelatedCustomersCount");
+const campaignRelatedCustomersList = document.getElementById("campaignRelatedCustomersList");
+const campaignRelatedAffiliatesCount = document.getElementById("campaignRelatedAffiliatesCount");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
 const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
 const campaignAffiliateNotesInput = document.getElementById("campaignAffiliateNotesInput");
@@ -5856,21 +5861,23 @@ async function selectCampaign(campaignId) {
   renderCampaignAssociationInputs();
 
   try {
-    const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
+    const [campaignData, reportData, leadsData, redemptionsData, salesData, campaignAffiliatesData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
+      apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
+    if (!state.affiliatesLoaded) await loadAffiliatesData();
     state.selectedCampaign = campaignData.campaign || null;
     state.selectedReport = reportData || null;
     state.selectedLeads = leadsData.leads || [];
     state.selectedRedemptions = redemptionsData.redemptions || [];
     state.selectedSales = salesData.sales || [];
-    state.selectedCampaignAffiliates = [];
+    state.selectedCampaignAffiliates = campaignAffiliatesData.affiliates || [];
 
     renderCampaignView();
     renderCampaignAssociationInputs();
@@ -6687,6 +6694,9 @@ function applyCampaignCostToLaunchBudget() {
 function renderCampaignAffiliatesPanel() {
   if (!campaignAffiliateSelect || !campaignAffiliatesTable) return;
   const assigned = state.selectedCampaignAffiliates || [];
+  if (campaignRelatedAffiliatesCount) {
+    campaignRelatedAffiliatesCount.textContent = assigned.length.toLocaleString("es-CO");
+  }
   const assignedIds = new Set(assigned.map((item) => item.affiliate_id));
   const available = (state.affiliates || []).filter((affiliate) => affiliate.status !== "DELETED");
   campaignAffiliateSelect.innerHTML = [
@@ -6729,6 +6739,97 @@ function renderCampaignAffiliatesPanel() {
   campaignAffiliatesTable.querySelectorAll("[data-campaign-affiliate-remove]").forEach((button) => {
     button.addEventListener("click", () => removeCampaignAffiliate(button.dataset.campaignAffiliateRemove));
   });
+}
+
+function campaignLeadIdentity(lead = {}) {
+  return lead.lead_id || lead.id || lead.player_id || "";
+}
+
+function campaignRelatedLeadCard(lead = {}) {
+  const leadId = campaignLeadIdentity(lead);
+  const contact = lead.phone || lead.email || lead.document_id || "Sin contacto";
+  const status = lead.qr_status || lead.stage || lead.lead_temperature || "Lead";
+  return `
+    <article class="campaign-related-item">
+      <div>
+        <strong>${escapeHtml(lead.name || lead.player_name || "Lead sin nombre")}</strong>
+        <span>${escapeHtml(contact)}</span>
+        <small>${escapeHtml([lead.lead_source || lead.attribution_source, lead.reward_name || lead.attribution_subject, status].filter(Boolean).join(" · "))}</small>
+      </div>
+      ${leadId ? `<button class="ghost-button" type="button" data-campaign-related-lead="${escapeHtml(leadId)}" data-source-type="${escapeHtml(lead.source_type || "PLAYER")}">Ver</button>` : ""}
+    </article>
+  `;
+}
+
+function campaignRelatedCustomerRows() {
+  const map = new Map();
+  (state.selectedSales || []).forEach((sale) => {
+    const key = sale.document_id || sale.phone || sale.email || sale.player_name || sale.id;
+    if (!key) return;
+    const current = map.get(key) || {
+      name: sale.player_name || "Cliente sin nombre",
+      contact: sale.phone || sale.email || sale.document_id || "Sin contacto",
+      sales: 0,
+      revenue: 0,
+      latest: sale.created_at,
+      product: sale.product_or_service || "",
+      branch: sale.branch_name || "",
+      affiliate: sale.affiliate_name || "",
+    };
+    current.sales += 1;
+    current.revenue += toNumber(sale.sale_amount);
+    if (sale.created_at && (!current.latest || new Date(sale.created_at) > new Date(current.latest))) {
+      current.latest = sale.created_at;
+    }
+    current.product = current.product || sale.product_or_service || "";
+    current.branch = current.branch || sale.branch_name || "";
+    current.affiliate = current.affiliate || sale.affiliate_name || "";
+    map.set(key, current);
+  });
+  return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
+}
+
+function campaignRelatedCustomerCard(customer = {}) {
+  const meta = [
+    `${customer.sales} venta${customer.sales === 1 ? "" : "s"}`,
+    customer.product,
+    customer.branch,
+    customer.affiliate ? `Afiliado: ${customer.affiliate}` : "",
+  ].filter(Boolean).join(" · ");
+  return `
+    <article class="campaign-related-item">
+      <div>
+        <strong>${escapeHtml(customer.name || "Cliente")}</strong>
+        <span>${escapeHtml(customer.contact || "Sin contacto")}</span>
+        <small>${escapeHtml(meta || "Compra atribuida a campaña")}</small>
+      </div>
+      <b>${escapeHtml(money(customer.revenue || 0))}</b>
+    </article>
+  `;
+}
+
+function renderCampaignRelationsPanel() {
+  const leads = state.selectedLeads || [];
+  const customers = campaignRelatedCustomerRows();
+  const affiliates = state.selectedCampaignAffiliates || [];
+  if (campaignRelatedLeadsCount) campaignRelatedLeadsCount.textContent = leads.length.toLocaleString("es-CO");
+  if (campaignRelatedCustomersCount) campaignRelatedCustomersCount.textContent = customers.length.toLocaleString("es-CO");
+  if (campaignRelatedAffiliatesCount) campaignRelatedAffiliatesCount.textContent = affiliates.length.toLocaleString("es-CO");
+  if (campaignRelatedLeadsList) {
+    campaignRelatedLeadsList.innerHTML = leads.slice(0, 8).map(campaignRelatedLeadCard).join("")
+      || '<div class="campaign-related-empty">Sin leads relacionados a esta campaña.</div>';
+    campaignRelatedLeadsList.querySelectorAll("[data-campaign-related-lead]").forEach((button) => {
+      button.addEventListener("click", () => openLeadDetail({
+        id: button.dataset.campaignRelatedLead,
+        source_type: button.dataset.sourceType || "PLAYER",
+      }));
+    });
+  }
+  if (campaignRelatedCustomersList) {
+    campaignRelatedCustomersList.innerHTML = customers.slice(0, 8).map(campaignRelatedCustomerCard).join("")
+      || '<div class="campaign-related-empty">Sin clientes o ventas atribuidas a esta campaña.</div>';
+  }
+  renderCampaignAffiliatesPanel();
 }
 
 function campaignAssetLabel(key = "") {
@@ -6828,7 +6929,7 @@ async function reloadCampaignAffiliates(campaignId = state.selectedCampaignId) {
   const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
   if (state.selectedCampaignId !== campaignId) return;
   state.selectedCampaignAffiliates = data.affiliates || [];
-  renderCampaignAffiliatesPanel();
+  renderCampaignRelationsPanel();
 }
 
 async function assignCampaignAffiliate(event) {
@@ -6956,7 +7057,7 @@ function renderCampaignView() {
         </article>
       `).join("")
     : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Market Games aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
-  renderCampaignAffiliatesPanel();
+  renderCampaignRelationsPanel();
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
   campaignSnapshotsTable.innerHTML = snapshots.map((item) => `
@@ -12958,6 +13059,11 @@ function renderNoCampaignState() {
   });
   campaignAssetsGrid.innerHTML = '<article class="asset-card"><strong>Sin assets cargados</strong><span>Selecciona una campaña para ver material entregado.</span></article>';
   renderCampaignConfigurationGrid(null);
+  if (campaignRelatedLeadsCount) campaignRelatedLeadsCount.textContent = "0";
+  if (campaignRelatedCustomersCount) campaignRelatedCustomersCount.textContent = "0";
+  if (campaignRelatedAffiliatesCount) campaignRelatedAffiliatesCount.textContent = "0";
+  if (campaignRelatedLeadsList) campaignRelatedLeadsList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
+  if (campaignRelatedCustomersList) campaignRelatedCustomersList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
   state.selectedCampaignAffiliates = [];
   if (campaignAffiliateSelect) campaignAffiliateSelect.innerHTML = '<option value="">Sin campaña</option>';
   if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;

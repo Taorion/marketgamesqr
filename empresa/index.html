@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=collapsible-contact-kpis-20260709">
+  <link rel="stylesheet" href="css/styles.css?v=campaign-relations-20260709">
 </head>
 <body>
   <main class="portal-shell">
@@ -2569,6 +2569,64 @@
                       <article><span class="mono-label">Canales</span><strong>-</strong></article>
                     </div>
                   </article>
+
+                  <article class="surface-card campaign-relations-card" data-campaign-tab-panel="analysis">
+                    <div class="card-head">
+                      <div>
+                        <span class="mono-label">Relacionados</span>
+                        <h3 class="subhead">Afiliados, clientes y leads de esta campaña</h3>
+                      </div>
+                    </div>
+                    <div class="campaign-relations-grid">
+                      <section class="campaign-related-panel">
+                        <div class="campaign-related-head">
+                          <span class="mono-label">Leads capturados</span>
+                          <strong id="campaignRelatedLeadsCount">0</strong>
+                        </div>
+                        <div class="campaign-related-list" id="campaignRelatedLeadsList"></div>
+                      </section>
+                      <section class="campaign-related-panel">
+                        <div class="campaign-related-head">
+                          <span class="mono-label">Clientes / compradores</span>
+                          <strong id="campaignRelatedCustomersCount">0</strong>
+                        </div>
+                        <div class="campaign-related-list" id="campaignRelatedCustomersList"></div>
+                      </section>
+                      <section class="campaign-related-panel campaign-related-affiliates">
+                        <div class="campaign-related-head">
+                          <span class="mono-label">Afiliados / referidores</span>
+                          <strong id="campaignRelatedAffiliatesCount">0</strong>
+                        </div>
+                        <form class="campaign-affiliate-form compact" id="campaignAffiliateForm">
+                          <label>
+                            <span>Afiliado</span>
+                            <select id="campaignAffiliateSelect"></select>
+                          </label>
+                          <label>
+                            <span>Nota interna</span>
+                            <input id="campaignAffiliateNotesInput" type="text" maxlength="500" placeholder="Ej: promotor principal, tienda norte...">
+                          </label>
+                          <button class="solid-button" id="campaignAffiliateAssignButton" type="submit">Asociar</button>
+                          <p class="form-message" id="campaignAffiliateMessage"></p>
+                        </form>
+                        <div class="table-wrap compact-table">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Afiliado</th>
+                                <th>Tickets</th>
+                                <th>Redimidos</th>
+                                <th>Ventas</th>
+                                <th>Revenue</th>
+                                <th>Accion</th>
+                              </tr>
+                            </thead>
+                            <tbody id="campaignAffiliatesTable"></tbody>
+                          </table>
+                        </div>
+                      </section>
+                    </div>
+                  </article>
                 </section>
 
                 <article class="surface-card data-table-card" data-campaign-tab-panel="analysis">
@@ -4596,7 +4654,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=collapsible-contact-kpis-20260709" defer></script>
+  <script src="js/app.js?v=campaign-relations-20260709" defer></script>
 </body>
 </html>
 
