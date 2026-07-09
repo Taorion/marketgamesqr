@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-session-isolation-v23";
+const APP_VERSION = "empresa-20260709-hard-session-boundary-v24";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1330,18 +1330,26 @@ function isSessionExpired(value, skewMs = 30_000) {
   return Boolean(expiresAt && Date.now() + skewMs >= expiresAt);
 }
 
-function removeLocalStorageByPredicate(predicate) {
+function removeStorageByPredicate(storage, predicate) {
   try {
-    if (!window.localStorage) return;
+    if (!storage) return;
     const keys = [];
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
       if (key && predicate(key)) keys.push(key);
     }
-    keys.forEach((key) => window.localStorage.removeItem(key));
+    keys.forEach((key) => storage.removeItem(key));
   } catch {
     // Storage cleanup is best-effort; in-memory state is still reset.
   }
+}
+
+function removeLocalStorageByPredicate(predicate) {
+  removeStorageByPredicate(window.localStorage, predicate);
+}
+
+function removeSessionStorageByPredicate(predicate) {
+  removeStorageByPredicate(window.sessionStorage, predicate);
 }
 
 function clearBusinessScopedStorage(businessId = "", options = {}) {
@@ -1353,6 +1361,50 @@ function clearBusinessScopedStorage(businessId = "", options = {}) {
     if (key.startsWith("marketgames:campaign-cost:")) return clearAll || key.startsWith(`marketgames:campaign-cost:${id}:`);
     return false;
   });
+}
+
+function isPortalStorageKey(key) {
+  return key === SESSION_KEY
+    || key === VALIDATOR_SESSION_KEY
+    || key === APP_VERSION_KEY
+    || key === APP_UPDATE_NOTICE_KEY
+    || key === THEME_KEY
+    || key === "marketgames_portal_light_mode"
+    || key.startsWith("qr_business_portal_")
+    || key.startsWith("universal_qr_validator_")
+    || key.startsWith("market_games_admin_")
+    || key.startsWith("marketgames_portal_")
+    || key.startsWith("marketgames:campaign-")
+    || key.startsWith("marketgames:strategy-")
+    || key.startsWith("marketgames:campaign-cost:");
+}
+
+function isPortalCacheKey(key) {
+  const value = String(key || "").toLowerCase();
+  return value.includes("marketgames")
+    || value.includes("market-games")
+    || value.includes("qr_business")
+    || value.includes("empresa")
+    || value.includes("portal");
+}
+
+function clearPortalCacheStorage() {
+  try {
+    if (!window.caches?.keys) return;
+    window.caches.keys()
+      .then((keys) => Promise.all(keys.filter(isPortalCacheKey).map((key) => window.caches.delete(key))))
+      .catch(() => null);
+  } catch {
+    // Browser cache APIs are optional; session isolation does not depend on them.
+  }
+}
+
+function clearPortalBrowserStorage(options = {}) {
+  const preservePreferences = options.preservePreferences !== false;
+  const preserved = new Set(preservePreferences ? [THEME_KEY, "marketgames_portal_light_mode"] : []);
+  removeLocalStorageByPredicate((key) => isPortalStorageKey(key) && !preserved.has(key));
+  removeSessionStorageByPredicate((key) => isPortalStorageKey(key) && !preserved.has(key));
+  clearPortalCacheStorage();
 }
 
 function normalizeSession(value) {
@@ -1421,18 +1473,24 @@ function saveValidatorSession(value) {
   localStorage.setItem(VALIDATOR_SESSION_KEY, JSON.stringify(normalizeSession(value)));
 }
 
-function clearSession() {
+function clearSession(options = {}) {
   stopActivityPolling();
   stopValidatorScanner();
   stopAffiliateFinderScanner();
-  clearBusinessScopedStorage(session?.user?.business_id || "", { all: !session?.user?.business_id });
+  clearBusinessScopedStorage(session?.user?.business_id || "", { all: true });
   resetBusinessScopedState({ session: null });
   session = null;
   closeFeatureUpgradeInterstitial();
   hideFeedback();
   hideBusyOverlay(true);
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(VALIDATOR_SESSION_KEY);
+  clearPortalBrowserStorage({ preservePreferences: options.preservePreferences !== false });
+  if (options.message) {
+    try {
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, options.message);
+    } catch {
+      // The login panel still renders even if storage is unavailable.
+    }
+  }
 }
 
 function consumeAppUpdateNotice() {
@@ -3748,8 +3806,11 @@ function renderShell() {
     return;
   }
 
+  const renderScope = `${session.token}:${session.user?.id || ""}:${session.user?.business_id || ""}`;
   refreshSessionIdentity()
     .then(() => {
+      const activeScope = `${session?.token || ""}:${session?.user?.id || ""}:${session?.user?.business_id || ""}`;
+      if (activeScope !== renderScope) return;
       const redirectTo = loginRedirectForSession(session);
       if (redirectTo) {
         saveValidatorSession(session);
@@ -3801,6 +3862,11 @@ function openGamingCenterEntry() {
 
 async function login(event) {
   event.preventDefault();
+  const loginEmail = emailInput.value;
+  const loginPassword = passwordInput.value;
+  clearSession({ preservePreferences: true });
+  emailInput.value = loginEmail;
+  passwordInput.value = "";
   loginError.textContent = "";
   hideFeedback();
   const submitButton = loginForm.querySelector("button[type='submit']");
@@ -3811,8 +3877,8 @@ async function login(event) {
     const data = await api("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        email: emailInput.value,
-        password: passwordInput.value,
+        email: loginEmail,
+        password: loginPassword,
       }),
     });
     saveSession(data);
@@ -21986,11 +22052,21 @@ function handleRangeToggle() {
 loginForm.addEventListener("submit", login);
 passwordResetRequestForm?.addEventListener("submit", submitPasswordResetRequest);
 passwordResetForm?.addEventListener("submit", submitPasswordReset);
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) return;
+  const storedSession = loadSession();
+  const currentScope = `${session?.token || ""}:${session?.user?.id || ""}:${session?.user?.business_id || ""}`;
+  const storedScope = `${storedSession?.token || ""}:${storedSession?.user?.id || ""}:${storedSession?.user?.business_id || ""}`;
+  if (currentScope === storedScope) return;
+  resetBusinessScopedState({ session: storedSession });
+  session = storedSession;
+  renderShell();
+});
 logoutButton.addEventListener("click", () => {
   stopValidatorScanner();
   resetQrBatchProgress();
-  clearSession();
-  renderShell();
+  clearSession({ message: "Sesión cerrada. El portal se reinició para separar completamente los datos de la empresa anterior." });
+  window.location.replace(window.location.pathname);
 });
 refreshButton.addEventListener("click", loadWorkspace);
 searchInput.addEventListener("input", (event) => {

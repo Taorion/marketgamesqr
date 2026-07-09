@@ -527,7 +527,9 @@ async function getBusinessProfile(req, res, next) {
     if (!business) {
       throw notFound("Business not found.");
     }
-    res.set("Cache-Control", includeLogo ? "private, max-age=300" : "private, max-age=30");
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
     const creditResult = await query(
       "select * from business_qr_credit_accounts where business_id = $1",
       [businessId]
