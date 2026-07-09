@@ -2186,6 +2186,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
 module.exports = {
   addLeadInterest,
   createLeadActivation,
+  createLeadAgendaItem,
   createLeadNote,
   deleteLeadAgendaItem,
   deleteLeadContact,
