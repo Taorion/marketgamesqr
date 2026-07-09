@@ -1353,11 +1353,11 @@ async function getLeadAgendaItem(businessId, noteId) {
         ln.created_at,
         ln.updated_at,
         u.full_name as author_name,
-        coalesce(p.name, ml.name, fa.name, 'Contacto sin nombre') as lead_name,
+        coalesce(p.name, ml.name, fa.full_name, 'Contacto sin nombre') as lead_name,
         coalesce(p.email, ml.email, fa.email) as lead_email,
         coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
         coalesce(p.document_id, fa.document_id) as lead_document_id,
-        coalesce(ml.company, fa.company_name, p.metadata->>'company') as lead_company,
+        coalesce(ml.company, fa.card_metadata->>'company', p.metadata->>'company') as lead_company,
         coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
         coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
        from lead_notes ln
@@ -1442,11 +1442,11 @@ async function listLeadAgenda(businessId, params = {}) {
         ln.created_at,
         ln.updated_at,
         u.full_name as author_name,
-        coalesce(p.name, ml.name, fa.name, 'Contacto sin nombre') as lead_name,
+        coalesce(p.name, ml.name, fa.full_name, 'Contacto sin nombre') as lead_name,
         coalesce(p.email, ml.email, fa.email) as lead_email,
         coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
         coalesce(p.document_id, fa.document_id) as lead_document_id,
-        coalesce(ml.company, fa.company_name, p.metadata->>'company') as lead_company,
+        coalesce(ml.company, fa.card_metadata->>'company', p.metadata->>'company') as lead_company,
         coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
         coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
        from lead_notes ln
