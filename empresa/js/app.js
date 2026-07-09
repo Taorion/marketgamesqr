@@ -1077,18 +1077,36 @@ const TICKET_CENTER_TAB_GROUPS = {
   next: ["metrics", "batches", "history"],
 };
 
+function activeBusinessId() {
+  return state.businessProfile?.id || state.businessProfile?.business_id || session?.user?.business_id || null;
+}
+
+function sessionBusinessProfileForActiveBusiness() {
+  const business = session?.user?.business || null;
+  const businessId = business?.id || business?.business_id || session?.user?.business_id || null;
+  const currentBusinessId = activeBusinessId();
+  return currentBusinessId && businessId === currentBusinessId ? business : null;
+}
+
 function mergeBusinessProfile(nextProfile) {
   if (!nextProfile) {
     return state.businessProfile || null;
   }
-  const existingLogo = state.businessProfile?.logo_data_url
-    || session?.user?.business?.logo_data_url
-    || session?.user?.business?.settings?.logo_data_url
-    || "";
-  const existingTicketFrame = state.businessProfile?.ticket_frame_data_url
-    || session?.user?.business?.ticket_frame_data_url
-    || session?.user?.business?.settings?.ticket_frame_data_url
-    || "";
+  const nextBusinessId = nextProfile.id || nextProfile.business_id || session?.user?.business_id || null;
+  const existingProfileBusinessId = state.businessProfile?.id || state.businessProfile?.business_id || null;
+  const sessionBusinessId = session?.user?.business_id || session?.user?.business?.id || session?.user?.business?.business_id || null;
+  const canReuseProfileBranding = Boolean(nextBusinessId && existingProfileBusinessId && existingProfileBusinessId === nextBusinessId);
+  const canReuseSessionBranding = Boolean(nextBusinessId && sessionBusinessId && sessionBusinessId === nextBusinessId);
+  const existingLogo = canReuseProfileBranding
+    ? (state.businessProfile?.logo_data_url || "")
+    : (canReuseSessionBranding
+      ? (session?.user?.business?.logo_data_url || session?.user?.business?.settings?.logo_data_url || "")
+      : "");
+  const existingTicketFrame = canReuseProfileBranding
+    ? (state.businessProfile?.ticket_frame_data_url || state.businessProfile?.settings?.ticket_frame_data_url || "")
+    : (canReuseSessionBranding
+      ? (session?.user?.business?.ticket_frame_data_url || session?.user?.business?.settings?.ticket_frame_data_url || "")
+      : "");
   const merged = {
     ...(state.businessProfile || {}),
     ...nextProfile,
@@ -1103,9 +1121,11 @@ function mergeBusinessProfile(nextProfile) {
   if (merged.affiliate_points) {
     state.affiliatePointRules = merged.affiliate_points;
   }
-  if (session?.user?.business) {
+  if (session?.user?.business && (!merged.id || !session?.user?.business_id || merged.id === session.user.business_id)) {
     session.user.business = {
       ...session.user.business,
+      id: merged.id || session.user.business.id || session.user.business_id,
+      business_id: merged.id || session.user.business.business_id || session.user.business_id,
       name: merged.name || session.user.business.name,
       logo_data_url: merged.logo_data_url || "",
       ticket_frame_data_url: merged.ticket_frame_data_url || "",
@@ -3952,12 +3972,13 @@ async function loadWorkspace() {
     strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Abre Gaming Center para cargar historial reciente.</td></tr>';
   }
 
+  const sessionBusinessProfile = sessionBusinessProfileForActiveBusiness();
   const needsLogoPayload = !lightTestMode && (!(state.businessProfile?.logo_data_url
-    || session?.user?.business?.logo_data_url
-    || session?.user?.business?.settings?.logo_data_url)
+    || sessionBusinessProfile?.logo_data_url
+    || sessionBusinessProfile?.settings?.logo_data_url)
     || !(state.businessProfile?.ticket_frame_data_url
-      || session?.user?.business?.ticket_frame_data_url
-      || session?.user?.business?.settings?.ticket_frame_data_url));
+      || sessionBusinessProfile?.ticket_frame_data_url
+      || sessionBusinessProfile?.settings?.ticket_frame_data_url));
   const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
   const shouldLoadDashboardData = !lightTestMode && (state.currentView === "dashboard" || !state.dashboard);
   const requests = [
@@ -4198,12 +4219,13 @@ async function loadPrepaidValidatorWorkspace() {
   };
 
   try {
+    const sessionBusinessProfile = sessionBusinessProfileForActiveBusiness();
     const needsLogoPayload = !(state.businessProfile?.logo_data_url
-      || session?.user?.business?.logo_data_url
-      || session?.user?.business?.settings?.logo_data_url)
+      || sessionBusinessProfile?.logo_data_url
+      || sessionBusinessProfile?.settings?.logo_data_url)
       || !(state.businessProfile?.ticket_frame_data_url
-        || session?.user?.business?.ticket_frame_data_url
-        || session?.user?.business?.settings?.ticket_frame_data_url);
+        || sessionBusinessProfile?.ticket_frame_data_url
+        || sessionBusinessProfile?.settings?.ticket_frame_data_url);
     const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
     const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData, businessUsersData] = await Promise.all([
       apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
@@ -15039,9 +15061,10 @@ function businessLogoSource(affiliate) {
 }
 
 function businessProfileLogoSource() {
+  const sessionBusinessProfile = sessionBusinessProfileForActiveBusiness();
   return state.businessProfile?.logo_data_url
-    || session?.user?.business?.logo_data_url
-    || session?.user?.business?.settings?.logo_data_url
+    || sessionBusinessProfile?.logo_data_url
+    || sessionBusinessProfile?.settings?.logo_data_url
     || businessLogoPreview?.querySelector("img")?.getAttribute("src")
     || accountLogoPreview?.querySelector("img")?.getAttribute("src")
     || "";
@@ -15058,7 +15081,7 @@ function isPanoInglesBusinessName(value) {
 }
 
 function businessCardProfile(affiliate = {}) {
-  const business = state.businessProfile || session?.user?.business || {};
+  const business = state.businessProfile || sessionBusinessProfileForActiveBusiness() || {};
   const settings = {
     ...(affiliate?.business_settings || {}),
     ...(business?.settings || {}),
@@ -15927,7 +15950,7 @@ function resetAffiliateForm() {
 
 function renderBusinessLogoPanel() {
   if (!businessLogoPreview) return;
-  const business = state.businessProfile || session?.user?.business || null;
+  const business = state.businessProfile || sessionBusinessProfileForActiveBusiness() || null;
   const logo = business?.logo_data_url || "";
   if (businessLogoTitle) {
     businessLogoTitle.textContent = business?.name
@@ -15949,7 +15972,7 @@ async function updateBusinessLogo(logoDataUrl) {
     body: JSON.stringify({ logo_data_url: logoDataUrl || "" }),
   });
   mergeBusinessProfile(data.business || null);
-  if (session?.user?.business) {
+  if (session?.user?.business && (!data.business?.id || data.business.id === session.user.business_id)) {
     session.user.business.logo_data_url = data.business?.logo_data_url || "";
     session.user.business.settings = {
       ...(session.user.business.settings || {}),
@@ -15975,7 +15998,7 @@ async function updateTicketFrame(frameDataUrl) {
     body: JSON.stringify({ ticket_frame_data_url: frameDataUrl || "" }),
   });
   mergeBusinessProfile(data.business || null);
-  if (session?.user?.business) {
+  if (session?.user?.business && (!data.business?.id || data.business.id === session.user.business_id)) {
     session.user.business.ticket_frame_data_url = data.business?.ticket_frame_data_url || "";
     session.user.business.settings = {
       ...(session.user.business.settings || {}),
