@@ -4,6 +4,7 @@ const { validate } = require("../utils/validators");
 const {
   addLeadInterest,
   createLeadActivation,
+  createLeadAgendaItem,
   createLeadNote,
   createLeadPurchase,
   deleteLeadAgendaItem,
@@ -36,6 +37,10 @@ const noteSchema = z.object({
     done: z.boolean().optional().default(false),
   })).max(20).optional(),
   source_type: sourceTypeSchema.optional(),
+});
+
+const agendaCreateSchema = noteSchema.extend({
+  lead_id: z.string().uuid(),
 });
 
 const agendaUpdateSchema = z.object({
@@ -153,6 +158,16 @@ async function agenda(req, res, next) {
   }
 }
 
+async function createAgendaItem(req, res, next) {
+  try {
+    const body = validate(agendaCreateSchema, req.body);
+    const item = await createLeadAgendaItem(businessIdFor(req), req.user, body);
+    res.status(201).json({ item });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateAgendaItem(req, res, next) {
   try {
     const body = validate(agendaUpdateSchema, req.body);
@@ -264,6 +279,7 @@ module.exports = {
   addInterest,
   addPurchase,
   agenda,
+  createAgendaItem,
   createNote,
   deleteAgendaItem,
   deleteContact,

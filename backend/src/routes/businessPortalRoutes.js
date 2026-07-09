@@ -43,6 +43,7 @@ const {
   addInterest,
   addPurchase,
   agenda,
+  createAgendaItem,
   createNote,
   deleteAgendaItem,
   deleteContact,
@@ -74,6 +75,7 @@ router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/leads/crm", listLeadsCrm);
 router.get("/leads/agenda", agenda);
+router.post("/leads/agenda", createAgendaItem);
 router.patch("/leads/agenda/:noteId", updateAgendaItem);
 router.delete("/leads/agenda/:noteId", deleteAgendaItem);
 router.get("/leads/:leadId", leadDetail);

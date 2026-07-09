@@ -1333,6 +1333,74 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
   return result.rows[0];
 }
 
+async function getLeadAgendaItem(businessId, noteId) {
+  const result = await query(
+    `select
+        ln.id,
+        ln.business_id,
+        ln.lead_id,
+        ln.source_type,
+        ln.source_id,
+        ln.note,
+        ln.note_type,
+        ln.next_action,
+        ln.reminder_at,
+        ln.agenda_status,
+        ln.agenda_priority,
+        ln.progress_percent,
+        ln.checklist,
+        ln.completed_at,
+        ln.created_at,
+        ln.updated_at,
+        u.full_name as author_name,
+        coalesce(p.name, ml.name, fa.name, 'Contacto sin nombre') as lead_name,
+        coalesce(p.email, ml.email, fa.email) as lead_email,
+        coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
+        coalesce(p.document_id, fa.document_id) as lead_document_id,
+        coalesce(ml.company, fa.company_name, p.metadata->>'company') as lead_company,
+        coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
+        coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
+       from lead_notes ln
+       left join app_users u on u.id = ln.created_by
+       left join players p on p.business_id = ln.business_id
+        and (p.id = ln.lead_id or (ln.source_type = 'PLAYER' and p.id = ln.source_id))
+       left join business_manual_leads ml on ml.business_id = ln.business_id
+        and ln.source_type = 'MANUAL'
+        and ml.id = ln.source_id
+       left join affiliates fa on fa.business_id = ln.business_id
+        and ln.source_type = 'AFFILIATE'
+        and fa.id = ln.source_id
+       left join campaigns c on c.id = p.campaign_id
+      where ln.business_id = $1
+        and ln.id = $2
+        and ln.reminder_at is not null`,
+    [businessId, noteId]
+  );
+  if (!result.rowCount) {
+    throw notFound("Tarea de agenda no encontrada.");
+  }
+  return result.rows[0];
+}
+
+async function createLeadAgendaItem(businessId, user, payload = {}) {
+  const note = await createLeadNote(
+    businessId,
+    user,
+    payload.lead_id,
+    payload.source_type || "PLAYER",
+    {
+      note: payload.note,
+      note_type: payload.note_type || "follow_up",
+      next_action: payload.next_action,
+      reminder_at: payload.reminder_at,
+      agenda_priority: payload.agenda_priority || "MEDIUM",
+      progress_percent: payload.progress_percent || 0,
+      checklist: Array.isArray(payload.checklist) ? payload.checklist : [],
+    }
+  );
+  return getLeadAgendaItem(businessId, note.id);
+}
+
 function agendaDateRange(params = {}) {
   const now = new Date();
   const from = params.from ? new Date(params.from) : new Date(now.getFullYear(), now.getMonth(), 1);
