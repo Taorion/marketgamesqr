@@ -1753,11 +1753,12 @@ function startQrBatchProgress(quantity) {
 }
 
 async function api(path, options = {}) {
+  const { planGate = true, ...fetchOptions } = options;
   const response = await fetch(path, {
-    ...options,
+    ...fetchOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(fetchOptions.headers || {}),
     },
   });
   const rawText = await response.text().catch(() => "");
@@ -1772,7 +1773,14 @@ async function api(path, options = {}) {
     if (response.status === 401) {
       forceLoginAfterSessionIssue(data.error?.message || "Tu sesión expiro o el portal fue actualizado. Inicia sesión de nuevo para continuar.");
     }
-    throw new Error(apiErrorMessage(data, response, rawText));
+    const error = new Error(apiErrorMessage(data, response, rawText));
+    error.status = response.status;
+    error.details = data.error?.details || null;
+    error.planGate = data.error?.details?.plan_gate || null;
+    if (planGate && error.planGate) {
+      showPlanGateFromApiError(error);
+    }
+    throw error;
   }
   return data;
 }
@@ -1815,7 +1823,7 @@ function httpErrorMessage(response, rawText = "") {
 
 async function apiSafe(path, options = {}, fallback = null) {
   try {
-    return await api(path, options);
+    return await api(path, { ...options, planGate: false });
   } catch (error) {
     return fallback;
   }
@@ -2843,6 +2851,12 @@ function featureUpgradeLabel(feature = "", requestedView = "") {
     portal_access: "Portal operativo",
     predictive_analytics: "Analítica predictiva",
     journey: "Customer Journey",
+    active_campaigns: "campañas activas",
+    branches: "sedes",
+    users: "usuarios",
+    validators: "validadores",
+    lead_exports_month: "exportaciones de leads",
+    lead_export_rows_month: "filas exportadas",
   };
   if (labels[feature]) return labels[feature];
   if (requestedView) {
@@ -2853,9 +2867,11 @@ function featureUpgradeLabel(feature = "", requestedView = "") {
 
 function showFeatureUpgradeInterstitial(feature = "", options = {}) {
   const prompt = featureUpgradePrompt(feature) || {};
-  const nextCode = nextSubscriptionPlanCode(feature);
+  const gate = options.planGate || {};
+  const nextCode = gate.suggested_plan_code || options.suggestedPlanCode || nextSubscriptionPlanCode(feature);
   const nextPlan = publicSubscriptionPlan(nextCode);
-  const featureLabel = featureUpgradeLabel(feature, options.requestedView);
+  const gateKey = gate.feature || gate.limit_key || feature;
+  const featureLabel = gate.label || featureUpgradeLabel(gateKey, options.requestedView);
   const currentName = currentPlan().name || "tu plan actual";
   const bullets = (Array.isArray(nextPlan.included) && nextPlan.included.length ? nextPlan.included : [])
     .slice(0, 5);
@@ -2870,8 +2886,8 @@ function showFeatureUpgradeInterstitial(feature = "", options = {}) {
   }
 
   featureUpgradeEyebrow.textContent = "Feature bloqueado por plan";
-  featureUpgradeTitle.textContent = prompt.title || `Desbloquea ${featureLabel}`;
-  featureUpgradeCopy.textContent = prompt.message || `${currentName} no incluye ${featureLabel}. El siguiente plan recomendado es ${nextPlan.name}.`;
+  featureUpgradeTitle.textContent = options.title || prompt.title || `Desbloquea ${featureLabel}`;
+  featureUpgradeCopy.textContent = options.message || prompt.message || `${currentName} no incluye ${featureLabel}. El siguiente plan recomendado es ${nextPlan.name}.`;
   featureUpgradePlanBox.innerHTML = `
     <span class="mono-label">Siguiente plan recomendado</span>
     <div class="feature-upgrade-plan-head">
@@ -2890,6 +2906,29 @@ function showFeatureUpgradeInterstitial(feature = "", options = {}) {
 
 function closeFeatureUpgradeInterstitial() {
   featureUpgradeModal?.classList.add("hidden");
+}
+
+function showPlanGateFromApiError(error = {}) {
+  const gate = error.planGate || error.details?.plan_gate;
+  if (!gate) return false;
+  const gateKey = gate.feature || gate.limit_key || "portal_access";
+  const title = gate.reason === "limit_reached" || gate.reason === "monthly_limit_reached"
+    ? "Capacidad del plan alcanzada"
+    : "Feature bloqueado por plan";
+  const label = gate.label || featureUpgradeLabel(gateKey);
+  const limitText = gate.limit !== null && gate.limit !== undefined
+    ? `Tu plan actual permite ${formatLimitValue(gate.limit)} ${label}.`
+    : "";
+  const message = error.message
+    ? `${error.message} ${limitText}`.trim()
+    : `${label} requiere un plan superior.`;
+  showFeatureUpgradeInterstitial(gateKey, {
+    planGate: gate,
+    title,
+    message,
+    requestedView: gateKey,
+  });
+  return true;
 }
 
 function planBenefitList(plan) {

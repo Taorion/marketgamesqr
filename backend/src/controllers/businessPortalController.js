@@ -2395,6 +2395,22 @@ async function exportContactFeed(req, res, next) {
     const retentionDays = null;
     const ticketFilter = normalizeContactTicketFilter(req.query.ticket_filter || req.query.status);
     const rows = await getContactFeedRows(businessId, retentionDays, null, ticketFilter);
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export",
+      subscription.plan.limits.lead_exports_month,
+      1,
+      "exportaciones de leads",
+      { plan: subscription.plan, limit_key: "lead_exports_month" }
+    );
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export_row",
+      subscription.plan.limits.lead_export_rows_month,
+      rows.length,
+      "filas exportadas",
+      { plan: subscription.plan, limit_key: "lead_export_rows_month" }
+    );
     await recordUsage({
       business_id: businessId,
       user_id: req.user.id,
@@ -2420,7 +2436,24 @@ async function exportContactFeed(req, res, next) {
 async function exportCampaignLeads(req, res, next) {
   try {
     const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
     const rows = await getCampaignLeadRows(businessId, req.params.id);
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export",
+      subscription.plan.limits.lead_exports_month,
+      1,
+      "exportaciones de leads",
+      { plan: subscription.plan, limit_key: "lead_exports_month" }
+    );
+    await assertMonthlyUsageLimit(
+      businessId,
+      "lead_export_row",
+      subscription.plan.limits.lead_export_rows_month,
+      rows.length,
+      "filas exportadas",
+      { plan: subscription.plan, limit_key: "lead_export_rows_month" }
+    );
     await recordUsage({
       business_id: businessId,
       user_id: req.user.id,

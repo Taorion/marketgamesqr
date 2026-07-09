@@ -11,9 +11,10 @@ function unauthorized(message = "Unauthorized.") {
   return error;
 }
 
-function forbidden(message = "Forbidden.") {
+function forbidden(message = "Forbidden.", details) {
   const error = new Error(message);
   error.status = 403;
+  error.details = details;
   return error;
 }
 

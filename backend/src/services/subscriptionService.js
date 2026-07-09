@@ -15,6 +15,7 @@ const PLAN_CODES = {
 
 const unlimited = null;
 const SUBSCRIPTION_GRACE_DAYS = 15;
+const PUBLIC_UPGRADE_ORDER = [PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO, PLAN_CODES.GLOBAL];
 const BASE_PORTAL_MIN_TICKETS = 200;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const STARTED_PORTAL_COP = 1000000;
@@ -905,6 +906,40 @@ async function setBusinessSubscription(businessId, payload) {
   };
 }
 
+function upgradeOrderIndex(planCode) {
+  const index = PUBLIC_UPGRADE_ORDER.indexOf(normalizePlanCode(planCode));
+  return index >= 0 ? index : -1;
+}
+
+function suggestedPlanForFeature(currentPlan = {}, feature = "") {
+  const start = Math.max(0, upgradeOrderIndex(currentPlan.code) + 1);
+  return PUBLIC_UPGRADE_ORDER.slice(start).find((code) => PLAN_CATALOG[code]?.features?.[feature]) || PLAN_CODES.GLOBAL;
+}
+
+function suggestedPlanForLimit(currentPlan = {}, limitKey = "", current = 0) {
+  const start = Math.max(0, upgradeOrderIndex(currentPlan.code) + 1);
+  return PUBLIC_UPGRADE_ORDER.slice(start).find((code) => {
+    const value = PLAN_CATALOG[code]?.limits?.[limitKey];
+    return value === null || value === undefined || Number(value) >= Number(current || 0);
+  }) || PLAN_CODES.GLOBAL;
+}
+
+function planGateDetails(plan = {}, payload = {}) {
+  return {
+    plan_gate: {
+      reason: payload.reason || "plan_gate",
+      current_plan_code: plan.code || null,
+      current_plan_name: plan.name || null,
+      suggested_plan_code: payload.suggested_plan_code || null,
+      feature: payload.feature || null,
+      limit_key: payload.limit_key || null,
+      label: payload.label || null,
+      current: payload.current ?? null,
+      limit: payload.limit ?? null,
+    },
+  };
+}
+
 async function assertBusinessFeature(user, businessId, feature) {
   if (!canAccessBusiness(user, businessId)) {
     throw forbidden("No puedes acceder a este negocio.");
@@ -914,13 +949,37 @@ async function assertBusinessFeature(user, businessId, feature) {
   }
   const subscription = await getBusinessSubscription(businessId);
   if (subscription.plan.raw_status !== "ACTIVE") {
-    throw forbidden("La suscripcion del negocio no esta activa.");
+    throw forbidden(
+      "La suscripcion del negocio no esta activa.",
+      planGateDetails(subscription.plan, {
+        reason: "subscription_inactive",
+        feature: "portal_access",
+        label: "portal",
+        suggested_plan_code: PLAN_CODES.STARTER,
+      })
+    );
   }
   if (!subscription.plan.portal_access_allowed) {
-    throw forbidden(`La mensualidad vencio y ya pasaron los ${SUBSCRIPTION_GRACE_DAYS} dias de gracia. Renueva para recuperar el acceso al portal; tus datos se conservan.`);
+    throw forbidden(
+      `La mensualidad vencio y ya pasaron los ${SUBSCRIPTION_GRACE_DAYS} dias de gracia. Renueva para recuperar el acceso al portal; tus datos se conservan.`,
+      planGateDetails(subscription.plan, {
+        reason: "portal_locked",
+        feature: "portal_access",
+        label: "portal",
+        suggested_plan_code: subscription.plan.code || PLAN_CODES.STARTER,
+      })
+    );
   }
   if (!subscription.plan.features[feature]) {
-    throw forbidden(`Tu plan no incluye: ${feature}.`);
+    throw forbidden(
+      `Tu plan no incluye: ${feature}.`,
+      planGateDetails(subscription.plan, {
+        reason: "feature_locked",
+        feature,
+        label: feature,
+        suggested_plan_code: suggestedPlanForFeature(subscription.plan, feature),
+      })
+    );
   }
   return subscription;
 }
@@ -963,13 +1022,24 @@ function assertLimitValue(limit, current, label) {
   }
 }
 
-async function assertMonthlyUsageLimit(businessId, eventType, limit, nextQuantity, label) {
+async function assertMonthlyUsageLimit(businessId, eventType, limit, nextQuantity, label, options = {}) {
   if (limit === null || limit === undefined) {
     return;
   }
   const used = await monthlyUsage(businessId, eventType);
   if (used + Number(nextQuantity || 1) > Number(limit)) {
-    throw forbidden(`Limite mensual alcanzado para ${label}.`);
+    const projected = used + Number(nextQuantity || 1);
+    throw forbidden(
+      `Limite mensual alcanzado para ${label}.`,
+      planGateDetails(options.plan || {}, {
+        reason: "monthly_limit_reached",
+        limit_key: options.limit_key || eventType,
+        label,
+        current: used,
+        limit,
+        suggested_plan_code: suggestedPlanForLimit(options.plan || {}, options.limit_key || eventType, projected),
+      })
+    );
   }
 }
 
@@ -986,7 +1056,20 @@ async function assertPortalAccess(req) {
 
 async function assertLimitForBusiness(businessId, limitKey, current, label) {
   const subscription = await getBusinessSubscription(businessId);
-  assertLimitValue(subscription.plan.limits[limitKey], current, label);
+  const limit = subscription.plan.limits[limitKey];
+  if (limit !== null && limit !== undefined && Number(current) >= Number(limit)) {
+    throw forbidden(
+      `Limite alcanzado para ${label}.`,
+      planGateDetails(subscription.plan, {
+        reason: "limit_reached",
+        limit_key: limitKey,
+        label,
+        current,
+        limit,
+        suggested_plan_code: suggestedPlanForLimit(subscription.plan, limitKey, Number(current) + 1),
+      })
+    );
+  }
   return subscription;
 }
 
