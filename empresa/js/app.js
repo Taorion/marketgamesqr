@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260708-lead-agenda-board-v7";
+const APP_VERSION = "empresa-20260709-lead-agenda-calendar-v8";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -926,7 +926,7 @@ let state = {
   leadAgendaLoading: false,
   leadAgendaView: "list",
   leadAgendaStatus: "OPEN",
-  leadAgendaAnchorDate: new Date().toISOString().slice(0, 10),
+  leadAgendaAnchorDate: dateInputValue(new Date()),
   leadAgendaRange: null,
   editingAgendaId: null,
   contactCenterMounted: false,
@@ -1615,7 +1615,7 @@ function resetBusinessScopedState(options = {}) {
   state.leadAgendaLoading = false;
   state.leadAgendaView = "list";
   state.leadAgendaStatus = "OPEN";
-  state.leadAgendaAnchorDate = new Date().toISOString().slice(0, 10);
+  state.leadAgendaAnchorDate = dateInputValue(new Date());
   state.leadAgendaRange = null;
   state.editingAgendaId = null;
   state.contactCenterTab = "overview";
@@ -2171,27 +2171,37 @@ function formatDate(value) {
 
 function formatDateOnly(value) {
   if (!value) return "-";
-  return new Date(value).toLocaleDateString("es-CO", {
+  return parseLocalDateValue(value).toLocaleDateString("es-CO", {
     dateStyle: "medium",
   });
 }
 
+function parseLocalDateValue(date = new Date()) {
+  if (date instanceof Date) return new Date(date);
+  const raw = String(date || "");
+  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]), 0, 0, 0, 0);
+  }
+  return new Date(raw);
+}
+
 function dateInputValue(date = new Date()) {
-  const value = date instanceof Date ? date : new Date(date);
+  const value = parseLocalDateValue(date);
   if (Number.isNaN(value.getTime())) return new Date().toISOString().slice(0, 10);
   const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
 
 function datetimeLocalValue(date = new Date()) {
-  const value = date instanceof Date ? date : new Date(date);
+  const value = parseLocalDateValue(date);
   if (Number.isNaN(value.getTime())) return "";
   const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
 }
 
 function startOfLocalDay(date = new Date()) {
-  const value = date instanceof Date ? new Date(date) : new Date(date);
+  const value = parseLocalDateValue(date);
   value.setHours(0, 0, 0, 0);
   return value;
 }
@@ -2227,8 +2237,8 @@ function agendaRangeForView(view = state.leadAgendaView, anchorValue = state.lea
       to: new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 23, 59, 59, 999),
     };
   }
-  if (view === "board") return { from: startOfLocalDay(new Date()), to: endOfLocalDay(addDays(new Date(), 60)) };
-  return { from: startOfLocalDay(new Date()), to: endOfLocalDay(addDays(new Date(), 60)) };
+  if (view === "board") return { from: anchor, to: endOfLocalDay(addDays(anchor, 60)) };
+  return { from: anchor, to: endOfLocalDay(addDays(anchor, 60)) };
 }
 
 function subscriptionAccessLabel(plan = {}) {
@@ -17503,12 +17513,21 @@ function renderAgendaList(rows = agendaRows()) {
 function agendaCompactCardMarkup(item = {}) {
   const priority = String(item.agenda_priority || "MEDIUM").toUpperCase();
   const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
+  const status = String(item.agenda_status || "OPEN").toUpperCase();
+  const isDone = status === "DONE";
   return `
-    <button class="lead-agenda-compact-card" type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
-      <span>${escapeHtml(formatTimeOnly(item.reminder_at))}</span>
-      <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
-      <small>${escapeHtml(item.lead_name || "Contacto")} · ${escapeHtml(agendaPriorityLabel(priority))} · ${progress}%</small>
-    </button>
+    <article class="lead-agenda-compact-card">
+      <button class="lead-agenda-compact-main" type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+        <span>${escapeHtml(formatTimeOnly(item.reminder_at))}</span>
+        <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
+        <small>${escapeHtml(item.lead_name || "Contacto")} · ${escapeHtml(agendaPriorityLabel(priority))} · ${progress}%</small>
+      </button>
+      <div class="lead-agenda-mini-actions">
+        <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
+        <button class="${isDone ? "ghost-button" : "solid-button"}" type="button" data-agenda-status="${escapeHtml(item.id || "")}" data-next-status="${isDone ? "OPEN" : "DONE"}">${isDone ? "Reabrir" : "Hecha"}</button>
+        <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+      </div>
+    </article>
   `;
 }
 
@@ -17608,8 +17627,8 @@ function renderAgendaMonth(rows = agendaRows()) {
         return `
           <section class="lead-calendar-cell ${outside ? "is-muted" : ""}">
             <span>${day.getDate()}</span>
-            ${items.slice(0, 3).map((item) => `<button type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">${escapeHtml(item.next_action || item.lead_name || "Seguimiento")}</button>`).join("")}
-            ${items.length > 3 ? `<small>+${items.length - 3} más</small>` : ""}
+            ${items.slice(0, 4).map((item) => agendaCompactCardMarkup(item)).join("")}
+            ${items.length > 4 ? `<small>+${items.length - 4} más</small>` : ""}
           </section>
         `;
       }).join("")}

@@ -14062,12 +14062,12 @@ body.chart-focus-open .command-center {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .lead-calendar-cell button {
+:root[data-theme="light"] .lead-calendar-cell .lead-agenda-compact-card {
   border-color: #c7e8d7;
   background: #f1fbf6;
 }
 
-:root[data-theme="light"] .lead-calendar-cell button:hover,
+:root[data-theme="light"] .lead-calendar-cell .lead-agenda-compact-card:hover,
 :root[data-theme="light"] .lead-year-month:hover {
   border-color: #91d6b2;
   background: #e8f6ef;
@@ -14372,20 +14372,45 @@ body.chart-focus-open .command-center {
   color: inherit;
   text-align: left;
   background: rgba(111, 251, 190, 0.07);
+}
+
+.lead-agenda-compact-main {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
   cursor: pointer;
 }
 
-.lead-agenda-compact-card span,
-.lead-agenda-compact-card small {
+.lead-agenda-compact-main span,
+.lead-agenda-compact-main small {
   color: var(--muted);
 }
 
-.lead-agenda-compact-card strong,
-.lead-agenda-compact-card small {
+.lead-agenda-compact-main strong,
+.lead-agenda-compact-main small {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.lead-agenda-mini-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.lead-agenda-mini-actions .ghost-button,
+.lead-agenda-mini-actions .solid-button {
+  min-height: 28px;
+  padding: 5px 7px;
+  font-size: 0.74rem;
 }
 
 .lead-week-board,
@@ -14479,14 +14504,14 @@ body.chart-focus-open .command-center {
 
 .lead-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(112px, 1fr));
+  grid-template-columns: repeat(7, minmax(168px, 1fr));
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .lead-calendar-weekday {
-  min-width: 112px;
+  min-width: 168px;
   padding: 0 4px 4px;
   color: var(--muted);
   font-size: 0.78rem;
@@ -14494,8 +14519,8 @@ body.chart-focus-open .command-center {
 }
 
 .lead-calendar-cell {
-  min-width: 112px;
-  min-height: 118px;
+  min-width: 168px;
+  min-height: 220px;
   display: grid;
   align-content: start;
   gap: 6px;
@@ -14512,21 +14537,6 @@ body.chart-focus-open .command-center {
 .lead-calendar-cell > span {
   color: var(--text);
   font-weight: 700;
-}
-
-.lead-calendar-cell button {
-  width: 100%;
-  min-height: 28px;
-  border: 1px solid rgba(111, 251, 190, 0.18);
-  border-radius: 7px;
-  padding: 5px 7px;
-  color: inherit;
-  text-align: left;
-  background: rgba(111, 251, 190, 0.08);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .lead-calendar-cell small {
@@ -14560,7 +14570,7 @@ body.chart-focus-open .command-center {
   color: var(--muted);
 }
 
-.lead-calendar-cell button:hover,
+.lead-calendar-cell .lead-agenda-compact-card:hover,
 .lead-year-month:hover {
   border-color: rgba(111, 251, 190, 0.36);
   background: rgba(111, 251, 190, 0.12);
