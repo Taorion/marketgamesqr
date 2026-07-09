@@ -80,16 +80,16 @@ const FALLBACK_PLANS = [
     code: "PRO",
     name: "Premium",
     monthly_price_cop: 4500000,
-    access_summary: "Plan para marcas que quieren usar MarketGamesQR como sistema comercial completo con campañas, activaciones, agenda, contactos, fidelización, referidos y analítica avanzada.",
+    access_summary: "Plan para marcas que quieren todo el portal habilitado, sin límites de uso ni cantidad en las capacidades operativas.",
     included: [
       "Acceso al portal",
       "Gráficas de redención",
-      "Visualización ampliada de leads",
+      "Visualización ilimitada de leads",
       "Exportaciones ilimitadas",
       "Validador de tickets",
       "Creación de campañas en línea ilimitadas",
-      "4 sedes",
-      "4 usuarios",
+      "Sedes ilimitadas",
+      "Usuarios ilimitados",
       "Gaming center con historial de tickets",
       "Acceso a todas las activaciones disponibles",
       "Calculadora de campañas",
@@ -126,7 +126,7 @@ const PLAN_FOCUS = {
 const PLAN_SNAPSHOT = {
   STARTER: ["1 campaña activa", "1 sede", "2 exportaciones"],
   GROWTH: ["3 campañas activas", "2 sedes", "10 exportaciones"],
-  PRO: ["Campañas ilimitadas", "4 sedes", "Exportaciones ilimitadas"],
+  PRO: ["Campañas ilimitadas", "Sedes ilimitadas", "Uso ilimitado"],
 };
 
 let plans = [];

@@ -2821,7 +2821,7 @@ function publicSubscriptionPlan(code) {
       code: "PRO",
       name: "Premium",
       monthly_price_cop: 4500000,
-      included: ["Campañas ilimitadas", "Tareas + Customer Journey", "Afiliados ilimitados + Carnet digital", "Analítica predictiva"],
+      included: ["Todo el portal habilitado", "Uso y cantidad ilimitados", "Afiliados ilimitados + Carnet digital", "Analítica predictiva"],
     },
     GLOBAL: {
       code: "GLOBAL",
