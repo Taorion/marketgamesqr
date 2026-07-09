@@ -223,6 +223,7 @@ const campaignCostScenarios = document.getElementById("campaignCostScenarios");
 const campaignCostMessage = document.getElementById("campaignCostMessage");
 const campaignStrategyTabOpenButton = document.getElementById("campaignStrategyTabOpenButton");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
+const campaignConfigurationGrid = document.getElementById("campaignConfigurationGrid");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
 const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
 const campaignAffiliateNotesInput = document.getElementById("campaignAffiliateNotesInput");
@@ -2531,7 +2532,7 @@ function setCheckedValues(container, values = []) {
 
 function statusLabel(status) {
   const labels = {
-    DRAFT: "Borrador interno",
+    DRAFT: "Borrador de campaña",
     READY_FOR_CLIENT_SETUP: "Listo para configurar",
     SCHEDULED: "Programada",
     ACTIVE: "Activa",
@@ -5855,23 +5856,21 @@ async function selectCampaign(campaignId) {
   renderCampaignAssociationInputs();
 
   try {
-    const [campaignData, reportData, leadsData, redemptionsData, salesData, campaignAffiliatesData] = await Promise.all([
+    const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
-      apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
-    if (!state.affiliatesLoaded) await loadAffiliatesData();
     state.selectedCampaign = campaignData.campaign || null;
     state.selectedReport = reportData || null;
     state.selectedLeads = leadsData.leads || [];
     state.selectedRedemptions = redemptionsData.redemptions || [];
     state.selectedSales = salesData.sales || [];
-    state.selectedCampaignAffiliates = campaignAffiliatesData.affiliates || [];
+    state.selectedCampaignAffiliates = [];
 
     renderCampaignView();
     renderCampaignAssociationInputs();
@@ -6732,6 +6731,81 @@ function renderCampaignAffiliatesPanel() {
   });
 }
 
+function campaignAssetLabel(key = "") {
+  const labels = {
+    captura_qr_publica: "QR publico de captacion",
+    landing_url: "Landing",
+    validator_url: "Validador",
+    game_url: "Juego",
+    form_url: "Formulario",
+    primary_link: "Link principal",
+    qr_landing_url: "QR landing",
+    creative_notes: "Notas de material",
+  };
+  return labels[key] || String(key || "Asset").replaceAll("_", " ");
+}
+
+function renderCampaignAssetSummary(assetEntries = []) {
+  if (!assetEntries.length) return "Sin assets o enlaces publicados.";
+  return assetEntries.map(([key, value]) => {
+    const label = campaignAssetLabel(key);
+    const values = Array.isArray(value) ? value : [value];
+    return values
+      .filter((item) => item !== null && item !== undefined && String(item).trim())
+      .map((item) => {
+        const text = String(item);
+        if (text.startsWith("http")) {
+          return `<a href="${escapeHtml(text)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+        }
+        return `<span>${escapeHtml(label)}: ${escapeHtml(text)}</span>`;
+      })
+      .join("");
+  }).filter(Boolean).join("");
+}
+
+function renderCampaignConfigurationGrid(campaign, assetEntries = []) {
+  if (!campaignConfigurationGrid) return;
+  if (!campaign) {
+    campaignConfigurationGrid.innerHTML = `
+      <article><span class="mono-label">Estado</span><strong>Sin campaña</strong></article>
+      <article><span class="mono-label">Fechas</span><strong>-</strong></article>
+      <article><span class="mono-label">Inversion</span><strong>$0</strong></article>
+      <article><span class="mono-label">Canales</span><strong>-</strong></article>
+    `;
+    return;
+  }
+  const start = campaign.starts_at ? formatDate(campaign.starts_at) : "Inicio abierto";
+  const end = campaign.ends_at ? formatDate(campaign.ends_at) : "Sin cierre";
+  const goalParts = [
+    `Leads ${Number(campaign.expected_leads_goal || 0).toLocaleString("es-CO")}`,
+    `Redenciones ${Number(campaign.expected_redemptions_goal || 0).toLocaleString("es-CO")}`,
+    `Ventas ${money(campaign.expected_sales_goal || 0)}`,
+  ];
+  const resultParts = [
+    `${Number(campaign.total_leads || 0).toLocaleString("es-CO")} leads`,
+    `${Number(campaign.total_qr_redeemed || 0).toLocaleString("es-CO")} redenciones`,
+    `${money(campaign.attributed_revenue || 0)} revenue`,
+  ];
+  const rows = [
+    ["Estado", statusLabel(campaign.status)],
+    ["Fechas", `${start} - ${end}`],
+    ["Inversion total", money(campaign.budget_total || 0)],
+    ["Presupuesto adicional", money(campaign.metadata?.additional_budget || 0)],
+    ["Objetivo", campaign.objective || "Sin objetivo definido", "wide"],
+    ["Canales", launchChannelsLabel(campaign.launch_channels), "wide"],
+    ["Metas", goalParts.join(" | "), "wide"],
+    ["Resultado actual", resultParts.join(" | "), "wide"],
+    ["Observaciones", campaign.client_notes || "Sin observaciones del cliente.", "wide"],
+    ["Assets y enlaces", renderCampaignAssetSummary(assetEntries), "wide", true],
+  ];
+  campaignConfigurationGrid.innerHTML = rows.map(([label, value, className, isHtml]) => `
+    <article class="${className === "wide" ? "campaign-config-wide" : ""}">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${isHtml ? value : escapeHtml(value)}</strong>
+    </article>
+  `).join("");
+}
+
 function setCampaignSectionTab(tab = "analysis") {
   const nextTab = ["analysis", "calculator", "assistant"].includes(tab) ? tab : "analysis";
   state.campaignSectionTab = nextTab;
@@ -6826,13 +6900,13 @@ function renderCampaignView() {
   const setupReady = campaign.status === "READY_FOR_CLIENT_SETUP";
   editCampaignButton.classList.toggle("hidden", !canManageCampaigns());
   markReadyCampaignButton.classList.toggle("hidden", !(isAdmin() && campaign.status === "DRAFT"));
-  launchSetupTitle.textContent = setupReady ? "Preparar lanzamiento" : "Configuración del cliente";
+  launchSetupTitle.textContent = setupEditable ? "Preparar lanzamiento" : "Configuracion de campaña";
   launchSetupStatus.textContent = statusLabel(campaign.status);
   launchSetupCopy.textContent = setupReady
     ? "Completa inversión, fechas, metas y canales reales antes de activar la campaña."
     : setupEditable
       ? "Puedes ajustar datos de lanzamiento antes de la fecha programada."
-      : "La estructura estrategica sigue bloqueada. Solo se muestran los datos operativos del cliente.";
+      : "Datos guardados para operación, medicion y seguimiento de esta campaña.";
   launchBudgetInput.value = campaign.budget_total || 0;
   launchAdditionalBudgetInput.value = campaign.metadata?.additional_budget || 0;
   launchStartsAtInput.value = formatInputDateTime(campaign.starts_at);
@@ -6869,10 +6943,11 @@ function renderCampaignView() {
     ...(publicLeadQrUrl ? [["captura_qr_publica", publicLeadQrUrl]] : []),
     ...Object.entries(deliveredAssets).filter(([, value]) => value && (!Array.isArray(value) || value.length)),
   ];
+  renderCampaignConfigurationGrid(campaign, assetEntries);
   campaignAssetsGrid.innerHTML = assetEntries.length
     ? assetEntries.map(([key, value]) => `
         <article class="asset-card">
-          <span class="mono-label">${escapeHtml(key.replaceAll("_", " "))}</span>
+          <span class="mono-label">${escapeHtml(campaignAssetLabel(key))}</span>
           ${Array.isArray(value)
             ? value.map((item) => `<a href="${escapeHtml(item)}" target="_blank" rel="noreferrer">${escapeHtml(item)}</a>`).join("")
             : String(value).startsWith("http")
@@ -12856,9 +12931,9 @@ function renderNoCampaignState() {
   campaignBudgetBar.style.width = "0%";
   campaignRoiValue.textContent = "-";
   campaignRoiDelta.textContent = "-";
-  launchSetupTitle.textContent = "Configuración del cliente";
-  launchSetupStatus.textContent = "Bloqueado";
-  launchSetupCopy.textContent = "Esta campaña aún no está lista para configuración por parte del cliente.";
+  launchSetupTitle.textContent = "Configuracion de campaña";
+  launchSetupStatus.textContent = "Sin campaña";
+  launchSetupCopy.textContent = "Selecciona una campaña para ver y ajustar sus datos operativos de lanzamiento.";
   launchSetupForm.reset();
   state.campaignCostCalculator = null;
   state.campaignCostCalculatorCampaignId = null;
@@ -12882,6 +12957,7 @@ function renderNoCampaignState() {
     input.disabled = true;
   });
   campaignAssetsGrid.innerHTML = '<article class="asset-card"><strong>Sin assets cargados</strong><span>Selecciona una campaña para ver material entregado.</span></article>';
+  renderCampaignConfigurationGrid(null);
   state.selectedCampaignAffiliates = [];
   if (campaignAffiliateSelect) campaignAffiliateSelect.innerHTML = '<option value="">Sin campaña</option>';
   if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;
