@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-agenda-whatsapp-business-v18";
+const APP_VERSION = "empresa-20260709-branch-create-v19";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -458,6 +458,14 @@ const affiliateStatAveragePurchase = document.getElementById("affiliateStatAvera
 const affiliateStatLastPurchase = document.getElementById("affiliateStatLastPurchase");
 const affiliateStatTopAffiliate = document.getElementById("affiliateStatTopAffiliate");
 const branchTable = document.getElementById("branchTable");
+const branchCreateForm = document.getElementById("branchCreateForm");
+const branchTypeInput = document.getElementById("branchTypeInput");
+const branchNameInput = document.getElementById("branchNameInput");
+const branchAddressInput = document.getElementById("branchAddressInput");
+const branchContactInput = document.getElementById("branchContactInput");
+const branchPhoneInput = document.getElementById("branchPhoneInput");
+const branchNotesInput = document.getElementById("branchNotesInput");
+const branchCreateMessage = document.getElementById("branchCreateMessage");
 const redemptionInsightTitle = document.getElementById("redemptionInsightTitle");
 const adminPanelMessage = document.getElementById("adminPanelMessage");
 const adminCampaignTable = document.getElementById("adminCampaignTable");
@@ -1021,6 +1029,9 @@ let state = {
   inventoryProducts: [],
   inventoryLoaded: false,
   inventorySearch: "",
+  businessBranches: [],
+  businessBranchesLoaded: false,
+  businessBranchesLoading: false,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
   ticketCenterLoading: false,
@@ -1649,6 +1660,9 @@ function resetBusinessScopedState(options = {}) {
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventorySearch = "";
+  state.businessBranches = [];
+  state.businessBranchesLoaded = false;
+  state.businessBranchesLoading = false;
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
   state.ticketCenterLoading = false;
@@ -3684,6 +3698,9 @@ async function loadWorkspace() {
     state.leadAgendaRange = null;
     state.editingAgendaId = null;
     state.businessUsers = businessUsersData.users || [];
+    state.businessBranches = [];
+    state.businessBranchesLoaded = false;
+    state.businessBranchesLoading = false;
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
     state.strategicQrMetrics = null;
@@ -7161,7 +7178,7 @@ function renderBranchesView() {
       <td>${escapeHtml(row.sales)}</td>
       <td>${escapeHtml(money(row.revenue))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="4">Sin datos por sucursal.</td></tr>';
+  `).join("") || '<tr><td colspan="7">Sin datos por sucursal.</td></tr>';
 }
 
 function renderAdminView() {
@@ -12867,7 +12884,7 @@ function renderNoCampaignState() {
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
   campaignSalesTable.innerHTML = '<tr><td colspan="10">Sin ventas.</td></tr>';
-  branchTable.innerHTML = '<tr><td colspan="4">Sin datos por sucursal.</td></tr>';
+  branchTable.innerHTML = '<tr><td colspan="7">Sin branches registrados ni actividad por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
   dashboardInsightTitle.textContent = "Esperando datos del negocio.";
@@ -20905,7 +20922,40 @@ function renderSalesView() {
   `).join("") || '<tr><td colspan="10">Sin ventas para esta campaña.</td></tr>';
 }
 
-function renderBranchesView() {
+function branchMetadata(branch = {}) {
+  return branch.metadata && typeof branch.metadata === "object" ? branch.metadata : {};
+}
+
+function branchTypeLabel(value = "") {
+  return {
+    BRANCH: "Sede / punto de venta",
+    CONSIGNMENT: "Consignación",
+  }[String(value || "BRANCH").toUpperCase()] || "Sede / punto de venta";
+}
+
+async function loadBusinessBranches(options = {}) {
+  if (!session?.user?.business_id) {
+    state.businessBranches = [];
+    state.businessBranchesLoaded = true;
+    state.businessBranchesLoading = false;
+    return [];
+  }
+  if (state.businessBranchesLoaded && !options.force) return state.businessBranches;
+  if (state.businessBranchesLoading) return state.businessBranches;
+  state.businessBranchesLoading = true;
+  const scopeKey = businessScopeKey();
+  try {
+    const data = await apiSafe("/api/business/branches", { headers: authHeaders() }, { branches: [] });
+    if (!isCurrentBusinessScope(scopeKey)) return state.businessBranches;
+    state.businessBranches = Array.isArray(data.branches) ? data.branches : [];
+    state.businessBranchesLoaded = true;
+    return state.businessBranches;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.businessBranchesLoading = false;
+  }
+}
+
+function branchActivityRows() {
   const summary = new Map();
   withFilters(
     state.selectedRedemptions || [],
@@ -20928,13 +20978,39 @@ function renderBranchesView() {
     summary.get(key).revenue += toNumber(item.sale_amount);
   });
 
-  const rows = Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue);
+  (state.businessBranches || []).forEach((branch) => {
+    const key = branch.name || "Sin sucursal";
+    const metadata = branchMetadata(branch);
+    const current = summary.get(key) || { branch: key, redemptions: 0, sales: 0, revenue: 0 };
+    summary.set(key, {
+      ...current,
+      id: branch.id,
+      slug: branch.slug,
+      address: branch.address || "",
+      is_active: branch.is_active !== false,
+      branch_type: metadata.branch_type || "BRANCH",
+      contact_name: metadata.contact_name || "",
+      contact_phone: metadata.contact_phone || "",
+      notes: metadata.notes || "",
+    });
+  });
+
+  return Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue || String(a.branch).localeCompare(String(b.branch)));
+}
+
+function renderBranchesView() {
+  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
+    loadBusinessBranches().then(renderBranchesView).catch((error) => showFeedback(error.message, "error"));
+  }
+  const rows = branchActivityRows();
   const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
   const topBranch = rows[0]?.branch || "Sin datos";
+  const activeBranches = (state.businessBranches || []).filter((branch) => branch.is_active !== false).length;
+  const consignmentCount = (state.businessBranches || []).filter((branch) => String(branchMetadata(branch).branch_type || "").toUpperCase() === "CONSIGNMENT").length;
   branchKpiGrid.innerHTML = [
-    ["Sucursales activas", rows.length, topBranch],
+    ["Branches activos", activeBranches || rows.length, `${consignmentCount} consignación`],
     ["Redenciones", rows.reduce((sum, row) => sum + row.redemptions, 0), `${rows.length ? Math.round(rows.reduce((sum, row) => sum + row.redemptions, 0) / rows.length) : 0} promedio/sucursal`],
-    ["Ingresos", money(totalRevenue), `${rows.reduce((sum, row) => sum + row.sales, 0)} ventas`],
+    ["Ingresos", money(totalRevenue), `${rows.reduce((sum, row) => sum + row.sales, 0)} ventas · líder ${topBranch}`],
   ].map(([label, value, meta]) => `
     <article class="kpi-card">
       <span class="mono-label">${escapeHtml(label)}</span>
@@ -20945,12 +21021,59 @@ function renderBranchesView() {
 
   branchTable.innerHTML = rows.map((row) => `
     <tr>
-      <td>${escapeHtml(row.branch)}</td>
+      <td>
+        <strong>${escapeHtml(row.branch)}</strong>
+        <small>${escapeHtml(row.address || row.notes || "-")}</small>
+      </td>
+      <td>${escapeHtml(branchTypeLabel(row.branch_type))}</td>
+      <td>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</td>
       <td>${escapeHtml(row.redemptions)}</td>
       <td>${escapeHtml(row.sales)}</td>
       <td>${escapeHtml(money(row.revenue))}</td>
+      <td>${row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin branch registrado"}</td>
     </tr>
-  `).join("") || '<tr><td colspan="4">Sin datos por sucursal.</td></tr>';
+  `).join("") || `<tr><td colspan="7">${state.businessBranchesLoading ? "Cargando branches..." : "Sin branches registrados ni actividad por sucursal."}</td></tr>`;
+}
+
+async function submitBranchCreate(event) {
+  event.preventDefault();
+  const name = String(branchNameInput?.value || "").trim();
+  if (!name) {
+    setInlineMessage(branchCreateMessage, "Escribe el nombre del branch.", "error");
+    return;
+  }
+  const payload = {
+    branch_type: branchTypeInput?.value || "BRANCH",
+    name,
+    address: branchAddressInput?.value.trim() || null,
+    contact_name: branchContactInput?.value.trim() || null,
+    contact_phone: branchPhoneInput?.value.trim() || null,
+    notes: branchNotesInput?.value.trim() || null,
+  };
+  try {
+    setInlineMessage(branchCreateMessage, "Creando branch...", "info");
+    const data = await api("/api/business/branches", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (data?.branch) {
+      state.businessBranches = [
+        data.branch,
+        ...(state.businessBranches || []).filter((branch) => String(branch.id) !== String(data.branch.id)),
+      ];
+      state.businessBranchesLoaded = true;
+    } else {
+      await loadBusinessBranches({ force: true });
+    }
+    branchCreateForm?.reset();
+    setInlineMessage(branchCreateMessage, "Branch agregado. Ya puedes usarlo para medir sedes, ventas o consignación.", "success");
+    showFeedback("Branch agregado correctamente.", "success", { title: "Branches" });
+    renderBranchesView();
+  } catch (error) {
+    setInlineMessage(branchCreateMessage, error.message || "No se pudo crear el branch.", "error");
+    showFeedback(error.message || "No se pudo crear el branch.", "error", { title: "Branches" });
+  }
 }
 
 function renderAdminView() {
@@ -21553,6 +21676,7 @@ rewardPassBeneficiaryNameInput?.addEventListener("input", () => renderRewardPass
 rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardPassImage);
 rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("pdf").catch((error) => showFeedback(error.message, "error")));
 rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
+branchCreateForm?.addEventListener("submit", submitBranchCreate);
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);

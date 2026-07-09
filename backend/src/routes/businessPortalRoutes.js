@@ -12,6 +12,8 @@ const {
   listBusinessUsers,
   createBusinessUser,
   updateBusinessUser,
+  listBranches,
+  createBranch,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
@@ -89,6 +91,8 @@ router.post("/leads/:leadId/activations", sendActivation);
 router.use(requirePortalAccess);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", commandCenterAnalytics);
+router.get("/branches", listBranches);
+router.post("/branches", createBranch);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/inventory/products", listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);

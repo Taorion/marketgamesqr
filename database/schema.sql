@@ -565,6 +565,7 @@ create table if not exists branches (
   slug text not null,
   address text,
   is_active boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (business_id, slug)

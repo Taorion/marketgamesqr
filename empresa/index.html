@@ -3638,22 +3638,64 @@
             <div class="view-head">
               <div>
                 <h2>Branches</h2>
-                <p>Vista reservada para sucursales y rendimiento por punto de venta.</p>
+                <p>Sedes, puntos de venta y responsables de producto en consignación.</p>
               </div>
             </div>
             <section class="kpi-grid sales-kpis" id="branchKpiGrid"></section>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
-                <span class="mono-label">Rendimiento por sucursal</span>
+                <div>
+                  <span class="mono-label">Nuevo branch</span>
+                  <strong>Sede o consignación</strong>
+                </div>
+              </div>
+              <form class="lead-agenda-create-form" id="branchCreateForm">
+                <label>
+                  <span>Tipo</span>
+                  <select id="branchTypeInput">
+                    <option value="BRANCH">Sede / punto de venta</option>
+                    <option value="CONSIGNMENT">Producto en consignación</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Nombre</span>
+                  <input id="branchNameInput" type="text" minlength="2" maxlength="160" placeholder="Ej: Sede Norte o Consignación Laura" required>
+                </label>
+                <label>
+                  <span>Dirección o ubicación</span>
+                  <input id="branchAddressInput" type="text" maxlength="220" placeholder="Dirección, ciudad, vitrina o punto de entrega">
+                </label>
+                <label>
+                  <span>Responsable</span>
+                  <input id="branchContactInput" type="text" maxlength="160" placeholder="Persona encargada">
+                </label>
+                <label>
+                  <span>WhatsApp / teléfono</span>
+                  <input id="branchPhoneInput" type="text" maxlength="40" placeholder="+57...">
+                </label>
+                <label class="span-2">
+                  <span>Notas</span>
+                  <textarea id="branchNotesInput" rows="2" maxlength="1000" placeholder="Condiciones de consignación, horario, inventario entregado o reglas operativas"></textarea>
+                </label>
+                <button class="solid-button" type="submit">Agregar branch</button>
+                <p class="form-message" id="branchCreateMessage"></p>
+              </form>
+            </article>
+            <article class="surface-card data-table-card">
+              <div class="table-card-head">
+                <span class="mono-label">Branches registrados y rendimiento</span>
               </div>
               <div class="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Sucursal</th>
+                      <th>Branch</th>
+                      <th>Tipo</th>
+                      <th>Responsable</th>
                       <th>Redenciones</th>
                       <th>Ventas</th>
                       <th>Ingresos</th>
+                      <th>Estado</th>
                     </tr>
                   </thead>
                   <tbody id="branchTable"></tbody>

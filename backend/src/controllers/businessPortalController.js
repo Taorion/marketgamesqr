@@ -190,6 +190,17 @@ const nullableText = (max) => z.preprocess(
   z.string().max(max).nullable()
 );
 
+const branchSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  slug: slugSchema.optional(),
+  branch_type: z.enum(["BRANCH", "CONSIGNMENT"]).default("BRANCH"),
+  address: nullableText(220),
+  contact_name: nullableText(160),
+  contact_phone: nullableText(40),
+  notes: nullableText(1000),
+  is_active: z.boolean().optional().default(true),
+});
+
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.preprocess(
@@ -240,6 +251,27 @@ async function activeUserCountsForBusiness(businessId) {
     [businessId]
   );
   return result.rows[0] || { users: 0, validators: 0 };
+}
+
+async function activeBranchCountForBusiness(businessId) {
+  const result = await query(
+    "select count(*)::int as total from branches where business_id = $1 and is_active = true",
+    [businessId]
+  );
+  return Number(result.rows[0]?.total || 0);
+}
+
+async function uniqueBranchSlug(businessId, baseSlug) {
+  const base = slugify(baseSlug) || "branch";
+  for (let index = 0; index < 50; index += 1) {
+    const candidate = index ? `${base}-${index + 1}` : base;
+    const existing = await query(
+      "select id from branches where business_id = $1 and slug = $2",
+      [businessId, candidate]
+    );
+    if (!existing.rowCount) return candidate;
+  }
+  return `${base}-${Date.now()}`;
 }
 
 async function requireCampaignForBusiness(campaignId, businessId) {
@@ -702,6 +734,61 @@ async function updateBusinessUser(req, res, next) {
       throw notFound("Usuario no encontrado para este negocio.");
     }
     res.json({ user: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listBranches(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `select id, business_id, name, slug, address, is_active, metadata, created_at, updated_at
+       from branches
+       where business_id = $1
+       order by is_active desc, name asc`,
+      [businessId]
+    );
+    res.json({ branches: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createBranch(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    requireBusinessOwner(req);
+    const body = validate(branchSchema, req.body);
+    if (body.is_active !== false) {
+      await assertLimitForBusiness(
+        businessId,
+        "branches",
+        await activeBranchCountForBusiness(businessId),
+        "sedes o puntos de consignación"
+      );
+    }
+    const slug = await uniqueBranchSlug(businessId, body.slug || body.name);
+    const metadata = {
+      branch_type: body.branch_type,
+      contact_name: body.contact_name || "",
+      contact_phone: body.contact_phone || "",
+      notes: body.notes || "",
+    };
+    const result = await query(
+      `insert into branches (business_id, name, slug, address, is_active, metadata)
+       values ($1, $2, $3, $4, $5, $6::jsonb)
+       returning id, business_id, name, slug, address, is_active, metadata, created_at, updated_at`,
+      [
+        businessId,
+        body.name,
+        slug,
+        body.address || null,
+        body.is_active !== false,
+        JSON.stringify(metadata),
+      ]
+    );
+    res.status(201).json({ branch: result.rows[0] });
   } catch (error) {
     next(error);
   }
@@ -2562,6 +2649,8 @@ module.exports = {
   listBusinessUsers,
   createBusinessUser,
   updateBusinessUser,
+  listBranches,
+  createBranch,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
