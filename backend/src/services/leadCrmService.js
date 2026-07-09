@@ -1355,13 +1355,23 @@ async function getLeadAgendaItem(businessId, noteId) {
         ln.created_at,
         ln.updated_at,
         u.full_name as author_name,
-        coalesce(p.name, ml.name, fa.full_name, 'Contacto sin nombre') as lead_name,
+        coalesce(
+          p.name,
+          ml.name,
+          fa.full_name,
+          nullif(ln.metadata->>'agenda_owner', ''),
+          case
+            when ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+            then coalesce(ac.name, ln.metadata->>'campaign_name', 'Tarea interna')
+          end,
+          'Contacto sin nombre'
+        ) as lead_name,
         coalesce(p.email, ml.email, fa.email) as lead_email,
         coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
         coalesce(p.document_id, fa.document_id) as lead_document_id,
         coalesce(ml.company, fa.card_metadata->>'company', p.metadata->>'company') as lead_company,
         coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
-        coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
+        coalesce(c.name, ac.name, ln.metadata->>'campaign_name', p.metadata->>'campaign_name', ml.source_detail) as campaign_name
        from lead_notes ln
        left join app_users u on u.id = ln.created_by
        left join players p on p.business_id = ln.business_id
@@ -1373,6 +1383,9 @@ async function getLeadAgendaItem(businessId, noteId) {
         and ln.source_type = 'AFFILIATE'
         and fa.id = ln.source_id
        left join campaigns c on c.id = p.campaign_id
+       left join campaigns ac on ac.business_id = ln.business_id
+        and ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+        and ac.id = ln.source_id
       where ln.business_id = $1
         and ln.id = $2
         and ln.reminder_at is not null`,
@@ -1384,12 +1397,78 @@ async function getLeadAgendaItem(businessId, noteId) {
   return result.rows[0];
 }
 
+async function validateAgendaCampaign(businessId, campaignId) {
+  if (!campaignId) return null;
+  const result = await query(
+    "select id, name from campaigns where id = $1 and business_id = $2",
+    [campaignId, businessId]
+  );
+  if (!result.rowCount) {
+    throw notFound("Campaña no encontrada.");
+  }
+  return result.rows[0];
+}
+
+async function createOperationalAgendaItem(businessId, user, payload = {}) {
+  const sourceType = String(payload.source_type || "MARKETING").toUpperCase();
+  const metadata = payload.metadata && typeof payload.metadata === "object" ? { ...payload.metadata } : {};
+  const campaignId = payload.source_id || metadata.campaign_id || null;
+  const campaign = await validateAgendaCampaign(businessId, campaignId);
+  if (campaign) {
+    metadata.campaign_id = campaign.id;
+    metadata.campaign_name = campaign.name;
+  }
+  metadata.agenda_scope = metadata.agenda_scope || sourceType;
+  const result = await query(
+    `insert into lead_notes
+      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, metadata, created_by)
+     values ($1, null, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12)
+     returning *`,
+    [
+      businessId,
+      sourceType,
+      campaign?.id || null,
+      payload.note,
+      payload.note_type || "follow_up",
+      payload.next_action || null,
+      payload.reminder_at || null,
+      payload.agenda_priority || "MEDIUM",
+      Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : 0,
+      JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
+      JSON.stringify(metadata),
+      user.id,
+    ]
+  );
+  await query(
+    `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, null, $2, $3, 'agenda_created', 'Tarea operativa creada', $4, $5, $6::jsonb)`,
+    [
+      businessId,
+      sourceType,
+      campaign?.id || null,
+      payload.next_action || payload.note,
+      user.id,
+      JSON.stringify({ note_id: result.rows[0].id, agenda_scope: metadata.agenda_scope, campaign_id: campaign?.id || null }),
+    ]
+  );
+  return getLeadAgendaItem(businessId, result.rows[0].id);
+}
+
 async function createLeadAgendaItem(businessId, user, payload = {}) {
+  const sourceType = String(payload.source_type || "PLAYER").toUpperCase();
+  if (["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType)) {
+    return createOperationalAgendaItem(businessId, user, { ...payload, source_type: sourceType });
+  }
+  if (!payload.lead_id) {
+    const error = new Error("Selecciona un contacto para esta tarea.");
+    error.status = 400;
+    throw error;
+  }
   const note = await createLeadNote(
     businessId,
     user,
     payload.lead_id,
-    payload.source_type || "PLAYER",
+    sourceType,
     {
       note: payload.note,
       note_type: payload.note_type || "follow_up",
@@ -1446,13 +1525,23 @@ async function listLeadAgenda(businessId, params = {}) {
         ln.created_at,
         ln.updated_at,
         u.full_name as author_name,
-        coalesce(p.name, ml.name, fa.full_name, 'Contacto sin nombre') as lead_name,
+        coalesce(
+          p.name,
+          ml.name,
+          fa.full_name,
+          nullif(ln.metadata->>'agenda_owner', ''),
+          case
+            when ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+            then coalesce(ac.name, ln.metadata->>'campaign_name', 'Tarea interna')
+          end,
+          'Contacto sin nombre'
+        ) as lead_name,
         coalesce(p.email, ml.email, fa.email) as lead_email,
         coalesce(p.phone, ml.phone, fa.phone) as lead_phone,
         coalesce(p.document_id, fa.document_id) as lead_document_id,
         coalesce(ml.company, fa.card_metadata->>'company', p.metadata->>'company') as lead_company,
         coalesce(ml.job_title, p.metadata->>'manual_job_title') as lead_job_title,
-        coalesce(c.name, p.metadata->>'campaign_name', ml.source_detail) as campaign_name
+        coalesce(c.name, ac.name, ln.metadata->>'campaign_name', p.metadata->>'campaign_name', ml.source_detail) as campaign_name
        from lead_notes ln
        left join app_users u on u.id = ln.created_by
        left join players p on p.business_id = ln.business_id
@@ -1464,6 +1553,9 @@ async function listLeadAgenda(businessId, params = {}) {
         and ln.source_type = 'AFFILIATE'
         and fa.id = ln.source_id
        left join campaigns c on c.id = p.campaign_id
+       left join campaigns ac on ac.business_id = ln.business_id
+        and ln.source_type in ('CAMPAIGN', 'MARKETING', 'ACTIVATION_STRATEGY', 'BULK_ACTIVATION')
+        and ac.id = ln.source_id
       where ln.business_id = $1
         and ln.reminder_at is not null
         and ln.reminder_at >= $2::timestamptz

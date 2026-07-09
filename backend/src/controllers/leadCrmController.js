@@ -24,6 +24,7 @@ function businessIdFor(req) {
 }
 
 const sourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER");
+const agendaSourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]).default("PLAYER");
 
 const noteSchema = z.object({
   note: z.string().trim().min(2).max(3000),
@@ -41,7 +42,9 @@ const noteSchema = z.object({
 });
 
 const agendaCreateSchema = noteSchema.extend({
-  lead_id: z.string().uuid(),
+  lead_id: z.string().uuid().optional().nullable(),
+  source_id: z.string().uuid().optional().nullable(),
+  source_type: agendaSourceTypeSchema.optional(),
 });
 
 const agendaUpdateSchema = z.object({

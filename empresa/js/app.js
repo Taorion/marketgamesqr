@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-lead-agenda-meetings-v11";
+const APP_VERSION = "empresa-20260709-operational-agenda-v12";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -80,7 +80,9 @@ const leadAgendaNextButton = document.getElementById("leadAgendaNextButton");
 const leadAgendaStatusFilter = document.getElementById("leadAgendaStatusFilter");
 const leadAgendaViewButtons = Array.from(document.querySelectorAll("[data-agenda-view]"));
 const leadAgendaCreateForm = document.getElementById("leadAgendaCreateForm");
+const leadAgendaScopeInput = document.getElementById("leadAgendaScopeInput");
 const leadAgendaLeadInput = document.getElementById("leadAgendaLeadInput");
+const leadAgendaCampaignInput = document.getElementById("leadAgendaCampaignInput");
 const leadAgendaActionInput = document.getElementById("leadAgendaActionInput");
 const leadAgendaReminderInput = document.getElementById("leadAgendaReminderInput");
 const leadAgendaNoteInput = document.getElementById("leadAgendaNoteInput");
@@ -1949,6 +1951,7 @@ function refreshLeadCampaignFilterOptions() {
       .join("");
     if (selected) leadActivationCampaignInput.value = selected;
   }
+  renderLeadAgendaCampaignOptions();
 }
 
 async function refreshLeadCrm(options = {}) {
@@ -17264,12 +17267,14 @@ const AGENDA_TEMPLATES = {
     note: "Validar necesidad, fecha tentativa y responsable.",
     priority: "HIGH",
     checklist: ["Confirmar contacto", "Registrar respuesta", "Definir siguiente paso"],
+    scope: "CONTACT",
   },
   PROPOSAL: {
     action: "Enviar propuesta comercial",
     note: "Preparar propuesta, compartir condiciones y dejar fecha de seguimiento.",
     priority: "HIGH",
     checklist: ["Revisar necesidad", "Enviar propuesta", "Agendar seguimiento"],
+    scope: "CONTACT",
   },
   MEETING: {
     action: "Reunión con cliente",
@@ -17279,6 +17284,14 @@ const AGENDA_TEMPLATES = {
     activity_type: "MEETING",
     meeting_mode: "VIRTUAL",
     meeting_platform: "MEET",
+    scope: "CONTACT",
+  },
+  CAMPAIGN: {
+    action: "Planificar campaña",
+    note: "Definir objetivo, audiencia, canales, recursos, fechas y métrica principal de la campaña.",
+    priority: "HIGH",
+    checklist: ["Definir objetivo", "Elegir mecánica", "Asignar responsables", "Programar lanzamiento"],
+    scope: "CAMPAIGN",
   },
   PACKAGE: {
     action: "Preparar paquete de tickets",
@@ -17291,12 +17304,28 @@ const AGENDA_TEMPLATES = {
     note: "Definir experiencia, recompensa, fecha de lanzamiento y responsables.",
     priority: "URGENT",
     checklist: ["Configurar activación", "Probar link o QR", "Confirmar lanzamiento"],
+    scope: "ACTIVATION_STRATEGY",
+  },
+  STRATEGY: {
+    action: "Diseñar estrategia de activación",
+    note: "Aterrizar hipótesis, dinámica, oferta, ticket operativo, canal de entrada y seguimiento comercial.",
+    priority: "HIGH",
+    checklist: ["Definir hipótesis", "Diseñar dinámica", "Mapear tickets", "Validar métricas"],
+    scope: "ACTIVATION_STRATEGY",
+  },
+  BULK_ACTIVATION: {
+    action: "Configurar activación en masa",
+    note: "Preparar carga masiva, piezas, mensajes, reglas de tickets, validación y control de salida.",
+    priority: "URGENT",
+    checklist: ["Preparar base", "Configurar reglas", "Probar emisión", "Lanzar en bloque"],
+    scope: "BULK_ACTIVATION",
   },
   MARKETING: {
     action: "Ejecutar acción de marketing",
     note: "Organizar copy, pieza, canal, emisión y medición de resultados.",
     priority: "MEDIUM",
     checklist: ["Preparar mensaje", "Publicar o enviar", "Revisar métricas"],
+    scope: "MARKETING",
   },
 };
 
@@ -17336,8 +17365,67 @@ function agendaPriorityLabel(priority = "MEDIUM") {
   }[String(priority || "MEDIUM").toUpperCase()] || "Media";
 }
 
+function agendaScopeLabel(value = "CONTACT") {
+  return {
+    CONTACT: "Contacto",
+    CAMPAIGN: "Campaña",
+    MARKETING: "Marketing",
+    ACTIVATION_STRATEGY: "Estrategia de activación",
+    BULK_ACTIVATION: "Activación en masa",
+  }[String(value || "CONTACT").toUpperCase()] || "Contacto";
+}
+
+function agendaSourceTypeForScope(scope = "CONTACT", leadSourceType = "PLAYER") {
+  const value = String(scope || "CONTACT").toUpperCase();
+  if (value === "CONTACT") return String(leadSourceType || "PLAYER").toUpperCase();
+  return value;
+}
+
 function agendaMetadata(item = {}) {
   return item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+}
+
+function agendaCampaignById(campaignId = "") {
+  return (state.campaigns || []).find((campaign) => String(campaign.id) === String(campaignId)) || null;
+}
+
+function selectedAgendaCampaign(campaignId = "") {
+  campaignId = campaignId || leadAgendaCampaignInput?.value || "";
+  return agendaCampaignById(campaignId);
+}
+
+function agendaCampaignOptionsMarkup(selectedValue = "") {
+  return '<option value="">Sin campaña</option>' + (state.campaigns || [])
+    .map((campaign) => `<option value="${escapeHtml(campaign.id)}" ${String(selectedValue) === String(campaign.id) ? "selected" : ""}>${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`)
+    .join("");
+}
+
+function agendaCampaignIdForItem(item = {}) {
+  const metadata = agendaMetadata(item);
+  if (metadata.campaign_id) return metadata.campaign_id;
+  if (["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase())) return item.source_id || "";
+  return "";
+}
+
+function agendaScopeForItem(item = {}) {
+  const metadata = agendaMetadata(item);
+  if (metadata.agenda_scope) return String(metadata.agenda_scope).toUpperCase();
+  const sourceType = String(item.source_type || "CONTACT").toUpperCase();
+  return ["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType) ? sourceType : "CONTACT";
+}
+
+function selectedAgendaCampaignFromData(data = null) {
+  const campaignId = data ? String(data.get("campaign_id") || "") : leadAgendaCampaignInput?.value || "";
+  return (state.campaigns || []).find((campaign) => String(campaign.id) === String(campaignId)) || null;
+}
+
+function renderLeadAgendaCampaignOptions() {
+  if (!leadAgendaCampaignInput) return;
+  const selected = leadAgendaCampaignInput.value || state.selectedCampaignId || "";
+  leadAgendaCampaignInput.innerHTML = agendaCampaignOptionsMarkup(selected);
+  if (selected && Array.from(leadAgendaCampaignInput.options).some((option) => option.value === selected)) {
+    leadAgendaCampaignInput.value = selected;
+  }
 }
 
 function agendaMeetingModeLabel(value = "") {
@@ -17384,6 +17472,18 @@ function agendaMeetingPayloadFromFields(data = null) {
   };
 }
 
+function agendaOperationalPayloadFromFields(data = null) {
+  const scope = String(data ? data.get("agenda_scope") || "CONTACT" : leadAgendaScopeInput?.value || "CONTACT").toUpperCase();
+  const campaign = selectedAgendaCampaignFromData(data);
+  return {
+    ...agendaMeetingPayloadFromFields(data),
+    agenda_scope: scope,
+    agenda_scope_label: agendaScopeLabel(scope),
+    campaign_id: campaign?.id || "",
+    campaign_name: campaign?.name || "",
+  };
+}
+
 function agendaMeetingSummary(item = {}) {
   const metadata = agendaMetadata(item);
   if (metadata.agenda_activity_type !== "MEETING" && !metadata.meeting_mode && !metadata.meeting_url && !metadata.meeting_address) return "";
@@ -17427,6 +17527,7 @@ function applyAgendaTemplate(templateKey = "") {
   if (leadAgendaActionInput) leadAgendaActionInput.value = template.action;
   if (leadAgendaNoteInput) leadAgendaNoteInput.value = template.note;
   if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = template.priority;
+  if (leadAgendaScopeInput) leadAgendaScopeInput.value = template.scope || "CONTACT";
   if (leadAgendaActivityTypeInput) leadAgendaActivityTypeInput.value = template.activity_type || "TASK";
   if (leadAgendaMeetingModeInput) leadAgendaMeetingModeInput.value = template.meeting_mode || "";
   if (leadAgendaMeetingPlatformInput) leadAgendaMeetingPlatformInput.value = template.meeting_platform || "";
@@ -17479,8 +17580,11 @@ function agendaCardMarkup(item = {}, options = {}) {
   const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
   const checklistSummary = agendaChecklistSummary(item);
   const metadata = agendaMetadata(item);
+  const scope = agendaScopeForItem(item);
+  const campaignId = agendaCampaignIdForItem(item);
   const meetingSummary = agendaMeetingSummary(item);
   const isMeeting = metadata.agenda_activity_type === "MEETING" || Boolean(metadata.meeting_mode || metadata.meeting_url || metadata.meeting_address);
+  const hasLeadRef = !["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase());
   if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
     return `
       <article class="lead-agenda-item is-editing">
@@ -17508,6 +17612,22 @@ function agendaCardMarkup(item = {}, options = {}) {
               <option value="MEDIUM" ${priority === "MEDIUM" ? "selected" : ""}>Media</option>
               <option value="HIGH" ${priority === "HIGH" ? "selected" : ""}>Alta</option>
               <option value="URGENT" ${priority === "URGENT" ? "selected" : ""}>Urgente</option>
+            </select>
+          </label>
+          <label>
+            <span>Alcance</span>
+            <select name="agenda_scope">
+              <option value="CONTACT" ${scope === "CONTACT" ? "selected" : ""}>Contacto</option>
+              <option value="CAMPAIGN" ${scope === "CAMPAIGN" ? "selected" : ""}>Campaña</option>
+              <option value="MARKETING" ${scope === "MARKETING" ? "selected" : ""}>Marketing</option>
+              <option value="ACTIVATION_STRATEGY" ${scope === "ACTIVATION_STRATEGY" ? "selected" : ""}>Estrategia de activación</option>
+              <option value="BULK_ACTIVATION" ${scope === "BULK_ACTIVATION" ? "selected" : ""}>Activación en masa</option>
+            </select>
+          </label>
+          <label>
+            <span>Campaña relacionada</span>
+            <select name="campaign_id">
+              ${agendaCampaignOptionsMarkup(campaignId)}
             </select>
           </label>
           <label>
@@ -17579,6 +17699,7 @@ function agendaCardMarkup(item = {}, options = {}) {
     <article class="lead-agenda-item ${done ? "is-done" : ""}">
       <div class="lead-agenda-item-main">
         <div class="lead-agenda-meta-row">
+          <span class="status-chip">${escapeHtml(agendaScopeLabel(scope))}</span>
           <span class="status-chip ${agendaStatusClass(item)}">${escapeHtml(done ? "Hecha" : status === "CANCELLED" ? "Cancelada" : "Pendiente")}</span>
           <span class="status-chip priority-${escapeHtml(priority.toLowerCase())}">${escapeHtml(agendaPriorityLabel(priority))}</span>
           <span class="table-secondary">${progress}%</span>
@@ -17604,7 +17725,7 @@ function agendaCardMarkup(item = {}, options = {}) {
       <div class="lead-agenda-item-side">
         ${item.lead_company ? `<span class="table-secondary">${escapeHtml(item.lead_company)}</span>` : ""}
         <div class="activation-row-actions">
-          <button class="ghost-button" type="button" data-agenda-open-lead="${escapeHtml(leadRef.id || "")}" data-source-type="${escapeHtml(leadRef.source_type)}">Ficha</button>
+          ${hasLeadRef ? `<button class="ghost-button" type="button" data-agenda-open-lead="${escapeHtml(leadRef.id || "")}" data-source-type="${escapeHtml(leadRef.source_type)}">Ficha</button>` : ""}
           ${isMeeting ? `<a class="ghost-button" href="${escapeHtml(agendaMeetingWhatsAppUrl(item))}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
           <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
           ${done
@@ -17659,12 +17780,17 @@ function agendaCompactCardMarkup(item = {}) {
   const status = String(item.agenda_status || "OPEN").toUpperCase();
   const isDone = status === "DONE";
   const meetingSummary = agendaMeetingSummary(item);
+  const scope = agendaScopeForItem(item);
+  const hasLeadRef = !["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase());
+  const mainActionAttributes = hasLeadRef
+    ? `data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}"`
+    : `data-agenda-edit="${escapeHtml(item.id || "")}"`;
   return `
     <article class="lead-agenda-compact-card">
-      <button class="lead-agenda-compact-main" type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+      <button class="lead-agenda-compact-main" type="button" ${mainActionAttributes}>
         <span>${escapeHtml(formatTimeOnly(item.reminder_at))}</span>
         <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
-        <small>${escapeHtml([item.lead_name || "Contacto", meetingSummary || agendaPriorityLabel(priority), `${progress}%`].filter(Boolean).join(" · "))}</small>
+        <small>${escapeHtml([agendaScopeLabel(scope), item.lead_name || "Tarea interna", meetingSummary || agendaPriorityLabel(priority), `${progress}%`].filter(Boolean).join(" · "))}</small>
       </button>
       <div class="lead-agenda-mini-actions">
         <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
@@ -17804,6 +17930,7 @@ function renderAgendaYear(rows = agendaRows()) {
 function renderLeadAgenda() {
   if (!leadAgendaBoard) return;
   renderLeadAgendaLeadOptions();
+  renderLeadAgendaCampaignOptions();
   if (leadAgendaReminderInput && !leadAgendaReminderInput.value) {
     const nextHour = new Date();
     nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
@@ -17970,7 +18097,7 @@ async function updateAgendaItemFromForm(event, noteId) {
       agenda_priority: data.get("agenda_priority") || "MEDIUM",
       progress_percent: progress,
       checklist: agendaChecklistItems(data.get("checklist")),
-      metadata: agendaMeetingPayloadFromFields(data),
+      metadata: agendaOperationalPayloadFromFields(data),
     }, "Tarea editada.");
   } catch (error) {
     showFeedback(error.message || "No se pudo editar la tarea.", "error");
@@ -18011,11 +18138,17 @@ async function deleteAgendaItem(noteId) {
 async function createAgendaItemFromForm(event) {
   event.preventDefault();
   const leadRef = parseAgendaLeadValue(leadAgendaLeadInput?.value || "");
+  const scope = String(leadAgendaScopeInput?.value || "CONTACT").toUpperCase();
+  const campaign = selectedAgendaCampaign();
   const reminderValue = leadAgendaReminderInput?.value || "";
   const nextAction = String(leadAgendaActionInput?.value || "").trim();
   const noteDetail = String(leadAgendaNoteInput?.value || "").trim();
   const progress = Math.max(0, Math.min(100, Number(leadAgendaProgressInput?.value || 0)));
-  if (!leadRef.id || !reminderValue || !nextAction) {
+  if (scope === "CONTACT" && !leadRef.id) {
+    showFeedback("Selecciona contacto o cambia el alcance a campaña, marketing o activación.", "error");
+    return;
+  }
+  if (!reminderValue || !nextAction) {
     showFeedback("Selecciona contacto, acción y fecha para crear la tarea.", "error");
     return;
   }
@@ -18024,8 +18157,9 @@ async function createAgendaItemFromForm(event) {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        lead_id: leadRef.id,
-        source_type: leadRef.source_type || "PLAYER",
+        lead_id: scope === "CONTACT" ? leadRef.id : null,
+        source_id: scope === "CONTACT" ? null : campaign?.id || null,
+        source_type: agendaSourceTypeForScope(scope, leadRef.source_type || "PLAYER"),
         note: noteDetail || nextAction,
         note_type: "follow_up",
         next_action: nextAction,
@@ -18033,7 +18167,7 @@ async function createAgendaItemFromForm(event) {
         agenda_priority: leadAgendaPriorityInput?.value || "MEDIUM",
         progress_percent: progress,
         checklist: agendaChecklistItems(leadAgendaChecklistInput?.value || ""),
-        metadata: agendaMeetingPayloadFromFields(),
+        metadata: agendaOperationalPayloadFromFields(),
       }),
     });
     if (result?.item?.id) {
@@ -18049,6 +18183,8 @@ async function createAgendaItemFromForm(event) {
     }
     leadAgendaActionInput.value = "";
     leadAgendaNoteInput.value = "";
+    if (leadAgendaScopeInput) leadAgendaScopeInput.value = "CONTACT";
+    if (leadAgendaCampaignInput) leadAgendaCampaignInput.value = "";
     if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = "MEDIUM";
     if (leadAgendaActivityTypeInput) leadAgendaActivityTypeInput.value = "TASK";
     if (leadAgendaMeetingModeInput) leadAgendaMeetingModeInput.value = "";

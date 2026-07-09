@@ -2773,14 +2773,33 @@
                 <button class="ghost-button" type="button" data-agenda-template="CALL">Llamar</button>
                 <button class="ghost-button" type="button" data-agenda-template="PROPOSAL">Propuesta</button>
                 <button class="ghost-button" type="button" data-agenda-template="MEETING">Reunión</button>
+                <button class="ghost-button" type="button" data-agenda-template="CAMPAIGN">Campaña</button>
                 <button class="ghost-button" type="button" data-agenda-template="PACKAGE">Paquete</button>
                 <button class="ghost-button" type="button" data-agenda-template="ACTIVATION">Activación</button>
+                <button class="ghost-button" type="button" data-agenda-template="STRATEGY">Estrategia</button>
+                <button class="ghost-button" type="button" data-agenda-template="BULK_ACTIVATION">Masiva</button>
                 <button class="ghost-button" type="button" data-agenda-template="MARKETING">Marketing</button>
               </div>
               <form class="lead-agenda-create-form" id="leadAgendaCreateForm">
                 <label>
+                  <span>Alcance</span>
+                  <select id="leadAgendaScopeInput">
+                    <option value="CONTACT">Contacto</option>
+                    <option value="CAMPAIGN">Campaña</option>
+                    <option value="MARKETING">Marketing</option>
+                    <option value="ACTIVATION_STRATEGY">Estrategia de activación</option>
+                    <option value="BULK_ACTIVATION">Activación en masa</option>
+                  </select>
+                </label>
+                <label>
                   <span>Contacto</span>
-                  <select id="leadAgendaLeadInput" required></select>
+                  <select id="leadAgendaLeadInput"></select>
+                </label>
+                <label>
+                  <span>Campaña relacionada</span>
+                  <select id="leadAgendaCampaignInput">
+                    <option value="">Sin campaña</option>
+                  </select>
                 </label>
                 <label>
                   <span>Qué hay que hacer</span>
