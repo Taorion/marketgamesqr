@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-checklist-comma-v17";
+const APP_VERSION = "empresa-20260709-agenda-whatsapp-business-v18";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17547,10 +17547,15 @@ function agendaMeetingSummary(item = {}) {
   return parts.join(" · ");
 }
 
+function agendaSentenceText(value = "") {
+  return String(value || "").trim().replace(/[.!?]+$/g, "");
+}
+
 function agendaMeetingWhatsAppMessage(item = {}) {
   const metadata = agendaMetadata(item);
   const greeting = item.lead_name ? `Hola ${item.lead_name}` : "Hola";
-  const date = formatDate(item.reminder_at);
+  const business = activationBusinessName();
+  const date = agendaSentenceText(formatDate(item.reminder_at));
   const mode = agendaMeetingModeLabel(metadata.meeting_mode);
   const platform = agendaMeetingPlatformLabel(metadata.meeting_platform);
   const meetingDetails = [
@@ -17559,7 +17564,7 @@ function agendaMeetingWhatsAppMessage(item = {}) {
     metadata.meeting_address ? `Dirección: ${metadata.meeting_address}` : "",
   ].filter(Boolean);
   return [
-    `${greeting}, te recuerdo nuestra reunión programada para ${date}.`,
+    `${greeting}, te contactamos de ${business} para recordarte nuestra reunión programada para ${date}.`,
     mode ? `Modalidad: ${mode}.` : "",
     meetingDetails.length ? `Detalle: ${meetingDetails.join(" · ")}.` : "",
     item.next_action ? `Tema: ${item.next_action}.` : "",
