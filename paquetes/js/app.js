@@ -30,17 +30,17 @@ const FALLBACK_PLANS = [
     access_summary: "Plan de entrada para negocios que quieren empezar a capturar leads, crear campañas y validar beneficios desde un portal comercial gamificado.",
     included: [
       "Acceso al portal",
-      "Graficas de redencion",
-      "Visualizacion de ultimos 50 leads",
+      "Gráficas de redención",
+      "Visualización de últimos 50 leads",
       "2 exportaciones mensuales",
       "Validador de tickets",
-      "Creacion de campañas",
-      "1 campaña activa en linea",
+      "Creación de campañas",
+      "1 campaña activa en línea",
       "1 sede",
       "1 usuario",
       "Gaming center sin historial de tickets",
       "Agenda para programar tareas",
-      "10 tickets de cortesia en primera suscripcion",
+      "10 tickets de cortesía en primera suscripción",
     ],
   },
   {
@@ -48,21 +48,21 @@ const FALLBACK_PLANS = [
     name: "Medium",
     recommended: true,
     monthly_price_cop: 2500000,
-    access_summary: "Plan para negocios que quieren operar varias campañas, organizar contactos, medir resultados y activar seguimiento comercial con mas estructura.",
+    access_summary: "Plan para negocios que quieren operar varias campañas, organizar contactos, medir resultados y activar seguimiento comercial con más estructura.",
     included: [
       "Acceso al portal",
-      "Graficas de redencion",
-      "Visualizacion de ultimos 100 leads",
+      "Gráficas de redención",
+      "Visualización de últimos 100 leads",
       "10 exportaciones mensuales",
       "Validador de tickets",
-      "Creacion de campañas",
-      "3 campañas activas en linea",
+      "Creación de campañas",
+      "3 campañas activas en línea",
       "2 sedes",
       "2 usuarios",
       "Gaming center con historial de tickets",
       "Calculadora de campañas",
       "Dashboard completo",
-      "Programa de fidelizacion hasta 50 contactos",
+      "Programa de fidelización hasta 50 contactos",
       "Branding en ticket",
       "Gift cards: 10 unidades al mes",
       "Directorio de contactos",
@@ -70,28 +70,28 @@ const FALLBACK_PLANS = [
       "Sales tracker",
       "Asistencia de marketing al lanzamiento de MarketGamesQR",
       "Agenda para programar tareas",
-      "10 tickets de cortesia en primera suscripcion",
+      "10 tickets de cortesía en primera suscripción",
     ],
   },
   {
     code: "PRO",
     name: "Premium",
     monthly_price_cop: 4500000,
-    access_summary: "Plan para marcas que quieren usar MarketGamesQR como sistema comercial completo con campañas, activaciones, agenda, contactos, fidelizacion, referidos y analitica avanzada.",
+    access_summary: "Plan para marcas que quieren usar MarketGamesQR como sistema comercial completo con campañas, activaciones, agenda, contactos, fidelización, referidos y analítica avanzada.",
     included: [
       "Acceso al portal",
-      "Graficas de redencion",
-      "Visualizacion ampliada de leads",
+      "Gráficas de redención",
+      "Visualización ampliada de leads",
       "Exportaciones ilimitadas",
       "Validador de tickets",
-      "Creacion de campañas en linea ilimitadas",
+      "Creación de campañas en línea ilimitadas",
       "4 sedes",
       "4 usuarios",
       "Gaming center con historial de tickets",
       "Acceso a todas las activaciones disponibles",
       "Calculadora de campañas",
       "Dashboard completo con insights",
-      "Programa de fidelizacion ilimitado",
+      "Programa de fidelización ilimitado",
       "Branding en ticket",
       "Gift cards ilimitadas",
       "Directorio de contactos",
@@ -103,8 +103,8 @@ const FALLBACK_PLANS = [
       "Contactos con tickets pendientes por redimir",
       "Afiliados con carnet digital",
       "Programa de premios",
-      "Analitica de prediccion de redencion de campañas",
-      "10 tickets de cortesia en primera suscripcion",
+      "Analítica de predicción de redención de campañas",
+      "10 tickets de cortesía en primera suscripción",
     ],
   },
 ];
@@ -113,6 +113,18 @@ const CTA_LABELS = {
   STARTER: "Suscribirme a Started",
   GROWTH: "Elegir Medium",
   PRO: "Activar Premium",
+};
+
+const PLAN_FOCUS = {
+  STARTER: "Entrada comercial",
+  GROWTH: "Operación recomendada",
+  PRO: "Sistema completo",
+};
+
+const PLAN_SNAPSHOT = {
+  STARTER: ["1 campaña activa", "1 sede", "2 exportaciones"],
+  GROWTH: ["3 campañas activas", "2 sedes", "10 exportaciones"],
+  PRO: ["Campañas ilimitadas", "4 sedes", "Exportaciones ilimitadas"],
 };
 
 let plans = [];
@@ -149,7 +161,7 @@ function copMoney(value) {
 }
 
 function monthlyPlanLabel(plan) {
-  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotizacion");
+  if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotización");
   return `${copMoney(plan.monthly_price_cop)} / mes`;
 }
 
@@ -166,7 +178,7 @@ async function fetchJson(path, options = {}) {
   const response = await fetch(path, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error?.message || "No se pudo cargar la informacion.");
+    throw new Error(data.error?.message || "No se pudo cargar la información.");
   }
   return data;
 }
@@ -174,10 +186,10 @@ async function fetchJson(path, options = {}) {
 function normalizedPlan(plan) {
   const fallback = FALLBACK_PLANS.find((item) => item.code === plan.code) || {};
   return {
-    ...fallback,
     ...plan,
-    included: Array.isArray(plan.included) && plan.included.length ? plan.included : fallback.included,
-    access_summary: plan.access_summary || fallback.access_summary,
+    name: fallback.name || plan.name,
+    included: fallback.included || plan.included,
+    access_summary: fallback.access_summary || plan.access_summary,
     recommended: Boolean(plan.recommended || fallback.recommended || plan.code === "GROWTH"),
   };
 }
@@ -194,23 +206,42 @@ function publicPlansFromApi(data) {
 
 function renderPlans() {
   planGrid.innerHTML = plans.map((plan) => {
-    const benefits = (plan.included || []).slice(0, 11);
+    const benefits = plan.included || [];
+    const primaryBenefits = benefits.slice(0, 6);
+    const extraBenefits = benefits.slice(6);
+    const snapshot = PLAN_SNAPSHOT[plan.code] || [];
     return `
       <article class="package-card subscription-plan-card ${selectedPlan?.code === plan.code ? "selected" : ""} ${plan.recommended ? "featured-plan" : ""}">
         <div class="plan-card-head">
-          <span class="package-code">${escapeHtml(plan.name)}</span>
-          ${plan.recommended ? '<span class="recommended-badge">Mas recomendado</span>' : ""}
+          <span class="package-code">${escapeHtml(PLAN_FOCUS[plan.code] || plan.name)}</span>
+          ${plan.recommended ? '<span class="recommended-badge">Más recomendado</span>' : ""}
         </div>
         <h3>${escapeHtml(plan.name)}</h3>
         <p>${escapeHtml(plan.access_summary || "")}</p>
-        <div class="price">${monthlyPlanLabel(plan)}</div>
+        <div class="plan-price-row">
+          <div class="price">${monthlyPlanLabel(plan)}</div>
+          <span>Mensual</span>
+        </div>
+        <div class="plan-snapshot">
+          ${snapshot.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+        </div>
         <ul class="plan-access-list">
-          ${benefits.map((benefit) => `
-            <li><span class="mark">OK</span><span>${escapeHtml(benefit)}</span></li>
+          ${primaryBenefits.map((benefit) => `
+            <li><span class="mark" aria-hidden="true"></span><span>${escapeHtml(benefit)}</span></li>
           `).join("")}
         </ul>
-        <p class="ticket-balance-note">Incluye 10 tickets de cortesia solo en la primera suscripcion. Los tickets adicionales se compran dentro del portal.</p>
-        <button type="button" data-plan-code="${escapeHtml(plan.code)}">${escapeHtml(CTA_LABELS[plan.code] || "Elegir plan")}</button>
+        ${extraBenefits.length ? `
+          <details class="plan-details">
+            <summary>Ver capacidad completa</summary>
+            <ul class="plan-access-list">
+              ${extraBenefits.map((benefit) => `
+                <li><span class="mark" aria-hidden="true"></span><span>${escapeHtml(benefit)}</span></li>
+              `).join("")}
+            </ul>
+          </details>
+        ` : ""}
+        <p class="ticket-balance-note">Incluye 10 tickets de cortesía solo en la primera suscripción. Los tickets adicionales se compran dentro del portal.</p>
+        <button type="button" data-plan-code="${escapeHtml(plan.code)}" aria-label="${escapeHtml(CTA_LABELS[plan.code] || `Elegir ${plan.name}`)}">${escapeHtml(CTA_LABELS[plan.code] || "Elegir plan")}</button>
       </article>
     `;
   }).join("");
@@ -221,27 +252,27 @@ function renderPlans() {
 }
 
 function renderSelection() {
-  const title = selectedPlan ? `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}` : "Suscripcion primero";
+  const title = selectedPlan ? `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}` : "Suscripción primero";
   const copy = selectedPlan
-    ? `Vas a activar el plan ${selectedPlan.name}. Al confirmar tu primera suscripcion recibes 10 tickets de cortesia.`
-    : "Los tickets adicionales se compran unicamente dentro del portal, una vez el usuario haya iniciado sesion y tenga una suscripcion activa.";
+    ? `Vas a activar el plan ${selectedPlan.name}. Al confirmar tu primera suscripción recibes 10 tickets de cortesía.`
+    : "Los tickets adicionales se compran únicamente dentro del portal, una vez el usuario haya iniciado sesión y tenga una suscripción activa.";
   [selectedBox, signupPlanSummary].forEach((box) => {
     if (!box) return;
     box.innerHTML = `
-      <span>${selectedPlan ? "Plan seleccionado" : "Logica comercial"}</span>
+      <span>${selectedPlan ? "Plan seleccionado" : "Lógica comercial"}</span>
       <strong>${escapeHtml(title)}</strong>
       <p>${escapeHtml(copy)}</p>
     `;
   });
-  if (formEyebrow) formEyebrow.textContent = selectedPlan ? `Suscripcion ${selectedPlan.name}` : "Activacion del plan";
-  if (formTitle) formTitle.textContent = selectedPlan ? `Activar ${selectedPlan.name}` : "Registro y suscripcion";
+  if (formEyebrow) formEyebrow.textContent = selectedPlan ? `Suscripción ${selectedPlan.name}` : "Activación del plan";
+  if (formTitle) formTitle.textContent = selectedPlan ? `Activar ${selectedPlan.name}` : "Registro y suscripción";
   if (formCopy) {
     formCopy.textContent = selectedPlan
       ? `Hola, quiero suscribirme al plan ${selectedPlan.name} de MarketGamesQR.`
       : "Selecciona Started, Medium o Premium para continuar.";
   }
   if (submitButton) {
-    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripcion") : "Activar suscripcion";
+    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripción") : "Activar suscripción";
   }
 }
 
@@ -283,14 +314,14 @@ function signupPayload() {
 async function submitSignup(event) {
   event.preventDefault();
   if (!selectedPlan?.code) {
-    setMessage("Selecciona un plan antes de registrar la suscripcion.", "error");
+    setMessage("Selecciona un plan antes de registrar la suscripción.", "error");
     document.getElementById("planes")?.scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
 
   submitButton.disabled = true;
-  submitButton.textContent = "Creando suscripcion...";
-  setMessage("Registrando cuenta y preparando autorizacion segura en Mercado Pago.", "info");
+  submitButton.textContent = "Creando suscripción...";
+  setMessage("Registrando cuenta y preparando autorización segura en Mercado Pago.", "info");
   try {
     const payload = {
       ...signupPayload(),
@@ -304,14 +335,14 @@ async function submitSignup(event) {
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("La suscripcion fue registrada, pero no se recibio enlace de Mercado Pago.");
+      throw new Error("La suscripción fue registrada, pero no se recibió enlace de Mercado Pago.");
     }
     setMessage("Suscripcion creada. Redirigiendo a Mercado Pago...", "success");
     window.location.href = checkoutUrl;
   } catch (error) {
-    setMessage(error.message || "No se pudo completar la suscripcion.", "error");
+    setMessage(error.message || "No se pudo completar la suscripción.", "error");
     submitButton.disabled = false;
-    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripcion") : "Activar suscripcion";
+    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripción") : "Activar suscripción";
   }
 }
 
@@ -321,31 +352,31 @@ function renderPaymentStatus() {
   const content = {
     success: {
       eyebrow: "Pago aprobado",
-      title: "Tu suscripcion fue aprobada",
+      title: "Tu suscripción fue aprobada",
       copy: "El portal se activa cuando Mercado Pago confirma el pago. Si ya esta aprobado, ingresa con el correo y clave registrados.",
       actionTitle: "Entra al portal",
-      actionCopy: "Recibiras 10 tickets de cortesia si es tu primera suscripcion.",
+      actionCopy: "Recibirás 10 tickets de cortesía si es tu primera suscripción.",
     },
     card: {
       eyebrow: "Tarjeta autorizada",
       title: "Autorizacion recibida",
-      copy: "Mercado Pago confirmo la autorizacion. El portal procesa la activacion y deja lista la cuenta.",
+      copy: "Mercado Pago confirmó la autorización. El portal procesa la activación y deja lista la cuenta.",
       actionTitle: "Ingresa al portal",
       actionCopy: "Gestiona campañas, leads, agenda y tickets desde tu cuenta.",
     },
     pending: {
       eyebrow: "Pago pendiente",
       title: "Mercado Pago esta validando",
-      copy: "Cuando el pago quede aprobado, se activa el portal y se entrega la cortesia si aplica.",
+      copy: "Cuando el pago quede aprobado, se activa el portal y se entrega la cortesía si aplica.",
       actionTitle: "Revisa luego",
-      actionCopy: "Puedes volver al portal despues de la confirmacion.",
+      actionCopy: "Puedes volver al portal después de la confirmación.",
     },
     failure: {
       eyebrow: "Pago no completado",
-      title: "No se pudo activar la suscripcion",
+      title: "No se pudo activar la suscripción",
       copy: "Intenta nuevamente o contacta al equipo comercial con el plan que elegiste.",
       actionTitle: "Volver a elegir plan",
-      actionCopy: "La cuenta no queda activa hasta confirmar la suscripcion.",
+      actionCopy: "La cuenta no queda activa hasta confirmar la suscripción.",
       link: "/paquetes/#planes",
     },
   }[status];
