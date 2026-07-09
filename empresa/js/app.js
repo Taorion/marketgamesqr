@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-client-agenda-v13";
+const APP_VERSION = "empresa-20260709-meeting-whatsapp-link-v14";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17502,13 +17502,15 @@ function agendaMeetingWhatsAppMessage(item = {}) {
   const date = formatDate(item.reminder_at);
   const mode = agendaMeetingModeLabel(metadata.meeting_mode);
   const platform = agendaMeetingPlatformLabel(metadata.meeting_platform);
-  const meetingLine = metadata.meeting_mode === "VIRTUAL"
-    ? [platform || "la plataforma acordada", metadata.meeting_url ? `enlace: ${metadata.meeting_url}` : ""].filter(Boolean).join(", ")
-    : [metadata.meeting_address ? `dirección: ${metadata.meeting_address}` : "dirección por confirmar"].join("");
+  const meetingDetails = [
+    platform || "",
+    metadata.meeting_url ? `Enlace: ${metadata.meeting_url}` : "",
+    metadata.meeting_address ? `Dirección: ${metadata.meeting_address}` : "",
+  ].filter(Boolean);
   return [
     `${greeting}, te recuerdo nuestra reunión programada para ${date}.`,
     mode ? `Modalidad: ${mode}.` : "",
-    meetingLine ? `Detalle: ${meetingLine}.` : "",
+    meetingDetails.length ? `Detalle: ${meetingDetails.join(" · ")}.` : "",
     item.next_action ? `Tema: ${item.next_action}.` : "",
   ].filter(Boolean).join("\n");
 }
