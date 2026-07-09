@@ -9,6 +9,8 @@ const {
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
 
+const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
+
 function normalizeSearch(value) {
   return String(value || "")
     .normalize("NFD")
@@ -1456,7 +1458,7 @@ async function createOperationalAgendaItem(businessId, user, payload = {}) {
 
 async function createLeadAgendaItem(businessId, user, payload = {}) {
   const sourceType = String(payload.source_type || "PLAYER").toUpperCase();
-  if (["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType)) {
+  if (OPERATIONAL_AGENDA_SOURCE_TYPES.has(sourceType)) {
     return createOperationalAgendaItem(businessId, user, { ...payload, source_type: sourceType });
   }
   if (!payload.lead_id) {
@@ -1582,17 +1584,58 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
   const hasProgress = Object.prototype.hasOwnProperty.call(payload, "progress_percent");
   const hasChecklist = Object.prototype.hasOwnProperty.call(payload, "checklist");
   const hasMetadata = Object.prototype.hasOwnProperty.call(payload, "metadata");
+  const hasLeadId = Object.prototype.hasOwnProperty.call(payload, "lead_id");
+  const hasSourceId = Object.prototype.hasOwnProperty.call(payload, "source_id");
+  const hasSourceType = Object.prototype.hasOwnProperty.call(payload, "source_type");
+  const hasSourcePatch = hasLeadId || hasSourceId || hasSourceType;
   const nextStatus = hasStatus ? String(payload.agenda_status || "").toUpperCase() : null;
   if (hasStatus && !["OPEN", "DONE", "CANCELLED"].includes(nextStatus)) {
     const error = new Error("Estado de agenda invalido.");
     error.status = 400;
     throw error;
   }
-  if (!hasNote && !hasNoteType && !hasNextAction && !hasReminder && !hasStatus && !hasPriority && !hasProgress && !hasChecklist && !hasMetadata) {
+  if (!hasNote && !hasNoteType && !hasNextAction && !hasReminder && !hasStatus && !hasPriority && !hasProgress && !hasChecklist && !hasMetadata && !hasSourcePatch) {
     const error = new Error("No hay cambios para actualizar en la agenda.");
     error.status = 400;
     throw error;
   }
+  let sourcePatch = null;
+  let metadataPatch = hasMetadata && payload.metadata && typeof payload.metadata === "object" ? { ...payload.metadata } : {};
+  if (hasSourcePatch) {
+    const sourceType = String(payload.source_type || "PLAYER").toUpperCase();
+    if (OPERATIONAL_AGENDA_SOURCE_TYPES.has(sourceType)) {
+      const campaignId = payload.source_id || metadataPatch.campaign_id || null;
+      const campaign = await validateAgendaCampaign(businessId, campaignId);
+      if (campaign) {
+        metadataPatch.campaign_id = campaign.id;
+        metadataPatch.campaign_name = campaign.name;
+      } else {
+        metadataPatch.campaign_id = "";
+        metadataPatch.campaign_name = "";
+      }
+      metadataPatch.agenda_scope = metadataPatch.agenda_scope || sourceType;
+      sourcePatch = {
+        lead_id: null,
+        source_type: sourceType,
+        source_id: campaign?.id || null,
+      };
+    } else {
+      const targetLeadId = payload.lead_id || payload.source_id || null;
+      if (!targetLeadId) {
+        const error = new Error("Selecciona un contacto para esta tarea.");
+        error.status = 400;
+        throw error;
+      }
+      const lead = await resolveLead(businessId, targetLeadId, sourceType);
+      metadataPatch.agenda_scope = "CONTACT";
+      sourcePatch = {
+        lead_id: lead.lead_id || null,
+        source_type: lead.source_type,
+        source_id: lead.id,
+      };
+    }
+  }
+  const hasMetadataPatch = hasMetadata || hasSourcePatch;
   const result = await query(
     `update lead_notes
         set note = case when $3 then $4 else note end,
@@ -1604,6 +1647,9 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
             progress_percent = case when $16 then $17 else progress_percent end,
             checklist = case when $18 then $19::jsonb else checklist end,
             metadata = case when $20 then coalesce(metadata, '{}'::jsonb) || $21::jsonb else metadata end,
+            lead_id = case when $22 then $23::uuid else lead_id end,
+            source_type = case when $22 then $24 else source_type end,
+            source_id = case when $22 then $25::uuid else source_id end,
             completed_at = case
               when $11 and $12 = 'DONE' then coalesce(completed_at, now())
               when $11 and $12 <> 'DONE' then null
@@ -1640,8 +1686,12 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
       Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : null,
       hasChecklist,
       JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
-      hasMetadata,
-      JSON.stringify(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
+      hasMetadataPatch,
+      JSON.stringify(metadataPatch),
+      hasSourcePatch,
+      sourcePatch?.lead_id || null,
+      sourcePatch?.source_type || null,
+      sourcePatch?.source_id || null,
     ]
   );
   if (!result.rowCount) {
@@ -1673,7 +1723,7 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
       }),
     ]
   );
-  return result.rows[0];
+  return getLeadAgendaItem(businessId, noteId);
 }
 
 async function deleteLeadAgendaItem(businessId, user, noteId) {

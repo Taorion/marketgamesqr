@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-meeting-whatsapp-link-v14";
+const APP_VERSION = "empresa-20260709-agenda-contact-reassign-v15";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -931,6 +931,9 @@ let state = {
   leadAgenda: [],
   leadAgendaLoaded: false,
   leadAgendaLoading: false,
+  leadAgendaContacts: [],
+  leadAgendaContactsLoaded: false,
+  leadAgendaContactsLoading: false,
   leadAgendaView: "list",
   leadAgendaStatus: "OPEN",
   leadAgendaAnchorDate: dateInputValue(new Date()),
@@ -1620,6 +1623,9 @@ function resetBusinessScopedState(options = {}) {
   state.leadAgenda = [];
   state.leadAgendaLoaded = false;
   state.leadAgendaLoading = false;
+  state.leadAgendaContacts = [];
+  state.leadAgendaContactsLoaded = false;
+  state.leadAgendaContactsLoading = false;
   state.leadAgendaView = "list";
   state.leadAgendaStatus = "OPEN";
   state.leadAgendaAnchorDate = dateInputValue(new Date());
@@ -1858,6 +1864,9 @@ async function loadLeadAgendaData(options = {}) {
   if (!session?.user?.business_id) {
     state.leadAgenda = [];
     state.leadAgendaLoaded = true;
+    state.leadAgendaContacts = [];
+    state.leadAgendaContactsLoaded = true;
+    state.leadAgendaContactsLoading = false;
     return;
   }
   if (state.leadAgendaLoaded && !options.force) return;
@@ -1935,6 +1944,40 @@ async function loadLeadCrmData(options = {}) {
   state.leadCrmPagination = data.pagination || { total: 0, limit: 40, offset: 0 };
   state.leadCrmLoaded = true;
   state.leadCrmLoading = false;
+}
+
+async function loadLeadAgendaContacts(options = {}) {
+  if (!session?.user?.business_id) {
+    state.leadAgendaContacts = [];
+    state.leadAgendaContactsLoaded = true;
+    state.leadAgendaContactsLoading = false;
+    return;
+  }
+  if (state.leadAgendaContactsLoaded && !options.force) return;
+  if (state.leadAgendaContactsLoading) return;
+  state.leadAgendaContactsLoading = true;
+  const scopeKey = businessScopeKey();
+  try {
+    const leads = [];
+    let offset = 0;
+    for (let pageIndex = 0; pageIndex < 3; pageIndex += 1) {
+      const data = await apiSafe(
+        `/api/business/leads/crm?limit=120&offset=${offset}`,
+        { headers: authHeaders() },
+        { leads: [], pagination: { limit: 120, has_more: false } }
+      );
+      leads.push(...(data.leads || []));
+      if (!data.pagination?.has_more) break;
+      offset += Number(data.pagination?.limit || 120);
+    }
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.leadAgendaContacts = leads;
+    state.leadAgendaContactsLoaded = true;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) {
+      state.leadAgendaContactsLoading = false;
+    }
+  }
 }
 
 function refreshLeadCampaignFilterOptions() {
@@ -3635,6 +3678,9 @@ async function loadWorkspace() {
     state.leadAgenda = [];
     state.leadAgendaLoaded = false;
     state.leadAgendaLoading = false;
+    state.leadAgendaContacts = [];
+    state.leadAgendaContactsLoaded = false;
+    state.leadAgendaContactsLoading = false;
     state.leadAgendaRange = null;
     state.editingAgendaId = null;
     state.businessUsers = businessUsersData.users || [];
@@ -17551,21 +17597,66 @@ function parseAgendaLeadValue(value = "") {
   };
 }
 
+function leadAgendaContactRows(extraRows = []) {
+  const seen = new Set();
+  return [
+    ...(Array.isArray(extraRows) ? extraRows : []),
+    ...(state.leadAgendaContacts || []),
+    ...(state.leadCrmRows || []),
+  ].filter((item) => item?.id || item?.lead_id).filter((item) => {
+    const key = agendaLeadOptionValue(item);
+    if (!key || key.endsWith("::") || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function agendaLeadLabel(item = {}) {
+  return [
+    item.name || item.full_name || item.lead_name || "Contacto sin nombre",
+    item.phone || item.email || item.document_id || "",
+    item.source_type || "",
+  ].filter(Boolean).join(" - ");
+}
+
+function agendaLeadFromItem(item = {}) {
+  const sourceType = String(item.source_type || "PLAYER").toUpperCase();
+  const leadId = item.source_id || item.lead_id || "";
+  if (!leadId || ["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(sourceType)) return null;
+  return {
+    id: leadId,
+    lead_id: item.lead_id || null,
+    source_type: sourceType,
+    name: item.lead_name || "Contacto sin nombre",
+    phone: item.lead_phone || "",
+    email: item.lead_email || "",
+    document_id: item.lead_document_id || "",
+  };
+}
+
+function agendaLeadOptionsMarkup(selectedValue = "", extraRows = []) {
+  if (!state.leadAgendaContactsLoaded && !state.leadAgendaContactsLoading && session?.user?.business_id) {
+    loadLeadAgendaContacts().then(() => {
+      renderLeadAgenda();
+      if (state.selectedLeadRef) renderLeadDetailAgenda();
+    }).catch(() => {});
+  }
+  const rows = leadAgendaContactRows(extraRows);
+  return rows.map((item) => {
+    const value = agendaLeadOptionValue(item);
+    return `<option value="${escapeHtml(value)}" ${String(value) === String(selectedValue) ? "selected" : ""}>${escapeHtml(agendaLeadLabel(item))}</option>`;
+  }).join("") || `<option value="">${state.leadAgendaContactsLoading ? "Cargando contactos..." : "Sin contactos cargados"}</option>`;
+}
+
 function renderLeadAgendaLeadOptions() {
   if (!leadAgendaLeadInput) return;
-  const rows = (state.leadCrmRows || []).filter((item) => item.id || item.lead_id);
+  if (!state.leadAgendaContactsLoaded && !state.leadAgendaContactsLoading && session?.user?.business_id) {
+    loadLeadAgendaContacts().then(renderLeadAgenda).catch(() => {});
+  }
   const selectedValue = state.selectedLeadRef?.id
     ? `${String(state.selectedLeadRef.source_type || "PLAYER").toUpperCase()}::${state.selectedLeadRef.id}`
     : leadAgendaLeadInput.value;
-  leadAgendaLeadInput.innerHTML = rows.map((item) => {
-    const value = agendaLeadOptionValue(item);
-    const label = [
-      item.name || item.full_name || "Contacto sin nombre",
-      item.phone || item.email || item.document_id || "",
-      item.source_type || "",
-    ].filter(Boolean).join(" - ");
-    return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
-  }).join("") || '<option value="">Sin contactos cargados</option>';
+  leadAgendaLeadInput.innerHTML = agendaLeadOptionsMarkup(selectedValue);
   if (selectedValue && Array.from(leadAgendaLeadInput.options).some((option) => option.value === selectedValue)) {
     leadAgendaLeadInput.value = selectedValue;
   }
@@ -17584,6 +17675,8 @@ function agendaCardMarkup(item = {}, options = {}) {
   const metadata = agendaMetadata(item);
   const scope = agendaScopeForItem(item);
   const campaignId = agendaCampaignIdForItem(item);
+  const currentLead = agendaLeadFromItem(item);
+  const currentLeadValue = currentLead ? agendaLeadOptionValue(currentLead) : "";
   const meetingSummary = agendaMeetingSummary(item);
   const isMeeting = metadata.agenda_activity_type === "MEETING" || Boolean(metadata.meeting_mode || metadata.meeting_url || metadata.meeting_address);
   const hasLeadRef = !["CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"].includes(String(item.source_type || "").toUpperCase());
@@ -17624,6 +17717,12 @@ function agendaCardMarkup(item = {}, options = {}) {
               <option value="MARKETING" ${scope === "MARKETING" ? "selected" : ""}>Marketing</option>
               <option value="ACTIVATION_STRATEGY" ${scope === "ACTIVATION_STRATEGY" ? "selected" : ""}>Estrategia de activación</option>
               <option value="BULK_ACTIVATION" ${scope === "BULK_ACTIVATION" ? "selected" : ""}>Activación en masa</option>
+            </select>
+          </label>
+          <label>
+            <span>Contacto</span>
+            <select name="lead_ref">
+              ${agendaLeadOptionsMarkup(currentLeadValue, currentLead ? [currentLead] : [])}
             </select>
           </label>
           <label>
@@ -18084,13 +18183,23 @@ async function updateAgendaItemFromForm(event, noteId) {
   const reminderValue = data.get("reminder_at");
   const nextAction = String(data.get("next_action") || "").trim();
   const note = String(data.get("note") || "").trim();
+  const scope = String(data.get("agenda_scope") || "CONTACT").toUpperCase();
+  const leadRef = parseAgendaLeadValue(data.get("lead_ref") || "");
+  const campaign = selectedAgendaCampaignFromData(data);
   const progress = Math.max(0, Math.min(100, Number(data.get("progress_percent") || 0)));
   if (!nextAction || !note || !reminderValue) {
     showFeedback("Completa acción, detalle y fecha para guardar la tarea.", "error");
     return;
   }
+  if (scope === "CONTACT" && !leadRef.id) {
+    showFeedback("Selecciona el contacto para esta tarea o cambia el alcance.", "error");
+    return;
+  }
   try {
     await updateAgendaItem(noteId, {
+      lead_id: scope === "CONTACT" ? leadRef.id : null,
+      source_id: scope === "CONTACT" ? null : campaign?.id || null,
+      source_type: agendaSourceTypeForScope(scope, leadRef.source_type || "PLAYER"),
       next_action: nextAction,
       note,
       note_type: data.get("note_type") || "commercial",

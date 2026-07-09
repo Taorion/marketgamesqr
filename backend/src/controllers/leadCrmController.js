@@ -48,6 +48,9 @@ const agendaCreateSchema = noteSchema.extend({
 });
 
 const agendaUpdateSchema = z.object({
+  lead_id: z.string().uuid().optional().nullable(),
+  source_id: z.string().uuid().optional().nullable(),
+  source_type: agendaSourceTypeSchema.optional(),
   note: z.string().trim().min(2).max(3000).optional(),
   note_type: z.enum(["commercial", "support", "vip", "observation", "follow_up"]).optional(),
   next_action: z.string().trim().max(500).optional().nullable(),
