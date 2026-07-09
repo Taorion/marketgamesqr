@@ -5,8 +5,19 @@ const { env } = require("../config/env");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { canAccessBusiness } = require("../middleware/auth");
 const { findPackageOffer } = require("./packageCatalog");
-const { addQrCredits, ensureCreditAccount, mapPublicCreditAccount, trafficLabel } = require("./qrCreditService");
-const { BASE_PORTAL_MIN_TICKETS, PLAN_CODES, listPlans } = require("./subscriptionService");
+const {
+  addQrCredits,
+  ensureCreditAccount,
+  grantFirstSubscriptionCourtesyTickets,
+  mapPublicCreditAccount,
+  trafficLabel,
+} = require("./qrCreditService");
+const {
+  BASE_PORTAL_MIN_TICKETS,
+  PLAN_CODES,
+  getBusinessSubscription,
+  listPlans,
+} = require("./subscriptionService");
 
 const MP_API_BASE = "https://api.mercadopago.com";
 
@@ -157,6 +168,15 @@ function isBaseAccessPackage(packageSize) {
   return Number(packageSize || 0) >= BASE_PORTAL_MIN_TICKETS;
 }
 
+async function assertActiveSubscriptionForTicketPurchase(user) {
+  const subscription = await getBusinessSubscription(user.business_id);
+  const plan = subscription.plan || {};
+  if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || !plan.portal_access_allowed) {
+    throw badRequest("Para comprar tickets internos primero debes activar un plan de suscripcion.");
+  }
+  return subscription;
+}
+
 async function activateTicketBaseAccess(client, businessId, userId = null, extraSettings = {}) {
   await client.query(
     `update businesses
@@ -281,18 +301,8 @@ async function createCreditCheckout(user, body) {
   if (!offer) {
     throw badRequest("Paquete QR no disponible.");
   }
-  const businessPlan = await query(
-    `select plan_code
-     from businesses
-     where id = $1`,
-    [user.business_id]
-  );
-  const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
-  const isSubscription = plan?.category === "subscription";
-  if (!isSubscription && !offer.base_access_allowed && !offer.prepaid_allowed) {
-    throw badRequest("Compra T200 o superior para activar o recargar tu Portal RMS.");
-  }
-  if (isSubscription && !offer.subscriber_allowed) {
+  await assertActiveSubscriptionForTicketPurchase(user);
+  if (!offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
 
@@ -745,10 +755,6 @@ async function createPortalSignupCheckout(client, payload) {
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para pago automatico.");
   }
-  const offer = findPackageOffer(payload.package_code);
-  if (!offer || !offer.subscriber_allowed) {
-    throw badRequest("Paquete inicial QR no disponible para suscriptores.");
-  }
 
   const billingCycle = normalizeBillingCycle(payload.billing_cycle);
   const planPriceCop = planChargeCop(plan, billingCycle);
@@ -767,8 +773,8 @@ async function createPortalSignupCheckout(client, payload) {
       payload.business_id,
       payload.user_id,
       plan.code,
-      offer.package_size,
-      `${plan.name} + ${offer.title}`,
+      0,
+      `${plan.name} - suscripcion ${billingLabel}`,
       planPriceCop,
       JSON.stringify({
         source: "public_portal_signup",
@@ -781,9 +787,7 @@ async function createPortalSignupCheckout(client, payload) {
           email: payload.email,
           plan_code: plan.code,
           billing_cycle: billingCycle,
-          initial_package_code: offer.code,
-          initial_package_size: offer.package_size,
-          initial_package_price_cop: offer.price_cop,
+          courtesy_tickets_quantity: 10,
           plan_price_cop: planPriceCop,
         },
       }),
@@ -797,7 +801,7 @@ async function createPortalSignupCheckout(client, payload) {
       reason: `${plan.name} - portal Market Games (${billingLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: payload.email,
-      back_url: appUrl("/paquetes/?signup=card&mode=portal"),
+      back_url: appUrl("/paquetes/?signup=card"),
       notification_url: webhookUrl(),
       auto_recurring: {
         frequency: recurringFrequency.frequency,
@@ -1036,15 +1040,9 @@ async function createDemoCreditPurchase(user, body) {
   if (!offer) {
     throw badRequest("Paquete QR no disponible.");
   }
-  const businessPlan = await query(
-    `select plan_code
-     from businesses
-     where id = $1`,
-    [user.business_id]
-  );
-  const plan = listPlans().find((item) => item.code === businessPlan.rows[0]?.plan_code);
-  if (plan?.category !== "subscription" && !offer.base_access_allowed && !offer.prepaid_allowed) {
-    throw badRequest("Compra T200 o superior para activar o recargar tu Portal RMS.");
+  await assertActiveSubscriptionForTicketPurchase(user);
+  if (!offer.subscriber_allowed) {
+    throw badRequest("Paquete QR no disponible para suscriptores.");
   }
 
   return withTransaction(async (client) => {
@@ -1175,6 +1173,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
 
   await ensureCreditAccount(client, order.business_id);
   let account = null;
+  let courtesyTicketsGranted = false;
   if (signup.initial_package_code && Number(order.package_size || 0) > 0) {
     account = await addQrCredits(client, {
       business_id: order.business_id,
@@ -1183,6 +1182,30 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       notes: `Paquete inicial de tickets al activar Portal RMS. Payment ID ${payment.id}.`,
       created_by_user_id: order.created_by_user_id,
     });
+  }
+  const previousSubscriptionOrder = await client.query(
+    `select id
+     from qr_credit_purchase_orders
+     where business_id = $1
+       and id <> $2
+       and status = 'APPROVED'
+       and (metadata->'signup'->>'type') in (
+         'portal_monthly_subscription',
+         'portal_annual_subscription',
+         'portal_monthly_subscription_auto_renewal'
+       )
+     limit 1`,
+    [order.business_id, order.id]
+  );
+  if (!previousSubscriptionOrder.rowCount) {
+    const courtesy = await grantFirstSubscriptionCourtesyTickets(client, {
+      business_id: order.business_id,
+      created_by_user_id: order.created_by_user_id,
+      public_label: "10 tickets de cortesia de bienvenida",
+      notes: "Cortesia de bienvenida por primera suscripcion del cliente.",
+    });
+    account = courtesy.account || account;
+    courtesyTicketsGranted = Boolean(courtesy.granted);
   }
   const updated = await client.query(
     `update qr_credit_purchase_orders
@@ -1238,6 +1261,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       current_period_ends_at: nextPeriodEnd.toISOString(),
     },
     credit_account: account ? mapPublicCreditAccount(account) : null,
+    courtesy_tickets_granted: courtesyTicketsGranted,
     credited: Boolean(account),
   };
 }

@@ -1,5 +1,7 @@
 const { z } = require("zod");
 const { validate } = require("../utils/validators");
+const { badRequest } = require("../utils/http");
+const { subscriberPackageOffers } = require("../services/packageCatalog");
 const {
   createCreditCheckout,
   createSubscriptionAutoRenewal,
@@ -7,6 +9,7 @@ const {
   listCreditOrders,
   processMercadoPagoWebhook,
 } = require("../services/mercadoPagoService");
+const { getBusinessSubscription } = require("../services/subscriptionService");
 
 const creditCheckoutSchema = z.object({
   package_code: z.string().trim().min(2).max(40),
@@ -21,6 +24,28 @@ async function createQrCreditCheckout(req, res, next) {
     const body = validate(creditCheckoutSchema, req.body);
     const order = await createCreditCheckout(req.user, body);
     res.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listQrCreditOffers(req, res, next) {
+  try {
+    if (!req.user.business_id) {
+      throw badRequest("Este usuario no tiene negocio asignado.");
+    }
+    const subscription = await getBusinessSubscription(req.user.business_id);
+    const plan = subscription.plan || {};
+    if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || !plan.portal_access_allowed) {
+      throw badRequest("Para comprar tickets internos primero debes activar un plan de suscripcion.");
+    }
+    res.json({
+      packages: subscriberPackageOffers(),
+      pricing: {
+        display_currency: "COP",
+        payment_currency: "COP",
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -68,6 +93,7 @@ module.exports = {
   createQrCreditCheckout,
   createSubscriptionAutoRenewalCheckout,
   createSubscriptionCheckout,
+  listQrCreditOffers,
   listQrCreditOrders,
   mercadoPagoWebhook,
 };

@@ -22,6 +22,181 @@
   --max: 1200px;
 }
 
+.subscription-page {
+  gap: 18px;
+}
+
+.subscription-hero {
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+}
+
+.subscription-hero h2 {
+  max-width: 760px;
+}
+
+.subscription-plan-grid {
+  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subscription-plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subscription-plan-card .plan-access-list {
+  flex: 1;
+}
+
+.plan-card-head {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recommended-badge {
+  display: inline-grid;
+  place-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(247, 201, 72, 0.5);
+  background: rgba(247, 201, 72, 0.12);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.featured-plan {
+  border-color: var(--border-strong);
+  box-shadow: 0 22px 60px rgba(53, 214, 173, 0.18);
+}
+
+.ticket-policy-note,
+.final-cta {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+  padding: 18px;
+}
+
+.ticket-policy-note {
+  margin-top: 16px;
+}
+
+.ticket-policy-note p,
+.final-cta p {
+  margin-bottom: 0;
+}
+
+.comparison-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  text-align: left;
+  vertical-align: top;
+}
+
+.comparison-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.comparison-table td:first-child,
+.comparison-table th:first-child {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.faq-grid article {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  padding: 16px;
+}
+
+.faq-grid article p {
+  margin-bottom: 0;
+}
+
+.final-cta {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+@supports not (background: color-mix(in srgb, white, black)) {
+  .ticket-policy-note,
+  .final-cta,
+  .comparison-table {
+    background: var(--surface);
+  }
+}
+
+@media (max-width: 980px) {
+  .subscription-hero,
+  .subscription-plan-grid,
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .subscription-page {
+    padding: 12px;
+  }
+
+  .plan-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .comparison-table {
+    min-width: 680px;
+  }
+}
+
+.subscription-page .package-grid.subscription-plan-grid {
+  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+  .subscription-page .package-grid.subscription-plan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #f6f8fb;

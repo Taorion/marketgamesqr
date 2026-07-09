@@ -280,6 +280,7 @@ const accountType = document.getElementById("accountType");
 const accountPlanStatus = document.getElementById("accountPlanStatus");
 const accountQrAvailable = document.getElementById("accountQrAvailable");
 const accountQrUsed = document.getElementById("accountQrUsed");
+const accountQrCourtesy = document.getElementById("accountQrCourtesy");
 const accountCommercialDealCard = document.getElementById("accountCommercialDealCard");
 const accountCommercialDealTitle = document.getElementById("accountCommercialDealTitle");
 const accountCommercialDealStatus = document.getElementById("accountCommercialDealStatus");
@@ -2093,7 +2094,7 @@ async function loadStrategicQrData(options = {}) {
     }
     if (group === "core") {
       const [packageData, creditData, creditOrdersData] = await Promise.all([
-        apiSafe("/api/public/packages", {}, { packages: [] }),
+        apiSafe("/api/payments/qr-credits/offers", { headers: authHeaders() }, { packages: [] }),
         apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }),
         lightTestMode ? Promise.resolve({ orders: [] }) : apiSafe("/api/payments/qr-credits/orders?limit=20", { headers: authHeaders() }, { orders: [] }),
       ]);
@@ -2927,7 +2928,7 @@ function renderSubscriptionRenewal() {
         : "Inscribir tarjeta solo crea la autorización; el primer cobro queda programado para la siguiente fecha de renovación.";
       setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
     } else {
-      setInlineMessage(subscriptionRenewalMessage, "Compra T200 para activar Portal Base o elige un upgrade mensual cuando necesites más herramientas.", "info");
+      setInlineMessage(subscriptionRenewalMessage, "Activa un plan mensual para usar el portal. Los tickets adicionales se compran dentro de la cuenta cuando la suscripcion este activa.", "info");
     }
   }
 }
@@ -3051,6 +3052,7 @@ function renderAccountView() {
   setAccountText(accountPlanStatus, subscriptionAccessLabel(plan));
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
+  setAccountText(accountQrCourtesy, Number(credit.qr_courtesy_total || 0).toLocaleString("es-CO"), "0");
   renderCommercialDeal();
   renderBusinessUsers();
   renderSubscriptionRenewal();
@@ -3908,7 +3910,7 @@ async function loadPrepaidValidatorWorkspace() {
     const [accessData, creditData, packageData, subscriptionPlansData, creditOrdersData, businessProfileData, contactFeedData, businessUsersData] = await Promise.all([
       apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
       apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
-      apiSafe("/api/public/packages", {}, { packages: [] }),
+      apiSafe("/api/payments/qr-credits/offers", { headers: authHeaders() }, { packages: [] }),
       apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
       apiSafe("/api/payments/qr-credits/orders?limit=20", { headers: authHeaders() }, { orders: [] }),
       apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null, subscription: session.user?.subscription || null }),
@@ -9909,7 +9911,8 @@ function renderQrCreditShop() {
   if (qrCreditCheckoutMessage) {
     const account = state.qrCreditAccount || {};
     const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
-    const rechargeCopy = "Puedes recargar desde T50. T200 o superior activa Portal Base para cuentas nuevas.";
+    const courtesy = Number(account.qr_courtesy_total || 0).toLocaleString("es-CO");
+    const rechargeCopy = `Cortesia recibida: ${courtesy} tickets. Las recargas estan disponibles solo para cuentas con suscripcion activa.`;
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
 

@@ -40,7 +40,19 @@ async function myQrCredits(req, res, next) {
       return res.json({ credit_account: null });
     }
     const result = await query(
-      "select * from business_qr_credit_accounts where business_id = $1",
+      `select a.*,
+              coalesce((
+                select sum(l.delta_qr)::int
+                from business_qr_credit_ledger l
+                where l.business_id = a.business_id
+                  and l.delta_qr > 0
+                  and (
+                    lower(coalesce(l.public_label, '')) like '%cortesia%'
+                    or lower(coalesce(l.notes, '')) like '%cortesia%'
+                  )
+              ), 0)::int as qr_courtesy_total
+       from business_qr_credit_accounts a
+       where a.business_id = $1`,
       [req.user.business_id]
     );
     res.json({ credit_account: mapPublicCreditAccount(result.rows[0]) });

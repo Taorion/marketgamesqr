@@ -2,6 +2,7 @@ const { badRequest } = require("../utils/http");
 
 const QR_PACKAGES = [50, 200, 600, 2000, 6000];
 const INTERNAL_UNIT_PRICE_COP = 1000;
+const FIRST_SUBSCRIPTION_COURTESY_TICKETS = 10;
 
 function assertValidPackage(packageSize) {
   if (!QR_PACKAGES.includes(Number(packageSize))) {
@@ -124,6 +125,85 @@ async function addQrCredits(client, payload) {
   );
 
   return updated.rows[0];
+}
+
+async function grantFirstSubscriptionCourtesyTickets(client, payload) {
+  const quantity = Number(payload.quantity || FIRST_SUBSCRIPTION_COURTESY_TICKETS);
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw badRequest("La cantidad de tickets de cortesia debe ser mayor a 0.");
+  }
+
+  const business = await client.query(
+    `select settings
+     from businesses
+     where id = $1
+     for update`,
+    [payload.business_id]
+  );
+  const settings = business.rows[0]?.settings || {};
+  const alreadyGranted = Boolean(
+    settings.firstSubscriptionCourtesyTicketsGranted
+      || settings.subscription?.firstSubscriptionCourtesyTicketsGranted
+      || settings.subscription?.first_subscription_courtesy_tickets_granted
+  );
+  const account = await ensureCreditAccount(client, payload.business_id);
+
+  if (alreadyGranted) {
+    return { account, granted: false };
+  }
+
+  const nextBalance = Number(account.qr_balance || 0) + quantity;
+  const nextPurchased = Number(account.qr_purchased_total || 0) + quantity;
+  const publicLabel = payload.public_label || `${quantity} tickets de cortesia`;
+
+  const updated = await client.query(
+    `update business_qr_credit_accounts
+     set qr_balance = $2,
+         qr_purchased_total = $3,
+         public_label = $4,
+         updated_at = now()
+     where business_id = $1
+     returning *`,
+    [payload.business_id, nextBalance, nextPurchased, publicLabel]
+  );
+
+  await client.query(
+    `insert into business_qr_credit_ledger
+      (business_id, account_id, entry_type, package_size, delta_qr, balance_after,
+       internal_unit_price_cop, internal_total_cop, public_label, notes, created_by_user_id)
+     values ($1, $2, 'MANUAL_ADJUSTMENT', $3, $4, $5, 0, 0, $6, $7, $8)`,
+    [
+      payload.business_id,
+      account.id,
+      quantity,
+      quantity,
+      nextBalance,
+      publicLabel,
+      payload.notes || "Cortesia de bienvenida por primera suscripcion.",
+      payload.created_by_user_id || null,
+    ]
+  );
+
+  await client.query(
+    `update businesses
+     set settings = coalesce(settings, '{}'::jsonb)
+         || jsonb_build_object(
+           'firstSubscriptionCourtesyTicketsGranted', true,
+           'subscription',
+           coalesce(settings->'subscription', '{}'::jsonb)
+             || jsonb_build_object(
+               'firstSubscriptionCourtesyTicketsGranted', true,
+               'first_subscription_courtesy_tickets_granted', true,
+               'firstSubscriptionCourtesyTicketsQuantity', $2::int,
+               'firstSubscriptionCourtesyTicketsGrantedAt', now()::text
+             )
+         ),
+         updated_at = now()
+     where id = $1`,
+    [payload.business_id, quantity]
+  );
+
+  return { account: updated.rows[0], granted: true };
 }
 
 async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, userId = null, notes = null) {
@@ -274,6 +354,7 @@ function mapCreditAccount(row) {
   const purchased = Number(row.qr_purchased_total || 0);
   const used = Number(row.qr_used_total || 0);
   const balance = Number(row.qr_balance || 0);
+  const courtesy = Number(row.qr_courtesy_total || 0);
   const usedRate = purchased ? Number(((used / purchased) * 100).toFixed(1)) : 0;
   return {
     id: row.id,
@@ -282,6 +363,7 @@ function mapCreditAccount(row) {
     qr_balance: balance,
     qr_purchased_total: purchased,
     qr_used_total: used,
+    qr_courtesy_total: courtesy,
     public_label: row.public_label || trafficLabel(balance),
     internal_unit_price_cop: Number(row.internal_unit_price_cop || INTERNAL_UNIT_PRICE_COP),
     internal_balance_value_cop: balance * Number(row.internal_unit_price_cop || INTERNAL_UNIT_PRICE_COP),
@@ -307,6 +389,7 @@ function mapPublicCreditAccount(row) {
     qr_balance: account.qr_balance,
     qr_purchased_total: account.qr_purchased_total,
     qr_used_total: account.qr_used_total,
+    qr_courtesy_total: account.qr_courtesy_total,
     public_label: account.public_label,
     used_rate: account.used_rate,
     low_balance: account.low_balance,
@@ -324,6 +407,8 @@ module.exports = {
   consumeQrCredits,
   consumeTickets,
   ensureCreditAccount,
+  FIRST_SUBSCRIPTION_COURTESY_TICKETS,
+  grantFirstSubscriptionCourtesyTickets,
   getTicketBalance,
   hasEnoughTickets,
   mapCreditAccount,

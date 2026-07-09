@@ -4,6 +4,7 @@ const {
   createQrCreditCheckout,
   createSubscriptionAutoRenewalCheckout,
   createSubscriptionCheckout,
+  listQrCreditOffers,
   listQrCreditOrders,
   mercadoPagoWebhook,
 } = require("../controllers/paymentController");
@@ -11,6 +12,7 @@ const {
 const router = express.Router();
 
 router.post("/mercadopago/webhook", mercadoPagoWebhook);
+router.get("/qr-credits/offers", authRequired, listQrCreditOffers);
 router.get("/qr-credits/orders", authRequired, listQrCreditOrders);
 router.post("/qr-credits/checkout", authRequired, createQrCreditCheckout);
 router.post("/tickets/checkout", authRequired, createQrCreditCheckout);
