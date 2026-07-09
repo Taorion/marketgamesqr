@@ -1307,8 +1307,8 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
   const lead = await resolveLead(businessId, leadId, sourceType);
   const result = await query(
     `insert into lead_notes
-      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, created_by)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
+      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, metadata, created_by)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13)
      returning *`,
     [
       businessId,
@@ -1322,6 +1322,7 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
       payload.agenda_priority || "MEDIUM",
       Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : 0,
       JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
+      JSON.stringify(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
       user.id,
     ]
   );
@@ -1349,6 +1350,7 @@ async function getLeadAgendaItem(businessId, noteId) {
         ln.agenda_priority,
         ln.progress_percent,
         ln.checklist,
+        ln.metadata,
         ln.completed_at,
         ln.created_at,
         ln.updated_at,
@@ -1396,6 +1398,7 @@ async function createLeadAgendaItem(businessId, user, payload = {}) {
       agenda_priority: payload.agenda_priority || "MEDIUM",
       progress_percent: payload.progress_percent || 0,
       checklist: Array.isArray(payload.checklist) ? payload.checklist : [],
+      metadata: payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {},
     }
   );
   return getLeadAgendaItem(businessId, note.id);
@@ -1438,6 +1441,7 @@ async function listLeadAgenda(businessId, params = {}) {
         ln.agenda_priority,
         ln.progress_percent,
         ln.checklist,
+        ln.metadata,
         ln.completed_at,
         ln.created_at,
         ln.updated_at,
@@ -1485,13 +1489,14 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
   const hasPriority = Object.prototype.hasOwnProperty.call(payload, "agenda_priority");
   const hasProgress = Object.prototype.hasOwnProperty.call(payload, "progress_percent");
   const hasChecklist = Object.prototype.hasOwnProperty.call(payload, "checklist");
+  const hasMetadata = Object.prototype.hasOwnProperty.call(payload, "metadata");
   const nextStatus = hasStatus ? String(payload.agenda_status || "").toUpperCase() : null;
   if (hasStatus && !["OPEN", "DONE", "CANCELLED"].includes(nextStatus)) {
     const error = new Error("Estado de agenda invalido.");
     error.status = 400;
     throw error;
   }
-  if (!hasNote && !hasNoteType && !hasNextAction && !hasReminder && !hasStatus && !hasPriority && !hasProgress && !hasChecklist) {
+  if (!hasNote && !hasNoteType && !hasNextAction && !hasReminder && !hasStatus && !hasPriority && !hasProgress && !hasChecklist && !hasMetadata) {
     const error = new Error("No hay cambios para actualizar en la agenda.");
     error.status = 400;
     throw error;
@@ -1506,6 +1511,7 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
             agenda_priority = case when $14 then $15 else agenda_priority end,
             progress_percent = case when $16 then $17 else progress_percent end,
             checklist = case when $18 then $19::jsonb else checklist end,
+            metadata = case when $20 then coalesce(metadata, '{}'::jsonb) || $21::jsonb else metadata end,
             completed_at = case
               when $11 and $12 = 'DONE' then coalesce(completed_at, now())
               when $11 and $12 <> 'DONE' then null
@@ -1542,6 +1548,8 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
       Number.isFinite(Number(payload.progress_percent)) ? Number(payload.progress_percent) : null,
       hasChecklist,
       JSON.stringify(Array.isArray(payload.checklist) ? payload.checklist : []),
+      hasMetadata,
+      JSON.stringify(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
     ]
   );
   if (!result.rowCount) {

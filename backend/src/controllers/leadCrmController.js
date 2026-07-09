@@ -36,6 +36,7 @@ const noteSchema = z.object({
     label: z.string().trim().min(1).max(240),
     done: z.boolean().optional().default(false),
   })).max(20).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
   source_type: sourceTypeSchema.optional(),
 });
 
@@ -55,6 +56,7 @@ const agendaUpdateSchema = z.object({
     label: z.string().trim().min(1).max(240),
     done: z.boolean().optional().default(false),
   })).max(20).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const interestSchema = z.object({

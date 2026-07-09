@@ -2772,6 +2772,7 @@
               <div class="lead-agenda-fast-actions" aria-label="Acciones rápidas de agenda">
                 <button class="ghost-button" type="button" data-agenda-template="CALL">Llamar</button>
                 <button class="ghost-button" type="button" data-agenda-template="PROPOSAL">Propuesta</button>
+                <button class="ghost-button" type="button" data-agenda-template="MEETING">Reunión</button>
                 <button class="ghost-button" type="button" data-agenda-template="PACKAGE">Paquete</button>
                 <button class="ghost-button" type="button" data-agenda-template="ACTIVATION">Activación</button>
                 <button class="ghost-button" type="button" data-agenda-template="MARKETING">Marketing</button>
@@ -2797,6 +2798,40 @@
                     <option value="URGENT">Urgente</option>
                     <option value="LOW">Baja</option>
                   </select>
+                </label>
+                <label>
+                  <span>Tipo</span>
+                  <select id="leadAgendaActivityTypeInput">
+                    <option value="TASK">Tarea</option>
+                    <option value="MEETING">Reunión</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Medio</span>
+                  <select id="leadAgendaMeetingModeInput">
+                    <option value="">Sin medio</option>
+                    <option value="VIRTUAL">Virtual</option>
+                    <option value="IN_PERSON">Presencial</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Plataforma</span>
+                  <select id="leadAgendaMeetingPlatformInput">
+                    <option value="">No aplica</option>
+                    <option value="ZOOM">Zoom</option>
+                    <option value="MEET">Google Meet</option>
+                    <option value="TEAMS">Microsoft Teams</option>
+                    <option value="WHATSAPP">WhatsApp</option>
+                    <option value="OTHER">Otra</option>
+                  </select>
+                </label>
+                <label class="span-2">
+                  <span>Enlace virtual</span>
+                  <input id="leadAgendaMeetingUrlInput" type="url" maxlength="1000" placeholder="https://meet.google.com/...">
+                </label>
+                <label class="span-2">
+                  <span>Dirección presencial</span>
+                  <input id="leadAgendaMeetingAddressInput" type="text" maxlength="1000" placeholder="Dirección, sede, local o punto de encuentro">
                 </label>
                 <label>
                   <span>% completado</span>

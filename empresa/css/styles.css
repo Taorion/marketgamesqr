@@ -14494,6 +14494,11 @@ body.chart-focus-open .command-center {
   color: var(--muted);
 }
 
+.lead-agenda-meeting-line {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .lead-agenda-item-main small {
   color: var(--muted);
 }

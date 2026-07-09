@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-lead-agenda-create-api-v10";
+const APP_VERSION = "empresa-20260709-lead-agenda-meetings-v11";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -85,6 +85,11 @@ const leadAgendaActionInput = document.getElementById("leadAgendaActionInput");
 const leadAgendaReminderInput = document.getElementById("leadAgendaReminderInput");
 const leadAgendaNoteInput = document.getElementById("leadAgendaNoteInput");
 const leadAgendaPriorityInput = document.getElementById("leadAgendaPriorityInput");
+const leadAgendaActivityTypeInput = document.getElementById("leadAgendaActivityTypeInput");
+const leadAgendaMeetingModeInput = document.getElementById("leadAgendaMeetingModeInput");
+const leadAgendaMeetingPlatformInput = document.getElementById("leadAgendaMeetingPlatformInput");
+const leadAgendaMeetingUrlInput = document.getElementById("leadAgendaMeetingUrlInput");
+const leadAgendaMeetingAddressInput = document.getElementById("leadAgendaMeetingAddressInput");
 const leadAgendaProgressInput = document.getElementById("leadAgendaProgressInput");
 const leadAgendaChecklistInput = document.getElementById("leadAgendaChecklistInput");
 const leadAgendaTemplateButtons = Array.from(document.querySelectorAll("[data-agenda-template]"));
@@ -17266,6 +17271,15 @@ const AGENDA_TEMPLATES = {
     priority: "HIGH",
     checklist: ["Revisar necesidad", "Enviar propuesta", "Agendar seguimiento"],
   },
+  MEETING: {
+    action: "Reunión con cliente",
+    note: "Confirmar objetivo de la reunión, asistentes, medio y siguiente paso.",
+    priority: "HIGH",
+    checklist: ["Confirmar asistencia", "Enviar enlace o dirección", "Registrar acuerdos"],
+    activity_type: "MEETING",
+    meeting_mode: "VIRTUAL",
+    meeting_platform: "MEET",
+  },
   PACKAGE: {
     action: "Preparar paquete de tickets",
     note: "Confirmar cantidad, condiciones, emisión y fecha de entrega.",
@@ -17322,12 +17336,102 @@ function agendaPriorityLabel(priority = "MEDIUM") {
   }[String(priority || "MEDIUM").toUpperCase()] || "Media";
 }
 
+function agendaMetadata(item = {}) {
+  return item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+}
+
+function agendaMeetingModeLabel(value = "") {
+  return {
+    VIRTUAL: "Virtual",
+    IN_PERSON: "Presencial",
+  }[String(value || "").toUpperCase()] || "";
+}
+
+function agendaMeetingPlatformLabel(value = "") {
+  return {
+    ZOOM: "Zoom",
+    MEET: "Google Meet",
+    TEAMS: "Microsoft Teams",
+    WHATSAPP: "WhatsApp",
+    OTHER: "Otra plataforma",
+  }[String(value || "").toUpperCase()] || "";
+}
+
+function agendaMeetingPayloadFromFields(data = null) {
+  const read = (name, fallback = "") => {
+    if (data) return String(data.get(name) || fallback).trim();
+    const input = {
+      agenda_activity_type: leadAgendaActivityTypeInput,
+      meeting_mode: leadAgendaMeetingModeInput,
+      meeting_platform: leadAgendaMeetingPlatformInput,
+      meeting_url: leadAgendaMeetingUrlInput,
+      meeting_address: leadAgendaMeetingAddressInput,
+    }[name];
+    return String(input?.value || fallback).trim();
+  };
+  const activityType = read("agenda_activity_type", "TASK").toUpperCase();
+  const mode = read("meeting_mode").toUpperCase();
+  const platform = read("meeting_platform").toUpperCase();
+  const url = read("meeting_url");
+  const address = read("meeting_address");
+  const isMeeting = activityType === "MEETING" || Boolean(mode || platform || url || address);
+  return {
+    agenda_activity_type: isMeeting ? "MEETING" : "TASK",
+    meeting_mode: isMeeting ? mode : "",
+    meeting_platform: isMeeting ? platform : "",
+    meeting_url: isMeeting ? url : "",
+    meeting_address: isMeeting ? address : "",
+  };
+}
+
+function agendaMeetingSummary(item = {}) {
+  const metadata = agendaMetadata(item);
+  if (metadata.agenda_activity_type !== "MEETING" && !metadata.meeting_mode && !metadata.meeting_url && !metadata.meeting_address) return "";
+  const parts = [
+    "Reunión",
+    agendaMeetingModeLabel(metadata.meeting_mode),
+    agendaMeetingPlatformLabel(metadata.meeting_platform),
+    metadata.meeting_mode === "VIRTUAL" ? metadata.meeting_url : metadata.meeting_address,
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
+function agendaMeetingWhatsAppMessage(item = {}) {
+  const metadata = agendaMetadata(item);
+  const greeting = item.lead_name ? `Hola ${item.lead_name}` : "Hola";
+  const date = formatDate(item.reminder_at);
+  const mode = agendaMeetingModeLabel(metadata.meeting_mode);
+  const platform = agendaMeetingPlatformLabel(metadata.meeting_platform);
+  const meetingLine = metadata.meeting_mode === "VIRTUAL"
+    ? [platform || "la plataforma acordada", metadata.meeting_url ? `enlace: ${metadata.meeting_url}` : ""].filter(Boolean).join(", ")
+    : [metadata.meeting_address ? `dirección: ${metadata.meeting_address}` : "dirección por confirmar"].join("");
+  return [
+    `${greeting}, te recuerdo nuestra reunión programada para ${date}.`,
+    mode ? `Modalidad: ${mode}.` : "",
+    meetingLine ? `Detalle: ${meetingLine}.` : "",
+    item.next_action ? `Tema: ${item.next_action}.` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function agendaMeetingWhatsAppUrl(item = {}) {
+  const phone = whatsappPhoneFromInput(item.lead_phone || "");
+  const message = agendaMeetingWhatsAppMessage(item);
+  return phone
+    ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
 function applyAgendaTemplate(templateKey = "") {
   const template = AGENDA_TEMPLATES[templateKey];
   if (!template) return;
   if (leadAgendaActionInput) leadAgendaActionInput.value = template.action;
   if (leadAgendaNoteInput) leadAgendaNoteInput.value = template.note;
   if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = template.priority;
+  if (leadAgendaActivityTypeInput) leadAgendaActivityTypeInput.value = template.activity_type || "TASK";
+  if (leadAgendaMeetingModeInput) leadAgendaMeetingModeInput.value = template.meeting_mode || "";
+  if (leadAgendaMeetingPlatformInput) leadAgendaMeetingPlatformInput.value = template.meeting_platform || "";
+  if (leadAgendaMeetingUrlInput) leadAgendaMeetingUrlInput.value = "";
+  if (leadAgendaMeetingAddressInput) leadAgendaMeetingAddressInput.value = "";
   if (leadAgendaProgressInput) leadAgendaProgressInput.value = "0";
   if (leadAgendaChecklistInput) leadAgendaChecklistInput.value = template.checklist.join("\n");
 }
@@ -17374,6 +17478,9 @@ function agendaCardMarkup(item = {}, options = {}) {
   const priority = String(item.agenda_priority || "MEDIUM").toUpperCase();
   const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
   const checklistSummary = agendaChecklistSummary(item);
+  const metadata = agendaMetadata(item);
+  const meetingSummary = agendaMeetingSummary(item);
+  const isMeeting = metadata.agenda_activity_type === "MEETING" || Boolean(metadata.meeting_mode || metadata.meeting_url || metadata.meeting_address);
   if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
     return `
       <article class="lead-agenda-item is-editing">
@@ -17402,6 +17509,40 @@ function agendaCardMarkup(item = {}, options = {}) {
               <option value="HIGH" ${priority === "HIGH" ? "selected" : ""}>Alta</option>
               <option value="URGENT" ${priority === "URGENT" ? "selected" : ""}>Urgente</option>
             </select>
+          </label>
+          <label>
+            <span>Tipo</span>
+            <select name="agenda_activity_type">
+              <option value="TASK" ${!isMeeting ? "selected" : ""}>Tarea</option>
+              <option value="MEETING" ${isMeeting ? "selected" : ""}>Reunión</option>
+            </select>
+          </label>
+          <label>
+            <span>Medio</span>
+            <select name="meeting_mode">
+              <option value="" ${!metadata.meeting_mode ? "selected" : ""}>Sin medio</option>
+              <option value="VIRTUAL" ${metadata.meeting_mode === "VIRTUAL" ? "selected" : ""}>Virtual</option>
+              <option value="IN_PERSON" ${metadata.meeting_mode === "IN_PERSON" ? "selected" : ""}>Presencial</option>
+            </select>
+          </label>
+          <label>
+            <span>Plataforma</span>
+            <select name="meeting_platform">
+              <option value="" ${!metadata.meeting_platform ? "selected" : ""}>No aplica</option>
+              <option value="ZOOM" ${metadata.meeting_platform === "ZOOM" ? "selected" : ""}>Zoom</option>
+              <option value="MEET" ${metadata.meeting_platform === "MEET" ? "selected" : ""}>Google Meet</option>
+              <option value="TEAMS" ${metadata.meeting_platform === "TEAMS" ? "selected" : ""}>Microsoft Teams</option>
+              <option value="WHATSAPP" ${metadata.meeting_platform === "WHATSAPP" ? "selected" : ""}>WhatsApp</option>
+              <option value="OTHER" ${metadata.meeting_platform === "OTHER" ? "selected" : ""}>Otra</option>
+            </select>
+          </label>
+          <label class="span-2">
+            <span>Enlace virtual</span>
+            <input name="meeting_url" type="url" maxlength="1000" value="${escapeHtml(metadata.meeting_url || "")}" placeholder="https://meet.google.com/...">
+          </label>
+          <label class="span-2">
+            <span>Dirección presencial</span>
+            <input name="meeting_address" type="text" maxlength="1000" value="${escapeHtml(metadata.meeting_address || "")}" placeholder="Dirección, sede, local o punto de encuentro">
           </label>
           <label>
             <span>% completado</span>
@@ -17444,6 +17585,7 @@ function agendaCardMarkup(item = {}, options = {}) {
         </div>
         <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
         <p>${escapeHtml(item.note || "")}</p>
+        ${meetingSummary ? `<p class="lead-agenda-meeting-line">${escapeHtml(meetingSummary)}</p>` : ""}
         <div class="lead-agenda-progress" aria-label="Avance ${escapeHtml(String(progress))}%">
           <span style="width: ${escapeHtml(String(progress))}%"></span>
         </div>
@@ -17463,6 +17605,7 @@ function agendaCardMarkup(item = {}, options = {}) {
         ${item.lead_company ? `<span class="table-secondary">${escapeHtml(item.lead_company)}</span>` : ""}
         <div class="activation-row-actions">
           <button class="ghost-button" type="button" data-agenda-open-lead="${escapeHtml(leadRef.id || "")}" data-source-type="${escapeHtml(leadRef.source_type)}">Ficha</button>
+          ${isMeeting ? `<a class="ghost-button" href="${escapeHtml(agendaMeetingWhatsAppUrl(item))}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
           <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
           ${done
             ? `<button class="ghost-button" type="button" data-agenda-status="${escapeHtml(item.id)}" data-next-status="OPEN">Reabrir</button>`
@@ -17515,12 +17658,13 @@ function agendaCompactCardMarkup(item = {}) {
   const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
   const status = String(item.agenda_status || "OPEN").toUpperCase();
   const isDone = status === "DONE";
+  const meetingSummary = agendaMeetingSummary(item);
   return `
     <article class="lead-agenda-compact-card">
       <button class="lead-agenda-compact-main" type="button" data-agenda-open-lead="${escapeHtml(item.source_id || item.lead_id || "")}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
         <span>${escapeHtml(formatTimeOnly(item.reminder_at))}</span>
         <strong>${escapeHtml(item.next_action || item.note || "Seguimiento")}</strong>
-        <small>${escapeHtml(item.lead_name || "Contacto")} · ${escapeHtml(agendaPriorityLabel(priority))} · ${progress}%</small>
+        <small>${escapeHtml([item.lead_name || "Contacto", meetingSummary || agendaPriorityLabel(priority), `${progress}%`].filter(Boolean).join(" · "))}</small>
       </button>
       <div class="lead-agenda-mini-actions">
         <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
@@ -17826,6 +17970,7 @@ async function updateAgendaItemFromForm(event, noteId) {
       agenda_priority: data.get("agenda_priority") || "MEDIUM",
       progress_percent: progress,
       checklist: agendaChecklistItems(data.get("checklist")),
+      metadata: agendaMeetingPayloadFromFields(data),
     }, "Tarea editada.");
   } catch (error) {
     showFeedback(error.message || "No se pudo editar la tarea.", "error");
@@ -17888,6 +18033,7 @@ async function createAgendaItemFromForm(event) {
         agenda_priority: leadAgendaPriorityInput?.value || "MEDIUM",
         progress_percent: progress,
         checklist: agendaChecklistItems(leadAgendaChecklistInput?.value || ""),
+        metadata: agendaMeetingPayloadFromFields(),
       }),
     });
     if (result?.item?.id) {
@@ -17904,6 +18050,11 @@ async function createAgendaItemFromForm(event) {
     leadAgendaActionInput.value = "";
     leadAgendaNoteInput.value = "";
     if (leadAgendaPriorityInput) leadAgendaPriorityInput.value = "MEDIUM";
+    if (leadAgendaActivityTypeInput) leadAgendaActivityTypeInput.value = "TASK";
+    if (leadAgendaMeetingModeInput) leadAgendaMeetingModeInput.value = "";
+    if (leadAgendaMeetingPlatformInput) leadAgendaMeetingPlatformInput.value = "";
+    if (leadAgendaMeetingUrlInput) leadAgendaMeetingUrlInput.value = "";
+    if (leadAgendaMeetingAddressInput) leadAgendaMeetingAddressInput.value = "";
     if (leadAgendaProgressInput) leadAgendaProgressInput.value = "0";
     if (leadAgendaChecklistInput) leadAgendaChecklistInput.value = "";
     const nextHour = new Date();
