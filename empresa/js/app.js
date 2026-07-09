@@ -22065,7 +22065,7 @@ window.addEventListener("pageshow", (event) => {
 logoutButton.addEventListener("click", () => {
   stopValidatorScanner();
   resetQrBatchProgress();
-  clearSession({ message: "Sesión cerrada. El portal se reinició para separar completamente los datos de la empresa anterior." });
+  clearSession({ message: "Sesión cerrada" });
   window.location.replace(window.location.pathname);
 });
 refreshButton.addEventListener("click", loadWorkspace);
