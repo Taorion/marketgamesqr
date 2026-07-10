@@ -465,6 +465,376 @@ textarea {
   left: 82px;
 }
 
+.rms-machine-head {
+  align-items: flex-start;
+}
+
+.view-head-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rms-machine-hero {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.4fr);
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+
+.rms-machine-principle,
+.rms-workday-shell {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.rms-machine-principle h3 {
+  margin: 8px 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.rms-machine-principle p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.rms-machine-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rms-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+  min-height: 118px;
+}
+
+.rms-kpi-card strong {
+  font-size: 24px;
+  color: var(--text);
+}
+
+.rms-kpi-card small {
+  color: var(--text-muted);
+}
+
+.rms-workday-shell {
+  margin-bottom: 18px;
+}
+
+.rms-daily-queue {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.rms-queue-section {
+  min-width: 260px;
+  background: var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.rms-queue-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.rms-queue-head h3 {
+  margin: 3px 0 0;
+  font-size: 15px;
+}
+
+.rms-queue-head strong {
+  min-width: 34px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--secondary);
+  font-size: 13px;
+}
+
+.rms-card-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.rms-opportunity-card,
+.rms-loading-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.rms-loading-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.rms-loading-card p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+
+.rms-card-topline,
+.rms-card-title,
+.rms-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rms-card-title {
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+.rms-card-title strong {
+  font-size: 16px;
+}
+
+.rms-card-title small {
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.rms-priority,
+.rms-risk {
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rms-priority.critical {
+  background: rgba(198, 40, 40, 0.12);
+  color: #9f1239;
+}
+
+.rms-priority.high {
+  background: rgba(245, 158, 11, 0.16);
+  color: #92400e;
+}
+
+.rms-priority.medium {
+  background: rgba(7, 89, 133, 0.12);
+  color: #075985;
+}
+
+.rms-priority.low {
+  background: rgba(100, 116, 139, 0.13);
+  color: #475569;
+}
+
+.rms-priority.premium {
+  background: rgba(181, 121, 17, 0.18);
+  color: #7c4a03;
+}
+
+.rms-risk {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-muted);
+}
+
+.rms-card-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.rms-card-facts div {
+  min-width: 0;
+  background: var(--surface-soft);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.rms-card-facts dt {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.rms-card-facts dd {
+  margin: 3px 0 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rms-card-reason {
+  border-left: 3px solid var(--secondary);
+  padding-left: 10px;
+  margin: 12px 0;
+}
+
+.rms-card-reason p,
+.rms-next-action p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.rms-next-action {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(234, 237, 255, 0.48);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.rms-next-action .material-symbols-outlined {
+  color: var(--secondary);
+}
+
+.rms-card-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.rms-journey-shell,
+.rms-playbook-shell {
+  margin-bottom: 18px;
+}
+
+.rms-stage-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(210px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.rms-stage-column {
+  min-width: 210px;
+  background: var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.rms-stage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.rms-stage-head span {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.rms-stage-items {
+  display: grid;
+  gap: 8px;
+}
+
+.rms-stage-item {
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rms-stage-item strong,
+.rms-stage-item small {
+  display: block;
+}
+
+.rms-stage-item small,
+.rms-stage-empty {
+  color: var(--text-muted);
+}
+
+.rms-stage-empty {
+  font-size: 13px;
+}
+
+.rms-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rms-rule-grid article {
+  background: var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.rms-rule-grid p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+@media (max-width: 980px) {
+  .rms-machine-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-daily-queue {
+    grid-template-columns: repeat(5, minmax(250px, 78vw));
+  }
+
+  .rms-rule-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .rms-machine-head,
+  .rms-card-title {
+    display: grid;
+  }
+
+  .view-head-actions {
+    justify-content: flex-start;
+  }
+
+  .rms-machine-kpis,
+  .rms-card-facts,
+  .rms-rule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-daily-queue {
+    grid-template-columns: repeat(5, minmax(238px, 86vw));
+  }
+}
+
 .topbar {
   position: fixed;
   top: 0;

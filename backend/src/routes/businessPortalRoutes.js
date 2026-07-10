@@ -81,6 +81,12 @@ const {
   sendActivation,
   updateAgendaItem,
 } = require("../controllers/leadCrmController");
+const {
+  createAgendaTask: createRmsAgendaTask,
+  dailyQueue: rmsDailyQueue,
+  journeys: rmsJourneys,
+  metrics: rmsMetrics,
+} = require("../controllers/rmsMachineController");
 
 const router = express.Router();
 
@@ -106,6 +112,10 @@ router.get("/leads/agenda", agenda);
 router.post("/leads/agenda", createAgendaItem);
 router.patch("/leads/agenda/:noteId", updateAgendaItem);
 router.delete("/leads/agenda/:noteId", deleteAgendaItem);
+router.get("/rms-machine/daily-queue", rmsDailyQueue);
+router.get("/rms-machine/journeys", rmsJourneys);
+router.get("/rms-machine/metrics", rmsMetrics);
+router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
 router.get("/leads/:leadId", leadDetail);
 router.delete("/leads/:leadId", deleteContact);
 router.post("/leads/:leadId/notes", createNote);
