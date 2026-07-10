@@ -18345,8 +18345,29 @@ function parseAffiliatePurchaseAmount(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function parseAffiliatePurchaseAmount(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+  const cleaned = raw.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
+    return Number(cleaned.replace(/\./g, "").replace(",", "."));
+  }
+  if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) {
+    return Number(cleaned.replace(/,/g, ""));
+  }
+  const normalized = cleaned.replace(/,/g, ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function affiliatePurchaseManualAmount() {
+  return Math.max(0, parseAffiliatePurchaseAmount(affiliatePurchaseAmountInput?.value || 0));
+}
+
 function affiliatePurchaseTotal() {
-  return normalizeAffiliatePurchaseItems().reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
+  const productsTotal = normalizeAffiliatePurchaseItems().reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
+  return productsTotal > 0 ? productsTotal : affiliatePurchaseManualAmount();
 }
 
 function affiliateReferralPointsEstimate(total) {
@@ -18360,13 +18381,16 @@ function affiliateReferralPointsEstimate(total) {
 
 function updateAffiliatePurchaseTotals() {
   const items = normalizeAffiliatePurchaseItems();
-  const total = affiliatePurchaseTotal();
   const namedItems = items.filter((item) => item.name && affiliatePurchaseLineTotal(item) > 0);
+  const productsTotal = namedItems.reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
+  const total = productsTotal > 0 ? productsTotal : affiliatePurchaseManualAmount();
   const productSummary = namedItems.length
     ? namedItems.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 170)
     : "";
   const points = affiliateReferralPointsEstimate(total);
-  if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = String(total || "");
+  if (affiliatePurchaseAmountInput && productsTotal > 0 && document.activeElement !== affiliatePurchaseAmountInput) {
+    affiliatePurchaseAmountInput.value = String(productsTotal || "");
+  }
   if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.value = productSummary || "Compra afiliado";
   if (affiliatePurchaseTotalText) affiliatePurchaseTotalText.textContent = money(total);
   if (affiliatePurchasePointsText) {
@@ -18483,16 +18507,11 @@ async function awardSelectedAffiliatePoints() {
   const amount = Number(purchase.total || 0);
   const campaignId = affiliatePurchaseCampaignInput?.value || "";
   if (!Number.isFinite(amount) || amount <= 0) {
-    setInlineMessage(affiliatePurchaseMessage, "Agrega productos con valor para totalizar la compra.", "error");
-    showFeedback("Agrega productos con valor para totalizar la compra.", "error");
+    setInlineMessage(affiliatePurchaseMessage, "Escribe el monto total de la compra en COP. Los productos son opcionales.", "error");
+    showFeedback("Escribe el monto total de la compra.", "error");
     return;
   }
-  if (!products.length) {
-    setInlineMessage(affiliatePurchaseMessage, "Agrega al menos un producto comprado con nombre y valor.", "error");
-    showFeedback("Agrega al menos un producto comprado.", "error");
-    return;
-  }
-  if (activeCampaignsForAssociation().length && !campaignId) {
+  if (products.length && activeCampaignsForAssociation().length && !campaignId) {
     setInlineMessage(affiliatePurchaseMessage, "Elige la campana que quieres atribuir a esta compra.", "error");
     showFeedback("Elige una campana para atribuir la compra.", "error");
     return;
@@ -18503,6 +18522,41 @@ async function awardSelectedAffiliatePoints() {
   setInlineMessage(affiliatePurchaseMessage, "Registrando compra y calculando puntos del afiliado...", "info");
 
   try {
+    if (!products.length) {
+      const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}/points`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          amount,
+          reason: "PURCHASE_AMOUNT",
+          metadata: {
+            source: "affiliate_purchase_amount_only",
+            affiliate_purchase: true,
+            purchase_total: amount,
+            campaign_id: campaignId || null,
+            products_optional: true,
+            estimated_referral_points: purchase.points,
+            note: affiliatePurchaseNotesInput?.value.trim() || null,
+          },
+        }),
+      });
+      const selectedAffiliateId = state.selectedAffiliateId;
+      if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = "";
+      if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
+      await loadAffiliatesData();
+      state.selectedAffiliateId = selectedAffiliateId;
+      state.selectedAffiliate = data.affiliate || (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
+      await renderAffiliatesView();
+      const awarded = Number(data.awarded || 0);
+      const name = data.affiliate?.full_name || selectedAffiliate.full_name || "El afiliado";
+      const message = awarded
+        ? `${name} recibio ${awarded.toLocaleString("es-CO")} puntos por una compra de ${money(amount)}.`
+        : `La compra de ${money(amount)} no genero puntos con la regla actual.`;
+      setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
+      showFeedback(message, awarded ? "success" : "info", { title: "Puntos por compra" });
+      return;
+    }
+
     const data = await api("/api/business/customer-acquisition-sales", {
       method: "POST",
       headers: authHeaders(),
@@ -18534,6 +18588,7 @@ async function awardSelectedAffiliatePoints() {
     const awarded = Number(data.referral?.points_awarded || 0);
     const selectedAffiliateId = state.selectedAffiliateId;
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
+    if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = "";
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
     await loadAffiliatesData();
     state.selectedAffiliateId = selectedAffiliateId;
@@ -18563,7 +18618,7 @@ async function awardSelectedAffiliatePoints() {
     showFeedback(error.message, "error");
   } finally {
     affiliateAddPointsButton.disabled = false;
-    affiliateAddPointsButton.textContent = "Registrar compra";
+    affiliateAddPointsButton.textContent = "Sumar puntos por compra";
   }
 }
 
@@ -24553,6 +24608,7 @@ affiliatePurchaseAddItemButton?.addEventListener("click", () => {
   ];
   renderAffiliatePurchaseItems();
 });
+affiliatePurchaseAmountInput?.addEventListener("input", updateAffiliatePurchaseTotals);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
 affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);

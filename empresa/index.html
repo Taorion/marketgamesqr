@@ -4718,6 +4718,11 @@
                     <span>Campaña de la compra</span>
                     <select id="affiliatePurchaseCampaignInput"></select>
                   </label>
+                  <label>
+                    <span>Monto total de la compra COP</span>
+                    <input id="affiliatePurchaseAmountInput" type="text" inputmode="numeric" placeholder="Ej: 120.000">
+                    <small>Es suficiente para sumar puntos al afiliado. Los productos son opcionales.</small>
+                  </label>
                   <div class="affiliate-purchase-summary">
                     <span>Total compra</span>
                     <strong id="affiliatePurchaseTotalText">$0</strong>
@@ -4734,9 +4739,8 @@
                     </div>
                     <div class="affiliate-purchase-items" id="affiliatePurchaseItemsList"></div>
                     <input id="affiliatePurchaseProductInput" type="hidden">
-                    <input id="affiliatePurchaseAmountInput" type="hidden">
                   </div>
-                  <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Registrar compra</button>
+                  <button class="solid-button" id="affiliateAddPointsButton" type="button" disabled>Sumar puntos por compra</button>
                   <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Abrir carnet digital</button>
                   <button class="ghost-button" id="copyAffiliateCardLinkButton" type="button" disabled>Copiar link</button>
                   <p class="form-message span-2" id="affiliatePurchaseMessage"></p>
