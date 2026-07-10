@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-lead-channel-association-v1";
+const APP_VERSION = "empresa-20260710-lead-channel-association-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1373,9 +1373,9 @@ const ACQUISITION_SOURCE_LABELS = {
   STORE_WALK_IN: "Vio el almacen",
   FRIEND_REFERRAL: "Recomendación de un amigo",
   FAIR_EVENT: "Feria o evento",
-  INTERNET_SEARCH: "Internet / buscador",
+  INTERNET_SEARCH: "Google / buscador",
   SOCIAL_MEDIA: "Redes sociales",
-  PAID_ADS: "Pauta digital",
+  PAID_ADS: "Google Ads / pauta digital",
   QR_SCAN: "Ticket / pieza impresa",
   OTHER: "Otro",
 };
@@ -15013,7 +15013,7 @@ const STRATEGY_WIZARD_OPTIONS = {
   nextActions: ["Enviar ebook", "Enviar WhatsApp automático", "Agendar demo", "Enviar caso de uso", "Asignar asesor", "Enviar oferta piloto", "Mandar cupón", "Activar beneficio", "Invitar a evento", "Enviar campaña de seguimiento", "Clasificar en seguimiento", "Crear tarea comercial"],
   dynamics: ["Batalla naval", "Ruleta de premios", "Trivia de marca", "Raspa y gana", "Reto de referidos", "Club de puntos", "Ranking de clientes", "Giftcard / Reward Pass", "Captura relámpago de leads", "Alianza cruzada", "Activación elegante sin juego visible"],
   rewards: ["Descuento porcentual", "Descuento fijo", "Obsequio físico", "Ebook / catálogo / activo digital", "Diagnóstico gratuito", "Sesión de asesoría", "Puntos acumulables", "Giftcard", "Entrada a sorteo", "Acceso VIP", "Producto de muestra", "Beneficio de aliado", "Segundo producto con descuento", "Otro"],
-  channels: ["Instagram", "Facebook", "TikTok", "Volantes", "Influencer", "Evento fisico", "WhatsApp", "Punto de venta", "Otro"],
+  channels: ["Instagram", "Facebook", "WhatsApp", "Pagina web", "Google", "Google Ads", "Google Maps", "TikTok", "Email", "Landing", "Punto de venta", "Evento fisico", "Referido", "QR", "Otro"],
   validationMethods: ["Punto físico", "WhatsApp", "Web", "Asesor", "URL interna de validación"],
   campaignCadence: ["Activación relámpago", "Semanal", "Mensual", "Permanente"],
   ticketTypes: ["Lead ticket", "Reward ticket", "Redemption ticket", "Referral ticket", "Giftcard ticket", "Event ticket", "Post-sale ticket", "Digital asset ticket"],
@@ -19266,22 +19266,27 @@ function manualContactCampaignOptions(contact = {}) {
     .join("");
 }
 
+const COMMERCIAL_CHANNEL_OPTIONS = [
+  "Instagram",
+  "Facebook",
+  "WhatsApp",
+  "Pagina web",
+  "Google",
+  "Google Ads",
+  "Google Maps",
+  "TikTok",
+  "Email",
+  "Landing",
+  "Referido",
+  "Punto de venta",
+  "Evento fisico",
+  "QR",
+  "Otro",
+];
+
 function manualContactChannelOptions(contact = {}) {
   const values = [
-    "WhatsApp",
-    "Instagram",
-    "Facebook",
-    "TikTok",
-    "Punto de venta",
-    "Evento fisico",
-    "Vitrina",
-    "QR",
-    "Referido",
-    "Landing",
-    "Email",
-    "Llamada",
-    "Directorio de contactos",
-    "Otro",
+    ...COMMERCIAL_CHANNEL_OPTIONS,
     contact.preferred_channel,
     contact.source,
     contact.source_detail,
@@ -19405,7 +19410,7 @@ async function assignManualContactToCampaign(manualLeadId) {
     .find((item) => String(item.dataset.manualContactChannelSelect) === String(manualLeadId));
   const channel = String(channelSelect?.value || "").trim();
   if (!channel) {
-    showFeedback("Selecciona el canal para saber si este lead viene por WhatsApp, vitrina, evento, QR u otro origen.", "error", { title: "Contactos" });
+    showFeedback("Selecciona el canal para saber si este lead viene por Instagram, Facebook, WhatsApp, Web, Google u otro origen.", "error", { title: "Contactos" });
     return;
   }
   try {
