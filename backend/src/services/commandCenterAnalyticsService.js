@@ -730,7 +730,7 @@ async function getSeriesAndCharts(businessId, filters) {
        where ($${matrixParams.push(filters.channel)}::text is null or channel = $${matrixParams.length}::text)
        group by campaign_id, campaign_name, channel
        order by revenue desc, sales desc, leads desc
-       limit 120`,
+       limit 240`,
       matrixParams
     ),
     query(
@@ -818,17 +818,26 @@ async function getSeriesAndCharts(businessId, filters) {
     ),
   ]);
 
+  const matrixRows = matrix.rows.map((row) => ({
+    campaign_id: row.campaign_id,
+    campaign_name: row.campaign_name,
+    channel: SOURCE_LABELS[row.channel] || row.channel,
+    raw_channel: row.channel,
+    leads: number(row.leads),
+    qr_generated: number(row.qr_generated),
+    redemptions: number(row.redemptions),
+    sales: number(row.sales),
+    revenue: number(row.revenue),
+    conversion_rate: number(row.conversion_rate),
+  }));
+  const channelPerformance = buildChannelPerformance(matrixRows);
+
   return {
     timeline: timeline.rows.map((row) => ({
       ...row,
       revenue: number(row.revenue),
     })),
-    channels: channelRows.rows.map((row) => ({
-      label: SOURCE_LABELS[row.channel] || row.channel,
-      channel: row.channel,
-      sales: number(row.sales),
-      revenue: number(row.revenue),
-    })),
+    channels: channelPerformance,
     heatmap: heatmap.rows.map((row) => ({
       dow: number(row.dow),
       hour: number(row.hour),
@@ -857,18 +866,7 @@ async function getSeriesAndCharts(businessId, filters) {
         cac: safeDivide(investment, sales) || 0,
       };
     }),
-    matrix: matrix.rows.map((row) => ({
-      campaign_id: row.campaign_id,
-      campaign_name: row.campaign_name,
-      channel: SOURCE_LABELS[row.channel] || row.channel,
-      raw_channel: row.channel,
-      leads: number(row.leads),
-      qr_generated: number(row.qr_generated),
-      redemptions: number(row.redemptions),
-      sales: number(row.sales),
-      revenue: number(row.revenue),
-      conversion_rate: number(row.conversion_rate),
-    })),
+    matrix: matrixRows,
     qr_status: qrStatus.rows.map((row) => ({ label: row.status, value: number(row.count) })),
     branches: branches.rows.map((row) => {
       const sales = number(row.sales);
@@ -899,6 +897,55 @@ async function getSeriesAndCharts(businessId, filters) {
       retention_rate: safeRate(row.post_sale_redeemed, row.post_sale_qr),
     })),
   };
+}
+
+function buildChannelPerformance(matrixRows = []) {
+  const grouped = new Map();
+  matrixRows.forEach((row) => {
+    const label = row.channel || "Sin canal";
+    if (!grouped.has(label)) {
+      grouped.set(label, {
+        label,
+        channel: row.raw_channel || label,
+        raw_channel: row.raw_channel || label,
+        leads: 0,
+        qr_generated: 0,
+        redemptions: 0,
+        sales: 0,
+        revenue: 0,
+        top_campaign: "",
+        top_campaign_id: null,
+        top_campaign_revenue: 0,
+        top_campaign_sales: 0,
+      });
+    }
+    const channel = grouped.get(label);
+    channel.leads += number(row.leads);
+    channel.qr_generated += number(row.qr_generated);
+    channel.redemptions += number(row.redemptions);
+    channel.sales += number(row.sales);
+    channel.revenue += number(row.revenue);
+    const rowRevenue = number(row.revenue);
+    const rowSales = number(row.sales);
+    if (
+      !channel.top_campaign
+      || rowRevenue > channel.top_campaign_revenue
+      || (rowRevenue === channel.top_campaign_revenue && rowSales > channel.top_campaign_sales)
+    ) {
+      channel.top_campaign = row.campaign_name || "Sin campana";
+      channel.top_campaign_id = row.campaign_id || null;
+      channel.top_campaign_revenue = rowRevenue;
+      channel.top_campaign_sales = rowSales;
+    }
+  });
+  return Array.from(grouped.values())
+    .map((channel) => ({
+      ...channel,
+      conversion_rate: safeRate(channel.sales, channel.leads),
+      redemption_rate: safeRate(channel.redemptions, channel.qr_generated),
+      avg_ticket: safeDivide(channel.revenue, channel.sales) || 0,
+    }))
+    .sort((a, b) => b.revenue - a.revenue || b.sales - a.sales || b.leads - a.leads);
 }
 
 function scoreDimension(value, target) {
@@ -1091,6 +1138,7 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
     timeline: charts.timeline,
     heatmap: charts.heatmap,
     campaign_channel_matrix: charts.matrix,
+    channel_performance: charts.channels,
     revenue_treemap: charts.channels,
     campaign_comparison: powerTable,
     attribution_sankey: buildSankey(charts),

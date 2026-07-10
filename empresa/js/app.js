@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-lead-channel-association-v2";
+const APP_VERSION = "empresa-20260710-lead-channel-association-v3";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1418,7 +1418,7 @@ const DATA_DICTIONARY = {
   avg_ticket: { name: "Ticket promedio", description: "Valor promedio de compra por venta registrada.", formula: "Revenue atribuido / ventas registradas.", example: "$1.000.000 / 5 ventas = $200.000.", decisión: "Canales de menor volumen pueden valer más si traen ticket alto." },
   cac: { name: "CAC", description: "Costo estimado de adquirir una venta o cliente.", formula: "Inversión atribuida / ventas registradas.", example: "$300.000 de pauta / 10 ventas = $30.000 por venta.", decisión: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
   roi: { name: "ROI", description: "Retorno estimado de la inversión de marketing.", formula: "(Revenue - inversión) / inversión.", example: "$1.200.000 de revenue con $300.000 de inversión = 3x.", decisión: "Repite y escala campañas con ROI positivo y datos confiables." },
-  channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificación de leads, tickets, redenciones o ventas por fuente.", example: "Instagram, referidos, vitrina, feria o ticket físico.", decisión: "Compara canales por revenue, no solo por volumen." },
+  channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificación de leads, tickets, redenciones o ventas por fuente.", example: "Instagram, Facebook, WhatsApp, Página web o Google.", decisión: "Compara canales por revenue, no solo por volumen." },
   affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con tickets o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendación.", example: "Un cliente compra por ticket de un afiliado.", decisión: "Premia afiliados con alto ticket y entregales más tickets." },
   branch: { name: "Sucursal", description: "Punto físico o sede donde se redime, vende o atiende.", formula: "Agrupación de redenciones y ventas por branch_id.", example: "Sucursal Norte convierte mejor que Centro.", decisión: "Replica prácticas de la sede líder y capacita sedes rezagadas." },
   campaign: { name: "Campaña", description: "Estrategia comercial o promocional conectada a tickets, leads y revenue.", formula: "Datos agrupados por campaign_id.", example: "Feria Junio, Lanzamiento postventa o pauta Instagram.", decisión: "Escala campañas con conversión y revenue; optimiza las de solo leads." },
@@ -1433,6 +1433,7 @@ const CHART_FOCUS_REGISTRY = {
   heatmap: { title: "Heatmap horario", subtitle: "Redenciones por día y hora", chartType: "heatmap", primaryMetric: "redemptions", description: "Muestra cuando se concentran las redenciones.", calculation: "Cuenta redenciones por día de semana y hora.", businessMeaning: "Sirve para reforzar equipo, horarios y activaciones.", recommendedActions: ["Refuerza vendedores en horas calientes.", "Activa recordatorios antes de los mejores bloques.", "Compara sucursales si una hora convierte mejor."], supportedDrilldowns: ["weekday", "hour"], relatedMetrics: ["redeemed_qr", "branch", "conversion_rate"], dataDictionaryKeys: ["redeemed_qr", "branch", "conversion_rate"] },
   matrix: { title: "Matriz campaña vs canal", subtitle: "Cruce exacto entre estrategia y fuente", chartType: "matrix", primaryMetric: "revenue", description: "Cruza campañas con canales para encontrar combinaciones rentables.", calculation: "Agrupa leads, tickets, redenciones, ventas y revenue por campaña y canal.", businessMeaning: "Identifica que combinacion merece repetirse, optimizarse o pausarse.", recommendedActions: ["Escala celdas con revenue alto.", "Optimiza celdas con leads pero baja venta.", "Investiga celdas vacias con gasto o esfuerzo comercial."], supportedDrilldowns: ["campaign", "channel", "metric"], relatedMetrics: ["campaign", "channel", "revenue", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "conversion_rate"] },
   treemap: { title: "Treemap de revenue por canal", subtitle: "Canales que aportan ingreso real", chartType: "treemap", primaryMetric: "revenue", description: "Dimensiona los canales según el revenue atribuido.", calculation: "Suma ventas registradas por canal de llegada.", businessMeaning: "Diferencia canales de ruido contra canales que compran.", recommendedActions: ["Escala el canal con mejor revenue y conversión.", "No descartes canales chicos si tienen ticket alto.", "Completa origen de ventas para mejorar la lectura."], supportedDrilldowns: ["channel"], relatedMetrics: ["channel", "revenue", "avg_ticket", "roi"], dataDictionaryKeys: ["channel", "revenue", "avg_ticket", "roi"] },
+  "channel-performance": { title: "Canales independientes", subtitle: "Instagram, Facebook, WhatsApp, Web y Google comparados", chartType: "table", primaryMetric: "revenue", description: "Compara canales como dimensión propia, separada de campañas.", calculation: "Agrupa la matriz campaña/canal por canal y suma leads, tickets, redenciones, ventas y revenue.", businessMeaning: "Permite saber qué canal trae volumen, qué canal convierte y qué campaña domina dentro de cada canal.", recommendedActions: ["Escala canales con revenue y conversión.", "Optimiza canales con leads sin ventas.", "Cruza el canal con la campaña dominante antes de invertir más."], supportedDrilldowns: ["channel", "campaign"], relatedMetrics: ["channel", "lead", "revenue", "conversion_rate"], dataDictionaryKeys: ["channel", "lead", "revenue", "conversion_rate", "avg_ticket"] },
   "campaign-comparison": { title: "Campañas comparadas", subtitle: "Leads, tickets, redenciones, ventas y revenue", chartType: "bar", primaryMetric: "revenue", description: "Compara campañas por impacto comercial.", calculation: "Agrupa métricas RMS por campaña y las ordena por desempeño.", businessMeaning: "Permite decidir que campaña repetir, escalar, optimizar o pausar.", recommendedActions: ["Abre la campaña ganadora y replica su canal.", "Optimiza campañas con leads sin ventas.", "Pausa campañas sin revenue ni conversión."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "lead", "redeemed_qr", "revenue"], dataDictionaryKeys: ["campaign", "lead", "redeemed_qr", "revenue", "roi"] },
   sankey: { title: "Sankey RMS", subtitle: "Flujo de atribución", chartType: "sankey", primaryMetric: "revenue", description: "Conecta canal, campaña, ticket/redención, venta y revenue.", calculation: "Construye enlaces agregados desde origen hasta venta registrada.", businessMeaning: "Explica como se mueve el valor dentro del RMS.", recommendedActions: ["Haz foco en enlaces con mayor salida a ventas.", "Investiga nodos con mucho volumen y baja continuidad.", "Aplica filtro global sobre el nodo más rentable."], supportedDrilldowns: ["node", "channel", "campaign"], relatedMetrics: ["channel", "campaign", "revenue"], dataDictionaryKeys: ["channel", "campaign", "redeemed_qr", "revenue"] },
   "affiliate-network": { title: "Red de afiliados y referidos", subtitle: "Voz a voz medible", chartType: "network", primaryMetric: "revenue", description: "Muestra afiliados como nodos conectados al negocio.", calculation: "Agrupa actividad, puntos, compras y revenue por afiliado.", businessMeaning: "Detecta quienes recomiendan clientes que compran.", recommendedActions: ["Premia afiliados con alto revenue.", "Genera más tickets para afiliados activos.", "Reactiva afiliados sin última actividad."], supportedDrilldowns: ["affiliate"], relatedMetrics: ["affiliate", "revenue", "avg_ticket"], dataDictionaryKeys: ["affiliate", "revenue", "avg_ticket"] },
@@ -4925,6 +4926,46 @@ function renderTreemapChart(rows = []) {
     </div>`;
 }
 
+function renderChannelPerformanceTable(rows = []) {
+  const channelRows = (rows || []).filter((row) => row?.label || row?.channel);
+  if (!channelRows.length) {
+    return commandEmpty("Aún no hay canales para analizar.", "Asocia leads a canales como Instagram, Facebook, WhatsApp, Web o Google para ver su rendimiento independiente.");
+  }
+  return `
+    <div class="table-wrap command-table-wrap">
+      <table class="command-table">
+        <thead>
+          <tr>
+            <th>Canal</th>
+            <th>Leads</th>
+            <th>Tickets</th>
+            <th>Redenciones</th>
+            <th>Ventas</th>
+            <th>Revenue</th>
+            <th>Conversión</th>
+            <th>Ticket prom.</th>
+            <th>Campaña dominante</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${channelRows.map((row) => `
+            <tr data-command-focus="channel-performance" data-focus-channel="${escapeHtml(row.label || row.channel)}" tabindex="0" role="button">
+              <td><strong>${escapeHtml(row.label || row.channel || "Sin canal")}</strong><small>${escapeHtml(row.raw_channel || row.channel || "")}</small></td>
+              <td>${toNumber(row.leads).toLocaleString("es-CO")}</td>
+              <td>${toNumber(row.qr_generated).toLocaleString("es-CO")}</td>
+              <td>${toNumber(row.redemptions).toLocaleString("es-CO")}</td>
+              <td>${toNumber(row.sales).toLocaleString("es-CO")}</td>
+              <td>${money(row.revenue)}</td>
+              <td>${toNumber(row.conversion_rate)}%</td>
+              <td>${money(row.avg_ticket || 0)}</td>
+              <td>${escapeHtml(row.top_campaign || "Sin campaña dominante")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
 function renderSankeyChart(data = {}) {
   const nodes = data.nodes || [];
   const links = data.links || [];
@@ -5332,6 +5373,7 @@ function renderCommandCenter() {
         <article class="command-panel" data-command-focus="heatmap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Heatmap horario</span><h3>Redenciones por día y hora</h3><p>Decisión: refuerza vendedores en franjas calientes.</p></div>${commandPanelActions("heatmap")}</div>${renderHeatmapChart(data.heatmap)}</article>
         <article class="command-panel command-wide" data-command-focus="matrix" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Matrix chart</span><h3>Campaña vs canal</h3><p>Decisión: encuentra el cruce exacto que produce ventas o revenue.</p></div>${commandPanelActions("matrix")}</div>${renderMatrixChart(data.campaign_channel_matrix)}</article>
         <article class="command-panel" data-command-focus="treemap" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Treemap revenue</span><h3>Revenue por canal</h3></div>${commandPanelActions("treemap")}</div>${renderTreemapChart(data.revenue_treemap)}</article>
+        <article class="command-panel command-wide" data-command-focus="channel-performance" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Canales independientes</span><h3>Rendimiento por canal</h3><p>Compara Instagram, Facebook, WhatsApp, Web, Google y otros canales sin depender de una sola campaña.</p></div>${commandPanelActions("channel-performance")}</div>${renderChannelPerformanceTable(data.channel_performance || data.revenue_treemap || [])}</article>
         <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campañas comparadas</span><h3>Leads, tickets, redenciones, ventas y revenue</h3></div>${commandPanelActions("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribución</h3></div>${commandPanelActions("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
         <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandPanelActions("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
@@ -5683,7 +5725,7 @@ function renderDataPointFocus(chartId, context = {}) {
 }
 
 function focusChartSequence() {
-  return ["executive-summary", "rms-funnel", "revenue-score", "timeline", "heatmap", "matrix", "treemap", "campaign-comparison", "sankey", "affiliate-network", "branch-ranking", "qr-status", "scatter", "waterfall", "cohorts", "power-table"];
+  return ["executive-summary", "rms-funnel", "revenue-score", "timeline", "heatmap", "matrix", "treemap", "channel-performance", "campaign-comparison", "sankey", "affiliate-network", "branch-ranking", "qr-status", "scatter", "waterfall", "cohorts", "power-table"];
 }
 
 function moveChartFocus(direction) {
@@ -5818,10 +5860,12 @@ function chartFocusRecords(chartId, context = {}) {
         .map((row) => [row.campaign_name, row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue)]),
     };
   }
-  if (chartId === "treemap" || chartId === "waterfall") {
+  if (chartId === "treemap" || chartId === "waterfall" || chartId === "channel-performance") {
     return {
-      columns: ["Canal", "Leads", "Ventas", "Revenue", "Conversión"],
-      rows: (data.revenue_treemap || []).map((row) => [row.label, row.leads, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`]),
+      columns: ["Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Conversión", "Campaña dominante"],
+      rows: (data.channel_performance || data.revenue_treemap || [])
+        .filter((row) => !context.channel || row.label === context.channel || row.channel === context.channel)
+        .map((row) => [row.label || row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`, row.top_campaign || "-"]),
     };
   }
   if (chartId === "affiliate-network") {
@@ -5892,6 +5936,9 @@ function focusNarrative(chartId, context = {}) {
   if (chartId === "treemap") {
     return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue. Si este canal también convierte bien, conviene escalarlo; si solo trae volumen, revisa ticket y calidad del cierre.`;
   }
+  if (chartId === "channel-performance") {
+    return `${topChannel?.label || "El canal principal"} lidera la lectura de canales con ${toNumber(topChannel?.leads || 0)} leads, ${toNumber(topChannel?.sales || 0)} ventas y ${money(topChannel?.revenue || 0)}. Revisa su campaña dominante antes de invertir más presupuesto.`;
+  }
   if (chartId === "power-table" || chartId === "campaign-comparison" || chartId === "scatter") {
     return `${topCampaign?.campaign_name || "La campaña principal"} lidera la lectura con ${money(topCampaign?.revenue || 0)}. Su decisión sugerida es ${topCampaign?.decision_hint || "Investigar"} porque ${topCampaign?.decision_reason || "faltan datos completos de conversión y revenue"}.`;
   }
@@ -5911,6 +5958,7 @@ function renderFocusVisualization(chartId, context = {}) {
   if (chartId === "heatmap") return renderHeatmapChart(data.heatmap || []);
   if (chartId === "matrix") return renderMatrixChart(data.campaign_channel_matrix || []);
   if (chartId === "treemap") return renderTreemapChart(data.revenue_treemap || []);
+  if (chartId === "channel-performance") return renderChannelPerformanceTable(data.channel_performance || data.revenue_treemap || []);
   if (chartId === "sankey") return renderSankeyChart(data.attribution_sankey || {});
   if (chartId === "affiliate-network") return renderAffiliateNetwork(data.affiliate_network || {});
   if (chartId === "cohorts") return renderCohortChart(data.cohorts || []);
