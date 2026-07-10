@@ -8,6 +8,7 @@ const {
   getAffiliatePointRules,
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
+const { syncSaleProductsWithCatalog } = require("./productCatalogService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
@@ -2050,9 +2051,27 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
     let relatedAffiliate = affiliateResult.rows[0] || null;
     const affiliatePointRules = relatedAffiliate ? await getAffiliatePointRules(businessId) : null;
     const referralPoints = affiliatePointRules ? referralPointsForAmount(amount, affiliatePointRules) : 0;
+    const saleProducts = [{
+      name: payload.product_name || "Compra registrada",
+      inventory_product_id: payload.metadata?.inventory_product_id || null,
+      category: payload.category || payload.metadata?.category || null,
+      quantity: 1,
+      unit_price: amount,
+      line_total: amount,
+      currency: payload.currency || "COP",
+    }];
+    const catalogSync = await syncSaleProductsWithCatalog(client, businessId, user?.id || null, saleProducts, {
+      currency: payload.currency || "COP",
+      category: payload.category || payload.metadata?.category || null,
+      sourceModule: "lead_purchase",
+    });
     const metadata = {
       ...(payload.metadata || {}),
       category: payload.category || payload.metadata?.category || null,
+      products: catalogSync.products,
+      auto_created_products: catalogSync.autoCreatedProducts,
+      matched_products: catalogSync.matchedProducts,
+      product_catalog_sync: true,
       crm_entry: true,
       crm_source_type: source,
       crm_source_id: lead.id,

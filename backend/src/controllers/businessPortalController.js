@@ -26,6 +26,7 @@ const {
   referralPointsForAmount,
   rulesFromSettings,
 } = require("../services/affiliatePointRulesService");
+const { syncSaleProductsWithCatalog } = require("../services/productCatalogService");
 const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
 
@@ -2184,6 +2185,31 @@ async function createCustomerAcquisitionSale(req, res, next) {
         ? referralPointsForAmount(body.sale_amount, affiliatePointRules)
         : 0;
       const autoMatchedAffiliate = Boolean(referredAffiliate && !body.referred_affiliate_id);
+      const saleProducts = Array.isArray(body.metadata?.products) && body.metadata.products.length
+        ? body.metadata.products
+        : [{
+            name: body.product_name || "Venta registrada",
+            quantity: 1,
+            unit_price: body.sale_amount,
+            line_total: body.sale_amount,
+            currency: body.currency || "COP",
+          }];
+      const catalogSync = await syncSaleProductsWithCatalog(client, businessId, req.user.id, saleProducts, {
+        currency: body.currency || "COP",
+        sourceModule: body.metadata?.affiliate_purchase ? "affiliate_purchase" : "customer_acquisition_sale",
+      });
+      const saleMetadata = {
+        ...body.metadata,
+        products: catalogSync.products,
+        auto_created_products: catalogSync.autoCreatedProducts,
+        matched_products: catalogSync.matchedProducts,
+        product_catalog_sync: true,
+        capture_source: "customer_acquisition",
+        conversion_source: "contact_center_sale",
+        affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : body.referred_affiliate_id ? "manual_selection" : null,
+        related_affiliate_id: referredAffiliate?.id || null,
+        ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
+      };
 
       const saleResult = await client.query(
         `insert into business_sales
@@ -2209,33 +2235,9 @@ async function createCustomerAcquisitionSale(req, res, next) {
           referredAffiliate?.id || null,
           referralPoints,
           body.notes || null,
-          {
-            ...body.metadata,
-            capture_source: "customer_acquisition",
-            conversion_source: "contact_center_sale",
-            affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : body.referred_affiliate_id ? "manual_selection" : null,
-            related_affiliate_id: referredAffiliate?.id || null,
-            ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
-          },
+          saleMetadata,
         ]
       );
-
-      const inventoryItems = saleInventoryItems(body.metadata?.products);
-      for (const item of inventoryItems) {
-        const updatedInventory = await client.query(
-          `update business_inventory_products
-           set stock_quantity = greatest(0, stock_quantity - $3::numeric),
-               updated_at = now()
-           where id = $1
-             and business_id = $2
-             and status <> 'ARCHIVED'
-           returning id`,
-          [item.inventory_product_id, businessId, item.quantity]
-        );
-        if (!updatedInventory.rowCount) {
-          throw badRequest("Uno de los productos seleccionados no existe en el inventario activo del negocio.");
-        }
-      }
 
       const matchParams = [
         businessId,

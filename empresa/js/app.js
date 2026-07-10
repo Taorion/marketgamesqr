@@ -1912,7 +1912,7 @@ function clearBusinessWorkspaceUi() {
     [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
-    [inventoryTable, 7, "Abre Inventario para cargar productos."],
+    [inventoryTable, 7, "Abre Productos para cargar productos."],
     [competitionTable, 9, "Abre Radar Competitivo para cargar productos y precios."],
     [competitorTable, 7, "Abre Radar Competitivo para cargar competidores."],
     [competitionFindingsTable, 7, "Abre Radar Competitivo para cargar hallazgos."],
@@ -2919,7 +2919,7 @@ function benefitProductScopeLabel(value = {}, metadata = {}) {
     : scope.mode === "applies_to_product"
       ? "Aplica a"
       : "Producto";
-  const sourceLabel = scope.source === "inventory" ? "inventario" : "abierto";
+  const sourceLabel = scope.source === "inventory" ? "producto guardado" : "abierto";
   return `${modeLabel}: ${scope.product_name} (${sourceLabel})`;
 }
 
@@ -8860,7 +8860,7 @@ function renderQrBatchResultCard(batch, options = {}) {
       <article class="qr-batch-stat">
         <span class="mono-label">Ticket creados</span>
         <strong>${escapeHtml(quantity)}</strong>
-        <span class="table-secondary">Inventario ya guardado en el portal</span>
+        <span class="table-secondary">Productos ya guardados en el portal</span>
       </article>
       <article class="qr-batch-stat">
         <span class="mono-label">Disponibles</span>
@@ -9471,7 +9471,7 @@ function renderCustomerSaleItems() {
   if (!customerSaleItemsContainer) return;
   ensureCustomerSaleItems();
   customerSaleItemsContainer.innerHTML = state.customerSaleItems.map((item, index) => {
-    const productLabel = item.inventory_product_id ? "Inventario" : "Producto abierto";
+    const productLabel = item.inventory_product_id ? "Producto guardado" : "Producto abierto";
     const selectedProductValue = item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.name ? OPEN_PRODUCT_VALUE : "");
     return `
       <div class="sales-item-row" data-sale-item-index="${index}">
@@ -10952,7 +10952,7 @@ function productSelectSelectionForValue(value = "") {
 function inventoryProductSelectOptions(selectedValue = "", options = {}) {
   const selected = String(selectedValue || "");
   const placeholder = options.placeholder || "Sin producto especifico";
-  const openLabel = options.openLabel || "Producto abierto / no esta en inventario";
+  const openLabel = options.openLabel || "Producto abierto / no esta en Productos";
   const option = (value, label) => `<option value="${escapeHtml(value)}" ${selected === value ? "selected" : ""}>${escapeHtml(label)}</option>`;
   return [
     option("", placeholder),
@@ -10981,7 +10981,7 @@ function setProductInputValue(productInput, value = "") {
   if (productInput.tagName === "SELECT" && !Array.from(productInput.options || []).some((option) => option.value === selected)) {
     productInput.innerHTML = inventoryProductSelectOptions(selected, {
       placeholder: productInput.dataset.placeholder || "Sin producto especifico",
-      openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en inventario",
+      openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en Productos",
     });
   }
   productInput.value = selected;
@@ -10999,7 +10999,7 @@ function renderProductSelect(productInput) {
   if (selected === OPEN_PRODUCT_VALUE && openInput && currentRaw) openInput.value = currentRaw;
   productInput.innerHTML = inventoryProductSelectOptions(selected, {
     placeholder: productInput.dataset.placeholder || "Sin producto especifico",
-    openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en inventario",
+    openLabel: productInput.dataset.openLabel || "Producto abierto / no esta en Productos",
   });
   productInput.value = selected;
   syncProductOpenInput(productInput);
@@ -11012,7 +11012,7 @@ function renderInventoryProductOptions() {
 async function loadInventoryProducts(options = {}) {
   if (state.inventoryLoaded && !options.force) return state.inventoryProducts;
   if (!options.quiet && inventoryTable) {
-    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando inventario...</td></tr>';
+    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
   }
   const data = await apiSafe("/api/business/inventory/products?limit=500", { headers: authHeaders() }, { products: [] });
   state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
@@ -11036,8 +11036,8 @@ function inventoryKpis(products = state.inventoryProducts || []) {
   const lowStock = active.filter((item) => Number(item.stock_quantity || 0) <= Number(item.min_stock_quantity || 0)).length;
   return [
     { label: "Productos activos", value: active.length.toLocaleString("es-CO"), meta: "Disponibles para venta" },
-    { label: "Unidades en stock", value: stockUnits.toLocaleString("es-CO"), meta: "Suma del inventario" },
-    { label: "Valor venta inventario", value: money(inventoryValue), meta: "Stock x precio venta" },
+    { label: "Unidades en stock", value: stockUnits.toLocaleString("es-CO"), meta: "Suma de productos" },
+    { label: "Valor venta productos", value: money(inventoryValue), meta: "Stock x precio venta" },
     { label: "Stock bajo", value: lowStock.toLocaleString("es-CO"), meta: "Requieren reposicion" },
   ];
 }
@@ -11054,7 +11054,7 @@ function renderInventoryView() {
   }
   if (!inventoryTable) return;
   if (!state.inventoryLoaded) {
-    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando inventario...</td></tr>';
+    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
     return;
   }
   const rows = filteredInventoryProducts();
@@ -11070,7 +11070,7 @@ function renderInventoryView() {
       <tr>
         <td>
           <strong>${escapeHtml(product.name)}</strong>
-          <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto de inventario")}</span>
+          <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto guardado")}</span>
         </td>
         <td>
           <span>${escapeHtml(product.barcode || "-")}</span>
@@ -11160,7 +11160,7 @@ async function submitInventoryProduct(event) {
     return;
   }
   setButtonLoading(inventorySaveButton, true, productId ? "Actualizando..." : "Guardando...");
-  setInlineMessage(inventoryMessage, "Guardando producto en inventario...", "info");
+  setInlineMessage(inventoryMessage, "Guardando producto...", "info");
   try {
     const data = await api(productId ? `/api/business/inventory/products/${productId}` : "/api/business/inventory/products", {
       method: productId ? "PATCH" : "POST",
@@ -11177,7 +11177,7 @@ async function submitInventoryProduct(event) {
     renderInventoryProductOptions();
     renderInventoryView();
     setInlineMessage(inventoryMessage, "Producto guardado correctamente.", "success");
-    showFeedback("Producto guardado en inventario.", "success", { title: "Inventario" });
+    showFeedback("Producto guardado.", "success", { title: "Productos" });
   } catch (error) {
     setInlineMessage(inventoryMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo guardar" });
@@ -11200,7 +11200,7 @@ async function archiveInventoryProduct(productId) {
     ));
     renderInventoryProductOptions();
     renderInventoryView();
-    showFeedback("Producto archivado.", "success", { title: "Inventario" });
+    showFeedback("Producto archivado.", "success", { title: "Productos" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo archivar" });
   }
@@ -22197,6 +22197,7 @@ async function createLeadPurchaseFromForm(event) {
   const submitButton = document.getElementById("leadPurchaseSubmitButton");
   renderProductSelect(productInput);
   const productName = productInputRawValue(productInput);
+  const selectedInventoryProduct = findInventoryProduct(productInput?.value || productName);
   const amount = Number(amountInput?.value || 0);
   if (!productName || !Number.isFinite(amount) || amount <= 0) {
     setFormMessage(message, "Agrega producto y un valor de compra valido.", "error");
@@ -22212,6 +22213,10 @@ async function createLeadPurchaseFromForm(event) {
     acquisition_channel: String(document.getElementById("leadPurchaseChannelInput")?.value || "").trim() || "Base de contactos",
     notes: String(document.getElementById("leadPurchaseNotesInput")?.value || "").trim() || null,
     created_at: dateValue ? new Date(dateValue).toISOString() : null,
+    metadata: {
+      inventory_product_id: selectedInventoryProduct?.id || null,
+      product_source: selectedInventoryProduct ? "catalog" : "open",
+    },
   };
   try {
     if (submitButton) submitButton.disabled = true;

@@ -127,7 +127,7 @@
           </button>
           <button class="nav-item" data-view="inventory" type="button">
             <span class="material-symbols-outlined">inventory_2</span>
-            <span>Inventario</span>
+            <span>Productos</span>
           </button>
           <button class="nav-item" data-view="reward-passes" type="button">
             <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
@@ -1192,7 +1192,7 @@
                       <option value="gift_product">El obsequio es este producto</option>
                     </select>
                   </label>
-                  <label><span class="field-label">Producto del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre producto del beneficio" data-help="Selecciona un producto de inventario. Si no existe, usa producto abierto y escribe el nombre."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><select id="qrBatchBenefitProductInput" data-product-select data-open-product-input="qrBatchBenefitProductOpenInput"></select><input id="qrBatchBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
+                  <label><span class="field-label">Producto del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre producto del beneficio" data-help="Selecciona un producto guardado. Si no existe, usa producto abierto y escribe el nombre."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><select id="qrBatchBenefitProductInput" data-product-select data-open-product-input="qrBatchBenefitProductOpenInput"></select><input id="qrBatchBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                   <label><span class="field-label">Valor del beneficio <button class="field-help" type="button" aria-label="Ayuda sobre valor del beneficio" data-help="Opcional: escribe datos estructurados del beneficio en JSON. Ejemplo para dinero: {'amount':10000}. Ejemplo para porcentaje: {'percent':15}."><span class="material-symbols-outlined" aria-hidden="true">help</span></button></span><input id="qrBatchBenefitValueInput" type="text" placeholder="{'amount':10000}"></label>
                   <section class="full benefit-fulfillment-panel">
                     <div class="activation-config-head">
@@ -3379,7 +3379,7 @@
                 </div>
                 <span class="status-chip ok">Ventas reales</span>
               </div>
-              <p class="chart-explainer">Registra el cliente, los productos comprados, el medio de llegada y la atribucion comercial. Si el producto existe en inventario se descuenta automaticamente; si no existe queda como producto abierto.</p>
+              <p class="chart-explainer">Registra el cliente, los productos comprados, el medio de llegada y la atribucion comercial. Si el producto existe en Productos se descuenta automaticamente; si no existe se crea automaticamente como producto abierto.</p>
               <form class="modal-form customer-sale-form" id="customerAcquisitionForm">
                 <section class="sale-form-block sale-form-block-summary">
                   <div class="sale-form-block-head">
@@ -3497,7 +3497,7 @@
           <section class="view-section" data-view="inventory">
             <div class="view-head">
               <div>
-                <h2>Inventario de productos</h2>
+                <h2>Productos</h2>
                 <p>Catálogo operativo con código de barras, SKU, precios, stock y búsqueda para registrar ventas.</p>
               </div>
               <button class="ghost-button" id="refreshInventoryButton" type="button">Actualizar</button>
@@ -5169,7 +5169,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-free-points-20260710" defer></script>
+  <script src="js/app.js?v=products-auto-catalog-20260710" defer></script>
 </body>
 </html>
 
