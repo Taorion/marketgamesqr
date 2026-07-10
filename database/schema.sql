@@ -470,6 +470,9 @@ create table if not exists campaign_manual_contacts (
   unique (business_id, campaign_id, manual_lead_id)
 );
 
+alter table campaign_manual_contacts add column if not exists channel text;
+alter table campaign_manual_contacts add column if not exists acquisition_source text;
+
 create table if not exists redemptions (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
