@@ -18204,13 +18204,29 @@ function normalizeAffiliatePurchaseItems() {
     sku: item.sku || null,
     barcode: item.barcode || null,
     quantity: Math.max(1, Number(item.quantity || 1)),
-    unit_price: Math.max(0, Number(item.unit_price || 0)),
+    unit_price: Math.max(0, parseAffiliatePurchaseAmount(item.unit_price)),
   }));
   return state.affiliatePurchaseItems;
 }
 
 function affiliatePurchaseLineTotal(item = {}) {
-  return Math.max(1, Number(item.quantity || 1)) * Math.max(0, Number(item.unit_price || 0));
+  return Math.max(1, Number(item.quantity || 1)) * Math.max(0, parseAffiliatePurchaseAmount(item.unit_price));
+}
+
+function parseAffiliatePurchaseAmount(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+  const cleaned = raw.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
+    return Number(cleaned.replace(/\./g, "").replace(",", "."));
+  }
+  if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) {
+    return Number(cleaned.replace(/,/g, ""));
+  }
+  const normalized = cleaned.replace(/,/g, ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function affiliatePurchaseTotal() {
@@ -18263,8 +18279,8 @@ function renderAffiliatePurchaseItems() {
         <input type="number" min="1" step="1" data-affiliate-purchase-field="quantity" value="${escapeHtml(item.quantity)}" ${disabled ? "disabled" : ""}>
       </label>
       <label>
-        <span>Valor unitario</span>
-        <input type="number" min="0" step="100" data-affiliate-purchase-field="unit_price" value="${escapeHtml(item.unit_price)}" ${disabled ? "disabled" : ""}>
+        <span>${item.is_open_product ? "Precio manual" : "Valor unitario"}</span>
+        <input type="text" inputmode="numeric" data-affiliate-purchase-field="unit_price" value="${escapeHtml(item.unit_price)}" placeholder="Ej: 50000 o 50.000" ${disabled ? "disabled" : ""}>
       </label>
       <div class="affiliate-purchase-line-total">
         <span>Subtotal</span>
@@ -18312,7 +18328,7 @@ function renderAffiliatePurchaseItems() {
         next[index].name = input.value;
         next[index].is_open_product = true;
       } else {
-        next[index][field] = Number(input.value || 0);
+        next[index][field] = field === "unit_price" ? parseAffiliatePurchaseAmount(input.value) : Number(input.value || 0);
       }
       state.affiliatePurchaseItems = next;
       const totalCell = row?.querySelector(".affiliate-purchase-line-total strong");
