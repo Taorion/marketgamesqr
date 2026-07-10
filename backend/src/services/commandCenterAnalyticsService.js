@@ -329,6 +329,12 @@ async function getOptions(businessId) {
          select channel_use as value
          from qr_batches
          where business_id = $1
+         union
+         select coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, '')) as value
+         from campaign_manual_contacts cmc
+         join business_manual_leads ml on ml.id = cmc.manual_lead_id and ml.business_id = cmc.business_id
+         where cmc.business_id = $1
+           and cmc.status = 'ACTIVE'
        ) x
        where value is not null
        order by value asc`,
@@ -485,13 +491,30 @@ async function getSeriesAndCharts(businessId, filters) {
     query(
       `with sales as (${salesUnionSql()})
        , lead_counts as (
-         select p.campaign_id, count(*)::int as leads
-         from players p
-         where p.business_id = $${campaignParams.push(businessId)}
-           and p.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
-           and p.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
-           and ($${campaignParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${campaignParams.length}::uuid)
-         group by p.campaign_id
+         select source.campaign_id, sum(source.leads)::int as leads
+         from (
+           select p.campaign_id, count(*)::int as leads
+           from players p
+           left join campaigns pc on pc.id = p.campaign_id and pc.business_id = p.business_id
+           where p.business_id = $${campaignParams.push(businessId)}
+             and p.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+             and p.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+             and ($${campaignParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${campaignParams.length}::uuid)
+             and ($${campaignParams.push(filters.channel)}::text is null or coalesce(nullif(p.metadata->>'preferred_channel', ''), nullif(p.metadata->>'source', ''), pc.type, 'QR / Activacion') = $${campaignParams.length}::text)
+           group by p.campaign_id
+           union all
+           select cmc.campaign_id, count(distinct cmc.manual_lead_id)::int as leads
+           from campaign_manual_contacts cmc
+           join business_manual_leads ml on ml.id = cmc.manual_lead_id and ml.business_id = cmc.business_id
+           where cmc.business_id = $${campaignParams.push(businessId)}
+             and cmc.status = 'ACTIVE'
+             and cmc.created_at >= $${campaignParams.push(filters.startDate)}::timestamptz
+             and cmc.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
+             and ($${campaignParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${campaignParams.length}::uuid)
+             and ($${campaignParams.push(filters.channel)}::text is null or coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, ''), 'Directorio de contactos') = $${campaignParams.length}::text)
+           group by cmc.campaign_id
+         ) source
+         group by source.campaign_id
        ),
        qr_counts as (
          select q.campaign_id, count(*)::int as qr_generated
@@ -598,6 +621,25 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or coalesce(latest_capture.campaign_id, p.campaign_id) = $${matrixParams.length}::uuid)
          group by coalesce(latest_capture.campaign_id, p.campaign_id), coalesce(latest_capture.campaign_name, c.name, 'Sin campana'), channel
        ),
+       manual_contact_events as (
+         select cmc.campaign_id,
+                coalesce(c.name, 'Sin campana') as campaign_name,
+                coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, ''), 'Directorio de contactos') as channel,
+                count(distinct cmc.manual_lead_id)::int as leads,
+                0::int as qr_generated,
+                0::int as redemptions,
+                0::int as sales,
+                0::numeric(14, 2) as revenue
+         from campaign_manual_contacts cmc
+         join business_manual_leads ml on ml.id = cmc.manual_lead_id and ml.business_id = cmc.business_id
+         join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
+         where cmc.business_id = $${matrixParams.push(businessId)}
+           and cmc.status = 'ACTIVE'
+           and cmc.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
+           and cmc.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${matrixParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${matrixParams.length}::uuid)
+         group by cmc.campaign_id, c.name, channel
+       ),
        qr_events as (
          select q.campaign_id,
                 coalesce(c.name, 'Sin campana') as campaign_name,
@@ -668,6 +710,7 @@ async function getSeriesAndCharts(businessId, filters) {
        ),
        events as (
          select * from lead_events
+         union all select * from manual_contact_events
          union all select * from qr_events
          union all select * from redemption_events
          union all select * from sale_events

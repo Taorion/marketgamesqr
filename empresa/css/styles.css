@@ -15522,6 +15522,7 @@ body.chart-focus-open .command-center {
   display: grid;
   gap: 8px;
   min-width: 230px;
+  max-width: 100%;
 }
 
 .lead-campaign-chip-list,
@@ -15533,8 +15534,9 @@ body.chart-focus-open .command-center {
 }
 
 .lead-campaign-assign-row select {
-  flex: 1 1 150px;
-  min-width: 140px;
+  flex: 1 1 130px;
+  min-width: 118px;
+  max-width: 100%;
 }
 
 .pill .pill-close {

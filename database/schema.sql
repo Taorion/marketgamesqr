@@ -461,6 +461,8 @@ create table if not exists campaign_manual_contacts (
   manual_lead_id uuid not null references business_manual_leads(id) on delete cascade,
   assigned_by_user_id uuid references app_users(id) on delete set null,
   status text not null default 'ACTIVE' check (status in ('ACTIVE', 'ARCHIVED')),
+  channel text,
+  acquisition_source text,
   notes text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -755,6 +757,8 @@ create index if not exists idx_campaign_manual_contacts_campaign
   on campaign_manual_contacts(business_id, campaign_id, status, created_at desc);
 create index if not exists idx_campaign_manual_contacts_manual_lead
   on campaign_manual_contacts(business_id, manual_lead_id, status, created_at desc);
+create index if not exists idx_campaign_manual_contacts_channel
+  on campaign_manual_contacts(business_id, campaign_id, status, channel);
 create index if not exists idx_redemptions_business_date on redemptions(business_id, redeemed_at desc);
 create index if not exists idx_redemptions_campaign_date on redemptions(campaign_id, redeemed_at desc);
 create index if not exists idx_portal_redemptions_business_campaign_redeemed on redemptions(business_id, campaign_id, redeemed_at desc);

@@ -430,6 +430,8 @@ const manualLeadPatchSchema = manualLeadSchema;
 
 const manualContactCampaignSchema = z.object({
   campaign_id: z.string().uuid(),
+  channel: nullableText(120),
+  acquisition_source: nullableText(120),
   notes: nullableText(1000),
 });
 
@@ -621,7 +623,8 @@ async function getCampaignManualContactRows(businessId, campaignId, limit = null
   const result = await query(
     `select ml.id, 'MANUAL'::text as source_type, ml.name, null::text as document_id, ml.phone, ml.email,
             cmc.created_at,
-            concat_ws(' - ', 'Directorio de contactos', nullif(ml.source, ''), nullif(c.name, '')) as lead_source,
+            coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, ''), 'Directorio') as channel,
+            concat_ws(' - ', 'Directorio de contactos', nullif(cmc.channel, ''), nullif(ml.source, ''), nullif(c.name, '')) as lead_source,
             coalesce(nullif(ml.interest, ''), ml.company, '-') as favorite_product,
             coalesce(nullif(ml.importance_reason, ''), nullif(ml.notes, ''), '-') as purchase_intent,
             '-'::text as gift_budget,
@@ -2972,6 +2975,8 @@ async function listManualLeads(req, res, next) {
              json_build_object(
                'id', c.id,
                'name', c.name,
+               'channel', cmc.channel,
+               'acquisition_source', cmc.acquisition_source,
                'status', cmc.status,
                'assigned_at', cmc.created_at
              )
@@ -3097,10 +3102,12 @@ async function assignManualLeadToCampaign(req, res, next) {
 
       const assignment = await client.query(
         `insert into campaign_manual_contacts
-          (business_id, campaign_id, manual_lead_id, assigned_by_user_id, status, notes, metadata)
-         values ($1, $2, $3, $4, 'ACTIVE', $5, $6::jsonb)
+          (business_id, campaign_id, manual_lead_id, assigned_by_user_id, status, channel, acquisition_source, notes, metadata)
+         values ($1, $2, $3, $4, 'ACTIVE', $5, $6, $7, $8::jsonb)
          on conflict (business_id, campaign_id, manual_lead_id)
          do update set status = 'ACTIVE',
+                       channel = coalesce(excluded.channel, campaign_manual_contacts.channel),
+                       acquisition_source = coalesce(excluded.acquisition_source, campaign_manual_contacts.acquisition_source),
                        notes = coalesce(excluded.notes, campaign_manual_contacts.notes),
                        metadata = campaign_manual_contacts.metadata || excluded.metadata,
                        assigned_by_user_id = excluded.assigned_by_user_id,
@@ -3111,9 +3118,13 @@ async function assignManualLeadToCampaign(req, res, next) {
           body.campaign_id,
           req.params.manualLeadId,
           req.user.id,
+          body.channel || null,
+          body.acquisition_source || null,
           body.notes || null,
           JSON.stringify({
             source: "manual_contact_campaign_assignment",
+            channel: body.channel || null,
+            acquisition_source: body.acquisition_source || null,
             assigned_by_email: req.user.email || null,
           }),
         ]
@@ -3125,11 +3136,12 @@ async function assignManualLeadToCampaign(req, res, next) {
               || jsonb_build_object(
                    'last_associated_campaign_id', $3::text,
                    'last_associated_campaign_name', $4::text,
+                   'last_associated_channel', $5::text,
                    'last_campaign_assignment_at', now()::text
                  ),
                 updated_at = now()
           where id = $1 and business_id = $2`,
-        [req.params.manualLeadId, businessId, campaign.rows[0].id, campaign.rows[0].name]
+        [req.params.manualLeadId, businessId, campaign.rows[0].id, campaign.rows[0].name, body.channel || null]
       );
 
       return {

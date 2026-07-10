@@ -224,7 +224,7 @@ function listWhere(filters, params) {
   if (filters.has_redeemed_tickets === "true") clauses.push("redeemed_tickets > 0");
   if (filters.channel) {
     params.push(`%${normalizeSearch(filters.channel)}%`);
-    clauses.push("normalized_channel like $" + params.length);
+    clauses.push(`(normalized_channel like $${params.length} or normalized_associated_channels like $${params.length})`);
   }
   if (filters.score_min !== undefined && filters.score_min !== "") {
     params.push(Number(filters.score_min));
@@ -279,6 +279,13 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
          array_remove(array[p.campaign_id, latest_capture.campaign_id], null)::uuid[] as associated_campaign_ids,
+         array_remove(array[
+           latest_capture.channel,
+           p.metadata->>'preferred_channel',
+           p.metadata->>'source',
+           p.metadata->>'lead_source',
+           c.type
+         ], null)::text[] as associated_channels,
          coalesce(
            case when latest_capture.id is not null then 'Descarga de activo digital' end,
            case
@@ -451,7 +458,8 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ca.campaign_id,
          ca.campaign_name,
          coalesce(ca.campaign_ids, '{}'::uuid[]) as associated_campaign_ids,
-         coalesce(ml.source, 'Manual') as channel,
+         coalesce(ca.campaign_channel, ml.preferred_channel, ml.source, 'Manual') as channel,
+         coalesce(ca.campaign_channels, array_remove(array[ml.preferred_channel, ml.source], null)::text[], '{}'::text[]) as associated_channels,
          coalesce(ml.metadata->>'city', '') as city,
          ml.priority as crm_priority,
          ml.preferred_channel,
@@ -494,7 +502,12 @@ async function listLeadCrmRows(businessId, filters = {}) {
          select
            (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
            (array_agg(c.name order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_name,
-           coalesce(array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc), '{}'::uuid[]) as campaign_ids
+           (array_agg(coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, '')) order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_channel,
+           coalesce(array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc), '{}'::uuid[]) as campaign_ids,
+           coalesce(
+             array_remove(array_agg(coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, '')) order by cmc.updated_at desc, cmc.created_at desc), null),
+             '{}'::text[]
+           ) as campaign_channels
          from campaign_manual_contacts cmc
          join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
          where cmc.business_id = ml.business_id
@@ -545,6 +558,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ca.campaign_id,
          ca.campaign_name,
          case when ca.campaign_id is null then '{}'::uuid[] else array[ca.campaign_id]::uuid[] end as associated_campaign_ids,
+         array_remove(array['Afiliados'::text, ca.campaign_name], null)::text[] as associated_channels,
          'Afiliados'::text as channel,
          coalesce(fa.card_metadata->>'city', '') as city,
          null::text as crm_priority,
@@ -674,6 +688,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') as normalized_phone,
          lower(coalesce(email, '')) as normalized_email,
          regexp_replace(lower(coalesce(channel, '')), '[^a-z0-9]', '', 'g') as normalized_channel,
+         regexp_replace(lower(coalesce(array_to_string(associated_channels, ' '), '')), '[^a-z0-9]', '', 'g') as normalized_associated_channels,
          regexp_replace(lower(coalesce(affiliate_code, '')), '[^a-z0-9]', '', 'g') as normalized_affiliate_code,
          regexp_replace(lower(
            coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' ||
@@ -789,7 +804,7 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
     const result = await client.query(
       `select ml.id, ml.business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
               ml.name, null::text as document_id, ml.email, ml.phone, ml.company as organization,
-              ml.source as channel, ml.source_detail, ml.interest, ml.preferred_channel,
+              coalesce(ca.campaign_channel, ml.preferred_channel, ml.source) as channel, ml.source_detail, ml.interest, ml.preferred_channel,
               ml.status as stored_status, ml.priority, ml.notes,
               ml.metadata
                 || jsonb_build_object(
@@ -809,7 +824,8 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
          select
            (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
            (array_agg(c.name order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_name,
-           json_agg(json_build_object('id', c.id, 'name', c.name) order by cmc.updated_at desc, cmc.created_at desc)
+           (array_agg(coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, '')) order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_channel,
+           json_agg(json_build_object('id', c.id, 'name', c.name, 'channel', cmc.channel, 'acquisition_source', cmc.acquisition_source) order by cmc.updated_at desc, cmc.created_at desc)
              filter (where cmc.id is not null) as campaigns
          from campaign_manual_contacts cmc
          join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id

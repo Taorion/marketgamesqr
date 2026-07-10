@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-contact-campaign-association-v1";
+const APP_VERSION = "empresa-20260710-lead-channel-association-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -19266,15 +19266,55 @@ function manualContactCampaignOptions(contact = {}) {
     .join("");
 }
 
+function manualContactChannelOptions(contact = {}) {
+  const values = [
+    "WhatsApp",
+    "Instagram",
+    "Facebook",
+    "TikTok",
+    "Punto de venta",
+    "Evento fisico",
+    "Vitrina",
+    "QR",
+    "Referido",
+    "Landing",
+    "Email",
+    "Llamada",
+    "Directorio de contactos",
+    "Otro",
+    contact.preferred_channel,
+    contact.source,
+    contact.source_detail,
+    ...(state.campaigns || []).flatMap((campaign) => Array.isArray(campaign.launch_channels) ? campaign.launch_channels : []),
+  ];
+  const seen = new Set();
+  return values
+    .map((value) => String(value || "").trim())
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (!value || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("");
+}
+
+function manualContactCampaignLabel(campaign = {}) {
+  const parts = [campaign.name || campaign.id, campaign.channel || campaign.acquisition_source].filter(Boolean);
+  return parts.join(" / ");
+}
+
 function renderManualContactCampaignCell(contact = {}) {
   const campaigns = manualContactCampaigns(contact);
   const options = manualContactCampaignOptions(contact);
+  const channelOptions = manualContactChannelOptions(contact);
   return `
     <div class="lead-campaign-assignment">
       <div class="lead-campaign-chip-list">
         ${campaigns.map((campaign) => `
           <span class="pill muted">
-            ${escapeHtml(campaign.name || campaign.id)}
+            ${escapeHtml(manualContactCampaignLabel(campaign))}
             <button class="pill-close" type="button" aria-label="Quitar campaña" data-manual-contact-remove-campaign="${escapeHtml(campaign.id)}" data-lead-id="${escapeHtml(contact.id)}">&times;</button>
           </span>
         `).join("") || '<span class="table-secondary">Sin campañas asociadas</span>'}
@@ -19283,6 +19323,10 @@ function renderManualContactCampaignCell(contact = {}) {
         <select data-manual-contact-campaign-select="${escapeHtml(contact.id)}">
           <option value="">Asociar campaña</option>
           ${options}
+        </select>
+        <select data-manual-contact-channel-select="${escapeHtml(contact.id)}">
+          <option value="">Canal</option>
+          ${channelOptions}
         </select>
         <button class="ghost-button" type="button" data-manual-contact-action="assign-campaign" data-lead-id="${escapeHtml(contact.id)}" ${options ? "" : "disabled"}>Asociar</button>
       </div>
@@ -19357,12 +19401,23 @@ async function assignManualContactToCampaign(manualLeadId) {
     showFeedback("Selecciona una campaña para asociar este contacto.", "error", { title: "Contactos" });
     return;
   }
+  const channelSelect = Array.from(manualContactsTable?.querySelectorAll("[data-manual-contact-channel-select]") || [])
+    .find((item) => String(item.dataset.manualContactChannelSelect) === String(manualLeadId));
+  const channel = String(channelSelect?.value || "").trim();
+  if (!channel) {
+    showFeedback("Selecciona el canal para saber si este lead viene por WhatsApp, vitrina, evento, QR u otro origen.", "error", { title: "Contactos" });
+    return;
+  }
   try {
     showFeedback("Asociando contacto a campaña...", "loading", { title: "Contactos", timeout: 0 });
     await api(`/api/business/contacts/manual/${encodeURIComponent(manualLeadId)}/campaigns`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ campaign_id: campaignId }),
+      body: JSON.stringify({
+        campaign_id: campaignId,
+        channel,
+        acquisition_source: channel,
+      }),
     });
     state.manualContactsLoaded = false;
     state.leadCrmLoaded = false;
