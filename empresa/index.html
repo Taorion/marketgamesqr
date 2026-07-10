@@ -4739,6 +4739,16 @@
                   <button class="ghost-button" id="downloadAffiliateCardButton" type="button" disabled>Abrir carnet digital</button>
                   <button class="ghost-button" id="copyAffiliateCardLinkButton" type="button" disabled>Copiar link</button>
                   <p class="form-message span-2" id="affiliatePurchaseMessage"></p>
+                  <label>
+                    <span>Puntos manuales</span>
+                    <input id="affiliateManualPointsInput" type="number" min="1" step="1" placeholder="Ej: 25">
+                  </label>
+                  <label>
+                    <span>Motivo</span>
+                    <input id="affiliateManualPointsReasonInput" type="text" maxlength="80" placeholder="Ej: Bono especial">
+                  </label>
+                  <button class="ghost-button" id="affiliateManualPointsButton" type="button" disabled>Sumar puntos</button>
+                  <p class="form-message span-2" id="affiliateManualPointsMessage"></p>
                 </div>
               </article>
 
@@ -5159,7 +5169,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-manual-price-20260710" defer></script>
+  <script src="js/app.js?v=affiliate-free-points-20260710" defer></script>
 </body>
 </html>
 

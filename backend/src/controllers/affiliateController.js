@@ -35,9 +35,12 @@ const createAffiliateSchema = z.object({
 });
 
 const awardPointsSchema = z.object({
-  amount: z.number().positive(),
+  amount: z.number().positive().optional(),
+  points_awarded: z.number().int().positive().optional(),
   reason: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.any()).optional().nullable(),
+}).refine((body) => body.amount || body.points_awarded, {
+  message: "Debes enviar un monto o puntos manuales.",
 });
 
 const campaignAffiliateSchema = z.object({

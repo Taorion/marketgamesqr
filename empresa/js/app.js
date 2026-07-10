@@ -359,6 +359,10 @@ const affiliatePurchaseTotalText = document.getElementById("affiliatePurchaseTot
 const affiliatePurchasePointsText = document.getElementById("affiliatePurchasePointsText");
 const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
+const affiliateManualPointsInput = document.getElementById("affiliateManualPointsInput");
+const affiliateManualPointsReasonInput = document.getElementById("affiliateManualPointsReasonInput");
+const affiliateManualPointsButton = document.getElementById("affiliateManualPointsButton");
+const affiliateManualPointsMessage = document.getElementById("affiliateManualPointsMessage");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
 const copyAffiliateCardLinkButton = document.getElementById("copyAffiliateCardLinkButton");
 const affiliateRewardRuleForm = document.getElementById("affiliateRewardRuleForm");
@@ -18451,6 +18455,50 @@ async function awardSelectedAffiliatePoints() {
   }
 }
 
+async function awardManualAffiliatePoints() {
+  if (!state.selectedAffiliateId || !session?.user?.business_id) return;
+  const points = Number(affiliateManualPointsInput?.value || 0);
+  if (!Number.isInteger(points) || points <= 0) {
+    setInlineMessage(affiliateManualPointsMessage, "Escribe una cantidad de puntos mayor a 0.", "error");
+    affiliateManualPointsInput?.focus();
+    return;
+  }
+
+  setButtonLoading(affiliateManualPointsButton, true, "Sumando...");
+  setInlineMessage(affiliateManualPointsMessage, "Sumando puntos manuales al afiliado...", "info");
+  try {
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}/points`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        points_awarded: points,
+        reason: affiliateManualPointsReasonInput?.value.trim() || "MANUAL_ADJUSTMENT",
+        metadata: {
+          source: "affiliate_manual_points_portal",
+          manual_points: true,
+        },
+      }),
+    });
+    const selectedAffiliateId = state.selectedAffiliateId;
+    if (affiliateManualPointsInput) affiliateManualPointsInput.value = "";
+    if (affiliateManualPointsReasonInput) affiliateManualPointsReasonInput.value = "";
+    await loadAffiliatesData();
+    state.selectedAffiliateId = selectedAffiliateId;
+    state.selectedAffiliate = data.affiliate || (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
+    await renderAffiliatesView();
+    const awarded = Number(data.awarded || points);
+    const name = data.affiliate?.full_name || state.selectedAffiliate?.full_name || "El afiliado";
+    const message = `${name} recibio ${awarded.toLocaleString("es-CO")} puntos manuales.`;
+    setInlineMessage(affiliateManualPointsMessage, message, "success");
+    showFeedback(message, "success", { title: "Puntos sumados" });
+  } catch (error) {
+    setInlineMessage(affiliateManualPointsMessage, error.message, "error");
+    showFeedback(error.message, "error");
+  } finally {
+    setButtonLoading(affiliateManualPointsButton, false);
+  }
+}
+
 async function downloadSelectedAffiliateCard() {
   if (!state.selectedAffiliate) return;
   downloadAffiliateCardButton.disabled = true;
@@ -22520,6 +22568,10 @@ async function renderAffiliatesView() {
     if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = true;
     if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = true;
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = true;
+    if (affiliateManualPointsInput) affiliateManualPointsInput.disabled = true;
+    if (affiliateManualPointsReasonInput) affiliateManualPointsReasonInput.disabled = true;
+    if (affiliateManualPointsButton) affiliateManualPointsButton.disabled = true;
+    setInlineMessage(affiliateManualPointsMessage, "", "info");
     renderAffiliatePurchaseItems();
     downloadAffiliateCardButton.disabled = true;
     if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = true;
@@ -22542,6 +22594,9 @@ async function renderAffiliatesView() {
   if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = false;
   if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = false;
   if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = false;
+  if (affiliateManualPointsInput) affiliateManualPointsInput.disabled = false;
+  if (affiliateManualPointsReasonInput) affiliateManualPointsReasonInput.disabled = false;
+  if (affiliateManualPointsButton) affiliateManualPointsButton.disabled = false;
   renderAffiliatePurchaseItems();
   affiliateAddPointsButton.disabled = false;
   downloadAffiliateCardButton.disabled = false;
@@ -24216,6 +24271,7 @@ affiliatePurchaseAddItemButton?.addEventListener("click", () => {
   renderAffiliatePurchaseItems();
 });
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
+affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);

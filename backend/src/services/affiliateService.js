@@ -234,12 +234,13 @@ async function getPublicAffiliateCard(token) {
 async function awardAffiliatePoints(businessId, affiliateId, user, body) {
   ensureBusinessAccess(user, businessId);
   const amount = Number(body.amount || 0);
-  if (!Number.isFinite(amount) || amount <= 0) {
+  const manualPoints = Number(body.points_awarded || 0);
+  if ((!Number.isFinite(amount) || amount <= 0) && (!Number.isInteger(manualPoints) || manualPoints <= 0)) {
     throw badRequest("El monto debe ser mayor a 0.");
   }
 
-  const pointRules = await getAffiliatePointRules(businessId);
-  const points = affiliatePointsForAmount(amount, pointRules);
+  const pointRules = manualPoints > 0 ? null : await getAffiliatePointRules(businessId);
+  const points = manualPoints > 0 ? manualPoints : affiliatePointsForAmount(amount, pointRules);
   if (points < 1) {
     return {
       awarded: 0,
@@ -271,10 +272,11 @@ async function awardAffiliatePoints(businessId, affiliateId, user, body) {
         user.id,
         amount,
         points,
-        body.reason || "PURCHASE",
+        body.reason || (manualPoints > 0 ? "MANUAL_ADJUSTMENT" : "PURCHASE"),
         {
           ...(body.metadata || {}),
-          ...affiliatePointRuleMetadata(pointRules),
+          source: manualPoints > 0 ? "manual_points_adjustment" : body.metadata?.source,
+          ...(pointRules ? affiliatePointRuleMetadata(pointRules) : {}),
         },
       ]
     );
