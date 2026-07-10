@@ -34,8 +34,14 @@ const launchChannelOptions = [
   "Instagram",
   "Facebook",
   "TikTok",
-  "Volantes",
-  "Influencer",
+  "Pagina web",
+  "Google",
+  "Google Ads",
+  "Google Maps",
+  "Landing",
+  "Email",
+  "Referido",
+  "QR",
   "Evento fisico",
   "WhatsApp",
   "Punto de venta",
@@ -87,6 +93,7 @@ const ownerCampaignSchema = z.object({
   ends_at: z.string().datetime().optional().nullable(),
   client_notes: z.string().trim().max(2000).optional().nullable(),
   delivered_assets: z.record(z.string(), z.unknown()).optional(),
+  campaign_cost_calculator: z.record(z.string(), z.any()).optional().nullable(),
 });
 
 const ownerCampaignPatchSchema = ownerCampaignSchema.partial();
@@ -2668,10 +2675,12 @@ async function createCampaign(req, res, next) {
         JSON.stringify(body.launch_channels || []),
         body.client_notes || null,
         JSON.stringify(body.delivered_assets || {}),
-        {
+        JSON.stringify({
           owner_created: true,
           creation_source: "business_portal",
-        },
+          campaign_cost_calculator: body.campaign_cost_calculator || {},
+          channel_investments: body.campaign_cost_calculator?.channel_investments || [],
+        }),
       ]
     );
 
@@ -2709,6 +2718,15 @@ async function updateCampaign(req, res, next) {
            launch_channels = case when $15::jsonb is null then launch_channels else $15 end,
            client_notes = case when $16::text is null then client_notes else $16 end,
            delivered_assets = case when $17::jsonb is null then delivered_assets else $17 end,
+           metadata = case
+             when $18::jsonb is null then metadata
+             else jsonb_set(
+               jsonb_set(coalesce(metadata, '{}'::jsonb), '{campaign_cost_calculator}', $18::jsonb, true),
+               '{channel_investments}',
+               coalesce($18::jsonb->'channel_investments', '[]'::jsonb),
+               true
+             )
+           end,
            client_setup_completed_at = case when coalesce($8, status) in ('SCHEDULED', 'ACTIVE') then coalesce(client_setup_completed_at, now()) else client_setup_completed_at end,
            activated_at = case when coalesce($8, status) = 'ACTIVE' then coalesce(activated_at, now()) else activated_at end
        where id = $1 and business_id = $2
@@ -2731,6 +2749,7 @@ async function updateCampaign(req, res, next) {
         Object.prototype.hasOwnProperty.call(body, "launch_channels") ? JSON.stringify(body.launch_channels || []) : null,
         body.client_notes ?? null,
         deliveredAssets,
+        Object.prototype.hasOwnProperty.call(body, "campaign_cost_calculator") ? JSON.stringify(body.campaign_cost_calculator || {}) : null,
       ]
     );
 

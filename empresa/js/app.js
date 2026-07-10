@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-lead-channel-association-v3";
+const APP_VERSION = "empresa-20260710-channel-roi-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -229,6 +229,7 @@ const campaignCostAddVariableButton = document.getElementById("campaignCostAddVa
 const campaignCostAddFixedButton = document.getElementById("campaignCostAddFixedButton");
 const campaignCostScenarios = document.getElementById("campaignCostScenarios");
 const campaignCostMessage = document.getElementById("campaignCostMessage");
+const campaignChannelBudgetRows = document.getElementById("campaignChannelBudgetRows");
 const campaignStrategyTabOpenButton = document.getElementById("campaignStrategyTabOpenButton");
 const campaignAssetsGrid = document.getElementById("campaignAssetsGrid");
 const campaignConfigurationGrid = document.getElementById("campaignConfigurationGrid");
@@ -3043,6 +3044,53 @@ function launchChannelsLabel(channels) {
   return Array.isArray(channels) && channels.length ? channels.join(", ") : "Sin canales cargados";
 }
 
+function campaignChannelInvestments(campaign = state.selectedCampaign || {}) {
+  const calculator = campaign?.metadata?.campaign_cost_calculator || campaign?.metadata?.cost_calculator || {};
+  const values = calculator.channel_investments || campaign?.metadata?.channel_investments || [];
+  return Array.isArray(values) ? values.filter((item) => item?.channel) : [];
+}
+
+function currentCampaignChannelBudgetMap() {
+  if (state.campaignModalMode !== "edit") return new Map();
+  return new Map(campaignChannelInvestments(state.selectedCampaign || {}).map((item) => [
+    String(item.channel || "").trim().toLowerCase(),
+    toNumber(item.amount || item.investment || 0),
+  ]));
+}
+
+function renderCampaignChannelBudgetRows() {
+  if (!campaignChannelBudgetRows) return;
+  const channels = selectedCheckedValues(campaignFormLaunchChannels);
+  if (!channels.length) {
+    campaignChannelBudgetRows.innerHTML = '<p class="table-secondary">Selecciona canales para repartir inversión por Instagram, Facebook, WhatsApp, Web o Google.</p>';
+    return;
+  }
+  const saved = currentCampaignChannelBudgetMap();
+  const totalBudget = toNumber(campaignFormBudget?.value || 0);
+  const defaultAmount = channels.length ? Math.round(totalBudget / channels.length) : 0;
+  campaignChannelBudgetRows.innerHTML = `
+    <div class="channel-investment-head">
+      <strong>Inversión por canal</strong>
+      <span>Estos valores alimentan ROI por canal. Si los dejas en 0, el Command Center estimará repartiendo el presupuesto total.</span>
+    </div>
+    ${channels.map((channel) => {
+      const value = saved.has(channel.toLowerCase()) ? saved.get(channel.toLowerCase()) : defaultAmount;
+      return `<label class="channel-investment-row">
+        <span>${escapeHtml(channel)}</span>
+        <input data-campaign-channel-budget="${escapeHtml(channel)}" type="number" min="0" step="1000" value="${escapeHtml(value || 0)}" placeholder="Inversión">
+      </label>`;
+    }).join("")}`;
+}
+
+function readCampaignChannelInvestments() {
+  return Array.from(campaignChannelBudgetRows?.querySelectorAll("[data-campaign-channel-budget]") || [])
+    .map((input) => ({
+      channel: input.dataset.campaignChannelBudget,
+      amount: Math.max(0, Number(input.value || 0)),
+    }))
+    .filter((item) => item.channel && item.amount > 0);
+}
+
 function safeRate(numerator, denominator) {
   const total = toNumber(denominator);
   if (!total) return 0;
@@ -4942,6 +4990,9 @@ function renderChannelPerformanceTable(rows = []) {
             <th>Redenciones</th>
             <th>Ventas</th>
             <th>Revenue</th>
+            <th>Inversión</th>
+            <th>ROI</th>
+            <th>CAC</th>
             <th>Conversión</th>
             <th>Ticket prom.</th>
             <th>Campaña dominante</th>
@@ -4956,6 +5007,9 @@ function renderChannelPerformanceTable(rows = []) {
               <td>${toNumber(row.redemptions).toLocaleString("es-CO")}</td>
               <td>${toNumber(row.sales).toLocaleString("es-CO")}</td>
               <td>${money(row.revenue)}</td>
+              <td>${money(row.investment || 0)}<small>${row.investment_source === "manual" ? "Manual" : "Estimado"}</small></td>
+              <td>${ratioLabel(row.roi)}</td>
+              <td>${money(row.cac || 0)}</td>
               <td>${toNumber(row.conversion_rate)}%</td>
               <td>${money(row.avg_ticket || 0)}</td>
               <td>${escapeHtml(row.top_campaign || "Sin campaña dominante")}</td>
@@ -5862,10 +5916,10 @@ function chartFocusRecords(chartId, context = {}) {
   }
   if (chartId === "treemap" || chartId === "waterfall" || chartId === "channel-performance") {
     return {
-      columns: ["Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Conversión", "Campaña dominante"],
+      columns: ["Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Inversión", "ROI", "CAC", "Conversión", "Campaña dominante"],
       rows: (data.channel_performance || data.revenue_treemap || [])
         .filter((row) => !context.channel || row.label === context.channel || row.channel === context.channel)
-        .map((row) => [row.label || row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), `${row.conversion_rate || 0}%`, row.top_campaign || "-"]),
+        .map((row) => [row.label || row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), money(row.investment || 0), ratioLabel(row.roi), money(row.cac || 0), `${row.conversion_rate || 0}%`, row.top_campaign || "-"]),
     };
   }
   if (chartId === "affiliate-network") {
@@ -5934,10 +5988,10 @@ function focusNarrative(chartId, context = {}) {
     return `Durante el periodo filtrado, el RMS llega hasta ${metric.value}. La mayor fuga visible esta en ${worst?.label || "una etapa pendiente"}, con ${commandValue(worst?.loss_from_previous || 0, worst?.format)} de diferencia frente a la etapa anterior. Recomendación: enfoca seguimiento, urgencia o cierre comercial en esa etapa.`;
   }
   if (chartId === "treemap") {
-    return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue. Si este canal también convierte bien, conviene escalarlo; si solo trae volumen, revisa ticket y calidad del cierre.`;
+    return `${topChannel?.label || "El canal principal"} concentra ${money(topChannel?.revenue || 0)} en revenue contra ${money(topChannel?.investment || 0)} de inversión registrada o estimada. ROI: ${ratioLabel(topChannel?.roi)}.`;
   }
   if (chartId === "channel-performance") {
-    return `${topChannel?.label || "El canal principal"} lidera la lectura de canales con ${toNumber(topChannel?.leads || 0)} leads, ${toNumber(topChannel?.sales || 0)} ventas y ${money(topChannel?.revenue || 0)}. Revisa su campaña dominante antes de invertir más presupuesto.`;
+    return `${topChannel?.label || "El canal principal"} lidera la lectura de canales con ${toNumber(topChannel?.leads || 0)} leads, ${toNumber(topChannel?.sales || 0)} ventas, ${money(topChannel?.revenue || 0)} de revenue y ROI ${ratioLabel(topChannel?.roi)}. Revisa su campaña dominante antes de invertir más presupuesto.`;
   }
   if (chartId === "power-table" || chartId === "campaign-comparison" || chartId === "scatter") {
     return `${topCampaign?.campaign_name || "La campaña principal"} lidera la lectura con ${money(topCampaign?.revenue || 0)}. Su decisión sugerida es ${topCampaign?.decision_hint || "Investigar"} porque ${topCampaign?.decision_reason || "faltan datos completos de conversión y revenue"}.`;
@@ -15602,6 +15656,7 @@ function applyStrategyWizardToCampaignForm() {
   campaignFormStartsAt.value = payload.starts_at;
   campaignFormEndsAt.value = payload.ends_at;
   setCheckedValues(campaignFormLaunchChannels, payload.launch_channels);
+  renderCampaignChannelBudgetRows();
   campaignFormClientNotes.value = payload.client_notes;
   campaignFormLandingUrl.value = payload.delivered_assets.landing_url;
   campaignFormValidatorUrl.value = payload.delivered_assets.validator_url;
@@ -15651,6 +15706,7 @@ function openCampaignModal(mode) {
   campaignFormStartsAt.value = formatInputDateTime(campaign?.starts_at);
   campaignFormEndsAt.value = formatInputDateTime(campaign?.ends_at);
   setCheckedValues(campaignFormLaunchChannels, campaign?.launch_channels || []);
+  renderCampaignChannelBudgetRows();
   campaignFormClientNotes.value = campaign?.client_notes || "";
   campaignFormLandingUrl.value = campaign?.delivered_assets?.landing_url || "";
   campaignFormValidatorUrl.value = campaign?.delivered_assets?.validator_url || "";
@@ -15673,6 +15729,9 @@ function campaignModalSnapshot() {
   if (!campaignModalForm) return "";
   const data = new FormData(campaignModalForm);
   const channels = selectedCheckedValues(campaignFormLaunchChannels).sort();
+  const channelInvestments = readCampaignChannelInvestments()
+    .map((item) => `${item.channel}:${item.amount}`)
+    .sort();
   return JSON.stringify({
     name: campaignFormName.value,
     slug: campaignFormSlug.value,
@@ -15687,6 +15746,7 @@ function campaignModalSnapshot() {
     starts_at: campaignFormStartsAt.value,
     ends_at: campaignFormEndsAt.value,
     channels,
+    channel_investments: channelInvestments,
     client_notes: campaignFormClientNotes.value,
     landing_url: campaignFormLandingUrl.value,
     validator_url: campaignFormValidatorUrl.value,
@@ -15767,6 +15827,10 @@ async function submitCampaignModal(event) {
     starts_at: campaignFormStartsAt.value ? new Date(campaignFormStartsAt.value).toISOString() : null,
     ends_at: campaignFormEndsAt.value ? new Date(campaignFormEndsAt.value).toISOString() : null,
     launch_channels: campaignChannels,
+    campaign_cost_calculator: {
+      ...((state.campaignModalMode === "edit" ? (state.selectedCampaign?.metadata?.campaign_cost_calculator || state.selectedCampaign?.metadata?.cost_calculator || {}) : {})),
+      channel_investments: readCampaignChannelInvestments(),
+    },
     client_notes: campaignFormClientNotes.value.trim() || null,
     delivered_assets: {
       landing_url: campaignFormLandingUrl.value.trim() || null,
@@ -24375,6 +24439,8 @@ cancelCampaignModalButton.addEventListener("click", requestCloseCampaignModal);
 closeSnapshotModalButton.addEventListener("click", closeSnapshotModal);
 cancelSnapshotModalButton.addEventListener("click", closeSnapshotModal);
 campaignModalForm.addEventListener("submit", submitCampaignModal);
+campaignFormLaunchChannels?.addEventListener("change", renderCampaignChannelBudgetRows);
+campaignFormBudget?.addEventListener("input", renderCampaignChannelBudgetRows);
 campaignModal.addEventListener("click", (event) => {
   if (event.target === campaignModal) notifyCampaignBackdropLocked();
 });

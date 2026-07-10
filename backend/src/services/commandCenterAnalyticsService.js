@@ -364,6 +364,7 @@ async function getSeriesAndCharts(businessId, filters) {
   const branchParams = [];
   const affiliateParams = [];
   const cohortParams = [];
+  const channelInvestmentParams = [];
 
   const [
     timeline,
@@ -375,6 +376,7 @@ async function getSeriesAndCharts(businessId, filters) {
     branches,
     affiliates,
     cohorts,
+    channelInvestments,
   ] = await Promise.all([
     query(
       `with days as (
@@ -816,6 +818,56 @@ async function getSeriesAndCharts(businessId, filters) {
        limit 8`,
       cohortParams
     ),
+    query(
+      `with campaign_scope as (
+         select c.id, c.name, c.budget_total, c.launch_channels, c.metadata
+         from campaigns c
+         where c.business_id = $${channelInvestmentParams.push(businessId)}
+           and ($${channelInvestmentParams.push(filters.campaignId)}::uuid is null or c.id = $${channelInvestmentParams.length}::uuid)
+           and (c.starts_at is null or c.starts_at < ($${channelInvestmentParams.push(filters.endDate)}::date + interval '1 day'))
+           and (c.ends_at is null or c.ends_at >= $${channelInvestmentParams.push(filters.startDate)}::timestamptz)
+       ),
+       explicit_investments as (
+         select c.id as campaign_id,
+                c.name as campaign_name,
+                nullif(trim(ci.channel), '') as channel,
+                greatest(coalesce(ci.amount, 0), 0)::numeric(14, 2) as investment,
+                'manual'::text as investment_source
+         from campaign_scope c
+         cross join lateral jsonb_to_recordset(
+           coalesce(c.metadata->'campaign_cost_calculator'->'channel_investments', c.metadata->'channel_investments', '[]'::jsonb)
+         ) as ci(channel text, amount numeric)
+         where nullif(trim(ci.channel), '') is not null
+           and greatest(coalesce(ci.amount, 0), 0) > 0
+       ),
+       fallback_investments as (
+         select c.id as campaign_id,
+                c.name as campaign_name,
+                ch.channel,
+                (coalesce(c.budget_total, 0) / greatest(jsonb_array_length(coalesce(c.launch_channels, '[]'::jsonb)), 1))::numeric(14, 2) as investment,
+                'allocated'::text as investment_source
+         from campaign_scope c
+         cross join lateral jsonb_array_elements_text(coalesce(c.launch_channels, '[]'::jsonb)) as ch(channel)
+         where coalesce(c.budget_total, 0) > 0
+           and jsonb_array_length(coalesce(c.launch_channels, '[]'::jsonb)) > 0
+           and not exists (select 1 from explicit_investments e where e.campaign_id = c.id)
+       ),
+       investments as (
+         select * from explicit_investments
+         union all
+         select * from fallback_investments
+       )
+       select campaign_id,
+              campaign_name,
+              channel,
+              sum(investment)::numeric(14, 2) as investment,
+              case when bool_or(investment_source = 'manual') then 'manual' else 'allocated' end as investment_source
+       from investments
+       where ($${channelInvestmentParams.push(filters.channel)}::text is null or channel = $${channelInvestmentParams.length}::text)
+       group by campaign_id, campaign_name, channel
+       order by investment desc, campaign_name asc`,
+      channelInvestmentParams
+    ),
   ]);
 
   const matrixRows = matrix.rows.map((row) => ({
@@ -830,7 +882,15 @@ async function getSeriesAndCharts(businessId, filters) {
     revenue: number(row.revenue),
     conversion_rate: number(row.conversion_rate),
   }));
-  const channelPerformance = buildChannelPerformance(matrixRows);
+  const investmentRows = channelInvestments.rows.map((row) => ({
+    campaign_id: row.campaign_id,
+    campaign_name: row.campaign_name,
+    channel: SOURCE_LABELS[row.channel] || row.channel,
+    raw_channel: row.channel,
+    investment: number(row.investment),
+    investment_source: row.investment_source || "allocated",
+  }));
+  const channelPerformance = buildChannelPerformance(matrixRows, investmentRows);
 
   return {
     timeline: timeline.rows.map((row) => ({
@@ -899,27 +959,34 @@ async function getSeriesAndCharts(businessId, filters) {
   };
 }
 
-function buildChannelPerformance(matrixRows = []) {
+function buildChannelPerformance(matrixRows = [], investmentRows = []) {
   const grouped = new Map();
-  matrixRows.forEach((row) => {
-    const label = row.channel || "Sin canal";
-    if (!grouped.has(label)) {
-      grouped.set(label, {
-        label,
-        channel: row.raw_channel || label,
-        raw_channel: row.raw_channel || label,
+  const ensure = (label, rawChannel = label) => {
+    const key = label || "Sin canal";
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        label: key,
+        channel: rawChannel || key,
+        raw_channel: rawChannel || key,
         leads: 0,
         qr_generated: 0,
         redemptions: 0,
         sales: 0,
         revenue: 0,
+        investment: 0,
+        investment_source: "",
         top_campaign: "",
         top_campaign_id: null,
         top_campaign_revenue: 0,
         top_campaign_sales: 0,
       });
     }
-    const channel = grouped.get(label);
+    return grouped.get(key);
+  };
+
+  matrixRows.forEach((row) => {
+    const label = row.channel || "Sin canal";
+    const channel = ensure(label, row.raw_channel || label);
     channel.leads += number(row.leads);
     channel.qr_generated += number(row.qr_generated);
     channel.redemptions += number(row.redemptions);
@@ -938,12 +1005,26 @@ function buildChannelPerformance(matrixRows = []) {
       channel.top_campaign_sales = rowSales;
     }
   });
+
+  investmentRows.forEach((row) => {
+    const label = row.channel || "Sin canal";
+    const channel = ensure(label, row.raw_channel || label);
+    channel.investment += number(row.investment);
+    channel.investment_source = channel.investment_source === "manual" || row.investment_source === "manual" ? "manual" : "allocated";
+    if (!channel.top_campaign) {
+      channel.top_campaign = row.campaign_name || channel.top_campaign;
+    }
+  });
+
   return Array.from(grouped.values())
     .map((channel) => ({
       ...channel,
       conversion_rate: safeRate(channel.sales, channel.leads),
       redemption_rate: safeRate(channel.redemptions, channel.qr_generated),
       avg_ticket: safeDivide(channel.revenue, channel.sales) || 0,
+      roi: safeRoi(channel.revenue, channel.investment),
+      cac: safeDivide(channel.investment, channel.sales) || 0,
+      cost_per_lead: safeDivide(channel.investment, channel.leads) || 0,
     }))
     .sort((a, b) => b.revenue - a.revenue || b.sales - a.sales || b.leads - a.leads);
 }

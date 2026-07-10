@@ -4136,6 +4136,40 @@ td {
   padding: 0;
 }
 
+#campaignModal .channel-investment-list {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(124, 251, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+#campaignModal .channel-investment-head {
+  display: grid;
+  gap: 4px;
+  color: var(--text);
+}
+
+#campaignModal .channel-investment-head span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+#campaignModal .channel-investment-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 180px);
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+#campaignModal .channel-investment-row input {
+  width: 100%;
+}
+
 #campaignModal .campaign-url-field {
   grid-column: span 2;
 }
