@@ -18200,6 +18200,7 @@ function normalizeAffiliatePurchaseItems() {
   state.affiliatePurchaseItems = rows.map((item) => ({
     name: String(item.name || "").trim(),
     inventory_product_id: item.inventory_product_id || null,
+    is_open_product: Boolean(item.is_open_product || (!item.inventory_product_id && item.name)),
     sku: item.sku || null,
     barcode: item.barcode || null,
     quantity: Math.max(1, Number(item.quantity || 1)),
@@ -18253,9 +18254,9 @@ function renderAffiliatePurchaseItems() {
       <label>
         <span>Producto</span>
         <select data-affiliate-purchase-field="product_select" data-product-select ${disabled ? "disabled" : ""}>
-          ${inventoryProductSelectOptions(item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.name ? OPEN_PRODUCT_VALUE : ""), { placeholder: "Seleccionar producto" })}
+          ${inventoryProductSelectOptions(item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.is_open_product || item.name ? OPEN_PRODUCT_VALUE : ""), { placeholder: "Seleccionar producto" })}
         </select>
-        <input class="open-product-input ${!item.inventory_product_id && item.name ? "" : "hidden"}" type="text" data-affiliate-purchase-field="name" data-open-product-input value="${escapeHtml(item.inventory_product_id ? "" : item.name)}" placeholder="Producto abierto o servicio" ${disabled || item.inventory_product_id || !item.name ? "disabled" : ""}>
+        <input class="open-product-input ${!item.inventory_product_id && (item.is_open_product || item.name) ? "" : "hidden"}" type="text" data-affiliate-purchase-field="name" data-open-product-input value="${escapeHtml(item.inventory_product_id ? "" : item.name)}" placeholder="Producto abierto o servicio" ${disabled || item.inventory_product_id || !(item.is_open_product || item.name) ? "disabled" : ""}>
       </label>
       <label>
         <span>Cant.</span>
@@ -18280,9 +18281,11 @@ function renderAffiliatePurchaseItems() {
       const next = normalizeAffiliatePurchaseItems();
       if (field === "product_select") {
         const product = findInventoryProduct(input.value);
+        const shouldFocusOpenProduct = input.value === OPEN_PRODUCT_VALUE;
         if (product) {
           next[index].name = product.name;
           next[index].inventory_product_id = product.id;
+          next[index].is_open_product = false;
           next[index].sku = product.sku || null;
           next[index].barcode = product.barcode || null;
           if (!Number(next[index].unit_price || 0)) next[index].unit_price = Number(product.unit_price || 0);
@@ -18292,13 +18295,25 @@ function renderAffiliatePurchaseItems() {
           next[index].inventory_product_id = null;
           next[index].sku = null;
           next[index].barcode = null;
+          next[index].is_open_product = input.value === OPEN_PRODUCT_VALUE;
           if (input.value !== OPEN_PRODUCT_VALUE) next[index].name = "";
         }
         state.affiliatePurchaseItems = next;
         renderAffiliatePurchaseItems();
+        if (shouldFocusOpenProduct) {
+          window.requestAnimationFrame(() => {
+            const openInput = affiliatePurchaseItemsList?.querySelector(`[data-affiliate-purchase-row="${index}"] [data-open-product-input]`);
+            openInput?.focus();
+          });
+        }
         return;
       }
-      next[index][field] = field === "name" ? input.value : Number(input.value || 0);
+      if (field === "name") {
+        next[index].name = input.value;
+        next[index].is_open_product = true;
+      } else {
+        next[index][field] = Number(input.value || 0);
+      }
       state.affiliatePurchaseItems = next;
       const totalCell = row?.querySelector(".affiliate-purchase-line-total strong");
       if (totalCell) totalCell.textContent = money(affiliatePurchaseLineTotal(next[index]));
