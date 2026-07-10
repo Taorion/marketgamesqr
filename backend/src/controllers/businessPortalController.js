@@ -213,6 +213,33 @@ const branchPatchSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
+const nullableDateTime = z.preprocess(
+  (value) => {
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString();
+  },
+  z.string().datetime().nullable()
+);
+
+const competitorProductSchema = z.object({
+  competitor_name: z.string().trim().min(2).max(160),
+  product_name: z.string().trim().min(2).max(180),
+  category: nullableText(120),
+  competitor_price: z.number().min(0),
+  our_price: z.number().min(0).optional().nullable(),
+  currency: z.string().trim().max(12).default("COP"),
+  channel: nullableText(120),
+  source_url: nullableText(500),
+  observed_at: nullableDateTime.optional().nullable(),
+  notes: nullableText(1500),
+  is_active: z.boolean().optional().default(true),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorProductPatchSchema = competitorProductSchema.partial();
+
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.preprocess(
@@ -890,6 +917,180 @@ async function deleteBranch(req, res, next) {
       throw notFound("Branch not found.");
     }
     res.json({ branch: result.rows[0], deleted: false, archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function competitorSearchWhere(search, params) {
+  const text = String(search || "").trim();
+  if (!text) return "";
+  params.push(`%${text.toLowerCase()}%`);
+  const index = params.length;
+  return `and (
+    lower(competitor_name) like $${index}
+    or lower(product_name) like $${index}
+    or lower(coalesce(category, '')) like $${index}
+    or lower(coalesce(channel, '')) like $${index}
+    or lower(coalesce(notes, '')) like $${index}
+  )`;
+}
+
+function mapCompetitorProduct(row = {}) {
+  const competitorPrice = Number(row.competitor_price || 0);
+  const ourPrice = row.our_price === null || row.our_price === undefined ? null : Number(row.our_price || 0);
+  const priceGap = ourPrice === null ? null : ourPrice - competitorPrice;
+  return {
+    ...row,
+    competitor_price: competitorPrice,
+    our_price: ourPrice,
+    price_gap: priceGap,
+    price_gap_percent: priceGap === null || competitorPrice <= 0 ? null : Number(((priceGap / competitorPrice) * 100).toFixed(2)),
+  };
+}
+
+function competitorProductPayload(body, userId) {
+  return {
+    competitor_name: body.competitor_name,
+    product_name: body.product_name,
+    category: body.category || null,
+    competitor_price: Number(body.competitor_price || 0),
+    our_price: body.our_price === null || body.our_price === undefined ? null : Number(body.our_price || 0),
+    currency: body.currency || "COP",
+    channel: body.channel || null,
+    source_url: body.source_url || null,
+    observed_at: body.observed_at || null,
+    notes: body.notes || null,
+    is_active: body.is_active !== false,
+    metadata: body.metadata || {},
+    created_by_user_id: userId || null,
+  };
+}
+
+async function listCompetitorProducts(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const limit = boundedLimit(req.query.limit, 300, 800);
+    const params = [businessId];
+    const searchWhere = competitorSearchWhere(req.query.search, params);
+    const includeInactive = ["1", "true", "yes"].includes(String(req.query.include_inactive || "").toLowerCase());
+    params.push(limit);
+    const result = await query(
+      `select *
+       from business_competitor_products
+       where business_id = $1
+         ${includeInactive ? "" : "and is_active = true"}
+         ${searchWhere}
+       order by observed_at desc, updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ products: result.rows.map(mapCompetitorProduct) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitorProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorProductSchema, req.body);
+    const payload = competitorProductPayload(body, req.user.id);
+    const result = await query(
+      `insert into business_competitor_products
+        (business_id, competitor_name, product_name, category, competitor_price, our_price,
+         currency, channel, source_url, observed_at, notes, is_active, metadata, created_by_user_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, coalesce($10::timestamptz, now()), $11, $12, $13::jsonb, $14)
+       returning *`,
+      [
+        businessId,
+        payload.competitor_name,
+        payload.product_name,
+        payload.category,
+        payload.competitor_price,
+        payload.our_price,
+        payload.currency,
+        payload.channel,
+        payload.source_url,
+        payload.observed_at,
+        payload.notes,
+        payload.is_active,
+        JSON.stringify(payload.metadata),
+        payload.created_by_user_id,
+      ]
+    );
+    res.status(201).json({ product: mapCompetitorProduct(result.rows[0]) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitorProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorProductPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_competitor_products where id = $1 and business_id = $2",
+      [req.params.productId, businessId]
+    );
+    if (!existing.rowCount) throw notFound("Producto de competencia no encontrado.");
+    const payload = competitorProductPayload({ ...existing.rows[0], ...body }, req.user.id);
+    const result = await query(
+      `update business_competitor_products
+       set competitor_name = $3,
+           product_name = $4,
+           category = $5,
+           competitor_price = $6,
+           our_price = $7,
+           currency = $8,
+           channel = $9,
+           source_url = $10,
+           observed_at = coalesce($11::timestamptz, observed_at),
+           notes = $12,
+           is_active = $13,
+           metadata = $14::jsonb,
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [
+        req.params.productId,
+        businessId,
+        payload.competitor_name,
+        payload.product_name,
+        payload.category,
+        payload.competitor_price,
+        payload.our_price,
+        payload.currency,
+        payload.channel,
+        payload.source_url,
+        payload.observed_at,
+        payload.notes,
+        payload.is_active,
+        JSON.stringify(payload.metadata),
+      ]
+    );
+    res.json({ product: mapCompetitorProduct(result.rows[0]) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitorProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitor_products
+       set is_active = false, updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.productId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Producto de competencia no encontrado.");
+    res.json({ product: mapCompetitorProduct(result.rows[0]), archived: true });
   } catch (error) {
     next(error);
   }
@@ -2825,6 +3026,10 @@ module.exports = {
   createBranch,
   updateBranch,
   deleteBranch,
+  listCompetitorProducts,
+  createCompetitorProduct,
+  updateCompetitorProduct,
+  archiveCompetitorProduct,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,

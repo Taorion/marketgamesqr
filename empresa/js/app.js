@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-hard-session-boundary-v24";
+const APP_VERSION = "empresa-20260709-competition-directory-v25";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -41,6 +41,7 @@ const businessKpiGrid = document.getElementById("businessKpiGrid");
 const campaignKpiGrid = document.getElementById("campaignKpiGrid");
 const salesKpiGrid = document.getElementById("salesKpiGrid");
 const branchKpiGrid = document.getElementById("branchKpiGrid");
+const competitionKpiGrid = document.getElementById("competitionKpiGrid");
 const adminKpiGrid = document.getElementById("adminKpiGrid");
 const recentRedemptionsTable = document.getElementById("recentRedemptionsTable");
 const recentLeadsTable = document.getElementById("recentLeadsTable");
@@ -708,6 +709,25 @@ const inventoryFormTitle = document.getElementById("inventoryFormTitle");
 const inventoryKpiGrid = document.getElementById("inventoryKpiGrid");
 const inventorySearchInput = document.getElementById("inventorySearchInput");
 const inventoryTable = document.getElementById("inventoryTable");
+const competitionProductForm = document.getElementById("competitionProductForm");
+const competitionProductIdInput = document.getElementById("competitionProductIdInput");
+const competitionCompetitorInput = document.getElementById("competitionCompetitorInput");
+const competitionProductNameInput = document.getElementById("competitionProductNameInput");
+const competitionCategoryInput = document.getElementById("competitionCategoryInput");
+const competitionPriceInput = document.getElementById("competitionPriceInput");
+const competitionOurPriceInput = document.getElementById("competitionOurPriceInput");
+const competitionCurrencyInput = document.getElementById("competitionCurrencyInput");
+const competitionChannelInput = document.getElementById("competitionChannelInput");
+const competitionObservedAtInput = document.getElementById("competitionObservedAtInput");
+const competitionSourceUrlInput = document.getElementById("competitionSourceUrlInput");
+const competitionNotesInput = document.getElementById("competitionNotesInput");
+const competitionMessage = document.getElementById("competitionMessage");
+const competitionSaveButton = document.getElementById("competitionSaveButton");
+const competitionResetButton = document.getElementById("competitionResetButton");
+const refreshCompetitionButton = document.getElementById("refreshCompetitionButton");
+const competitionFormTitle = document.getElementById("competitionFormTitle");
+const competitionSearchInput = document.getElementById("competitionSearchInput");
+const competitionTable = document.getElementById("competitionTable");
 const qrBatchForm = document.getElementById("qrBatchForm");
 const qrBatchCampaignInput = document.getElementById("qrBatchCampaignInput");
 const qrBatchCampaignHelp = document.getElementById("qrBatchCampaignHelp");
@@ -1047,6 +1067,11 @@ let state = {
   inventoryProducts: [],
   inventoryLoaded: false,
   inventorySearch: "",
+  competitionProducts: [],
+  competitionLoaded: false,
+  competitionLoading: false,
+  competitionSearch: "",
+  competitionEditingId: null,
   businessBranches: [],
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
@@ -1721,6 +1746,7 @@ function clearBusinessWorkspaceUi() {
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
     [inventoryTable, 7, "Abre Inventario para cargar productos."],
+    [competitionTable, 8, "Abre Competencia para cargar el directorio."],
     [rewardPassTable, 8, "Cargando Reward Pass..."],
     [rewardPassRedemptionTable, 9, "Cargando historial..."],
     [rewardPassTicketLedgerTable, 5, "Cargando movimientos..."],
@@ -1745,6 +1771,8 @@ function clearBusinessWorkspaceUi() {
   if (validatorHistoryTable) validatorHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial de la empresa activa...</td></tr>';
   if (inventorySearchInput) inventorySearchInput.value = "";
   resetInventoryForm();
+  if (competitionSearchInput) competitionSearchInput.value = "";
+  resetCompetitionForm();
   setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
   if (rewardPassKpiGrid) renderSkeletonCards(rewardPassKpiGrid, 4);
   if (rewardPassPreviewTitle) rewardPassPreviewTitle.textContent = "Vista previa";
@@ -1877,6 +1905,11 @@ function resetBusinessScopedState(options = {}) {
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventorySearch = "";
+  state.competitionProducts = [];
+  state.competitionLoaded = false;
+  state.competitionLoading = false;
+  state.competitionSearch = "";
+  state.competitionEditingId = null;
   state.businessBranches = [];
   state.businessBranchesLoaded = false;
   state.businessBranchesLoading = false;
@@ -2904,6 +2937,7 @@ const viewFeatureMap = {
   dashboard: "portal_access",
   account: null,
   campaigns: "portal_access",
+  competition: "campaign_comparison",
   leads: "leads_view",
   affiliates: "affiliates",
   inventory: "gift_inventory",
@@ -3748,6 +3782,10 @@ function setView(view) {
   if (view === "inventory") {
     loadInventoryProducts({ quiet: true }).then(renderInventoryView);
     renderInventoryView();
+  }
+  if (view === "competition") {
+    loadCompetitionProducts({ quiet: true }).then(renderCompetitionView);
+    renderCompetitionView();
   }
   if (view === "redemptions") renderRedemptionsView();
   if (view === "strategic-qr") {
@@ -10974,6 +11012,222 @@ async function archiveInventoryProduct(productId) {
     showFeedback("Producto archivado.", "success", { title: "Inventario" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo archivar" });
+  }
+}
+
+async function loadCompetitionProducts(options = {}) {
+  if (!session?.user?.business_id) {
+    state.competitionProducts = [];
+    state.competitionLoaded = true;
+    state.competitionLoading = false;
+    return [];
+  }
+  if (state.competitionLoaded && !options.force) return state.competitionProducts;
+  if (state.competitionLoading) return state.competitionProducts;
+  if (!options.quiet && competitionTable) {
+    competitionTable.innerHTML = '<tr><td colspan="8">Cargando directorio de competencia...</td></tr>';
+  }
+  state.competitionLoading = true;
+  const scopeKey = businessScopeKey();
+  try {
+    const data = await apiSafe("/api/business/competitor-products?limit=500", { headers: authHeaders() }, { products: [] });
+    if (!isCurrentBusinessScope(scopeKey)) return state.competitionProducts;
+    state.competitionProducts = Array.isArray(data.products) ? data.products : [];
+    state.competitionLoaded = true;
+    return state.competitionProducts;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.competitionLoading = false;
+  }
+}
+
+function filteredCompetitionProducts() {
+  const needle = String(state.competitionSearch || "").trim().toLowerCase();
+  const products = (state.competitionProducts || []).filter((item) => item.is_active !== false);
+  if (!needle) return products;
+  return products.filter((item) => [
+    item.competitor_name,
+    item.product_name,
+    item.category,
+    item.channel,
+    item.notes,
+  ].some((value) => String(value || "").toLowerCase().includes(needle)));
+}
+
+function competitionKpis(products = filteredCompetitionProducts()) {
+  const competitors = new Set(products.map((item) => String(item.competitor_name || "").trim().toLowerCase()).filter(Boolean));
+  const avgCompetitorPrice = products.length
+    ? products.reduce((sum, item) => sum + toNumber(item.competitor_price), 0) / products.length
+    : 0;
+  const comparable = products.filter((item) => item.our_price !== null && item.our_price !== undefined);
+  const favorable = comparable.filter((item) => toNumber(item.our_price) < toNumber(item.competitor_price)).length;
+  const avgGap = comparable.length
+    ? comparable.reduce((sum, item) => sum + (toNumber(item.our_price) - toNumber(item.competitor_price)), 0) / comparable.length
+    : 0;
+  return [
+    { label: "Competidores", value: competitors.size.toLocaleString("es-CO"), meta: "Marcas o negocios monitoreados" },
+    { label: "Productos comparados", value: products.length.toLocaleString("es-CO"), meta: "Registros activos del directorio" },
+    { label: "Precio promedio competencia", value: money(avgCompetitorPrice), meta: "Sobre los datos capturados" },
+    { label: "Ventaja de precio", value: favorable.toLocaleString("es-CO"), meta: comparable.length ? `Brecha promedio ${money(avgGap)}` : "Agrega tu precio para comparar" },
+  ];
+}
+
+function competitionGapLabel(product) {
+  if (product.our_price === null || product.our_price === undefined) return "Sin precio propio";
+  const gap = toNumber(product.our_price) - toNumber(product.competitor_price);
+  if (gap === 0) return "Mismo precio";
+  return gap > 0 ? `+${money(gap)} vs competencia` : `${money(gap)} vs competencia`;
+}
+
+function renderCompetitionView() {
+  const rows = filteredCompetitionProducts();
+  if (competitionKpiGrid) {
+    competitionKpiGrid.innerHTML = competitionKpis(rows).map((item) => `
+      <article class="surface-card kpi-card">
+        <span class="mono-label">${escapeHtml(item.label)}</span>
+        <strong class="kpi-value">${escapeHtml(item.value)}</strong>
+        <p class="kpi-meta">${escapeHtml(item.meta)}</p>
+      </article>
+    `).join("");
+  }
+  if (!competitionTable) return;
+  if (!state.competitionLoaded) {
+    competitionTable.innerHTML = '<tr><td colspan="8">Cargando directorio de competencia...</td></tr>';
+    return;
+  }
+  if (!rows.length) {
+    competitionTable.innerHTML = '<tr><td colspan="8">Sin productos de competencia registrados. Agrega el primer hallazgo con el formulario.</td></tr>';
+    return;
+  }
+  competitionTable.innerHTML = rows.map((product) => {
+    const source = product.source_url
+      ? `<a href="${escapeHtml(product.source_url)}" target="_blank" rel="noopener">Abrir fuente</a>`
+      : "-";
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(product.competitor_name)}</strong>
+          <span class="table-secondary">${escapeHtml(formatDate(product.observed_at))}</span>
+        </td>
+        <td>${escapeHtml(product.product_name)}</td>
+        <td>${escapeHtml(product.category || "-")}</td>
+        <td>${escapeHtml(money(product.competitor_price))}</td>
+        <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
+        <td>${escapeHtml(competitionGapLabel(product))}</td>
+        <td>
+          <span>${escapeHtml(product.channel || "-")}</span>
+          <span class="table-secondary">${source}</span>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="ghost-button" type="button" data-competition-edit="${escapeHtml(product.id)}">Editar</button>
+            <button class="ghost-button danger-button" type="button" data-competition-delete="${escapeHtml(product.id)}">Eliminar</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  competitionTable.querySelectorAll("[data-competition-edit]").forEach((button) => {
+    button.addEventListener("click", () => editCompetitionProduct(button.dataset.competitionEdit));
+  });
+  competitionTable.querySelectorAll("[data-competition-delete]").forEach((button) => {
+    button.addEventListener("click", () => archiveCompetitionProduct(button.dataset.competitionDelete));
+  });
+}
+
+function resetCompetitionForm() {
+  state.competitionEditingId = null;
+  competitionProductForm?.reset();
+  if (competitionProductIdInput) competitionProductIdInput.value = "";
+  if (competitionCurrencyInput) competitionCurrencyInput.value = "COP";
+  if (competitionObservedAtInput) competitionObservedAtInput.value = dateInputValue(new Date());
+  if (competitionFormTitle) competitionFormTitle.textContent = "Nuevo producto competidor";
+  setInlineMessage(competitionMessage, "", "info");
+}
+
+function editCompetitionProduct(productId = "") {
+  const product = (state.competitionProducts || []).find((item) => String(item.id) === String(productId));
+  if (!product) return;
+  state.competitionEditingId = product.id;
+  if (competitionProductIdInput) competitionProductIdInput.value = product.id;
+  if (competitionCompetitorInput) competitionCompetitorInput.value = product.competitor_name || "";
+  if (competitionProductNameInput) competitionProductNameInput.value = product.product_name || "";
+  if (competitionCategoryInput) competitionCategoryInput.value = product.category || "";
+  if (competitionPriceInput) competitionPriceInput.value = String(product.competitor_price || 0);
+  if (competitionOurPriceInput) competitionOurPriceInput.value = product.our_price === null || product.our_price === undefined ? "" : String(product.our_price || 0);
+  if (competitionCurrencyInput) competitionCurrencyInput.value = product.currency || "COP";
+  if (competitionChannelInput) competitionChannelInput.value = product.channel || "";
+  if (competitionObservedAtInput) competitionObservedAtInput.value = product.observed_at ? dateInputValue(new Date(product.observed_at)) : dateInputValue(new Date());
+  if (competitionSourceUrlInput) competitionSourceUrlInput.value = product.source_url || "";
+  if (competitionNotesInput) competitionNotesInput.value = product.notes || "";
+  if (competitionFormTitle) competitionFormTitle.textContent = "Editar producto competidor";
+  setInlineMessage(competitionMessage, "Editando dato de competencia existente.", "info");
+  competitionCompetitorInput?.focus();
+}
+
+function competitionFormPayload() {
+  return {
+    competitor_name: competitionCompetitorInput?.value.trim() || "",
+    product_name: competitionProductNameInput?.value.trim() || "",
+    category: competitionCategoryInput?.value.trim() || null,
+    competitor_price: Number(competitionPriceInput?.value || 0),
+    our_price: competitionOurPriceInput?.value === "" ? null : Number(competitionOurPriceInput?.value || 0),
+    currency: competitionCurrencyInput?.value.trim() || "COP",
+    channel: competitionChannelInput?.value.trim() || null,
+    source_url: competitionSourceUrlInput?.value.trim() || null,
+    observed_at: competitionObservedAtInput?.value ? new Date(`${competitionObservedAtInput.value}T00:00:00`).toISOString() : null,
+    notes: competitionNotesInput?.value.trim() || null,
+  };
+}
+
+async function submitCompetitionProduct(event) {
+  event.preventDefault();
+  const productId = competitionProductIdInput?.value || state.competitionEditingId || "";
+  const payload = competitionFormPayload();
+  if (!payload.competitor_name || !payload.product_name || payload.competitor_price < 0) {
+    setInlineMessage(competitionMessage, "Completa competidor, producto y precio de competencia.", "error");
+    return;
+  }
+  setButtonLoading(competitionSaveButton, true, productId ? "Actualizando..." : "Guardando...");
+  setInlineMessage(competitionMessage, "Guardando dato de competencia...", "info");
+  try {
+    const data = await api(productId ? `/api/business/competitor-products/${encodeURIComponent(productId)}` : "/api/business/competitor-products", {
+      method: productId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.product;
+    state.competitionProducts = [
+      saved,
+      ...(state.competitionProducts || []).filter((item) => String(item.id) !== String(saved.id)),
+    ];
+    state.competitionLoaded = true;
+    resetCompetitionForm();
+    renderCompetitionView();
+    setInlineMessage(competitionMessage, productId ? "Dato actualizado correctamente." : "Dato agregado al directorio de competencia.", "success");
+    showFeedback(productId ? "Dato de competencia actualizado." : "Dato de competencia guardado.", "success", { title: "Competencia" });
+  } catch (error) {
+    setInlineMessage(competitionMessage, error.message || "No se pudo guardar el dato.", "error");
+    showFeedback(error.message || "No se pudo guardar el dato.", "error", { title: "Competencia" });
+  } finally {
+    setButtonLoading(competitionSaveButton, false);
+  }
+}
+
+async function archiveCompetitionProduct(productId = "") {
+  const product = (state.competitionProducts || []).find((item) => String(item.id) === String(productId));
+  if (!product) return;
+  if (!window.confirm(`Eliminar "${product.product_name}" de ${product.competitor_name}?`)) return;
+  try {
+    await api(`/api/business/competitor-products/${encodeURIComponent(productId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.competitionProducts = (state.competitionProducts || []).filter((item) => String(item.id) !== String(productId));
+    if (String(state.competitionEditingId || "") === String(productId)) resetCompetitionForm();
+    renderCompetitionView();
+    showFeedback("Dato eliminado del directorio activo.", "success", { title: "Competencia" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el dato.", "error", { title: "Competencia" });
   }
 }
 
@@ -22521,6 +22775,16 @@ refreshInventoryButton?.addEventListener("click", async () => {
 inventorySearchInput?.addEventListener("input", () => {
   state.inventorySearch = inventorySearchInput.value;
   renderInventoryView();
+});
+competitionProductForm?.addEventListener("submit", submitCompetitionProduct);
+competitionResetButton?.addEventListener("click", resetCompetitionForm);
+refreshCompetitionButton?.addEventListener("click", async () => {
+  await loadCompetitionProducts({ force: true });
+  renderCompetitionView();
+});
+competitionSearchInput?.addEventListener("input", () => {
+  state.competitionSearch = competitionSearchInput.value;
+  renderCompetitionView();
 });
 customerAcquisitionProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);

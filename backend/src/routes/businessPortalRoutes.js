@@ -16,6 +16,10 @@ const {
   createBranch,
   updateBranch,
   deleteBranch,
+  listCompetitorProducts,
+  createCompetitorProduct,
+  updateCompetitorProduct,
+  archiveCompetitorProduct,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
@@ -97,6 +101,10 @@ router.get("/branches", listBranches);
 router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);
 router.delete("/branches/:branchId", deleteBranch);
+router.get("/competitor-products", listCompetitorProducts);
+router.post("/competitor-products", createCompetitorProduct);
+router.patch("/competitor-products/:productId", updateCompetitorProduct);
+router.delete("/competitor-products/:productId", archiveCompetitorProduct);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/inventory/products", listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);

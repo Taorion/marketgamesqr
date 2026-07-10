@@ -109,6 +109,10 @@
             <span class="material-symbols-outlined">campaign</span>
             <span>Campaigns</span>
           </button>
+          <button class="nav-item" data-view="competition" type="button">
+            <span class="material-symbols-outlined">monitoring</span>
+            <span>Competencia</span>
+          </button>
           <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
             <span class="material-symbols-outlined">group</span>
             <span>Contactos</span>
@@ -3476,6 +3480,74 @@
                       </tr>
                     </thead>
                     <tbody id="inventoryTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="competition">
+            <div class="view-head">
+              <div>
+                <h2>Analizador de competencia</h2>
+                <p>Directorio operativo para comparar productos, precios, canales y hallazgos comerciales por competidor.</p>
+              </div>
+              <button class="ghost-button" id="refreshCompetitionButton" type="button">Actualizar</button>
+            </div>
+
+            <section class="kpi-grid sales-kpis" id="competitionKpiGrid"></section>
+
+            <section class="inventory-layout">
+              <article class="surface-card inventory-form-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Observación</span>
+                    <strong id="competitionFormTitle">Nuevo producto competidor</strong>
+                  </div>
+                  <button class="ghost-button" id="competitionResetButton" type="button">Limpiar</button>
+                </div>
+                <form class="modal-form inventory-form" id="competitionProductForm">
+                  <input id="competitionProductIdInput" type="hidden">
+                  <label><span>Competidor</span><input id="competitionCompetitorInput" type="text" maxlength="160" required></label>
+                  <label><span>Producto o servicio</span><input id="competitionProductNameInput" type="text" maxlength="180" required></label>
+                  <label><span>Categoría</span><input id="competitionCategoryInput" type="text" maxlength="120"></label>
+                  <label><span>Precio competencia</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
+                  <label><span>Nuestro precio</span><input id="competitionOurPriceInput" type="number" min="0" step="100"></label>
+                  <label><span>Moneda</span><input id="competitionCurrencyInput" type="text" maxlength="12" value="COP"></label>
+                  <label><span>Canal o fuente</span><input id="competitionChannelInput" type="text" maxlength="120" placeholder="Web, tienda, WhatsApp, marketplace"></label>
+                  <label><span>Fecha observada</span><input id="competitionObservedAtInput" type="date"></label>
+                  <label class="span-2"><span>Link de referencia</span><input id="competitionSourceUrlInput" type="url" maxlength="500" placeholder="https://..."></label>
+                  <label class="span-2"><span>Notas</span><textarea id="competitionNotesInput" rows="3" maxlength="1500" placeholder="Promoción, presentación, condiciones, empaque, garantía o hallazgo comercial"></textarea></label>
+                  <div class="modal-actions span-2">
+                    <p class="form-message" id="competitionMessage"></p>
+                    <button class="solid-button" id="competitionSaveButton" type="submit">Guardar dato</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="surface-card data-table-card inventory-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Directorio</span>
+                    <strong>Productos y precios de competencia</strong>
+                  </div>
+                  <input id="competitionSearchInput" type="search" placeholder="Buscar competidor, producto, categoría o canal">
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Competidor</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio competencia</th>
+                        <th>Nuestro precio</th>
+                        <th>Diferencia</th>
+                        <th>Fuente</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="competitionTable"></tbody>
                   </table>
                 </div>
               </article>
