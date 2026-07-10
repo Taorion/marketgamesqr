@@ -203,7 +203,7 @@ function listWhere(filters, params) {
   }
   if (filters.campaign_id) {
     params.push(filters.campaign_id);
-    clauses.push(`campaign_id = $${params.length}`);
+    clauses.push(`(campaign_id = $${params.length} or associated_campaign_ids @> array[$${params.length}]::uuid[])`);
   }
   if (filters.status) {
     params.push(String(filters.status).toUpperCase());
@@ -278,6 +278,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          p.created_at,
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
+         array_remove(array[p.campaign_id, latest_capture.campaign_id], null)::uuid[] as associated_campaign_ids,
          coalesce(
            case when latest_capture.id is not null then 'Descarga de activo digital' end,
            case
@@ -447,8 +448,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.email,
          ml.phone,
          ml.created_at,
-         null::uuid as campaign_id,
-         null::text as campaign_name,
+         ca.campaign_id,
+         ca.campaign_name,
+         coalesce(ca.campaign_ids, '{}'::uuid[]) as associated_campaign_ids,
          coalesce(ml.source, 'Manual') as channel,
          coalesce(ml.metadata->>'city', '') as city,
          ml.priority as crm_priority,
@@ -487,7 +489,18 @@ async function listLeadCrmRows(businessId, filters = {}) {
                 'manual_job_title', ml.job_title,
                 'manual_importance_reason', ml.importance_reason
               ) as metadata
-       from business_manual_leads ml
+      from business_manual_leads ml
+       left join lateral (
+         select
+           (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
+           (array_agg(c.name order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_name,
+           coalesce(array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc), '{}'::uuid[]) as campaign_ids
+         from campaign_manual_contacts cmc
+         join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
+         where cmc.business_id = ml.business_id
+           and cmc.manual_lead_id = ml.id
+           and cmc.status = 'ACTIVE'
+       ) ca on true
        left join lateral (
          select count(*)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
@@ -531,6 +544,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.created_at,
          ca.campaign_id,
          ca.campaign_name,
+         case when ca.campaign_id is null then '{}'::uuid[] else array[ca.campaign_id]::uuid[] end as associated_campaign_ids,
          'Afiliados'::text as channel,
          coalesce(fa.card_metadata->>'city', '') as city,
          null::text as crm_priority,
@@ -773,22 +787,37 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
   }
   if (source === "MANUAL") {
     const result = await client.query(
-      `select id, business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
-              name, null::text as document_id, email, phone, company as organization,
-              source as channel, source_detail, interest, preferred_channel,
-              status as stored_status, priority, notes,
-              metadata
+      `select ml.id, ml.business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
+              ml.name, null::text as document_id, ml.email, ml.phone, ml.company as organization,
+              ml.source as channel, ml.source_detail, ml.interest, ml.preferred_channel,
+              ml.status as stored_status, ml.priority, ml.notes,
+              ml.metadata
                 || jsonb_build_object(
-                     'manual_status', status,
-                     'manual_priority', priority,
-                     'manual_notes', notes,
-                     'manual_company', company,
-                     'manual_job_title', job_title,
-                     'manual_importance_reason', importance_reason
+                     'manual_status', ml.status,
+                     'manual_priority', ml.priority,
+                     'manual_notes', ml.notes,
+                     'manual_company', ml.company,
+                     'manual_job_title', ml.job_title,
+                     'manual_importance_reason', ml.importance_reason,
+                     'associated_campaigns', coalesce(ca.campaigns, '[]'::json)
                    ) as metadata,
-              created_at, updated_at
-       from business_manual_leads
-       where id = $1 and business_id = $2`,
+              ca.campaign_id,
+              ca.campaign_name,
+              ml.created_at, ml.updated_at
+       from business_manual_leads ml
+       left join lateral (
+         select
+           (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
+           (array_agg(c.name order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_name,
+           json_agg(json_build_object('id', c.id, 'name', c.name) order by cmc.updated_at desc, cmc.created_at desc)
+             filter (where cmc.id is not null) as campaigns
+         from campaign_manual_contacts cmc
+         join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
+         where cmc.business_id = ml.business_id
+           and cmc.manual_lead_id = ml.id
+           and cmc.status = 'ACTIVE'
+       ) ca on true
+       where ml.id = $1 and ml.business_id = $2`,
       [leadId, businessId]
     );
     if (!result.rowCount) throw notFound("Lead not found.");

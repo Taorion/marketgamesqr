@@ -15518,6 +15518,36 @@ body.chart-focus-open .command-center {
   background: rgba(255, 255, 255, 0.045);
 }
 
+.lead-campaign-assignment {
+  display: grid;
+  gap: 8px;
+  min-width: 230px;
+}
+
+.lead-campaign-chip-list,
+.lead-campaign-assign-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lead-campaign-assign-row select {
+  flex: 1 1 150px;
+  min-width: 140px;
+}
+
+.pill .pill-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0 0 0 4px;
+}
+
 @media (max-width: 980px) {
   .lead-agenda-toolbar {
     grid-template-columns: 1fr;

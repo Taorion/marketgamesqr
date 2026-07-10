@@ -57,6 +57,8 @@ const {
   createManualLead,
   createManualLeadFromExistingLead,
   updateManualLead,
+  assignManualLeadToCampaign,
+  removeManualLeadFromCampaign,
   contactFeed,
   exportContactFeed,
   exportCampaignLeads,
@@ -104,6 +106,8 @@ router.get("/contacts/feed", contactFeed);
 router.get("/contacts/manual", listManualLeads);
 router.post("/contacts/manual", createManualLead);
 router.post("/contacts/manual/from-lead/:leadId", createManualLeadFromExistingLead);
+router.post("/contacts/manual/:manualLeadId/campaigns", assignManualLeadToCampaign);
+router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", removeManualLeadFromCampaign);
 router.patch("/contacts/manual/:manualLeadId", updateManualLead);
 router.get("/contacts/feed/export.csv", exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);

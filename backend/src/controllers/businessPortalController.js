@@ -428,6 +428,11 @@ const manualLeadSchema = z.object({
 
 const manualLeadPatchSchema = manualLeadSchema;
 
+const manualContactCampaignSchema = z.object({
+  campaign_id: z.string().uuid(),
+  notes: nullableText(1000),
+});
+
 const PREPAID_LEAD_SAMPLE_LIMIT = 20;
 
 function businessIdFor(req) {
@@ -553,7 +558,7 @@ async function ticketTransactions(req, res, next) {
   }
 }
 
-async function getCampaignLeadRows(businessId, campaignId, limit = null) {
+async function getCampaignCapturedLeadRows(businessId, campaignId, limit = null) {
   const limitClause = limit ? "limit $3" : "";
   const params = limit ? [businessId, campaignId, limit] : [businessId, campaignId];
   const result = await query(
@@ -608,6 +613,47 @@ async function getCampaignLeadRows(businessId, campaignId, limit = null) {
     params
   );
   return result.rows;
+}
+
+async function getCampaignManualContactRows(businessId, campaignId, limit = null) {
+  const limitClause = limit ? "limit $3" : "";
+  const params = limit ? [businessId, campaignId, limit] : [businessId, campaignId];
+  const result = await query(
+    `select ml.id, 'MANUAL'::text as source_type, ml.name, null::text as document_id, ml.phone, ml.email,
+            cmc.created_at,
+            concat_ws(' - ', 'Directorio de contactos', nullif(ml.source, ''), nullif(c.name, '')) as lead_source,
+            coalesce(nullif(ml.interest, ''), ml.company, '-') as favorite_product,
+            coalesce(nullif(ml.importance_reason, ''), nullif(ml.notes, ''), '-') as purchase_intent,
+            '-'::text as gift_budget,
+            coalesce(nullif(ml.preferred_contact_time, ''), '-') as purchase_window,
+            coalesce(nullif(ml.preferred_channel, ''), '-') as preferred_channel,
+            '-'::text as style_preference,
+            coalesce(nullif(ml.company, ''), '-') as usage_context,
+            coalesce(nullif(ml.preferred_contact_time, ''), '-') as preferred_contact_time,
+            null::uuid as qr_code_id,
+            null::text as qr_status,
+            null::timestamptz as redeemed_at,
+            'Contacto asociado desde directorio'::text as reward_name
+     from campaign_manual_contacts cmc
+     join business_manual_leads ml on ml.id = cmc.manual_lead_id and ml.business_id = cmc.business_id
+     join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
+     where cmc.business_id = $1
+       and cmc.campaign_id = $2
+       and cmc.status = 'ACTIVE'
+     order by cmc.created_at desc
+     ${limitClause}`,
+    params
+  );
+  return result.rows;
+}
+
+async function getCampaignLeadRows(businessId, campaignId, limit = null) {
+  const [captured, manualContacts] = await Promise.all([
+    getCampaignCapturedLeadRows(businessId, campaignId, limit),
+    getCampaignManualContactRows(businessId, campaignId, limit),
+  ]);
+  const rows = [...captured, ...manualContacts].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  return limit ? rows.slice(0, Number(limit)) : rows;
 }
 
 function csvValue(value) {
@@ -2917,10 +2963,28 @@ async function listManualLeads(req, res, next) {
     }
     const limit = boundedLimit(req.query.limit, 500, 1000);
     const result = await query(
-      `select *
+      `select ml.*,
+              coalesce(ca.campaigns, '[]'::json) as campaigns
          from business_manual_leads
-        where business_id = $1
-        order by updated_at desc, created_at desc
+         ml
+         left join lateral (
+           select json_agg(
+             json_build_object(
+               'id', c.id,
+               'name', c.name,
+               'status', cmc.status,
+               'assigned_at', cmc.created_at
+             )
+             order by cmc.updated_at desc, cmc.created_at desc
+           ) filter (where cmc.id is not null) as campaigns
+           from campaign_manual_contacts cmc
+           join campaigns c on c.id = cmc.campaign_id and c.business_id = cmc.business_id
+           where cmc.business_id = ml.business_id
+             and cmc.manual_lead_id = ml.id
+             and cmc.status = 'ACTIVE'
+         ) ca on true
+        where ml.business_id = $1
+        order by ml.updated_at desc, ml.created_at desc
         limit $2`,
       [businessId, limit]
     );
@@ -3001,6 +3065,102 @@ async function updateManualLead(req, res, next) {
       throw notFound("Prospecto manual no encontrado.");
     }
     res.json({ lead: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function assignManualLeadToCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const subscription = await getBusinessSubscription(businessId);
+    if (subscription.plan.raw_status !== "ACTIVE") {
+      throw forbidden("La suscripcion del negocio no esta activa.");
+    }
+    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para asociar contactos a campañas.`);
+    }
+
+    const body = validate(manualContactCampaignSchema, req.body);
+    const result = await withTransaction(async (client) => {
+      const manualLead = await client.query(
+        "select id, name from business_manual_leads where id = $1 and business_id = $2",
+        [req.params.manualLeadId, businessId]
+      );
+      if (!manualLead.rowCount) throw notFound("Contacto del directorio no encontrado.");
+
+      const campaign = await client.query(
+        "select id, name from campaigns where id = $1 and business_id = $2",
+        [body.campaign_id, businessId]
+      );
+      if (!campaign.rowCount) throw notFound("Campaña no encontrada para este negocio.");
+
+      const assignment = await client.query(
+        `insert into campaign_manual_contacts
+          (business_id, campaign_id, manual_lead_id, assigned_by_user_id, status, notes, metadata)
+         values ($1, $2, $3, $4, 'ACTIVE', $5, $6::jsonb)
+         on conflict (business_id, campaign_id, manual_lead_id)
+         do update set status = 'ACTIVE',
+                       notes = coalesce(excluded.notes, campaign_manual_contacts.notes),
+                       metadata = campaign_manual_contacts.metadata || excluded.metadata,
+                       assigned_by_user_id = excluded.assigned_by_user_id,
+                       updated_at = now()
+         returning *`,
+        [
+          businessId,
+          body.campaign_id,
+          req.params.manualLeadId,
+          req.user.id,
+          body.notes || null,
+          JSON.stringify({
+            source: "manual_contact_campaign_assignment",
+            assigned_by_email: req.user.email || null,
+          }),
+        ]
+      );
+
+      await client.query(
+        `update business_manual_leads
+            set metadata = coalesce(metadata, '{}'::jsonb)
+              || jsonb_build_object(
+                   'last_associated_campaign_id', $3::text,
+                   'last_associated_campaign_name', $4::text,
+                   'last_campaign_assignment_at', now()::text
+                 ),
+                updated_at = now()
+          where id = $1 and business_id = $2`,
+        [req.params.manualLeadId, businessId, campaign.rows[0].id, campaign.rows[0].name]
+      );
+
+      return {
+        assignment: assignment.rows[0],
+        campaign: campaign.rows[0],
+        contact: manualLead.rows[0],
+      };
+    });
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function removeManualLeadFromCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `update campaign_manual_contacts
+          set status = 'ARCHIVED',
+              updated_at = now()
+        where business_id = $1
+          and manual_lead_id = $2
+          and campaign_id = $3
+          and status = 'ACTIVE'
+        returning *`,
+      [businessId, req.params.manualLeadId, req.params.campaignId]
+    );
+    if (!result.rowCount) throw notFound("Asociación de contacto y campaña no encontrada.");
+    res.json({ assignment: result.rows[0] });
   } catch (error) {
     next(error);
   }
@@ -4095,6 +4255,8 @@ module.exports = {
   listManualLeads,
   createManualLead,
   updateManualLead,
+  assignManualLeadToCampaign,
+  removeManualLeadFromCampaign,
   createManualLeadFromExistingLead,
   contactFeed,
   exportContactFeed,

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-rms-machine-v1";
+const APP_VERSION = "empresa-20260710-contact-campaign-association-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -19254,6 +19254,42 @@ function manualContactRows() {
     .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
 }
 
+function manualContactCampaigns(contact = {}) {
+  return Array.isArray(contact.campaigns) ? contact.campaigns.filter((campaign) => campaign?.id) : [];
+}
+
+function manualContactCampaignOptions(contact = {}) {
+  const assignedIds = new Set(manualContactCampaigns(contact).map((campaign) => String(campaign.id)));
+  return (state.campaigns || [])
+    .filter((campaign) => campaign?.id && !assignedIds.has(String(campaign.id)))
+    .map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || campaign.id)}</option>`)
+    .join("");
+}
+
+function renderManualContactCampaignCell(contact = {}) {
+  const campaigns = manualContactCampaigns(contact);
+  const options = manualContactCampaignOptions(contact);
+  return `
+    <div class="lead-campaign-assignment">
+      <div class="lead-campaign-chip-list">
+        ${campaigns.map((campaign) => `
+          <span class="pill muted">
+            ${escapeHtml(campaign.name || campaign.id)}
+            <button class="pill-close" type="button" aria-label="Quitar campaña" data-manual-contact-remove-campaign="${escapeHtml(campaign.id)}" data-lead-id="${escapeHtml(contact.id)}">&times;</button>
+          </span>
+        `).join("") || '<span class="table-secondary">Sin campañas asociadas</span>'}
+      </div>
+      <div class="lead-campaign-assign-row">
+        <select data-manual-contact-campaign-select="${escapeHtml(contact.id)}">
+          <option value="">Asociar campaña</option>
+          ${options}
+        </select>
+        <button class="ghost-button" type="button" data-manual-contact-action="assign-campaign" data-lead-id="${escapeHtml(contact.id)}" ${options ? "" : "disabled"}>Asociar</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderManualContactsDirectory() {
   if (!manualContactsTable) return;
   if (!state.manualContactsLoaded && !state.manualContactsLoading && session?.user?.business_id) {
@@ -19264,7 +19300,7 @@ function renderManualContactsDirectory() {
     manualContactsCount.textContent = `${rows.length.toLocaleString("es-CO")} contactos`;
   }
   if (state.manualContactsLoading && !state.manualContactsLoaded) {
-    manualContactsTable.innerHTML = '<tr><td colspan="6">Cargando directorio interno...</td></tr>';
+    manualContactsTable.innerHTML = '<tr><td colspan="7">Cargando directorio interno...</td></tr>';
     return;
   }
   manualContactsTable.innerHTML = rows.map((item) => `
@@ -19282,6 +19318,7 @@ function renderManualContactsDirectory() {
         <br><span class="table-secondary">${escapeHtml(item.source_detail || "-")}</span>
       </td>
       <td>${escapeHtml(item.importance_reason || item.metadata?.manual_importance_reason || item.interest || "-")}</td>
+      <td>${renderManualContactCampaignCell(item)}</td>
       <td>
         <span class="status-chip ${commercialChipClass(item.status)}">${escapeHtml(item.status || "NEW")}</span>
         <br><span class="table-secondary">${escapeHtml(item.priority || "MEDIUM")}</span>
@@ -19293,13 +19330,80 @@ function renderManualContactsDirectory() {
         </div>
       </td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Aún no hay contactos agregados al directorio interno.</td></tr>';
+  `).join("") || '<tr><td colspan="7">Aún no hay contactos agregados al directorio interno.</td></tr>';
   manualContactsTable.querySelectorAll("[data-manual-contact-action]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.manualContactAction === "assign-campaign") {
+        assignManualContactToCampaign(button.dataset.leadId);
+        return;
+      }
       const leadRef = { id: button.dataset.leadId, source_type: "MANUAL" };
       openLeadDetail(leadRef, { tab: button.dataset.manualContactAction === "edit" ? "personal" : "summary" });
     });
   });
+  manualContactsTable.querySelectorAll("[data-manual-contact-remove-campaign]").forEach((button) => {
+    button.addEventListener("click", () => {
+      removeManualContactFromCampaign(button.dataset.leadId, button.dataset.manualContactRemoveCampaign);
+    });
+  });
+}
+
+async function assignManualContactToCampaign(manualLeadId) {
+  if (!manualLeadId) return;
+  const select = Array.from(manualContactsTable?.querySelectorAll("[data-manual-contact-campaign-select]") || [])
+    .find((item) => String(item.dataset.manualContactCampaignSelect) === String(manualLeadId));
+  const campaignId = select?.value || "";
+  if (!campaignId) {
+    showFeedback("Selecciona una campaña para asociar este contacto.", "error", { title: "Contactos" });
+    return;
+  }
+  try {
+    showFeedback("Asociando contacto a campaña...", "loading", { title: "Contactos", timeout: 0 });
+    await api(`/api/business/contacts/manual/${encodeURIComponent(manualLeadId)}/campaigns`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ campaign_id: campaignId }),
+    });
+    state.manualContactsLoaded = false;
+    state.leadCrmLoaded = false;
+    await Promise.all([
+      loadManualContactsData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+    ]);
+    if (state.selectedCampaignId === campaignId) {
+      const leadsData = await api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() });
+      state.selectedLeads = leadsData.leads || [];
+    }
+    renderLeadsView();
+    showFeedback("Contacto asociado a la campaña.", "success", { title: "Contactos" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo asociar el contacto a la campaña.", "error", { title: "Contactos" });
+  }
+}
+
+async function removeManualContactFromCampaign(manualLeadId, campaignId) {
+  if (!manualLeadId || !campaignId) return;
+  try {
+    showFeedback("Quitando contacto de la campaña...", "loading", { title: "Contactos", timeout: 0 });
+    await api(`/api/business/contacts/manual/${encodeURIComponent(manualLeadId)}/campaigns/${encodeURIComponent(campaignId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    state.manualContactsLoaded = false;
+    state.leadCrmLoaded = false;
+    await Promise.all([
+      loadManualContactsData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+    ]);
+    if (state.selectedCampaignId === campaignId) {
+      const leadsData = await api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() });
+      state.selectedLeads = leadsData.leads || [];
+    }
+    renderLeadsView();
+    showFeedback("Contacto retirado de la campaña.", "success", { title: "Contactos" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo retirar el contacto de la campaña.", "error", { title: "Contactos" });
+  }
 }
 
 function renderLeadCrmTable() {
