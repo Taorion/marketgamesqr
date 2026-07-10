@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=campaign-relations-20260709">
+  <link rel="stylesheet" href="css/styles.css?v=competitive-radar-20260709">
 </head>
 <body>
   <main class="portal-shell">
@@ -111,7 +111,7 @@
           </button>
           <button class="nav-item" data-view="competition" type="button">
             <span class="material-symbols-outlined">monitoring</span>
-            <span>Competencia</span>
+            <span>Radar Competitivo</span>
           </button>
           <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
             <span class="material-symbols-outlined">group</span>
@@ -3489,14 +3489,126 @@
           <section class="view-section" data-view="competition">
             <div class="view-head">
               <div>
-                <h2>Analizador de competencia</h2>
-                <p>Directorio operativo para comparar productos, precios, canales y hallazgos comerciales por competidor.</p>
+                <h2>Radar Competitivo</h2>
+                <p>Competitor Intelligence Hub para organizar competidores, precios, promociones, eventos, amenazas y oportunidades.</p>
               </div>
               <button class="ghost-button" id="refreshCompetitionButton" type="button">Actualizar</button>
             </div>
 
             <section class="kpi-grid sales-kpis" id="competitionKpiGrid"></section>
 
+            <div class="segment-tabs contact-center-tabs">
+              <button class="segment-tab active" type="button" data-competition-tab="competitors">Directorio</button>
+              <button class="segment-tab" type="button" data-competition-tab="dashboard">Dashboard competitivo</button>
+              <button class="segment-tab" type="button" data-competition-tab="products">Productos y precios</button>
+              <button class="segment-tab" type="button" data-competition-tab="campaigns">Campañas y promociones</button>
+              <button class="segment-tab" type="button" data-competition-tab="events">Eventos y activaciones</button>
+              <button class="segment-tab" type="button" data-competition-tab="findings">Hallazgos y alertas</button>
+              <button class="segment-tab" type="button" data-competition-tab="swot">SWOT / DOFA</button>
+              <button class="segment-tab" type="button" data-competition-tab="comparison">Análisis comparativo</button>
+            </div>
+
+            <section class="competition-panel hidden" data-competition-panel="dashboard">
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Últimos hallazgos</span>
+                    <strong>Bitácora competitiva reciente</strong>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Competidor</th>
+                        <th>Tipo</th>
+                        <th>Descripción</th>
+                        <th>Impacto</th>
+                        <th>Acción sugerida</th>
+                      </tr>
+                    </thead>
+                    <tbody id="competitionLatestFindingsTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+
+            <section class="competition-panel" data-competition-panel="competitors">
+              <section class="inventory-layout">
+                <article class="surface-card inventory-form-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Competidor</span>
+                      <strong id="competitorFormTitle">Nuevo competidor</strong>
+                    </div>
+                    <button class="ghost-button" id="competitorResetButton" type="button">Limpiar</button>
+                  </div>
+                  <form class="modal-form inventory-form" id="competitorForm">
+                    <input id="competitorIdInput" type="hidden">
+                    <label><span>Nombre</span><input id="competitorNameInput" type="text" maxlength="160" required></label>
+                    <label><span>Categoría</span><input id="competitorCategoryInput" type="text" maxlength="120"></label>
+                    <label><span>Tipo de negocio</span><input id="competitorBusinessTypeInput" type="text" maxlength="120"></label>
+                    <label><span>Ciudad</span><input id="competitorCityInput" type="text" maxlength="120"></label>
+                    <label><span>Dirección</span><input id="competitorAddressInput" type="text" maxlength="220"></label>
+                    <label><span>Zona de operación</span><input id="competitorZoneInput" type="text" maxlength="160"></label>
+                    <label><span>Sitio web</span><input id="competitorWebsiteInput" type="url" maxlength="500"></label>
+                    <label><span>Instagram</span><input id="competitorInstagramInput" type="text" maxlength="180"></label>
+                    <label><span>WhatsApp público</span><input id="competitorWhatsappInput" type="text" maxlength="80"></label>
+                    <label><span>Teléfono</span><input id="competitorPhoneInput" type="text" maxlength="80"></label>
+                    <label><span>Email</span><input id="competitorEmailInput" type="email" maxlength="180"></label>
+                    <label><span>Estado</span><select id="competitorStatusInput"><option value="ACTIVE">Activo</option><option value="POTENTIAL">Potencial</option><option value="INDIRECT">Indirecto</option><option value="INACTIVE">Inactivo</option></select></label>
+                    <label><span>Nivel de amenaza</span><select id="competitorThreatInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option></select></label>
+                    <label><span>Segmento objetivo</span><input id="competitorSegmentInput" type="text" maxlength="220"></label>
+                    <label><span>Rango de precios</span><input id="competitorPriceRangeInput" type="text" maxlength="120"></label>
+                    <label class="span-2"><span>Productos principales</span><textarea id="competitorProductsInput" rows="2" maxlength="800"></textarea></label>
+                    <label class="span-2"><span>Servicios principales</span><textarea id="competitorServicesInput" rows="2" maxlength="800"></textarea></label>
+                    <label class="span-2"><span>Diferencial percibido</span><textarea id="competitorDifferentialInput" rows="2" maxlength="1200"></textarea></label>
+                    <label class="span-2"><span>Fortalezas</span><textarea id="competitorStrengthsInput" rows="2" maxlength="1500"></textarea></label>
+                    <label class="span-2"><span>Debilidades</span><textarea id="competitorWeaknessesInput" rows="2" maxlength="1500"></textarea></label>
+                    <label><span>Presencia digital</span><select id="competitorDigitalPresenceInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label><span>Agresividad comercial</span><select id="competitorAggressivenessInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label class="checkbox-line"><input id="competitorCompetesPriceInput" type="checkbox"><span>Compite por precio</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesPromotionsInput" type="checkbox"><span>Compite por promociones</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesSocialInput" type="checkbox"><span>Compite por redes sociales</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesEventsInput" type="checkbox"><span>Compite por eventos</span></label>
+                    <label class="span-2"><span>Notas internas</span><textarea id="competitorNotesInput" rows="3" maxlength="2000"></textarea></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="competitorMessage"></p>
+                      <button class="solid-button" id="competitorSaveButton" type="submit">Guardar competidor</button>
+                    </div>
+                  </form>
+                </article>
+
+                <article class="surface-card data-table-card inventory-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Directorio</span>
+                      <strong>Competidores registrados</strong>
+                    </div>
+                    <input id="competitorSearchInput" type="search" placeholder="Buscar competidor, ciudad, zona o categoría">
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Competidor</th>
+                          <th>Categoría</th>
+                          <th>Ciudad / zona</th>
+                          <th>Amenaza</th>
+                          <th>Productos</th>
+                          <th>Hallazgos</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="competitorTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="products">
             <section class="inventory-layout">
               <article class="surface-card inventory-form-card">
                 <div class="table-card-head">
@@ -3508,18 +3620,24 @@
                 </div>
                 <form class="modal-form inventory-form" id="competitionProductForm">
                   <input id="competitionProductIdInput" type="hidden">
-                  <label><span>Competidor</span><input id="competitionCompetitorInput" type="text" maxlength="160" required></label>
+                  <label class="span-2"><span>Competidor registrado</span><select id="competitionCompetitorSelect" required></select></label>
                   <label><span>Producto o servicio</span><input id="competitionProductNameInput" type="text" maxlength="180" required></label>
                   <label><span>Categoría</span><input id="competitionCategoryInput" type="text" maxlength="120"></label>
-                  <label><span>Precio competencia</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
-                  <label><span>Nuestro precio</span><input id="competitionOurPriceInput" type="number" min="0" step="100"></label>
+                  <label><span>Precio competidor</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
+                  <label><span>Precio anterior</span><input id="competitionPreviousPriceInput" type="number" min="0" step="100"></label>
+                  <label><span>Precio propio</span><input id="competitionOurPriceInput" type="number" min="0" step="100" placeholder="Ej: 135000"></label>
+                  <label><span>Producto propio</span><input id="competitionOwnProductInput" type="text" maxlength="180" placeholder="Ej: Combo Propio A"></label>
                   <label><span>Moneda</span><input id="competitionCurrencyInput" type="text" maxlength="12" value="COP"></label>
                   <label><span>Canal o fuente</span><input id="competitionChannelInput" type="text" maxlength="120" placeholder="Web, tienda, WhatsApp, marketplace"></label>
                   <label><span>Fecha observada</span><input id="competitionObservedAtInput" type="date"></label>
+                  <label><span>Disponibilidad</span><input id="competitionAvailabilityInput" type="text" maxlength="120" placeholder="Disponible, agotado, preventa"></label>
+                  <label><span>Promoción asociada</span><input id="competitionPromotionInput" type="text" maxlength="180"></label>
+                  <label><span>Nivel competitivo</span><select id="competitionLevelInput"><option value="">Sin calificar</option><option value="LOW">Bajo</option><option value="MEDIUM">Medio</option><option value="HIGH">Alto</option><option value="CRITICAL">Crítico</option></select></label>
                   <label class="span-2"><span>Link de referencia</span><input id="competitionSourceUrlInput" type="url" maxlength="500" placeholder="https://..."></label>
+                  <label class="span-2"><span>Imagen o captura</span><input id="competitionEvidenceImageInput" type="url" maxlength="500" placeholder="https://..."></label>
                   <label class="span-2"><span>Notas</span><textarea id="competitionNotesInput" rows="3" maxlength="1500" placeholder="Promoción, presentación, condiciones, empaque, garantía o hallazgo comercial"></textarea></label>
                   <div class="modal-actions span-2">
-                    <p class="form-message" id="competitionMessage"></p>
+                  <p class="form-message" id="competitionMessage">Primero registra el competidor en Directorio y luego agrega sus productos, precios y evidencias.</p>
                     <button class="solid-button" id="competitionSaveButton" type="submit">Guardar dato</button>
                   </div>
                 </form>
@@ -3529,7 +3647,7 @@
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Directorio</span>
-                    <strong>Productos y precios de competencia</strong>
+                    <strong>Productos y precios de competidores</strong>
                   </div>
                   <input id="competitionSearchInput" type="search" placeholder="Buscar competidor, producto, categoría o canal">
                 </div>
@@ -3540,8 +3658,9 @@
                         <th>Competidor</th>
                         <th>Producto</th>
                         <th>Categoría</th>
-                        <th>Precio competencia</th>
-                        <th>Nuestro precio</th>
+                        <th>Precio competidor</th>
+                        <th>Producto propio</th>
+                        <th>Precio propio</th>
                         <th>Diferencia</th>
                         <th>Fuente</th>
                         <th>Acción</th>
@@ -3551,6 +3670,216 @@
                   </table>
                 </div>
               </article>
+            </section>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="campaigns">
+              <section class="inventory-layout">
+                <article class="surface-card inventory-form-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Promoción</span>
+                      <strong id="competitorCampaignFormTitle">Nueva campaña observada</strong>
+                    </div>
+                    <button class="ghost-button" id="competitorCampaignResetButton" type="button">Limpiar</button>
+                  </div>
+                  <form class="modal-form inventory-form" id="competitorCampaignForm">
+                    <input id="competitorCampaignIdInput" type="hidden">
+                    <label><span>Competidor</span><select id="competitorCampaignCompetitorInput"></select></label>
+                    <label><span>Tipo de campaña</span><select id="competitorCampaignTypeInput"><option value="DISCOUNT">Descuento</option><option value="TWO_FOR_ONE">2x1</option><option value="EVENT">Evento</option><option value="RAFFLE">Sorteo</option><option value="REFERRALS">Referidos</option><option value="LAUNCH">Lanzamiento</option><option value="SEASONAL">Temporada</option><option value="PARTNERSHIP">Alianza</option><option value="INFLUENCER">Influencer</option><option value="GIFT_CARD">Gift card</option><option value="POST_SALE_BENEFIT">Beneficio postventa</option><option value="PROMO_BUNDLE">Paquete promocional</option><option value="PHYSICAL_ACTIVATION">Activación física</option><option value="OTHER">Otro</option></select></label>
+                    <label class="span-2"><span>Nombre de la campaña</span><input id="competitorCampaignNameInput" type="text" maxlength="180" required></label>
+                    <label><span>Fecha de inicio</span><input id="competitorCampaignStartInput" type="date"></label>
+                    <label><span>Fecha final</span><input id="competitorCampaignEndInput" type="date"></label>
+                    <label><span>Canal</span><input id="competitorCampaignChannelInput" type="text" maxlength="160" placeholder="Instagram, punto físico, WhatsApp"></label>
+                    <label><span>Agresividad</span><select id="competitorCampaignAggressivenessInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option></select></label>
+                    <label><span>Impacto estimado</span><select id="competitorCampaignImpactInput"><option value="LOW">Bajo</option><option value="MEDIUM">Medio</option><option value="HIGH">Alto</option><option value="CRITICAL">Crítico</option></select></label>
+                    <label><span>Fuente</span><select id="competitorCampaignSourceTypeInput"><option value="MANUAL">Manual</option><option value="WEBSITE">Sitio web</option><option value="SOCIAL">Red social</option><option value="SCREENSHOT">Captura</option><option value="PHOTO">Foto</option><option value="CUSTOMER">Cliente</option><option value="SELLER">Vendedor</option><option value="EVENT">Evento</option><option value="PHYSICAL_VISIT">Visita física</option><option value="WHATSAPP">WhatsApp</option><option value="CATALOG">Catálogo</option><option value="AD">Anuncio</option><option value="EMAIL">Email</option><option value="POST">Publicación</option><option value="OTHER">Otro</option></select></label>
+                    <label><span>Confiabilidad</span><select id="competitorCampaignReliabilityInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label class="span-2"><span>Oferta</span><textarea id="competitorCampaignOfferInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Beneficio</span><textarea id="competitorCampaignBenefitInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Público objetivo</span><textarea id="competitorCampaignAudienceInput" rows="2" maxlength="800"></textarea></label>
+                    <label class="span-2"><span>Mensaje principal</span><textarea id="competitorCampaignMessageInput" rows="2" maxlength="1200"></textarea></label>
+                    <label class="span-2"><span>Acción sugerida</span><textarea id="competitorCampaignActionInput" rows="2" maxlength="1500"></textarea></label>
+                    <label class="span-2"><span>Link fuente</span><input id="competitorCampaignSourceUrlInput" type="url" maxlength="500"></label>
+                    <label class="span-2"><span>Imagen o evidencia</span><input id="competitorCampaignImageInput" type="url" maxlength="500"></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="competitorCampaignMessage">Selecciona un competidor registrado antes de guardar una campaña o promoción.</p>
+                      <button class="solid-button" id="competitorCampaignSaveButton" type="submit">Guardar campaña</button>
+                    </div>
+                  </form>
+                </article>
+                <article class="surface-card data-table-card inventory-table-card">
+                  <div class="table-card-head">
+                    <div><span class="mono-label">Acciones detectadas</span><strong>Campañas y promociones de competidores</strong></div>
+                    <input id="competitorCampaignSearchInput" type="search" placeholder="Buscar campaña, competidor, canal u oferta">
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>Campaña</th><th>Competidor</th><th>Canal</th><th>Oferta</th><th>Agresividad</th><th>Impacto</th><th>Acción</th></tr></thead>
+                      <tbody id="competitorCampaignTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="events">
+              <section class="inventory-layout">
+                <article class="surface-card inventory-form-card">
+                  <div class="table-card-head">
+                    <div><span class="mono-label">Evento</span><strong id="competitorEventFormTitle">Nuevo evento observado</strong></div>
+                    <button class="ghost-button" id="competitorEventResetButton" type="button">Limpiar</button>
+                  </div>
+                  <form class="modal-form inventory-form" id="competitorEventForm">
+                    <input id="competitorEventIdInput" type="hidden">
+                    <label><span>Competidor</span><select id="competitorEventCompetitorInput"></select></label>
+                    <label><span>Tipo de evento</span><select id="competitorEventTypeInput"><option value="FAIR">Feria</option><option value="LAUNCH">Lanzamiento</option><option value="STORE_ACTIVATION">Activación en tienda</option><option value="PRIVATE_EVENT">Evento privado</option><option value="PARTNERSHIP">Alianza comercial</option><option value="MALL">Centro comercial</option><option value="CORPORATE">Corporativo</option><option value="EDUCATIONAL">Educativo</option><option value="SEASONAL">Temporada especial</option><option value="INFLUENCER_MEETUP">Influencer meet-up</option><option value="POP_UP">Pop-up store</option><option value="OTHER">Otro</option></select></label>
+                    <label class="span-2"><span>Nombre del evento</span><input id="competitorEventNameInput" type="text" maxlength="180" required></label>
+                    <label><span>Fecha</span><input id="competitorEventDateInput" type="date"></label>
+                    <label><span>Ciudad</span><input id="competitorEventCityInput" type="text" maxlength="120"></label>
+                    <label><span>Lugar</span><input id="competitorEventPlaceInput" type="text" maxlength="220"></label>
+                    <label><span>Organizador</span><input id="competitorEventOrganizerInput" type="text" maxlength="180"></label>
+                    <label class="span-2"><span>Participación del competidor</span><textarea id="competitorEventParticipationInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Oferta presentada</span><textarea id="competitorEventOfferInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Productos destacados</span><textarea id="competitorEventProductsInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Público asistente</span><textarea id="competitorEventAudienceInput" rows="2" maxlength="800"></textarea></label>
+                    <label class="span-2"><span>Oportunidad detectada</span><textarea id="competitorEventOpportunityInput" rows="2" maxlength="1500"></textarea></label>
+                    <label class="span-2"><span>Acción recomendada</span><textarea id="competitorEventActionInput" rows="2" maxlength="1500"></textarea></label>
+                    <label class="span-2"><span>Evidencia</span><input id="competitorEventEvidenceInput" type="url" maxlength="500"></label>
+                    <label class="span-2"><span>Imagen o captura</span><input id="competitorEventImageInput" type="url" maxlength="500"></label>
+                    <label class="span-2"><span>Observaciones</span><textarea id="competitorEventObservationsInput" rows="2" maxlength="1500"></textarea></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="competitorEventMessage">Selecciona un competidor registrado antes de guardar un evento o activación.</p>
+                      <button class="solid-button" id="competitorEventSaveButton" type="submit">Guardar evento</button>
+                    </div>
+                  </form>
+                </article>
+                <article class="surface-card data-table-card inventory-table-card">
+                  <div class="table-card-head">
+                    <div><span class="mono-label">Activaciones</span><strong>Eventos detectados</strong></div>
+                    <input id="competitorEventSearchInput" type="search" placeholder="Buscar evento, competidor, lugar o ciudad">
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>Evento</th><th>Competidor</th><th>Fecha</th><th>Lugar</th><th>Oferta</th><th>Oportunidad</th><th>Acción</th></tr></thead>
+                      <tbody id="competitorEventTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="findings">
+              <section class="inventory-layout">
+                <article class="surface-card inventory-form-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Hallazgo</span>
+                      <strong id="findingFormTitle">Nuevo hallazgo competitivo</strong>
+                    </div>
+                    <button class="ghost-button" id="findingResetButton" type="button">Limpiar</button>
+                  </div>
+                  <form class="modal-form inventory-form" id="competitionFindingForm">
+                    <input id="findingIdInput" type="hidden">
+                    <label><span>Competidor</span><select id="findingCompetitorInput"></select></label>
+                    <label><span>Tipo</span><select id="findingTypeInput"><option value="PRICE">Precio</option><option value="PRODUCT">Producto</option><option value="PROMOTION">Promoción</option><option value="CAMPAIGN">Campaña</option><option value="EVENT">Evento</option><option value="BENEFIT">Beneficio</option><option value="CHANNEL">Canal</option><option value="SOCIAL">Redes sociales</option><option value="PARTNERSHIP">Alianza</option><option value="LAUNCH">Lanzamiento</option><option value="MESSAGE">Mensaje de venta</option><option value="OTHER">Otro</option></select></label>
+                    <label class="span-2"><span>Título</span><input id="findingTitleInput" type="text" maxlength="180" required></label>
+                    <label><span>Impacto</span><select id="findingImpactInput"><option value="LOW">Bajo</option><option value="MEDIUM">Medio</option><option value="HIGH">Alto</option><option value="CRITICAL">Crítico</option></select></label>
+                    <label><span>Urgencia</span><select id="findingUrgencyInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option></select></label>
+                    <label><span>Área afectada</span><select id="findingAreaInput"><option value="PRICE">Precio</option><option value="PRODUCT">Producto</option><option value="CAMPAIGN">Campaña</option><option value="BRAND">Marca</option><option value="CHANNEL">Canal</option><option value="EVENT">Evento</option><option value="SALES">Ventas</option><option value="SERVICE">Servicio</option><option value="EXPERIENCE">Experiencia</option><option value="LOYALTY">Fidelización</option><option value="PARTNERSHIPS">Alianzas</option><option value="REVENUE">Revenue</option><option value="OTHER">Otro</option></select></label>
+                    <label><span>Responsable</span><input id="findingResponsibleInput" type="text" maxlength="160"></label>
+                    <label><span>Estado</span><select id="findingStatusInput"><option value="OPEN">Abierto</option><option value="IN_PROGRESS">En gestión</option><option value="DONE">Hecho</option><option value="ARCHIVED">Archivado</option></select></label>
+                    <label><span>Fecha detectada</span><input id="findingDetectedAtInput" type="date"></label>
+                    <label><span>Fecha de acción</span><input id="findingDueAtInput" type="date"></label>
+                    <label><span>Tipo de fuente</span><select id="findingSourceTypeInput"><option value="MANUAL">Manual</option><option value="WEBSITE">Sitio web</option><option value="SOCIAL">Red social</option><option value="SCREENSHOT">Captura</option><option value="PHOTO">Foto</option><option value="CUSTOMER">Cliente</option><option value="SELLER">Vendedor</option><option value="EVENT">Evento</option><option value="PHYSICAL_VISIT">Visita física</option><option value="WHATSAPP">WhatsApp</option><option value="CATALOG">Catálogo</option><option value="AD">Anuncio</option><option value="EMAIL">Email</option><option value="POST">Publicación</option><option value="OTHER">Otro</option></select></label>
+                    <label><span>Confiabilidad</span><select id="findingReliabilityInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label class="checkbox-line"><input id="findingThreatInput" type="checkbox"><span>Amenaza comercial</span></label>
+                    <label class="checkbox-line"><input id="findingOpportunityInput" type="checkbox"><span>Oportunidad para responder</span></label>
+                    <label class="span-2"><span>Descripción</span><textarea id="findingDescriptionInput" rows="3" maxlength="2000"></textarea></label>
+                    <label class="span-2"><span>Acción sugerida</span><textarea id="findingActionInput" rows="2" maxlength="1500"></textarea></label>
+                    <label class="span-2"><span>Descripción de fuente</span><textarea id="findingSourceDescriptionInput" rows="2" maxlength="1000"></textarea></label>
+                    <label class="span-2"><span>Link de evidencia</span><input id="findingEvidenceUrlInput" type="url" maxlength="500"></label>
+                    <label class="span-2"><span>Imagen o captura</span><input id="findingEvidenceImageInput" type="url" maxlength="500"></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="findingMessage">Selecciona un competidor registrado para que el hallazgo quede dentro de su ficha.</p>
+                      <button class="solid-button" id="findingSaveButton" type="submit">Guardar hallazgo</button>
+                    </div>
+                  </form>
+                </article>
+
+                <article class="surface-card data-table-card inventory-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Bitácora</span>
+                      <strong>Campañas, promociones, eventos y alertas</strong>
+                    </div>
+                    <input id="findingSearchInput" type="search" placeholder="Buscar hallazgo, competidor o acción">
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Competidor</th>
+                          <th>Tipo</th>
+                          <th>Hallazgo</th>
+                          <th>Impacto</th>
+                          <th>Estado</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="competitionFindingsTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="swot">
+              <article class="surface-card inventory-form-card">
+                <div class="table-card-head">
+                  <div><span class="mono-label">DOFA</span><strong>Análisis estratégico del competidor</strong></div>
+                </div>
+                <form class="modal-form inventory-form" id="competitorSwotForm">
+                  <label class="span-2"><span>Competidor</span><select id="competitorSwotSelect"></select></label>
+                  <label class="span-2"><span>Fortalezas del competidor</span><textarea id="competitorSwotStrengthsInput" rows="2" maxlength="1500"></textarea></label>
+                  <label class="span-2"><span>Debilidades del competidor</span><textarea id="competitorSwotWeaknessesInput" rows="2" maxlength="1500"></textarea></label>
+                  <label class="span-2"><span>Oportunidades para nuestro negocio</span><textarea id="competitorSwotOpportunitiesInput" rows="2" maxlength="2000"></textarea></label>
+                  <label class="span-2"><span>Amenazas para nuestro negocio</span><textarea id="competitorSwotThreatsInput" rows="2" maxlength="2000"></textarea></label>
+                  <label class="span-2"><span>Qué hace mejor que nosotros</span><textarea id="competitorBetterThanUsInput" rows="2" maxlength="1500"></textarea></label>
+                  <label class="span-2"><span>Qué hacemos mejor nosotros</span><textarea id="competitorWeDoBetterInput" rows="2" maxlength="1500"></textarea></label>
+                  <label class="span-2"><span>Cómo podemos responder</span><textarea id="competitorResponsePlanInput" rows="2" maxlength="2000"></textarea></label>
+                  <label class="span-2"><span>Qué campaña deberíamos lanzar</span><textarea id="competitorRecommendedCampaignInput" rows="2" maxlength="1500"></textarea></label>
+                  <label><span>Producto a ajustar</span><input id="competitorProductToAdjustInput" type="text" maxlength="1000"></label>
+                  <label><span>Precio a revisar</span><input id="competitorPriceToReviewInput" type="text" maxlength="1000"></label>
+                  <label class="span-2"><span>Mensaje comercial a reforzar</span><textarea id="competitorMessageToReinforceInput" rows="2" maxlength="1500"></textarea></label>
+                  <div class="modal-actions span-2">
+                    <p class="form-message" id="competitorSwotMessage"></p>
+                    <button class="solid-button" id="competitorSwotSaveButton" type="submit">Guardar DOFA</button>
+                  </div>
+                </form>
+              </article>
+            </section>
+
+            <section class="competition-panel hidden" data-competition-panel="comparison">
+              <section class="insight-grid">
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head"><div><span class="mono-label">Básica</span><strong>Comparativa de competidores</strong></div></div>
+                  <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Ciudad</th><th>Categoría</th><th>Productos</th><th>Rango precio</th><th>Canales</th><th>Amenaza</th></tr></thead><tbody id="competitionBasicComparisonTable"></tbody></table></div>
+                </article>
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head"><div><span class="mono-label">Precios</span><strong>Brechas absolutas y porcentuales</strong></div></div>
+                  <div class="table-wrap"><table><thead><tr><th>Producto</th><th>Competidor</th><th>Precio competidor</th><th>Precio propio</th><th>Diferencia</th><th>%</th><th>Fuente</th></tr></thead><tbody id="competitionPriceComparisonTable"></tbody></table></div>
+                </article>
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head"><div><span class="mono-label">Campañas</span><strong>Respuesta comercial sugerida</strong></div></div>
+                  <div class="table-wrap"><table><thead><tr><th>Competidor</th><th>Campaña</th><th>Canal</th><th>Oferta</th><th>Agresividad</th><th>Impacto</th><th>Acción</th></tr></thead><tbody id="competitionCampaignComparisonTable"></tbody></table></div>
+                </article>
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head"><div><span class="mono-label">Estratégica</span><strong>Diferenciales y respuesta</strong></div></div>
+                  <div class="table-wrap"><table><thead><tr><th>Competidor</th><th>Fortalezas</th><th>Debilidades</th><th>Diferencial</th><th>Público</th><th>Respuesta</th></tr></thead><tbody id="competitionStrategicComparisonTable"></tbody></table></div>
+                </article>
+              </section>
             </section>
           </section>
 

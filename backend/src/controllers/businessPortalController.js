@@ -224,21 +224,183 @@ const nullableDateTime = z.preprocess(
 );
 
 const competitorProductSchema = z.object({
+  competitor_id: z.string().uuid().optional().nullable(),
   competitor_name: z.string().trim().min(2).max(160),
   product_name: z.string().trim().min(2).max(180),
   category: nullableText(120),
   competitor_price: z.number().min(0),
+  previous_price: z.number().min(0).optional().nullable(),
   our_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
   channel: nullableText(120),
   source_url: nullableText(500),
+  evidence_image_url: nullableText(500),
   observed_at: nullableDateTime.optional().nullable(),
+  availability: nullableText(120),
+  promotion_label: nullableText(180),
+  own_product_name: nullableText(180),
+  competitiveness_level: nullableText(80),
   notes: nullableText(1500),
   is_active: z.boolean().optional().default(true),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
 const competitorProductPatchSchema = competitorProductSchema.partial();
+
+const competitorSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  logo_url: nullableText(500),
+  image_url: nullableText(500),
+  category: nullableText(120),
+  business_type: nullableText(120),
+  city: nullableText(120),
+  address: nullableText(220),
+  operation_zone: nullableText(160),
+  website: nullableText(500),
+  instagram: nullableText(180),
+  facebook: nullableText(180),
+  tiktok: nullableText(180),
+  whatsapp_public: nullableText(80),
+  phone: nullableText(80),
+  email: z.preprocess(
+    (value) => {
+      const text = String(value ?? "").trim();
+      return text ? text : null;
+    },
+    z.string().email().max(180).nullable()
+  ),
+  status: z.enum(["ACTIVE", "INACTIVE", "POTENTIAL", "INDIRECT"]).default("ACTIVE"),
+  threat_level: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  target_segment: nullableText(220),
+  price_range: nullableText(120),
+  main_products: nullableText(800),
+  main_services: nullableText(800),
+  perceived_differential: nullableText(1200),
+  value_proposition: nullableText(1200),
+  strengths: nullableText(1500),
+  weaknesses: nullableText(1500),
+  sales_channels: nullableText(800),
+  acquisition_channels: nullableText(800),
+  digital_presence_level: nullableText(80),
+  physical_presence_level: nullableText(80),
+  perceived_quality: nullableText(80),
+  response_speed: nullableText(80),
+  commercial_aggressiveness: nullableText(80),
+  competes_price: z.boolean().optional().default(false),
+  competes_quality: z.boolean().optional().default(false),
+  competes_location: z.boolean().optional().default(false),
+  competes_brand: z.boolean().optional().default(false),
+  competes_experience: z.boolean().optional().default(false),
+  competes_promotions: z.boolean().optional().default(false),
+  competes_partnerships: z.boolean().optional().default(false),
+  competes_social_media: z.boolean().optional().default(false),
+  competes_events: z.boolean().optional().default(false),
+  competes_financing: z.boolean().optional().default(false),
+  swot_opportunities: nullableText(2000).optional(),
+  swot_threats: nullableText(2000).optional(),
+  better_than_us: nullableText(1500).optional(),
+  we_do_better: nullableText(1500).optional(),
+  response_plan: nullableText(2000).optional(),
+  recommended_campaign: nullableText(1500).optional(),
+  product_to_adjust: nullableText(1000).optional(),
+  price_to_review: nullableText(1000).optional(),
+  message_to_reinforce: nullableText(1500).optional(),
+  notes: nullableText(2000),
+  is_active: z.boolean().optional().default(true),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorPatchSchema = competitorSchema.partial();
+
+const competitorFindingSchema = z.object({
+  competitor_id: z.string().uuid().optional().nullable(),
+  finding_type: z.enum(["PRICE", "PRODUCT", "PROMOTION", "CAMPAIGN", "EVENT", "BENEFIT", "CHANNEL", "SOCIAL", "PARTNERSHIP", "LAUNCH", "MESSAGE", "OTHER"]).default("OTHER"),
+  title: z.string().trim().min(2).max(180),
+  description: nullableText(2000),
+  impact_level: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  suggested_action: nullableText(1500),
+  detected_at: nullableDateTime.optional().nullable(),
+  evidence_url: nullableText(500),
+  evidence_image_url: nullableText(500),
+  due_at: nullableDateTime.optional().nullable(),
+  status: z.enum(["OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"]).default("OPEN"),
+  urgency: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  area_affected: z.enum(["PRICE", "PRODUCT", "CAMPAIGN", "BRAND", "CHANNEL", "EVENT", "SALES", "SERVICE", "EXPERIENCE", "LOYALTY", "PARTNERSHIPS", "REVENUE", "OTHER"]).default("OTHER"),
+  responsible_name: nullableText(160),
+  source_type: z.enum(["MANUAL", "WEBSITE", "SOCIAL", "SCREENSHOT", "PHOTO", "CUSTOMER", "SELLER", "EVENT", "PHYSICAL_VISIT", "WHATSAPP", "CATALOG", "AD", "EMAIL", "POST", "OTHER"]).default("MANUAL"),
+  source_description: nullableText(1000),
+  source_checked_at: nullableDateTime.optional().nullable(),
+  source_reliability: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  is_threat: z.boolean().optional().default(false),
+  is_opportunity: z.boolean().optional().default(false),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorFindingPatchSchema = competitorFindingSchema.partial();
+
+const competitorCampaignSchema = z.object({
+  competitor_id: z.string().uuid().optional().nullable(),
+  name: z.string().trim().min(2).max(180),
+  campaign_type: z.enum(["DISCOUNT", "TWO_FOR_ONE", "EVENT", "RAFFLE", "REFERRALS", "LAUNCH", "SEASONAL", "PARTNERSHIP", "INFLUENCER", "GIFT_CARD", "POST_SALE_BENEFIT", "PROMO_BUNDLE", "PHYSICAL_ACTIVATION", "OTHER"]).default("OTHER"),
+  starts_at: nullableDateTime.optional().nullable(),
+  ends_at: nullableDateTime.optional().nullable(),
+  channel: nullableText(160),
+  offer: nullableText(1000),
+  benefit: nullableText(1000),
+  target_audience: nullableText(800),
+  main_message: nullableText(1200),
+  evidence_image_url: nullableText(500),
+  source_url: nullableText(500),
+  source_type: z.enum(["MANUAL", "WEBSITE", "SOCIAL", "SCREENSHOT", "PHOTO", "CUSTOMER", "SELLER", "EVENT", "PHYSICAL_VISIT", "WHATSAPP", "CATALOG", "AD", "EMAIL", "POST", "OTHER"]).default("MANUAL"),
+  source_reliability: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  aggressiveness_level: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  estimated_impact: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  suggested_action: nullableText(1500),
+  status: z.enum(["ACTIVE", "PAUSED", "FINISHED", "ARCHIVED"]).default("ACTIVE"),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorCampaignPatchSchema = competitorCampaignSchema.partial();
+
+const competitorEventSchema = z.object({
+  competitor_id: z.string().uuid().optional().nullable(),
+  name: z.string().trim().min(2).max(180),
+  event_date: nullableDateTime.optional().nullable(),
+  place: nullableText(220),
+  city: nullableText(120),
+  event_type: z.enum(["FAIR", "LAUNCH", "STORE_ACTIVATION", "PRIVATE_EVENT", "PARTNERSHIP", "MALL", "CORPORATE", "EDUCATIONAL", "SEASONAL", "INFLUENCER_MEETUP", "POP_UP", "OTHER"]).default("OTHER"),
+  organizer: nullableText(180),
+  competitor_participation: nullableText(1000),
+  presented_offer: nullableText(1000),
+  highlighted_products: nullableText(1000),
+  attendee_audience: nullableText(800),
+  evidence_url: nullableText(500),
+  evidence_image_url: nullableText(500),
+  observations: nullableText(1500),
+  detected_opportunity: nullableText(1500),
+  recommended_action: nullableText(1500),
+  source_type: z.enum(["MANUAL", "WEBSITE", "SOCIAL", "SCREENSHOT", "PHOTO", "CUSTOMER", "SELLER", "EVENT", "PHYSICAL_VISIT", "WHATSAPP", "CATALOG", "AD", "EMAIL", "POST", "OTHER"]).default("MANUAL"),
+  source_reliability: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  status: z.enum(["ACTIVE", "DONE", "ARCHIVED"]).default("ACTIVE"),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorEventPatchSchema = competitorEventSchema.partial();
+
+const competitorTaskSchema = z.object({
+  competitor_id: z.string().uuid().optional().nullable(),
+  finding_id: z.string().uuid().optional().nullable(),
+  title: z.string().trim().min(2).max(180),
+  responsible_name: nullableText(160),
+  due_at: nullableDateTime.optional().nullable(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+  status: z.enum(["OPEN", "IN_PROGRESS", "DONE", "ARCHIVED"]).default("OPEN"),
+  notes: nullableText(1500),
+  related_campaign_id: z.string().uuid().optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const competitorTaskPatchSchema = competitorTaskSchema.partial();
 
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -922,6 +1084,832 @@ async function deleteBranch(req, res, next) {
   }
 }
 
+const competitorColumns = [
+  "name",
+  "logo_url",
+  "image_url",
+  "category",
+  "business_type",
+  "city",
+  "address",
+  "operation_zone",
+  "website",
+  "instagram",
+  "facebook",
+  "tiktok",
+  "whatsapp_public",
+  "phone",
+  "email",
+  "status",
+  "threat_level",
+  "target_segment",
+  "price_range",
+  "main_products",
+  "main_services",
+  "perceived_differential",
+  "value_proposition",
+  "strengths",
+  "weaknesses",
+  "sales_channels",
+  "acquisition_channels",
+  "digital_presence_level",
+  "physical_presence_level",
+  "perceived_quality",
+  "response_speed",
+  "commercial_aggressiveness",
+  "competes_price",
+  "competes_quality",
+  "competes_location",
+  "competes_brand",
+  "competes_experience",
+  "competes_promotions",
+  "competes_partnerships",
+  "competes_social_media",
+  "competes_events",
+  "competes_financing",
+  "swot_opportunities",
+  "swot_threats",
+  "better_than_us",
+  "we_do_better",
+  "response_plan",
+  "recommended_campaign",
+  "product_to_adjust",
+  "price_to_review",
+  "message_to_reinforce",
+  "notes",
+  "is_active",
+  "metadata",
+];
+
+const competitorCampaignColumns = [
+  "competitor_id",
+  "name",
+  "campaign_type",
+  "starts_at",
+  "ends_at",
+  "channel",
+  "offer",
+  "benefit",
+  "target_audience",
+  "main_message",
+  "evidence_image_url",
+  "source_url",
+  "source_type",
+  "source_reliability",
+  "aggressiveness_level",
+  "estimated_impact",
+  "suggested_action",
+  "status",
+  "metadata",
+];
+
+const competitorEventColumns = [
+  "competitor_id",
+  "name",
+  "event_date",
+  "place",
+  "city",
+  "event_type",
+  "organizer",
+  "competitor_participation",
+  "presented_offer",
+  "highlighted_products",
+  "attendee_audience",
+  "evidence_url",
+  "evidence_image_url",
+  "observations",
+  "detected_opportunity",
+  "recommended_action",
+  "source_type",
+  "source_reliability",
+  "status",
+  "metadata",
+];
+
+const competitorTaskColumns = [
+  "competitor_id",
+  "finding_id",
+  "title",
+  "responsible_name",
+  "due_at",
+  "priority",
+  "status",
+  "notes",
+  "related_campaign_id",
+  "metadata",
+];
+
+function radarSearchWhere(search, params, alias = "") {
+  const text = String(search || "").trim();
+  if (!text) return "";
+  params.push(`%${text.toLowerCase()}%`);
+  const index = params.length;
+  const prefix = alias ? `${alias}.` : "";
+  return `and (
+    lower(${prefix}name) like $${index}
+    or lower(coalesce(${prefix}category, '')) like $${index}
+    or lower(coalesce(${prefix}city, '')) like $${index}
+    or lower(coalesce(${prefix}operation_zone, '')) like $${index}
+    or lower(coalesce(${prefix}target_segment, '')) like $${index}
+    or lower(coalesce(${prefix}notes, '')) like $${index}
+  )`;
+}
+
+async function assertCompetitorBelongsToBusiness(client, businessId, competitorId) {
+  if (!competitorId) return null;
+  const result = await client.query(
+    "select id, name from business_competitors where id = $1 and business_id = $2 and is_active = true",
+    [competitorId, businessId]
+  );
+  if (!result.rowCount) {
+    throw badRequest("El competidor seleccionado no pertenece a este negocio o no esta activo.");
+  }
+  return result.rows[0];
+}
+
+async function resolveCompetitorForProduct(client, businessId, payload, userId) {
+  if (payload.competitor_id) {
+    return assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+  }
+  const name = String(payload.competitor_name || "").trim();
+  if (!name) return null;
+  const existing = await client.query(
+    "select id, name from business_competitors where business_id = $1 and lower(name) = lower($2) limit 1",
+    [businessId, name]
+  );
+  if (existing.rowCount) return existing.rows[0];
+  const created = await client.query(
+    `insert into business_competitors
+      (business_id, name, category, status, threat_level, created_by_user_id, metadata)
+     values ($1, $2, $3, 'ACTIVE', 'MEDIUM', $4, $5::jsonb)
+     returning id, name`,
+    [businessId, name, payload.category || null, userId || null, JSON.stringify({ source: "product_price_capture" })]
+  );
+  return created.rows[0];
+}
+
+function competitorPayload(body, userId) {
+  const payload = {};
+  competitorColumns.forEach((column) => {
+    if (column === "metadata") {
+      payload.metadata = body.metadata || {};
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, column)) {
+      payload[column] = body[column];
+    }
+  });
+  if (!Object.prototype.hasOwnProperty.call(payload, "is_active")) payload.is_active = true;
+  if (!Object.prototype.hasOwnProperty.call(payload, "status")) payload.status = "ACTIVE";
+  if (!Object.prototype.hasOwnProperty.call(payload, "threat_level")) payload.threat_level = "MEDIUM";
+  if (userId) payload.created_by_user_id = userId;
+  return payload;
+}
+
+async function listCompetitors(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const limit = boundedLimit(req.query.limit, 300, 800);
+    const params = [businessId];
+    const searchWhere = radarSearchWhere(req.query.search, params, "c");
+    const includeInactive = ["1", "true", "yes"].includes(String(req.query.include_inactive || "").toLowerCase());
+    params.push(limit);
+    const result = await query(
+      `select c.*,
+              count(distinct p.id)::int as product_count,
+              count(distinct f.id)::int as finding_count,
+              max(f.detected_at) as latest_finding_at
+       from business_competitors c
+       left join business_competitor_products p on p.competitor_id = c.id and p.business_id = c.business_id and p.is_active = true
+       left join business_competitor_findings f on f.competitor_id = c.id and f.business_id = c.business_id and f.status <> 'ARCHIVED'
+       where c.business_id = $1
+         ${includeInactive ? "" : "and c.is_active = true"}
+         ${searchWhere}
+       group by c.id
+       order by case c.threat_level when 'CRITICAL' then 0 when 'HIGH' then 1 when 'MEDIUM' then 2 else 3 end,
+                c.updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ competitors: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitor(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorSchema, req.body);
+    const payload = competitorPayload(body, req.user.id);
+    const columns = ["business_id", ...Object.keys(payload)];
+    const params = [businessId, ...Object.values(payload).map((value, index) => Object.keys(payload)[index] === "metadata" ? JSON.stringify(value || {}) : value)];
+    const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
+    const result = await query(
+      `insert into business_competitors (${columns.join(", ")})
+       values (${placeholders.join(", ")})
+       returning *`,
+      params
+    );
+    res.status(201).json({ competitor: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitor(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_competitors where id = $1 and business_id = $2",
+      [req.params.competitorId, businessId]
+    );
+    if (!existing.rowCount) throw notFound("Competidor no encontrado.");
+    const payload = competitorPayload({ ...existing.rows[0], ...body }, null);
+    const setClauses = competitorColumns.map((column, index) => (
+      `${column} = $${index + 3}${column === "metadata" ? "::jsonb" : ""}`
+    ));
+    const params = [
+      req.params.competitorId,
+      businessId,
+      ...competitorColumns.map((column) => column === "metadata" ? JSON.stringify(payload.metadata || {}) : payload[column]),
+    ];
+    const result = await query(
+      `update business_competitors
+       set ${setClauses.join(", ")},
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      params
+    );
+    res.json({ competitor: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitor(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitors
+       set is_active = false, status = 'INACTIVE', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.competitorId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Competidor no encontrado.");
+    res.json({ competitor: result.rows[0], archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function buildRadarPayload(columns, body, userId) {
+  const payload = {};
+  columns.forEach((column) => {
+    if (column === "metadata") {
+      payload.metadata = body.metadata || {};
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, column)) {
+      payload[column] = body[column];
+    }
+  });
+  if (userId) payload.created_by_user_id = userId;
+  return payload;
+}
+
+function radarSearchFilter(search, params, fields) {
+  const text = String(search || "").trim();
+  if (!text) return "";
+  params.push(`%${text.toLowerCase()}%`);
+  const index = params.length;
+  return `and (${fields.map((field) => `lower(coalesce(${field}, '')) like $${index}`).join(" or ")})`;
+}
+
+async function listCompetitorCampaigns(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const params = [businessId];
+    const filters = [];
+    if (req.query.competitor_id) {
+      params.push(req.query.competitor_id);
+      filters.push(`cc.competitor_id = $${params.length}`);
+    }
+    const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
+    if (!includeArchived) filters.push("cc.status <> 'ARCHIVED'");
+    const searchWhere = radarSearchFilter(req.query.search, params, ["cc.name", "cc.channel", "cc.offer", "cc.benefit", "cc.main_message", "c.name"]);
+    params.push(boundedLimit(req.query.limit, 300, 800));
+    const result = await query(
+      `select cc.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+       from business_competitor_campaigns cc
+       left join business_competitors c on c.id = cc.competitor_id and c.business_id = cc.business_id
+       where cc.business_id = $1
+         ${filters.length ? `and ${filters.join(" and ")}` : ""}
+         ${searchWhere}
+       order by coalesce(cc.starts_at, cc.created_at) desc, cc.updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ campaigns: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitorCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorCampaignSchema, req.body);
+    const payload = buildRadarPayload(competitorCampaignColumns, body, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      const columns = ["business_id", ...Object.keys(payload)];
+      const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
+      const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
+      return client.query(
+        `insert into business_competitor_campaigns (${columns.join(", ")})
+         values (${placeholders.join(", ")})
+         returning *`,
+        params
+      );
+    });
+    res.status(201).json({ campaign: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitorCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorCampaignPatchSchema, req.body);
+    const existing = await query("select * from business_competitor_campaigns where id = $1 and business_id = $2", [req.params.campaignId, businessId]);
+    if (!existing.rowCount) throw notFound("Campaña competitiva no encontrada.");
+    const payload = buildRadarPayload(competitorCampaignColumns, { ...existing.rows[0], ...body }, null);
+    const setClauses = competitorCampaignColumns.map((column, index) => `${column} = $${index + 3}${column === "metadata" ? "::jsonb" : ""}`);
+    const params = [
+      req.params.campaignId,
+      businessId,
+      ...competitorCampaignColumns.map((column) => column === "metadata" ? JSON.stringify(payload.metadata || {}) : payload[column]),
+    ];
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      return client.query(
+        `update business_competitor_campaigns
+         set ${setClauses.join(", ")}, updated_at = now()
+         where id = $1 and business_id = $2
+         returning *`,
+        params
+      );
+    });
+    res.json({ campaign: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitorCampaign(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitor_campaigns
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.campaignId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Campaña competitiva no encontrada.");
+    res.json({ campaign: result.rows[0], archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listCompetitorEvents(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const params = [businessId];
+    const filters = [];
+    if (req.query.competitor_id) {
+      params.push(req.query.competitor_id);
+      filters.push(`ce.competitor_id = $${params.length}`);
+    }
+    const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
+    if (!includeArchived) filters.push("ce.status <> 'ARCHIVED'");
+    const searchWhere = radarSearchFilter(req.query.search, params, ["ce.name", "ce.place", "ce.city", "ce.organizer", "ce.presented_offer", "ce.detected_opportunity", "c.name"]);
+    params.push(boundedLimit(req.query.limit, 300, 800));
+    const result = await query(
+      `select ce.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+       from business_competitor_events ce
+       left join business_competitors c on c.id = ce.competitor_id and c.business_id = ce.business_id
+       where ce.business_id = $1
+         ${filters.length ? `and ${filters.join(" and ")}` : ""}
+         ${searchWhere}
+       order by coalesce(ce.event_date, ce.created_at) desc, ce.updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ events: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitorEvent(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorEventSchema, req.body);
+    const payload = buildRadarPayload(competitorEventColumns, body, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      const columns = ["business_id", ...Object.keys(payload)];
+      const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
+      const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
+      return client.query(
+        `insert into business_competitor_events (${columns.join(", ")})
+         values (${placeholders.join(", ")})
+         returning *`,
+        params
+      );
+    });
+    res.status(201).json({ event: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitorEvent(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorEventPatchSchema, req.body);
+    const existing = await query("select * from business_competitor_events where id = $1 and business_id = $2", [req.params.eventId, businessId]);
+    if (!existing.rowCount) throw notFound("Evento competitivo no encontrado.");
+    const payload = buildRadarPayload(competitorEventColumns, { ...existing.rows[0], ...body }, null);
+    const setClauses = competitorEventColumns.map((column, index) => `${column} = $${index + 3}${column === "metadata" ? "::jsonb" : ""}`);
+    const params = [
+      req.params.eventId,
+      businessId,
+      ...competitorEventColumns.map((column) => column === "metadata" ? JSON.stringify(payload.metadata || {}) : payload[column]),
+    ];
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      return client.query(
+        `update business_competitor_events
+         set ${setClauses.join(", ")}, updated_at = now()
+         where id = $1 and business_id = $2
+         returning *`,
+        params
+      );
+    });
+    res.json({ event: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitorEvent(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitor_events
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.eventId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Evento competitivo no encontrado.");
+    res.json({ event: result.rows[0], archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listCompetitorTasks(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const params = [businessId];
+    const filters = [];
+    if (req.query.competitor_id) {
+      params.push(req.query.competitor_id);
+      filters.push(`ct.competitor_id = $${params.length}`);
+    }
+    if (req.query.status) {
+      params.push(String(req.query.status).toUpperCase());
+      filters.push(`ct.status = $${params.length}`);
+    } else {
+      filters.push("ct.status <> 'ARCHIVED'");
+    }
+    params.push(boundedLimit(req.query.limit, 300, 800));
+    const result = await query(
+      `select ct.*, c.name as competitor_name, f.title as finding_title
+       from business_competitor_tasks ct
+       left join business_competitors c on c.id = ct.competitor_id and c.business_id = ct.business_id
+       left join business_competitor_findings f on f.id = ct.finding_id and f.business_id = ct.business_id
+       where ct.business_id = $1
+         ${filters.length ? `and ${filters.join(" and ")}` : ""}
+       order by ct.due_at asc nulls last, ct.updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ tasks: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitorTask(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorTaskSchema, req.body);
+    const payload = buildRadarPayload(competitorTaskColumns, body, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      const columns = ["business_id", ...Object.keys(payload)];
+      const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
+      const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
+      return client.query(
+        `insert into business_competitor_tasks (${columns.join(", ")})
+         values (${placeholders.join(", ")})
+         returning *`,
+        params
+      );
+    });
+    res.status(201).json({ task: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitorTask(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorTaskPatchSchema, req.body);
+    const existing = await query("select * from business_competitor_tasks where id = $1 and business_id = $2", [req.params.taskId, businessId]);
+    if (!existing.rowCount) throw notFound("Tarea competitiva no encontrada.");
+    const payload = buildRadarPayload(competitorTaskColumns, { ...existing.rows[0], ...body }, null);
+    const setClauses = competitorTaskColumns.map((column, index) => `${column} = $${index + 3}${column === "metadata" ? "::jsonb" : ""}`);
+    const params = [
+      req.params.taskId,
+      businessId,
+      ...competitorTaskColumns.map((column) => column === "metadata" ? JSON.stringify(payload.metadata || {}) : payload[column]),
+    ];
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      return client.query(
+        `update business_competitor_tasks
+         set ${setClauses.join(", ")}, updated_at = now()
+         where id = $1 and business_id = $2
+         returning *`,
+        params
+      );
+    });
+    res.json({ task: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitorTask(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitor_tasks
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.taskId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Tarea competitiva no encontrada.");
+    res.json({ task: result.rows[0], archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function findingPayload(body, userId) {
+  return {
+    competitor_id: body.competitor_id || null,
+    finding_type: body.finding_type || "OTHER",
+    title: body.title,
+    description: body.description || null,
+    impact_level: body.impact_level || "MEDIUM",
+    suggested_action: body.suggested_action || null,
+    detected_at: body.detected_at || null,
+    evidence_url: body.evidence_url || null,
+    evidence_image_url: body.evidence_image_url || null,
+    due_at: body.due_at || null,
+    status: body.status || "OPEN",
+    urgency: body.urgency || "MEDIUM",
+    area_affected: body.area_affected || "OTHER",
+    responsible_name: body.responsible_name || null,
+    source_type: body.source_type || "MANUAL",
+    source_description: body.source_description || null,
+    source_checked_at: body.source_checked_at || null,
+    source_reliability: body.source_reliability || "MEDIUM",
+    is_threat: body.is_threat === true,
+    is_opportunity: body.is_opportunity === true,
+    metadata: body.metadata || {},
+    created_by_user_id: userId || null,
+  };
+}
+
+async function listCompetitorFindings(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const params = [businessId];
+    const filters = [];
+    if (req.query.competitor_id) {
+      params.push(req.query.competitor_id);
+      filters.push(`f.competitor_id = $${params.length}`);
+    }
+    if (req.query.status) {
+      params.push(String(req.query.status).toUpperCase());
+      filters.push(`f.status = $${params.length}`);
+    } else {
+      filters.push("f.status <> 'ARCHIVED'");
+    }
+    const search = String(req.query.search || "").trim();
+    if (search) {
+      params.push(`%${search.toLowerCase()}%`);
+      filters.push(`(lower(f.title) like $${params.length} or lower(coalesce(f.description, '')) like $${params.length} or lower(coalesce(c.name, '')) like $${params.length})`);
+    }
+    params.push(boundedLimit(req.query.limit, 300, 800));
+    const result = await query(
+      `select f.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+       from business_competitor_findings f
+       left join business_competitors c on c.id = f.competitor_id and c.business_id = f.business_id
+       where f.business_id = $1
+         ${filters.length ? `and ${filters.join(" and ")}` : ""}
+       order by f.detected_at desc, f.updated_at desc
+       limit $${params.length}`,
+      params
+    );
+    res.json({ findings: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createCompetitorFinding(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorFindingSchema, req.body);
+    const payload = findingPayload(body, req.user.id);
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      return client.query(
+        `insert into business_competitor_findings
+          (business_id, competitor_id, finding_type, title, description, impact_level, suggested_action,
+           detected_at, evidence_url, evidence_image_url, due_at, status, urgency, area_affected,
+           responsible_name, source_type, source_description, source_checked_at, source_reliability,
+           is_threat, is_opportunity, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, coalesce($8::timestamptz, now()), $9, $10, $11::timestamptz,
+                 $12, $13, $14, $15, $16, $17, $18::timestamptz, $19, $20, $21, $22::jsonb, $23)
+         returning *`,
+        [
+          businessId,
+          payload.competitor_id,
+          payload.finding_type,
+          payload.title,
+          payload.description,
+          payload.impact_level,
+          payload.suggested_action,
+          payload.detected_at,
+          payload.evidence_url,
+          payload.evidence_image_url,
+          payload.due_at,
+          payload.status,
+          payload.urgency,
+          payload.area_affected,
+          payload.responsible_name,
+          payload.source_type,
+          payload.source_description,
+          payload.source_checked_at,
+          payload.source_reliability,
+          payload.is_threat,
+          payload.is_opportunity,
+          JSON.stringify(payload.metadata),
+          payload.created_by_user_id,
+        ]
+      );
+    });
+    res.status(201).json({ finding: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCompetitorFinding(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const body = validate(competitorFindingPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_competitor_findings where id = $1 and business_id = $2",
+      [req.params.findingId, businessId]
+    );
+    if (!existing.rowCount) throw notFound("Hallazgo competitivo no encontrado.");
+    const payload = findingPayload({ ...existing.rows[0], ...body }, null);
+    const result = await withTransaction(async (client) => {
+      await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      return client.query(
+        `update business_competitor_findings
+         set competitor_id = $3,
+             finding_type = $4,
+             title = $5,
+             description = $6,
+             impact_level = $7,
+             suggested_action = $8,
+             detected_at = coalesce($9::timestamptz, detected_at),
+             evidence_url = $10,
+             evidence_image_url = $11,
+             due_at = $12::timestamptz,
+             status = $13,
+             urgency = $14,
+             area_affected = $15,
+             responsible_name = $16,
+             source_type = $17,
+             source_description = $18,
+             source_checked_at = $19::timestamptz,
+             source_reliability = $20,
+             is_threat = $21,
+             is_opportunity = $22,
+             metadata = $23::jsonb,
+             updated_at = now()
+         where id = $1 and business_id = $2
+         returning *`,
+        [
+          req.params.findingId,
+          businessId,
+          payload.competitor_id,
+          payload.finding_type,
+          payload.title,
+          payload.description,
+          payload.impact_level,
+          payload.suggested_action,
+          payload.detected_at,
+          payload.evidence_url,
+          payload.evidence_image_url,
+          payload.due_at,
+          payload.status,
+          payload.urgency,
+          payload.area_affected,
+          payload.responsible_name,
+          payload.source_type,
+          payload.source_description,
+          payload.source_checked_at,
+          payload.source_reliability,
+          payload.is_threat,
+          payload.is_opportunity,
+          JSON.stringify(payload.metadata),
+        ]
+      );
+    });
+    res.json({ finding: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveCompetitorFinding(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `update business_competitor_findings
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.findingId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Hallazgo competitivo no encontrado.");
+    res.json({ finding: result.rows[0], archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
 function competitorSearchWhere(search, params) {
   const text = String(search || "").trim();
   if (!text) return "";
@@ -951,15 +1939,22 @@ function mapCompetitorProduct(row = {}) {
 
 function competitorProductPayload(body, userId) {
   return {
+    competitor_id: body.competitor_id || null,
     competitor_name: body.competitor_name,
     product_name: body.product_name,
     category: body.category || null,
     competitor_price: Number(body.competitor_price || 0),
+    previous_price: body.previous_price === null || body.previous_price === undefined ? null : Number(body.previous_price || 0),
     our_price: body.our_price === null || body.our_price === undefined ? null : Number(body.our_price || 0),
     currency: body.currency || "COP",
     channel: body.channel || null,
     source_url: body.source_url || null,
+    evidence_image_url: body.evidence_image_url || null,
     observed_at: body.observed_at || null,
+    availability: body.availability || null,
+    promotion_label: body.promotion_label || null,
+    own_product_name: body.own_product_name || null,
+    competitiveness_level: body.competitiveness_level || null,
     notes: body.notes || null,
     is_active: body.is_active !== false,
     metadata: body.metadata || {},
@@ -977,12 +1972,13 @@ async function listCompetitorProducts(req, res, next) {
     const includeInactive = ["1", "true", "yes"].includes(String(req.query.include_inactive || "").toLowerCase());
     params.push(limit);
     const result = await query(
-      `select *
-       from business_competitor_products
-       where business_id = $1
-         ${includeInactive ? "" : "and is_active = true"}
+      `select p.*, c.name as linked_competitor_name, c.threat_level as linked_competitor_threat_level
+       from business_competitor_products p
+       left join business_competitors c on c.id = p.competitor_id and c.business_id = p.business_id
+       where p.business_id = $1
+         ${includeInactive ? "" : "and p.is_active = true"}
          ${searchWhere}
-       order by observed_at desc, updated_at desc
+       order by p.observed_at desc, p.updated_at desc
        limit $${params.length}`,
       params
     );
@@ -998,29 +1994,42 @@ async function createCompetitorProduct(req, res, next) {
     await assertFeatureForRequest(req, businessId, "campaign_comparison");
     const body = validate(competitorProductSchema, req.body);
     const payload = competitorProductPayload(body, req.user.id);
-    const result = await query(
-      `insert into business_competitor_products
-        (business_id, competitor_name, product_name, category, competitor_price, our_price,
-         currency, channel, source_url, observed_at, notes, is_active, metadata, created_by_user_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, coalesce($10::timestamptz, now()), $11, $12, $13::jsonb, $14)
-       returning *`,
-      [
-        businessId,
-        payload.competitor_name,
-        payload.product_name,
-        payload.category,
-        payload.competitor_price,
-        payload.our_price,
-        payload.currency,
-        payload.channel,
-        payload.source_url,
-        payload.observed_at,
-        payload.notes,
-        payload.is_active,
-        JSON.stringify(payload.metadata),
-        payload.created_by_user_id,
-      ]
-    );
+    const result = await withTransaction(async (client) => {
+      const competitor = await resolveCompetitorForProduct(client, businessId, payload, req.user.id);
+      return client.query(
+        `insert into business_competitor_products
+          (business_id, competitor_id, competitor_name, product_name, category, competitor_price, previous_price, our_price,
+           currency, channel, source_url, evidence_image_url, observed_at, availability, promotion_label,
+           own_product_name, competitiveness_level, notes, is_active, metadata, created_by_user_id)
+         values ($1, $2, coalesce($3, $4), $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                 coalesce($14::timestamptz, now()), $15, $16, $17, $18, $19, $20, $21::jsonb, $22)
+         returning *`,
+        [
+          businessId,
+          competitor?.id || null,
+          payload.competitor_name,
+          competitor?.name || null,
+          payload.product_name,
+          payload.category,
+          payload.competitor_price,
+          payload.previous_price,
+          payload.our_price,
+          payload.currency,
+          payload.channel,
+          payload.source_url,
+          payload.evidence_image_url,
+          payload.observed_at,
+          payload.availability,
+          payload.promotion_label,
+          payload.own_product_name,
+          payload.competitiveness_level,
+          payload.notes,
+          payload.is_active,
+          JSON.stringify(payload.metadata),
+          payload.created_by_user_id,
+        ]
+      );
+    });
     res.status(201).json({ product: mapCompetitorProduct(result.rows[0]) });
   } catch (error) {
     next(error);
@@ -1038,40 +2047,58 @@ async function updateCompetitorProduct(req, res, next) {
     );
     if (!existing.rowCount) throw notFound("Producto de competencia no encontrado.");
     const payload = competitorProductPayload({ ...existing.rows[0], ...body }, req.user.id);
-    const result = await query(
-      `update business_competitor_products
-       set competitor_name = $3,
-           product_name = $4,
-           category = $5,
-           competitor_price = $6,
-           our_price = $7,
-           currency = $8,
-           channel = $9,
-           source_url = $10,
-           observed_at = coalesce($11::timestamptz, observed_at),
-           notes = $12,
-           is_active = $13,
-           metadata = $14::jsonb,
-           updated_at = now()
-       where id = $1 and business_id = $2
-       returning *`,
-      [
-        req.params.productId,
-        businessId,
-        payload.competitor_name,
-        payload.product_name,
-        payload.category,
-        payload.competitor_price,
-        payload.our_price,
-        payload.currency,
-        payload.channel,
-        payload.source_url,
-        payload.observed_at,
-        payload.notes,
-        payload.is_active,
-        JSON.stringify(payload.metadata),
-      ]
-    );
+    const result = await withTransaction(async (client) => {
+      const competitor = await resolveCompetitorForProduct(client, businessId, payload, req.user.id);
+      return client.query(
+        `update business_competitor_products
+         set competitor_id = $3,
+             competitor_name = coalesce($4, $5),
+             product_name = $6,
+             category = $7,
+             competitor_price = $8,
+             previous_price = $9,
+             our_price = $10,
+             currency = $11,
+             channel = $12,
+             source_url = $13,
+             evidence_image_url = $14,
+             observed_at = coalesce($15::timestamptz, observed_at),
+             availability = $16,
+             promotion_label = $17,
+             own_product_name = $18,
+             competitiveness_level = $19,
+             notes = $20,
+             is_active = $21,
+             metadata = $22::jsonb,
+             updated_at = now()
+         where id = $1 and business_id = $2
+         returning *`,
+        [
+          req.params.productId,
+          businessId,
+          competitor?.id || null,
+          payload.competitor_name,
+          competitor?.name || null,
+          payload.product_name,
+          payload.category,
+          payload.competitor_price,
+          payload.previous_price,
+          payload.our_price,
+          payload.currency,
+          payload.channel,
+          payload.source_url,
+          payload.evidence_image_url,
+          payload.observed_at,
+          payload.availability,
+          payload.promotion_label,
+          payload.own_product_name,
+          payload.competitiveness_level,
+          payload.notes,
+          payload.is_active,
+          JSON.stringify(payload.metadata),
+        ]
+      );
+    });
     res.json({ product: mapCompetitorProduct(result.rows[0]) });
   } catch (error) {
     next(error);
@@ -3026,6 +4053,26 @@ module.exports = {
   createBranch,
   updateBranch,
   deleteBranch,
+  listCompetitors,
+  createCompetitor,
+  updateCompetitor,
+  archiveCompetitor,
+  listCompetitorCampaigns,
+  createCompetitorCampaign,
+  updateCompetitorCampaign,
+  archiveCompetitorCampaign,
+  listCompetitorEvents,
+  createCompetitorEvent,
+  updateCompetitorEvent,
+  archiveCompetitorEvent,
+  listCompetitorFindings,
+  createCompetitorFinding,
+  updateCompetitorFinding,
+  archiveCompetitorFinding,
+  listCompetitorTasks,
+  createCompetitorTask,
+  updateCompetitorTask,
+  archiveCompetitorTask,
   listCompetitorProducts,
   createCompetitorProduct,
   updateCompetitorProduct,

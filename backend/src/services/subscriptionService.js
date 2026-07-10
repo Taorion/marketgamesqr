@@ -748,9 +748,20 @@ function isGrowthTemporalActive(row = {}, now = new Date()) {
   return planType === "growth_temporal" && expiresAt && expiresAt > now;
 }
 
+function hasLifetimeAccess(row = {}) {
+  return Boolean(
+    row.settings?.subscription?.lifetime_access
+      || row.settings?.access?.lifetime_access
+      || row.settings?.commercial_deal?.lifetime_access
+  );
+}
+
 function effectivePlanCode(row = {}) {
   const now = new Date();
   const planType = row.plan_type || row.settings?.access?.plan_type;
+  if (hasLifetimeAccess(row)) {
+    return PLAN_CODES.GLOBAL;
+  }
   if (isGrowthTemporalActive(row, now)) {
     return PLAN_CODES.GROWTH_TEMPORAL;
   }
@@ -777,6 +788,23 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     authorized_at: row.subscription_auto_renew_authorized_at || null,
     cancelled_at: row.subscription_auto_renew_cancelled_at || null,
   };
+
+  if (hasLifetimeAccess(row)) {
+    return {
+      raw_status: rawStatus,
+      access_status: "ACTIVE",
+      access_allowed: true,
+      portal_access_allowed: true,
+      is_subscription: true,
+      official_payment_due_at: null,
+      grace_period_days: 0,
+      grace_period_ends_at: null,
+      days_until_due: null,
+      days_overdue: 0,
+      days_until_lock: null,
+      auto_renew: autoRenew,
+    };
+  }
 
   if (plan.category !== "subscription") {
     const portalAccessAllowed = ["ticket_base", "growth_temporal"].includes(plan.category)
@@ -838,11 +866,17 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
 
 function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_QR]) {
   const isInternalAccount = Boolean(row.settings?.internal_account || row.settings?.access?.source === "internal_seed");
-  if (!isInternalAccount) return plan;
+  if (!isInternalAccount && !hasLifetimeAccess(row)) return plan;
   return {
     ...plan,
     name: plan.code === PLAN_CODES.PRO ? "Enterprise Operado Interno" : plan.name,
-    access_summary: "Cuenta interna MarketGames QR con acceso completo para operar clientes propios sin bloqueos de plan.",
+    access_summary: isInternalAccount
+      ? "Cuenta interna MarketGames QR con acceso completo para operar clientes propios sin bloqueos de plan."
+      : "Convenio premium vitalicio con acceso completo sin bloqueos de plan.",
+    features: {
+      ...Object.keys(PLAN_CATALOG[PLAN_CODES.PRO].features || {}).reduce((acc, feature) => ({ ...acc, [feature]: true }), {}),
+      ...(plan.features || {}),
+    },
     limits: {
       ...(plan.limits || {}),
       users: unlimited,
@@ -863,9 +897,25 @@ function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   };
 }
 
+function completeGlobalPlan(plan = PLAN_CATALOG[PLAN_CODES.GLOBAL]) {
+  if (plan.code !== PLAN_CODES.GLOBAL) return plan;
+  const premiumPlan = PLAN_CATALOG[PLAN_CODES.PRO];
+  return {
+    ...plan,
+    features: {
+      ...(premiumPlan.features || {}),
+      ...(plan.features || {}),
+    },
+    limits: {
+      ...(premiumPlan.limits || {}),
+      ...(plan.limits || {}),
+    },
+  };
+}
+
 function planFromBusiness(row = {}) {
   const code = effectivePlanCode(row);
-  const plan = internalUnlimitedPlan(row, PLAN_CATALOG[code]);
+  const plan = internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code]));
   const lifecycle = subscriptionLifecycle(row, plan);
   const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
   const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;
@@ -891,7 +941,7 @@ function planFromBusiness(row = {}) {
     days_overdue: lifecycle.days_overdue,
     days_until_lock: lifecycle.days_until_lock,
     auto_renew: lifecycle.auto_renew,
-    lifetime_access: Boolean(row.settings?.subscription?.lifetime_access || row.settings?.access?.lifetime_access),
+    lifetime_access: hasLifetimeAccess(row),
     monthly_payment_required: row.settings?.subscription?.monthly_payment_required !== false,
   };
 }

@@ -16,6 +16,26 @@ const {
   createBranch,
   updateBranch,
   deleteBranch,
+  listCompetitors,
+  createCompetitor,
+  updateCompetitor,
+  archiveCompetitor,
+  listCompetitorCampaigns,
+  createCompetitorCampaign,
+  updateCompetitorCampaign,
+  archiveCompetitorCampaign,
+  listCompetitorEvents,
+  createCompetitorEvent,
+  updateCompetitorEvent,
+  archiveCompetitorEvent,
+  listCompetitorFindings,
+  createCompetitorFinding,
+  updateCompetitorFinding,
+  archiveCompetitorFinding,
+  listCompetitorTasks,
+  createCompetitorTask,
+  updateCompetitorTask,
+  archiveCompetitorTask,
   listCompetitorProducts,
   createCompetitorProduct,
   updateCompetitorProduct,
@@ -101,6 +121,26 @@ router.get("/branches", listBranches);
 router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);
 router.delete("/branches/:branchId", deleteBranch);
+router.get("/competitors", listCompetitors);
+router.post("/competitors", createCompetitor);
+router.patch("/competitors/:competitorId", updateCompetitor);
+router.delete("/competitors/:competitorId", archiveCompetitor);
+router.get("/competitor-campaigns", listCompetitorCampaigns);
+router.post("/competitor-campaigns", createCompetitorCampaign);
+router.patch("/competitor-campaigns/:campaignId", updateCompetitorCampaign);
+router.delete("/competitor-campaigns/:campaignId", archiveCompetitorCampaign);
+router.get("/competitor-events", listCompetitorEvents);
+router.post("/competitor-events", createCompetitorEvent);
+router.patch("/competitor-events/:eventId", updateCompetitorEvent);
+router.delete("/competitor-events/:eventId", archiveCompetitorEvent);
+router.get("/competitor-findings", listCompetitorFindings);
+router.post("/competitor-findings", createCompetitorFinding);
+router.patch("/competitor-findings/:findingId", updateCompetitorFinding);
+router.delete("/competitor-findings/:findingId", archiveCompetitorFinding);
+router.get("/competitor-tasks", listCompetitorTasks);
+router.post("/competitor-tasks", createCompetitorTask);
+router.patch("/competitor-tasks/:taskId", updateCompetitorTask);
+router.delete("/competitor-tasks/:taskId", archiveCompetitorTask);
 router.get("/competitor-products", listCompetitorProducts);
 router.post("/competitor-products", createCompetitorProduct);
 router.patch("/competitor-products/:productId", updateCompetitorProduct);

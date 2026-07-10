@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260709-competition-directory-v25";
+const APP_VERSION = "empresa-20260709-competitive-radar-v28";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -711,15 +711,59 @@ const inventorySearchInput = document.getElementById("inventorySearchInput");
 const inventoryTable = document.getElementById("inventoryTable");
 const competitionProductForm = document.getElementById("competitionProductForm");
 const competitionProductIdInput = document.getElementById("competitionProductIdInput");
-const competitionCompetitorInput = document.getElementById("competitionCompetitorInput");
+const competitionTabs = Array.from(document.querySelectorAll("[data-competition-tab]"));
+const competitionPanels = Array.from(document.querySelectorAll("[data-competition-panel]"));
+const competitionLatestFindingsTable = document.getElementById("competitionLatestFindingsTable");
+const competitorForm = document.getElementById("competitorForm");
+const competitorIdInput = document.getElementById("competitorIdInput");
+const competitorNameInput = document.getElementById("competitorNameInput");
+const competitorCategoryInput = document.getElementById("competitorCategoryInput");
+const competitorBusinessTypeInput = document.getElementById("competitorBusinessTypeInput");
+const competitorCityInput = document.getElementById("competitorCityInput");
+const competitorAddressInput = document.getElementById("competitorAddressInput");
+const competitorZoneInput = document.getElementById("competitorZoneInput");
+const competitorWebsiteInput = document.getElementById("competitorWebsiteInput");
+const competitorInstagramInput = document.getElementById("competitorInstagramInput");
+const competitorWhatsappInput = document.getElementById("competitorWhatsappInput");
+const competitorPhoneInput = document.getElementById("competitorPhoneInput");
+const competitorEmailInput = document.getElementById("competitorEmailInput");
+const competitorStatusInput = document.getElementById("competitorStatusInput");
+const competitorThreatInput = document.getElementById("competitorThreatInput");
+const competitorSegmentInput = document.getElementById("competitorSegmentInput");
+const competitorPriceRangeInput = document.getElementById("competitorPriceRangeInput");
+const competitorProductsInput = document.getElementById("competitorProductsInput");
+const competitorServicesInput = document.getElementById("competitorServicesInput");
+const competitorDifferentialInput = document.getElementById("competitorDifferentialInput");
+const competitorStrengthsInput = document.getElementById("competitorStrengthsInput");
+const competitorWeaknessesInput = document.getElementById("competitorWeaknessesInput");
+const competitorDigitalPresenceInput = document.getElementById("competitorDigitalPresenceInput");
+const competitorAggressivenessInput = document.getElementById("competitorAggressivenessInput");
+const competitorCompetesPriceInput = document.getElementById("competitorCompetesPriceInput");
+const competitorCompetesPromotionsInput = document.getElementById("competitorCompetesPromotionsInput");
+const competitorCompetesSocialInput = document.getElementById("competitorCompetesSocialInput");
+const competitorCompetesEventsInput = document.getElementById("competitorCompetesEventsInput");
+const competitorNotesInput = document.getElementById("competitorNotesInput");
+const competitorMessage = document.getElementById("competitorMessage");
+const competitorSaveButton = document.getElementById("competitorSaveButton");
+const competitorResetButton = document.getElementById("competitorResetButton");
+const competitorFormTitle = document.getElementById("competitorFormTitle");
+const competitorSearchInput = document.getElementById("competitorSearchInput");
+const competitorTable = document.getElementById("competitorTable");
+const competitionCompetitorSelect = document.getElementById("competitionCompetitorSelect");
 const competitionProductNameInput = document.getElementById("competitionProductNameInput");
 const competitionCategoryInput = document.getElementById("competitionCategoryInput");
 const competitionPriceInput = document.getElementById("competitionPriceInput");
+const competitionPreviousPriceInput = document.getElementById("competitionPreviousPriceInput");
 const competitionOurPriceInput = document.getElementById("competitionOurPriceInput");
+const competitionOwnProductInput = document.getElementById("competitionOwnProductInput");
 const competitionCurrencyInput = document.getElementById("competitionCurrencyInput");
 const competitionChannelInput = document.getElementById("competitionChannelInput");
 const competitionObservedAtInput = document.getElementById("competitionObservedAtInput");
+const competitionAvailabilityInput = document.getElementById("competitionAvailabilityInput");
+const competitionPromotionInput = document.getElementById("competitionPromotionInput");
+const competitionLevelInput = document.getElementById("competitionLevelInput");
 const competitionSourceUrlInput = document.getElementById("competitionSourceUrlInput");
+const competitionEvidenceImageInput = document.getElementById("competitionEvidenceImageInput");
 const competitionNotesInput = document.getElementById("competitionNotesInput");
 const competitionMessage = document.getElementById("competitionMessage");
 const competitionSaveButton = document.getElementById("competitionSaveButton");
@@ -728,6 +772,101 @@ const refreshCompetitionButton = document.getElementById("refreshCompetitionButt
 const competitionFormTitle = document.getElementById("competitionFormTitle");
 const competitionSearchInput = document.getElementById("competitionSearchInput");
 const competitionTable = document.getElementById("competitionTable");
+const competitionFindingForm = document.getElementById("competitionFindingForm");
+const competitorCampaignForm = document.getElementById("competitorCampaignForm");
+const competitorCampaignIdInput = document.getElementById("competitorCampaignIdInput");
+const competitorCampaignCompetitorInput = document.getElementById("competitorCampaignCompetitorInput");
+const competitorCampaignTypeInput = document.getElementById("competitorCampaignTypeInput");
+const competitorCampaignNameInput = document.getElementById("competitorCampaignNameInput");
+const competitorCampaignStartInput = document.getElementById("competitorCampaignStartInput");
+const competitorCampaignEndInput = document.getElementById("competitorCampaignEndInput");
+const competitorCampaignChannelInput = document.getElementById("competitorCampaignChannelInput");
+const competitorCampaignAggressivenessInput = document.getElementById("competitorCampaignAggressivenessInput");
+const competitorCampaignImpactInput = document.getElementById("competitorCampaignImpactInput");
+const competitorCampaignSourceTypeInput = document.getElementById("competitorCampaignSourceTypeInput");
+const competitorCampaignReliabilityInput = document.getElementById("competitorCampaignReliabilityInput");
+const competitorCampaignOfferInput = document.getElementById("competitorCampaignOfferInput");
+const competitorCampaignBenefitInput = document.getElementById("competitorCampaignBenefitInput");
+const competitorCampaignAudienceInput = document.getElementById("competitorCampaignAudienceInput");
+const competitorCampaignMessageInput = document.getElementById("competitorCampaignMessageInput");
+const competitorCampaignActionInput = document.getElementById("competitorCampaignActionInput");
+const competitorCampaignSourceUrlInput = document.getElementById("competitorCampaignSourceUrlInput");
+const competitorCampaignImageInput = document.getElementById("competitorCampaignImageInput");
+const competitorCampaignMessage = document.getElementById("competitorCampaignMessage");
+const competitorCampaignSaveButton = document.getElementById("competitorCampaignSaveButton");
+const competitorCampaignResetButton = document.getElementById("competitorCampaignResetButton");
+const competitorCampaignFormTitle = document.getElementById("competitorCampaignFormTitle");
+const competitorCampaignSearchInput = document.getElementById("competitorCampaignSearchInput");
+const competitorCampaignTable = document.getElementById("competitorCampaignTable");
+const competitorEventForm = document.getElementById("competitorEventForm");
+const competitorEventIdInput = document.getElementById("competitorEventIdInput");
+const competitorEventCompetitorInput = document.getElementById("competitorEventCompetitorInput");
+const competitorEventTypeInput = document.getElementById("competitorEventTypeInput");
+const competitorEventNameInput = document.getElementById("competitorEventNameInput");
+const competitorEventDateInput = document.getElementById("competitorEventDateInput");
+const competitorEventCityInput = document.getElementById("competitorEventCityInput");
+const competitorEventPlaceInput = document.getElementById("competitorEventPlaceInput");
+const competitorEventOrganizerInput = document.getElementById("competitorEventOrganizerInput");
+const competitorEventParticipationInput = document.getElementById("competitorEventParticipationInput");
+const competitorEventOfferInput = document.getElementById("competitorEventOfferInput");
+const competitorEventProductsInput = document.getElementById("competitorEventProductsInput");
+const competitorEventAudienceInput = document.getElementById("competitorEventAudienceInput");
+const competitorEventOpportunityInput = document.getElementById("competitorEventOpportunityInput");
+const competitorEventActionInput = document.getElementById("competitorEventActionInput");
+const competitorEventEvidenceInput = document.getElementById("competitorEventEvidenceInput");
+const competitorEventImageInput = document.getElementById("competitorEventImageInput");
+const competitorEventObservationsInput = document.getElementById("competitorEventObservationsInput");
+const competitorEventMessage = document.getElementById("competitorEventMessage");
+const competitorEventSaveButton = document.getElementById("competitorEventSaveButton");
+const competitorEventResetButton = document.getElementById("competitorEventResetButton");
+const competitorEventFormTitle = document.getElementById("competitorEventFormTitle");
+const competitorEventSearchInput = document.getElementById("competitorEventSearchInput");
+const competitorEventTable = document.getElementById("competitorEventTable");
+const findingIdInput = document.getElementById("findingIdInput");
+const findingCompetitorInput = document.getElementById("findingCompetitorInput");
+const findingTypeInput = document.getElementById("findingTypeInput");
+const findingTitleInput = document.getElementById("findingTitleInput");
+const findingImpactInput = document.getElementById("findingImpactInput");
+const findingUrgencyInput = document.getElementById("findingUrgencyInput");
+const findingAreaInput = document.getElementById("findingAreaInput");
+const findingResponsibleInput = document.getElementById("findingResponsibleInput");
+const findingStatusInput = document.getElementById("findingStatusInput");
+const findingDetectedAtInput = document.getElementById("findingDetectedAtInput");
+const findingDueAtInput = document.getElementById("findingDueAtInput");
+const findingSourceTypeInput = document.getElementById("findingSourceTypeInput");
+const findingReliabilityInput = document.getElementById("findingReliabilityInput");
+const findingThreatInput = document.getElementById("findingThreatInput");
+const findingOpportunityInput = document.getElementById("findingOpportunityInput");
+const findingDescriptionInput = document.getElementById("findingDescriptionInput");
+const findingActionInput = document.getElementById("findingActionInput");
+const findingSourceDescriptionInput = document.getElementById("findingSourceDescriptionInput");
+const findingEvidenceUrlInput = document.getElementById("findingEvidenceUrlInput");
+const findingEvidenceImageInput = document.getElementById("findingEvidenceImageInput");
+const findingMessage = document.getElementById("findingMessage");
+const findingSaveButton = document.getElementById("findingSaveButton");
+const findingResetButton = document.getElementById("findingResetButton");
+const findingFormTitle = document.getElementById("findingFormTitle");
+const findingSearchInput = document.getElementById("findingSearchInput");
+const competitionFindingsTable = document.getElementById("competitionFindingsTable");
+const competitorSwotForm = document.getElementById("competitorSwotForm");
+const competitorSwotSelect = document.getElementById("competitorSwotSelect");
+const competitorSwotStrengthsInput = document.getElementById("competitorSwotStrengthsInput");
+const competitorSwotWeaknessesInput = document.getElementById("competitorSwotWeaknessesInput");
+const competitorSwotOpportunitiesInput = document.getElementById("competitorSwotOpportunitiesInput");
+const competitorSwotThreatsInput = document.getElementById("competitorSwotThreatsInput");
+const competitorBetterThanUsInput = document.getElementById("competitorBetterThanUsInput");
+const competitorWeDoBetterInput = document.getElementById("competitorWeDoBetterInput");
+const competitorResponsePlanInput = document.getElementById("competitorResponsePlanInput");
+const competitorRecommendedCampaignInput = document.getElementById("competitorRecommendedCampaignInput");
+const competitorProductToAdjustInput = document.getElementById("competitorProductToAdjustInput");
+const competitorPriceToReviewInput = document.getElementById("competitorPriceToReviewInput");
+const competitorMessageToReinforceInput = document.getElementById("competitorMessageToReinforceInput");
+const competitorSwotMessage = document.getElementById("competitorSwotMessage");
+const competitorSwotSaveButton = document.getElementById("competitorSwotSaveButton");
+const competitionBasicComparisonTable = document.getElementById("competitionBasicComparisonTable");
+const competitionPriceComparisonTable = document.getElementById("competitionPriceComparisonTable");
+const competitionCampaignComparisonTable = document.getElementById("competitionCampaignComparisonTable");
+const competitionStrategicComparisonTable = document.getElementById("competitionStrategicComparisonTable");
 const qrBatchForm = document.getElementById("qrBatchForm");
 const qrBatchCampaignInput = document.getElementById("qrBatchCampaignInput");
 const qrBatchCampaignHelp = document.getElementById("qrBatchCampaignHelp");
@@ -1068,10 +1207,24 @@ let state = {
   inventoryLoaded: false,
   inventorySearch: "",
   competitionProducts: [],
+  competitionCompetitors: [],
+  competitionFindings: [],
+  competitionCampaigns: [],
+  competitionEvents: [],
+  competitionTasks: [],
   competitionLoaded: false,
   competitionLoading: false,
   competitionSearch: "",
+  competitorSearch: "",
+  findingSearch: "",
+  competitorCampaignSearch: "",
+  competitorEventSearch: "",
+  competitionTab: "competitors",
   competitionEditingId: null,
+  competitorEditingId: null,
+  findingEditingId: null,
+  competitorCampaignEditingId: null,
+  competitorEventEditingId: null,
   businessBranches: [],
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
@@ -1746,7 +1899,10 @@ function clearBusinessWorkspaceUi() {
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
     [inventoryTable, 7, "Abre Inventario para cargar productos."],
-    [competitionTable, 8, "Abre Competencia para cargar el directorio."],
+    [competitionTable, 9, "Abre Radar Competitivo para cargar productos y precios."],
+    [competitorTable, 7, "Abre Radar Competitivo para cargar competidores."],
+    [competitionFindingsTable, 7, "Abre Radar Competitivo para cargar hallazgos."],
+    [competitionLatestFindingsTable, 6, "Abre Radar Competitivo para cargar hallazgos."],
     [rewardPassTable, 8, "Cargando Reward Pass..."],
     [rewardPassRedemptionTable, 9, "Cargando historial..."],
     [rewardPassTicketLedgerTable, 5, "Cargando movimientos..."],
@@ -1772,6 +1928,10 @@ function clearBusinessWorkspaceUi() {
   if (inventorySearchInput) inventorySearchInput.value = "";
   resetInventoryForm();
   if (competitionSearchInput) competitionSearchInput.value = "";
+  if (competitorSearchInput) competitorSearchInput.value = "";
+  if (findingSearchInput) findingSearchInput.value = "";
+  resetCompetitorForm();
+  resetFindingForm();
   resetCompetitionForm();
   setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
   if (rewardPassKpiGrid) renderSkeletonCards(rewardPassKpiGrid, 4);
@@ -1906,10 +2066,17 @@ function resetBusinessScopedState(options = {}) {
   state.inventoryLoaded = false;
   state.inventorySearch = "";
   state.competitionProducts = [];
+  state.competitionCompetitors = [];
+  state.competitionFindings = [];
   state.competitionLoaded = false;
   state.competitionLoading = false;
   state.competitionSearch = "";
+  state.competitorSearch = "";
+  state.findingSearch = "";
+  state.competitionTab = "competitors";
   state.competitionEditingId = null;
+  state.competitorEditingId = null;
+  state.findingEditingId = null;
   state.businessBranches = [];
   state.businessBranchesLoaded = false;
   state.businessBranchesLoading = false;
@@ -11018,70 +11185,230 @@ async function archiveInventoryProduct(productId) {
 async function loadCompetitionProducts(options = {}) {
   if (!session?.user?.business_id) {
     state.competitionProducts = [];
+    state.competitionCompetitors = [];
+    state.competitionFindings = [];
+    state.competitionCampaigns = [];
+    state.competitionEvents = [];
+    state.competitionTasks = [];
     state.competitionLoaded = true;
     state.competitionLoading = false;
     return [];
   }
   if (state.competitionLoaded && !options.force) return state.competitionProducts;
   if (state.competitionLoading) return state.competitionProducts;
-  if (!options.quiet && competitionTable) {
-    competitionTable.innerHTML = '<tr><td colspan="8">Cargando directorio de competencia...</td></tr>';
-  }
+  if (!options.quiet && competitionTable) competitionTable.innerHTML = '<tr><td colspan="9">Cargando radar competitivo...</td></tr>';
   state.competitionLoading = true;
   const scopeKey = businessScopeKey();
   try {
-    const data = await apiSafe("/api/business/competitor-products?limit=500", { headers: authHeaders() }, { products: [] });
+    const [competitorsData, productsData, findingsData, campaignsData, eventsData, tasksData] = await Promise.all([
+      apiSafe("/api/business/competitors?limit=500", { headers: authHeaders() }, { competitors: [] }),
+      apiSafe("/api/business/competitor-products?limit=500", { headers: authHeaders() }, { products: [] }),
+      apiSafe("/api/business/competitor-findings?limit=500", { headers: authHeaders() }, { findings: [] }),
+      apiSafe("/api/business/competitor-campaigns?limit=500", { headers: authHeaders() }, { campaigns: [] }),
+      apiSafe("/api/business/competitor-events?limit=500", { headers: authHeaders() }, { events: [] }),
+      apiSafe("/api/business/competitor-tasks?limit=500", { headers: authHeaders() }, { tasks: [] }),
+    ]);
     if (!isCurrentBusinessScope(scopeKey)) return state.competitionProducts;
-    state.competitionProducts = Array.isArray(data.products) ? data.products : [];
+    state.competitionCompetitors = Array.isArray(competitorsData.competitors) ? competitorsData.competitors : [];
+    state.competitionProducts = Array.isArray(productsData.products) ? productsData.products : [];
+    state.competitionFindings = Array.isArray(findingsData.findings) ? findingsData.findings : [];
+    state.competitionCampaigns = Array.isArray(campaignsData.campaigns) ? campaignsData.campaigns : [];
+    state.competitionEvents = Array.isArray(eventsData.events) ? eventsData.events : [];
+    state.competitionTasks = Array.isArray(tasksData.tasks) ? tasksData.tasks : [];
     state.competitionLoaded = true;
+    renderCompetitionSelectOptions();
     return state.competitionProducts;
   } finally {
     if (isCurrentBusinessScope(scopeKey)) state.competitionLoading = false;
   }
 }
 
+function setCompetitionTab(tab = "competitors") {
+  state.competitionTab = tab || "competitors";
+  competitionTabs.forEach((button) => button.classList.toggle("active", button.dataset.competitionTab === state.competitionTab));
+  competitionPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.competitionPanel !== state.competitionTab));
+}
+
+function threatLabel(value = "") {
+  return { LOW: "Baja", MEDIUM: "Media", HIGH: "Alta", CRITICAL: "Crítica" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function radarStatusLabel(value = "") {
+  return { ACTIVE: "Activo", INACTIVE: "Inactivo", POTENTIAL: "Potencial", INDIRECT: "Indirecto", OPEN: "Abierto", IN_PROGRESS: "En gestión", DONE: "Hecho", ARCHIVED: "Archivado" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function findingTypeLabel(value = "") {
+  return { PRICE: "Precio", PRODUCT: "Producto", PROMOTION: "Promoción", CAMPAIGN: "Campaña", EVENT: "Evento", BENEFIT: "Beneficio", CHANNEL: "Canal", SOCIAL: "Redes", PARTNERSHIP: "Alianza", LAUNCH: "Lanzamiento", MESSAGE: "Mensaje", OTHER: "Otro" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function campaignTypeLabel(value = "") {
+  return { DISCOUNT: "Descuento", TWO_FOR_ONE: "2x1", EVENT: "Evento", RAFFLE: "Sorteo", REFERRALS: "Referidos", LAUNCH: "Lanzamiento", SEASONAL: "Temporada", PARTNERSHIP: "Alianza", INFLUENCER: "Influencer", GIFT_CARD: "Gift card", POST_SALE_BENEFIT: "Beneficio postventa", PROMO_BUNDLE: "Paquete promocional", PHYSICAL_ACTIVATION: "Activación física", OTHER: "Otro" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function eventTypeLabel(value = "") {
+  return { FAIR: "Feria", LAUNCH: "Lanzamiento", STORE_ACTIVATION: "Activación en tienda", PRIVATE_EVENT: "Evento privado", PARTNERSHIP: "Alianza comercial", MALL: "Centro comercial", CORPORATE: "Corporativo", EDUCATIONAL: "Educativo", SEASONAL: "Temporada especial", INFLUENCER_MEETUP: "Influencer meet-up", POP_UP: "Pop-up store", OTHER: "Otro" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function areaAffectedLabel(value = "") {
+  return { PRICE: "Precio", PRODUCT: "Producto", CAMPAIGN: "Campaña", BRAND: "Marca", CHANNEL: "Canal", EVENT: "Evento", SALES: "Ventas", SERVICE: "Servicio", EXPERIENCE: "Experiencia", LOYALTY: "Fidelización", PARTNERSHIPS: "Alianzas", REVENUE: "Revenue", OTHER: "Otro" }[String(value || "").toUpperCase()] || value || "-";
+}
+
+function competitorById(competitorId = "") {
+  return (state.competitionCompetitors || []).find((item) => String(item.id) === String(competitorId)) || null;
+}
+
+function findingById(findingId = "") {
+  return (state.competitionFindings || []).find((item) => String(item.id) === String(findingId)) || null;
+}
+
+function competitorCampaignById(campaignId = "") {
+  return (state.competitionCampaigns || []).find((item) => String(item.id) === String(campaignId)) || null;
+}
+
+function competitorEventById(eventId = "") {
+  return (state.competitionEvents || []).find((item) => String(item.id) === String(eventId)) || null;
+}
+
+function renderCompetitionSelectOptions() {
+  const options = [
+    '<option value="">Elige competidor registrado</option>',
+    ...(state.competitionCompetitors || []).filter((item) => item.is_active !== false).map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`),
+  ].join("");
+  if (competitionCompetitorSelect) competitionCompetitorSelect.innerHTML = options;
+  if (findingCompetitorInput) findingCompetitorInput.innerHTML = options;
+  if (competitorCampaignCompetitorInput) competitorCampaignCompetitorInput.innerHTML = options;
+  if (competitorEventCompetitorInput) competitorEventCompetitorInput.innerHTML = options;
+  if (competitorSwotSelect) competitorSwotSelect.innerHTML = options;
+}
+
+function hasRegisteredCompetitors() {
+  return (state.competitionCompetitors || []).some((item) => item.is_active !== false);
+}
+
+function requireSelectedCompetitor(selectElement, messageElement, context = "guardar este dato") {
+  if (!hasRegisteredCompetitors()) {
+    setInlineMessage(messageElement, "Primero agrega un competidor en Directorio. Después podrás cargar productos, precios, campañas, eventos y hallazgos.", "error");
+    setCompetitionTab("competitors");
+    return false;
+  }
+  if (!selectElement?.value) {
+    setInlineMessage(messageElement, `Selecciona un competidor registrado para ${context}.`, "error");
+    return false;
+  }
+  return true;
+}
+
+function filteredCompetitors() {
+  const needle = String(state.competitorSearch || "").trim().toLowerCase();
+  const competitors = (state.competitionCompetitors || []).filter((item) => item.is_active !== false);
+  if (!needle) return competitors;
+  return competitors.filter((item) => [item.name, item.category, item.city, item.operation_zone, item.target_segment, item.notes].some((value) => String(value || "").toLowerCase().includes(needle)));
+}
+
 function filteredCompetitionProducts() {
   const needle = String(state.competitionSearch || "").trim().toLowerCase();
   const products = (state.competitionProducts || []).filter((item) => item.is_active !== false);
   if (!needle) return products;
-  return products.filter((item) => [
-    item.competitor_name,
-    item.product_name,
-    item.category,
-    item.channel,
-    item.notes,
-  ].some((value) => String(value || "").toLowerCase().includes(needle)));
+  return products.filter((item) => [item.linked_competitor_name, item.competitor_name, item.product_name, item.category, item.channel, item.promotion_label, item.own_product_name, item.notes].some((value) => String(value || "").toLowerCase().includes(needle)));
 }
 
-function competitionKpis(products = filteredCompetitionProducts()) {
-  const competitors = new Set(products.map((item) => String(item.competitor_name || "").trim().toLowerCase()).filter(Boolean));
-  const avgCompetitorPrice = products.length
-    ? products.reduce((sum, item) => sum + toNumber(item.competitor_price), 0) / products.length
-    : 0;
+function filteredFindings() {
+  const needle = String(state.findingSearch || "").trim().toLowerCase();
+  const findings = (state.competitionFindings || []).filter((item) => item.status !== "ARCHIVED");
+  if (!needle) return findings;
+  return findings.filter((item) => [item.title, item.description, item.suggested_action, item.competitor_name, item.finding_type, item.area_affected, item.responsible_name].some((value) => String(value || "").toLowerCase().includes(needle)));
+}
+
+function filteredCompetitorCampaigns() {
+  const needle = String(state.competitorCampaignSearch || "").trim().toLowerCase();
+  const campaigns = (state.competitionCampaigns || []).filter((item) => item.status !== "ARCHIVED");
+  if (!needle) return campaigns;
+  return campaigns.filter((item) => [item.name, item.competitor_name, item.campaign_type, item.channel, item.offer, item.benefit, item.main_message, item.suggested_action].some((value) => String(value || "").toLowerCase().includes(needle)));
+}
+
+function filteredCompetitorEvents() {
+  const needle = String(state.competitorEventSearch || "").trim().toLowerCase();
+  const events = (state.competitionEvents || []).filter((item) => item.status !== "ARCHIVED");
+  if (!needle) return events;
+  return events.filter((item) => [item.name, item.competitor_name, item.event_type, item.place, item.city, item.organizer, item.presented_offer, item.detected_opportunity, item.recommended_action].some((value) => String(value || "").toLowerCase().includes(needle)));
+}
+
+function competitionKpis() {
+  const competitors = (state.competitionCompetitors || []).filter((item) => item.is_active !== false);
+  const products = (state.competitionProducts || []).filter((item) => item.is_active !== false);
+  const findings = (state.competitionFindings || []).filter((item) => item.status !== "ARCHIVED");
+  const campaigns = (state.competitionCampaigns || []).filter((item) => item.status !== "ARCHIVED");
+  const events = (state.competitionEvents || []).filter((item) => item.status !== "ARCHIVED");
+  const tasks = (state.competitionTasks || []).filter((item) => item.status !== "ARCHIVED");
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const monthFindings = findings.filter((item) => new Date(item.detected_at || item.created_at).getTime() >= monthStart.getTime());
+  const promotions = campaigns.length ? campaigns : findings.filter((item) => ["PROMOTION", "CAMPAIGN"].includes(item.finding_type));
+  const threats = findings.filter((item) => item.is_threat || ["HIGH", "CRITICAL"].includes(String(item.impact_level || "").toUpperCase()));
+  const opportunities = findings.filter((item) => item.is_opportunity);
+  const avgCompetitorPrice = products.length ? products.reduce((sum, item) => sum + toNumber(item.competitor_price), 0) / products.length : 0;
   const comparable = products.filter((item) => item.our_price !== null && item.our_price !== undefined);
   const favorable = comparable.filter((item) => toNumber(item.our_price) < toNumber(item.competitor_price)).length;
-  const avgGap = comparable.length
-    ? comparable.reduce((sum, item) => sum + (toNumber(item.our_price) - toNumber(item.competitor_price)), 0) / comparable.length
-    : 0;
+  const avgGap = comparable.length ? comparable.reduce((sum, item) => sum + (toNumber(item.our_price) - toNumber(item.competitor_price)), 0) / comparable.length : 0;
   return [
-    { label: "Competidores", value: competitors.size.toLocaleString("es-CO"), meta: "Marcas o negocios monitoreados" },
-    { label: "Productos comparados", value: products.length.toLocaleString("es-CO"), meta: "Registros activos del directorio" },
-    { label: "Precio promedio competencia", value: money(avgCompetitorPrice), meta: "Sobre los datos capturados" },
-    { label: "Ventaja de precio", value: favorable.toLocaleString("es-CO"), meta: comparable.length ? `Brecha promedio ${money(avgGap)}` : "Agrega tu precio para comparar" },
+    { label: "Competidores registrados", value: competitors.length.toLocaleString("es-CO"), meta: `${competitors.filter((item) => ["HIGH", "CRITICAL"].includes(item.threat_level)).length} alta amenaza` },
+    { label: "Nuevos hallazgos", value: monthFindings.length.toLocaleString("es-CO"), meta: "Detectados este mes" },
+    { label: "Productos monitoreados", value: products.length.toLocaleString("es-CO"), meta: "Productos y servicios" },
+    { label: "Precios registrados", value: money(avgCompetitorPrice), meta: `${favorable} ventajas propias · brecha ${money(avgGap)}` },
+    { label: "Promociones activas", value: promotions.length.toLocaleString("es-CO"), meta: `${campaigns.filter((item) => ["HIGH", "CRITICAL"].includes(item.aggressiveness_level)).length} agresivas` },
+    { label: "Eventos detectados", value: events.length.toLocaleString("es-CO"), meta: "Activaciones próximas" },
+    { label: "Amenazas", value: threats.length.toLocaleString("es-CO"), meta: "Priorizar respuesta" },
+    { label: "Oportunidades", value: opportunities.length.toLocaleString("es-CO"), meta: `${tasks.length} tareas abiertas/sugeridas` },
   ];
 }
 
 function competitionGapLabel(product) {
-  if (product.our_price === null || product.our_price === undefined) return "Sin precio propio";
+  if (product.our_price === null || product.our_price === undefined) return "-";
   const gap = toNumber(product.our_price) - toNumber(product.competitor_price);
-  if (gap === 0) return "Mismo precio";
-  return gap > 0 ? `+${money(gap)} vs competencia` : `${money(gap)} vs competencia`;
+  if (gap === 0) return "$0";
+  return gap > 0 ? `+${money(gap)}` : money(gap);
+}
+
+function competitionGapPercentLabel(product) {
+  if (product.our_price === null || product.our_price === undefined || toNumber(product.competitor_price) <= 0) return "-";
+  const gap = toNumber(product.our_price) - toNumber(product.competitor_price);
+  const percent = (gap / toNumber(product.competitor_price)) * 100;
+  if (!Number.isFinite(percent)) return "-";
+  return `${percent > 0 ? "+" : ""}${percent.toFixed(1)}%`;
+}
+
+function recommendedActionForCompetitor(competitor = {}) {
+  if (competitor.competes_price) return "Revisar margen y responder con valor agregado medible por QR.";
+  if (competitor.competes_promotions) return "Crear campaña de respuesta con beneficio limitado y seguimiento de redenciones.";
+  if (competitor.competes_events) return "Preparar captura en el mismo público o alianza cercana al evento.";
+  if (competitor.competes_social_media) return "Activar contenido y QR de captura para convertir audiencia en leads propios.";
+  if (String(competitor.weaknesses || "").trim()) return "Reforzar mensaje comercial donde el competidor muestra debilidad.";
+  return "Observar, actualizar información y definir próxima acción comercial.";
+}
+
+function recommendedActionForCampaign(campaign = {}) {
+  if (["HIGH", "CRITICAL"].includes(String(campaign.aggressiveness_level || "").toUpperCase())) {
+    return "Crear campaña de respuesta con beneficio limitado y medición por QR.";
+  }
+  if (campaign.campaign_type === "DISCOUNT") return "Evaluar valor agregado antes de competir solo por precio.";
+  if (campaign.campaign_type === "EVENT") return "Preparar captura o alianza para competir por el mismo público.";
+  return "Monitorear resultados visibles y registrar evidencia adicional.";
+}
+
+function recommendedActionForFinding(finding = {}) {
+  if (finding.finding_type === "PRICE") return "Revisar margen y evaluar valor agregado en lugar de bajar precio de inmediato.";
+  if (["PROMOTION", "CAMPAIGN"].includes(finding.finding_type)) return "Crear campaña de respuesta con beneficio limitado y QR medible.";
+  if (finding.finding_type === "EVENT") return "Preparar captura o alianza para competir en el mismo público.";
+  if (finding.area_affected === "SERVICE") return "Reforzar mensaje de atención, experiencia y seguimiento.";
+  return finding.suggested_action || "Observar y actualizar la bitácora competitiva.";
 }
 
 function renderCompetitionView() {
-  const rows = filteredCompetitionProducts();
+  setCompetitionTab(state.competitionTab || "competitors");
+  renderCompetitionSelectOptions();
   if (competitionKpiGrid) {
-    competitionKpiGrid.innerHTML = competitionKpis(rows).map((item) => `
+    competitionKpiGrid.innerHTML = competitionKpis().map((item) => `
       <article class="surface-card kpi-card">
         <span class="mono-label">${escapeHtml(item.label)}</span>
         <strong class="kpi-value">${escapeHtml(item.value)}</strong>
@@ -11089,49 +11416,206 @@ function renderCompetitionView() {
       </article>
     `).join("");
   }
+  renderCompetitionDashboard();
+  renderCompetitorDirectory();
+  renderCompetitionProductsTable();
+  renderCompetitorCampaignsTable();
+  renderCompetitorEventsTable();
+  renderCompetitionFindingsTable();
+  renderCompetitionComparisons();
+  populateSwotForm();
+}
+
+function renderCompetitionDashboard() {
+  if (!competitionLatestFindingsTable) return;
+  if (!state.competitionLoaded) {
+    competitionLatestFindingsTable.innerHTML = '<tr><td colspan="6">Cargando radar competitivo...</td></tr>';
+    return;
+  }
+  const rows = (state.competitionFindings || []).filter((item) => item.status !== "ARCHIVED").slice(0, 12);
+  competitionLatestFindingsTable.innerHTML = rows.map((finding) => `
+    <tr>
+      <td>${escapeHtml(formatDate(finding.detected_at || finding.created_at))}</td>
+      <td>${escapeHtml(finding.competitor_name || competitorById(finding.competitor_id)?.name || "-")}</td>
+      <td>${escapeHtml(findingTypeLabel(finding.finding_type))}</td>
+      <td><strong>${escapeHtml(finding.title)}</strong><span class="table-secondary">${escapeHtml(finding.description || "-")}</span></td>
+      <td>${escapeHtml(threatLabel(finding.impact_level))}</td>
+      <td>${escapeHtml(finding.suggested_action || "-")}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="6">Sin hallazgos registrados. Agrega promociones, eventos, cambios de precio o mensajes detectados.</td></tr>';
+}
+
+function renderCompetitorDirectory() {
+  if (!competitorTable) return;
+  if (!state.competitionLoaded) {
+    competitorTable.innerHTML = '<tr><td colspan="7">Cargando competidores...</td></tr>';
+    return;
+  }
+  const rows = filteredCompetitors();
+  competitorTable.innerHTML = rows.map((competitor) => `
+    <tr>
+      <td><strong>${escapeHtml(competitor.name)}</strong><span class="table-secondary">${escapeHtml(competitor.website || competitor.instagram || competitor.phone || "-")}</span></td>
+      <td>${escapeHtml(competitor.category || competitor.business_type || "-")}</td>
+      <td>${escapeHtml([competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "-")}</td>
+      <td>${escapeHtml(threatLabel(competitor.threat_level))}</td>
+      <td>${escapeHtml(String(competitor.product_count || 0))}</td>
+      <td>${escapeHtml(String(competitor.finding_count || 0))}</td>
+      <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-edit="${escapeHtml(competitor.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competitor-delete="${escapeHtml(competitor.id)}">Eliminar</button></div></td>
+    </tr>
+  `).join("") || '<tr><td colspan="7">Sin competidores registrados.</td></tr>';
+  competitorTable.querySelectorAll("[data-competitor-edit]").forEach((button) => button.addEventListener("click", () => editCompetitor(button.dataset.competitorEdit)));
+  competitorTable.querySelectorAll("[data-competitor-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitor(button.dataset.competitorDelete)));
+}
+
+function renderCompetitionProductsTable() {
   if (!competitionTable) return;
   if (!state.competitionLoaded) {
-    competitionTable.innerHTML = '<tr><td colspan="8">Cargando directorio de competencia...</td></tr>';
+    competitionTable.innerHTML = '<tr><td colspan="9">Cargando productos y precios...</td></tr>';
     return;
   }
-  if (!rows.length) {
-    competitionTable.innerHTML = '<tr><td colspan="8">Sin productos de competencia registrados. Agrega el primer hallazgo con el formulario.</td></tr>';
-    return;
-  }
+  const rows = filteredCompetitionProducts();
   competitionTable.innerHTML = rows.map((product) => {
-    const source = product.source_url
-      ? `<a href="${escapeHtml(product.source_url)}" target="_blank" rel="noopener">Abrir fuente</a>`
-      : "-";
+    const competitorName = product.linked_competitor_name || product.competitor_name || competitorById(product.competitor_id)?.name || "-";
+    const source = product.source_url ? `<a href="${escapeHtml(product.source_url)}" target="_blank" rel="noopener">Abrir fuente</a>` : "-";
     return `
       <tr>
-        <td>
-          <strong>${escapeHtml(product.competitor_name)}</strong>
-          <span class="table-secondary">${escapeHtml(formatDate(product.observed_at))}</span>
-        </td>
-        <td>${escapeHtml(product.product_name)}</td>
+        <td><strong>${escapeHtml(competitorName)}</strong><span class="table-secondary">${escapeHtml(formatDate(product.observed_at))}</span></td>
+        <td><strong>${escapeHtml(product.product_name)}</strong><span class="table-secondary">${escapeHtml(product.promotion_label || "-")}</span></td>
         <td>${escapeHtml(product.category || "-")}</td>
+        <td>${escapeHtml(money(product.competitor_price))}</td>
+        <td>${escapeHtml(product.own_product_name || "-")}</td>
+        <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
+        <td><strong>${escapeHtml(competitionGapLabel(product))}</strong><span class="table-secondary">${escapeHtml(competitionGapPercentLabel(product))}</span></td>
+        <td><span>${escapeHtml(product.channel || product.availability || "-")}</span><span class="table-secondary">${source}</span></td>
+        <td><div class="table-actions"><button class="ghost-button" type="button" data-competition-edit="${escapeHtml(product.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competition-delete="${escapeHtml(product.id)}">Eliminar</button></div></td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="9">Sin productos de competidores registrados.</td></tr>';
+  competitionTable.querySelectorAll("[data-competition-edit]").forEach((button) => button.addEventListener("click", () => editCompetitionProduct(button.dataset.competitionEdit)));
+  competitionTable.querySelectorAll("[data-competition-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitionProduct(button.dataset.competitionDelete)));
+}
+
+function renderCompetitorCampaignsTable() {
+  if (!competitorCampaignTable) return;
+  if (!state.competitionLoaded) {
+    competitorCampaignTable.innerHTML = '<tr><td colspan="7">Cargando campañas y promociones...</td></tr>';
+    return;
+  }
+  const rows = filteredCompetitorCampaigns();
+  competitorCampaignTable.innerHTML = rows.map((campaign) => `
+    <tr>
+      <td><strong>${escapeHtml(campaign.name)}</strong><span class="table-secondary">${escapeHtml(campaignTypeLabel(campaign.campaign_type))} · ${escapeHtml(formatDate(campaign.starts_at || campaign.created_at))}</span></td>
+      <td>${escapeHtml(campaign.competitor_name || competitorById(campaign.competitor_id)?.name || "-")}</td>
+      <td>${escapeHtml(campaign.channel || "-")}</td>
+      <td>${escapeHtml(campaign.offer || campaign.benefit || "-")}</td>
+      <td>${escapeHtml(threatLabel(campaign.aggressiveness_level))}</td>
+      <td>${escapeHtml(threatLabel(campaign.estimated_impact))}</td>
+      <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-campaign-edit="${escapeHtml(campaign.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competitor-campaign-delete="${escapeHtml(campaign.id)}">Eliminar</button></div></td>
+    </tr>
+  `).join("") || '<tr><td colspan="7">Sin campañas o promociones registradas.</td></tr>';
+  competitorCampaignTable.querySelectorAll("[data-competitor-campaign-edit]").forEach((button) => button.addEventListener("click", () => editCompetitorCampaign(button.dataset.competitorCampaignEdit)));
+  competitorCampaignTable.querySelectorAll("[data-competitor-campaign-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitorCampaign(button.dataset.competitorCampaignDelete)));
+}
+
+function renderCompetitorEventsTable() {
+  if (!competitorEventTable) return;
+  if (!state.competitionLoaded) {
+    competitorEventTable.innerHTML = '<tr><td colspan="7">Cargando eventos y activaciones...</td></tr>';
+    return;
+  }
+  const rows = filteredCompetitorEvents();
+  competitorEventTable.innerHTML = rows.map((eventItem) => `
+    <tr>
+      <td><strong>${escapeHtml(eventItem.name)}</strong><span class="table-secondary">${escapeHtml(eventTypeLabel(eventItem.event_type))}</span></td>
+      <td>${escapeHtml(eventItem.competitor_name || competitorById(eventItem.competitor_id)?.name || "-")}</td>
+      <td>${escapeHtml(formatDate(eventItem.event_date || eventItem.created_at))}</td>
+      <td>${escapeHtml([eventItem.place, eventItem.city].filter(Boolean).join(" / ") || "-")}</td>
+      <td>${escapeHtml(eventItem.presented_offer || "-")}</td>
+      <td>${escapeHtml(eventItem.detected_opportunity || "-")}</td>
+      <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-event-edit="${escapeHtml(eventItem.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competitor-event-delete="${escapeHtml(eventItem.id)}">Eliminar</button></div></td>
+    </tr>
+  `).join("") || '<tr><td colspan="7">Sin eventos registrados.</td></tr>';
+  competitorEventTable.querySelectorAll("[data-competitor-event-edit]").forEach((button) => button.addEventListener("click", () => editCompetitorEvent(button.dataset.competitorEventEdit)));
+  competitorEventTable.querySelectorAll("[data-competitor-event-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitorEvent(button.dataset.competitorEventDelete)));
+}
+
+function renderCompetitionComparisons() {
+  const competitors = (state.competitionCompetitors || []).filter((item) => item.is_active !== false);
+  if (competitionBasicComparisonTable) {
+    competitionBasicComparisonTable.innerHTML = competitors.map((competitor) => `
+      <tr>
+        <td><strong>${escapeHtml(competitor.name)}</strong></td>
+        <td>${escapeHtml(competitor.city || "-")}</td>
+        <td>${escapeHtml(competitor.category || competitor.business_type || "-")}</td>
+        <td>${escapeHtml(competitor.main_products || "-")}</td>
+        <td>${escapeHtml(competitor.price_range || "-")}</td>
+        <td>${escapeHtml(competitor.sales_channels || competitor.acquisition_channels || "-")}</td>
+        <td>${escapeHtml(threatLabel(competitor.threat_level))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="7">Sin competidores para comparar.</td></tr>';
+  }
+  if (competitionPriceComparisonTable) {
+    const rows = (state.competitionProducts || []).filter((item) => item.is_active !== false);
+    competitionPriceComparisonTable.innerHTML = rows.map((product) => `
+      <tr>
+        <td><strong>${escapeHtml(product.product_name)}</strong><span class="table-secondary">${escapeHtml(product.own_product_name || "-")}</span></td>
+        <td>${escapeHtml(product.linked_competitor_name || product.competitor_name || "-")}</td>
         <td>${escapeHtml(money(product.competitor_price))}</td>
         <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
         <td>${escapeHtml(competitionGapLabel(product))}</td>
-        <td>
-          <span>${escapeHtml(product.channel || "-")}</span>
-          <span class="table-secondary">${source}</span>
-        </td>
-        <td>
-          <div class="table-actions">
-            <button class="ghost-button" type="button" data-competition-edit="${escapeHtml(product.id)}">Editar</button>
-            <button class="ghost-button danger-button" type="button" data-competition-delete="${escapeHtml(product.id)}">Eliminar</button>
-          </div>
-        </td>
+        <td>${escapeHtml(competitionGapPercentLabel(product))}</td>
+        <td>${product.source_url ? `<a href="${escapeHtml(product.source_url)}" target="_blank" rel="noopener">Fuente</a>` : "-"}</td>
       </tr>
-    `;
-  }).join("");
-  competitionTable.querySelectorAll("[data-competition-edit]").forEach((button) => {
-    button.addEventListener("click", () => editCompetitionProduct(button.dataset.competitionEdit));
-  });
-  competitionTable.querySelectorAll("[data-competition-delete]").forEach((button) => {
-    button.addEventListener("click", () => archiveCompetitionProduct(button.dataset.competitionDelete));
-  });
+    `).join("") || '<tr><td colspan="7">Sin precios comparables.</td></tr>';
+  }
+  if (competitionCampaignComparisonTable) {
+    const rows = (state.competitionCampaigns || []).filter((item) => item.status !== "ARCHIVED");
+    competitionCampaignComparisonTable.innerHTML = rows.map((campaign) => `
+      <tr>
+        <td>${escapeHtml(campaign.competitor_name || competitorById(campaign.competitor_id)?.name || "-")}</td>
+        <td><strong>${escapeHtml(campaign.name)}</strong></td>
+        <td>${escapeHtml(campaign.channel || "-")}</td>
+        <td>${escapeHtml(campaign.offer || campaign.benefit || "-")}</td>
+        <td>${escapeHtml(threatLabel(campaign.aggressiveness_level))}</td>
+        <td>${escapeHtml(threatLabel(campaign.estimated_impact))}</td>
+        <td>${escapeHtml(campaign.suggested_action || recommendedActionForCampaign(campaign))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="7">Sin campañas para comparar.</td></tr>';
+  }
+  if (competitionStrategicComparisonTable) {
+    competitionStrategicComparisonTable.innerHTML = competitors.map((competitor) => `
+      <tr>
+        <td><strong>${escapeHtml(competitor.name)}</strong></td>
+        <td>${escapeHtml(competitor.strengths || "-")}</td>
+        <td>${escapeHtml(competitor.weaknesses || "-")}</td>
+        <td>${escapeHtml(competitor.perceived_differential || "-")}</td>
+        <td>${escapeHtml(competitor.target_segment || "-")}</td>
+        <td>${escapeHtml(competitor.response_plan || recommendedActionForCompetitor(competitor))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="6">Sin análisis estratégico registrado.</td></tr>';
+  }
+}
+
+function renderCompetitionFindingsTable() {
+  if (!competitionFindingsTable) return;
+  if (!state.competitionLoaded) {
+    competitionFindingsTable.innerHTML = '<tr><td colspan="7">Cargando hallazgos...</td></tr>';
+    return;
+  }
+  const rows = filteredFindings();
+  competitionFindingsTable.innerHTML = rows.map((finding) => `
+    <tr>
+      <td>${escapeHtml(formatDate(finding.detected_at || finding.created_at))}</td>
+      <td>${escapeHtml(finding.competitor_name || competitorById(finding.competitor_id)?.name || "-")}</td>
+      <td>${escapeHtml(findingTypeLabel(finding.finding_type))}</td>
+      <td><strong>${escapeHtml(finding.title)}</strong><span class="table-secondary">${escapeHtml(finding.suggested_action || recommendedActionForFinding(finding))}</span></td>
+      <td><strong>${escapeHtml(threatLabel(finding.impact_level))}</strong><span class="table-secondary">${escapeHtml(areaAffectedLabel(finding.area_affected))} · ${escapeHtml(threatLabel(finding.urgency))}</span></td>
+      <td>${escapeHtml(radarStatusLabel(finding.status))}</td>
+      <td><div class="table-actions"><button class="ghost-button" type="button" data-finding-edit="${escapeHtml(finding.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-finding-delete="${escapeHtml(finding.id)}">Eliminar</button></div></td>
+    </tr>
+  `).join("") || '<tr><td colspan="7">Sin hallazgos registrados.</td></tr>';
+  competitionFindingsTable.querySelectorAll("[data-finding-edit]").forEach((button) => button.addEventListener("click", () => editFinding(button.dataset.findingEdit)));
+  competitionFindingsTable.querySelectorAll("[data-finding-delete]").forEach((button) => button.addEventListener("click", () => archiveFinding(button.dataset.findingDelete)));
 }
 
 function resetCompetitionForm() {
@@ -11140,6 +11624,7 @@ function resetCompetitionForm() {
   if (competitionProductIdInput) competitionProductIdInput.value = "";
   if (competitionCurrencyInput) competitionCurrencyInput.value = "COP";
   if (competitionObservedAtInput) competitionObservedAtInput.value = dateInputValue(new Date());
+  if (competitionCompetitorSelect) competitionCompetitorSelect.value = "";
   if (competitionFormTitle) competitionFormTitle.textContent = "Nuevo producto competidor";
   setInlineMessage(competitionMessage, "", "info");
 }
@@ -11149,32 +11634,46 @@ function editCompetitionProduct(productId = "") {
   if (!product) return;
   state.competitionEditingId = product.id;
   if (competitionProductIdInput) competitionProductIdInput.value = product.id;
-  if (competitionCompetitorInput) competitionCompetitorInput.value = product.competitor_name || "";
+  if (competitionCompetitorSelect) competitionCompetitorSelect.value = product.competitor_id || "";
   if (competitionProductNameInput) competitionProductNameInput.value = product.product_name || "";
   if (competitionCategoryInput) competitionCategoryInput.value = product.category || "";
   if (competitionPriceInput) competitionPriceInput.value = String(product.competitor_price || 0);
+  if (competitionPreviousPriceInput) competitionPreviousPriceInput.value = product.previous_price === null || product.previous_price === undefined ? "" : String(product.previous_price || 0);
   if (competitionOurPriceInput) competitionOurPriceInput.value = product.our_price === null || product.our_price === undefined ? "" : String(product.our_price || 0);
+  if (competitionOwnProductInput) competitionOwnProductInput.value = product.own_product_name || "";
   if (competitionCurrencyInput) competitionCurrencyInput.value = product.currency || "COP";
   if (competitionChannelInput) competitionChannelInput.value = product.channel || "";
   if (competitionObservedAtInput) competitionObservedAtInput.value = product.observed_at ? dateInputValue(new Date(product.observed_at)) : dateInputValue(new Date());
+  if (competitionAvailabilityInput) competitionAvailabilityInput.value = product.availability || "";
+  if (competitionPromotionInput) competitionPromotionInput.value = product.promotion_label || "";
+  if (competitionLevelInput) competitionLevelInput.value = product.competitiveness_level || "";
   if (competitionSourceUrlInput) competitionSourceUrlInput.value = product.source_url || "";
+  if (competitionEvidenceImageInput) competitionEvidenceImageInput.value = product.evidence_image_url || "";
   if (competitionNotesInput) competitionNotesInput.value = product.notes || "";
   if (competitionFormTitle) competitionFormTitle.textContent = "Editar producto competidor";
-  setInlineMessage(competitionMessage, "Editando dato de competencia existente.", "info");
-  competitionCompetitorInput?.focus();
+  setInlineMessage(competitionMessage, "Editando dato de competidor existente.", "info");
+  competitionProductNameInput?.focus();
 }
 
 function competitionFormPayload() {
+  const selectedCompetitor = competitorById(competitionCompetitorSelect?.value || "");
   return {
-    competitor_name: competitionCompetitorInput?.value.trim() || "",
+    competitor_id: competitionCompetitorSelect?.value || null,
+    competitor_name: selectedCompetitor?.name || "",
     product_name: competitionProductNameInput?.value.trim() || "",
     category: competitionCategoryInput?.value.trim() || null,
     competitor_price: Number(competitionPriceInput?.value || 0),
+    previous_price: competitionPreviousPriceInput?.value === "" ? null : Number(competitionPreviousPriceInput?.value || 0),
     our_price: competitionOurPriceInput?.value === "" ? null : Number(competitionOurPriceInput?.value || 0),
+    own_product_name: competitionOwnProductInput?.value.trim() || null,
     currency: competitionCurrencyInput?.value.trim() || "COP",
     channel: competitionChannelInput?.value.trim() || null,
     source_url: competitionSourceUrlInput?.value.trim() || null,
+    evidence_image_url: competitionEvidenceImageInput?.value.trim() || null,
     observed_at: competitionObservedAtInput?.value ? new Date(`${competitionObservedAtInput.value}T00:00:00`).toISOString() : null,
+    availability: competitionAvailabilityInput?.value.trim() || null,
+    promotion_label: competitionPromotionInput?.value.trim() || null,
+    competitiveness_level: competitionLevelInput?.value || null,
     notes: competitionNotesInput?.value.trim() || null,
   };
 }
@@ -11183,12 +11682,13 @@ async function submitCompetitionProduct(event) {
   event.preventDefault();
   const productId = competitionProductIdInput?.value || state.competitionEditingId || "";
   const payload = competitionFormPayload();
-  if (!payload.competitor_name || !payload.product_name || payload.competitor_price < 0) {
-    setInlineMessage(competitionMessage, "Completa competidor, producto y precio de competencia.", "error");
+  if (!requireSelectedCompetitor(competitionCompetitorSelect, competitionMessage, "guardar productos y precios")) return;
+  if (!payload.product_name || payload.competitor_price < 0) {
+    setInlineMessage(competitionMessage, "Completa producto y precio competidor.", "error");
     return;
   }
   setButtonLoading(competitionSaveButton, true, productId ? "Actualizando..." : "Guardando...");
-  setInlineMessage(competitionMessage, "Guardando dato de competencia...", "info");
+  setInlineMessage(competitionMessage, "Guardando dato de competidor...", "info");
   try {
     const data = await api(productId ? `/api/business/competitor-products/${encodeURIComponent(productId)}` : "/api/business/competitor-products", {
       method: productId ? "PATCH" : "POST",
@@ -11196,18 +11696,18 @@ async function submitCompetitionProduct(event) {
       body: JSON.stringify(payload),
     });
     const saved = data.product;
-    state.competitionProducts = [
-      saved,
-      ...(state.competitionProducts || []).filter((item) => String(item.id) !== String(saved.id)),
-    ];
+    state.competitionProducts = [saved, ...(state.competitionProducts || []).filter((item) => String(item.id) !== String(saved.id))];
     state.competitionLoaded = true;
+    if (!payload.competitor_id && saved?.competitor_id) {
+      await loadCompetitionProducts({ force: true, quiet: true });
+    }
     resetCompetitionForm();
     renderCompetitionView();
-    setInlineMessage(competitionMessage, productId ? "Dato actualizado correctamente." : "Dato agregado al directorio de competencia.", "success");
-    showFeedback(productId ? "Dato de competencia actualizado." : "Dato de competencia guardado.", "success", { title: "Competencia" });
+    setInlineMessage(competitionMessage, productId ? "Dato actualizado correctamente." : "Dato agregado al radar competitivo.", "success");
+    showFeedback(productId ? "Dato de competidor actualizado." : "Dato de competidor guardado.", "success", { title: "Radar competitivo" });
   } catch (error) {
     setInlineMessage(competitionMessage, error.message || "No se pudo guardar el dato.", "error");
-    showFeedback(error.message || "No se pudo guardar el dato.", "error", { title: "Competencia" });
+    showFeedback(error.message || "No se pudo guardar el dato.", "error", { title: "Radar competitivo" });
   } finally {
     setButtonLoading(competitionSaveButton, false);
   }
@@ -11216,18 +11716,558 @@ async function submitCompetitionProduct(event) {
 async function archiveCompetitionProduct(productId = "") {
   const product = (state.competitionProducts || []).find((item) => String(item.id) === String(productId));
   if (!product) return;
-  if (!window.confirm(`Eliminar "${product.product_name}" de ${product.competitor_name}?`)) return;
+  if (!window.confirm(`Eliminar "${product.product_name}" del radar competitivo?`)) return;
   try {
-    await api(`/api/business/competitor-products/${encodeURIComponent(productId)}`, {
-      method: "DELETE",
-      headers: authHeaders(),
-    });
+    await api(`/api/business/competitor-products/${encodeURIComponent(productId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionProducts = (state.competitionProducts || []).filter((item) => String(item.id) !== String(productId));
     if (String(state.competitionEditingId || "") === String(productId)) resetCompetitionForm();
     renderCompetitionView();
-    showFeedback("Dato eliminado del directorio activo.", "success", { title: "Competencia" });
+    showFeedback("Dato eliminado del directorio activo.", "success", { title: "Radar competitivo" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo eliminar el dato.", "error", { title: "Competencia" });
+    showFeedback(error.message || "No se pudo eliminar el dato.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function resetCompetitorForm() {
+  state.competitorEditingId = null;
+  competitorForm?.reset();
+  if (competitorIdInput) competitorIdInput.value = "";
+  if (competitorStatusInput) competitorStatusInput.value = "ACTIVE";
+  if (competitorThreatInput) competitorThreatInput.value = "MEDIUM";
+  if (competitorFormTitle) competitorFormTitle.textContent = "Nuevo competidor";
+  setInlineMessage(competitorMessage, "", "info");
+}
+
+function competitorFormPayload() {
+  return {
+    name: competitorNameInput?.value.trim() || "",
+    category: competitorCategoryInput?.value.trim() || null,
+    business_type: competitorBusinessTypeInput?.value.trim() || null,
+    city: competitorCityInput?.value.trim() || null,
+    address: competitorAddressInput?.value.trim() || null,
+    operation_zone: competitorZoneInput?.value.trim() || null,
+    website: competitorWebsiteInput?.value.trim() || null,
+    instagram: competitorInstagramInput?.value.trim() || null,
+    whatsapp_public: competitorWhatsappInput?.value.trim() || null,
+    phone: competitorPhoneInput?.value.trim() || null,
+    email: competitorEmailInput?.value.trim() || null,
+    status: competitorStatusInput?.value || "ACTIVE",
+    threat_level: competitorThreatInput?.value || "MEDIUM",
+    target_segment: competitorSegmentInput?.value.trim() || null,
+    price_range: competitorPriceRangeInput?.value.trim() || null,
+    main_products: competitorProductsInput?.value.trim() || null,
+    main_services: competitorServicesInput?.value.trim() || null,
+    perceived_differential: competitorDifferentialInput?.value.trim() || null,
+    strengths: competitorStrengthsInput?.value.trim() || null,
+    weaknesses: competitorWeaknessesInput?.value.trim() || null,
+    digital_presence_level: competitorDigitalPresenceInput?.value || null,
+    commercial_aggressiveness: competitorAggressivenessInput?.value || null,
+    competes_price: competitorCompetesPriceInput?.checked === true,
+    competes_promotions: competitorCompetesPromotionsInput?.checked === true,
+    competes_social_media: competitorCompetesSocialInput?.checked === true,
+    competes_events: competitorCompetesEventsInput?.checked === true,
+    notes: competitorNotesInput?.value.trim() || null,
+  };
+}
+
+function editCompetitor(competitorId = "") {
+  const competitor = competitorById(competitorId);
+  if (!competitor) return;
+  state.competitorEditingId = competitor.id;
+  if (competitorIdInput) competitorIdInput.value = competitor.id;
+  if (competitorNameInput) competitorNameInput.value = competitor.name || "";
+  if (competitorCategoryInput) competitorCategoryInput.value = competitor.category || "";
+  if (competitorBusinessTypeInput) competitorBusinessTypeInput.value = competitor.business_type || "";
+  if (competitorCityInput) competitorCityInput.value = competitor.city || "";
+  if (competitorAddressInput) competitorAddressInput.value = competitor.address || "";
+  if (competitorZoneInput) competitorZoneInput.value = competitor.operation_zone || "";
+  if (competitorWebsiteInput) competitorWebsiteInput.value = competitor.website || "";
+  if (competitorInstagramInput) competitorInstagramInput.value = competitor.instagram || "";
+  if (competitorWhatsappInput) competitorWhatsappInput.value = competitor.whatsapp_public || "";
+  if (competitorPhoneInput) competitorPhoneInput.value = competitor.phone || "";
+  if (competitorEmailInput) competitorEmailInput.value = competitor.email || "";
+  if (competitorStatusInput) competitorStatusInput.value = competitor.status || "ACTIVE";
+  if (competitorThreatInput) competitorThreatInput.value = competitor.threat_level || "MEDIUM";
+  if (competitorSegmentInput) competitorSegmentInput.value = competitor.target_segment || "";
+  if (competitorPriceRangeInput) competitorPriceRangeInput.value = competitor.price_range || "";
+  if (competitorProductsInput) competitorProductsInput.value = competitor.main_products || "";
+  if (competitorServicesInput) competitorServicesInput.value = competitor.main_services || "";
+  if (competitorDifferentialInput) competitorDifferentialInput.value = competitor.perceived_differential || "";
+  if (competitorStrengthsInput) competitorStrengthsInput.value = competitor.strengths || "";
+  if (competitorWeaknessesInput) competitorWeaknessesInput.value = competitor.weaknesses || "";
+  if (competitorDigitalPresenceInput) competitorDigitalPresenceInput.value = competitor.digital_presence_level || "";
+  if (competitorAggressivenessInput) competitorAggressivenessInput.value = competitor.commercial_aggressiveness || "";
+  if (competitorCompetesPriceInput) competitorCompetesPriceInput.checked = competitor.competes_price === true;
+  if (competitorCompetesPromotionsInput) competitorCompetesPromotionsInput.checked = competitor.competes_promotions === true;
+  if (competitorCompetesSocialInput) competitorCompetesSocialInput.checked = competitor.competes_social_media === true;
+  if (competitorCompetesEventsInput) competitorCompetesEventsInput.checked = competitor.competes_events === true;
+  if (competitorNotesInput) competitorNotesInput.value = competitor.notes || "";
+  if (competitorFormTitle) competitorFormTitle.textContent = "Editar competidor";
+  setInlineMessage(competitorMessage, "Editando ficha de competidor.", "info");
+  competitorNameInput?.focus();
+}
+
+async function submitCompetitor(event) {
+  event.preventDefault();
+  const competitorId = competitorIdInput?.value || state.competitorEditingId || "";
+  const payload = competitorFormPayload();
+  if (!payload.name) {
+    setInlineMessage(competitorMessage, "Escribe el nombre del competidor.", "error");
+    return;
+  }
+  setButtonLoading(competitorSaveButton, true, competitorId ? "Actualizando..." : "Guardando...");
+  setInlineMessage(competitorMessage, "Guardando ficha competitiva...", "info");
+  try {
+    const data = await api(competitorId ? `/api/business/competitors/${encodeURIComponent(competitorId)}` : "/api/business/competitors", {
+      method: competitorId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.competitor;
+    state.competitionCompetitors = [saved, ...(state.competitionCompetitors || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionLoaded = true;
+    resetCompetitorForm();
+    renderCompetitionView();
+    setInlineMessage(competitorMessage, competitorId ? "Competidor actualizado." : "Competidor agregado al radar.", "success");
+    showFeedback(competitorId ? "Competidor actualizado." : "Competidor agregado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(competitorMessage, error.message || "No se pudo guardar el competidor.", "error");
+    showFeedback(error.message || "No se pudo guardar el competidor.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(competitorSaveButton, false);
+  }
+}
+
+async function archiveCompetitor(competitorId = "") {
+  const competitor = competitorById(competitorId);
+  if (!competitor) return;
+  if (!window.confirm(`Eliminar/desactivar "${competitor.name}" del radar competitivo?`)) return;
+  try {
+    await api(`/api/business/competitors/${encodeURIComponent(competitorId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionCompetitors = (state.competitionCompetitors || []).filter((item) => String(item.id) !== String(competitorId));
+    if (String(state.competitorEditingId || "") === String(competitorId)) resetCompetitorForm();
+    renderCompetitionView();
+    showFeedback("Competidor desactivado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el competidor.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function selectedSwotCompetitor() {
+  return competitorById(competitorSwotSelect?.value || "") || filteredCompetitors()[0] || null;
+}
+
+function populateSwotForm() {
+  if (!competitorSwotForm) return;
+  const competitor = selectedSwotCompetitor();
+  if (competitorSwotSelect && !competitorSwotSelect.value && competitor) {
+    competitorSwotSelect.value = competitor.id;
+  }
+  const current = selectedSwotCompetitor();
+  if (!current) {
+    setInlineMessage(competitorSwotMessage, "Registra un competidor para crear DOFA.", "info");
+    return;
+  }
+  if (competitorSwotStrengthsInput) competitorSwotStrengthsInput.value = current.strengths || "";
+  if (competitorSwotWeaknessesInput) competitorSwotWeaknessesInput.value = current.weaknesses || "";
+  if (competitorSwotOpportunitiesInput) competitorSwotOpportunitiesInput.value = current.swot_opportunities || "";
+  if (competitorSwotThreatsInput) competitorSwotThreatsInput.value = current.swot_threats || "";
+  if (competitorBetterThanUsInput) competitorBetterThanUsInput.value = current.better_than_us || "";
+  if (competitorWeDoBetterInput) competitorWeDoBetterInput.value = current.we_do_better || "";
+  if (competitorResponsePlanInput) competitorResponsePlanInput.value = current.response_plan || recommendedActionForCompetitor(current);
+  if (competitorRecommendedCampaignInput) competitorRecommendedCampaignInput.value = current.recommended_campaign || "";
+  if (competitorProductToAdjustInput) competitorProductToAdjustInput.value = current.product_to_adjust || "";
+  if (competitorPriceToReviewInput) competitorPriceToReviewInput.value = current.price_to_review || "";
+  if (competitorMessageToReinforceInput) competitorMessageToReinforceInput.value = current.message_to_reinforce || "";
+}
+
+function swotPayloadForCompetitor(competitor = {}) {
+  return {
+    name: competitor.name,
+    category: competitor.category || null,
+    business_type: competitor.business_type || null,
+    city: competitor.city || null,
+    address: competitor.address || null,
+    operation_zone: competitor.operation_zone || null,
+    website: competitor.website || null,
+    instagram: competitor.instagram || null,
+    whatsapp_public: competitor.whatsapp_public || null,
+    phone: competitor.phone || null,
+    email: competitor.email || null,
+    status: competitor.status || "ACTIVE",
+    threat_level: competitor.threat_level || "MEDIUM",
+    target_segment: competitor.target_segment || null,
+    price_range: competitor.price_range || null,
+    main_products: competitor.main_products || null,
+    main_services: competitor.main_services || null,
+    perceived_differential: competitor.perceived_differential || null,
+    strengths: competitorSwotStrengthsInput?.value.trim() || null,
+    weaknesses: competitorSwotWeaknessesInput?.value.trim() || null,
+    digital_presence_level: competitor.digital_presence_level || null,
+    commercial_aggressiveness: competitor.commercial_aggressiveness || null,
+    competes_price: competitor.competes_price === true,
+    competes_promotions: competitor.competes_promotions === true,
+    competes_social_media: competitor.competes_social_media === true,
+    competes_events: competitor.competes_events === true,
+    swot_opportunities: competitorSwotOpportunitiesInput?.value.trim() || null,
+    swot_threats: competitorSwotThreatsInput?.value.trim() || null,
+    better_than_us: competitorBetterThanUsInput?.value.trim() || null,
+    we_do_better: competitorWeDoBetterInput?.value.trim() || null,
+    response_plan: competitorResponsePlanInput?.value.trim() || null,
+    recommended_campaign: competitorRecommendedCampaignInput?.value.trim() || null,
+    product_to_adjust: competitorProductToAdjustInput?.value.trim() || null,
+    price_to_review: competitorPriceToReviewInput?.value.trim() || null,
+    message_to_reinforce: competitorMessageToReinforceInput?.value.trim() || null,
+    notes: competitor.notes || null,
+  };
+}
+
+async function submitCompetitorSwot(event) {
+  event.preventDefault();
+  const competitor = selectedSwotCompetitor();
+  if (!competitor) {
+    setInlineMessage(competitorSwotMessage, "Selecciona un competidor.", "error");
+    return;
+  }
+  setButtonLoading(competitorSwotSaveButton, true, "Guardando...");
+  try {
+    const data = await api(`/api/business/competitors/${encodeURIComponent(competitor.id)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify(swotPayloadForCompetitor(competitor)),
+    });
+    const saved = data.competitor;
+    state.competitionCompetitors = [saved, ...(state.competitionCompetitors || []).filter((item) => String(item.id) !== String(saved.id))];
+    renderCompetitionView();
+    setInlineMessage(competitorSwotMessage, "DOFA actualizado.", "success");
+    showFeedback("DOFA competitivo guardado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(competitorSwotMessage, error.message || "No se pudo guardar DOFA.", "error");
+    showFeedback(error.message || "No se pudo guardar DOFA.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(competitorSwotSaveButton, false);
+  }
+}
+
+function dateValueToIso(value = "") {
+  return value ? new Date(`${value}T00:00:00`).toISOString() : null;
+}
+
+function resetCompetitorCampaignForm() {
+  state.competitorCampaignEditingId = null;
+  competitorCampaignForm?.reset();
+  if (competitorCampaignIdInput) competitorCampaignIdInput.value = "";
+  if (competitorCampaignTypeInput) competitorCampaignTypeInput.value = "DISCOUNT";
+  if (competitorCampaignAggressivenessInput) competitorCampaignAggressivenessInput.value = "MEDIUM";
+  if (competitorCampaignImpactInput) competitorCampaignImpactInput.value = "MEDIUM";
+  if (competitorCampaignSourceTypeInput) competitorCampaignSourceTypeInput.value = "MANUAL";
+  if (competitorCampaignReliabilityInput) competitorCampaignReliabilityInput.value = "MEDIUM";
+  if (competitorCampaignFormTitle) competitorCampaignFormTitle.textContent = "Nueva campaña observada";
+  setInlineMessage(competitorCampaignMessage, "", "info");
+}
+
+function competitorCampaignPayload() {
+  return {
+    competitor_id: competitorCampaignCompetitorInput?.value || null,
+    name: competitorCampaignNameInput?.value.trim() || "",
+    campaign_type: competitorCampaignTypeInput?.value || "OTHER",
+    starts_at: dateValueToIso(competitorCampaignStartInput?.value || ""),
+    ends_at: dateValueToIso(competitorCampaignEndInput?.value || ""),
+    channel: competitorCampaignChannelInput?.value.trim() || null,
+    offer: competitorCampaignOfferInput?.value.trim() || null,
+    benefit: competitorCampaignBenefitInput?.value.trim() || null,
+    target_audience: competitorCampaignAudienceInput?.value.trim() || null,
+    main_message: competitorCampaignMessageInput?.value.trim() || null,
+    evidence_image_url: competitorCampaignImageInput?.value.trim() || null,
+    source_url: competitorCampaignSourceUrlInput?.value.trim() || null,
+    source_type: competitorCampaignSourceTypeInput?.value || "MANUAL",
+    source_reliability: competitorCampaignReliabilityInput?.value || "MEDIUM",
+    aggressiveness_level: competitorCampaignAggressivenessInput?.value || "MEDIUM",
+    estimated_impact: competitorCampaignImpactInput?.value || "MEDIUM",
+    suggested_action: competitorCampaignActionInput?.value.trim() || null,
+  };
+}
+
+function editCompetitorCampaign(campaignId = "") {
+  const campaign = competitorCampaignById(campaignId);
+  if (!campaign) return;
+  state.competitorCampaignEditingId = campaign.id;
+  if (competitorCampaignIdInput) competitorCampaignIdInput.value = campaign.id;
+  if (competitorCampaignCompetitorInput) competitorCampaignCompetitorInput.value = campaign.competitor_id || "";
+  if (competitorCampaignTypeInput) competitorCampaignTypeInput.value = campaign.campaign_type || "OTHER";
+  if (competitorCampaignNameInput) competitorCampaignNameInput.value = campaign.name || "";
+  if (competitorCampaignStartInput) competitorCampaignStartInput.value = campaign.starts_at ? dateInputValue(new Date(campaign.starts_at)) : "";
+  if (competitorCampaignEndInput) competitorCampaignEndInput.value = campaign.ends_at ? dateInputValue(new Date(campaign.ends_at)) : "";
+  if (competitorCampaignChannelInput) competitorCampaignChannelInput.value = campaign.channel || "";
+  if (competitorCampaignAggressivenessInput) competitorCampaignAggressivenessInput.value = campaign.aggressiveness_level || "MEDIUM";
+  if (competitorCampaignImpactInput) competitorCampaignImpactInput.value = campaign.estimated_impact || "MEDIUM";
+  if (competitorCampaignSourceTypeInput) competitorCampaignSourceTypeInput.value = campaign.source_type || "MANUAL";
+  if (competitorCampaignReliabilityInput) competitorCampaignReliabilityInput.value = campaign.source_reliability || "MEDIUM";
+  if (competitorCampaignOfferInput) competitorCampaignOfferInput.value = campaign.offer || "";
+  if (competitorCampaignBenefitInput) competitorCampaignBenefitInput.value = campaign.benefit || "";
+  if (competitorCampaignAudienceInput) competitorCampaignAudienceInput.value = campaign.target_audience || "";
+  if (competitorCampaignMessageInput) competitorCampaignMessageInput.value = campaign.main_message || "";
+  if (competitorCampaignActionInput) competitorCampaignActionInput.value = campaign.suggested_action || recommendedActionForCampaign(campaign);
+  if (competitorCampaignSourceUrlInput) competitorCampaignSourceUrlInput.value = campaign.source_url || "";
+  if (competitorCampaignImageInput) competitorCampaignImageInput.value = campaign.evidence_image_url || "";
+  if (competitorCampaignFormTitle) competitorCampaignFormTitle.textContent = "Editar campaña observada";
+  setInlineMessage(competitorCampaignMessage, "Editando campaña competitiva.", "info");
+}
+
+async function submitCompetitorCampaign(event) {
+  event.preventDefault();
+  const campaignId = competitorCampaignIdInput?.value || state.competitorCampaignEditingId || "";
+  const payload = competitorCampaignPayload();
+  if (!requireSelectedCompetitor(competitorCampaignCompetitorInput, competitorCampaignMessage, "guardar campañas y promociones")) return;
+  if (!payload.name) {
+    setInlineMessage(competitorCampaignMessage, "Escribe el nombre de la campaña.", "error");
+    return;
+  }
+  setButtonLoading(competitorCampaignSaveButton, true, campaignId ? "Actualizando..." : "Guardando...");
+  try {
+    const data = await api(campaignId ? `/api/business/competitor-campaigns/${encodeURIComponent(campaignId)}` : "/api/business/competitor-campaigns", {
+      method: campaignId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.campaign;
+    state.competitionCampaigns = [saved, ...(state.competitionCampaigns || []).filter((item) => String(item.id) !== String(saved.id))];
+    resetCompetitorCampaignForm();
+    renderCompetitionView();
+    showFeedback("Campaña competitiva guardada.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(competitorCampaignMessage, error.message || "No se pudo guardar la campaña.", "error");
+    showFeedback(error.message || "No se pudo guardar la campaña.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(competitorCampaignSaveButton, false);
+  }
+}
+
+async function archiveCompetitorCampaign(campaignId = "") {
+  const campaign = competitorCampaignById(campaignId);
+  if (!campaign) return;
+  if (!window.confirm(`Eliminar campaña "${campaign.name}"?`)) return;
+  try {
+    await api(`/api/business/competitor-campaigns/${encodeURIComponent(campaignId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionCampaigns = (state.competitionCampaigns || []).filter((item) => String(item.id) !== String(campaignId));
+    renderCompetitionView();
+    showFeedback("Campaña competitiva eliminada.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar la campaña.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function resetCompetitorEventForm() {
+  state.competitorEventEditingId = null;
+  competitorEventForm?.reset();
+  if (competitorEventIdInput) competitorEventIdInput.value = "";
+  if (competitorEventTypeInput) competitorEventTypeInput.value = "FAIR";
+  if (competitorEventFormTitle) competitorEventFormTitle.textContent = "Nuevo evento observado";
+  setInlineMessage(competitorEventMessage, "", "info");
+}
+
+function competitorEventPayload() {
+  return {
+    competitor_id: competitorEventCompetitorInput?.value || null,
+    name: competitorEventNameInput?.value.trim() || "",
+    event_date: dateValueToIso(competitorEventDateInput?.value || ""),
+    place: competitorEventPlaceInput?.value.trim() || null,
+    city: competitorEventCityInput?.value.trim() || null,
+    event_type: competitorEventTypeInput?.value || "OTHER",
+    organizer: competitorEventOrganizerInput?.value.trim() || null,
+    competitor_participation: competitorEventParticipationInput?.value.trim() || null,
+    presented_offer: competitorEventOfferInput?.value.trim() || null,
+    highlighted_products: competitorEventProductsInput?.value.trim() || null,
+    attendee_audience: competitorEventAudienceInput?.value.trim() || null,
+    evidence_url: competitorEventEvidenceInput?.value.trim() || null,
+    evidence_image_url: competitorEventImageInput?.value.trim() || null,
+    observations: competitorEventObservationsInput?.value.trim() || null,
+    detected_opportunity: competitorEventOpportunityInput?.value.trim() || null,
+    recommended_action: competitorEventActionInput?.value.trim() || null,
+  };
+}
+
+function editCompetitorEvent(eventId = "") {
+  const eventItem = competitorEventById(eventId);
+  if (!eventItem) return;
+  state.competitorEventEditingId = eventItem.id;
+  if (competitorEventIdInput) competitorEventIdInput.value = eventItem.id;
+  if (competitorEventCompetitorInput) competitorEventCompetitorInput.value = eventItem.competitor_id || "";
+  if (competitorEventTypeInput) competitorEventTypeInput.value = eventItem.event_type || "OTHER";
+  if (competitorEventNameInput) competitorEventNameInput.value = eventItem.name || "";
+  if (competitorEventDateInput) competitorEventDateInput.value = eventItem.event_date ? dateInputValue(new Date(eventItem.event_date)) : "";
+  if (competitorEventCityInput) competitorEventCityInput.value = eventItem.city || "";
+  if (competitorEventPlaceInput) competitorEventPlaceInput.value = eventItem.place || "";
+  if (competitorEventOrganizerInput) competitorEventOrganizerInput.value = eventItem.organizer || "";
+  if (competitorEventParticipationInput) competitorEventParticipationInput.value = eventItem.competitor_participation || "";
+  if (competitorEventOfferInput) competitorEventOfferInput.value = eventItem.presented_offer || "";
+  if (competitorEventProductsInput) competitorEventProductsInput.value = eventItem.highlighted_products || "";
+  if (competitorEventAudienceInput) competitorEventAudienceInput.value = eventItem.attendee_audience || "";
+  if (competitorEventOpportunityInput) competitorEventOpportunityInput.value = eventItem.detected_opportunity || "";
+  if (competitorEventActionInput) competitorEventActionInput.value = eventItem.recommended_action || "";
+  if (competitorEventEvidenceInput) competitorEventEvidenceInput.value = eventItem.evidence_url || "";
+  if (competitorEventImageInput) competitorEventImageInput.value = eventItem.evidence_image_url || "";
+  if (competitorEventObservationsInput) competitorEventObservationsInput.value = eventItem.observations || "";
+  if (competitorEventFormTitle) competitorEventFormTitle.textContent = "Editar evento observado";
+  setInlineMessage(competitorEventMessage, "Editando evento competitivo.", "info");
+}
+
+async function submitCompetitorEvent(event) {
+  event.preventDefault();
+  const eventId = competitorEventIdInput?.value || state.competitorEventEditingId || "";
+  const payload = competitorEventPayload();
+  if (!requireSelectedCompetitor(competitorEventCompetitorInput, competitorEventMessage, "guardar eventos y activaciones")) return;
+  if (!payload.name) {
+    setInlineMessage(competitorEventMessage, "Escribe el nombre del evento.", "error");
+    return;
+  }
+  setButtonLoading(competitorEventSaveButton, true, eventId ? "Actualizando..." : "Guardando...");
+  try {
+    const data = await api(eventId ? `/api/business/competitor-events/${encodeURIComponent(eventId)}` : "/api/business/competitor-events", {
+      method: eventId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.event;
+    state.competitionEvents = [saved, ...(state.competitionEvents || []).filter((item) => String(item.id) !== String(saved.id))];
+    resetCompetitorEventForm();
+    renderCompetitionView();
+    showFeedback("Evento competitivo guardado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(competitorEventMessage, error.message || "No se pudo guardar el evento.", "error");
+    showFeedback(error.message || "No se pudo guardar el evento.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(competitorEventSaveButton, false);
+  }
+}
+
+async function archiveCompetitorEvent(eventId = "") {
+  const eventItem = competitorEventById(eventId);
+  if (!eventItem) return;
+  if (!window.confirm(`Eliminar evento "${eventItem.name}"?`)) return;
+  try {
+    await api(`/api/business/competitor-events/${encodeURIComponent(eventId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionEvents = (state.competitionEvents || []).filter((item) => String(item.id) !== String(eventId));
+    renderCompetitionView();
+    showFeedback("Evento competitivo eliminado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el evento.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function resetFindingForm() {
+  state.findingEditingId = null;
+  competitionFindingForm?.reset();
+  if (findingIdInput) findingIdInput.value = "";
+  if (findingTypeInput) findingTypeInput.value = "PRICE";
+  if (findingImpactInput) findingImpactInput.value = "MEDIUM";
+  if (findingUrgencyInput) findingUrgencyInput.value = "MEDIUM";
+  if (findingAreaInput) findingAreaInput.value = "OTHER";
+  if (findingSourceTypeInput) findingSourceTypeInput.value = "MANUAL";
+  if (findingReliabilityInput) findingReliabilityInput.value = "MEDIUM";
+  if (findingStatusInput) findingStatusInput.value = "OPEN";
+  if (findingDetectedAtInput) findingDetectedAtInput.value = dateInputValue(new Date());
+  if (findingFormTitle) findingFormTitle.textContent = "Nuevo hallazgo competitivo";
+  setInlineMessage(findingMessage, "", "info");
+}
+
+function findingFormPayload() {
+  return {
+    competitor_id: findingCompetitorInput?.value || null,
+    finding_type: findingTypeInput?.value || "OTHER",
+    title: findingTitleInput?.value.trim() || "",
+    description: findingDescriptionInput?.value.trim() || null,
+    impact_level: findingImpactInput?.value || "MEDIUM",
+    urgency: findingUrgencyInput?.value || "MEDIUM",
+    area_affected: findingAreaInput?.value || "OTHER",
+    responsible_name: findingResponsibleInput?.value.trim() || null,
+    suggested_action: findingActionInput?.value.trim() || null,
+    detected_at: findingDetectedAtInput?.value ? new Date(`${findingDetectedAtInput.value}T00:00:00`).toISOString() : null,
+    due_at: findingDueAtInput?.value ? new Date(`${findingDueAtInput.value}T00:00:00`).toISOString() : null,
+    source_type: findingSourceTypeInput?.value || "MANUAL",
+    source_description: findingSourceDescriptionInput?.value.trim() || null,
+    source_reliability: findingReliabilityInput?.value || "MEDIUM",
+    evidence_url: findingEvidenceUrlInput?.value.trim() || null,
+    evidence_image_url: findingEvidenceImageInput?.value.trim() || null,
+    status: findingStatusInput?.value || "OPEN",
+    is_threat: findingThreatInput?.checked === true,
+    is_opportunity: findingOpportunityInput?.checked === true,
+  };
+}
+
+function editFinding(findingId = "") {
+  const finding = findingById(findingId);
+  if (!finding) return;
+  state.findingEditingId = finding.id;
+  if (findingIdInput) findingIdInput.value = finding.id;
+  if (findingCompetitorInput) findingCompetitorInput.value = finding.competitor_id || "";
+  if (findingTypeInput) findingTypeInput.value = finding.finding_type || "OTHER";
+  if (findingTitleInput) findingTitleInput.value = finding.title || "";
+  if (findingImpactInput) findingImpactInput.value = finding.impact_level || "MEDIUM";
+  if (findingUrgencyInput) findingUrgencyInput.value = finding.urgency || "MEDIUM";
+  if (findingAreaInput) findingAreaInput.value = finding.area_affected || "OTHER";
+  if (findingResponsibleInput) findingResponsibleInput.value = finding.responsible_name || "";
+  if (findingStatusInput) findingStatusInput.value = finding.status || "OPEN";
+  if (findingDetectedAtInput) findingDetectedAtInput.value = finding.detected_at ? dateInputValue(new Date(finding.detected_at)) : dateInputValue(new Date());
+  if (findingDueAtInput) findingDueAtInput.value = finding.due_at ? dateInputValue(new Date(finding.due_at)) : "";
+  if (findingSourceTypeInput) findingSourceTypeInput.value = finding.source_type || "MANUAL";
+  if (findingReliabilityInput) findingReliabilityInput.value = finding.source_reliability || "MEDIUM";
+  if (findingThreatInput) findingThreatInput.checked = finding.is_threat === true;
+  if (findingOpportunityInput) findingOpportunityInput.checked = finding.is_opportunity === true;
+  if (findingDescriptionInput) findingDescriptionInput.value = finding.description || "";
+  if (findingActionInput) findingActionInput.value = finding.suggested_action || "";
+  if (findingSourceDescriptionInput) findingSourceDescriptionInput.value = finding.source_description || "";
+  if (findingEvidenceUrlInput) findingEvidenceUrlInput.value = finding.evidence_url || "";
+  if (findingEvidenceImageInput) findingEvidenceImageInput.value = finding.evidence_image_url || "";
+  if (findingFormTitle) findingFormTitle.textContent = "Editar hallazgo competitivo";
+  setInlineMessage(findingMessage, "Editando hallazgo existente.", "info");
+  findingTitleInput?.focus();
+}
+
+async function submitFinding(event) {
+  event.preventDefault();
+  const findingId = findingIdInput?.value || state.findingEditingId || "";
+  const payload = findingFormPayload();
+  if (!requireSelectedCompetitor(findingCompetitorInput, findingMessage, "guardar hallazgos")) return;
+  if (!payload.title) {
+    setInlineMessage(findingMessage, "Escribe el título del hallazgo.", "error");
+    return;
+  }
+  setButtonLoading(findingSaveButton, true, findingId ? "Actualizando..." : "Guardando...");
+  setInlineMessage(findingMessage, "Guardando hallazgo competitivo...", "info");
+  try {
+    const data = await api(findingId ? `/api/business/competitor-findings/${encodeURIComponent(findingId)}` : "/api/business/competitor-findings", {
+      method: findingId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.finding;
+    state.competitionFindings = [saved, ...(state.competitionFindings || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionLoaded = true;
+    resetFindingForm();
+    renderCompetitionView();
+    setInlineMessage(findingMessage, findingId ? "Hallazgo actualizado." : "Hallazgo agregado.", "success");
+    showFeedback(findingId ? "Hallazgo actualizado." : "Hallazgo agregado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(findingMessage, error.message || "No se pudo guardar el hallazgo.", "error");
+    showFeedback(error.message || "No se pudo guardar el hallazgo.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(findingSaveButton, false);
+  }
+}
+
+async function archiveFinding(findingId = "") {
+  const finding = findingById(findingId);
+  if (!finding) return;
+  if (!window.confirm(`Eliminar hallazgo "${finding.title}"?`)) return;
+  try {
+    await api(`/api/business/competitor-findings/${encodeURIComponent(findingId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionFindings = (state.competitionFindings || []).filter((item) => String(item.id) !== String(findingId));
+    if (String(state.findingEditingId || "") === String(findingId)) resetFindingForm();
+    renderCompetitionView();
+    showFeedback("Hallazgo eliminado de la bitácora activa.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el hallazgo.", "error", { title: "Radar competitivo" });
   }
 }
 
@@ -22778,13 +23818,44 @@ inventorySearchInput?.addEventListener("input", () => {
 });
 competitionProductForm?.addEventListener("submit", submitCompetitionProduct);
 competitionResetButton?.addEventListener("click", resetCompetitionForm);
+competitorForm?.addEventListener("submit", submitCompetitor);
+competitorResetButton?.addEventListener("click", resetCompetitorForm);
+competitorCampaignForm?.addEventListener("submit", submitCompetitorCampaign);
+competitorCampaignResetButton?.addEventListener("click", resetCompetitorCampaignForm);
+competitorEventForm?.addEventListener("submit", submitCompetitorEvent);
+competitorEventResetButton?.addEventListener("click", resetCompetitorEventForm);
+competitionFindingForm?.addEventListener("submit", submitFinding);
+findingResetButton?.addEventListener("click", resetFindingForm);
+competitorSwotForm?.addEventListener("submit", submitCompetitorSwot);
+competitorSwotSelect?.addEventListener("change", populateSwotForm);
 refreshCompetitionButton?.addEventListener("click", async () => {
   await loadCompetitionProducts({ force: true });
   renderCompetitionView();
 });
+competitionTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    setCompetitionTab(button.dataset.competitionTab || "competitors");
+  });
+});
+competitorSearchInput?.addEventListener("input", () => {
+  state.competitorSearch = competitorSearchInput.value;
+  renderCompetitorDirectory();
+});
 competitionSearchInput?.addEventListener("input", () => {
   state.competitionSearch = competitionSearchInput.value;
-  renderCompetitionView();
+  renderCompetitionProductsTable();
+});
+findingSearchInput?.addEventListener("input", () => {
+  state.findingSearch = findingSearchInput.value;
+  renderCompetitionFindingsTable();
+});
+competitorCampaignSearchInput?.addEventListener("input", () => {
+  state.competitorCampaignSearch = competitorCampaignSearchInput.value;
+  renderCompetitorCampaignsTable();
+});
+competitorEventSearchInput?.addEventListener("input", () => {
+  state.competitorEventSearch = competitorEventSearchInput.value;
+  renderCompetitorEventsTable();
 });
 customerAcquisitionProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);
