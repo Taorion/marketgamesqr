@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260711-agenda-menu-fix-v1";
+const APP_VERSION = "empresa-20260711-agenda-visibility-fix-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -21514,36 +21514,6 @@ function renderAgendaKpis(rows = agendaRows()) {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
-
-  if (campaignRoiTable) {
-    const rows = campaigns
-      .slice()
-      .sort((a, b) => toNumber(b.attributed_revenue) - toNumber(a.attributed_revenue) || toNumber(b.direct_sales_count || b.attributed_sales_count) - toNumber(a.direct_sales_count || a.attributed_sales_count));
-    campaignRoiTable.innerHTML = rows.map((campaign) => {
-      const investment = toNumber(campaign.budget_total);
-      const revenue = toNumber(campaign.attributed_revenue);
-      const sales = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count);
-      const net = revenue - investment;
-      const roi = investment ? net / investment : null;
-      const cac = sales ? investment / sales : null;
-      return `
-        <tr>
-          <td>
-            <strong>${escapeHtml(campaign.name || "Sin nombre")}</strong>
-            <br><span class="table-secondary">${escapeHtml(launchChannelsLabel(campaign.launch_channels))}</span>
-          </td>
-          <td><span class="status-chip ${campaign.status === "ACTIVE" ? "ok" : campaign.status === "PAUSED" ? "warning" : "pending"}">${escapeHtml(statusLabel(campaign.status))}</span></td>
-          <td>${escapeHtml(money(investment))}</td>
-          <td>${escapeHtml(sales)}</td>
-          <td>${escapeHtml(money(revenue))}</td>
-          <td><strong>${escapeHtml(money(net))}</strong></td>
-          <td>${escapeHtml(cac === null ? "-" : money(cac))}</td>
-          <td>${escapeHtml(ratioLabel(roi))}</td>
-          <td>${escapeHtml(roiDecisionLabel(roi, revenue, investment))}</td>
-        </tr>
-      `;
-    }).join("") || '<tr><td colspan="9">Crea una campaña, registra inversión y atribuye ventas para ver ROI.</td></tr>';
-  }
 }
 
 function renderAgendaList(rows = agendaRows()) {
@@ -22232,6 +22202,9 @@ function setContactCenterTab(tab = "overview") {
 function openContactCenterSection(tab = "overview", options = {}) {
   const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
   state.contactCenterTab = nextTab;
+  if (nextTab === "agenda") {
+    state.leadAgendaLoaded = false;
+  }
   setView(nextTab === "sales" ? "sales" : "leads");
   window.setTimeout(() => {
     if (state.currentView !== "leads") return;
@@ -22239,7 +22212,7 @@ function openContactCenterSection(tab = "overview", options = {}) {
     if (nextTab === "agenda") {
       renderLeadAgenda();
       if (!state.leadAgendaLoaded && !state.leadAgendaLoading && session?.user?.business_id) {
-        loadLeadAgendaData({ quiet: true }).then(renderLeadAgenda).catch((error) => {
+        loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda).catch((error) => {
           showFeedback(error.message || "No se pudo cargar la agenda comercial.", "error", { title: "Agenda comercial" });
         });
       }
