@@ -27816,3 +27816,104 @@ body[data-current-view="rms-machine"] .rms-event-log {
   color: #c9ffec !important;
   border-color: rgba(84, 214, 171, 0.28) !important;
 }
+
+/* 2026-07 RMS station rail: keep the 12 stations visible as one process line. */
+body[data-current-view="rms-machine"] .rms-factory-console {
+  overflow: hidden !important;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-board {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(330px, 360px) !important;
+  grid-template-columns: none !important;
+  grid-auto-rows: minmax(430px, auto) !important;
+  align-items: stretch !important;
+  gap: 14px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+  scroll-snap-type: x proximity !important;
+  scrollbar-width: thin !important;
+  padding: 16px 16px 20px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-board::-webkit-scrollbar {
+  height: 10px;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-board::-webkit-scrollbar-track {
+  background: rgba(15, 35, 29, 0.08);
+  border-radius: 999px;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-board::-webkit-scrollbar-thumb {
+  background: #9bb7ac;
+  border-radius: 999px;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-column {
+  width: 100% !important;
+  min-width: 330px !important;
+  max-width: 360px !important;
+  min-height: 430px !important;
+  scroll-snap-align: start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-column::after {
+  display: block !important;
+  right: -15px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-column:last-child::after {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-stage-items {
+  max-height: 218px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
+  content: "Desplaza horizontalmente para operar las 12 estaciones completas";
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef5f1;
+  color: #0b513d;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-board::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-board::-webkit-scrollbar-thumb {
+  background: rgba(124, 251, 255, 0.38);
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
+  background: rgba(84, 214, 171, 0.14);
+  color: #c9ffec;
+  border: 1px solid rgba(84, 214, 171, 0.24);
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="rms-machine"] .rms-stage-board {
+    grid-auto-columns: minmax(286px, 86vw) !important;
+    grid-template-columns: none !important;
+    padding: 12px 12px 18px !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-stage-column {
+    min-width: 286px !important;
+    max-width: 86vw !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
+    white-space: normal;
+  }
+}
