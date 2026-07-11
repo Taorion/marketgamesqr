@@ -784,6 +784,7 @@ create index if not exists idx_qr_batches_business_created on qr_batches(busines
 create index if not exists idx_qr_claims_business_claimed on qr_claims(business_id, claimed_at desc);
 create index if not exists idx_business_sales_business_created on business_sales(business_id, created_at desc);
 create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
+create index if not exists idx_business_sales_business_channel_created on business_sales(business_id, acquisition_channel, created_at desc);
 create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
 create index if not exists idx_business_inventory_products_business_status on business_inventory_products(business_id, status, updated_at desc);
 create index if not exists idx_business_inventory_products_search
@@ -860,6 +861,68 @@ for each row execute function set_updated_at();
 drop trigger if exists trg_business_inventory_products_updated_at on business_inventory_products;
 create trigger trg_business_inventory_products_updated_at
 before update on business_inventory_products
+for each row execute function set_updated_at();
+
+create table if not exists business_acquisition_channels (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  name text not null,
+  slug text not null,
+  channel_type text not null default 'DIGITAL',
+  platform text,
+  status text not null default 'ACTIVE',
+  period_budget numeric(14, 2) not null default 0,
+  currency text not null default 'COP',
+  cost_model text,
+  notes text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, slug)
+);
+
+create index if not exists idx_business_acquisition_channels_business_status
+  on business_acquisition_channels(business_id, status, updated_at desc);
+
+create table if not exists business_acquisition_channel_efforts (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  channel_id uuid not null references business_acquisition_channels(id) on delete cascade,
+  campaign_id uuid references campaigns(id) on delete set null,
+  title text not null,
+  description text,
+  objective text,
+  content_type text not null default 'POST',
+  status text not null default 'ACTIVE',
+  published_at timestamptz,
+  starts_at timestamptz,
+  ends_at timestamptz,
+  budget_amount numeric(14, 2) not null default 0,
+  currency text not null default 'COP',
+  creative_url text,
+  source_url text,
+  notes text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_business_acquisition_channel_efforts_channel_dates
+  on business_acquisition_channel_efforts(business_id, channel_id, starts_at, ends_at);
+
+create index if not exists idx_business_acquisition_channel_efforts_campaign
+  on business_acquisition_channel_efforts(business_id, campaign_id, status);
+
+drop trigger if exists trg_business_acquisition_channels_updated_at on business_acquisition_channels;
+create trigger trg_business_acquisition_channels_updated_at
+before update on business_acquisition_channels
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_business_acquisition_channel_efforts_updated_at on business_acquisition_channel_efforts;
+create trigger trg_business_acquisition_channel_efforts_updated_at
+before update on business_acquisition_channel_efforts
 for each row execute function set_updated_at();
 
 drop trigger if exists trg_affiliate_reward_rules_updated_at on affiliate_reward_rules;

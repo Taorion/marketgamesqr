@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-machine-20260710">
+  <link rel="stylesheet" href="css/styles.css?v=agenda-menu-fix-20260711-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -92,35 +92,70 @@
           </div>
         </div>
 
+        <section class="sidebar-flow-card" aria-label="Ruta operativa RMS">
+          <span class="mono-label">Ruta operativa</span>
+          <strong>Generar revenue medible</strong>
+          <small>Entrada → Activación → Seguimiento → Venta</small>
+          <div class="sidebar-flow-actions">
+            <button type="button" data-portal-shortcut="campaigns">Capturar</button>
+            <button type="button" data-portal-shortcut="strategic-qr">Activar</button>
+            <button type="button" data-portal-shortcut="rms-machine">Procesar</button>
+            <button type="button" data-portal-shortcut="agenda">Seguir</button>
+          </div>
+        </section>
+
         <nav class="sidebar-nav">
+          <span class="nav-group-label">Centro operativo</span>
           <button class="nav-item active" data-view="dashboard" type="button">
             <span class="material-symbols-outlined">dashboard</span>
-            <span>Dashboard</span>
-          </button>
-          <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
-            <span class="material-symbols-outlined">sports_esports</span>
-            <span>Gaming Center</span>
+            <span>Centro de Revenue</span>
           </button>
           <button class="nav-item nav-item-core" data-view="rms-machine" type="button">
             <span class="material-symbols-outlined">precision_manufacturing</span>
             <span>Máquina RMS</span>
           </button>
-          <button class="nav-item" data-view="account" type="button">
-            <span class="material-symbols-outlined">manage_accounts</span>
-            <span>Cuenta</span>
+          <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
+            <span class="material-symbols-outlined">event_note</span>
+            <span>Agenda comercial</span>
           </button>
+
+          <span class="nav-group-label">Capturar y activar</span>
           <button class="nav-item" data-view="campaigns" type="button">
             <span class="material-symbols-outlined">campaign</span>
-            <span>Campaigns</span>
+            <span>Campañas y QR</span>
           </button>
-          <button class="nav-item" data-view="competition" type="button">
-            <span class="material-symbols-outlined">monitoring</span>
-            <span>Radar Competitivo</span>
+          <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
+            <span class="material-symbols-outlined">sports_esports</span>
+            <span>Gaming Center</span>
+          </button>
+          <button class="nav-item nav-item-core" data-view="missions" type="button">
+            <span class="material-symbols-outlined">emoji_events</span>
+            <span>Temporadas y Misiones MG</span>
           </button>
           <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
             <span class="material-symbols-outlined">group</span>
             <span>Contactos</span>
           </button>
+          <button class="nav-item" data-view="reward-passes" type="button">
+            <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
+            <span>Reward Pass</span>
+          </button>
+
+          <span class="nav-group-label">Convertir y medir</span>
+          <button class="nav-item" data-view="validator" type="button">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            <span>Validar QR</span>
+          </button>
+          <button class="nav-item" data-view="redemptions" type="button">
+            <span class="material-symbols-outlined">redeem</span>
+            <span>Redenciones</span>
+          </button>
+          <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button">
+            <span class="material-symbols-outlined">payments</span>
+            <span>Ventas atribuidas</span>
+          </button>
+
+          <span class="nav-group-label">Fidelizar y crecer</span>
           <button class="nav-item" data-view="affiliates" type="button">
             <span class="material-symbols-outlined">card_membership</span>
             <span>Afiliados</span>
@@ -129,25 +164,23 @@
             <span class="material-symbols-outlined">inventory_2</span>
             <span>Productos</span>
           </button>
-          <button class="nav-item" data-view="reward-passes" type="button">
-            <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
-            <span>Reward Pass</span>
-          </button>
-          <button class="nav-item" data-view="redemptions" type="button">
-            <span class="material-symbols-outlined">redeem</span>
-            <span>Redemptions</span>
-          </button>
-          <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button">
-            <span class="material-symbols-outlined">payments</span>
-            <span>Sales</span>
-          </button>
-          <button class="nav-item" data-view="validator" type="button">
-            <span class="material-symbols-outlined">qr_code_scanner</span>
-            <span>Validar QR</span>
-          </button>
           <button class="nav-item" data-view="branches" type="button">
             <span class="material-symbols-outlined">storefront</span>
-            <span>Branches</span>
+            <span>Sedes</span>
+          </button>
+
+          <span class="nav-group-label">Análisis y control</span>
+          <button class="nav-item" data-view="channels" type="button">
+            <span class="material-symbols-outlined">hub</span>
+            <span>Canales ROI</span>
+          </button>
+          <button class="nav-item" data-view="competition" type="button">
+            <span class="material-symbols-outlined">monitoring</span>
+            <span>Radar Competitivo</span>
+          </button>
+          <button class="nav-item" data-view="account" type="button">
+            <span class="material-symbols-outlined">manage_accounts</span>
+            <span>Cuenta y plan</span>
           </button>
           <button class="nav-item" data-view="admin" type="button">
             <span class="material-symbols-outlined">admin_panel_settings</span>
@@ -164,11 +197,14 @@
           </button>
           <div class="search-shell">
             <span class="material-symbols-outlined">search</span>
-            <input id="searchInput" type="text" placeholder="Search analytics...">
+            <input id="searchInput" type="text" placeholder="Buscar cliente, campaña, ticket o módulo...">
           </div>
           <div class="topbar-actions">
+            <button class="solid-button revenue-global-button" id="globalRevenueActionButton" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
+              Crear acción de revenue
+            </button>
             <a class="ghost-button nav-link-button" href="/">Home</a>
-            <a class="ghost-button nav-link-button" href="/paquetes/">Planes</a>
             <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
               <span class="material-symbols-outlined">refresh</span>
             </button>
@@ -224,13 +260,169 @@
             </div>
           </div>
 
-          <section class="view-section active" data-view="dashboard">
+          <section class="view-section active dashboard-builder-mode" data-view="dashboard">
             <div class="view-head">
               <div>
-                <h2>RMS Command Center</h2>
-                <p>Centro de comando ejecutivo para revenue, campañas, canales, tickets, sucursales, afiliados y decisiones comerciales.</p>
+                <h2>Centro de Comando Revenue Marketing</h2>
+                <p>Vista inicial simple para entender captación, inversión, conversión y revenue. El resto del dashboard lo arma el usuario por bloques.</p>
               </div>
             </div>
+
+            <section class="dashboard-builder-shell" id="dashboardBuilderShell">
+              <div class="dashboard-builder-head">
+                <div>
+                  <span class="mono-label">Centro simple + bloques</span>
+                  <h3>Empieza con lo necesario y agrega solo lo que uses</h3>
+                  <p>El tablero inicial muestra pocas piezas clave. Puedes quitar bloques, agregar otros y reordenarlos como un dashboard tipo lego.</p>
+                </div>
+                <div class="dashboard-profile-tabs" id="dashboardProfileTabs" aria-label="Perfiles de dashboard">
+                  <button type="button" data-dashboard-profile="marketing">Marketing</button>
+                  <button type="button" data-dashboard-profile="commercial">Comercial</button>
+                  <button type="button" data-dashboard-profile="custom">Personalizado</button>
+                </div>
+              </div>
+
+              <div class="dashboard-builder-layout">
+                <aside class="dashboard-widget-library" aria-label="Bloques disponibles para el dashboard">
+                  <div>
+                    <span class="mono-label">Bloques disponibles</span>
+                    <h4>Agregar o quitar del tablero</h4>
+                    <p>El centro inicial ya trae lo básico. Usa esta biblioteca para sumar análisis cuando realmente lo necesites.</p>
+                  </div>
+                  <div class="dashboard-widget-library-list" id="dashboardWidgetLibrary"></div>
+                </aside>
+
+                <section class="dashboard-canvas" aria-label="Dashboard configurable">
+                  <div class="dashboard-canvas-head">
+                    <div>
+                      <span class="mono-label" id="dashboardProfileLabel">Perfil activo</span>
+                      <h3 id="dashboardProfileTitle">Centro de Comando Revenue Marketing</h3>
+                      <p id="dashboardProfileDescription">Siguiente acción, embudo, ROI por canales/campañas y tabla ejecutiva sin exceso de ruido.</p>
+                    </div>
+                    <div class="dashboard-canvas-actions">
+                      <button class="ghost-button" id="dashboardAdvancedToggleButton" type="button">
+                        <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                        Ver dashboard avanzado
+                      </button>
+                      <button class="ghost-button" id="dashboardResetProfileButton" type="button">
+                        <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                        Restaurar perfil
+                      </button>
+                    </div>
+                  </div>
+                  <div class="dashboard-widget-grid" id="dashboardWidgetGrid" aria-live="polite"></div>
+                </section>
+              </div>
+            </section>
+
+            <section class="revenue-workspace" id="revenueWorkspace">
+              <div class="revenue-workspace-head">
+                <div>
+                  <span class="mono-label">Centro de Revenue</span>
+                  <h3>Hoy en MarketGamesQR</h3>
+                  <p>Usa campañas, QR, gamificación, tickets, agenda y métricas para convertir clientes y medir ingresos reales.</p>
+                </div>
+                <button class="solid-button" id="dashboardRevenueActionButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
+                  Crear acción de revenue
+                </button>
+              </div>
+              <div class="revenue-main-grid">
+                <article class="next-best-action-card" id="nextBestActionCard"></article>
+                <article class="revenue-objective-card">
+                  <span class="mono-label">Elige qué quieres lograr hoy</span>
+                  <div class="revenue-objective-grid" id="revenueQuickActions">
+                    <button type="button" data-revenue-objective="capture">Capturar nuevos clientes</button>
+                    <button type="button" data-revenue-objective="store_activation">Activar campaña en tienda</button>
+                    <button type="button" data-revenue-objective="recover">Recuperar clientes dormidos</button>
+                    <button type="button" data-revenue-objective="rebuy">Aumentar recompra</button>
+                    <button type="button" data-revenue-objective="measure">Medir ventas de campaña</button>
+                    <button type="button" data-revenue-objective="gamify">Crear dinámica gamificada</button>
+                    <button type="button" data-revenue-objective="validate">Validar tickets</button>
+                    <button type="button" data-revenue-objective="agenda">Revisar agenda comercial</button>
+                  </div>
+                </article>
+              </div>
+              <section class="revenue-path-guide" id="revenuePathGuide" aria-label="Ruta de revenue"></section>
+              <section class="revenue-onboarding" id="revenueOnboarding">
+                <div>
+                  <span class="mono-label">Empieza en 3 pasos</span>
+                  <h3>Todo empieza con una oportunidad</h3>
+                </div>
+                <article><strong>1. Crea una entrada de clientes</strong><p>QR, campaña, contacto o dinámica.</p></article>
+                <article><strong>2. Agrega cobertura gamificada</strong><p>Ticket, recompensa, puntos, ranking o racha.</p></article>
+                <article><strong>3. Crea seguimiento en agenda</strong><p>WhatsApp, llamada, redención, venta o recompra.</p></article>
+                <button class="solid-button" type="button" data-revenue-open-wizard>Crear mi primera acción de revenue</button>
+              </section>
+              <section class="portal-module-map" aria-label="Mapa operativo del portal">
+                <div class="portal-map-head">
+                  <div>
+                    <span class="mono-label">Mapa del portal</span>
+                    <h3>Encuentra cada herramienta por etapa del revenue</h3>
+                  </div>
+                  <p>No necesitas recorrer todos los módulos. Elige la etapa de trabajo y entra directo a la herramienta que mueve al cliente.</p>
+                </div>
+                <div class="portal-map-grid">
+                  <article>
+                    <span class="material-symbols-outlined">add_location_alt</span>
+                    <h4>1. Capturar entrada</h4>
+                    <p>Campañas, QR, formularios y contactos que alimentan la operación comercial.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="campaigns">Campañas y QR</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="contacts">Contactos</button>
+                    </div>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined">sports_esports</span>
+                    <h4>2. Activar atención</h4>
+                    <p>Juegos, misiones, tickets y recompensas que sostienen el journey.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="strategic-qr">Gaming Center</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="missions">Misiones MG</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="reward-passes">Reward Pass</button>
+                    </div>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined">precision_manufacturing</span>
+                    <h4>3. Procesar oportunidades</h4>
+                    <p>La Máquina RMS prioriza clientes, tickets y leads para saber qué hacer hoy.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="rms-machine">Máquina RMS</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="agenda">Agenda</button>
+                    </div>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined">qr_code_scanner</span>
+                    <h4>4. Convertir y validar</h4>
+                    <p>Valida beneficios, registra redenciones y conecta cada acción con ventas reales.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="validator">Validar QR</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="redemptions">Redenciones</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="sales">Ventas</button>
+                    </div>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined">diversity_3</span>
+                    <h4>5. Fidelizar y crecer</h4>
+                    <p>Referidos, productos y sedes para repetir compras y ampliar canales.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="inventory">Productos</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="branches">Sedes</button>
+                    </div>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined">monitoring</span>
+                    <h4>6. Analizar y decidir</h4>
+                    <p>Dashboard, radar competitivo y cuenta para entender rendimiento, contexto y límites.</p>
+                    <div class="button-row">
+                      <button class="ghost-button" type="button" data-portal-shortcut="dashboard">Dashboard</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="competition">Radar</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="account">Cuenta</button>
+                    </div>
+                  </article>
+                </div>
+              </section>
+            </section>
 
             <section class="command-center-shell" id="commandCenterRoot" aria-live="polite">
               <article class="command-center-loading surface-card">
@@ -438,9 +630,12 @@
               <div>
                 <span class="mono-label">Revenue Factory</span>
                 <h2>Máquina RMS de Conversión</h2>
-                <p>Journey industrializado para saber que cliente atender, por que, con que cobertura y cual es la siguiente accion comercial.</p>
+                <p>Esta pantalla convierte leads, tickets, campañas y contactos en una cola diaria de acciones. Si no hay oportunidades, primero activa un recolector para alimentar la máquina.</p>
+                <span class="rms-flow-chip">Entrada → Procesamiento → Acción → Revenue</span>
               </div>
               <div class="view-head-actions">
+                <button class="solid-button" id="rmsMachineCollectorButton" type="button">Alimentar Máquina RMS</button>
+                <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver cómo funciona</button>
                 <button class="ghost-button" id="rmsMachineRefreshButton" type="button">Actualizar cola</button>
                 <button class="solid-button" id="rmsMachineOpenAgendaButton" type="button">Ver agenda</button>
               </div>
@@ -453,6 +648,64 @@
                 <p>La plataforma transforma atencion, dinamicas, datos, beneficios y seguimiento en oportunidades priorizadas con accion concreta.</p>
               </article>
               <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
+            </section>
+
+            <section class="rms-empty-guide hidden" id="rmsEmptyStateGuide">
+              <div class="rms-empty-head">
+                <div>
+                  <span class="mono-label">Recolector de oportunidades</span>
+                  <h3>Empieza alimentando la Máquina RMS</h3>
+                  <p>La Máquina RMS convierte clientes, leads y contactos en oportunidades priorizadas. Para operar la cola diaria necesitas primero capturar o seleccionar la materia prima comercial.</p>
+                </div>
+                <button class="solid-button" type="button" data-rms-open-collector>Alimentar Máquina RMS</button>
+              </div>
+              <article class="rms-collector-active-card hidden" id="rmsCollectorActiveCard"></article>
+              <div class="rms-empty-paths">
+                <article>
+                  <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                  <h4>Capturar nuevos clientes</h4>
+                  <p>Usa QR, activaciones gamificadas, tickets o formularios para capturar personas nuevas desde tienda, vitrina, evento o WhatsApp.</p>
+                  <div class="button-row">
+                    <button class="ghost-button" type="button" data-rms-empty-action="campaigns">Crear QR de captura</button>
+                    <button class="ghost-button" type="button" data-rms-empty-action="gaming">Crear activación</button>
+                    <button class="ghost-button" type="button" data-rms-empty-action="reward-passes">Crear ticket</button>
+                  </div>
+                </article>
+                <article>
+                  <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                  <h4>Usar contactos existentes</h4>
+                  <p>Si ya tienes contactos o leads cargados, selecciona cuáles entran a la Máquina RMS para seguimiento, recompra o recuperación.</p>
+                  <div class="button-row">
+                    <button class="ghost-button" type="button" data-rms-empty-action="contacts">Ver contactos</button>
+                    <button class="ghost-button" type="button" data-rms-empty-action="contacts-manual">Importar contactos</button>
+                  </div>
+                </article>
+                <article>
+                  <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                  <h4>Reactivar clientes dormidos</h4>
+                  <p>Convierte clientes antiguos, tickets vencidos o contactos sin seguimiento en oportunidades de recuperación.</p>
+                  <div class="button-row">
+                    <button class="ghost-button" type="button" data-rms-empty-action="contacts">Buscar clientes dormidos</button>
+                    <button class="ghost-button" type="button" data-rms-empty-action="agenda">Crear tarea</button>
+                  </div>
+                </article>
+              </div>
+              <div class="rms-start-steps">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Pasos para encender la Máquina RMS</span>
+                    <h3 class="subhead">De cero oportunidades a cola diaria</h3>
+                  </div>
+                </div>
+                <ol>
+                  <li><span>1</span><strong>Crear o seleccionar una fuente de clientes</strong><button type="button" data-rms-empty-action="campaigns">Crear fuente</button></li>
+                  <li><span>2</span><strong>Crear una dinámica o campaña de captura</strong><button type="button" data-rms-empty-action="gaming">Crear dinámica</button></li>
+                  <li><span>3</span><strong>Capturar datos o seleccionar contactos existentes</strong><button type="button" data-rms-empty-action="contacts">Ver contactos</button></li>
+                  <li><span>4</span><strong>Asignar cobertura: ticket, beneficio, reto o recompensa</strong><button type="button" data-rms-empty-action="reward-passes">Crear cobertura</button></li>
+                  <li><span>5</span><strong>Crear primera tarea en agenda</strong><button type="button" data-rms-empty-action="agenda">Crear tarea</button></li>
+                  <li><span>6</span><strong>Ver oportunidades en la cola diaria</strong><button type="button" data-rms-open-collector>Activar recolector</button></li>
+                </ol>
+              </div>
             </section>
 
             <section class="rms-workday-shell">
@@ -504,7 +757,263 @@
                   <p>La tarjeta debe terminar en una llamada, WhatsApp, agenda, venta, recompra o referido.</p>
                 </article>
               </div>
+              <div class="rms-rule-action">
+                <button class="solid-button" id="rmsApplyRuleButton" type="button">Aplicar esta regla ahora</button>
+              </div>
             </section>
+
+            <div class="modal-shell hidden" id="rmsCollectorModal" role="dialog" aria-modal="true" aria-labelledby="rmsCollectorTitle">
+              <div class="modal-card rms-collector-card">
+                <div class="modal-head">
+                  <div>
+                    <span class="mono-label">Recolector de oportunidades</span>
+                    <h3 id="rmsCollectorTitle">Alimentar Máquina RMS</h3>
+                    <p>Define la fuente, la captura, la cobertura y la tarea de agenda que sostendra el seguimiento.</p>
+                  </div>
+                  <button class="icon-button" type="button" id="rmsCollectorCloseButton" title="Cerrar">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <form class="modal-form rms-collector-form" id="rmsCollectorForm">
+                  <label>
+                    Fuente de clientes
+                    <select id="rmsCollectorSourceInput">
+                      <option value="store_visitors">Transeuntes / visitantes fisicos</option>
+                      <option value="existing_contacts">Contactos existentes</option>
+                      <option value="tickets">Clientes con tickets</option>
+                      <option value="previous_buyers">Compradores anteriores</option>
+                      <option value="referrals">Referidos</option>
+                      <option value="digital_campaign">Campaña digital</option>
+                    </select>
+                  </label>
+                  <label>
+                    Captura o activación
+                    <select id="rmsCollectorCaptureInput">
+                      <option value="qr_ticket_capture">QR + ticket relampago</option>
+                      <option value="gamified_activation">Ruleta / trivia / juego</option>
+                      <option value="catalog_download">Descarga de catalogo</option>
+                      <option value="reward_pass">Reward Pass</option>
+                      <option value="survey_reward">Encuesta con recompensa</option>
+                      <option value="import_contacts">Importar contactos</option>
+                    </select>
+                  </label>
+                  <label>
+                    Cobertura del journey
+                    <select id="rmsCollectorCoverageInput">
+                      <option value="ticket_expiring">Ticket con vencimiento</option>
+                      <option value="benefit">Beneficio</option>
+                      <option value="points">Puntos MG</option>
+                      <option value="streak">Racha</option>
+                      <option value="ranking">Ranking</option>
+                      <option value="reward_pass">Reward Pass</option>
+                      <option value="agenda_reminder">Recordatorio por agenda</option>
+                    </select>
+                  </label>
+                  <label>
+                    Primera tarea de agenda
+                    <select id="rmsCollectorAgendaInput">
+                      <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
+                      <option value="Llamar cliente caliente">Llamar</option>
+                      <option value="Agendar visita">Agendar visita</option>
+                      <option value="Recordar ticket">Recordar ticket</option>
+                      <option value="Enviar catalogo">Enviar catalogo</option>
+                      <option value="Activar recompra">Activar recompra</option>
+                      <option value="Recuperar cliente dormido">Recuperar cliente dormido</option>
+                    </select>
+                  </label>
+                  <label class="span-2">
+                    Resultado esperado
+                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas en Máquina RMS y primera tarea de seguimiento en agenda.</textarea>
+                  </label>
+                  <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
+                  <div class="modal-actions span-2">
+                    <button class="ghost-button" type="button" id="rmsCollectorCancelButton">Cancelar</button>
+                    <button class="solid-button" type="submit">Activar recolector</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="modal-shell hidden" id="rmsHowModal" role="dialog" aria-modal="true" aria-labelledby="rmsHowTitle">
+              <div class="modal-card rms-how-card">
+                <div class="modal-head">
+                  <div>
+                    <span class="mono-label">Cómo se usa</span>
+                    <h3 id="rmsHowTitle">La Máquina RMS funciona en 4 pasos</h3>
+                  </div>
+                  <button class="icon-button" type="button" id="rmsHowCloseButton" title="Cerrar">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div class="rms-how-steps">
+                  <article><span>1</span><strong>Entra materia prima</strong><p>Clientes, leads, contactos, visitantes, tickets o compradores anteriores.</p></article>
+                  <article><span>2</span><strong>Se procesa</strong><p>El sistema revisa campaña, ticket, interacción, interés, riesgo y oportunidad.</p></article>
+                  <article><span>3</span><strong>Se asigna siguiente acción</strong><p>WhatsApp, llamada, visita, redención, recompra, referido o recuperación.</p></article>
+                  <article><span>4</span><strong>Sale revenue</strong><p>Venta atribuida, recompra, referido, redención o cliente recuperado.</p></article>
+                </div>
+                <div class="modal-actions">
+                  <button class="solid-button" type="button" id="rmsHowStartButton">Empezar con un recolector</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="view-section" data-view="missions">
+            <div class="view-head missions-head">
+              <div>
+                <span class="mono-label">Gamificación del Journey</span>
+                <h2>Temporadas y Misiones MG</h2>
+                <p>Crea dinámicas semanales, retos, trivias, rankings, rachas y recompensas para que tus clientes interactúen, acumulen puntos y vuelvan a comprar.</p>
+              </div>
+              <div class="view-head-actions">
+                <button class="solid-button" id="missionsCreateButton" type="button">Crear nueva dinámica</button>
+                <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
+                <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
+              </div>
+            </div>
+
+            <section class="missions-hero">
+              <article class="missions-onboarding">
+                <span class="mono-label">Motor de Misiones Comerciales</span>
+                <h3>Mantén a tus clientes participando hasta convertirlos</h3>
+                <p>Actividad del cliente → suma puntos → avanza progreso → desbloquea recompensa → genera siguiente acción comercial.</p>
+                <div class="button-row">
+                  <button class="solid-button" type="button" data-open-mission-wizard="weekly_trivia">Crear trivia semanal</button>
+                  <button class="ghost-button" type="button" data-open-mission-wizard="top_clients_week">Top clientes</button>
+                  <button class="ghost-button" type="button" data-open-mission-wizard="rebuy_streak">Racha de recompra</button>
+                </div>
+              </article>
+              <div class="missions-kpis" id="missionsKpiGrid"></div>
+            </section>
+
+            <section class="missions-dashboard-grid">
+              <article class="surface-card missions-panel span-2">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Biblioteca de plantillas</span>
+                    <h3 class="subhead">Dinámicas listas para activar</h3>
+                  </div>
+                </div>
+                <div class="mission-template-grid" id="missionTemplateGrid"></div>
+              </article>
+
+              <article class="surface-card missions-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Ranking</span>
+                    <h3 class="subhead">Top clientes</h3>
+                  </div>
+                </div>
+                <div class="mission-leaderboard" id="missionLeaderboard"></div>
+              </article>
+
+              <article class="surface-card missions-panel span-2">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Dinámicas activas</span>
+                    <h3 class="subhead">Misiones en operación</h3>
+                  </div>
+                </div>
+                <div class="mission-active-list" id="missionActiveList"></div>
+              </article>
+
+              <article class="surface-card missions-panel">
+                <div class="card-head">
+                  <div>
+                    <span class="mono-label">Recompensas</span>
+                    <h3 class="subhead">Pendientes por entregar</h3>
+                  </div>
+                </div>
+                <div class="mission-reward-list" id="missionRewardsPending"></div>
+              </article>
+            </section>
+
+            <div class="modal-shell hidden" id="missionWizardModal" role="dialog" aria-modal="true" aria-labelledby="missionWizardTitle">
+              <div class="modal-card mission-wizard-card">
+                <div class="modal-head">
+                  <div>
+                    <span class="mono-label">Crear dinámica</span>
+                    <h3 id="missionWizardTitle">Nueva temporada o misión MG</h3>
+                    <p>Elige una plantilla, define fechas, acciones que suman puntos, ranking, recompensa y tareas de agenda.</p>
+                  </div>
+                  <button class="icon-button" id="missionWizardCloseButton" type="button" title="Cerrar">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <form class="modal-form mission-wizard-form" id="missionWizardForm">
+                  <label>
+                    Tipo de dinámica
+                    <select id="missionTemplateInput"></select>
+                  </label>
+                  <label>
+                    Campaña asociada
+                    <select id="missionCampaignInput">
+                      <option value="">Sin campaña asociada</option>
+                    </select>
+                  </label>
+                  <label>
+                    Nombre
+                    <input id="missionNameInput" type="text" required placeholder="Trivia Semanal Octubre - Top Clientes MG">
+                  </label>
+                  <label>
+                    Canal
+                    <select id="missionChannelInput">
+                      <option value="WhatsApp / QR / landing">WhatsApp / QR / landing</option>
+                      <option value="tienda / evento">Tienda / evento</option>
+                      <option value="redes / landing">Redes / landing</option>
+                      <option value="mixto">Mixto</option>
+                    </select>
+                  </label>
+                  <label>
+                    Fecha de inicio
+                    <input id="missionStartInput" type="date">
+                  </label>
+                  <label>
+                    Fecha de finalización
+                    <input id="missionEndInput" type="date">
+                  </label>
+                  <label class="span-2">
+                    Descripción corta
+                    <textarea id="missionDescriptionInput" rows="3"></textarea>
+                  </label>
+                  <label class="span-2">
+                    Acciones que suman puntos
+                    <textarea id="missionPointsInput" rows="5"></textarea>
+                  </label>
+                  <label>
+                    Ranking
+                    <select id="missionRankingInput">
+                      <option value="POINTS">Ranking por puntos</option>
+                      <option value="PURCHASES">Ranking por compras</option>
+                      <option value="REFERRALS">Ranking por referidos</option>
+                      <option value="REDEMPTIONS">Ranking por redenciones</option>
+                      <option value="PARTICIPATION">Ranking por participación</option>
+                    </select>
+                  </label>
+                  <label>
+                    Top visible
+                    <select id="missionTopLimitInput">
+                      <option value="5">Top 5</option>
+                      <option value="10">Top 10</option>
+                      <option value="20">Top 20</option>
+                    </select>
+                  </label>
+                  <label class="span-2">
+                    Recompensas
+                    <textarea id="missionRewardsInput" rows="4"></textarea>
+                  </label>
+                  <label class="checkbox-line span-2">
+                    <input id="missionCreateAgendaInput" type="checkbox" checked>
+                    <span>Crear tareas en la agenda actual para publicar, revisar ranking y contactar ganadores.</span>
+                  </label>
+                  <p class="inline-message span-2" id="missionWizardMessage"></p>
+                  <div class="modal-actions span-2">
+                    <button class="ghost-button" id="missionWizardCancelButton" type="button">Cancelar</button>
+                    <button class="solid-button" type="submit">Guardar y activar dinámica</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </section>
 
           <section class="view-section" data-view="account">
@@ -603,7 +1112,7 @@
             </article>
 
             <section class="account-settings-grid">
-              <article class="surface-card account-settings-card account-billing-card">
+              <article class="surface-card account-settings-card account-billing-card account-span-full">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Pagos y renovaciones</span>
@@ -615,7 +1124,7 @@
                 <div class="account-billing-grid">
                   <div class="account-billing-panel">
                     <strong>Recarga de tickets</strong>
-                    <p class="table-secondary">Elige el paquete en la sección de tickets estratégicos y paga por Mercado Pago con medios digitales.</p>
+                    <p class="table-secondary">Elige el paquete en esta sección de Cuenta y paga por Mercado Pago con medios digitales.</p>
                     <button class="solid-button" id="accountOpenQrShopButton" type="button">Comprar paquetes de tickets</button>
                   </div>
                   <form class="account-billing-panel" id="subscriptionRenewalForm">
@@ -650,7 +1159,55 @@
                 <p class="error-line" id="subscriptionRenewalMessage"></p>
               </article>
 
-              <article class="surface-card account-settings-card">
+              <article class="surface-card data-table-card qr-credit-shop-card account-only-commerce-card account-span-5" id="accountQrCreditShopCard">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Recarga automatica</span>
+                    <h3>Saldo y tickets</h3>
+                  </div>
+                  <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
+                </div>
+                <p class="table-secondary">Pago digital: tarjetas, saldo Mercado Pago y PSE cuando esté disponible en tu cuenta. Efectivo y Efecty quedan excluidos.</p>
+                <form class="qr-credit-shop-form" id="qrCreditCheckoutForm">
+                  <label>
+                    <span>Paquete</span>
+                    <select id="qrCreditPackageSelect" required></select>
+                  </label>
+                  <div class="qr-credit-shop-actions">
+                    <button class="solid-button" id="qrCreditCheckoutButton" type="submit">Ir a pagar</button>
+                  </div>
+                </form>
+                <p class="error-line" id="qrCreditCheckoutMessage"></p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Paquete</th>
+                        <th>Valor</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="qrCreditOrdersTable"></tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="surface-card portal-pricing-card account-only-commerce-card account-span-7" id="accountPortalPlansCard">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Planes del portal</span>
+                    <h3>Suscripcion mensual y recarga interna</h3>
+                  </div>
+                  <span class="status-chip ok">Solo en Cuenta</span>
+                </div>
+                <p class="pricing-intro" id="subscriptionPricingNote">
+                  Los planes activan el acceso mensual al portal. Los tickets adicionales se compran desde Cuenta, con sesion iniciada y suscripcion activa.
+                </p>
+                <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
+              </article>
+
+              <article class="surface-card account-settings-card account-company-card account-span-8">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Datos básicos</span>
@@ -668,10 +1225,10 @@
                   <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
                   <label><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
                   <label><span>Dirección</span><input id="accountAddressInput" type="text" maxlength="220"></label>
-                  <label><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
-                  <label><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
-                  <label><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
-                  <p class="table-secondary span-2">Regla de afiliados: por cada monto comprado se asignan los puntos configurados. Ejemplo: 1 punto cada $1.000.</p>
+                  <label class="affiliate-only-config hidden"><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
+                  <label class="affiliate-only-config hidden"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
+                  <label class="affiliate-only-config hidden"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
+                  <p class="table-secondary span-2 affiliate-only-config hidden">Regla de afiliados: por cada monto comprado se asignan los puntos configurados. Ejemplo: 1 punto cada $1.000.</p>
                   <div class="modal-actions span-2">
                     <p class="error-line" id="accountProfileMessage"></p>
                     <button class="solid-button" id="accountProfileSaveButton" type="submit">Guardar cambios</button>
@@ -679,7 +1236,7 @@
                 </form>
               </article>
 
-              <article class="surface-card account-settings-card">
+              <article class="surface-card account-settings-card account-logo-card account-span-4">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Configuración visible</span>
@@ -693,12 +1250,12 @@
                   </div>
                   <div>
                     <strong id="accountLogoTitle">Sin logo cargado</strong>
-                    <p class="table-secondary">Carga el logo desde Afiliados o usa los controles existentes de logo en esa sección.</p>
+                    <p class="table-secondary">Carga el logo del negocio para usarlo en piezas de marca, tickets y materiales del portal.</p>
                   </div>
                 </div>
               </article>
 
-              <article class="surface-card account-settings-card digital-asset-library-card">
+              <article class="surface-card account-settings-card digital-asset-library-card account-span-8">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Activos digitales</span>
@@ -722,7 +1279,7 @@
                 <div class="digital-assets-grid" id="digitalAssetsGrid"></div>
               </article>
 
-              <article class="surface-card account-settings-card">
+              <article class="surface-card account-settings-card account-ticket-frame-card account-span-4">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Brand tickets</span>
@@ -748,7 +1305,7 @@
                 </div>
               </article>
 
-              <article class="surface-card account-settings-card">
+              <article class="surface-card account-settings-card account-security-card account-span-4">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Seguridad</span>
@@ -790,7 +1347,7 @@
                 </form>
               </article>
 
-              <article class="surface-card account-settings-card">
+              <article class="surface-card account-settings-card account-users-card account-span-8">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Usuarios del negocio</span>
@@ -940,54 +1497,6 @@
               <p class="qr-workflow-copy" id="qrWorkflowContext">
                 Selecciona una campaña antes de generar tickets. La activación define el objetivo comercial; el ticket registra el uso, la redención y la venta.
               </p>
-            </article>
-
-            <article class="surface-card data-table-card qr-credit-shop-card">
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Recarga automatica</span>
-                  <h3>Saldo y tickets</h3>
-                </div>
-                <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
-              </div>
-              <p class="table-secondary">Pago digital: tarjetas, saldo Mercado Pago y PSE cuando esté disponible en tu cuenta. Efectivo y Efecty quedan excluidos.</p>
-              <form class="qr-credit-shop-form" id="qrCreditCheckoutForm">
-                <label>
-                  <span>Paquete</span>
-                  <select id="qrCreditPackageSelect" required></select>
-                </label>
-                <div class="qr-credit-shop-actions">
-                  <button class="solid-button" id="qrCreditCheckoutButton" type="submit">Ir a pagar</button>
-                </div>
-              </form>
-              <p class="error-line" id="qrCreditCheckoutMessage"></p>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Paquete</th>
-                      <th>Valor</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody id="qrCreditOrdersTable"></tbody>
-                </table>
-              </div>
-            </article>
-
-            <article class="surface-card portal-pricing-card">
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Planes del portal</span>
-                  <h3>Suscripcion mensual y recarga interna</h3>
-                </div>
-                <span class="status-chip ok">Tickets solo dentro del portal</span>
-              </div>
-              <p class="pricing-intro" id="subscriptionPricingNote">
-                Los planes activan el acceso mensual al portal. Los tickets adicionales se compran desde esta cuenta, con sesion iniciada y suscripcion activa.
-              </p>
-              <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
             </article>
 
             <section class="charts-grid dashboard-charts strategic-ticket-generators">
@@ -2220,6 +2729,35 @@
 
             <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
 
+            <section class="surface-card campaign-roi-summary-card" data-campaign-tab-panel="analysis">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Gasto vs revenue</span>
+                  <h3>ROI total por campaña</h3>
+                </div>
+                <span class="status-chip ok">Campañas</span>
+              </div>
+              <p class="chart-explainer">Aquí ves cuánto se invirtió en cada campaña, cuántos clientes/ventas atribuidas generó, cuánto revenue produjo y si el retorno es sano.</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campaña</th>
+                      <th>Estado</th>
+                      <th>Inversión</th>
+                      <th>Ventas/clientes</th>
+                      <th>Revenue</th>
+                      <th>Ganancia neta</th>
+                      <th>CAC</th>
+                      <th>ROI</th>
+                      <th>Lectura</th>
+                    </tr>
+                  </thead>
+                  <tbody id="campaignRoiTable"></tbody>
+                </table>
+              </div>
+            </section>
+
             <section class="campaign-layout">
               <aside class="campaign-rail surface-card">
                 <div class="rail-head">
@@ -2298,6 +2836,34 @@
                 </section>
 
                 <section class="kpi-grid campaign-kpis" id="campaignKpiGrid" data-campaign-tab-panel="analysis"></section>
+
+                <section class="surface-card campaign-channel-roi-card" id="campaignChannelRoiCard" data-campaign-tab-panel="analysis">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">ROI por canal dentro de campaña</span>
+                      <h3>Qué canal está devolviendo revenue en esta campaña</h3>
+                    </div>
+                    <span class="status-chip ok">Campaña + canal</span>
+                  </div>
+                  <p class="chart-explainer">La campaña conserva su inversión total. Los canales conservan su inversión independiente. Esta vista cruza ambos para saber por dónde llegaron las ventas atribuidas.</p>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Canal</th>
+                          <th>Ventas</th>
+                          <th>Revenue</th>
+                          <th>Ganancia neta</th>
+                          <th>Inversión canal</th>
+                          <th>ROI canal</th>
+                          <th>ROI campaña</th>
+                          <th>Lectura</th>
+                        </tr>
+                      </thead>
+                      <tbody id="campaignChannelRoiTable"></tbody>
+                    </table>
+                  </div>
+                </section>
 
                 <section class="campaign-overview-grid">
                   <article class="surface-card" data-campaign-tab-panel="analysis">
@@ -2660,7 +3226,7 @@
                     <div class="card-head">
                       <div>
                         <span class="mono-label">Relacionados</span>
-                        <h3 class="subhead">Afiliados, clientes y leads de esta campaña</h3>
+                        <h3 class="subhead">Clientes y leads de esta campaña</h3>
                       </div>
                     </div>
                     <div class="campaign-relations-grid">
@@ -2678,7 +3244,7 @@
                         </div>
                         <div class="campaign-related-list" id="campaignRelatedCustomersList"></div>
                       </section>
-                      <section class="campaign-related-panel campaign-related-affiliates">
+                      <section class="campaign-related-panel campaign-related-affiliates hidden">
                         <div class="campaign-related-head">
                           <span class="mono-label">Afiliados / referidores</span>
                           <strong id="campaignRelatedAffiliatesCount">0</strong>
@@ -2998,7 +3564,7 @@
               <div class="lead-directory-search-row">
                 <label class="lead-directory-search">
                   <span class="material-symbols-outlined" aria-hidden="true">search</span>
-                  <input id="leadCrmSearchInput" type="search" placeholder="Buscar por cedula, nombre, correo, telefono, afiliado o ID">
+                  <input id="leadCrmSearchInput" type="search" placeholder="Buscar por cedula, nombre, correo, telefono o ID">
                 </label>
                 <button class="solid-button" id="leadCrmSearchButton" type="button">Buscar lead</button>
                 <button class="ghost-button" id="leadCrmResetButton" type="button">Limpiar</button>
@@ -3016,7 +3582,7 @@
                     <option value="INACTIVE">Inactivo</option>
                   </select>
                 </label>
-                <label><span>Afiliacion</span>
+                <label class="affiliate-only-config hidden"><span>Afiliacion</span>
                   <select id="leadCrmAffiliateFilter">
                     <option value="">Todos</option>
                     <option value="true">Afiliados</option>
@@ -3238,7 +3804,7 @@
                   <button class="segment-tab" data-lead-tab="activations" type="button" role="tab" aria-selected="false" tabindex="-1">Activaciones</button>
                   <button class="segment-tab" data-lead-tab="games" type="button" role="tab" aria-selected="false" tabindex="-1">Juegos</button>
                   <button class="segment-tab" data-lead-tab="benefits" type="button" role="tab" aria-selected="false" tabindex="-1">Tickets</button>
-                  <button class="segment-tab" data-lead-tab="affiliate" type="button" role="tab" aria-selected="false" tabindex="-1">Afiliacion</button>
+                  <button class="segment-tab affiliate-only-config hidden" data-lead-tab="affiliate" type="button" role="tab" aria-selected="false" tabindex="-1">Afiliacion</button>
                   <button class="segment-tab" data-lead-tab="communications" type="button" role="tab" aria-selected="false" tabindex="-1">Comunicaciones</button>
                   <button class="segment-tab" data-lead-tab="tasks" type="button" role="tab" aria-selected="false" tabindex="-1">Tareas</button>
                   <button class="segment-tab" data-lead-tab="notes" type="button" role="tab" aria-selected="false" tabindex="-1">Notas</button>
@@ -3427,6 +3993,7 @@
                     <div>
                       <span class="mono-label">Detalle de compra</span>
                       <strong>Productos comprados</strong>
+                      <small>Selecciona un producto existente o escribe uno nuevo; al guardar la venta quedará creado en Productos automáticamente.</small>
                     </div>
                     <button class="ghost-button" id="customerSaleAddItemButton" type="button">Agregar producto</button>
                   </div>
@@ -3435,6 +4002,7 @@
                     <span>Total calculado</span>
                     <strong id="customerSaleTotalPreview">$0</strong>
                   </div>
+                  <div class="commerce-operation-feed" id="customerSaleOperationFeed" aria-live="polite"></div>
                 </div>
                 <section class="sale-form-block sale-form-block-attribution">
                   <div class="sale-form-block-head">
@@ -3457,8 +4025,8 @@
                         <option value="OTHER">Otro</option>
                       </select>
                     </label>
-                    <label class="sale-field"><span>Canal especifico</span><input id="customerAcquisitionChannelInput" type="text" placeholder="Instagram, Google, feria, vitrina..."></label>
-                    <label class="sale-field"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
+                    <label class="sale-field"><span>Canal específico</span><input id="customerAcquisitionChannelInput" type="text" list="acquisitionChannelDatalist" placeholder="Instagram, Google, WhatsApp, web..."></label>
+                    <label class="sale-field affiliate-only-config hidden"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
                     <label class="sale-field sale-field-notes"><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
                   </div>
                 </section>
@@ -3466,6 +4034,7 @@
                   <button class="solid-button" type="submit">Registrar venta</button>
                   <p class="error-line" id="customerAcquisitionMessage"></p>
                 </div>
+                <datalist id="acquisitionChannelDatalist"></datalist>
               </form>
             </article>
 
@@ -3483,8 +4052,8 @@
                       <th>Valor</th>
                       <th>Pago</th>
                       <th>Origen</th>
+                      <th>Canal</th>
                       <th>Producto o servicio</th>
-                      <th>Afiliado / puntos</th>
                       <th>Sucursal</th>
                       <th>Fecha</th>
                     </tr>
@@ -3493,6 +4062,227 @@
                 </table>
               </div>
             </article>
+          </section>
+
+          <section class="view-section" data-view="channels">
+            <div class="view-head">
+              <div>
+                <h2>Canales de adquisición</h2>
+                <p>Analiza Instagram, Facebook, Google, WhatsApp, Web y otros canales separados de las campañas. Una venta puede tener campaña atribuida y canal de llegada al mismo tiempo.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="refreshAcquisitionChannelsButton" type="button">Actualizar canales</button>
+              </div>
+            </div>
+
+            <section class="kpi-grid sales-kpis" id="acquisitionChannelKpiGrid"></section>
+
+            <section class="channel-command-strip">
+              <article class="surface-card channel-command-card">
+                <div>
+                  <span class="mono-label">Cómo se usa</span>
+                  <h3>Canales como centros de inversión</h3>
+                  <p>Crea cada canal por separado, carga cuánto inviertes en el periodo y registra cada venta con su canal de llegada. El portal calcula leads, ventas, revenue, CAC, ROI y cruce con campañas.</p>
+                </div>
+                <div class="channel-quick-create" id="acquisitionChannelQuickCreate">
+                  <button type="button" data-channel-template="Instagram|SOCIAL|Instagram|Meta Ads">Instagram</button>
+                  <button type="button" data-channel-template="Facebook|SOCIAL|Facebook|Meta Ads">Facebook</button>
+                  <button type="button" data-channel-template="Google|SEARCH|Google|Google Ads">Google</button>
+                  <button type="button" data-channel-template="WhatsApp|MESSAGING|WhatsApp|WhatsApp Business">WhatsApp</button>
+                  <button type="button" data-channel-template="Web|WEB|Sitio web|Orgánico / pauta">Web</button>
+                </div>
+              </article>
+              <article class="surface-card channel-detail-card" id="acquisitionChannelDetailPanel"></article>
+            </section>
+
+            <section class="channel-effort-layout">
+              <article class="surface-card channel-effort-form-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Esfuerzos del canal</span>
+                    <h3 id="channelEffortFormTitle">Registrar publicación, pauta o acción</h3>
+                  </div>
+                  <button class="ghost-button" id="channelEffortCancelButton" type="button">Limpiar</button>
+                </div>
+                <p class="chart-explainer">Registra piezas concretas del canal: publicación de Instagram, pauta de Google, campaña de WhatsApp, landing, historia, reel, evento o esfuerzo orgánico. El portal cruza fechas, canal, campaña opcional, inversión, leads, compras, recompra y referidos.</p>
+                <form class="modal-form channel-effort-form" id="channelEffortForm">
+                  <input id="channelEffortIdInput" type="hidden">
+                  <label><span>Canal</span><select id="channelEffortChannelInput" required></select></label>
+                  <label><span>Campaña asociada</span><select id="channelEffortCampaignInput"><option value="">Sin campaña</option></select></label>
+                  <label class="span-2"><span>Título del esfuerzo</span><input id="channelEffortTitleInput" type="text" maxlength="180" required placeholder="Post Instagram colección premium julio"></label>
+                  <label><span>Tipo de pieza</span>
+                    <select id="channelEffortTypeInput">
+                      <option value="POST">Post</option>
+                      <option value="REEL">Reel</option>
+                      <option value="STORY">Historia</option>
+                      <option value="AD">Anuncio / pauta</option>
+                      <option value="WHATSAPP">WhatsApp</option>
+                      <option value="WEB">Web</option>
+                      <option value="LANDING">Landing</option>
+                      <option value="EVENT">Evento</option>
+                      <option value="INFLUENCER">Influencer</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </label>
+                  <label><span>Objetivo</span><input id="channelEffortObjectiveInput" type="text" maxlength="500" placeholder="Captar leads, vender, recomprar, referidos..."></label>
+                  <label><span>Fecha publicación</span><input id="channelEffortPublishedInput" type="date"></label>
+                  <label><span>Desde</span><input id="channelEffortStartsInput" type="date"></label>
+                  <label><span>Hasta</span><input id="channelEffortEndsInput" type="date"></label>
+                  <label><span>Inversión COP</span><input id="channelEffortBudgetInput" type="number" min="0" step="100" value="0"></label>
+                  <label><span>URL imagen / creativa</span><input id="channelEffortCreativeInput" type="url" maxlength="800" placeholder="https://..."></label>
+                  <label><span>URL publicación</span><input id="channelEffortSourceInput" type="url" maxlength="800" placeholder="https://instagram.com/..."></label>
+                  <label><span>Estado</span>
+                    <select id="channelEffortStatusInput">
+                      <option value="ACTIVE">Activo</option>
+                      <option value="DRAFT">Borrador</option>
+                      <option value="PAUSED">Pausado</option>
+                      <option value="FINISHED">Finalizado</option>
+                    </select>
+                  </label>
+                  <label class="span-2"><span>Descripción / esfuerzo realizado</span><textarea id="channelEffortDescriptionInput" rows="3" maxlength="1200" placeholder="Qué se publicó, qué imagen se usó, qué copy, qué oferta, qué segmento y qué se espera medir."></textarea></label>
+                  <label class="span-2"><span>Notas de análisis</span><textarea id="channelEffortNotesInput" rows="2" maxlength="1600" placeholder="Ej: se compartió en historias 3 días, se impulsó con $150.000 y se enlazó a WhatsApp."></textarea></label>
+                  <p class="form-message span-2" id="channelEffortMessage"></p>
+                  <button class="solid-button" id="channelEffortSaveButton" type="submit">Guardar esfuerzo del canal</button>
+                </form>
+              </article>
+
+              <article class="surface-card data-table-card channel-effort-results-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Publicaciones y esfuerzos</span>
+                    <h3>ROI por pieza dentro del canal</h3>
+                  </div>
+                  <span class="status-chip ok" id="channelEffortTotalsChip">0 esfuerzos</span>
+                </div>
+                <p class="chart-explainer">Cada fila muestra qué produjo una acción concreta del canal durante su rango de fechas: leads, ventas, recompra, referidos, revenue y ROI.</p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Esfuerzo</th>
+                        <th>Canal</th>
+                        <th>Campaña</th>
+                        <th>Fechas</th>
+                        <th>Inversión</th>
+                        <th>Leads</th>
+                        <th>Ventas</th>
+                        <th>Recompra</th>
+                        <th>Referidos</th>
+                        <th>Revenue</th>
+                        <th>ROI</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="channelEffortTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+
+            <section class="channel-analytics-layout">
+              <article class="surface-card channel-form-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">Directorio independiente</span>
+                    <h3 id="acquisitionChannelFormTitle">Crear canal</h3>
+                  </div>
+                  <button class="ghost-button" id="acquisitionChannelCancelButton" type="button">Limpiar</button>
+                </div>
+                <p class="chart-explainer">Crea canales separados de campañas para asignar inversión, controlar origen y medir ROI por Instagram, Facebook, Google, WhatsApp, Web u otros medios.</p>
+                <form class="modal-form channel-form" id="acquisitionChannelForm">
+                  <input id="acquisitionChannelIdInput" type="hidden">
+                  <label><span>Nombre del canal</span><input id="acquisitionChannelNameInput" type="text" maxlength="120" placeholder="Instagram Ads" required></label>
+                  <label><span>Tipo</span>
+                    <select id="acquisitionChannelTypeInput">
+                      <option value="DIGITAL">Digital</option>
+                      <option value="SOCIAL">Red social</option>
+                      <option value="MESSAGING">Mensajería</option>
+                      <option value="SEARCH">Buscador</option>
+                      <option value="WEB">Web</option>
+                      <option value="PHYSICAL">Físico / tienda</option>
+                      <option value="REFERRAL">Referidos</option>
+                      <option value="MARKETPLACE">Marketplace</option>
+                      <option value="DIRECT">Directo</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </label>
+                  <label><span>Plataforma</span><input id="acquisitionChannelPlatformInput" type="text" maxlength="120" placeholder="Instagram, Facebook, Google, WhatsApp"></label>
+                  <label><span>Inversión del periodo</span><input id="acquisitionChannelBudgetInput" type="number" min="0" step="100" value="0"></label>
+                  <label><span>Moneda</span><input id="acquisitionChannelCurrencyInput" type="text" maxlength="8" value="COP"></label>
+                  <label><span>Estado</span>
+                    <select id="acquisitionChannelStatusInput">
+                      <option value="ACTIVE">Activo</option>
+                      <option value="PAUSED">Pausado</option>
+                      <option value="TESTING">En prueba</option>
+                      <option value="ARCHIVED">Archivado</option>
+                    </select>
+                  </label>
+                  <label class="span-2"><span>Notas</span><textarea id="acquisitionChannelNotesInput" rows="3" placeholder="Ej: pauta de Meta para recompra, campaña always-on, canal orgánico, alianza o tráfico de vitrina."></textarea></label>
+                  <p class="form-message span-2" id="acquisitionChannelMessage"></p>
+                  <button class="solid-button" id="acquisitionChannelSaveButton" type="submit">Guardar canal</button>
+                </form>
+              </article>
+
+              <article class="surface-card data-table-card">
+                <div class="table-card-head">
+                  <div>
+                    <span class="mono-label">ROI por canal</span>
+                    <h3>Canales creados y detectados</h3>
+                  </div>
+                  <span class="status-chip ok">Independiente de campañas</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Canal</th>
+                        <th>Tipo</th>
+                        <th>Inversión</th>
+                        <th>Leads</th>
+                        <th>Ventas</th>
+                        <th>Revenue</th>
+                        <th>Ganancia neta</th>
+                        <th>CAC</th>
+                        <th>ROI</th>
+                        <th>Mejor campaña</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="acquisitionChannelTable"></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+
+            <section class="surface-card channel-matrix-card">
+              <div class="table-card-head">
+                <div>
+                  <span class="mono-label">Campaña x canal</span>
+                  <h3>ROI cruzado para decidir inversión</h3>
+                </div>
+                <span class="status-chip pending">Lectura ejecutiva</span>
+              </div>
+              <p class="chart-explainer">Úsalo para responder: qué canal trae revenue, qué campaña lo convierte y dónde conviene subir o bajar inversión.</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Canal</th>
+                      <th>Campaña</th>
+                      <th>Ventas</th>
+                      <th>Revenue</th>
+                      <th>Ganancia neta</th>
+                      <th>Inversión canal asignada</th>
+                      <th>ROI canal</th>
+                      <th>Inversión campaña</th>
+                      <th>ROI campaña</th>
+                    </tr>
+                  </thead>
+                  <tbody id="acquisitionChannelMatrixTable"></tbody>
+                </table>
+              </div>
+            </section>
           </section>
 
           <section class="view-section" data-view="inventory">
@@ -4587,8 +5377,8 @@
             <div class="view-head">
               <div>
                 <span class="mono-label">Sistema de afiliados</span>
-                <h2>Crear afiliado</h2>
-                <p>Genera un carnet con nombre de empresa, slogan opcional, contacto, ticket propio y puntos acumulables: 1 punto por cada COP 1.000.</p>
+                <h2>Afiliados y referidos</h2>
+                <p>Opera afiliados como canal de revenue: crea carnet, busca por QR, registra compras por monto, suma puntos, entrega premios y genera tickets de referido.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
@@ -4617,6 +5407,37 @@
                 <p id="affiliateStatTopAffiliate">Sin compras aún</p>
               </article>
             </section>
+
+            <section class="affiliate-command-strip">
+              <article class="surface-card affiliate-command-card">
+                <div>
+                  <span class="mono-label">Operación diaria</span>
+                  <h3>Flujo simple para afiliados</h3>
+                  <p>Busca o crea un afiliado, registra el monto de la compra, suma puntos y usa su carnet o tickets de referido para traer más clientes.</p>
+                </div>
+                <ol class="affiliate-flow-steps" id="affiliateOperationChecklist">
+                  <li><span>1</span><strong>Seleccionar afiliado</strong><small>Buscar por nombre, documento o QR.</small></li>
+                  <li><span>2</span><strong>Registrar compra</strong><small>Monto total COP, productos opcionales.</small></li>
+                  <li><span>3</span><strong>Activar crecimiento</strong><small>Carnet, puntos, premios o tickets de referido.</small></li>
+                </ol>
+              </article>
+              <article class="surface-card affiliate-next-action-card">
+                <span class="mono-label">Siguiente acción</span>
+                <h3 id="affiliateQuickNextAction">Crea o selecciona un afiliado</h3>
+                <p id="affiliateQuickNextActionCopy">Cuando selecciones un afiliado, aquí verás qué hacer: registrar compra, entregar premio, copiar carnet o generar tickets de referido.</p>
+              </article>
+              <article class="surface-card affiliate-ranking-card">
+                <div class="table-card-head compact">
+                  <div>
+                    <span class="mono-label">Ranking</span>
+                    <strong>Top afiliados por revenue</strong>
+                  </div>
+                </div>
+                <div class="affiliate-top-list" id="affiliateTopRankingList"></div>
+              </article>
+            </section>
+
+            <section class="commerce-operation-feed affiliate-operation-feed" id="affiliateOperationFeed" aria-live="polite"></section>
 
             <article class="surface-card affiliate-finder-panel">
               <div class="table-card-head">
@@ -4694,7 +5515,7 @@
                   <div class="modal-actions span-2">
                     <p class="error-line" id="affiliateCreateMessage"></p>
                     <div class="modal-button-row">
-                      <button class="solid-button" type="submit">Crear afiliado y ticket</button>
+                      <button class="solid-button" type="submit">Crear afiliado y carnet</button>
                       <button class="ghost-button" type="button" id="resetAffiliateFormButton">Limpiar</button>
                     </div>
                   </div>
@@ -4717,6 +5538,12 @@
                   <label>
                     <span>Campaña de la compra</span>
                     <select id="affiliatePurchaseCampaignInput"></select>
+                    <small>Opcional. Úsala si quieres atribuir esta venta a una campaña.</small>
+                  </label>
+                  <label>
+                    <span>Monto total de la compra COP</span>
+                    <input id="affiliatePurchaseAmountInput" type="text" inputmode="numeric" placeholder="Ej: 120.000">
+                    <small>Es suficiente para registrar la venta y sumar puntos al afiliado.</small>
                   </label>
                   <label>
                     <span>Monto total de la compra COP</span>
@@ -4734,7 +5561,10 @@
                   </label>
                   <div class="affiliate-purchase-builder span-3">
                     <div class="affiliate-purchase-builder-head">
-                      <strong>Productos comprados</strong>
+                      <div>
+                        <strong>Productos comprados</strong>
+                        <small>Opcional. Si escribes un producto nuevo, queda registrado en Productos automáticamente.</small>
+                      </div>
                       <button class="ghost-button" id="affiliatePurchaseAddItemButton" type="button">Agregar producto</button>
                     </div>
                     <div class="affiliate-purchase-items" id="affiliatePurchaseItemsList"></div>
@@ -4933,10 +5763,95 @@
         <div class="feature-upgrade-plan" id="featureUpgradePlanBox"></div>
         <div class="modal-button-row feature-upgrade-actions">
           <button class="ghost-button" id="featureUpgradeSecondaryButton" type="button">Seguir en el portal</button>
-          <a class="solid-button" id="featureUpgradePrimaryLink" href="/paquetes/" target="_blank" rel="noopener">Ver plan</a>
+          <a class="solid-button" id="featureUpgradePrimaryLink" href="#accountPortalPlansCard">Ver planes en Cuenta</a>
         </div>
       </div>
     </article>
+  </div>
+
+  <div class="modal-shell hidden" id="revenueActionWizardModal" role="dialog" aria-modal="true" aria-labelledby="revenueActionWizardTitle">
+    <div class="modal-card revenue-action-wizard-card">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label">Centro de Revenue</span>
+          <h3 id="revenueActionWizardTitle">Crear acción de revenue</h3>
+          <p>Define objetivo, herramienta, segmento, cobertura y la tarea que debe ejecutar la agenda.</p>
+        </div>
+        <button class="icon-button" id="revenueActionWizardCloseButton" type="button" aria-label="Cerrar acción de revenue">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="modal-form revenue-action-form" id="revenueActionWizardForm">
+        <label>
+          <span>1. ¿Qué quieres lograr?</span>
+          <select id="revenueActionObjectiveInput">
+            <option value="capture">Capturar nuevos clientes</option>
+            <option value="store_activation">Activar campaña en tienda</option>
+            <option value="recover">Reactivar clientes dormidos</option>
+            <option value="rebuy">Aumentar recompra</option>
+            <option value="gamify">Crear dinámica gamificada</option>
+            <option value="referrals">Generar referidos</option>
+            <option value="measure">Medir campaña</option>
+            <option value="validate">Validar tickets</option>
+            <option value="sales">Registrar ventas</option>
+          </select>
+        </label>
+        <label>
+          <span>2. Herramienta principal</span>
+          <select id="revenueActionToolInput"></select>
+        </label>
+        <label>
+          <span>3. Cliente o segmento</span>
+          <select id="revenueActionSegmentInput">
+            <option value="new_visitors">Nuevos visitantes</option>
+            <option value="existing_contacts">Contactos existentes</option>
+            <option value="old_customers">Clientes antiguos</option>
+            <option value="expired_tickets">Clientes con tickets vencidos</option>
+            <option value="buyers">Clientes que compraron</option>
+            <option value="no_follow_up">Clientes sin seguimiento</option>
+            <option value="referral_candidates">Referidos potenciales</option>
+          </select>
+        </label>
+        <label>
+          <span>4. Cobertura gamificada</span>
+          <select id="revenueActionCoverageInput">
+            <option value="ticket">Ticket</option>
+            <option value="points">Puntos MG</option>
+            <option value="ranking">Ranking</option>
+            <option value="streak">Racha</option>
+            <option value="weekly_trivia">Trivia semanal</option>
+            <option value="reward_pass">Reward Pass</option>
+            <option value="limited_benefit">Beneficio por tiempo limitado</option>
+            <option value="redemption_reward">Recompensa por redención</option>
+            <option value="rebuy_mission">Misión de recompra</option>
+            <option value="agenda_reminder">Recordatorio por agenda</option>
+          </select>
+        </label>
+        <label>
+          <span>5. Tarea para agenda</span>
+          <select id="revenueActionTaskInput">
+            <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
+            <option value="Llamar">Llamar</option>
+            <option value="Revisar redención">Revisar redención</option>
+            <option value="Enviar catálogo">Enviar catálogo</option>
+            <option value="Recordar ticket">Recordar ticket</option>
+            <option value="Pedir referido">Pedir referido</option>
+            <option value="Activar recompra">Activar recompra</option>
+            <option value="Registrar venta">Registrar venta</option>
+          </select>
+        </label>
+        <label>
+          <span>Fecha de seguimiento</span>
+          <input id="revenueActionDueInput" type="datetime-local">
+        </label>
+        <article class="revenue-action-summary span-2" id="revenueActionSummary"></article>
+        <p class="inline-message span-2" id="revenueActionWizardMessage"></p>
+        <div class="modal-actions span-2">
+          <button class="ghost-button" id="revenueActionWizardCancelButton" type="button">Cancelar</button>
+          <button class="solid-button" type="submit">Activar acción de revenue</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="modal-shell hidden" id="campaignModal" role="dialog" aria-modal="true" aria-labelledby="campaignModalTitle">
@@ -5180,7 +6095,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=channel-roi-20260710-v1" defer></script>
+  <script src="js/app.js?v=agenda-menu-fix-20260711-v1" defer></script>
 </body>
 </html>
 

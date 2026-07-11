@@ -32,6 +32,14 @@ function number(value) {
   return Number(value || 0);
 }
 
+function channelKey(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
 function cacheKeyFor(businessId, filters) {
   return JSON.stringify({ businessId, filters });
 }
@@ -322,6 +330,14 @@ async function getOptions(businessId) {
     query(
       `select distinct value as channel
        from (
+         select name as value
+         from business_acquisition_channels
+         where business_id = $1 and status <> 'ARCHIVED'
+         union
+         select platform as value
+         from business_acquisition_channels
+         where business_id = $1 and status <> 'ARCHIVED'
+         union
          select coalesce(nullif(acquisition_channel, ''), acquisition_source) as value
          from business_sales
          where business_id = $1
@@ -369,6 +385,7 @@ async function getSeriesAndCharts(businessId, filters) {
   const [
     timeline,
     channelRows,
+    channelDirectory,
     heatmap,
     campaigns,
     matrix,
@@ -469,6 +486,13 @@ async function getSeriesAndCharts(businessId, filters) {
        order by revenue desc, sales desc
        limit 12`,
       salesParams
+    ),
+    query(
+      `select name, platform, slug, period_budget, currency, status
+       from business_acquisition_channels
+       where business_id = $1 and status <> 'ARCHIVED'
+       order by updated_at desc, name asc`,
+      [businessId]
     ),
     query(
       `select extract(dow from rd.redeemed_at)::int as dow,

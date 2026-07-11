@@ -40,6 +40,14 @@ const {
   createCompetitorProduct,
   updateCompetitorProduct,
   archiveCompetitorProduct,
+  listAcquisitionChannels,
+  createAcquisitionChannel,
+  updateAcquisitionChannel,
+  archiveAcquisitionChannel,
+  listAcquisitionChannelEfforts,
+  createAcquisitionChannelEffort,
+  updateAcquisitionChannelEffort,
+  archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
@@ -89,6 +97,21 @@ const {
   journeys: rmsJourneys,
   metrics: rmsMetrics,
 } = require("../controllers/rmsMachineController");
+const {
+  activate: activateGamificationSeason,
+  agendaTasks: createGamificationAgendaTasks,
+  award: awardGamificationPoints,
+  close: closeGamificationSeason,
+  create: createGamificationSeason,
+  deliver: deliverGamificationReward,
+  detail: gamificationSeasonDetail,
+  getDashboard: gamificationDashboard,
+  leaderboard: gamificationLeaderboard,
+  patch: updateGamificationSeason,
+  pause: pauseGamificationSeason,
+  rewardsPending: gamificationRewardsPending,
+  seasons: gamificationSeasons,
+} = require("../controllers/gamificationMissionController");
 
 const router = express.Router();
 
@@ -120,6 +143,19 @@ router.get("/rms-machine/daily-queue", rmsDailyQueue);
 router.get("/rms-machine/journeys", rmsJourneys);
 router.get("/rms-machine/metrics", rmsMetrics);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
+router.get("/gamification/dashboard", gamificationDashboard);
+router.get("/gamification/seasons", gamificationSeasons);
+router.post("/gamification/seasons", createGamificationSeason);
+router.get("/gamification/seasons/:id", gamificationSeasonDetail);
+router.patch("/gamification/seasons/:id", updateGamificationSeason);
+router.post("/gamification/seasons/:id/activate", activateGamificationSeason);
+router.post("/gamification/seasons/:id/pause", pauseGamificationSeason);
+router.post("/gamification/seasons/:id/close", closeGamificationSeason);
+router.post("/gamification/points/award", awardGamificationPoints);
+router.get("/gamification/leaderboards/:seasonId", gamificationLeaderboard);
+router.get("/gamification/rewards/pending", gamificationRewardsPending);
+router.post("/gamification/rewards/:id/deliver", deliverGamificationReward);
+router.post("/gamification/agenda/create-tasks", createGamificationAgendaTasks);
 router.get("/leads/:leadId", leadDetail);
 router.delete("/leads/:leadId", deleteContact);
 router.post("/leads/:leadId/notes", createNote);
@@ -159,6 +195,14 @@ router.get("/competitor-products", listCompetitorProducts);
 router.post("/competitor-products", createCompetitorProduct);
 router.patch("/competitor-products/:productId", updateCompetitorProduct);
 router.delete("/competitor-products/:productId", archiveCompetitorProduct);
+router.get("/channels", listAcquisitionChannels);
+router.post("/channels", createAcquisitionChannel);
+router.get("/channel-efforts", listAcquisitionChannelEfforts);
+router.post("/channel-efforts", createAcquisitionChannelEffort);
+router.patch("/channel-efforts/:effortId", updateAcquisitionChannelEffort);
+router.delete("/channel-efforts/:effortId", archiveAcquisitionChannelEffort);
+router.patch("/channels/:channelId", updateAcquisitionChannel);
+router.delete("/channels/:channelId", archiveAcquisitionChannel);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/inventory/products", listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);

@@ -191,6 +191,21 @@ const inventoryProductSchema = z.object({
 
 const inventoryProductPatchSchema = inventoryProductSchema.partial();
 
+const acquisitionChannelSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  slug: slugSchema.optional(),
+  channel_type: z.enum(["DIGITAL", "SOCIAL", "MESSAGING", "SEARCH", "WEB", "PHYSICAL", "REFERRAL", "AFFILIATE", "MARKETPLACE", "DIRECT", "OTHER"]).default("DIGITAL"),
+  platform: z.string().trim().max(120).optional().nullable(),
+  status: z.enum(["ACTIVE", "PAUSED", "TESTING", "ARCHIVED"]).default("ACTIVE"),
+  period_budget: z.number().min(0).default(0),
+  currency: z.string().trim().max(12).default("COP"),
+  cost_model: z.string().trim().max(80).optional().nullable(),
+  notes: z.string().trim().max(1500).optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const acquisitionChannelPatchSchema = acquisitionChannelSchema.partial();
+
 const nullableText = (max) => z.preprocess(
   (value) => {
     const text = String(value ?? "").trim();
@@ -198,6 +213,37 @@ const nullableText = (max) => z.preprocess(
   },
   z.string().max(max).nullable()
 );
+
+const nullableDateTime = z.preprocess(
+  (value) => {
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString();
+  },
+  z.string().datetime().nullable()
+);
+
+const acquisitionChannelEffortSchema = z.object({
+  channel_id: z.string().uuid(),
+  campaign_id: z.string().uuid().optional().nullable(),
+  title: z.string().trim().min(2).max(180),
+  description: nullableText(1200).optional(),
+  objective: nullableText(500).optional(),
+  content_type: z.enum(["POST", "REEL", "STORY", "AD", "CAMPAIGN", "WHATSAPP", "EMAIL", "WEB", "LANDING", "EVENT", "INFLUENCER", "OTHER"]).default("POST"),
+  status: z.enum(["DRAFT", "ACTIVE", "PAUSED", "FINISHED", "ARCHIVED"]).default("ACTIVE"),
+  published_at: nullableDateTime.optional().nullable(),
+  starts_at: nullableDateTime.optional().nullable(),
+  ends_at: nullableDateTime.optional().nullable(),
+  budget_amount: z.number().min(0).default(0),
+  currency: z.string().trim().max(12).default("COP"),
+  creative_url: nullableText(800).optional(),
+  source_url: nullableText(800).optional(),
+  notes: nullableText(1600).optional(),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
+});
+
+const acquisitionChannelEffortPatchSchema = acquisitionChannelEffortSchema.partial();
 
 const branchSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -220,16 +266,6 @@ const branchPatchSchema = z.object({
   notes: nullableText(1000).optional(),
   is_active: z.boolean().optional(),
 });
-
-const nullableDateTime = z.preprocess(
-  (value) => {
-    const text = String(value ?? "").trim();
-    if (!text) return null;
-    const parsed = new Date(text);
-    return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString();
-  },
-  z.string().datetime().nullable()
-);
 
 const competitorProductSchema = z.object({
   competitor_id: z.string().uuid().optional().nullable(),
@@ -2390,14 +2426,996 @@ async function createCustomerAcquisitionSale(req, res, next) {
   }
 }
 
-function saleInventoryItems(products) {
+function channelDateRange(queryParams = {}) {
+  const end = queryParams.end_date ? new Date(queryParams.end_date) : new Date();
+  if (Number.isNaN(end.getTime())) throw badRequest("Fecha final inválida.");
+  end.setHours(23, 59, 59, 999);
+  const start = queryParams.start_date ? new Date(queryParams.start_date) : new Date(end);
+  if (!queryParams.start_date) start.setDate(start.getDate() - 29);
+  if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial inválida.");
+  start.setHours(0, 0, 0, 0);
+  return { start, end };
+}
+
+function channelSlug(value = "") {
+  return slugify(value).replace(/-/g, "");
+}
+
+function channelMatchKeys(row = {}) {
+  return Array.from(new Set([
+    channelSlug(row.slug || ""),
+    channelSlug(row.name || ""),
+    channelSlug(row.platform || ""),
+  ].filter(Boolean)));
+}
+
+function normalizeChannelRow(row = {}) {
+  return {
+    ...row,
+    period_budget: Number(row.period_budget || 0),
+  };
+}
+
+function emptyChannelMetrics() {
+  return {
+    leads: 0,
+    qr_generated: 0,
+    redemptions: 0,
+    sales: 0,
+    revenue: 0,
+  };
+}
+
+function channelEfficiencyLabel(metrics = {}) {
+  const roi = metrics.roi;
+  if (roi === null || roi === undefined) return "Sin inversión cargada";
+  if (Number(roi) >= 1) return "Escalar";
+  if (Number(roi) >= 0) return "Sano";
+  if (Number(metrics.revenue || 0) > 0) return "Optimizar costo";
+  return "Sin retorno visible";
+}
+
+function decorateChannel(row = {}, metrics = emptyChannelMetrics(), breakdown = []) {
+  const investment = Number(row.period_budget || 0);
+  const revenue = Number(metrics.revenue || 0);
+  const sales = Number(metrics.sales || 0);
+  const leads = Number(metrics.leads || 0);
+  const redemptions = Number(metrics.redemptions || 0);
+  const qrGenerated = Number(metrics.qr_generated || 0);
+  return {
+    ...normalizeChannelRow(row),
+    metrics: {
+      leads,
+      qr_generated: qrGenerated,
+      redemptions,
+      sales,
+      revenue,
+      investment,
+      roi: safeRoi(revenue, investment),
+      cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+      conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
+      redemption_rate: qrGenerated > 0 ? Number(((redemptions / qrGenerated) * 100).toFixed(1)) : 0,
+      efficiency_label: channelEfficiencyLabel({ revenue, sales, leads, roi: safeRoi(revenue, investment) }),
+    },
+    campaign_breakdown: breakdown,
+  };
+}
+
+async function channelCampaignBreakdownRows(businessId, filters = {}) {
+  const { start, end } = filters;
+  const campaignId = filters.campaign_id || null;
+  const result = await query(
+    `with sales_by_campaign_channel as (
+       select
+         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
+         bs.campaign_id,
+         coalesce(c.name, 'Sin campana') as campaign_name,
+         count(*)::int as sales,
+         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
+       from business_sales bs
+       left join campaigns c on c.id = bs.campaign_id and c.business_id = bs.business_id
+       where bs.business_id = $1
+         and bs.created_at >= $2::timestamptz
+         and bs.created_at <= $3::timestamptz
+         and ($4::uuid is null or bs.campaign_id = $4::uuid)
+       group by channel, bs.campaign_id, c.name
+     ),
+     campaign_budget as (
+       select id, coalesce(budget_total, 0)::numeric(14, 2) as campaign_investment
+       from campaigns
+       where business_id = $1
+     )
+     select s.channel,
+            s.campaign_id,
+            s.campaign_name,
+            s.sales,
+            s.revenue,
+            coalesce(cb.campaign_investment, 0)::numeric(14, 2) as campaign_investment
+     from sales_by_campaign_channel s
+     left join campaign_budget cb on cb.id = s.campaign_id
+     order by s.revenue desc, s.sales desc, s.campaign_name asc`,
+    [businessId, start.toISOString(), end.toISOString(), campaignId]
+  );
+  return result.rows;
+}
+
+async function channelActivityRows(businessId, filters = {}) {
+  const { start, end } = filters;
+  const campaignId = filters.campaign_id || null;
+  const result = await query(
+    `with activity as (
+       select
+         coalesce(
+           nullif(qn.answers->>'preferred_channel', ''),
+           nullif(qn.answers->>'source', ''),
+           nullif(p.metadata->>'preferred_channel', ''),
+           nullif(p.metadata->>'source', ''),
+           'Sin canal'
+         ) as channel,
+         count(distinct p.id)::int as leads,
+         0::int as qr_generated,
+         0::int as redemptions,
+         0::int as sales,
+         0::numeric(14, 2) as revenue
+       from players p
+       left join lateral (
+         select answers
+         from questionnaires
+         where player_id = p.id and business_id = p.business_id
+         order by created_at desc
+         limit 1
+       ) qn on true
+       where p.business_id = $1
+         and p.created_at >= $2::timestamptz
+         and p.created_at <= $3::timestamptz
+         and ($4::uuid is null or p.campaign_id = $4::uuid)
+       group by channel
+
+       union all
+
+       select
+         coalesce(nullif(ml.preferred_channel, ''), nullif(ml.source, ''), 'Manual') as channel,
+         count(distinct ml.id)::int as leads,
+         0::int as qr_generated,
+         0::int as redemptions,
+         0::int as sales,
+         0::numeric(14, 2) as revenue
+       from business_manual_leads ml
+       where ml.business_id = $1
+         and ml.created_at >= $2::timestamptz
+         and ml.created_at <= $3::timestamptz
+         and $4::uuid is null
+       group by channel
+
+       union all
+
+       select
+         coalesce(nullif(qb.channel_use, ''), nullif(q.metadata->>'channel_use', ''), nullif(q.metadata->>'channel', ''), nullif(q.metadata->>'source', ''), 'QR fisico / impreso') as channel,
+         0::int as leads,
+         count(distinct q.id)::int as qr_generated,
+         0::int as redemptions,
+         0::int as sales,
+         0::numeric(14, 2) as revenue
+       from qr_codes q
+       left join qr_batches qb on qb.id = q.batch_id and qb.business_id = q.business_id
+       where q.business_id = $1
+         and q.created_at >= $2::timestamptz
+         and q.created_at <= $3::timestamptz
+         and ($4::uuid is null or q.campaign_id = $4::uuid)
+       group by channel
+
+       union all
+
+       select
+         coalesce(nullif(qb.channel_use, ''), nullif(q.metadata->>'channel_use', ''), nullif(q.metadata->>'channel', ''), nullif(q.metadata->>'source', ''), 'QR redimido') as channel,
+         0::int as leads,
+         0::int as qr_generated,
+         count(distinct rd.id)::int as redemptions,
+         0::int as sales,
+         0::numeric(14, 2) as revenue
+       from redemptions rd
+       left join qr_codes q on q.id = rd.qr_code_id
+       left join qr_batches qb on qb.id = q.batch_id and qb.business_id = q.business_id
+       where rd.business_id = $1
+         and rd.redeemed_at >= $2::timestamptz
+         and rd.redeemed_at <= $3::timestamptz
+         and ($4::uuid is null or rd.campaign_id = $4::uuid)
+       group by channel
+
+       union all
+
+       select
+         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
+         0::int as leads,
+         0::int as qr_generated,
+         0::int as redemptions,
+         count(*)::int as sales,
+         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
+       from business_sales bs
+       where bs.business_id = $1
+         and bs.created_at >= $2::timestamptz
+         and bs.created_at <= $3::timestamptz
+         and ($4::uuid is null or bs.campaign_id = $4::uuid)
+       group by channel
+     )
+     select channel,
+            sum(leads)::int as leads,
+            sum(qr_generated)::int as qr_generated,
+            sum(redemptions)::int as redemptions,
+            sum(sales)::int as sales,
+            coalesce(sum(revenue), 0)::numeric(14, 2) as revenue
+     from activity
+     where nullif(channel, '') is not null
+     group by channel
+     order by revenue desc, sales desc, leads desc, channel asc`,
+    [businessId, start.toISOString(), end.toISOString(), campaignId]
+  );
+  return result.rows;
+}
+
+async function listAcquisitionChannels(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const { start, end } = channelDateRange(req.query);
+    const campaignId = req.query.campaign_id || null;
+    const [channelsResult, activityRows, campaignBreakdownRows] = await Promise.all([
+      query(
+        `select *
+         from business_acquisition_channels
+         where business_id = $1
+           and ($2::boolean = true or status <> 'ARCHIVED')
+         order by status asc, updated_at desc, name asc`,
+        [businessId, ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase())]
+      ),
+      channelActivityRows(businessId, { start, end, campaign_id: campaignId }),
+      channelCampaignBreakdownRows(businessId, { start, end, campaign_id: campaignId }),
+    ]);
+
+    const metricsBySlug = new Map();
+    activityRows.forEach((row) => {
+      const slug = channelSlug(row.channel);
+      if (!slug) return;
+      const current = metricsBySlug.get(slug) || emptyChannelMetrics();
+      metricsBySlug.set(slug, {
+        leads: current.leads + Number(row.leads || 0),
+        qr_generated: current.qr_generated + Number(row.qr_generated || 0),
+        redemptions: current.redemptions + Number(row.redemptions || 0),
+        sales: current.sales + Number(row.sales || 0),
+        revenue: current.revenue + Number(row.revenue || 0),
+      });
+    });
+
+    const breakdownBySlug = new Map();
+    campaignBreakdownRows.forEach((row) => {
+      const slug = channelSlug(row.channel);
+      if (!slug) return;
+      const current = breakdownBySlug.get(slug) || [];
+      current.push({
+        campaign_id: row.campaign_id,
+        campaign_name: row.campaign_name || "Sin campana",
+        sales: Number(row.sales || 0),
+        revenue: Number(row.revenue || 0),
+        campaign_investment: Number(row.campaign_investment || 0),
+        campaign_roi: safeRoi(row.revenue, row.campaign_investment),
+      });
+      breakdownBySlug.set(slug, current);
+    });
+
+    const readMetricsForChannel = (row = {}) => {
+      for (const key of channelMatchKeys(row)) {
+        const match = metricsBySlug.get(key);
+        if (match) return { key, metrics: match };
+      }
+      return { key: channelMatchKeys(row)[0] || "", metrics: emptyChannelMetrics() };
+    };
+    const readBreakdownForChannel = (row = {}) => {
+      for (const key of channelMatchKeys(row)) {
+        const match = breakdownBySlug.get(key);
+        if (match) return { key, rows: match };
+      }
+      return { key: channelMatchKeys(row)[0] || "", rows: [] };
+    };
+    const decorateBreakdown = (rows = [], channelInvestment = 0, channelRevenue = 0, channelSales = 0) => rows
+      .map((row) => {
+        const revenueShare = channelRevenue > 0
+          ? Number(row.revenue || 0) / channelRevenue
+          : channelSales > 0
+            ? Number(row.sales || 0) / channelSales
+            : 0;
+        const allocatedChannelInvestment = Number((Number(channelInvestment || 0) * revenueShare).toFixed(2));
+        return {
+          ...row,
+          channel_investment_allocated: allocatedChannelInvestment,
+          channel_roi: safeRoi(row.revenue, allocatedChannelInvestment),
+        };
+      })
+      .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0));
+
+    const directory = channelsResult.rows.map((row) => {
+      const { metrics, key } = readMetricsForChannel(row);
+      const { rows: breakdownRows } = readBreakdownForChannel(row);
+      channelMatchKeys(row).forEach((matchKey) => {
+        metricsBySlug.delete(matchKey);
+        breakdownBySlug.delete(matchKey);
+      });
+      if (key) {
+        metricsBySlug.delete(key);
+        breakdownBySlug.delete(key);
+      }
+      const decoratedBreakdown = decorateBreakdown(
+        breakdownRows,
+        Number(row.period_budget || 0),
+        Number(metrics.revenue || 0),
+        Number(metrics.sales || 0)
+      );
+      return decorateChannel(row, metrics, decoratedBreakdown);
+    });
+
+    const inferred = activityRows
+      .filter((row) => metricsBySlug.has(channelSlug(row.channel)))
+      .map((row) => ({
+        ...decorateChannel({
+          id: null,
+          business_id: businessId,
+          name: row.channel,
+          slug: slugify(row.channel) || "sin-canal",
+          channel_type: "OTHER",
+          platform: row.channel,
+          status: "DETECTED",
+          period_budget: 0,
+          currency: "COP",
+          cost_model: null,
+          notes: "Canal detectado desde leads, tickets o ventas. Puedes crearlo para asignarle inversión y controlarlo.",
+          metadata: { inferred: true },
+        }, row, decorateBreakdown(
+          breakdownBySlug.get(channelSlug(row.channel)) || [],
+          0,
+          Number(row.revenue || 0),
+          Number(row.sales || 0)
+        )),
+      }));
+
+    const allRows = [...directory, ...inferred].sort((a, b) => (
+      Number(b.metrics?.revenue || 0) - Number(a.metrics?.revenue || 0)
+      || Number(b.metrics?.sales || 0) - Number(a.metrics?.sales || 0)
+      || String(a.name || "").localeCompare(String(b.name || ""))
+    ));
+    const totals = allRows.reduce((acc, row) => {
+      acc.leads += Number(row.metrics?.leads || 0);
+      acc.qr_generated += Number(row.metrics?.qr_generated || 0);
+      acc.redemptions += Number(row.metrics?.redemptions || 0);
+      acc.sales += Number(row.metrics?.sales || 0);
+      acc.revenue += Number(row.metrics?.revenue || 0);
+      acc.investment += Number(row.metrics?.investment || 0);
+      return acc;
+    }, { leads: 0, qr_generated: 0, redemptions: 0, sales: 0, revenue: 0, investment: 0 });
+
+    res.json({
+      channels: allRows,
+      directory_count: directory.length,
+      detected_count: inferred.length,
+      totals: {
+        ...totals,
+        roi: safeRoi(totals.revenue, totals.investment),
+        cac: totals.sales > 0 ? Number((totals.investment / totals.sales).toFixed(2)) : null,
+      },
+      campaign_channel_matrix: allRows.flatMap((channel) => (
+        channel.campaign_breakdown || []
+      ).map((row) => ({
+        channel_id: channel.id,
+        channel_name: channel.name,
+        campaign_id: row.campaign_id,
+        campaign_name: row.campaign_name,
+        sales: row.sales,
+        revenue: row.revenue,
+        channel_investment_allocated: row.channel_investment_allocated,
+        channel_roi: row.channel_roi,
+        campaign_investment: row.campaign_investment,
+        campaign_roi: row.campaign_roi,
+      }))),
+      filters: {
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+        campaign_id: campaignId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createAcquisitionChannel(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(acquisitionChannelSchema, req.body);
+    const slug = body.slug || slugify(body.name);
+    const result = await query(
+      `insert into business_acquisition_channels
+        (business_id, name, slug, channel_type, platform, status, period_budget, currency, cost_model, notes, metadata, created_by_user_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
+       returning *`,
+      [
+        businessId,
+        body.name,
+        slug,
+        body.channel_type,
+        body.platform || null,
+        body.status || "ACTIVE",
+        body.period_budget || 0,
+        body.currency || "COP",
+        body.cost_model || null,
+        body.notes || null,
+        JSON.stringify(body.metadata || {}),
+        req.user.id,
+      ]
+    );
+    res.status(201).json({ channel: normalizeChannelRow(result.rows[0]) });
+  } catch (error) {
+    if (error.code === "23505") {
+      next(badRequest("Ya existe un canal con ese nombre o slug para este negocio."));
+      return;
+    }
+    next(error);
+  }
+}
+
+async function updateAcquisitionChannel(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(acquisitionChannelPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_acquisition_channels where id = $1 and business_id = $2",
+      [req.params.channelId, businessId]
+    );
+    if (!existing.rowCount) throw notFound("Canal no encontrado.");
+    const merged = { ...existing.rows[0], ...body };
+    const slug = body.slug ? slugify(body.slug) : body.name ? slugify(body.name) : existing.rows[0].slug;
+    const result = await query(
+      `update business_acquisition_channels
+       set name = $3,
+           slug = $4,
+           channel_type = $5,
+           platform = $6,
+           status = $7,
+           period_budget = $8,
+           currency = $9,
+           cost_model = $10,
+           notes = $11,
+           metadata = $12::jsonb,
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [
+        req.params.channelId,
+        businessId,
+        merged.name,
+        slug,
+        merged.channel_type || "DIGITAL",
+        merged.platform || null,
+        merged.status || "ACTIVE",
+        Number(merged.period_budget || 0),
+        merged.currency || "COP",
+        merged.cost_model || null,
+        merged.notes || null,
+        JSON.stringify(merged.metadata || {}),
+      ]
+    );
+    res.json({ channel: normalizeChannelRow(result.rows[0]) });
+  } catch (error) {
+    if (error.code === "23505") {
+      next(badRequest("Ya existe un canal con ese nombre o slug para este negocio."));
+      return;
+    }
+    next(error);
+  }
+}
+
+async function archiveAcquisitionChannel(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `update business_acquisition_channels
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.channelId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Canal no encontrado.");
+    res.json({ channel: normalizeChannelRow(result.rows[0]), archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function normalizeChannelEffortRow(row = {}) {
+  return {
+    ...row,
+    budget_amount: Number(row.budget_amount || 0),
+    metrics: row.metrics || {
+      leads: 0,
+      qr_generated: 0,
+      redemptions: 0,
+      sales: 0,
+      revenue: 0,
+      investment: Number(row.budget_amount || 0),
+      net_revenue: -Number(row.budget_amount || 0),
+      roi: safeRoi(0, row.budget_amount),
+      conversion_rate: 0,
+      rebuy_sales: 0,
+      referral_sales: 0,
+      unique_customers: 0,
+    },
+  };
+}
+
+function channelEffortDateRange(row = {}) {
+  const start = new Date(row.starts_at || row.published_at || row.created_at || Date.now());
+  const end = row.ends_at ? new Date(row.ends_at) : new Date();
+  if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial del esfuerzo invÃ¡lida.");
+  if (Number.isNaN(end.getTime())) throw badRequest("Fecha final del esfuerzo invÃ¡lida.");
+  if (end < start) {
+    const sameDayEnd = new Date(start);
+    sameDayEnd.setHours(23, 59, 59, 999);
+    return { start, end: sameDayEnd };
+  }
+  return { start, end };
+}
+
+function channelEffortSearchTerms(row = {}) {
+  return Array.from(new Set([
+    row.channel_name,
+    row.channel_slug,
+    row.channel_platform,
+  ].filter(Boolean).map((value) => String(value).trim().toLowerCase())));
+}
+
+async function requireAcquisitionChannelForBusiness(channelId, businessId) {
+  const result = await query(
+    `select *
+     from business_acquisition_channels
+     where id = $1 and business_id = $2 and status <> 'ARCHIVED'`,
+    [channelId, businessId]
+  );
+  if (!result.rowCount) throw notFound("Canal no encontrado.");
+  return result.rows[0];
+}
+
+async function assertCampaignForBusinessOrNull(campaignId, businessId) {
+  if (!campaignId) return null;
+  const result = await query(
+    "select id from campaigns where id = $1 and business_id = $2",
+    [campaignId, businessId]
+  );
+  if (!result.rowCount) throw notFound("Campana no encontrada para este negocio.");
+  return campaignId;
+}
+
+async function salesDetailForChannelEffort(businessId, effort, start, end) {
+  const terms = channelEffortSearchTerms(effort);
+  if (!terms.length) {
+    return { sales: 0, revenue: 0, unique_customers: 0, rebuy_sales: 0, referral_sales: 0 };
+  }
+  const result = await query(
+    `select
+       count(*)::int as sales,
+       coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue,
+       count(distinct coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_phone, ''), nullif(bs.customer_email, ''), bs.id::text))::int as unique_customers,
+       count(*) filter (
+         where bs.referred_affiliate_id is not null
+            or bs.acquisition_source = 'FRIEND_REFERRAL'
+            or bs.acquisition_channel ilike '%refer%'
+       )::int as referral_sales,
+       count(*) filter (
+         where exists (
+           select 1
+           from business_sales previous
+           where previous.business_id = bs.business_id
+             and previous.created_at < $2::timestamptz
+             and (
+               (nullif(bs.customer_document_id, '') is not null and previous.customer_document_id = bs.customer_document_id)
+               or (nullif(bs.customer_phone, '') is not null and previous.customer_phone = bs.customer_phone)
+               or (nullif(bs.customer_email, '') is not null and previous.customer_email = bs.customer_email)
+             )
+         )
+       )::int as rebuy_sales
+     from business_sales bs
+     where bs.business_id = $1
+       and bs.created_at >= $2::timestamptz
+       and bs.created_at <= $3::timestamptz
+       and ($4::uuid is null or bs.campaign_id = $4::uuid)
+       and lower(coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, '')) = any($5::text[])`,
+    [businessId, start.toISOString(), end.toISOString(), effort.campaign_id || null, terms]
+  );
+  const row = result.rows[0] || {};
+  return {
+    sales: Number(row.sales || 0),
+    revenue: Number(row.revenue || 0),
+    unique_customers: Number(row.unique_customers || 0),
+    rebuy_sales: Number(row.rebuy_sales || 0),
+    referral_sales: Number(row.referral_sales || 0),
+  };
+}
+
+async function metricsForChannelEffort(businessId, effort = {}) {
+  const { start, end } = channelEffortDateRange(effort);
+  const effortKeys = new Set(channelMatchKeys({
+    slug: effort.channel_slug,
+    name: effort.channel_name,
+    platform: effort.channel_platform,
+  }));
+  const activityRows = await channelActivityRows(businessId, {
+    start,
+    end,
+    campaign_id: effort.campaign_id || null,
+  });
+  const activity = activityRows.reduce((acc, row) => {
+    if (!effortKeys.has(channelSlug(row.channel))) return acc;
+    acc.leads += Number(row.leads || 0);
+    acc.qr_generated += Number(row.qr_generated || 0);
+    acc.redemptions += Number(row.redemptions || 0);
+    acc.sales += Number(row.sales || 0);
+    acc.revenue += Number(row.revenue || 0);
+    return acc;
+  }, emptyChannelMetrics());
+  const salesDetail = await salesDetailForChannelEffort(businessId, effort, start, end);
+  const sales = Math.max(Number(activity.sales || 0), salesDetail.sales);
+  const revenue = Math.max(Number(activity.revenue || 0), salesDetail.revenue);
+  const investment = Number(effort.budget_amount || 0);
+  return {
+    ...activity,
+    sales,
+    revenue,
+    investment,
+    net_revenue: Number((revenue - investment).toFixed(2)),
+    roi: safeRoi(revenue, investment),
+    conversion_rate: Number(activity.leads || 0) > 0 ? Number(((sales / Number(activity.leads || 0)) * 100).toFixed(1)) : 0,
+    rebuy_sales: salesDetail.rebuy_sales,
+    referral_sales: salesDetail.referral_sales,
+    unique_customers: salesDetail.unique_customers,
+    date_window: {
+      start_date: start.toISOString(),
+      end_date: end.toISOString(),
+    },
+  };
+}
+
+async function listAcquisitionChannelEfforts(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const channelId = req.query.channel_id || null;
+    const campaignId = req.query.campaign_id || null;
+    const startDate = req.query.start_date ? new Date(req.query.start_date) : null;
+    const endDate = req.query.end_date ? new Date(req.query.end_date) : null;
+    if (startDate && Number.isNaN(startDate.getTime())) throw badRequest("Fecha inicial invÃ¡lida.");
+    if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final invÃ¡lida.");
+    if (endDate) endDate.setHours(23, 59, 59, 999);
+    const result = await query(
+      `select e.*,
+              ch.name as channel_name,
+              ch.slug as channel_slug,
+              ch.platform as channel_platform,
+              ch.channel_type,
+              c.name as campaign_name
+       from business_acquisition_channel_efforts e
+       join business_acquisition_channels ch on ch.id = e.channel_id and ch.business_id = e.business_id
+       left join campaigns c on c.id = e.campaign_id and c.business_id = e.business_id
+       where e.business_id = $1
+         and e.status <> 'ARCHIVED'
+         and ($2::uuid is null or e.channel_id = $2::uuid)
+         and ($3::uuid is null or e.campaign_id = $3::uuid)
+         and ($4::timestamptz is null or coalesce(e.ends_at, e.starts_at, e.published_at, e.created_at) >= $4::timestamptz)
+         and ($5::timestamptz is null or coalesce(e.starts_at, e.published_at, e.created_at) <= $5::timestamptz)
+       order by coalesce(e.starts_at, e.published_at, e.created_at) desc, e.updated_at desc
+       limit 200`,
+      [
+        businessId,
+        channelId,
+        campaignId,
+        startDate ? startDate.toISOString() : null,
+        endDate ? endDate.toISOString() : null,
+      ]
+    );
+    const efforts = await Promise.all(result.rows.map(async (row) => normalizeChannelEffortRow({
+      ...row,
+      metrics: await metricsForChannelEffort(businessId, row),
+    })));
+    const totals = efforts.reduce((acc, effort) => {
+      acc.efforts += 1;
+      acc.investment += Number(effort.metrics?.investment || 0);
+      acc.leads += Number(effort.metrics?.leads || 0);
+      acc.sales += Number(effort.metrics?.sales || 0);
+      acc.revenue += Number(effort.metrics?.revenue || 0);
+      acc.rebuy_sales += Number(effort.metrics?.rebuy_sales || 0);
+      acc.referral_sales += Number(effort.metrics?.referral_sales || 0);
+      return acc;
+    }, { efforts: 0, investment: 0, leads: 0, sales: 0, revenue: 0, rebuy_sales: 0, referral_sales: 0 });
+    res.json({
+      efforts,
+      totals: {
+        ...totals,
+        roi: safeRoi(totals.revenue, totals.investment),
+        net_revenue: Number((totals.revenue - totals.investment).toFixed(2)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createAcquisitionChannelEffort(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(acquisitionChannelEffortSchema, req.body);
+    await requireAcquisitionChannelForBusiness(body.channel_id, businessId);
+    await assertCampaignForBusinessOrNull(body.campaign_id, businessId);
+    const result = await query(
+      `insert into business_acquisition_channel_efforts
+        (business_id, channel_id, campaign_id, title, description, objective, content_type, status,
+         published_at, starts_at, ends_at, budget_amount, currency, creative_url, source_url, notes, metadata, created_by_user_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz, $10::timestamptz, $11::timestamptz,
+               $12, $13, $14, $15, $16, $17::jsonb, $18)
+       returning *`,
+      [
+        businessId,
+        body.channel_id,
+        body.campaign_id || null,
+        body.title,
+        body.description || null,
+        body.objective || null,
+        body.content_type || "POST",
+        body.status || "ACTIVE",
+        body.published_at || null,
+        body.starts_at || null,
+        body.ends_at || null,
+        body.budget_amount || 0,
+        body.currency || "COP",
+        body.creative_url || null,
+        body.source_url || null,
+        body.notes || null,
+        JSON.stringify(body.metadata || {}),
+        req.user.id,
+      ]
+    );
+    res.status(201).json({ effort: normalizeChannelEffortRow(result.rows[0]) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateAcquisitionChannelEffort(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const body = validate(acquisitionChannelEffortPatchSchema, req.body);
+    const existing = await query(
+      "select * from business_acquisition_channel_efforts where id = $1 and business_id = $2",
+      [req.params.effortId, businessId]
+    );
+    if (!existing.rowCount) throw notFound("Esfuerzo de canal no encontrado.");
+    const merged = { ...existing.rows[0], ...body };
+    await requireAcquisitionChannelForBusiness(merged.channel_id, businessId);
+    await assertCampaignForBusinessOrNull(merged.campaign_id, businessId);
+    const result = await query(
+      `update business_acquisition_channel_efforts
+       set channel_id = $3,
+           campaign_id = $4,
+           title = $5,
+           description = $6,
+           objective = $7,
+           content_type = $8,
+           status = $9,
+           published_at = $10::timestamptz,
+           starts_at = $11::timestamptz,
+           ends_at = $12::timestamptz,
+           budget_amount = $13,
+           currency = $14,
+           creative_url = $15,
+           source_url = $16,
+           notes = $17,
+           metadata = $18::jsonb,
+           updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [
+        req.params.effortId,
+        businessId,
+        merged.channel_id,
+        merged.campaign_id || null,
+        merged.title,
+        merged.description || null,
+        merged.objective || null,
+        merged.content_type || "POST",
+        merged.status || "ACTIVE",
+        merged.published_at || null,
+        merged.starts_at || null,
+        merged.ends_at || null,
+        Number(merged.budget_amount || 0),
+        merged.currency || "COP",
+        merged.creative_url || null,
+        merged.source_url || null,
+        merged.notes || null,
+        JSON.stringify(merged.metadata || {}),
+      ]
+    );
+    res.json({ effort: normalizeChannelEffortRow(result.rows[0]) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function archiveAcquisitionChannelEffort(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const result = await query(
+      `update business_acquisition_channel_efforts
+       set status = 'ARCHIVED', updated_at = now()
+       where id = $1 and business_id = $2
+       returning *`,
+      [req.params.effortId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Esfuerzo de canal no encontrado.");
+    res.json({ effort: normalizeChannelEffortRow(result.rows[0]), archived: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function cleanSaleProductText(value, max = 180) {
+  const text = String(value || "").trim();
+  return text ? text.slice(0, max) : null;
+}
+
+function cleanSaleProductNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback;
+}
+
+function normalizeSaleProductsForInventory(products) {
   if (!Array.isArray(products)) return [];
   return products
-    .map((item) => ({
-      inventory_product_id: item?.inventory_product_id || item?.product_id || null,
-      quantity: Math.max(1, Number(item?.quantity || 1)),
-    }))
-    .filter((item) => item.inventory_product_id && Number.isFinite(item.quantity) && item.quantity > 0);
+    .map((item) => {
+      const name = cleanSaleProductText(item?.name || item?.product_name);
+      const quantity = Math.max(1, cleanSaleProductNumber(item?.quantity, 1));
+      const unitPrice = cleanSaleProductNumber(item?.unit_price);
+      const lineTotal = cleanSaleProductNumber(item?.line_total, quantity * unitPrice);
+      return {
+        name,
+        inventory_product_id: item?.inventory_product_id || item?.product_id || null,
+        sku: cleanSaleProductText(item?.sku, 80),
+        barcode: cleanSaleProductText(item?.barcode, 120),
+        category: cleanSaleProductText(item?.category, 120),
+        brand: cleanSaleProductText(item?.brand, 120),
+        quantity,
+        unit_price: unitPrice,
+        line_total: lineTotal || quantity * unitPrice,
+        currency: cleanSaleProductText(item?.currency, 12),
+      };
+    })
+    .filter((item) => item.name && item.line_total > 0);
+}
+
+async function findInventoryProductForSale(client, businessId, item) {
+  if (item.inventory_product_id) {
+    const result = await client.query(
+      `select *
+       from business_inventory_products
+       where id = $1
+         and business_id = $2
+         and status <> 'ARCHIVED'
+       limit 1`,
+      [item.inventory_product_id, businessId]
+    );
+    if (!result.rowCount) {
+      throw badRequest("Uno de los productos seleccionados no existe en productos activos del negocio.");
+    }
+    return result.rows[0];
+  }
+
+  const result = await client.query(
+    `select *
+     from business_inventory_products
+     where business_id = $1
+       and status <> 'ARCHIVED'
+       and (
+         lower(name) = lower($2)
+         or ($3::text is not null and nullif(sku, '') = $3)
+         or ($4::text is not null and nullif(barcode, '') = $4)
+       )
+     order by updated_at desc
+     limit 1`,
+    [businessId, item.name, item.sku, item.barcode]
+  );
+  return result.rows[0] || null;
+}
+
+async function updateInventoryProductFromSale(client, businessId, item, product) {
+  const result = await client.query(
+    `update business_inventory_products
+     set stock_quantity = greatest(0, stock_quantity - $3::numeric),
+         unit_price = case
+           when coalesce(unit_price, 0) = 0 and $4::numeric > 0 then $4::numeric
+           else unit_price
+         end,
+         updated_at = now()
+     where id = $1
+       and business_id = $2
+       and status <> 'ARCHIVED'
+     returning *`,
+    [product.id, businessId, item.quantity, item.unit_price]
+  );
+  if (!result.rowCount) {
+    throw badRequest("Uno de los productos seleccionados no existe en productos activos del negocio.");
+  }
+  return result.rows[0];
+}
+
+async function createInventoryProductFromSale(client, businessId, userId, item, options = {}) {
+  const result = await client.query(
+    `insert into business_inventory_products
+      (business_id, sku, barcode, name, category, brand, unit_price, currency,
+       stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
+     returning *`,
+    [
+      businessId,
+      item.sku,
+      item.barcode,
+      item.name,
+      item.category || null,
+      item.brand || null,
+      item.unit_price,
+      item.currency || options.currency || "COP",
+      JSON.stringify({
+        source: "sale_auto_product",
+        source_module: options.sourceModule || "sales",
+        auto_created_from_sale: true,
+        created_from_sale_at: new Date().toISOString(),
+        sku_from_sale: item.sku || null,
+        barcode_from_sale: item.barcode || null,
+      }),
+      userId || null,
+    ]
+  );
+  return result.rows[0];
+}
+
+function saleProductPayload(item, product, source) {
+  return {
+    name: product.name,
+    inventory_product_id: product.id,
+    sku: product.sku || item.sku || null,
+    barcode: product.barcode || item.barcode || null,
+    quantity: item.quantity,
+    unit_price: item.unit_price || Number(product.unit_price || 0),
+    line_total: item.line_total,
+    source,
+  };
+}
+
+async function syncSaleProductsWithInventory(client, businessId, userId, products, options = {}) {
+  const normalizedProducts = normalizeSaleProductsForInventory(products);
+  const syncedProducts = [];
+  const autoCreatedProducts = [];
+  const matchedProducts = [];
+
+  for (const item of normalizedProducts) {
+    const existingProduct = await findInventoryProductForSale(client, businessId, item);
+    if (existingProduct) {
+      const updatedProduct = await updateInventoryProductFromSale(client, businessId, item, existingProduct);
+      syncedProducts.push(saleProductPayload(item, updatedProduct, item.inventory_product_id ? "catalog_selected" : "catalog_matched"));
+      matchedProducts.push({ id: updatedProduct.id, name: updatedProduct.name });
+      continue;
+    }
+
+    const createdProduct = await createInventoryProductFromSale(client, businessId, userId, item, options);
+    syncedProducts.push(saleProductPayload(item, createdProduct, "catalog_auto_created"));
+    autoCreatedProducts.push({ id: createdProduct.id, name: createdProduct.name });
+  }
+
+  return {
+    products: syncedProducts,
+    autoCreatedProducts,
+    matchedProducts,
+  };
 }
 
 function inventorySearchWhere(search, params) {
@@ -4270,6 +5288,14 @@ module.exports = {
   createCompetitorProduct,
   updateCompetitorProduct,
   archiveCompetitorProduct,
+  listAcquisitionChannels,
+  createAcquisitionChannel,
+  updateAcquisitionChannel,
+  archiveAcquisitionChannel,
+  listAcquisitionChannelEfforts,
+  createAcquisitionChannelEffort,
+  updateAcquisitionChannelEffort,
+  archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,

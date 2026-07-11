@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260710-channel-roi-v1";
+const APP_VERSION = "empresa-20260711-agenda-menu-fix-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -31,6 +31,7 @@ const searchInput = document.getElementById("searchInput");
 const refreshButton = document.getElementById("refreshButton");
 const notificationsButton = document.getElementById("notificationsButton");
 const settingsButton = document.getElementById("settingsButton");
+const globalRevenueActionButton = document.getElementById("globalRevenueActionButton");
 const themeSwitch = document.getElementById("themeSwitch");
 const themeSwitchLabel = document.getElementById("themeSwitchLabel");
 const logoutButton = document.getElementById("logoutButton");
@@ -47,6 +48,32 @@ const recentRedemptionsTable = document.getElementById("recentRedemptionsTable")
 const recentLeadsTable = document.getElementById("recentLeadsTable");
 const branchPerformanceTable = document.getElementById("branchPerformanceTable");
 const commandCenterRoot = document.getElementById("commandCenterRoot");
+const revenuePathGuide = document.getElementById("revenuePathGuide");
+const nextBestActionCard = document.getElementById("nextBestActionCard");
+const revenueQuickActions = document.getElementById("revenueQuickActions");
+const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
+const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
+const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
+const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
+const dashboardWidgetGrid = document.getElementById("dashboardWidgetGrid");
+const dashboardProfileLabel = document.getElementById("dashboardProfileLabel");
+const dashboardProfileTitle = document.getElementById("dashboardProfileTitle");
+const dashboardProfileDescription = document.getElementById("dashboardProfileDescription");
+const dashboardAdvancedToggleButton = document.getElementById("dashboardAdvancedToggleButton");
+const dashboardResetProfileButton = document.getElementById("dashboardResetProfileButton");
+const revenueOnboarding = document.getElementById("revenueOnboarding");
+const revenueActionWizardModal = document.getElementById("revenueActionWizardModal");
+const revenueActionWizardForm = document.getElementById("revenueActionWizardForm");
+const revenueActionWizardCloseButton = document.getElementById("revenueActionWizardCloseButton");
+const revenueActionWizardCancelButton = document.getElementById("revenueActionWizardCancelButton");
+const revenueActionObjectiveInput = document.getElementById("revenueActionObjectiveInput");
+const revenueActionToolInput = document.getElementById("revenueActionToolInput");
+const revenueActionSegmentInput = document.getElementById("revenueActionSegmentInput");
+const revenueActionCoverageInput = document.getElementById("revenueActionCoverageInput");
+const revenueActionTaskInput = document.getElementById("revenueActionTaskInput");
+const revenueActionDueInput = document.getElementById("revenueActionDueInput");
+const revenueActionSummary = document.getElementById("revenueActionSummary");
+const revenueActionWizardMessage = document.getElementById("revenueActionWizardMessage");
 const rmsMachineKpis = document.getElementById("rmsMachineKpis");
 const rmsDailyQueue = document.getElementById("rmsDailyQueue");
 const rmsStageBoard = document.getElementById("rmsStageBoard");
@@ -54,6 +81,49 @@ const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
 const rmsMachineRefreshButton = document.getElementById("rmsMachineRefreshButton");
 const rmsMachineOpenAgendaButton = document.getElementById("rmsMachineOpenAgendaButton");
+const rmsMachineCollectorButton = document.getElementById("rmsMachineCollectorButton");
+const rmsMachineHowButton = document.getElementById("rmsMachineHowButton");
+const rmsApplyRuleButton = document.getElementById("rmsApplyRuleButton");
+const rmsEmptyStateGuide = document.getElementById("rmsEmptyStateGuide");
+const rmsCollectorActiveCard = document.getElementById("rmsCollectorActiveCard");
+const rmsCollectorModal = document.getElementById("rmsCollectorModal");
+const rmsCollectorForm = document.getElementById("rmsCollectorForm");
+const rmsCollectorCloseButton = document.getElementById("rmsCollectorCloseButton");
+const rmsCollectorCancelButton = document.getElementById("rmsCollectorCancelButton");
+const rmsCollectorSourceInput = document.getElementById("rmsCollectorSourceInput");
+const rmsCollectorCaptureInput = document.getElementById("rmsCollectorCaptureInput");
+const rmsCollectorCoverageInput = document.getElementById("rmsCollectorCoverageInput");
+const rmsCollectorAgendaInput = document.getElementById("rmsCollectorAgendaInput");
+const rmsCollectorExpectedInput = document.getElementById("rmsCollectorExpectedInput");
+const rmsCollectorSummary = document.getElementById("rmsCollectorSummary");
+const rmsHowModal = document.getElementById("rmsHowModal");
+const rmsHowCloseButton = document.getElementById("rmsHowCloseButton");
+const rmsHowStartButton = document.getElementById("rmsHowStartButton");
+const missionsKpiGrid = document.getElementById("missionsKpiGrid");
+const missionTemplateGrid = document.getElementById("missionTemplateGrid");
+const missionActiveList = document.getElementById("missionActiveList");
+const missionLeaderboard = document.getElementById("missionLeaderboard");
+const missionRewardsPending = document.getElementById("missionRewardsPending");
+const missionsCreateButton = document.getElementById("missionsCreateButton");
+const missionsRefreshButton = document.getElementById("missionsRefreshButton");
+const missionsOpenAgendaButton = document.getElementById("missionsOpenAgendaButton");
+const missionWizardModal = document.getElementById("missionWizardModal");
+const missionWizardForm = document.getElementById("missionWizardForm");
+const missionWizardCloseButton = document.getElementById("missionWizardCloseButton");
+const missionWizardCancelButton = document.getElementById("missionWizardCancelButton");
+const missionTemplateInput = document.getElementById("missionTemplateInput");
+const missionCampaignInput = document.getElementById("missionCampaignInput");
+const missionNameInput = document.getElementById("missionNameInput");
+const missionChannelInput = document.getElementById("missionChannelInput");
+const missionStartInput = document.getElementById("missionStartInput");
+const missionEndInput = document.getElementById("missionEndInput");
+const missionDescriptionInput = document.getElementById("missionDescriptionInput");
+const missionPointsInput = document.getElementById("missionPointsInput");
+const missionRankingInput = document.getElementById("missionRankingInput");
+const missionTopLimitInput = document.getElementById("missionTopLimitInput");
+const missionRewardsInput = document.getElementById("missionRewardsInput");
+const missionCreateAgendaInput = document.getElementById("missionCreateAgendaInput");
+const missionWizardMessage = document.getElementById("missionWizardMessage");
 const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
@@ -174,6 +244,7 @@ const campaignSectionTabs = Array.from(document.querySelectorAll("[data-campaign
 const campaignSectionTabOpenButtons = Array.from(document.querySelectorAll("[data-campaign-tab-open]"));
 const campaignSectionPanels = Array.from(document.querySelectorAll("[data-campaign-tab-panel]"));
 const campaignStateGrid = document.getElementById("campaignStateGrid");
+const campaignRoiTable = document.getElementById("campaignRoiTable");
 const campaignInsightText = document.getElementById("campaignInsightText");
 const campaignObjectiveValue = document.getElementById("campaignObjectiveValue");
 const campaignDurationValue = document.getElementById("campaignDurationValue");
@@ -248,6 +319,7 @@ const campaignSnapshotsTable = document.getElementById("campaignSnapshotsTable")
 const saveSnapshotButton = document.getElementById("saveSnapshotButton");
 const campaignSnapshotChart = document.getElementById("campaignSnapshotChart");
 const funnelStack = document.getElementById("funnelStack");
+const campaignChannelRoiTable = document.getElementById("campaignChannelRoiTable");
 const campaignLeadsTable = document.getElementById("campaignLeadsTable");
 const campaignRedemptionsTable = document.getElementById("campaignRedemptionsTable");
 const campaignSalesTable = document.getElementById("campaignSalesTable");
@@ -359,6 +431,7 @@ const affiliatePurchaseAddItemButton = document.getElementById("affiliatePurchas
 const affiliatePurchaseTotalText = document.getElementById("affiliatePurchaseTotalText");
 const affiliatePurchasePointsText = document.getElementById("affiliatePurchasePointsText");
 const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
+const affiliateOperationFeed = document.getElementById("affiliateOperationFeed");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
 const affiliateManualPointsInput = document.getElementById("affiliateManualPointsInput");
 const affiliateManualPointsReasonInput = document.getElementById("affiliateManualPointsReasonInput");
@@ -477,6 +550,10 @@ const affiliateStatPurchaseTotal = document.getElementById("affiliateStatPurchas
 const affiliateStatAveragePurchase = document.getElementById("affiliateStatAveragePurchase");
 const affiliateStatLastPurchase = document.getElementById("affiliateStatLastPurchase");
 const affiliateStatTopAffiliate = document.getElementById("affiliateStatTopAffiliate");
+const affiliateOperationChecklist = document.getElementById("affiliateOperationChecklist");
+const affiliateQuickNextAction = document.getElementById("affiliateQuickNextAction");
+const affiliateQuickNextActionCopy = document.getElementById("affiliateQuickNextActionCopy");
+const affiliateTopRankingList = document.getElementById("affiliateTopRankingList");
 const branchTable = document.getElementById("branchTable");
 const branchCreateForm = document.getElementById("branchCreateForm");
 const branchTypeInput = document.getElementById("branchTypeInput");
@@ -698,6 +775,49 @@ const customerAcquisitionMessage = document.getElementById("customerAcquisitionM
 const customerSaleItemsContainer = document.getElementById("customerSaleItemsContainer");
 const customerSaleAddItemButton = document.getElementById("customerSaleAddItemButton");
 const customerSaleTotalPreview = document.getElementById("customerSaleTotalPreview");
+const customerSaleOperationFeed = document.getElementById("customerSaleOperationFeed");
+const acquisitionChannelKpiGrid = document.getElementById("acquisitionChannelKpiGrid");
+const acquisitionChannelDetailPanel = document.getElementById("acquisitionChannelDetailPanel");
+const acquisitionChannelQuickCreate = document.getElementById("acquisitionChannelQuickCreate");
+const acquisitionChannelForm = document.getElementById("acquisitionChannelForm");
+const acquisitionChannelFormTitle = document.getElementById("acquisitionChannelFormTitle");
+const acquisitionChannelIdInput = document.getElementById("acquisitionChannelIdInput");
+const acquisitionChannelNameInput = document.getElementById("acquisitionChannelNameInput");
+const acquisitionChannelTypeInput = document.getElementById("acquisitionChannelTypeInput");
+const acquisitionChannelPlatformInput = document.getElementById("acquisitionChannelPlatformInput");
+const acquisitionChannelBudgetInput = document.getElementById("acquisitionChannelBudgetInput");
+const acquisitionChannelCurrencyInput = document.getElementById("acquisitionChannelCurrencyInput");
+const acquisitionChannelStatusInput = document.getElementById("acquisitionChannelStatusInput");
+const acquisitionChannelNotesInput = document.getElementById("acquisitionChannelNotesInput");
+const acquisitionChannelMessage = document.getElementById("acquisitionChannelMessage");
+const acquisitionChannelSaveButton = document.getElementById("acquisitionChannelSaveButton");
+const acquisitionChannelCancelButton = document.getElementById("acquisitionChannelCancelButton");
+const acquisitionChannelTable = document.getElementById("acquisitionChannelTable");
+const acquisitionChannelMatrixTable = document.getElementById("acquisitionChannelMatrixTable");
+const refreshAcquisitionChannelsButton = document.getElementById("refreshAcquisitionChannelsButton");
+const acquisitionChannelDatalist = document.getElementById("acquisitionChannelDatalist");
+const channelEffortForm = document.getElementById("channelEffortForm");
+const channelEffortFormTitle = document.getElementById("channelEffortFormTitle");
+const channelEffortIdInput = document.getElementById("channelEffortIdInput");
+const channelEffortChannelInput = document.getElementById("channelEffortChannelInput");
+const channelEffortCampaignInput = document.getElementById("channelEffortCampaignInput");
+const channelEffortTitleInput = document.getElementById("channelEffortTitleInput");
+const channelEffortTypeInput = document.getElementById("channelEffortTypeInput");
+const channelEffortObjectiveInput = document.getElementById("channelEffortObjectiveInput");
+const channelEffortPublishedInput = document.getElementById("channelEffortPublishedInput");
+const channelEffortStartsInput = document.getElementById("channelEffortStartsInput");
+const channelEffortEndsInput = document.getElementById("channelEffortEndsInput");
+const channelEffortBudgetInput = document.getElementById("channelEffortBudgetInput");
+const channelEffortCreativeInput = document.getElementById("channelEffortCreativeInput");
+const channelEffortSourceInput = document.getElementById("channelEffortSourceInput");
+const channelEffortStatusInput = document.getElementById("channelEffortStatusInput");
+const channelEffortDescriptionInput = document.getElementById("channelEffortDescriptionInput");
+const channelEffortNotesInput = document.getElementById("channelEffortNotesInput");
+const channelEffortMessage = document.getElementById("channelEffortMessage");
+const channelEffortSaveButton = document.getElementById("channelEffortSaveButton");
+const channelEffortCancelButton = document.getElementById("channelEffortCancelButton");
+const channelEffortTable = document.getElementById("channelEffortTable");
+const channelEffortTotalsChip = document.getElementById("channelEffortTotalsChip");
 const inventoryProductForm = document.getElementById("inventoryProductForm");
 const inventoryProductIdInput = document.getElementById("inventoryProductIdInput");
 const inventoryNameInput = document.getElementById("inventoryNameInput");
@@ -942,6 +1062,7 @@ const featureUpgradePrimaryLink = document.getElementById("featureUpgradePrimary
 const featureUpgradeCloseButton = document.getElementById("featureUpgradeCloseButton");
 const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSecondaryButton");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
+const portalShortcutButtons = Array.from(document.querySelectorAll("[data-portal-shortcut]"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll("[data-redemption-sales-tab]"));
 const businessTrendChart = document.getElementById("businessTrendChart");
@@ -1051,6 +1172,9 @@ const lightTestMode = routeLightMode || (() => {
 let session = loadSession();
 let state = {
   currentView: "dashboard",
+  dashboardBuilderProfile: "marketing",
+  dashboardBuilderExpanded: false,
+  dashboardBuilderDragWidget: "",
   ticketCenterTab: "center",
   filter: "",
   dashboard: null,
@@ -1068,7 +1192,6 @@ let state = {
     qrStatus: "",
     qrType: "",
     sellerId: "",
-    affiliateId: "",
     comparePrevious: true,
     matrixMetric: "revenue",
     tableSearch: "",
@@ -1145,6 +1268,11 @@ let state = {
   rmsMachine: null,
   rmsMachineLoaded: false,
   rmsMachineLoading: false,
+  rmsCollectorActivation: null,
+  missions: null,
+  missionsLoaded: false,
+  missionsLoading: false,
+  missionWizardTemplateKey: "weekly_trivia",
   leadCrmFilters: {
     search: "",
     campaign_id: "",
@@ -1218,6 +1346,18 @@ let state = {
   affiliateRewardUnlocks: [],
   affiliatePurchaseItems: [{ name: "", quantity: 1, unit_price: 0 }],
   customerSaleItems: [{ name: "", quantity: 1, unit_price: 0 }],
+  acquisitionChannels: [],
+  acquisitionChannelTotals: null,
+  acquisitionChannelMatrix: [],
+  acquisitionChannelsLoaded: false,
+  acquisitionChannelsLoading: false,
+  acquisitionChannelEditingId: null,
+  selectedAcquisitionChannelKey: "",
+  acquisitionChannelEfforts: [],
+  acquisitionChannelEffortTotals: null,
+  acquisitionChannelEffortsLoaded: false,
+  acquisitionChannelEffortsLoading: false,
+  channelEffortEditingId: null,
   inventoryProducts: [],
   inventoryLoaded: false,
   inventorySearch: "",
@@ -1437,7 +1577,6 @@ const CHART_FOCUS_REGISTRY = {
   "channel-performance": { title: "Canales independientes", subtitle: "Instagram, Facebook, WhatsApp, Web y Google comparados", chartType: "table", primaryMetric: "revenue", description: "Compara canales como dimensión propia, separada de campañas.", calculation: "Agrupa la matriz campaña/canal por canal y suma leads, tickets, redenciones, ventas y revenue.", businessMeaning: "Permite saber qué canal trae volumen, qué canal convierte y qué campaña domina dentro de cada canal.", recommendedActions: ["Escala canales con revenue y conversión.", "Optimiza canales con leads sin ventas.", "Cruza el canal con la campaña dominante antes de invertir más."], supportedDrilldowns: ["channel", "campaign"], relatedMetrics: ["channel", "lead", "revenue", "conversion_rate"], dataDictionaryKeys: ["channel", "lead", "revenue", "conversion_rate", "avg_ticket"] },
   "campaign-comparison": { title: "Campañas comparadas", subtitle: "Leads, tickets, redenciones, ventas y revenue", chartType: "bar", primaryMetric: "revenue", description: "Compara campañas por impacto comercial.", calculation: "Agrupa métricas RMS por campaña y las ordena por desempeño.", businessMeaning: "Permite decidir que campaña repetir, escalar, optimizar o pausar.", recommendedActions: ["Abre la campaña ganadora y replica su canal.", "Optimiza campañas con leads sin ventas.", "Pausa campañas sin revenue ni conversión."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "lead", "redeemed_qr", "revenue"], dataDictionaryKeys: ["campaign", "lead", "redeemed_qr", "revenue", "roi"] },
   sankey: { title: "Sankey RMS", subtitle: "Flujo de atribución", chartType: "sankey", primaryMetric: "revenue", description: "Conecta canal, campaña, ticket/redención, venta y revenue.", calculation: "Construye enlaces agregados desde origen hasta venta registrada.", businessMeaning: "Explica como se mueve el valor dentro del RMS.", recommendedActions: ["Haz foco en enlaces con mayor salida a ventas.", "Investiga nodos con mucho volumen y baja continuidad.", "Aplica filtro global sobre el nodo más rentable."], supportedDrilldowns: ["node", "channel", "campaign"], relatedMetrics: ["channel", "campaign", "revenue"], dataDictionaryKeys: ["channel", "campaign", "redeemed_qr", "revenue"] },
-  "affiliate-network": { title: "Red de afiliados y referidos", subtitle: "Voz a voz medible", chartType: "network", primaryMetric: "revenue", description: "Muestra afiliados como nodos conectados al negocio.", calculation: "Agrupa actividad, puntos, compras y revenue por afiliado.", businessMeaning: "Detecta quienes recomiendan clientes que compran.", recommendedActions: ["Premia afiliados con alto revenue.", "Genera más tickets para afiliados activos.", "Reactiva afiliados sin última actividad."], supportedDrilldowns: ["affiliate"], relatedMetrics: ["affiliate", "revenue", "avg_ticket"], dataDictionaryKeys: ["affiliate", "revenue", "avg_ticket"] },
   "branch-ranking": { title: "Ranking de sucursales", subtitle: "Redenciones, ventas, revenue y conversión", chartType: "ranking", primaryMetric: "revenue", description: "Compara sedes por ejecución comercial.", calculation: "Agrupa redenciones y ventas por sucursal.", businessMeaning: "Muestra que sede convierte mejor y donde hay oportunidad operativa.", recommendedActions: ["Replica prácticas de la sucursal líder.", "Capacita sedes con redenciones sin ventas.", "Filtra por sucursal para ver detalles."], supportedDrilldowns: ["branch"], relatedMetrics: ["branch", "redeemed_qr", "revenue", "conversion_rate"], dataDictionaryKeys: ["branch", "redeemed_qr", "revenue", "conversion_rate"] },
   "qr-status": { title: "Estados de tickets", subtitle: "Activos, redimidos, vencidos y reclamados", chartType: "donut", primaryMetric: "qr_generated", description: "Muestra la salud operativa del inventario de tickets.", calculation: "Cuenta tickets agrupados por estado.", businessMeaning: "Ayuda a detectar oportunidad perdida o beneficios no usados.", recommendedActions: ["Si hay muchos vencidos, mejora recordatorios.", "Si hay muchos activos, crea urgencia.", "Si hay pocos redimidos, revisa beneficio y canal."], supportedDrilldowns: ["status"], relatedMetrics: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"], dataDictionaryKeys: ["qr_generated", "active_qr", "redeemed_qr", "expired_qr"] },
   scatter: { title: "Scatter de campañas", subtitle: "Inversión o tickets vs revenue", chartType: "scatter", primaryMetric: "roi", description: "Ubica campañas según esfuerzo y resultado.", calculation: "Eje X usa inversión o tickets generados; eje Y usa revenue o ventas; tamano usa leads.", businessMeaning: "Encuentra campañas sanas, costosas o escalables.", recommendedActions: ["Escala puntos con alto revenue y bajo esfuerzo.", "Optimiza puntos con muchos leads y poco revenue.", "Investiga campañas sin datos completos."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "qr_generated", "revenue", "roi"], dataDictionaryKeys: ["campaign", "qr_generated", "revenue", "roi"] },
@@ -1483,7 +1622,6 @@ function commandCenterQueryString() {
     "qrStatus",
     "qrType",
     "sellerId",
-    "affiliateId",
   ].forEach((key) => {
     if (state.commandCenterFilters[key]) params.set(key, state.commandCenterFilters[key]);
   });
@@ -1907,13 +2045,14 @@ function clearBusinessWorkspaceUi() {
     [branchPerformanceTable, 5, "Cargando actividad por sucursal..."],
     [campaignLeadsTable, 9, "Cargando leads..."],
     [campaignRedemptionsTable, 6, "Cargando redenciones..."],
-    [campaignSalesTable, 8, "Cargando ventas..."],
+    [campaignSalesTable, 11, "Cargando ventas..."],
     [branchTable, 4, "Cargando sucursales..."],
     [qrBatchTable, 5, "Abre Gaming Center para cargar paquetes recientes."],
     [strategicQrHistoryTable, 5, "Abre Gaming Center para cargar historial reciente."],
     [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
+    [acquisitionChannelTable, 12, "Abre Canales ROI para cargar canales de adquisición."],
     [inventoryTable, 7, "Abre Productos para cargar productos."],
     [competitionTable, 9, "Abre Radar Competitivo para cargar productos y precios."],
     [competitorTable, 7, "Abre Radar Competitivo para cargar competidores."],
@@ -1985,7 +2124,6 @@ function resetBusinessScopedState(options = {}) {
     qrStatus: "",
     qrType: "",
     sellerId: "",
-    affiliateId: "",
     comparePrevious: true,
     matrixMetric: "revenue",
     tableSearch: "",
@@ -2044,6 +2182,11 @@ function resetBusinessScopedState(options = {}) {
   state.rmsMachine = null;
   state.rmsMachineLoaded = false;
   state.rmsMachineLoading = false;
+  state.rmsCollectorActivation = null;
+  state.missions = null;
+  state.missionsLoaded = false;
+  state.missionsLoading = false;
+  state.missionWizardTemplateKey = "weekly_trivia";
   state.selectedLeadDetail = null;
   state.selectedLeadTab = "summary";
   state.selectedLeadRef = null;
@@ -2081,6 +2224,18 @@ function resetBusinessScopedState(options = {}) {
   state.affiliatesLoaded = false;
   state.affiliateRewardRules = [];
   state.affiliateRewardUnlocks = [];
+  state.acquisitionChannels = [];
+  state.acquisitionChannelTotals = null;
+  state.acquisitionChannelMatrix = [];
+  state.acquisitionChannelsLoaded = false;
+  state.acquisitionChannelsLoading = false;
+  state.acquisitionChannelEditingId = null;
+  state.selectedAcquisitionChannelKey = "";
+  state.acquisitionChannelEfforts = [];
+  state.acquisitionChannelEffortTotals = null;
+  state.acquisitionChannelEffortsLoaded = false;
+  state.acquisitionChannelEffortsLoading = false;
+  state.channelEffortEditingId = null;
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventorySearch = "";
@@ -3169,9 +3324,11 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 const viewFeatureMap = {
   dashboard: "portal_access",
   "rms-machine": "leads_view",
+  missions: "leads_view",
   account: null,
   campaigns: "portal_access",
   competition: "campaign_comparison",
+  channels: "sales_tracker",
   leads: "leads_view",
   affiliates: "affiliates",
   inventory: "gift_inventory",
@@ -3350,7 +3507,7 @@ function renderSubscriptionBanner() {
       ? `Growth temporal activo${access.daysUntilGrowthExpiration !== null && access.daysUntilGrowthExpiration !== undefined ? `: ${access.daysUntilGrowthExpiration} días restantes` : ""}. Conservas tus tickets al volver a Base.`
       : plan.category === "prepaid"
         ? "Acceso legacy: compra T200 para activar Portal Base con dashboard, validador interno y Sales Tracker."
-        : `${subscriptionAccessLabel(plan)}: upgrade mensual activo. Los tickets se compran y consumen como saldo operativo.`;
+        : `${subscriptionAccessLabel(plan)}: upgrade mensual activo. Los tickets se compran desde Cuenta y se consumen como saldo operativo.`;
   if (subscriptionTiming) {
     subscriptionTiming.textContent = subscriptionTimingText(plan);
   }
@@ -3476,9 +3633,6 @@ function showFeatureUpgradeInterstitial(feature = "", options = {}) {
   const currentName = currentPlan().name || "tu plan actual";
   const bullets = (Array.isArray(nextPlan.included) && nextPlan.included.length ? nextPlan.included : [])
     .slice(0, 5);
-  const planUrl = nextPlan.code === "GLOBAL"
-    ? "/paquetes/#contacto"
-    : `/paquetes/?plan=${encodeURIComponent(nextPlan.code)}`;
   const price = nextPlan.monthly_price_cop ? planMonthlyLabel(nextPlan) : (nextPlan.price_label || "Plan superior");
 
   if (!featureUpgradeModal) {
@@ -3499,8 +3653,8 @@ function showFeatureUpgradeInterstitial(feature = "", options = {}) {
       ${bullets.map((item) => `<li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>${escapeHtml(item)}</li>`).join("")}
     </ul>
   `;
-  featureUpgradePrimaryLink.href = planUrl;
-  featureUpgradePrimaryLink.textContent = nextPlan.code === "GLOBAL" ? "Contactar plan Global" : `Ver ${nextPlan.name || "plan"}`;
+  featureUpgradePrimaryLink.href = "#accountPortalPlansCard";
+  featureUpgradePrimaryLink.textContent = "Ver planes en Cuenta";
   featureUpgradeModal.classList.remove("hidden");
   featureUpgradeCloseButton?.focus();
 }
@@ -3819,6 +3973,8 @@ function renderAccountView() {
   renderCommercialDeal();
   renderBusinessUsers();
   renderSubscriptionRenewal();
+  renderQrCreditShop();
+  renderSubscriptionPricing();
   renderDigitalAssets();
 
   if (accountNameInput) accountNameInput.value = business.name || "";
@@ -3928,14 +4084,21 @@ function setView(view) {
     stopAffiliateFinderScanner();
   }
   state.currentView = view;
+  document.body.dataset.currentView = view;
   navButtons.forEach((button) => {
     const isSalesAlias = button.dataset.view === "sales" && view === "leads" && state.contactCenterTab === "sales";
-    const isLeadsBase = button.dataset.view === "leads" && view === "leads" && state.contactCenterTab !== "sales";
+    const contactTarget = button.dataset.contactCenterNav || "";
+    const isLeadsBase = button.dataset.view === "leads"
+      && view === "leads"
+      && state.contactCenterTab !== "sales"
+      && (contactTarget ? state.contactCenterTab === contactTarget : true);
     const isRegular = button.dataset.view === view && view !== "leads";
     button.classList.toggle("active", isSalesAlias || isLeadsBase || isRegular);
   });
   viewSections.forEach((section) => {
-    section.classList.toggle("active", section.dataset.view === view);
+    const isActiveView = section.dataset.view === view;
+    section.classList.toggle("active", isActiveView);
+    section.hidden = !isActiveView;
   });
   workspace?.classList.remove("sidebar-open");
 
@@ -3947,14 +4110,29 @@ function setView(view) {
     tab.classList.toggle("active", active);
   });
 
-  if (view === "dashboard" && state.dashboard) renderDashboard();
+  if (view === "dashboard" && state.dashboard) {
+    renderDashboard();
+    if (!state.missionsLoaded) {
+      loadGamificationDashboard({ quiet: true }).then(renderRevenueWorkspace).catch(() => {});
+    }
+  }
   if (view === "rms-machine") {
     loadRmsMachineData({ quiet: true }).then(renderRmsMachineView).catch((error) => {
       showFeedback(error.message || "No se pudo cargar la Maquina RMS.", "error", { title: "Maquina RMS" });
       renderRmsMachineView();
     });
   }
+  if (view === "missions") {
+    loadGamificationDashboard({ quiet: true }).then(renderMissionsView).catch((error) => {
+      showFeedback(error.message || "No se pudo cargar Misiones MG.", "error", { title: "Misiones MG" });
+      renderMissionsView();
+    });
+  }
   if (view === "account") {
+    loadStrategicQrData({ groups: ["core"], quiet: true }).then(() => {
+      renderQrCreditShop();
+      renderAccountView();
+    }).catch(() => {});
     if (!state.digitalAssetsLoaded || !state.leadCaptureLoaded) {
       Promise.all([
         loadDigitalAssets({ quiet: true }),
@@ -3995,13 +4173,15 @@ function setView(view) {
         renderContactCenterSummary(state.leadCrmRows || []);
       });
     }
-    if (state.contactCenterTab === "sales" && !state.affiliatesLoaded) {
-      loadAffiliatesData().then(renderSalesView);
-    }
     if (state.contactCenterTab === "sales" && !state.inventoryLoaded) {
       loadInventoryProducts({ quiet: true }).then(() => {
         renderInventoryProductOptions();
         renderCustomerSaleItems();
+      });
+    }
+    if (state.contactCenterTab === "sales" && !state.acquisitionChannelsLoaded) {
+      loadAcquisitionChannels({ quiet: true }).then(() => {
+        renderAcquisitionChannelDatalist();
       });
     }
     renderLeadsView();
@@ -4022,6 +4202,13 @@ function setView(view) {
   if (view === "inventory") {
     loadInventoryProducts({ quiet: true }).then(renderInventoryView);
     renderInventoryView();
+  }
+  if (view === "channels") {
+    Promise.all([
+      loadAcquisitionChannels({ quiet: true }),
+      loadChannelEfforts({ quiet: true }),
+    ]).then(renderAcquisitionChannelsView);
+    renderAcquisitionChannelsView();
   }
   if (view === "competition") {
     loadCompetitionProducts({ quiet: true }).then(renderCompetitionView);
@@ -4055,9 +4242,11 @@ function setView(view) {
 function togglePortalMenu() {
   if (!workspace) return;
   if (window.matchMedia("(max-width: 960px)").matches) {
+    workspace.classList.remove("sidebar-collapsed");
     workspace.classList.toggle("sidebar-open");
     return;
   }
+  workspace.classList.remove("sidebar-open");
   workspace.classList.toggle("sidebar-collapsed");
 }
 
@@ -4246,12 +4435,12 @@ function campaignById(campaignId) {
 function campaignAssociationOptions(selectedValue = "", options = {}) {
   const campaigns = activeCampaignsForAssociation();
   const allowNoCampaign = options.allowNoCampaign !== false;
-  const shouldForceCampaign = allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly();
+  const shouldForceCampaign = allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly() && options.forceCampaign !== false;
   const defaultLabel = !campaigns.length
     ? "Crea una campaña antes de asociar tickets"
     : shouldForceCampaign || !allowNoCampaign
       ? "Selecciona campaña / activación"
-      : "Sin campaña: activación por tickets";
+      : options.noCampaignLabel || "Sin campaña: activación por tickets";
   const defaultOption = `<option value="" ${shouldForceCampaign || !allowNoCampaign ? "disabled" : ""}>${defaultLabel}</option>`;
   return [
     defaultOption,
@@ -4285,17 +4474,24 @@ function renderCampaignAssociationInputs() {
     [triviaCampaignInput, true],
     [leadCaptureCampaignInput, true],
     [affiliateReferralQrCampaignInput, false],
-    [affiliatePurchaseCampaignInput, false],
+    [affiliatePurchaseCampaignInput, true],
   ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
     const currentValue = input.value || selectedCampaignId || selectedCampaign?.id || "";
-    input.innerHTML = campaignAssociationOptions(currentValue, { allowNoCampaign });
+    const optionConfig = input === affiliatePurchaseCampaignInput
+      ? { allowNoCampaign: true, forceCampaign: false, noCampaignLabel: "Sin campaña" }
+      : { allowNoCampaign };
+    input.innerHTML = campaignAssociationOptions(currentValue, optionConfig);
     if (currentValue && Array.from(input.options).some((option) => option.value === currentValue)) {
       input.value = currentValue;
     } else if (selectedCampaign?.id && Array.from(input.options).some((option) => option.value === selectedCampaign.id)) {
       input.value = selectedCampaign.id;
     }
-    input.required = input !== triviaCampaignInput && allowNoCampaign && campaigns.length > 0 && !isPrepaidValidatorOnly();
+    input.required = input !== triviaCampaignInput
+      && input !== affiliatePurchaseCampaignInput
+      && allowNoCampaign
+      && campaigns.length > 0
+      && !isPrepaidValidatorOnly();
   });
 
   const campaignName = selectedCampaign?.name || "";
@@ -4317,11 +4513,15 @@ function renderCampaignAssociationInputs() {
 function renderAffiliatePurchaseCampaignOptions() {
   if (!affiliatePurchaseCampaignInput) return;
   const currentValue = affiliatePurchaseCampaignInput.value || state.selectedCampaignId || "";
-  affiliatePurchaseCampaignInput.innerHTML = campaignAssociationOptions(currentValue, { allowNoCampaign: false });
+  affiliatePurchaseCampaignInput.innerHTML = campaignAssociationOptions(currentValue, {
+    allowNoCampaign: true,
+    forceCampaign: false,
+    noCampaignLabel: "Sin campaña",
+  });
   if (currentValue && Array.from(affiliatePurchaseCampaignInput.options).some((option) => option.value === currentValue)) {
     affiliatePurchaseCampaignInput.value = currentValue;
   }
-  affiliatePurchaseCampaignInput.disabled = !state.selectedAffiliateId || !activeCampaignsForAssociation().length;
+  affiliatePurchaseCampaignInput.disabled = !state.selectedAffiliateId;
 }
 
 function requireCampaignAssociation(input, messageElement, actionLabel) {
@@ -4849,7 +5049,6 @@ function renderCommandCenterFilters(data) {
       <label><span>Estado del ticket</span><select data-command-filter="qrStatus">${commandOptions(options.qr_statuses, filters.qrStatus, "Todos")}</select></label>
       <label><span>Tipo de ticket</span><select data-command-filter="qrType">${commandOptions(options.qr_types, filters.qrType, "Todos")}</select></label>
       <label><span>Vendedor / validador</span><select data-command-filter="sellerId">${commandOptions(options.sellers, filters.sellerId, "Todos")}</select></label>
-      <label><span>Afiliado</span><select data-command-filter="affiliateId">${commandOptions(options.affiliates, filters.affiliateId, "Todos")}</select></label>
       <label class="command-toggle">
         <input data-command-filter="comparePrevious" type="checkbox" ${filters.comparePrevious ? "checked" : ""}>
         <span>Comparar periodo anterior</span>
@@ -4926,11 +5125,12 @@ function renderMatrixChart(rows = []) {
     sales: "Ventas",
     revenue: "Revenue",
     conversion_rate: "Conversión",
+    channel_roi: "ROI canal",
   };
   if (!rows.length || !rows.some((row) => toNumber(row[metric] || row.revenue || row.sales || row.leads || row.redemptions) > 0)) return commandEmpty("La matriz aún no tiene cruces medibles.", "Registra leads, tickets, redenciones o ventas con canal para saber que campaña funciona en cada medio.");
   const campaigns = Array.from(new Set(rows.map((row) => row.campaign_name))).slice(0, 8);
   const channels = Array.from(new Set(rows.map((row) => row.channel))).slice(0, 7);
-  const max = Math.max(1, ...rows.map((row) => toNumber(row[metric])));
+  const max = Math.max(1, ...rows.map((row) => Math.abs(toNumber(row[metric]))));
   return `
     <div class="command-panel-tools" aria-label="Selector de metrica de matriz">
       ${Object.entries(metricLabels).map(([value, label]) => `
@@ -4947,8 +5147,8 @@ function renderMatrixChart(rows = []) {
               ${channels.map((channel) => {
                 const row = rows.find((item) => item.campaign_name === campaign && item.channel === channel) || {};
                 const value = toNumber(row[metric]);
-                const label = metric === "revenue" ? money(value) : metric === "conversion_rate" ? `${value}%` : value.toLocaleString("es-CO");
-                return `<td style="--intensity:${value / max}" title="${escapeHtml(campaign)} / ${escapeHtml(channel)} · ${escapeHtml(metricLabels[metric])}: ${escapeHtml(label)}" data-command-focus="matrix" data-focus-campaign="${escapeHtml(campaign)}" data-focus-channel="${escapeHtml(channel)}" tabindex="0" role="button">${value ? escapeHtml(label) : "-"}</td>`;
+                const label = metric === "revenue" ? money(value) : ["conversion_rate"].includes(metric) ? `${value}%` : metric === "channel_roi" ? channelRoiLabel(value) : value.toLocaleString("es-CO");
+                return `<td style="--intensity:${Math.abs(value) / max}" title="${escapeHtml(campaign)} / ${escapeHtml(channel)} · ${escapeHtml(metricLabels[metric])}: ${escapeHtml(label)}" data-command-focus="matrix" data-focus-campaign="${escapeHtml(campaign)}" data-focus-channel="${escapeHtml(channel)}" tabindex="0" role="button">${value ? escapeHtml(label) : "-"}</td>`;
               }).join("")}
             </tr>
           `).join("")}
@@ -4968,7 +5168,7 @@ function renderTreemapChart(rows = []) {
         return `<article style="--share:${share}; --span:${span}; --tone:${index}" data-command-focus="treemap" data-focus-channel="${escapeHtml(row.label)}" tabindex="0" role="button">
           <strong>${escapeHtml(row.label)}</strong>
           <span>${money(row.revenue)}</span>
-          <small>${row.sales} ventas · ${Math.round((toNumber(row.revenue) / total) * 100)}%</small>
+          <small>${row.sales} ventas · ROI ${channelRoiLabel(row.roi)} · CAC ${money(row.cac || 0)}</small>
         </article>`;
       }).join("")}
     </div>`;
@@ -5244,7 +5444,7 @@ function renderGuidedRevenueFeed(data = {}) {
       eyebrow: "Lectura inicial",
       title: `MG Revenue Score: ${scoreValue}/100`,
       metric: scoreLabel,
-      what: "Es la salud comercial del negocio en el periodo filtrado. Combina redención, conversión, revenue, afiliados, sucursales y calidad de datos.",
+      what: "Es la salud comercial del negocio en el periodo filtrado. Combina redención, conversión, revenue, sucursales y calidad de datos.",
       signal: `El sistema interpreta el negocio como: ${scoreLabel}.`,
       action: scoreAction,
     },
@@ -5253,7 +5453,7 @@ function renderGuidedRevenueFeed(data = {}) {
       eyebrow: "Revenue real",
       title: "Cuanto dinero se puede atribuir",
       metric: money(executive.revenue || totals.revenue || 0),
-      what: "Revenue atribuido es la venta registrada que el RMS puede conectar con una campaña, canal, ticket, afiliado o sucursal.",
+      what: "Revenue atribuido es la venta registrada que el RMS puede conectar con una campaña, canal, ticket o sucursal.",
       signal: `Canal ganador: ${executive.winning_channel || "Sin datos"} · Campaña ganadora: ${executive.winning_campaign || "Sin datos"}.`,
       action: executive.recommended_action || "Registra cada venta con origen para que el sistema sepa que estrategia repetir.",
     },
@@ -5373,7 +5573,7 @@ function renderCommandCenter() {
         <div>
           <span class="mono-label">Market Games RMS</span>
           <h2>Centro de comando de revenue marketing</h2>
-          <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, afiliados, sucursales y revenue real.</p>
+          <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, sucursales y revenue real.</p>
           <div class="command-hero-actions">
             <button class="solid-button" data-command-scroll="detail" type="button">Ver detalle</button>
             <button class="ghost-button" data-command-export type="button">Exportar CSV</button>
@@ -5385,7 +5585,6 @@ function renderCommandCenter() {
           <p>Canal: ${escapeHtml(executive.winning_channel)} · Campaña: ${escapeHtml(executive.winning_campaign)}</p>
           <dl>
             <div><dt>Sucursal líder</dt><dd>${escapeHtml(executive.leading_branch)}</dd></div>
-            <div><dt>Afiliado destacado</dt><dd>${escapeHtml(executive.top_affiliate)}</dd></div>
             <div><dt>Riesgo</dt><dd>${escapeHtml(executive.main_risk)}</dd></div>
             <div><dt>Accion</dt><dd>${escapeHtml(executive.recommended_action)}</dd></div>
           </dl>
@@ -5418,7 +5617,7 @@ function renderCommandCenter() {
       </section>
 
       <section class="command-panel">
-        <div class="command-panel-head"><div><span class="mono-label">Decisiones sugeridas</span><h3>Insights automaticos del RMS</h3><p>Reglas de negocio que conectan interés, redención, venta, afiliados y revenue.</p></div></div>
+        <div class="command-panel-head"><div><span class="mono-label">Decisiones sugeridas</span><h3>Insights automaticos del RMS</h3><p>Reglas de negocio que conectan interés, redención, venta y revenue.</p></div></div>
         ${renderSuggestedDecisions(data.insights)}
       </section>
 
@@ -5430,7 +5629,6 @@ function renderCommandCenter() {
         <article class="command-panel command-wide" data-command-focus="channel-performance" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Canales independientes</span><h3>Rendimiento por canal</h3><p>Compara Instagram, Facebook, WhatsApp, Web, Google y otros canales sin depender de una sola campaña.</p></div>${commandPanelActions("channel-performance")}</div>${renderChannelPerformanceTable(data.channel_performance || data.revenue_treemap || [])}</article>
         <article class="command-panel" data-command-focus="campaign-comparison" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Campañas comparadas</span><h3>Leads, tickets, redenciones, ventas y revenue</h3></div>${commandPanelActions("campaign-comparison")}</div><canvas id="commandCampaignBars" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="sankey" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sankey RMS</span><h3>Flujo de atribución</h3></div>${commandPanelActions("sankey")}</div>${renderSankeyChart(data.attribution_sankey)}</article>
-        <article class="command-panel" data-command-focus="affiliate-network" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Afiliados y referidos</span><h3>Network graph</h3></div>${commandPanelActions("affiliate-network")}</div>${renderAffiliateNetwork(data.affiliate_network)}</article>
         <article class="command-panel" data-command-focus="branch-ranking" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Sucursales</span><h3>Ranking combinado</h3></div>${commandPanelActions("branch-ranking")}</div><canvas id="commandBranchRanking" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="qr-status" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Estado de tickets</span><h3>Activos, redimidos, vencidos y reclamados</h3></div>${commandPanelActions("qr-status")}</div><canvas id="commandQrDonut" width="900" height="340"></canvas></article>
         <article class="command-panel" data-command-focus="scatter" tabindex="0" role="button"><div class="command-panel-head"><div><span class="mono-label">Scatter campañas</span><h3>Inversión / tickets vs revenue</h3></div>${commandPanelActions("scatter")}</div><canvas id="commandScatter" width="900" height="340"></canvas></article>
@@ -5499,7 +5697,6 @@ function bindCommandCenterEvents() {
       qrStatus: "",
       qrType: "",
       sellerId: "",
-      affiliateId: "",
       comparePrevious: true,
       matrixMetric: "revenue",
       tableSearch: "",
@@ -5802,7 +5999,6 @@ function commandFilterLabel(key, value) {
   const optionMaps = {
     campaignId: options.campaigns?.map((item) => ({ value: item.id, label: item.name })),
     branchId: options.branches?.map((item) => ({ value: item.id, label: item.name })),
-    affiliateId: options.affiliates?.map((item) => ({ value: item.id, label: item.name })),
     sellerId: options.sellers?.map((item) => ({ value: item.id, label: item.name })),
     channel: options.channels,
     qrType: options.qr_types,
@@ -5823,7 +6019,6 @@ function activeCommandFilterChips(extra = {}) {
     ["qrStatus", "Estado del ticket"],
     ["qrType", "Tipo de ticket"],
     ["sellerId", "Vendedor"],
-    ["affiliateId", "Afiliado"],
   ].forEach(([key, label]) => {
     if (filters[key]) chips.push({ key, label, value: commandFilterLabel(key, filters[key]) });
   });
@@ -5905,13 +6100,13 @@ function chartFocusRecords(chartId, context = {}) {
   }
   if (chartId === "matrix") {
     return {
-      columns: ["Campaña", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue"],
+      columns: ["Campaña", "Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Inversión canal", "ROI canal"],
       rows: (data.campaign_channel_matrix || [])
         .filter((row) => !context.campaign || row.campaign_name === context.campaign)
         .filter((row) => !context.channel || row.channel === context.channel)
         .sort((a, b) => toNumber(b[metric]) - toNumber(a[metric]))
         .slice(0, 25)
-        .map((row) => [row.campaign_name, row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue)]),
+        .map((row) => [row.campaign_name, row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), money(row.channel_investment || 0), channelRoiLabel(row.channel_roi)]),
     };
   }
   if (chartId === "treemap" || chartId === "waterfall" || chartId === "channel-performance") {
@@ -6014,7 +6209,6 @@ function renderFocusVisualization(chartId, context = {}) {
   if (chartId === "treemap") return renderTreemapChart(data.revenue_treemap || []);
   if (chartId === "channel-performance") return renderChannelPerformanceTable(data.channel_performance || data.revenue_treemap || []);
   if (chartId === "sankey") return renderSankeyChart(data.attribution_sankey || {});
-  if (chartId === "affiliate-network") return renderAffiliateNetwork(data.affiliate_network || {});
   if (chartId === "cohorts") return renderCohortChart(data.cohorts || []);
   if (chartId === "power-table") return renderPowerTable(data.power_table || []);
   if (["timeline", "campaign-comparison", "branch-ranking", "qr-status", "scatter", "waterfall", "revenue-score"].includes(chartId)) {
@@ -6386,7 +6580,740 @@ function drawCommandCenterCharts(data) {
   drawWaterfallChart(document.getElementById("commandWaterfall"), data.revenue_waterfall || []);
 }
 
+const REVENUE_ACTION_OPTIONS = {
+  capture: {
+    label: "Capturar nuevos clientes",
+    tools: ["QR", "Landing", "Ticket relámpago", "Trivia", "Ruleta", "Descarga de catálogo", "Formulario corto"],
+    route: "campaigns",
+    task: "Contactar por WhatsApp",
+    coverage: "ticket",
+  },
+  store_activation: {
+    label: "Activar campaña en tienda",
+    tools: ["QR de vitrina", "Ticket relámpago", "Ruleta", "Check-in", "Reward Pass"],
+    route: "strategic-qr",
+    task: "Revisar redención",
+    coverage: "limited_benefit",
+  },
+  recover: {
+    label: "Reactivar clientes dormidos",
+    tools: ["Agenda de recuperación", "Ticket de regreso", "Campaña de WhatsApp", "Reward Pass"],
+    route: "leads",
+    tab: "agenda",
+    task: "Contactar por WhatsApp",
+    coverage: "limited_benefit",
+  },
+  rebuy: {
+    label: "Aumentar recompra",
+    tools: ["Reward Pass", "Ticket de regreso", "Agenda de seguimiento", "Campaña de WhatsApp", "Racha de compra"],
+    route: "reward-passes",
+    task: "Activar recompra",
+    coverage: "rebuy_mission",
+  },
+  gamify: {
+    label: "Crear dinámica gamificada",
+    tools: ["Trivia semanal", "Ranking", "Racha", "Juego diario", "Encuesta con recompensa"],
+    route: "missions",
+    task: "Enviar catálogo",
+    coverage: "weekly_trivia",
+  },
+  referrals: {
+    label: "Generar referidos",
+    tools: ["Ticket referido", "Reward Pass", "Beneficio por recomendación", "Campaña de referidos"],
+    route: "reward-passes",
+    task: "Pedir referido",
+    coverage: "reward_pass",
+  },
+  measure: {
+    label: "Medir campaña",
+    tools: ["Dashboard", "Sales", "Redenciones", "Reporte de campaña"],
+    route: "sales",
+    tab: "sales",
+    task: "Registrar venta",
+    coverage: "redemption_reward",
+  },
+  validate: {
+    label: "Validar tickets",
+    tools: ["Validador QR", "Redenciones", "Ticket activo"],
+    route: "validator",
+    task: "Revisar redención",
+    coverage: "ticket",
+  },
+  sales: {
+    label: "Registrar ventas",
+    tools: ["Sales", "Venta atribuida", "Ticket postventa"],
+    route: "sales",
+    tab: "sales",
+    task: "Registrar venta",
+    coverage: "reward_pass",
+  },
+  agenda: {
+    label: "Revisar agenda comercial",
+    tools: ["Agenda", "Tareas críticas", "Seguimiento"],
+    route: "leads",
+    tab: "agenda",
+    task: "Contactar por WhatsApp",
+    coverage: "agenda_reminder",
+  },
+};
+
+function revenueActionConfig(objective = "capture") {
+  return REVENUE_ACTION_OPTIONS[objective] || REVENUE_ACTION_OPTIONS.capture;
+}
+
+function renderRevenueWorkspace() {
+  const summary = state.summary || {};
+  const dashboard = state.dashboard || {};
+  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const activeQr = toNumber(dashboard.summary?.active_qr);
+  const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
+  const activeMissions = toNumber(state.missions?.metrics?.active_seasons || 0);
+  const path = [
+    { key: "capture", label: "Capturar", count: summary.total_leads || 0, meta: "leads nuevos", action: "Crear QR", target: "campaigns" },
+    { key: "gamify", label: "Gamificar", count: activeMissions || state.leadCaptureActivations?.length || 0, meta: "dinámicas activas", action: "Crear dinámica", target: "missions" },
+    { key: "qualify", label: "Calificar", count: state.leadCrmPagination?.total || summary.total_leads || 0, meta: "contactos procesables", action: "Ver contactos", target: "contacts" },
+    { key: "agenda", label: "Agendar", count: openAgenda, meta: "tareas abiertas", action: "Ver agenda", target: "agenda" },
+    { key: "redeem", label: "Redimir", count: summary.total_qr_redeemed || 0, meta: `${activeQr} tickets activos`, action: "Validar ticket", target: "validator" },
+    { key: "sell", label: "Vender", count: observedSalesCount, meta: money(observedRevenue), action: "Registrar venta", target: "sales" },
+    { key: "loyalty", label: "Fidelizar", count: summary.referral_sales_count || state.rewardPasses?.length || 0, meta: "recompra / referido", action: "Activar recompra", target: "reward-passes" },
+  ];
+  if (revenuePathGuide) {
+    revenuePathGuide.innerHTML = path.map((step, index) => `
+      <article class="revenue-path-step ${Number(step.count || 0) > 0 ? "is-active" : ""}">
+        <span>${index + 1}</span>
+        <strong>${escapeHtml(step.label)}</strong>
+        <p>${Number(step.count || 0).toLocaleString("es-CO")} ${escapeHtml(step.meta)}</p>
+        <button type="button" data-revenue-route="${escapeHtml(step.target)}">${escapeHtml(step.action)}</button>
+      </article>
+    `).join("");
+    revenuePathGuide.querySelectorAll("[data-revenue-route]").forEach((button) => {
+      button.addEventListener("click", () => navigateRevenueRoute(button.dataset.revenueRoute));
+    });
+  }
+  renderNextBestAction(path);
+  const totalActivity = path.reduce((acc, step) => acc + Number(step.count || 0), 0);
+  revenueOnboarding?.classList.toggle("hidden", totalActivity > 0);
+}
+
+function nextBestRevenueAction(path = []) {
+  const summary = state.summary || {};
+  const dashboard = state.dashboard || {};
+  const leads = toNumber(summary.total_leads || 0);
+  const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
+  const redeemed = toNumber(summary.total_qr_redeemed || 0);
+  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const activeQr = toNumber(dashboard.summary?.active_qr || 0);
+  if (!leads) return { title: "Crear una entrada de clientes", description: "Aún no hay materia prima comercial. Crea QR, campaña, dinámica o importa contactos para alimentar la Máquina RMS.", cta: "Crear acción de revenue", objective: "capture", route: "wizard" };
+  if (leads && !openAgenda) return { title: "Crear seguimiento en agenda", description: "Ya hay leads o contactos, pero necesitan una orden de trabajo: WhatsApp, llamada, redención, venta o recompra.", cta: "Crear tarea de conversión", objective: "agenda", route: "wizard" };
+  if (activeQr > 0 && redeemed === 0) return { title: "Recordar tickets activos", description: "Hay tickets vivos sin redención suficiente. Usa agenda o WhatsApp para empujar visita y validación.", cta: "Revisar tickets", objective: "validate", route: "validator" };
+  if (redeemed > observedSalesCount) return { title: "Registrar ventas pendientes", description: "Hay redenciones que deben conectarse con ventas para medir revenue real.", cta: "Registrar venta", objective: "sales", route: "sales" };
+  if (!state.missions?.metrics?.active_seasons) return { title: "Crear dinámica semanal", description: "Una misión, ranking o racha mantiene vivo al cliente después de la captura.", cta: "Crear dinámica", objective: "gamify", route: "missions" };
+  return { title: "Operar la Máquina RMS", description: "Procesa oportunidades por prioridad y convierte cada lead en una siguiente acción medible.", cta: "Ver Máquina RMS", objective: "agenda", route: "rms-machine" };
+}
+
+function renderNextBestAction(path = []) {
+  if (!nextBestActionCard) return;
+  const action = nextBestRevenueAction(path);
+  nextBestActionCard.innerHTML = `
+    <span class="mono-label">Siguiente acción recomendada</span>
+    <h3>${escapeHtml(action.title)}</h3>
+    <p>${escapeHtml(action.description)}</p>
+    <button class="solid-button" type="button" data-next-revenue-action="${escapeHtml(action.route)}" data-revenue-objective="${escapeHtml(action.objective)}">${escapeHtml(action.cta)}</button>
+  `;
+  nextBestActionCard.querySelector("[data-next-revenue-action]")?.addEventListener("click", (event) => {
+    const route = event.currentTarget.dataset.nextRevenueAction;
+    if (route === "wizard") {
+      openRevenueActionWizard(event.currentTarget.dataset.revenueObjective || "capture");
+      return;
+    }
+    navigateRevenueRoute(route);
+  });
+}
+
+function navigateRevenueRoute(route = "") {
+  const target = String(route || "");
+  if (target === "agenda") {
+    setContactCenterTab("agenda");
+    setView("leads");
+    return;
+  }
+  if (target === "contacts") {
+    setContactCenterTab("directory");
+    setView("leads");
+    return;
+  }
+  if (target === "sales") {
+    setContactCenterTab("sales");
+    setView("leads");
+    return;
+  }
+  if (target === "validator") {
+    setView("validator");
+    return;
+  }
+  setView(target || "dashboard");
+}
+
+function updateRevenueActionToolOptions() {
+  const config = revenueActionConfig(revenueActionObjectiveInput?.value || "capture");
+  if (revenueActionToolInput) {
+    revenueActionToolInput.innerHTML = config.tools.map((tool) => `<option value="${escapeHtml(tool)}">${escapeHtml(tool)}</option>`).join("");
+  }
+  if (revenueActionTaskInput) revenueActionTaskInput.value = config.task;
+  if (revenueActionCoverageInput) revenueActionCoverageInput.value = config.coverage || revenueActionCoverageInput.value;
+  renderRevenueActionSummary();
+}
+
+function openRevenueActionWizard(objective = "capture") {
+  if (revenueActionObjectiveInput) revenueActionObjectiveInput.value = REVENUE_ACTION_OPTIONS[objective] ? objective : "capture";
+  if (revenueActionDueInput && !revenueActionDueInput.value) {
+    revenueActionDueInput.value = datetimeLocalValue(new Date(Date.now() + 86400000));
+  }
+  updateRevenueActionToolOptions();
+  if (revenueActionWizardMessage) revenueActionWizardMessage.textContent = "";
+  revenueActionWizardModal?.classList.remove("hidden");
+}
+
+function closeRevenueActionWizard() {
+  revenueActionWizardModal?.classList.add("hidden");
+}
+
+function revenueSelectLabel(input) {
+  return input?.selectedOptions?.[0]?.textContent || input?.value || "";
+}
+
+function renderRevenueActionSummary() {
+  if (!revenueActionSummary) return;
+  const objective = revenueSelectLabel(revenueActionObjectiveInput);
+  const tool = revenueSelectLabel(revenueActionToolInput);
+  const segment = revenueSelectLabel(revenueActionSegmentInput);
+  const coverage = revenueSelectLabel(revenueActionCoverageInput);
+  const task = revenueSelectLabel(revenueActionTaskInput);
+  revenueActionSummary.innerHTML = `
+    <span class="mono-label">Confirmación</span>
+    <h4>Acción de revenue lista para agenda</h4>
+    <p>Objetivo: ${escapeHtml(objective)} · Herramienta: ${escapeHtml(tool)} · Segmento: ${escapeHtml(segment)} · Cobertura: ${escapeHtml(coverage)} · Agenda: ${escapeHtml(task)}</p>
+    <small>Métrica esperada: clientes capturados, tickets/redenciones, tareas ejecutadas y revenue atribuido.</small>
+  `;
+}
+
+async function submitRevenueActionWizard(event) {
+  event.preventDefault();
+  const objective = revenueActionObjectiveInput?.value || "capture";
+  const config = revenueActionConfig(objective);
+  const payload = {
+    source_type: "MARKETING",
+    note_type: "follow_up",
+    next_action: revenueActionTaskInput?.value || config.task,
+    note: `Acción de revenue: ${revenueSelectLabel(revenueActionObjectiveInput)} con ${revenueSelectLabel(revenueActionToolInput)}. Segmento: ${revenueSelectLabel(revenueActionSegmentInput)}. Cobertura: ${revenueSelectLabel(revenueActionCoverageInput)}.`,
+    reminder_at: revenueActionDueInput?.value ? new Date(revenueActionDueInput.value).toISOString() : new Date(Date.now() + 86400000).toISOString(),
+    agenda_priority: ["capture", "validate", "sales"].includes(objective) ? "HIGH" : "MEDIUM",
+    checklist: [
+      { label: "Activar herramienta seleccionada", done: false },
+      { label: "Capturar o seleccionar clientes", done: false },
+      { label: "Registrar resultado comercial", done: false },
+    ],
+    metadata: {
+      source_module: "revenue_workspace",
+      source_flow: "revenue_action_wizard",
+      objective,
+      tool: revenueActionToolInput?.value || "",
+      segment: revenueActionSegmentInput?.value || "",
+      coverage: revenueActionCoverageInput?.value || "",
+      route: config.route,
+    },
+  };
+  try {
+    if (revenueActionWizardMessage) revenueActionWizardMessage.textContent = "Creando tarea en agenda...";
+    await api("/api/business/leads/agenda", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.leadAgendaLoaded = false;
+    closeRevenueActionWizard();
+    showFeedback("Acción de revenue creada. Quedó como tarea en la agenda operativa.", "success", { title: "Centro de Revenue" });
+    navigateRevenueRoute(config.route);
+  } catch (error) {
+    if (revenueActionWizardMessage) revenueActionWizardMessage.textContent = error.message || "No se pudo crear la acción.";
+    showFeedback(error.message || "No se pudo crear la acción de revenue.", "error", { title: "Centro de Revenue" });
+  }
+}
+
+function navigatePortalShortcut(target = "") {
+  const shortcut = String(target || "").trim();
+  if (!shortcut) return;
+  const contactTabs = {
+    agenda: "agenda",
+    contacts: "overview",
+    sales: "sales",
+  };
+  if (contactTabs[shortcut]) {
+    setContactCenterTab(contactTabs[shortcut]);
+    setView(shortcut === "sales" ? "sales" : "leads");
+    return;
+  }
+  const viewMap = {
+    dashboard: "dashboard",
+    campaigns: "campaigns",
+    "strategic-qr": "strategic-qr",
+    missions: "missions",
+    "rms-machine": "rms-machine",
+    "reward-passes": "reward-passes",
+    validator: "validator",
+    redemptions: "redemptions",
+    affiliates: "affiliates",
+    inventory: "inventory",
+    branches: "branches",
+    competition: "competition",
+    account: "account",
+    admin: "admin",
+  };
+  if (viewMap[shortcut]) setView(viewMap[shortcut]);
+}
+
+const DASHBOARD_BUILDER_STORAGE_KEY = "marketgames_dashboard_builder_v2";
+const DASHBOARD_BUILDER_PROFILE_KEY = "marketgames_dashboard_profile_v1";
+const DASHBOARD_BUILDER_EXPANDED_KEY = "marketgames_dashboard_advanced_v1";
+
+const DASHBOARD_BUILDER_PROFILES = {
+  marketing: {
+    label: "Centro inicial",
+    title: "Centro de Comando Revenue Marketing",
+    description: "Siguiente acción, embudo, ROI por canales/campañas y tabla ejecutiva sin exceso de ruido.",
+    widgets: ["next_action", "revenue_funnel", "channel_roi", "campaign_roi", "roi_table"],
+  },
+  commercial: {
+    label: "Perfil comercial",
+    title: "Dashboard Comercial",
+    description: "Revenue, ventas, agenda y oportunidades para operar seguimiento y cierre.",
+    widgets: ["next_action", "revenue_funnel", "revenue", "agenda", "opportunities", "roi_table"],
+  },
+  custom: {
+    label: "Perfil personalizado",
+    title: "Dashboard Personalizado",
+    description: "Arrastra, agrega y quita bloques para construir tu propia vista de control.",
+    widgets: ["next_action", "revenue", "channel_roi", "agenda"],
+  },
+};
+
+const DASHBOARD_WIDGET_CATALOG = [
+  { id: "next_action", title: "Siguiente mejor acción", category: "Operacion", icon: "bolt", route: "rms-machine", description: "Indica qué debe hacer el negocio ahora para mover revenue." },
+  { id: "revenue", title: "Revenue real", category: "Comercial", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
+  { id: "revenue_funnel", title: "Embudo RMS simple", category: "Revenue", icon: "conversion_path", route: "rms-machine", description: "Lectura compacta de leads, tickets, redenciones y ventas." },
+  { id: "sales", title: "Ventas registradas", category: "Comercial", icon: "point_of_sale", route: "sales", description: "Entrada directa para registrar compras y alimentar el ROI." },
+  { id: "channel_roi", title: "ROI por canales", category: "Marketing", icon: "hub", route: "channels", description: "Compara Instagram, Facebook, Google, web, WhatsApp y otros canales." },
+  { id: "campaign_roi", title: "ROI campañas", category: "Marketing", icon: "campaign", route: "campaigns", description: "Mide inversión vs revenue atribuido por campaña." },
+  { id: "leads", title: "Leads capturados", category: "Marketing", icon: "person_add", route: "leads", description: "Personas identificadas desde campañas, QR, juegos o formularios." },
+  { id: "tickets", title: "Tickets activos", category: "Activacion", icon: "confirmation_number", route: "strategic-qr", description: "Beneficios emitidos que sostienen la atención del cliente." },
+  { id: "redemptions", title: "Redenciones", category: "Conversion", icon: "qr_code_scanner", route: "redemptions", description: "Clientes que usaron el beneficio y ya requieren cierre comercial." },
+  { id: "agenda", title: "Agenda comercial", category: "Operacion", icon: "event_available", route: "agenda", description: "Tareas de seguimiento para WhatsApp, llamadas, redenciones y cierre." },
+  { id: "opportunities", title: "Máquina RMS", category: "Operacion", icon: "precision_manufacturing", route: "rms-machine", description: "Cola diaria de oportunidades priorizadas para vendedores." },
+  { id: "roi_table", title: "Tabla ejecutiva ROI", category: "Analisis", icon: "table_chart", route: "channels", description: "Ranking corto de canales y campañas por inversión, revenue y ROI." },
+];
+
+function readDashboardBuilderStorage() {
+  try {
+    return JSON.parse(window.localStorage.getItem(DASHBOARD_BUILDER_STORAGE_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeDashboardBuilderStorage(layouts) {
+  try {
+    window.localStorage.setItem(DASHBOARD_BUILDER_STORAGE_KEY, JSON.stringify(layouts || {}));
+  } catch {
+    // El dashboard sigue funcionando aunque el navegador bloquee localStorage.
+  }
+}
+
+function getDashboardProfile() {
+  try {
+    const stored = window.localStorage.getItem(DASHBOARD_BUILDER_PROFILE_KEY) || state.dashboardBuilderProfile || "marketing";
+    return DASHBOARD_BUILDER_PROFILES[stored] ? stored : "marketing";
+  } catch {
+    return DASHBOARD_BUILDER_PROFILES[state.dashboardBuilderProfile] ? state.dashboardBuilderProfile : "marketing";
+  }
+}
+
+function setDashboardProfile(profile) {
+  state.dashboardBuilderProfile = DASHBOARD_BUILDER_PROFILES[profile] ? profile : "marketing";
+  try {
+    window.localStorage.setItem(DASHBOARD_BUILDER_PROFILE_KEY, state.dashboardBuilderProfile);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function getDashboardBuilderLayout(profile = getDashboardProfile()) {
+  const layouts = readDashboardBuilderStorage();
+  const saved = Array.isArray(layouts[profile]) ? layouts[profile] : null;
+  const fallback = DASHBOARD_BUILDER_PROFILES[profile]?.widgets || DASHBOARD_BUILDER_PROFILES.marketing.widgets;
+  return (saved || fallback).filter((id) => DASHBOARD_WIDGET_CATALOG.some((widget) => widget.id === id));
+}
+
+function setDashboardBuilderLayout(profile, widgets) {
+  const layouts = readDashboardBuilderStorage();
+  layouts[profile] = Array.from(new Set((widgets || []).filter((id) => DASHBOARD_WIDGET_CATALOG.some((widget) => widget.id === id))));
+  writeDashboardBuilderStorage(layouts);
+}
+
+function resetDashboardBuilderLayout() {
+  const profile = getDashboardProfile();
+  const layouts = readDashboardBuilderStorage();
+  delete layouts[profile];
+  writeDashboardBuilderStorage(layouts);
+  renderDashboardBuilder();
+  showFeedback("Perfil restaurado con los bloques recomendados.", "success", { title: "Dashboard RMS" });
+}
+
+function dashboardBuilderTopCampaigns() {
+  return (Array.isArray(state.campaigns) ? state.campaigns : [])
+    .map((campaign) => ({
+      label: campaign.name || "Campaña sin nombre",
+      revenue: toNumber(campaign.attributed_revenue || campaign.observed_revenue),
+      investment: toNumber(campaign.budget_total || campaign.investment || campaign.cost_total),
+      meta: `${toNumber(campaign.total_leads)} leads | ${toNumber(campaign.total_qr_redeemed)} redenciones`,
+    }))
+    .filter((row) => row.revenue || row.investment)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 4);
+}
+
+function dashboardBuilderTopChannels() {
+  const channelRows = Array.isArray(state.acquisitionChannels) && state.acquisitionChannels.length
+    ? state.acquisitionChannels.map((channel) => ({
+      label: channel.name || channel.platform || channel.channel || "Canal sin nombre",
+      revenue: toNumber(channel.attributed_revenue || channel.revenue || channel.total_revenue),
+      investment: toNumber(channel.budget_total || channel.monthly_budget || channel.total_investment || channel.investment),
+      meta: `${toNumber(channel.leads || channel.total_leads)} leads | ${toNumber(channel.sales_count || channel.sales || channel.total_sales)} ventas`,
+    }))
+    : (state.dashboard?.acquisition_sources || []).map((row) => ({
+      label: `${acquisitionSourceLabel(row.acquisition_source)}${row.acquisition_channel ? ` / ${row.acquisition_channel}` : ""}`,
+      revenue: toNumber(row.revenue),
+      investment: toNumber(row.investment || row.cost || row.budget_total),
+      meta: `${toNumber(row.count)} ventas`,
+    }));
+  return channelRows.filter((row) => row.revenue || row.investment).sort((a, b) => b.revenue - a.revenue).slice(0, 4);
+}
+
+function getDashboardBuilderNextAction(stats) {
+  if (!stats.totalLeads) {
+    return { title: "Crear entrada de clientes", meta: "Primero alimenta el sistema", body: "Crea una campaña, QR, dinámica o importa contactos para empezar a medir.", cta: "Crear acción de revenue", route: "campaigns" };
+  }
+  if (!stats.openAgenda) {
+    return { title: "Crear seguimiento en agenda", meta: "Leads sin orden de trabajo", body: "Cada lead debe tener próxima tarea: WhatsApp, llamada, redención, venta o recompra.", cta: "Abrir agenda", route: "agenda" };
+  }
+  if (stats.activeQr) {
+    return { title: "Recordar tickets activos", meta: `${stats.activeQr} tickets vivos`, body: "Convierte tickets activos en visitas, redenciones y ventas registradas.", cta: "Ver tickets", route: "strategic-qr" };
+  }
+  if (stats.totalQrRedeemed && !stats.observedSalesCount) {
+    return { title: "Registrar ventas de redenciones", meta: "Hay redenciones sin revenue", body: "Conecta redenciones con ventas para que el ROI sea real.", cta: "Registrar venta", route: "sales" };
+  }
+  return { title: "Revisar Máquina RMS", meta: "Prioriza la siguiente acción", body: "Ordena oportunidades por riesgo, intención, ticket, recompra o referido.", cta: "Abrir Máquina RMS", route: "rms-machine" };
+}
+
+function getDashboardBuilderStats() {
+  const summary = state.summary || {};
+  const dashboard = state.dashboard || {};
+  const topCampaigns = dashboardBuilderTopCampaigns();
+  const topChannels = dashboardBuilderTopChannels();
+  const campaignInvestment = topCampaigns.reduce((sum, row) => sum + toNumber(row.investment), 0)
+    || (Array.isArray(state.campaigns) ? state.campaigns.reduce((sum, campaign) => sum + toNumber(campaign.budget_total || campaign.investment || campaign.cost_total), 0) : 0);
+  const campaignRevenue = topCampaigns.reduce((sum, row) => sum + toNumber(row.revenue), 0)
+    || (Array.isArray(state.campaigns) ? state.campaigns.reduce((sum, campaign) => sum + toNumber(campaign.attributed_revenue || campaign.observed_revenue), 0) : 0);
+  const channelInvestment = toNumber(state.acquisitionChannelTotals?.total_investment || state.acquisitionChannelTotals?.investment)
+    || topChannels.reduce((sum, row) => sum + toNumber(row.investment), 0);
+  const channelRevenue = toNumber(state.acquisitionChannelTotals?.revenue || state.acquisitionChannelTotals?.total_revenue)
+    || topChannels.reduce((sum, row) => sum + toNumber(row.revenue), 0);
+  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const openAgenda = (Array.isArray(state.leadAgenda) ? state.leadAgenda : [])
+    .filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase()))
+    .length;
+  const rmsOpportunities = Object.values(state.rmsMachineData?.dailyQueue || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+  const totalLeads = toNumber(summary.total_leads);
+  const activeQr = toNumber(dashboard.summary?.active_qr);
+  const totalQrRedeemed = toNumber(summary.total_qr_redeemed);
+  const nextAction = getDashboardBuilderNextAction({
+    totalLeads,
+    openAgenda,
+    activeQr,
+    totalQrRedeemed,
+    observedSalesCount,
+  });
+  return {
+    activeQr,
+    avgTicket: observedSalesCount ? observedRevenue / observedSalesCount : 0,
+    campaignInvestment,
+    campaignRevenue,
+    campaignRoi: campaignInvestment ? (campaignRevenue - campaignInvestment) / campaignInvestment : null,
+    channelInvestment,
+    channelRevenue,
+    channelRoi: channelInvestment ? (channelRevenue - channelInvestment) / channelInvestment : null,
+    nextAction,
+    observedRevenue,
+    openAgenda,
+    redemptionRate: toNumber(summary.redemption_rate),
+    referralPoints: toNumber(summary.referral_points_awarded),
+    referralSales: toNumber(summary.referral_sales_count),
+    rmsOpportunities,
+    salesCount: observedSalesCount,
+    topCampaigns,
+    topChannels,
+    totalLeads,
+    totalQrGenerated: toNumber(summary.total_qr_generated),
+    totalQrRedeemed,
+  };
+}
+
+function dashboardBuilderBars(rows = [], key = "revenue") {
+  if (!rows.length) return '<div class="dashboard-mini-empty">Sin datos suficientes todavía. Registra inversión, leads y ventas para activar esta lectura.</div>';
+  const maxValue = Math.max(...rows.map((row) => toNumber(row[key])), 1);
+  return `
+    <div class="dashboard-mini-bars">
+      ${rows.map((row) => {
+        const value = toNumber(row[key]);
+        const width = Math.max(8, Math.min(100, Math.round((value / maxValue) * 100)));
+        return `
+          <div class="dashboard-mini-bar">
+            <div class="dashboard-mini-bar-top"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(money(value))}</strong></div>
+            <i><b style="width:${width}%"></b></i>
+            <small>${escapeHtml(row.meta || "")}</small>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function dashboardBuilderFunnel(stats) {
+  const stages = [
+    { label: "Leads", value: stats.totalLeads, meta: "captados" },
+    { label: "Tickets", value: stats.totalQrGenerated, meta: "emitidos" },
+    { label: "Redenciones", value: stats.totalQrRedeemed, meta: "validadas" },
+    { label: "Ventas", value: stats.salesCount, meta: "registradas" },
+  ];
+  const maxValue = Math.max(...stages.map((stage) => toNumber(stage.value)), 1);
+  return `
+    <div class="dashboard-funnel-simple">
+      ${stages.map((stage) => {
+        const width = Math.max(8, Math.min(100, Math.round((toNumber(stage.value) / maxValue) * 100)));
+        return `
+          <div class="dashboard-funnel-row">
+            <span>${escapeHtml(stage.label)}</span>
+            <i><b style="width:${width}%"></b></i>
+            <strong>${toNumber(stage.value).toLocaleString("es-CO")}</strong>
+            <small>${escapeHtml(stage.meta)}</small>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function dashboardBuilderRoiTable(stats) {
+  const rows = [
+    ...stats.topChannels.map((row) => ({ ...row, type: "Canal" })),
+    ...stats.topCampaigns.map((row) => ({ ...row, type: "Campaña" })),
+  ]
+    .map((row) => ({
+      ...row,
+      roi: toNumber(row.investment) ? (toNumber(row.revenue) - toNumber(row.investment)) / toNumber(row.investment) : null,
+    }))
+    .sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))
+    .slice(0, 5);
+  if (!rows.length) {
+    return '<div class="dashboard-mini-empty">Cuando registres inversión y ventas por canal o campaña, aquí aparecerá el ranking ejecutivo.</div>';
+  }
+  return `
+    <div class="dashboard-roi-table-wrap">
+      <table class="dashboard-roi-table">
+        <thead>
+          <tr>
+            <th>Fuente</th>
+            <th>Tipo</th>
+            <th>Inversión</th>
+            <th>Revenue</th>
+            <th>ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr>
+              <td>${escapeHtml(row.label)}</td>
+              <td>${escapeHtml(row.type)}</td>
+              <td>${escapeHtml(money(row.investment))}</td>
+              <td>${escapeHtml(money(row.revenue))}</td>
+              <td>${escapeHtml(ratioLabel(row.roi))}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderDashboardWidget(widget, stats) {
+  if (widget.id === "next_action") return { value: stats.nextAction.title, meta: stats.nextAction.meta, body: stats.nextAction.body, cta: stats.nextAction.cta, route: stats.nextAction.route, tone: "action" };
+  if (widget.id === "revenue") return { value: money(stats.observedRevenue), meta: `${stats.salesCount} ventas registradas`, body: `Ticket promedio: ${money(stats.avgTicket)}.`, tone: "money" };
+  if (widget.id === "revenue_funnel") return { value: `${stats.totalLeads} leads`, meta: "Captura a venta registrada", body: dashboardBuilderFunnel(stats), tone: "chart" };
+  if (widget.id === "sales") return { value: stats.salesCount, meta: "ventas observadas", body: "Registra ventas con canal y campaña para medir ROI real.", tone: "neutral" };
+  if (widget.id === "channel_roi") return { value: ratioLabel(stats.channelRoi), meta: `${money(stats.channelInvestment)} invertido`, body: dashboardBuilderBars(stats.topChannels, "revenue"), tone: "chart" };
+  if (widget.id === "campaign_roi") return { value: ratioLabel(stats.campaignRoi), meta: `${money(stats.campaignInvestment)} invertido`, body: dashboardBuilderBars(stats.topCampaigns, "revenue"), tone: "chart" };
+  if (widget.id === "leads") return { value: stats.totalLeads, meta: `${stats.redemptionRate}% redime`, body: "Convierte leads sin tarea en seguimiento dentro de agenda.", tone: "neutral" };
+  if (widget.id === "tickets") return { value: stats.activeQr, meta: `${stats.totalQrGenerated} generados`, body: "Los tickets próximos a vencer deben convertirse en tareas.", tone: "neutral" };
+  if (widget.id === "redemptions") return { value: stats.totalQrRedeemed, meta: `${stats.redemptionRate}% tasa de redencion`, body: "Cada redención debe conectarse con venta, recompra o referido.", tone: "neutral" };
+  if (widget.id === "agenda") return { value: stats.openAgenda, meta: "tareas abiertas", body: "La agenda convierte oportunidades en trabajo ejecutable.", tone: stats.openAgenda ? "action" : "neutral" };
+  if (widget.id === "opportunities") return { value: stats.rmsOpportunities, meta: "oportunidades en proceso", body: "Si está en cero, alimenta la máquina con contactos, campañas, QR o tickets.", tone: stats.rmsOpportunities ? "action" : "neutral" };
+  if (widget.id === "roi_table") return { value: "Top 5", meta: "Canales y campañas por revenue", body: dashboardBuilderRoiTable(stats), tone: "table" };
+  return { value: "-", meta: widget.description, body: "", tone: "neutral" };
+}
+
+function openDashboardBuilderRoute(route = "dashboard") {
+  if (route === "agenda") {
+    setContactCenterTab("agenda");
+    setView("leads");
+    return;
+  }
+  if (route === "sales") {
+    setContactCenterTab("sales");
+    setView("leads");
+    return;
+  }
+  if (route === "leads") {
+    setContactCenterTab("directory");
+    setView("leads");
+    return;
+  }
+  setView(route || "dashboard");
+}
+
+function renderDashboardBuilder() {
+  if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
+  state.dashboardBuilderProfile = getDashboardProfile();
+  try {
+    state.dashboardBuilderExpanded = window.localStorage.getItem(DASHBOARD_BUILDER_EXPANDED_KEY) === "1";
+  } catch {
+    state.dashboardBuilderExpanded = Boolean(state.dashboardBuilderExpanded);
+  }
+  const dashboardSection = document.querySelector('.view-section[data-view="dashboard"]');
+  dashboardSection?.classList.toggle("dashboard-builder-mode", !state.dashboardBuilderExpanded);
+  dashboardAdvancedToggleButton?.classList.toggle("active", state.dashboardBuilderExpanded);
+  if (dashboardAdvancedToggleButton) {
+    dashboardAdvancedToggleButton.innerHTML = `
+      <span class="material-symbols-outlined" aria-hidden="true">${state.dashboardBuilderExpanded ? "dashboard_customize" : "analytics"}</span>
+      ${state.dashboardBuilderExpanded ? "Ocultar dashboard avanzado" : "Ver dashboard avanzado"}
+    `;
+  }
+  const profile = DASHBOARD_BUILDER_PROFILES[state.dashboardBuilderProfile] || DASHBOARD_BUILDER_PROFILES.marketing;
+  const layout = getDashboardBuilderLayout(state.dashboardBuilderProfile);
+  const stats = getDashboardBuilderStats();
+  if (dashboardProfileLabel) dashboardProfileLabel.textContent = profile.label;
+  if (dashboardProfileTitle) dashboardProfileTitle.textContent = profile.title;
+  if (dashboardProfileDescription) dashboardProfileDescription.textContent = profile.description;
+  dashboardProfileTabs?.querySelectorAll("[data-dashboard-profile]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.dashboardProfile === state.dashboardBuilderProfile);
+  });
+  dashboardWidgetLibrary.innerHTML = DASHBOARD_WIDGET_CATALOG.map((widget) => {
+    const active = layout.includes(widget.id);
+    return `
+      <button class="dashboard-library-item ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}">
+        <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(widget.icon)}</span>
+        <span><strong>${escapeHtml(widget.title)}</strong><small>${escapeHtml(widget.category)}</small></span>
+        <em>${active ? "Agregado" : "Agregar"}</em>
+      </button>
+    `;
+  }).join("");
+  dashboardWidgetGrid.innerHTML = layout.map((id, index) => {
+    const widget = DASHBOARD_WIDGET_CATALOG.find((item) => item.id === id);
+    if (!widget) return "";
+    const rendered = renderDashboardWidget(widget, stats);
+    return `
+      <article class="dashboard-widget-card ${escapeHtml(rendered.tone || "")}" draggable="true" data-dashboard-widget="${escapeHtml(widget.id)}">
+        <div class="dashboard-widget-top">
+          <span class="dashboard-widget-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(widget.icon)}</span>
+          <div><span class="mono-label">${escapeHtml(widget.category)}</span><h4>${escapeHtml(widget.title)}</h4></div>
+          <button class="icon-button" type="button" data-dashboard-remove-widget="${escapeHtml(widget.id)}" title="Quitar bloque"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+        <strong class="dashboard-widget-value">${escapeHtml(rendered.value ?? "-")}</strong>
+        <span class="dashboard-widget-meta">${escapeHtml(rendered.meta || widget.description)}</span>
+        <div class="dashboard-widget-body">${rendered.body || ""}</div>
+        <div class="dashboard-widget-actions">
+          <button class="ghost-button" type="button" data-dashboard-open-route="${escapeHtml(rendered.route || widget.route || "dashboard")}">${escapeHtml(rendered.cta || "Abrir módulo")}</button>
+          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} title="Mover a la izquierda"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === layout.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+        </div>
+      </article>
+    `;
+  }).join("") || `
+    <article class="dashboard-builder-empty">
+      <span class="material-symbols-outlined" aria-hidden="true">dashboard_customize</span>
+      <strong>Tu tablero personalizado está vacío.</strong>
+      <p>Agrega bloques desde la biblioteca para construir una vista liviana y accionable.</p>
+    </article>
+  `;
+}
+
+function addDashboardWidget(widgetId) {
+  const profile = getDashboardProfile();
+  const layout = getDashboardBuilderLayout(profile);
+  if (!DASHBOARD_WIDGET_CATALOG.some((widget) => widget.id === widgetId) || layout.includes(widgetId)) return;
+  setDashboardBuilderLayout(profile, [...layout, widgetId]);
+  renderDashboardBuilder();
+}
+
+function removeDashboardWidget(widgetId) {
+  const profile = getDashboardProfile();
+  setDashboardBuilderLayout(profile, getDashboardBuilderLayout(profile).filter((id) => id !== widgetId));
+  renderDashboardBuilder();
+}
+
+function moveDashboardWidget(widgetId, direction) {
+  const profile = getDashboardProfile();
+  const layout = getDashboardBuilderLayout(profile);
+  const index = layout.indexOf(widgetId);
+  const nextIndex = index + Number(direction || 0);
+  if (index < 0 || nextIndex < 0 || nextIndex >= layout.length) return;
+  const next = [...layout];
+  [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+  setDashboardBuilderLayout(profile, next);
+  renderDashboardBuilder();
+}
+
+function reorderDashboardWidget(sourceId, targetId) {
+  if (!sourceId || !targetId || sourceId === targetId) return;
+  const profile = getDashboardProfile();
+  const layout = getDashboardBuilderLayout(profile);
+  const sourceIndex = layout.indexOf(sourceId);
+  const targetIndex = layout.indexOf(targetId);
+  if (sourceIndex < 0 || targetIndex < 0) return;
+  const next = [...layout];
+  const [item] = next.splice(sourceIndex, 1);
+  next.splice(targetIndex, 0, item);
+  setDashboardBuilderLayout(profile, next);
+  renderDashboardBuilder();
+}
+
+function toggleDashboardAdvancedView() {
+  state.dashboardBuilderExpanded = !state.dashboardBuilderExpanded;
+  try {
+    window.localStorage.setItem(DASHBOARD_BUILDER_EXPANDED_KEY, state.dashboardBuilderExpanded ? "1" : "0");
+  } catch {
+    // Ignore storage failures.
+  }
+  if (state.dashboardBuilderExpanded && state.dashboard) {
+    renderDashboard();
+    return;
+  }
+  renderDashboardBuilder();
+}
+
 function renderDashboard() {
+  renderDashboardBuilder();
+  if (!state.dashboardBuilderExpanded) return;
   renderCommandCenter();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
@@ -6429,7 +7356,7 @@ function renderDashboard() {
     ["Claims estratégicos", summary.strategic_claimed_or_active || 0, `${strategicRedemptionRate}% redimido`, "", "Clientes que escanearon un ticket precreado, dejaron datos y activaron el beneficio."],
     ["Ventas reales", observedSalesCount, `${money(observedRevenue)} registrado`, "", "Compras reales registradas por caja, ticket postventa o captura manual del medio de llegada."],
     ["Revenue observado", money(observedRevenue), `${money(avgTicket)} ticket promedio`, "", "Dinero real asociado a clientes capturados por los distintos medios de llegada."],
-    ["Referidos afiliados", summary.referral_sales_count || 0, `${summary.referral_points_awarded || 0} puntos entregados`, "", "Ventas en las que un afiliado recomendo al cliente y recibio puntos."],
+    ["Referidos", summary.referral_sales_count || 0, `${summary.referral_points_awarded || 0} puntos entregados`, "", "Ventas que llegaron por recomendación y quedaron registradas."],
     ["Inversión total", money(summary.total_investment), `${money(summary.cost_per_lead)} por lead`, "", "Suma total invertida en pauta, creativos y activación para este periodo de analisis."],
     ["Costo por lead", money(summary.cost_per_lead), `${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} por venta`, "", "Cuanto costo captar cada lead, antes de saber si compro o no."],
     ["Costo por venta", money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer), `vs. ticket medio ${money(avgTicket)}`, "", "Cuanto costo traer una venta real observada. Debe compararse contra ticket promedio y margen."],
@@ -6613,6 +7540,9 @@ function renderCampaignList() {
       <div class="campaign-item-row"><span>Canales</span><strong>${escapeHtml(Array.isArray(campaign.launch_channels) ? campaign.launch_channels.length : 0)}</strong></div>
       <div class="campaign-item-row"><span>Leads</span><strong>${toNumber(campaign.total_leads)}</strong></div>
       <div class="campaign-item-row"><span>Redenciones</span><strong>${toNumber(campaign.total_qr_redeemed)}</strong></div>
+      <div class="campaign-item-row"><span>Inversión</span><strong>${escapeHtml(money(campaign.budget_total || 0))}</strong></div>
+      <div class="campaign-item-row"><span>Revenue</span><strong>${escapeHtml(money(campaign.attributed_revenue || 0))}</strong></div>
+      <div class="campaign-item-row"><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div>
     </article>
   `).join("");
 
@@ -6623,11 +7553,17 @@ function renderCampaignList() {
 
 function renderCampaignStateGrid() {
   const groups = state.campaignGroups || {};
+  const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
+  const campaignInvestment = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.budget_total), 0);
+  const campaignRevenue = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.attributed_revenue), 0);
   const items = [
     ["Listas para lanzamiento", groups.ready_for_launch?.length || 0, "READY_FOR_CLIENT_SETUP"],
     ["Programadas", groups.scheduled?.length || 0, "SCHEDULED"],
     ["Activas", groups.active?.length || 0, "ACTIVE"],
     ["Finalizadas", groups.finished?.length || 0, "FINISHED / ARCHIVED"],
+    ["Inversión campañas", money(campaignInvestment), "Presupuesto total"],
+    ["Revenue atribuido", money(campaignRevenue), `${campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0)} ventas`],
+    ["ROI campañas", ratioLabel(campaignInvestment ? (campaignRevenue - campaignInvestment) / campaignInvestment : null), campaignInvestment ? roiDecisionLabel((campaignRevenue - campaignInvestment) / campaignInvestment, campaignRevenue, campaignInvestment) : "Carga inversión"],
   ];
 
   campaignStateGrid.innerHTML = items.map(([label, value, meta]) => `
@@ -6710,23 +7646,24 @@ async function selectCampaign(campaignId) {
   renderCampaignAssociationInputs();
 
   try {
-    const [campaignData, reportData, leadsData, redemptionsData, salesData, campaignAffiliatesData] = await Promise.all([
+    const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
-      apiSafe(`/api/portal/businesses/${session.user.business_id}/campaigns/${campaignId}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
-    if (!state.affiliatesLoaded) await loadAffiliatesData();
+    if (!state.acquisitionChannelsLoaded) {
+      await loadAcquisitionChannels({ quiet: true });
+    }
     state.selectedCampaign = campaignData.campaign || null;
     state.selectedReport = reportData || null;
     state.selectedLeads = leadsData.leads || [];
     state.selectedRedemptions = redemptionsData.redemptions || [];
     state.selectedSales = salesData.sales || [];
-    state.selectedCampaignAffiliates = campaignAffiliatesData.affiliates || [];
+    state.selectedCampaignAffiliates = [];
 
     renderCampaignView();
     renderCampaignAssociationInputs();
@@ -7342,6 +8279,8 @@ function renderCampaignCostSummary(calculator = state.campaignCostCalculator || 
     { label: "Ventas necesarias", value: totals.requiredSales ? totals.requiredSales.toLocaleString("es-CO") : "-", meta: `${totals.leadsNeeded.toLocaleString("es-CO")} leads estimados`, icon: "shopping_cart", tone: "target" },
     { label: "ROI esperado", value: `${Math.round(totals.roi)}%`, meta: `Neto ${money(totals.netProfit)}`, icon: "trending_up", tone: totals.roi < 0 ? "negative" : "positive" },
   ];
+
+  renderRevenueWorkspace();
   const detailMetrics = [
     ["Costo fijo", money(totals.fixedCostTotal), "Se paga aunque nadie participe"],
     ["Costo variable", money(totals.variableTotal + totals.benefitsTotal), "Beneficios y costos por volumen"],
@@ -7549,7 +8488,7 @@ function renderCampaignAffiliatesPanel() {
   const assignedIds = new Set(assigned.map((item) => item.affiliate_id));
   const available = (state.affiliates || []).filter((affiliate) => affiliate.status !== "DELETED");
   campaignAffiliateSelect.innerHTML = [
-    '<option value="">Seleccionar afiliado</option>',
+    '<option value="">Seleccionar referidor</option>',
     ...available.map((affiliate) => `
       <option value="${escapeHtml(affiliate.id)}" ${assignedIds.has(affiliate.id) ? "disabled" : ""}>
         ${escapeHtml(affiliate.full_name || "Afiliado")} (${escapeHtml(affiliate.document_id || affiliate.phone || "sin documento")})${assignedIds.has(affiliate.id) ? " - asociado" : ""}
@@ -7559,7 +8498,7 @@ function renderCampaignAffiliatesPanel() {
   const canAssign = Boolean(state.selectedCampaignId && available.some((affiliate) => !assignedIds.has(affiliate.id)));
   if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = !canAssign;
   if (campaignAffiliateMessage && !canAssign && !assigned.length) {
-    campaignAffiliateMessage.textContent = available.length ? "Todos los afiliados disponibles ya están asociados a esta campaña." : "Crea afiliados para asociarlos a campañas.";
+    campaignAffiliateMessage.textContent = available.length ? "Todos los referidores disponibles ya están asociados a esta campaña." : "Crea referidores desde su módulo para asociarlos a campañas.";
   } else if (campaignAffiliateMessage) {
     campaignAffiliateMessage.textContent = "";
   }
@@ -7623,7 +8562,6 @@ function campaignRelatedCustomerRows() {
       latest: sale.created_at,
       product: sale.product_or_service || "",
       branch: sale.branch_name || "",
-      affiliate: sale.affiliate_name || "",
     };
     current.sales += 1;
     current.revenue += toNumber(sale.sale_amount);
@@ -7632,7 +8570,6 @@ function campaignRelatedCustomerRows() {
     }
     current.product = current.product || sale.product_or_service || "";
     current.branch = current.branch || sale.branch_name || "";
-    current.affiliate = current.affiliate || sale.affiliate_name || "";
     map.set(key, current);
   });
   return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
@@ -7643,7 +8580,6 @@ function campaignRelatedCustomerCard(customer = {}) {
     `${customer.sales} venta${customer.sales === 1 ? "" : "s"}`,
     customer.product,
     customer.branch,
-    customer.affiliate ? `Afiliado: ${customer.affiliate}` : "",
   ].filter(Boolean).join(" · ");
   return `
     <article class="campaign-related-item">
@@ -7826,6 +8762,29 @@ async function removeCampaignAffiliate(affiliateId) {
   }
 }
 
+function renderCampaignChannelRoiTable(campaign = state.selectedCampaign || {}) {
+  if (!campaignChannelRoiTable) return;
+  const rows = campaignChannelRows(campaign.id);
+  const campaignRoi = campaign.estimated_roi;
+  campaignChannelRoiTable.innerHTML = rows.map((row) => {
+    const channelInvestment = Number(row.channel_investment_allocated || 0);
+    const channelRoi = row.channel_roi;
+    const net = Number(row.revenue || 0) - channelInvestment;
+    return `
+      <tr>
+        <td><strong>${escapeHtml(row.channel_name || "-")}</strong></td>
+        <td>${escapeHtml(row.sales || 0)}</td>
+        <td>${escapeHtml(money(row.revenue || 0))}</td>
+        <td><strong>${escapeHtml(money(net))}</strong></td>
+        <td>${escapeHtml(money(channelInvestment))}</td>
+        <td>${escapeHtml(channelRoiLabel(channelRoi))}</td>
+        <td>${escapeHtml(ratioLabel(campaignRoi))}</td>
+        <td>${escapeHtml(roiDecisionLabel(channelRoi, row.revenue, channelInvestment))}</td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="8">Registra ventas con campaña y canal específico para ver ROI por canal dentro de esta campaña.</td></tr>';
+}
+
 function renderCampaignView() {
   const campaign = state.selectedCampaign;
   if (!campaign) {
@@ -7952,6 +8911,7 @@ function renderCampaignView() {
       <strong>${escapeHtml(value)}</strong>
     </article>
   `).join("");
+  renderCampaignChannelRoiTable(campaign);
 
   const avgTicket = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)
     ? toNumber(campaign.attributed_revenue) / toNumber(campaign.direct_sales_count || campaign.attributed_sales_count)
@@ -8136,7 +9096,7 @@ function renderRedemptionsView() {
 
 function renderSalesView() {
   const campaign = state.selectedCampaign || {};
-  const sales = filterRows(state.selectedSales || [], ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "affiliate_name"]);
+  const sales = filterRows(state.selectedSales || [], ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel"]);
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const avgTicket = sales.length ? totalRevenue / sales.length : 0;
   const items = [
@@ -8152,7 +9112,6 @@ function renderSalesView() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
-  renderCustomerAcquisitionAffiliateOptions();
   renderCustomerAcquisitionCampaignOptions();
   renderCustomerAcquisitionBranchOptions();
   renderSalesCustomerOptions();
@@ -8165,9 +9124,9 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(item.referred_affiliate_id ? "Afiliado" : saleSourceLabel(item.sale_source))}</td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
+      <td>${escapeHtml(item.acquisition_channel || "-")}</td>
       <td>${saleProductSummary(item)}</td>
-      <td>${saleAffiliateSummary(item)}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
@@ -8626,6 +9585,10 @@ function ticketCenterStats() {
   const repeatRisk = Array.from(repeatedIds.values()).filter((count) => count > 1).length;
   const postSaleRedeemed = toNumber(metrics.post_sale_redeemed || 0);
   const loopRate = postSaleGenerated ? (postSaleRedeemed / postSaleGenerated) * 100 : 0;
+  const referralSales = sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).length;
+  const referralRevenue = sales
+    .filter((item) => item.referred_affiliate_id || item.affiliate_id)
+    .reduce((sum, item) => sum + toNumber(item.sale_amount || item.amount || item.total), 0);
   return {
     metrics,
     batches,
@@ -8644,6 +9607,8 @@ function ticketCenterStats() {
     postSaleGenerated,
     postSaleRedeemed,
     loopRate,
+    referralSales,
+    referralRevenue,
   };
 }
 
@@ -8702,13 +9667,13 @@ function renderTicketLoop(stats) {
     ["Tickets de salida", stats.postSaleGenerated.toLocaleString("es-CO"), "Postventa emitida después de compra", "highlight"],
     ["Vueltas medidas", stats.postSaleRedeemed.toLocaleString("es-CO"), "Tickets postventa redimidos"],
     ["Loop rate", `${stats.loopRate.toFixed(1)}%`, "Recompra medida"],
-    ["Afiliados activos", (state.affiliates || []).length.toLocaleString("es-CO"), "Clientes con ticket permanente"],
+    ["Referidos medidos", Number(stats.referralSales || 0).toLocaleString("es-CO"), "Compras por recomendación"],
   ]);
   if (!ticketLoopBoard) return;
   const cards = [
     ["Llegar con ticket", "Toda campaña física debe entregar una razon verificable para entrar a tienda.", "Generar paquetes"],
     ["Comprar con ticket", "Caja o vendedor asocia la venta al ticket, canal, beneficio y sucursal.", "Registrar venta"],
-    ["Salir con ticket", "Cada compra debe terminar con un nuevo ticket de recompra, referido o afiliado.", "Crear postventa"],
+    ["Salir con ticket", "Cada compra debe terminar con un nuevo ticket de recompra o referido.", "Crear postventa"],
   ];
   ticketLoopBoard.innerHTML = cards.map(([title, copy, action], index) => `
     <article class="surface-card ticket-action-card">
@@ -8740,12 +9705,12 @@ function renderTicketRevenue(stats) {
       reading: "Compara empaque, volante, feria, vitrina y mostrador por revenue real.",
     },
     {
-      type: "Referidos / afiliados",
-      issued: (state.affiliates || []).length,
-      redeemed: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).length,
-      sales: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).length,
-      revenue: stats.sales.filter((item) => item.referred_affiliate_id || item.affiliate_id).reduce((sum, item) => sum + toNumber(item.sale_amount), 0),
-      reading: "Premia solo recomendaciones que terminan en compra registrada.",
+      type: "Referidos",
+      issued: stats.referralSales || 0,
+      redeemed: stats.referralSales || 0,
+      sales: stats.referralSales || 0,
+      revenue: stats.referralRevenue || 0,
+      reading: "Mide recomendaciones que terminan en compra registrada.",
     },
   ];
   ticketRevenueTable.innerHTML = rows.map((row) => `
@@ -9198,7 +10163,6 @@ function salesCustomerRows() {
 }
 
 function salesCustomerLookupValue(customer = {}) {
-  const affiliateSameAsCustomer = normalizeInventoryLookup(customer.affiliate_name) && normalizeInventoryLookup(customer.affiliate_name) === normalizeInventoryLookup(customer.name);
   const refs = [
     customer.phone ? `Teléfono: ${customer.phone}` : "",
     customer.document_id ? `Cédula: ${customer.document_id}` : "",
@@ -9208,7 +10172,6 @@ function salesCustomerLookupValue(customer = {}) {
     customer.product_or_service ? `Producto: ${customer.product_or_service}` : "",
     customer.branch_name ? `Sucursal: ${customer.branch_name}` : "",
     customer.event_date ? `Fecha: ${formatDate(customer.event_date)}` : "",
-    customer.affiliate_name ? (affiliateSameAsCustomer ? "Afiliado: mismo cliente" : `Afiliado: ${customer.affiliate_name}`) : (customer.is_affiliate ? "Afiliado" : ""),
     Number(customer.referral_points_awarded || 0) > 0 ? `Puntos: ${Number(customer.referral_points_awarded || 0).toLocaleString("es-CO")}` : "",
     customer.email ? `Email: ${customer.email}` : "",
   ].filter(Boolean).join(" · ");
@@ -9231,10 +10194,8 @@ function salesCustomerSearchText(customer = {}) {
     customer.branch_name,
     customer.event_date,
     customer.event_date ? formatDate(customer.event_date) : "",
-    customer.affiliate_name,
     customer.referral_points_awarded,
     customer.source,
-    customer.is_affiliate ? "afiliado" : "",
   ].map(normalizeInventoryLookup).filter(Boolean).join(" ");
 }
 
@@ -9324,14 +10285,9 @@ function applySalesCustomer(customerOrValue) {
   if (customerAcquisitionCampaignInput && customer.campaign_id) {
     customerAcquisitionCampaignInput.value = customer.campaign_id;
   }
-  const affiliate = syncCustomerAffiliateSelection(customer);
-  if (affiliate) {
-    setSalesCustomerStatus("Cliente afiliado detectado", `La venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "success", "verified");
-    setInlineMessage(customerAcquisitionMessage, `Cliente afiliado detectado: la venta sumara puntos a ${affiliate.full_name || "este afiliado"}.`, "info");
-  } else {
-    setSalesCustomerStatus("Cliente seleccionado", "Datos cargados en el formulario. Esta venta no tiene afiliado asociado.", "success", "check_circle");
-    setInlineMessage(customerAcquisitionMessage, "Cliente seleccionado. No tiene afiliado activo asociado, por eso esta venta no sumara puntos de afiliado.", "info");
-  }
+  if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.value = "";
+  setSalesCustomerStatus("Cliente seleccionado", "Datos cargados en el formulario para registrar la venta.", "success", "check_circle");
+  setInlineMessage(customerAcquisitionMessage, "Cliente seleccionado. Revisa campaña, canal, producto y valor antes de guardar.", "info");
   return true;
 }
 
@@ -9468,7 +10424,7 @@ function applySalesCustomerToForm(value) {
 }
 
 function defaultCustomerSaleItem() {
-  return { name: "", quantity: 1, unit_price: 0, inventory_product_id: null, sku: null, barcode: null };
+  return { name: "", quantity: 1, unit_price: 0, inventory_product_id: null, sku: null, barcode: null, is_open_product: false };
 }
 
 function ensureCustomerSaleItems() {
@@ -9492,10 +10448,119 @@ function customerSaleTotal() {
   return state.customerSaleItems.reduce((sum, item) => sum + customerSaleLineTotal(item), 0);
 }
 
+function commerceFeedStep(status, title, copy, actionLabel = "", action = "") {
+  const icon = status === "done" ? "check_circle" : status === "active" ? "radio_button_checked" : "radio_button_unchecked";
+  return `
+    <article class="commerce-feed-step is-${escapeHtml(status || "pending")}">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
+      <div>
+        <strong>${escapeHtml(title || "")}</strong>
+        <p>${escapeHtml(copy || "")}</p>
+      </div>
+      ${actionLabel && action ? `<button class="ghost-button compact" type="button" data-commerce-feed-action="${escapeHtml(action)}">${escapeHtml(actionLabel)}</button>` : ""}
+    </article>
+  `;
+}
+
+function bindCommerceFeedActions(container) {
+  container?.querySelectorAll("[data-commerce-feed-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const action = button.dataset.commerceFeedAction || "";
+      if (action === "sales-add-product") {
+        customerSaleAddItemButton?.click();
+        return;
+      }
+      if (action === "sales-focus-customer") {
+        customerAcquisitionCustomerLookupInput?.focus();
+        return;
+      }
+      if (action === "sales-save") {
+        customerAcquisitionForm?.querySelector("button[type='submit']")?.focus();
+        return;
+      }
+      if (action === "affiliate-add-product") {
+        affiliatePurchaseAddItemButton?.click();
+        return;
+      }
+      if (action === "affiliate-focus-search") {
+        affiliateFinderInput?.focus();
+        return;
+      }
+      if (action === "affiliate-save") {
+        affiliateAddPointsButton?.focus();
+        return;
+      }
+      if (action === "inventory") {
+        setView("inventory");
+        return;
+      }
+      if (action === "sales") {
+        setView("sales");
+      }
+    });
+  });
+}
+
+function saleOpenProductCount(products = []) {
+  return products.filter((product) => product.name && !product.inventory_product_id).length;
+}
+
+function renderCustomerSaleOperationFeed() {
+  if (!customerSaleOperationFeed) return;
+  const products = customerSaleProductsPayload();
+  const total = customerSaleTotal();
+  const openCount = saleOpenProductCount(products);
+  const hasCustomer = hasCustomerIdentityForSale();
+  const hasAttribution = Boolean(customerAcquisitionSourceInput?.value || customerAcquisitionChannelInput?.value?.trim() || customerAcquisitionCampaignInput?.value);
+  const steps = [
+    commerceFeedStep(
+      hasCustomer ? "done" : "active",
+      "1. Identifica el cliente",
+      hasCustomer ? "La venta quedará asociada al cliente escrito o seleccionado." : "Busca un contacto existente o escribe nombre, teléfono, correo o cédula.",
+      hasCustomer ? "" : "Ir al cliente",
+      hasCustomer ? "" : "sales-focus-customer"
+    ),
+    commerceFeedStep(
+      products.length ? "done" : hasCustomer ? "active" : "pending",
+      "2. Agrega productos",
+      products.length
+        ? `${products.length} línea${products.length === 1 ? "" : "s"} por ${money(total)}. ${openCount ? `${openCount} producto${openCount === 1 ? "" : "s"} nuevo${openCount === 1 ? "" : "s"} se creará${openCount === 1 ? "" : "n"} en Productos al guardar.` : "Todos los productos ya están en Productos."}`
+        : "Selecciona un producto existente o escribe uno nuevo con precio. No tienes que abrir Productos primero.",
+      "Agregar producto nuevo",
+      "sales-add-product"
+    ),
+    commerceFeedStep(
+      hasAttribution ? "done" : products.length ? "active" : "pending",
+      "3. Define origen",
+      hasAttribution ? "La venta tendrá campaña, canal o fuente para medir ROI." : "Indica de dónde llegó el cliente: Instagram, Facebook, Google, WhatsApp, web u otro canal.",
+      "",
+      ""
+    ),
+    commerceFeedStep(
+      products.length && total > 0 && hasCustomer ? "active" : "pending",
+      "4. Guarda y verifica",
+      products.length && total > 0 && hasCustomer
+        ? "Al registrar, la venta entra a Sales, suma ROI y cualquier producto nuevo queda en Productos."
+        : "Cuando completes cliente y productos, podrás registrar la venta.",
+      products.length && total > 0 && hasCustomer ? "Registrar venta" : "",
+      products.length && total > 0 && hasCustomer ? "sales-save" : ""
+    ),
+  ];
+  customerSaleOperationFeed.innerHTML = `
+    <div class="commerce-feed-head">
+      <span class="mono-label">Feed operativo</span>
+      <strong>Qué pasará con esta venta</strong>
+    </div>
+    ${steps.join("")}
+  `;
+  bindCommerceFeedActions(customerSaleOperationFeed);
+}
+
 function syncCustomerSaleTotal() {
   const total = customerSaleTotal();
   if (customerAcquisitionAmountInput) customerAcquisitionAmountInput.value = total ? String(total) : "";
   if (customerSaleTotalPreview) customerSaleTotalPreview.textContent = money(total);
+  renderCustomerSaleOperationFeed();
   return total;
 }
 
@@ -9537,6 +10602,7 @@ function updateCustomerSaleItem(index, field, value, options = {}) {
     if (product) {
       item.inventory_product_id = product.id;
       item.name = product.name;
+      item.is_open_product = false;
       item.sku = product.sku || null;
       item.barcode = product.barcode || null;
       if (!Number(item.unit_price || 0)) item.unit_price = Number(product.unit_price || 0);
@@ -9545,15 +10611,18 @@ function updateCustomerSaleItem(index, field, value, options = {}) {
       item.inventory_product_id = null;
       item.sku = null;
       item.barcode = null;
+      item.is_open_product = value === OPEN_PRODUCT_VALUE;
       if (value !== OPEN_PRODUCT_VALUE) item.name = "";
     }
   }
   if (field === "name") {
     item.name = value;
+    item.is_open_product = true;
     const product = options.matchProduct ? findInventoryProduct(value) : null;
     if (product) {
       item.inventory_product_id = product.id;
       item.name = product.name;
+      item.is_open_product = false;
       item.sku = product.sku || null;
       item.barcode = product.barcode || null;
       if (!Number(item.unit_price || 0)) item.unit_price = Number(product.unit_price || 0);
@@ -9562,6 +10631,7 @@ function updateCustomerSaleItem(index, field, value, options = {}) {
       item.inventory_product_id = null;
       item.sku = null;
       item.barcode = null;
+      item.is_open_product = true;
     }
   }
   if (field === "quantity") item.quantity = Math.max(1, Number(value || 1));
@@ -9573,14 +10643,16 @@ function renderCustomerSaleItems() {
   if (!customerSaleItemsContainer) return;
   ensureCustomerSaleItems();
   customerSaleItemsContainer.innerHTML = state.customerSaleItems.map((item, index) => {
-    const productLabel = item.inventory_product_id ? "Producto guardado" : "Producto abierto";
-    const selectedProductValue = item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.name ? OPEN_PRODUCT_VALUE : "");
+    const isOpenProduct = !item.inventory_product_id && (item.is_open_product || item.name);
+    const productLabel = item.inventory_product_id ? "Producto registrado" : isOpenProduct ? "Se creará en Productos" : "Producto";
+    const selectedProductValue = item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (isOpenProduct ? OPEN_PRODUCT_VALUE : "");
     return `
       <div class="sales-item-row" data-sale-item-index="${index}">
         <label class="sales-item-product">
           <span>Producto</span>
           <select data-sale-item-field="product_select" data-product-select>${inventoryProductSelectOptions(selectedProductValue, { placeholder: "Seleccionar producto" })}</select>
           <input class="open-product-input ${selectedProductValue === OPEN_PRODUCT_VALUE ? "" : "hidden"}" type="text" value="${escapeHtml(item.inventory_product_id ? "" : item.name || "")}" placeholder="Producto abierto o servicio" data-sale-item-field="name" data-open-product-input ${selectedProductValue === OPEN_PRODUCT_VALUE ? "" : "disabled"}>
+          ${selectedProductValue === OPEN_PRODUCT_VALUE ? '<small>Al guardar la venta, este producto quedará creado automáticamente en Productos.</small>' : ""}
         </label>
         <label class="sales-item-quantity">
           <span>Cant.</span>
@@ -10624,11 +11696,8 @@ function renderStrategicQrView() {
       </article>`
     );
   }
-  renderQrCreditShop();
-  renderSubscriptionPricing();
   updateTriviaQuestionVisibility();
   renderTriviaLaunchers();
-  renderCustomerAcquisitionAffiliateOptions();
 
   qrBatchTable.innerHTML = (state.strategicQrBatches || []).length
     ? state.strategicQrBatches.map((item) => `
@@ -10818,8 +11887,7 @@ async function submitQrCreditCheckout(event) {
 }
 
 function openQrCreditShopFromAccount() {
-  setView("strategic-qr");
-  setTicketCenterTab("center");
+  setView("account");
   window.setTimeout(() => {
     document.querySelector(".qr-credit-shop-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 80);
@@ -10905,17 +11973,11 @@ async function submitCustomerAcquisitionSale(event) {
     setInlineMessage(customerAcquisitionMessage, "Agrega al menos un producto con precio para registrar la venta.", "error");
     return;
   }
-  const matchedAffiliate = syncCustomerAffiliateSelection({
-    document_id: customerAcquisitionDocumentInput.value.trim(),
-    phone: customerAcquisitionPhoneInput.value.trim(),
-    email: customerAcquisitionEmailInput.value.trim(),
-  });
   const productSummary = customerSaleProductSummary(products);
   const metadata = {
     products,
     sale_entry: "sales_module",
     customer_lookup: customerAcquisitionCustomerLookupInput?.value?.trim() || null,
-    affiliate_match_source: matchedAffiliate ? "customer_identity_frontend" : null,
   };
   setButtonLoading(submitButton, true, "Registrando...");
   setSalesCustomerStatus("Registrando venta", "Estamos guardando cliente, productos y atribucion comercial.", "success", "sync");
@@ -10936,15 +11998,17 @@ async function submitCustomerAcquisitionSale(event) {
         customer_email: customerAcquisitionEmailInput.value.trim() || null,
         acquisition_source: customerAcquisitionSourceInput.value,
         acquisition_channel: customerAcquisitionChannelInput.value.trim() || null,
-        referred_affiliate_id: customerAcquisitionAffiliateInput.value || null,
+        referred_affiliate_id: null,
         notes: customerAcquisitionNotesInput.value.trim() || null,
         metadata,
       }),
     });
-    const awarded = Number(data.referral?.points_awarded || 0);
-    const message = awarded
-      ? `Venta registrada. ${data.referral.affiliate_name} recibio ${awarded} puntos por recomendación.`
-      : "Venta registrada con su medio de llegada.";
+    const savedMetadata = saleMetadata(data.sale || {});
+    const autoCreatedCount = Array.isArray(savedMetadata.auto_created_products) ? savedMetadata.auto_created_products.length : 0;
+    const productSyncMessage = autoCreatedCount
+      ? ` ${autoCreatedCount} producto${autoCreatedCount === 1 ? "" : "s"} nuevo${autoCreatedCount === 1 ? "" : "s"} quedó${autoCreatedCount === 1 ? "" : "aron"} creado${autoCreatedCount === 1 ? "" : "s"} en Productos.`
+      : "";
+    const message = `Venta registrada con su medio de llegada.${productSyncMessage}`;
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
@@ -10959,8 +12023,12 @@ async function submitCustomerAcquisitionSale(event) {
     await Promise.all([
       loadContactFeedData({ force: true, quiet: true }),
       loadLeadCrmData({ force: true, quiet: true }),
+      loadAcquisitionChannels({ force: true, quiet: true }),
+      loadChannelEfforts({ force: true, quiet: true }),
     ]);
     renderSalesCustomerOptions();
+    renderAcquisitionChannelDatalist();
+    if (state.currentView === "channels") renderAcquisitionChannelsView();
     await refreshLiveBusinessData();
     if (state.currentView === "branches") renderBranchesView();
     setView("sales");
@@ -11161,7 +12229,7 @@ function renderInventoryView() {
   }
   const rows = filteredInventoryProducts();
   if (!rows.length) {
-    inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales o Afiliados.</td></tr>';
+    inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales y quedarán guardados aquí.</td></tr>';
     return;
   }
   inventoryTable.innerHTML = rows.map((product) => {
@@ -14884,7 +15952,7 @@ async function saveValidatorAttributedSale(event) {
     });
     const referralDelta = Number(data.referral?.points_delta || 0);
     const referralMessage = data.referral
-      ? ` ${referralDelta === 0 ? "Sin cambio de puntos" : `${toNumber(referralDelta)} puntos`} para el afiliado.`
+      ? ` ${referralDelta === 0 ? "Sin cambio de puntos" : `${toNumber(referralDelta)} puntos`} por recomendación.`
       : "";
     setInlineMessage(validatorSaleStatus, data.sale ? `Venta atribuida guardada.${referralMessage}` : "Redención registrada sin venta.", "success");
     await loadValidatorHistory();
@@ -15050,12 +16118,14 @@ function renderNoCampaignState() {
   if (campaignAffiliatesTable) campaignAffiliatesTable.innerHTML = '<tr><td colspan="6">Selecciona una campaña.</td></tr>';
   campaignSnapshotsTable.innerHTML = '<tr><td colspan="6">Sin snapshots cargados.</td></tr>';
   campaignKpiGrid.innerHTML = "";
+  if (campaignRoiTable) campaignRoiTable.innerHTML = '<tr><td colspan="9">Crea una campaña, registra inversión y atribuye ventas para ver ROI.</td></tr>';
+  if (campaignChannelRoiTable) campaignChannelRoiTable.innerHTML = '<tr><td colspan="8">Selecciona una campaña para ver ROI por canal.</td></tr>';
   funnelStack.innerHTML = "";
   recentRedemptionsTable.innerHTML = '<tr><td colspan="4">Sin redenciones.</td></tr>';
   recentLeadsTable.innerHTML = '<tr><td colspan="4">Sin leads.</td></tr>';
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
-  campaignSalesTable.innerHTML = '<tr><td colspan="10">Sin ventas.</td></tr>';
+  campaignSalesTable.innerHTML = '<tr><td colspan="11">Sin ventas.</td></tr>';
   branchTable.innerHTML = '<tr><td colspan="8">Sin branches registrados ni actividad por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
@@ -15855,7 +16925,7 @@ async function submitCampaignModal(event) {
         }),
       });
       state.selectedCampaignId = result.campaign?.id || state.selectedCampaignId;
-      showFeedback("Campaña creada. Ya aparece en el listado y queda disponible para asociar tickets, afiliados y paquetes.", "success", { title: "Campaña disponible", timeout: 6500 });
+    showFeedback("Campaña creada. Ya aparece en el listado y queda disponible para asociar tickets, leads, clientes y paquetes.", "success", { title: "Campaña disponible", timeout: 6500 });
     } else {
       await api(`${isAdmin() ? "/api/admin" : "/api/business"}/campaigns/${state.selectedCampaignId}`, {
         method: "PATCH",
@@ -18345,20 +19415,12 @@ function parseAffiliatePurchaseAmount(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function parseAffiliatePurchaseAmount(value) {
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  const raw = String(value || "").trim();
-  if (!raw) return 0;
-  const cleaned = raw.replace(/\s+/g, "").replace(/[^\d.,-]/g, "");
-  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
-    return Number(cleaned.replace(/\./g, "").replace(",", "."));
-  }
-  if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) {
-    return Number(cleaned.replace(/,/g, ""));
-  }
-  const normalized = cleaned.replace(/,/g, ".");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
+function affiliatePurchaseNamedItems() {
+  return normalizeAffiliatePurchaseItems().filter((item) => item.name);
+}
+
+function affiliatePurchaseProductsTotal() {
+  return affiliatePurchaseNamedItems().reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
 }
 
 function affiliatePurchaseManualAmount() {
@@ -18366,8 +19428,39 @@ function affiliatePurchaseManualAmount() {
 }
 
 function affiliatePurchaseTotal() {
-  const productsTotal = normalizeAffiliatePurchaseItems().reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
+  const productsTotal = affiliatePurchaseProductsTotal();
   return productsTotal > 0 ? productsTotal : affiliatePurchaseManualAmount();
+}
+
+function affiliatePurchasePayloadProducts(total = 0) {
+  const namedItems = affiliatePurchaseNamedItems();
+  const products = namedItems
+    .map((item) => ({
+      name: String(item.name || "").trim(),
+      inventory_product_id: item.inventory_product_id || null,
+      sku: item.sku || null,
+      barcode: item.barcode || null,
+      quantity: Math.max(1, Number(item.quantity || 1)),
+      unit_price: Math.max(0, Number(item.unit_price || 0)),
+      line_total: affiliatePurchaseLineTotal(item),
+    }))
+    .filter((item) => item.name && item.line_total > 0);
+
+  if (products.length || namedItems.length !== 1 || !Number.isFinite(total) || total <= 0) {
+    return products;
+  }
+
+  const item = namedItems[0];
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  return [{
+    name: String(item.name || "").trim(),
+    inventory_product_id: item.inventory_product_id || null,
+    sku: item.sku || null,
+    barcode: item.barcode || null,
+    quantity,
+    unit_price: total / quantity,
+    line_total: total,
+  }];
 }
 
 function affiliateReferralPointsEstimate(total) {
@@ -18379,11 +19472,69 @@ function affiliateReferralPointsEstimate(total) {
   return Math.max(0, rules.referral_rounding === "ceil" ? Math.ceil(raw) : Math.floor(raw));
 }
 
+function renderAffiliateOperationFeed() {
+  if (!affiliateOperationFeed) return;
+  const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === state.selectedAffiliateId) || null;
+  const namedItems = affiliatePurchaseNamedItems();
+  const products = affiliatePurchasePayloadProducts(affiliatePurchaseTotal());
+  const openCount = saleOpenProductCount(products);
+  const total = affiliatePurchaseTotal();
+  const points = affiliateReferralPointsEstimate(total);
+  const hasPurchase = total > 0;
+  const hasProducts = namedItems.length > 0;
+  const steps = [
+    commerceFeedStep(
+      selected ? "done" : "active",
+      "1. Selecciona o crea afiliado",
+      selected ? `${selected.full_name || "Afiliado"} está seleccionado. La compra y los puntos quedarán asociados a su carnet.` : "Busca por nombre, documento o QR. También puedes crear el afiliado desde el formulario.",
+      selected ? "" : "Buscar afiliado",
+      selected ? "" : "affiliate-focus-search"
+    ),
+    commerceFeedStep(
+      hasPurchase ? "done" : selected ? "active" : "pending",
+      "2. Registra el valor de compra",
+      hasPurchase ? `Total listo: ${money(total)}. ${points === null ? "Los puntos se calcularán al guardar." : `${points.toLocaleString("es-CO")} puntos estimados.`}` : "Puedes escribir solo el monto total en COP, o agregar productos si quieres alimentar Productos automáticamente.",
+      selected && !hasProducts ? "Agregar producto nuevo" : "",
+      selected && !hasProducts ? "affiliate-add-product" : ""
+    ),
+    commerceFeedStep(
+      hasProducts ? "done" : selected ? "active" : "pending",
+      "3. Productos opcionales",
+      hasProducts
+        ? `${namedItems.length} producto${namedItems.length === 1 ? "" : "s"} en la compra. ${openCount ? `${openCount} nuevo${openCount === 1 ? "" : "s"} quedará${openCount === 1 ? "" : "n"} creado${openCount === 1 ? "" : "s"} en Productos al guardar.` : "Todos están vinculados a Productos."}`
+        : "Si el producto no existe, escríbelo aquí. No necesitas ir primero a Productos.",
+      "Agregar producto",
+      "affiliate-add-product"
+    ),
+    commerceFeedStep(
+      selected && hasPurchase ? "active" : "pending",
+      "4. Guardar y verificar",
+      selected && hasPurchase
+        ? "Al guardar, se crea la venta en Sales, se suman puntos al afiliado y los productos nuevos aparecen en Productos."
+        : "Cuando selecciones afiliado y tengas monto de compra, podrás registrar la operación.",
+      selected && hasPurchase ? "Sumar puntos por compra" : "",
+      selected && hasPurchase ? "affiliate-save" : ""
+    ),
+  ];
+  affiliateOperationFeed.innerHTML = `
+    <div class="commerce-feed-head">
+      <span class="mono-label">Feed interactivo</span>
+      <strong>Cómo manejar esta operación</strong>
+    </div>
+    ${steps.join("")}
+    <div class="commerce-feed-shortcuts">
+      <button class="ghost-button compact" type="button" data-commerce-feed-action="inventory">Ver Productos</button>
+      <button class="ghost-button compact" type="button" data-commerce-feed-action="sales">Ver Sales</button>
+    </div>
+  `;
+  bindCommerceFeedActions(affiliateOperationFeed);
+}
+
 function updateAffiliatePurchaseTotals() {
   const items = normalizeAffiliatePurchaseItems();
-  const namedItems = items.filter((item) => item.name && affiliatePurchaseLineTotal(item) > 0);
+  const namedItems = affiliatePurchaseNamedItems();
   const productsTotal = namedItems.reduce((sum, item) => sum + affiliatePurchaseLineTotal(item), 0);
-  const total = productsTotal > 0 ? productsTotal : affiliatePurchaseManualAmount();
+  const total = affiliatePurchaseTotal();
   const productSummary = namedItems.length
     ? namedItems.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 170)
     : "";
@@ -18398,6 +19549,7 @@ function updateAffiliatePurchaseTotals() {
       ? "Puntos calculados al registrar"
       : `${points.toLocaleString("es-CO")} puntos estimados`;
   }
+  renderAffiliateOperationFeed();
   return { items, total, productSummary, points };
 }
 
@@ -18413,6 +19565,7 @@ function renderAffiliatePurchaseItems() {
           ${inventoryProductSelectOptions(item.inventory_product_id ? `inventory:${item.inventory_product_id}` : (item.is_open_product || item.name ? OPEN_PRODUCT_VALUE : ""), { placeholder: "Seleccionar producto" })}
         </select>
         <input class="open-product-input ${!item.inventory_product_id && (item.is_open_product || item.name) ? "" : "hidden"}" type="text" data-affiliate-purchase-field="name" data-open-product-input value="${escapeHtml(item.inventory_product_id ? "" : item.name)}" placeholder="Producto abierto o servicio" ${disabled || item.inventory_product_id || !(item.is_open_product || item.name) ? "disabled" : ""}>
+        ${!item.inventory_product_id && (item.is_open_product || item.name) ? '<small>Al registrar la compra, este producto quedará creado automáticamente en Productos.</small>' : ""}
       </label>
       <label>
         <span>Cant.</span>
@@ -18423,7 +19576,7 @@ function renderAffiliatePurchaseItems() {
         <input type="text" inputmode="numeric" data-affiliate-purchase-field="unit_price" value="${escapeHtml(item.unit_price)}" placeholder="Ej: 50000 o 50.000" ${disabled ? "disabled" : ""}>
       </label>
       <div class="affiliate-purchase-line-total">
-        <span>Subtotal</span>
+        <span>${item.inventory_product_id ? "Producto registrado" : (item.is_open_product || item.name) ? "Se creará en Productos" : "Subtotal"}</span>
         <strong>${escapeHtml(money(affiliatePurchaseLineTotal(item)))}</strong>
       </div>
       <button class="ghost-button danger-button" type="button" data-affiliate-purchase-remove="${index}" ${disabled || rows.length <= 1 ? "disabled" : ""}>Quitar</button>
@@ -18493,17 +19646,6 @@ async function awardSelectedAffiliatePoints() {
   if (!state.selectedAffiliateId || !session?.user?.business_id) return;
   const selectedAffiliate = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === state.selectedAffiliateId) || {};
   const purchase = updateAffiliatePurchaseTotals();
-  const products = purchase.items
-    .map((item) => ({
-      name: String(item.name || "").trim(),
-      inventory_product_id: item.inventory_product_id || null,
-      sku: item.sku || null,
-      barcode: item.barcode || null,
-      quantity: Math.max(1, Number(item.quantity || 1)),
-      unit_price: Math.max(0, Number(item.unit_price || 0)),
-      line_total: affiliatePurchaseLineTotal(item),
-    }))
-    .filter((item) => item.name && item.line_total > 0);
   const amount = Number(purchase.total || 0);
   const campaignId = affiliatePurchaseCampaignInput?.value || "";
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -18511,11 +19653,7 @@ async function awardSelectedAffiliatePoints() {
     showFeedback("Escribe el monto total de la compra.", "error");
     return;
   }
-  if (products.length && activeCampaignsForAssociation().length && !campaignId) {
-    setInlineMessage(affiliatePurchaseMessage, "Elige la campana que quieres atribuir a esta compra.", "error");
-    showFeedback("Elige una campana para atribuir la compra.", "error");
-    return;
-  }
+  const products = affiliatePurchasePayloadProducts(amount);
 
   affiliateAddPointsButton.disabled = true;
   affiliateAddPointsButton.textContent = "Registrando...";
@@ -18566,7 +19704,7 @@ async function awardSelectedAffiliatePoints() {
         customer_phone: selectedAffiliate.phone || null,
         customer_email: selectedAffiliate.email || null,
         customer_document_id: selectedAffiliate.document_id || null,
-        product_name: purchase.productSummary || products[0]?.name || "Compra afiliado",
+        product_name: purchase.productSummary || "Compra afiliado",
         sale_amount: amount,
         currency: "COP",
         acquisition_source: "FRIEND_REFERRAL",
@@ -18578,6 +19716,7 @@ async function awardSelectedAffiliatePoints() {
           affiliate_purchase: true,
           products,
           items_count: products.length,
+          products_optional: true,
           purchase_total: amount,
           estimated_referral_points: purchase.points,
           affiliate_name: selectedAffiliate.full_name || null,
@@ -18608,9 +19747,14 @@ async function awardSelectedAffiliatePoints() {
       if (state.currentView === "sales") renderSalesView();
     }
     await renderAffiliatesView();
+    const savedMetadata = saleMetadata(data.sale || {});
+    const autoCreatedCount = Array.isArray(savedMetadata.auto_created_products) ? savedMetadata.auto_created_products.length : 0;
+    const productSyncMessage = autoCreatedCount
+      ? ` ${autoCreatedCount} producto${autoCreatedCount === 1 ? "" : "s"} nuevo${autoCreatedCount === 1 ? "" : "s"} quedó${autoCreatedCount === 1 ? "" : "aron"} creado${autoCreatedCount === 1 ? "" : "s"} en Productos.`
+      : "";
     const message = awarded
-      ? `Compra por ${money(amount)} registrada en Sales. ${data.referral?.affiliate_name || selectedAffiliate.full_name || "El afiliado"} recibio ${awarded} puntos automaticamente.`
-      : `Compra por ${money(amount)} registrada en Sales. La regla actual no genero puntos para este total.`;
+      ? `Compra por ${money(amount)} registrada en Sales. ${data.referral?.affiliate_name || selectedAffiliate.full_name || "El afiliado"} recibio ${awarded} puntos automaticamente.${productSyncMessage}`
+      : `Compra por ${money(amount)} registrada en Sales. La regla actual no genero puntos para este total.${productSyncMessage}`;
     setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
     showFeedback(message, awarded ? "success" : "info", { title: "Compra atribuida" });
   } catch (error) {
@@ -19108,7 +20252,7 @@ function exportRedemptions() {
 
 function exportSales() {
   downloadCsv("campaign-sales", [
-    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Productos detallados", "Afiliado", "Puntos", "Sucursal", "Fecha"],
+    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Productos detallados", "Sucursal", "Fecha"],
     ...state.selectedSales.map((item) => [
       item.player_name,
       item.document_id,
@@ -19117,8 +20261,6 @@ function exportSales() {
       item.payment_method,
       item.product_or_service,
       saleProductsForDisplay(item).map((product) => `${product.name} x${product.quantity || 1} = ${product.line_total || 0}`).join(" | "),
-      item.affiliate_name || "",
-      item.referral_points_awarded || 0,
       item.branch_name,
       item.created_at,
     ]),
@@ -19368,7 +20510,6 @@ function commercialChipClass(status = "") {
 function leadBadges(item = {}) {
   const digitalAssetOrigin = String(item.channel || "").toLowerCase().includes("descarga de activo digital");
   return [
-    item.is_affiliate ? "Afiliado" : "",
     digitalAssetOrigin ? "Activo digital" : "",
     item.purchase_count > 0 ? "Comprador" : "",
     item.active_tickets > 0 ? "Ticket activo" : "",
@@ -20373,6 +21514,36 @@ function renderAgendaKpis(rows = agendaRows()) {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
+
+  if (campaignRoiTable) {
+    const rows = campaigns
+      .slice()
+      .sort((a, b) => toNumber(b.attributed_revenue) - toNumber(a.attributed_revenue) || toNumber(b.direct_sales_count || b.attributed_sales_count) - toNumber(a.direct_sales_count || a.attributed_sales_count));
+    campaignRoiTable.innerHTML = rows.map((campaign) => {
+      const investment = toNumber(campaign.budget_total);
+      const revenue = toNumber(campaign.attributed_revenue);
+      const sales = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count);
+      const net = revenue - investment;
+      const roi = investment ? net / investment : null;
+      const cac = sales ? investment / sales : null;
+      return `
+        <tr>
+          <td>
+            <strong>${escapeHtml(campaign.name || "Sin nombre")}</strong>
+            <br><span class="table-secondary">${escapeHtml(launchChannelsLabel(campaign.launch_channels))}</span>
+          </td>
+          <td><span class="status-chip ${campaign.status === "ACTIVE" ? "ok" : campaign.status === "PAUSED" ? "warning" : "pending"}">${escapeHtml(statusLabel(campaign.status))}</span></td>
+          <td>${escapeHtml(money(investment))}</td>
+          <td>${escapeHtml(sales)}</td>
+          <td>${escapeHtml(money(revenue))}</td>
+          <td><strong>${escapeHtml(money(net))}</strong></td>
+          <td>${escapeHtml(cac === null ? "-" : money(cac))}</td>
+          <td>${escapeHtml(ratioLabel(roi))}</td>
+          <td>${escapeHtml(roiDecisionLabel(roi, revenue, investment))}</td>
+        </tr>
+      `;
+    }).join("") || '<tr><td colspan="9">Crea una campaña, registra inversión y atribuye ventas para ver ROI.</td></tr>';
+  }
 }
 
 function renderAgendaList(rows = agendaRows()) {
@@ -21056,6 +22227,29 @@ function setContactCenterTab(tab = "overview") {
   }
   if (nextTab === "agenda") renderLeadAgenda();
   if (nextTab === "sales") renderSalesView();
+}
+
+function openContactCenterSection(tab = "overview", options = {}) {
+  const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
+  state.contactCenterTab = nextTab;
+  setView(nextTab === "sales" ? "sales" : "leads");
+  window.setTimeout(() => {
+    if (state.currentView !== "leads") return;
+    setContactCenterTab(nextTab);
+    if (nextTab === "agenda") {
+      renderLeadAgenda();
+      if (!state.leadAgendaLoaded && !state.leadAgendaLoading && session?.user?.business_id) {
+        loadLeadAgendaData({ quiet: true }).then(renderLeadAgenda).catch((error) => {
+          showFeedback(error.message || "No se pudo cargar la agenda comercial.", "error", { title: "Agenda comercial" });
+        });
+      }
+    }
+    if (options.scroll === false) return;
+    const target = nextTab === "agenda"
+      ? leadAgendaCard
+      : document.querySelector(`[data-contact-center-panel="${nextTab}"]`) || document.getElementById("contactCenterShell");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 80);
 }
 
 function updateContactCenterCounts({ totalContacts = 0, visibleContacts = 0, ticketTotal = 0, agendaTotal = 0, capturedLeads = 0, manualContacts = 0, converted = 0 } = {}) {
@@ -22364,7 +23558,8 @@ function bindLeadDetailPanelActions() {
 }
 
 function setLeadDetailTab(tabName = "summary", options = {}) {
-  const nextTab = String(tabName || "summary");
+  const requestedTab = String(tabName || "summary");
+  const nextTab = requestedTab === "affiliate" ? "summary" : requestedTab;
   state.selectedLeadTab = nextTab;
   leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => {
     const isActive = tab.dataset.leadTab === nextTab;
@@ -22619,6 +23814,61 @@ function renderAffiliateDashboard() {
       ? `${topAffiliate.full_name || "Afiliado"} - ${money(topAffiliate.purchase_total)}`
       : "Sin compras aún";
   }
+  renderAffiliateCommandStrip();
+}
+
+function renderAffiliateCommandStrip() {
+  const affiliates = state.affiliates || [];
+  const selected = state.selectedAffiliate || affiliates.find((item) => item.id === state.selectedAffiliateId) || null;
+  const selectedPurchaseTotal = toNumber(selected?.purchase_total || 0);
+  const selectedPoints = toNumber(selected?.points_total || selected?.ledger_points || 0);
+  const selectedEvents = toNumber(selected?.point_events || 0);
+
+  if (affiliateOperationChecklist) {
+    affiliateOperationChecklist.querySelectorAll("li").forEach((item, index) => {
+      const complete = index === 0 ? Boolean(selected)
+        : index === 1 ? selectedEvents > 0
+          : selectedPoints > 0 || Boolean(selected?.digital_card_url);
+      item.classList.toggle("is-complete", complete);
+      item.classList.toggle("is-active", !complete && (index === 0 || (index === 1 && selected) || (index === 2 && selectedEvents > 0)));
+    });
+  }
+
+  if (affiliateQuickNextAction && affiliateQuickNextActionCopy) {
+    if (!affiliates.length) {
+      affiliateQuickNextAction.textContent = "Crea el primer afiliado";
+      affiliateQuickNextActionCopy.textContent = "Registra nombre, documento o teléfono. Después podrás abrir su carnet y sumar puntos por compras.";
+    } else if (!selected) {
+      affiliateQuickNextAction.textContent = "Selecciona un afiliado";
+      affiliateQuickNextActionCopy.textContent = "Busca por documento, nombre o QR para abrir la ficha y registrar la compra atribuida.";
+    } else if (!selectedEvents) {
+      affiliateQuickNextAction.textContent = "Registrar primera compra";
+      affiliateQuickNextActionCopy.textContent = `${selected.full_name || "Este afiliado"} está listo. Escribe el monto total de la compra en COP y suma puntos.`;
+    } else if (selectedPoints > 0) {
+      affiliateQuickNextAction.textContent = "Activar referidos o premio";
+      affiliateQuickNextActionCopy.textContent = `${selected.full_name || "El afiliado"} acumula ${selectedPoints.toLocaleString("es-CO")} puntos y ${money(selectedPurchaseTotal)} en compras. Copia su carnet o genera tickets de referido.`;
+    } else {
+      affiliateQuickNextAction.textContent = "Mantener actividad";
+      affiliateQuickNextActionCopy.textContent = "Suma puntos manuales, registra otra compra o entrega tickets para que el afiliado siga trayendo clientes.";
+    }
+  }
+
+  if (affiliateTopRankingList) {
+    const ranking = affiliates
+      .slice()
+      .sort((a, b) => toNumber(b.purchase_total || 0) - toNumber(a.purchase_total || 0) || toNumber(b.points_total || b.ledger_points || 0) - toNumber(a.points_total || a.ledger_points || 0))
+      .slice(0, 5);
+    affiliateTopRankingList.innerHTML = ranking.map((affiliate, index) => `
+      <button class="affiliate-top-row ${affiliate.id === state.selectedAffiliateId ? "active" : ""}" type="button" data-affiliate-top-select="${escapeHtml(affiliate.id)}">
+        <span>${index + 1}</span>
+        <strong>${escapeHtml(affiliate.full_name || "Afiliado")}</strong>
+        <small>${escapeHtml(money(affiliate.purchase_total || 0))} · ${escapeHtml(toNumber(affiliate.points_total || affiliate.ledger_points || 0))} pts</small>
+      </button>
+    `).join("") || '<div class="affiliate-selected-empty">Sin afiliados para ranking.</div>';
+    affiliateTopRankingList.querySelectorAll("[data-affiliate-top-select]").forEach((button) => {
+      button.addEventListener("click", () => openAffiliateForPoints(button.dataset.affiliateTopSelect));
+    });
+  }
 }
 
 function normalizeAffiliateFinderValue(value) {
@@ -22715,7 +23965,7 @@ async function openAffiliateForPoints(affiliateId) {
   await renderAffiliatesView();
   const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
   renderAffiliateFinderResults([]);
-  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Registra la compra, elige campana y los puntos se suman automatico.`, "success");
+  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
   affiliatePurchaseAmountInput?.focus();
   affiliatePurchaseAmountInput?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -22841,6 +24091,7 @@ async function renderAffiliatesView() {
     state.selectedAffiliateId = selected.id;
   }
   state.selectedAffiliate = selected;
+  renderAffiliateCommandStrip();
   renderAffiliatePurchaseCampaignOptions();
   renderAffiliateRewardRules();
   resetAffiliateRewardResult();
@@ -23435,11 +24686,605 @@ function renderRedemptionsView() {
     : "Sin datos suficientes";
 }
 
+function acquisitionChannelTypeLabel(value = "") {
+  return {
+    DIGITAL: "Digital",
+    SOCIAL: "Red social",
+    MESSAGING: "Mensajería",
+    SEARCH: "Buscador",
+    WEB: "Web",
+    PHYSICAL: "Físico / tienda",
+    REFERRAL: "Referidos",
+    AFFILIATE: "Referidos",
+    MARKETPLACE: "Marketplace",
+    DIRECT: "Directo",
+    OTHER: "Otro",
+  }[String(value || "").toUpperCase()] || "Canal";
+}
+
+function acquisitionChannelStatusLabel(value = "") {
+  return {
+    ACTIVE: "Activo",
+    PAUSED: "Pausado",
+    TESTING: "En prueba",
+    ARCHIVED: "Archivado",
+    DETECTED: "Detectado",
+  }[String(value || "").toUpperCase()] || "Activo";
+}
+
+function channelRoiLabel(value) {
+  if (value === null || value === undefined) return "Sin inversión";
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return "Sin inversión";
+  return `${Math.round(numberValue * 100)}%`;
+}
+
+function roiDecisionLabel(roi, revenue = 0, investment = 0) {
+  const roiValue = Number(roi);
+  if (!Number(investment || 0)) return Number(revenue || 0) ? "Falta cargar inversión" : "Sin inversión ni revenue";
+  if (!Number.isFinite(roiValue)) return "Sin lectura";
+  if (roiValue >= 1) return "Escalar inversión";
+  if (roiValue >= 0) return "Mantener y optimizar";
+  if (Number(revenue || 0) > 0) return "Bajar costo o mejorar cierre";
+  return "Pausar o replantear";
+}
+
+function topChannelCampaign(channel = {}) {
+  const rows = Array.isArray(channel.campaign_breakdown) ? channel.campaign_breakdown : [];
+  return rows
+    .slice()
+    .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.sales || 0) - Number(a.sales || 0))[0] || null;
+}
+
+function campaignChannelRows(campaignId = state.selectedCampaignId) {
+  const rows = Array.isArray(state.acquisitionChannelMatrix) ? state.acquisitionChannelMatrix : [];
+  return rows
+    .filter((row) => String(row.campaign_id || "") === String(campaignId || ""))
+    .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.sales || 0) - Number(a.sales || 0));
+}
+
+function acquisitionChannelById(channelId = "") {
+  return (state.acquisitionChannels || []).find((channel) => String(channel.id || "") === String(channelId || "")) || null;
+}
+
+function acquisitionChannelKey(channel = {}) {
+  return channel.id || channel.slug || channel.name || channel.platform || "";
+}
+
+function selectedAcquisitionChannel() {
+  const channels = state.acquisitionChannels || [];
+  if (state.selectedAcquisitionChannelKey) {
+    const selected = channels.find((channel) => String(acquisitionChannelKey(channel)) === String(state.selectedAcquisitionChannelKey));
+    if (selected) return selected;
+  }
+  return channels
+    .slice()
+    .sort((a, b) => Number(b.metrics?.revenue || 0) - Number(a.metrics?.revenue || 0) || Number(b.metrics?.sales || 0) - Number(a.metrics?.sales || 0))[0] || null;
+}
+
+function acquisitionChannelNames() {
+  return Array.from(new Set((state.acquisitionChannels || [])
+    .map((channel) => channel.name || channel.platform)
+    .filter(Boolean)));
+}
+
+function renderAcquisitionChannelDatalist() {
+  if (!acquisitionChannelDatalist) return;
+  const names = acquisitionChannelNames();
+  acquisitionChannelDatalist.innerHTML = names
+    .map((name) => `<option value="${escapeHtml(name)}"></option>`)
+    .join("");
+}
+
+function renderChannelEffortOptions() {
+  if (channelEffortChannelInput) {
+    const current = channelEffortChannelInput.value;
+    const channels = (state.acquisitionChannels || []).filter((channel) => channel.id && channel.status !== "DETECTED");
+    channelEffortChannelInput.innerHTML = channels.length
+      ? channels.map((channel) => `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.name || channel.platform || "Canal")}</option>`).join("")
+      : '<option value="">Primero crea un canal</option>';
+    if (current && channels.some((channel) => String(channel.id) === String(current))) {
+      channelEffortChannelInput.value = current;
+    } else if (state.selectedAcquisitionChannelKey) {
+      const selected = selectedAcquisitionChannel();
+      if (selected?.id) channelEffortChannelInput.value = selected.id;
+    }
+  }
+  if (channelEffortCampaignInput) {
+    const current = channelEffortCampaignInput.value;
+    channelEffortCampaignInput.innerHTML = '<option value="">Sin campaña</option>' + (state.campaigns || [])
+      .map((campaign) => `<option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || "Campaña")}</option>`)
+      .join("");
+    if (current && (state.campaigns || []).some((campaign) => String(campaign.id) === String(current))) {
+      channelEffortCampaignInput.value = current;
+    }
+  }
+}
+
+function channelEffortById(effortId = "") {
+  return (state.acquisitionChannelEfforts || []).find((effort) => String(effort.id || "") === String(effortId || "")) || null;
+}
+
+function resetChannelEffortForm(effort = null) {
+  state.channelEffortEditingId = effort?.id || null;
+  renderChannelEffortOptions();
+  if (channelEffortFormTitle) channelEffortFormTitle.textContent = effort?.id ? "Editar esfuerzo del canal" : "Registrar publicación, pauta o acción";
+  if (channelEffortIdInput) channelEffortIdInput.value = effort?.id || "";
+  if (channelEffortChannelInput) channelEffortChannelInput.value = effort?.channel_id || channelEffortChannelInput.value || "";
+  if (channelEffortCampaignInput) channelEffortCampaignInput.value = effort?.campaign_id || "";
+  if (channelEffortTitleInput) channelEffortTitleInput.value = effort?.title || "";
+  if (channelEffortTypeInput) channelEffortTypeInput.value = effort?.content_type || "POST";
+  if (channelEffortObjectiveInput) channelEffortObjectiveInput.value = effort?.objective || "";
+  if (channelEffortPublishedInput) channelEffortPublishedInput.value = effort?.published_at ? dateInputValue(new Date(effort.published_at)) : "";
+  if (channelEffortStartsInput) channelEffortStartsInput.value = effort?.starts_at ? dateInputValue(new Date(effort.starts_at)) : "";
+  if (channelEffortEndsInput) channelEffortEndsInput.value = effort?.ends_at ? dateInputValue(new Date(effort.ends_at)) : "";
+  if (channelEffortBudgetInput) channelEffortBudgetInput.value = Number(effort?.budget_amount || 0);
+  if (channelEffortCreativeInput) channelEffortCreativeInput.value = effort?.creative_url || "";
+  if (channelEffortSourceInput) channelEffortSourceInput.value = effort?.source_url || "";
+  if (channelEffortStatusInput) channelEffortStatusInput.value = effort?.status || "ACTIVE";
+  if (channelEffortDescriptionInput) channelEffortDescriptionInput.value = effort?.description || "";
+  if (channelEffortNotesInput) channelEffortNotesInput.value = effort?.notes || "";
+  if (channelEffortSaveButton) channelEffortSaveButton.textContent = effort?.id ? "Guardar cambios" : "Guardar esfuerzo del canal";
+  setInlineMessage(channelEffortMessage, "", "info");
+}
+
+function channelEffortPayload() {
+  return {
+    channel_id: channelEffortChannelInput?.value || "",
+    campaign_id: channelEffortCampaignInput?.value || null,
+    title: channelEffortTitleInput?.value?.trim() || "",
+    content_type: channelEffortTypeInput?.value || "POST",
+    objective: channelEffortObjectiveInput?.value?.trim() || null,
+    published_at: dateValueToIso(channelEffortPublishedInput?.value || ""),
+    starts_at: dateValueToIso(channelEffortStartsInput?.value || ""),
+    ends_at: channelEffortEndsInput?.value ? new Date(`${channelEffortEndsInput.value}T23:59:59`).toISOString() : null,
+    budget_amount: Number(channelEffortBudgetInput?.value || 0),
+    currency: "COP",
+    creative_url: channelEffortCreativeInput?.value?.trim() || null,
+    source_url: channelEffortSourceInput?.value?.trim() || null,
+    status: channelEffortStatusInput?.value || "ACTIVE",
+    description: channelEffortDescriptionInput?.value?.trim() || null,
+    notes: channelEffortNotesInput?.value?.trim() || null,
+    metadata: {
+      source_module: "channels_roi",
+      measured_as: "channel_effort",
+    },
+  };
+}
+
+async function loadChannelEfforts(options = {}) {
+  if (!session?.user?.business_id) {
+    state.acquisitionChannelEfforts = [];
+    state.acquisitionChannelEffortTotals = null;
+    state.acquisitionChannelEffortsLoaded = true;
+    state.acquisitionChannelEffortsLoading = false;
+    return [];
+  }
+  if (state.acquisitionChannelEffortsLoaded && !options.force) return state.acquisitionChannelEfforts;
+  if (state.acquisitionChannelEffortsLoading) return state.acquisitionChannelEfforts;
+  state.acquisitionChannelEffortsLoading = true;
+  const scopeKey = businessScopeKey();
+  try {
+    const data = await apiSafe("/api/business/channel-efforts", { headers: authHeaders() }, { efforts: [], totals: null });
+    if (!isCurrentBusinessScope(scopeKey)) return state.acquisitionChannelEfforts;
+    state.acquisitionChannelEfforts = Array.isArray(data.efforts) ? data.efforts : [];
+    state.acquisitionChannelEffortTotals = data.totals || null;
+    state.acquisitionChannelEffortsLoaded = true;
+    return state.acquisitionChannelEfforts;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.acquisitionChannelEffortsLoading = false;
+  }
+}
+
+function effortDateRangeLabel(effort = {}) {
+  const start = effort.starts_at || effort.published_at;
+  const end = effort.ends_at;
+  if (!start && !end) return "-";
+  if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+  return formatDate(start || end);
+}
+
+function renderChannelEffortsView() {
+  renderChannelEffortOptions();
+  if (channelEffortTotalsChip) {
+    const totals = state.acquisitionChannelEffortTotals || {};
+    channelEffortTotalsChip.textContent = `${Number(totals.efforts || 0)} esfuerzos · ${money(totals.revenue || 0)}`;
+  }
+  if (!channelEffortTable) return;
+  const rows = withFilters(
+    state.acquisitionChannelEfforts || [],
+    ["title", "channel_name", "campaign_name", "content_type", "objective", "description", "notes"],
+    ["published_at", "starts_at", "ends_at", "created_at"]
+  );
+  if (state.acquisitionChannelEffortsLoading && !rows.length) {
+    channelEffortTable.innerHTML = '<tr><td colspan="12">Cargando esfuerzos y publicaciones...</td></tr>';
+    return;
+  }
+  channelEffortTable.innerHTML = rows.map((effort) => {
+    const metrics = effort.metrics || {};
+    const investment = Number(metrics.investment || effort.budget_amount || 0);
+    const revenue = Number(metrics.revenue || 0);
+    const roi = metrics.roi;
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(effort.title || "Esfuerzo sin nombre")}</strong>
+          <br><span class="table-secondary">${escapeHtml(effort.content_type || "POST")} · ${escapeHtml(effort.objective || "Sin objetivo")}</span>
+        </td>
+        <td>${escapeHtml(effort.channel_name || "-")}</td>
+        <td>${escapeHtml(effort.campaign_name || "Sin campaña")}</td>
+        <td>${escapeHtml(effortDateRangeLabel(effort))}</td>
+        <td>${escapeHtml(money(investment))}</td>
+        <td>${escapeHtml(metrics.leads || 0)}</td>
+        <td>${escapeHtml(metrics.sales || 0)}</td>
+        <td>${escapeHtml(metrics.rebuy_sales || 0)}</td>
+        <td>${escapeHtml(metrics.referral_sales || 0)}</td>
+        <td><strong>${escapeHtml(money(revenue))}</strong></td>
+        <td>
+          <strong>${escapeHtml(channelRoiLabel(roi))}</strong>
+          <br><span class="table-secondary">${escapeHtml(roiDecisionLabel(roi, revenue, investment))}</span>
+        </td>
+        <td>
+          <button class="ghost-button" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Editar</button>
+          ${effort.source_url ? `<a class="ghost-button" href="${escapeHtml(effort.source_url)}" target="_blank" rel="noopener">Ver pieza</a>` : ""}
+          <button class="link-button danger-link" type="button" data-channel-effort-archive="${escapeHtml(effort.id)}">Archivar</button>
+        </td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="12">Registra una publicación, pauta o acción del canal para medir ROI por pieza.</td></tr>';
+}
+
+async function submitChannelEffort(event) {
+  event.preventDefault();
+  const payload = channelEffortPayload();
+  if (!payload.channel_id) {
+    setInlineMessage(channelEffortMessage, "Primero selecciona o crea un canal.", "error");
+    channelEffortChannelInput?.focus();
+    return;
+  }
+  if (!payload.title) {
+    setInlineMessage(channelEffortMessage, "Escribe el título del esfuerzo.", "error");
+    channelEffortTitleInput?.focus();
+    return;
+  }
+  const editingId = state.channelEffortEditingId || channelEffortIdInput?.value || "";
+  setButtonLoading(channelEffortSaveButton, true, "Guardando...");
+  setInlineMessage(channelEffortMessage, "Guardando esfuerzo y recalculando análisis del canal...", "info");
+  try {
+    await api(editingId ? `/api/business/channel-efforts/${encodeURIComponent(editingId)}` : "/api/business/channel-efforts", {
+      method: editingId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    resetChannelEffortForm();
+    state.acquisitionChannelEffortsLoaded = false;
+    state.acquisitionChannelsLoaded = false;
+    await Promise.all([
+      loadAcquisitionChannels({ force: true, quiet: true }),
+      loadChannelEfforts({ force: true, quiet: true }),
+    ]);
+    renderAcquisitionChannelsView();
+    showFeedback("Esfuerzo del canal guardado con análisis de ROI por fechas.", "success", { title: "Canales ROI" });
+  } catch (error) {
+    setInlineMessage(channelEffortMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo guardar el esfuerzo" });
+  } finally {
+    setButtonLoading(channelEffortSaveButton, false);
+  }
+}
+
+async function archiveChannelEffort(effortId = "") {
+  if (!effortId) return;
+  try {
+    await api(`/api/business/channel-efforts/${encodeURIComponent(effortId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (state.channelEffortEditingId === effortId) resetChannelEffortForm();
+    await loadChannelEfforts({ force: true, quiet: true });
+    renderAcquisitionChannelsView();
+    showFeedback("Esfuerzo archivado. El canal conserva su histórico de ventas y campañas.", "success", { title: "Canales ROI" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo archivar el esfuerzo" });
+  }
+}
+
+async function loadAcquisitionChannels(options = {}) {
+  if (!session?.user?.business_id) {
+    state.acquisitionChannels = [];
+    state.acquisitionChannelTotals = null;
+    state.acquisitionChannelsLoaded = true;
+    state.acquisitionChannelsLoading = false;
+    renderAcquisitionChannelDatalist();
+    return [];
+  }
+  if (state.acquisitionChannelsLoaded && !options.force) return state.acquisitionChannels;
+  if (state.acquisitionChannelsLoading) return state.acquisitionChannels;
+  state.acquisitionChannelsLoading = true;
+  const scopeKey = businessScopeKey();
+  try {
+    const data = await apiSafe("/api/business/channels", { headers: authHeaders() }, { channels: [], totals: null });
+    if (!isCurrentBusinessScope(scopeKey)) return state.acquisitionChannels;
+    state.acquisitionChannels = Array.isArray(data.channels) ? data.channels : [];
+    state.acquisitionChannelTotals = data.totals || null;
+    state.acquisitionChannelMatrix = Array.isArray(data.campaign_channel_matrix) ? data.campaign_channel_matrix : [];
+    state.acquisitionChannelsLoaded = true;
+    renderAcquisitionChannelDatalist();
+    renderChannelEffortOptions();
+    return state.acquisitionChannels;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.acquisitionChannelsLoading = false;
+  }
+}
+
+function resetAcquisitionChannelForm(channel = null) {
+  state.acquisitionChannelEditingId = channel?.id || null;
+  if (acquisitionChannelFormTitle) acquisitionChannelFormTitle.textContent = channel?.id ? "Editar canal" : "Crear canal";
+  if (acquisitionChannelIdInput) acquisitionChannelIdInput.value = channel?.id || "";
+  if (acquisitionChannelNameInput) acquisitionChannelNameInput.value = channel?.name || "";
+  if (acquisitionChannelTypeInput) acquisitionChannelTypeInput.value = channel?.channel_type || "DIGITAL";
+  if (acquisitionChannelPlatformInput) acquisitionChannelPlatformInput.value = channel?.platform || channel?.name || "";
+  if (acquisitionChannelBudgetInput) acquisitionChannelBudgetInput.value = Number(channel?.period_budget || 0);
+  if (acquisitionChannelCurrencyInput) acquisitionChannelCurrencyInput.value = channel?.currency || "COP";
+  if (acquisitionChannelStatusInput) acquisitionChannelStatusInput.value = channel?.status && channel.status !== "DETECTED" ? channel.status : "ACTIVE";
+  if (acquisitionChannelNotesInput) acquisitionChannelNotesInput.value = channel?.notes || "";
+  if (acquisitionChannelSaveButton) acquisitionChannelSaveButton.textContent = channel?.id ? "Guardar cambios" : "Guardar canal";
+  setInlineMessage(acquisitionChannelMessage, "", "info");
+}
+
+function acquisitionChannelPayload() {
+  return {
+    name: acquisitionChannelNameInput?.value?.trim() || "",
+    channel_type: acquisitionChannelTypeInput?.value || "DIGITAL",
+    platform: acquisitionChannelPlatformInput?.value?.trim() || null,
+    period_budget: Number(acquisitionChannelBudgetInput?.value || 0),
+    currency: acquisitionChannelCurrencyInput?.value?.trim() || "COP",
+    status: acquisitionChannelStatusInput?.value || "ACTIVE",
+    notes: acquisitionChannelNotesInput?.value?.trim() || null,
+  };
+}
+
+async function submitAcquisitionChannel(event) {
+  event.preventDefault();
+  const payload = acquisitionChannelPayload();
+  if (!payload.name) {
+    setInlineMessage(acquisitionChannelMessage, "Escribe el nombre del canal.", "error");
+    acquisitionChannelNameInput?.focus();
+    return;
+  }
+  const editingId = state.acquisitionChannelEditingId || acquisitionChannelIdInput?.value || "";
+  setButtonLoading(acquisitionChannelSaveButton, true, "Guardando...");
+  setInlineMessage(acquisitionChannelMessage, "Guardando canal independiente de campañas...", "info");
+  try {
+    await api(editingId ? `/api/business/channels/${encodeURIComponent(editingId)}` : "/api/business/channels", {
+      method: editingId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    resetAcquisitionChannelForm();
+    await loadAcquisitionChannels({ force: true, quiet: true });
+    renderAcquisitionChannelsView();
+    renderAcquisitionChannelDatalist();
+    showFeedback("Canal guardado para análisis independiente de ROI.", "success", { title: "Canales ROI" });
+  } catch (error) {
+    setInlineMessage(acquisitionChannelMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo guardar canal" });
+  } finally {
+    setButtonLoading(acquisitionChannelSaveButton, false);
+  }
+}
+
+async function archiveAcquisitionChannel(channelId = "") {
+  const channel = acquisitionChannelById(channelId);
+  if (!channel?.id) return;
+  try {
+    await api(`/api/business/channels/${encodeURIComponent(channel.id)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (state.acquisitionChannelEditingId === channel.id) resetAcquisitionChannelForm();
+    await loadAcquisitionChannels({ force: true, quiet: true });
+    renderAcquisitionChannelsView();
+    renderAcquisitionChannelDatalist();
+    showFeedback("Canal archivado. Los datos históricos siguen disponibles por texto de canal.", "success", { title: "Canales ROI" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo archivar" });
+  }
+}
+
+function createDetectedAcquisitionChannel(name = "") {
+  resetAcquisitionChannelForm({
+    name,
+    platform: name,
+    channel_type: "DIGITAL",
+    status: "ACTIVE",
+    period_budget: 0,
+    currency: "COP",
+    notes: "Canal detectado automáticamente desde ventas, leads o tickets. Ajusta inversión para medir ROI real.",
+  });
+  acquisitionChannelNameInput?.focus();
+  setInlineMessage(acquisitionChannelMessage, "Completa la inversión del canal detectado y guarda para controlarlo.", "info");
+}
+
+function applyAcquisitionChannelTemplate(rawTemplate = "") {
+  const [name, type, platform, costModel] = String(rawTemplate || "").split("|");
+  resetAcquisitionChannelForm({
+    name: name || "",
+    platform: platform || name || "",
+    channel_type: type || "DIGITAL",
+    status: "ACTIVE",
+    period_budget: 0,
+    currency: "COP",
+    cost_model: costModel || null,
+    notes: `Canal ${name || "nuevo"} creado para controlar inversión, clientes recibidos, ventas y ROI independiente de campañas.`,
+  });
+  acquisitionChannelBudgetInput?.focus();
+  setInlineMessage(acquisitionChannelMessage, "Carga la inversión del periodo y guarda el canal. Luego registra ventas con este canal para medir ROI.", "info");
+}
+
+function renderAcquisitionChannelDetail() {
+  if (!acquisitionChannelDetailPanel) return;
+  const channel = selectedAcquisitionChannel();
+  if (!channel) {
+    acquisitionChannelDetailPanel.innerHTML = `
+      <span class="mono-label">Detalle del canal</span>
+      <h3>Sin canal seleccionado</h3>
+      <p>Crea Instagram, Facebook, Google, WhatsApp, Web u otro canal. Después registra ventas con ese canal para ver ROI individual.</p>
+    `;
+    return;
+  }
+  const metrics = channel.metrics || {};
+  const investment = Number(metrics.investment || channel.period_budget || 0);
+  const revenue = Number(metrics.revenue || 0);
+  const sales = Number(metrics.sales || 0);
+  const leads = Number(metrics.leads || 0);
+  const roi = metrics.roi;
+  const breakdown = Array.isArray(channel.campaign_breakdown) ? channel.campaign_breakdown.slice(0, 4) : [];
+  const isDetected = !channel.id || channel.status === "DETECTED";
+  acquisitionChannelDetailPanel.innerHTML = `
+    <div class="channel-detail-head">
+      <div>
+        <span class="mono-label">Detalle del canal</span>
+        <h3>${escapeHtml(channel.name || "Canal")}</h3>
+        <p>${escapeHtml(channel.platform || acquisitionChannelTypeLabel(channel.channel_type))}</p>
+      </div>
+      <span class="status-chip ${isDetected ? "warning" : channel.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(acquisitionChannelStatusLabel(channel.status))}</span>
+    </div>
+    <div class="channel-detail-metrics">
+      <div><span>Inversión</span><strong>${escapeHtml(money(investment))}</strong></div>
+      <div><span>Revenue</span><strong>${escapeHtml(money(revenue))}</strong></div>
+      <div><span>Ventas</span><strong>${escapeHtml(String(sales))}</strong></div>
+      <div><span>Leads</span><strong>${escapeHtml(String(leads))}</strong></div>
+      <div><span>CAC</span><strong>${escapeHtml(metrics.cac === null || metrics.cac === undefined ? "-" : money(metrics.cac))}</strong></div>
+      <div><span>ROI</span><strong>${escapeHtml(channelRoiLabel(roi))}</strong></div>
+    </div>
+    <div class="channel-decision-box">
+      <strong>${escapeHtml(roiDecisionLabel(roi, revenue, investment))}</strong>
+      <p>${investment ? "La inversión del canal se compara contra las ventas atribuidas por canal." : "Carga inversión para saber si este canal está dando retorno real."}</p>
+    </div>
+    <div class="channel-breakdown-list">
+      <strong>Campañas que convierten en este canal</strong>
+      ${breakdown.length ? breakdown.map((row) => `
+        <button type="button" data-channel-campaign-open="${escapeHtml(row.campaign_id || "")}">
+          <span>${escapeHtml(row.campaign_name || "Sin campaña")}</span>
+          <strong>${escapeHtml(money(row.revenue || 0))}</strong>
+          <small>${escapeHtml(row.sales || 0)} ventas · ROI canal ${escapeHtml(channelRoiLabel(row.channel_roi))}</small>
+        </button>
+      `).join("") : '<p class="table-secondary">Aún no hay campañas/ventas atribuidas a este canal.</p>'}
+    </div>
+    <div class="button-row">
+      ${isDetected
+        ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear canal y cargar inversión</button>`
+        : `<button class="ghost-button compact" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar inversión</button>`}
+      <button class="ghost-button compact" type="button" data-channel-open-sales="${escapeHtml(channel.name || "")}">Registrar venta con este canal</button>
+      ${!isDetected ? `<button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Registrar publicación/pauta</button>` : ""}
+    </div>
+  `;
+}
+
+function renderAcquisitionChannelsView() {
+  const channels = withFilters(
+    state.acquisitionChannels || [],
+    ["name", "platform", "channel_type", "status", "notes"],
+    ["created_at", "updated_at"]
+  );
+  const totals = state.acquisitionChannelTotals || channels.reduce((acc, channel) => {
+    acc.leads += Number(channel.metrics?.leads || 0);
+    acc.sales += Number(channel.metrics?.sales || 0);
+    acc.revenue += Number(channel.metrics?.revenue || 0);
+    acc.investment += Number(channel.metrics?.investment || 0);
+    return acc;
+  }, { leads: 0, sales: 0, revenue: 0, investment: 0 });
+  if (acquisitionChannelKpiGrid) {
+    const created = channels.filter((channel) => channel.id).length;
+    const detected = channels.filter((channel) => !channel.id || channel.status === "DETECTED").length;
+    acquisitionChannelKpiGrid.innerHTML = [
+      ["Canales creados", created, "Directorio propio"],
+      ["Canales detectados", detected, "Desde ventas, leads o tickets"],
+      ["Esfuerzos medidos", Number(state.acquisitionChannelEffortTotals?.efforts || 0), "Posts, pautas, WhatsApp o eventos"],
+      ["Revenue por canal", money(totals.revenue || 0), `${Number(totals.sales || 0)} ventas`],
+      ["Inversión canal", money(totals.investment || 0), "Presupuesto cargado"],
+      ["ROI total de canales", channelRoiLabel(totals.roi), totals.investment ? roiDecisionLabel(totals.roi, totals.revenue, totals.investment) : "Carga inversión para ROI"],
+    ].map(([label, value, meta]) => `
+      <article class="kpi-card">
+        <span class="mono-label">${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+        <div class="kpi-meta">${escapeHtml(meta || "")}</div>
+      </article>
+    `).join("");
+  }
+  renderAcquisitionChannelDetail();
+  renderChannelEffortsView();
+  if (!acquisitionChannelTable) return;
+  if (state.acquisitionChannelsLoading && !channels.length) {
+    acquisitionChannelTable.innerHTML = '<tr><td colspan="12">Cargando canales de adquisición...</td></tr>';
+    return;
+  }
+  acquisitionChannelTable.innerHTML = channels.map((channel) => {
+    const metrics = channel.metrics || {};
+    const isDetected = !channel.id || channel.status === "DETECTED";
+    const topCampaign = topChannelCampaign(channel);
+    const investment = Number(metrics.investment || channel.period_budget || 0);
+    const revenue = Number(metrics.revenue || 0);
+    const net = revenue - investment;
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(channel.name || "Sin canal")}</strong>
+          <br><span class="table-secondary">${escapeHtml(channel.platform || channel.slug || "Canal comercial")}</span>
+        </td>
+        <td>${escapeHtml(acquisitionChannelTypeLabel(channel.channel_type))}</td>
+        <td>${escapeHtml(money(metrics.investment || channel.period_budget || 0))}</td>
+        <td>${escapeHtml(metrics.leads || 0)}</td>
+        <td>${escapeHtml(metrics.sales || 0)}</td>
+        <td>${escapeHtml(money(revenue))}</td>
+        <td><strong>${escapeHtml(money(net))}</strong></td>
+        <td>${escapeHtml(metrics.cac === null || metrics.cac === undefined ? "-" : money(metrics.cac))}</td>
+        <td>
+          <strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong>
+          <br><span class="table-secondary">${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</span>
+        </td>
+        <td>
+          <strong>${escapeHtml(topCampaign?.campaign_name || "-")}</strong>
+          <br><span class="table-secondary">${topCampaign ? `${money(topCampaign.revenue)} · ${topCampaign.sales || 0} ventas` : "Sin ventas cruzadas"}</span>
+        </td>
+        <td><span class="status-chip ${isDetected ? "warning" : channel.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(acquisitionChannelStatusLabel(channel.status))}</span></td>
+        <td>
+          <button class="ghost-button" type="button" data-channel-detail="${escapeHtml(acquisitionChannelKey(channel))}">Ver detalle</button>
+          ${isDetected
+            ? `<button class="ghost-button" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear</button>`
+            : `<button class="ghost-button" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar</button>
+               <button class="ghost-button" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Esfuerzo</button>
+               <button class="link-button danger-link" type="button" data-channel-archive="${escapeHtml(channel.id)}">Archivar</button>`}
+        </td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="12">Crea tu primer canal o registra ventas con canal específico para detectarlos automáticamente.</td></tr>';
+
+  if (acquisitionChannelMatrixTable) {
+    const matrix = (state.acquisitionChannelMatrix || []).slice()
+      .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.sales || 0) - Number(a.sales || 0));
+    acquisitionChannelMatrixTable.innerHTML = matrix.map((row) => `
+      <tr>
+        <td><strong>${escapeHtml(row.channel_name || "-")}</strong></td>
+        <td>${escapeHtml(row.campaign_name || "Sin campaña")}</td>
+        <td>${escapeHtml(row.sales || 0)}</td>
+        <td>${escapeHtml(money(row.revenue || 0))}</td>
+        <td><strong>${escapeHtml(money(Number(row.revenue || 0) - Number(row.channel_investment_allocated || 0)))}</strong></td>
+        <td>${escapeHtml(money(row.channel_investment_allocated || 0))}</td>
+        <td>${escapeHtml(channelRoiLabel(row.channel_roi))}</td>
+        <td>${escapeHtml(money(row.campaign_investment || 0))}</td>
+        <td>${escapeHtml(channelRoiLabel(row.campaign_roi))}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="9">Registra ventas con campaña y canal para ver el cruce de ROI.</td></tr>';
+  }
+}
+
 function renderSalesView() {
   const campaign = state.selectedCampaign || {};
   const sales = withFilters(
     state.selectedSales || [],
-    ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "affiliate_name"],
+    ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel"],
     ["created_at"]
   );
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
@@ -23457,10 +25302,11 @@ function renderSalesView() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
-  renderCustomerAcquisitionAffiliateOptions();
   renderCustomerAcquisitionCampaignOptions();
+  renderCustomerAcquisitionBranchOptions();
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
+  renderAcquisitionChannelDatalist();
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -23469,9 +25315,9 @@ function renderSalesView() {
       <td>${escapeHtml(item.phone || "-")}</td>
       <td>${escapeHtml(money(item.sale_amount))}</td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(item.referred_affiliate_id ? "Afiliado" : saleSourceLabel(item.sale_source))}</td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
+      <td>${escapeHtml(item.acquisition_channel || "-")}</td>
       <td>${saleProductSummary(item)}</td>
-      <td>${saleAffiliateSummary(item)}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
@@ -23762,20 +25608,29 @@ function renderRmsMachineView() {
   const data = state.rmsMachine || {};
   const opportunities = data.opportunities || [];
   const metrics = data.metrics || {};
+  const isEmpty = opportunities.length === 0 && Number(metrics.total_opportunities || 0) === 0;
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
   if (rmsMachineOpportunityCount) {
     rmsMachineOpportunityCount.textContent = `${Number(metrics.total_opportunities || opportunities.length).toLocaleString("es-CO")} oportunidades`;
   }
+  rmsEmptyStateGuide?.classList.toggle("hidden", !isEmpty);
+  renderRmsCollectorActivation();
   renderRmsMachineKpis(metrics);
   renderRmsDailyQueue(data.sections || []);
-  renderRmsStageBoard(data.stages || [], opportunities);
+  renderRmsStageBoard(data.stages || [], opportunities, isEmpty);
 }
 
 function renderRmsMachineKpis(metrics = {}) {
   if (!rmsMachineKpis) return;
-  const cards = [
+  const isEmpty = Number(metrics.total_opportunities || 0) === 0;
+  const cards = isEmpty ? [
+    ["Oportunidades", "Por alimentar", "Aquí aparecerán los clientes listos para procesar."],
+    ["Atender ahora", "Sin cola", "Aquí estarán los clientes que requieren acción inmediata."],
+    ["En riesgo", "Sin riesgo", "Aquí aparecerán clientes que se están enfriando o pueden perderse."],
+    ["Revenue potencial", "Por proyectar", "Aquí se proyectará el valor de las oportunidades activas."],
+  ] : [
     ["Oportunidades", metrics.total_opportunities || 0, "Base procesada"],
     ["Atender ahora", metrics.attend_now || 0, `${Number(metrics.high_priority || 0).toLocaleString("es-CO")} alta prioridad`],
     ["En riesgo", metrics.recover || 0, `${Number(metrics.high_risk || 0).toLocaleString("es-CO")} con riesgo de fuga`],
@@ -23792,6 +25647,21 @@ function renderRmsMachineKpis(metrics = {}) {
 
 function renderRmsDailyQueue(sections = []) {
   if (!rmsDailyQueue) return;
+  const hasItems = sections.some((section) => (section.items || []).length);
+  if (!hasItems) {
+    rmsDailyQueue.innerHTML = `
+      <article class="rms-empty-queue-card">
+        <div>
+          <span class="mono-label">Mi Día RMS</span>
+          <h3>No hay oportunidades todavía.</h3>
+          <p>Primero necesitas una fuente de clientes. Crea un recolector para capturar leads desde tienda, vitrina, evento, WhatsApp o contactos existentes.</p>
+        </div>
+        <button class="solid-button" type="button" data-rms-open-collector>Alimentar Máquina RMS</button>
+      </article>
+    `;
+    bindRmsMachineActions(rmsDailyQueue);
+    return;
+  }
   rmsDailyQueue.innerHTML = sections.map((section) => `
     <article class="rms-queue-section" data-rms-section="${escapeHtml(section.key)}">
       <div class="rms-queue-head">
@@ -23802,14 +25672,39 @@ function renderRmsDailyQueue(sections = []) {
         <strong>${Number(section.items?.length || 0).toLocaleString("es-CO")}</strong>
       </div>
       <div class="rms-card-stack">
-        ${(section.items || []).map(rmsOpportunityCardMarkup).join("") || '<div class="empty-state compact">Sin oportunidades en esta cola.</div>'}
+        ${(section.items || []).map(rmsOpportunityCardMarkup).join("") || '<div class="empty-state compact">Sin oportunidades en esta cola por ahora.</div>'}
       </div>
     </article>
   `).join("") || '<div class="empty-state">Aun no hay oportunidades para procesar.</div>';
   bindRmsMachineActions(rmsDailyQueue);
 }
 
-function renderRmsStageBoard(stages = [], opportunities = []) {
+function rmsStageEmptyMarkup(stage = {}) {
+  const map = {
+    ATTENTION_CAPTURED: ["Entrada de atención vacía.", "Alimenta esta estación con QR de vitrina, campaña, landing, evento o captura manual.", "Crear QR/campaña", "campaigns"],
+    GAMIFIED_INTERACTION: ["Sin interacción gamificada.", "Entra aquí cuando el cliente participa en trivia, ruleta, juego, reto, encuesta o misión.", "Crear dinámica", "gaming"],
+    INTENT_DETECTED: ["Sin intención detectada.", "Alimenta esta estación con preguntas de producto, categoría, presupuesto, urgencia o preferencia.", "Crear pregunta", "gaming"],
+    LEAD_CAPTURED: ["Sin lead capturado.", "Entra aquí cuando el cliente deja nombre, WhatsApp, email o se importa desde contactos.", "Ver/importar contactos", "contacts-manual"],
+    TICKET_ACTIVE: ["Sin ticket activo.", "Entra aquí cuando emites ticket, Reward Pass o beneficio con vencimiento.", "Crear cobertura", "reward-passes"],
+    FOLLOW_UP_PENDING: ["Sin seguimiento pendiente.", "Entra aquí cuando creas una tarea de WhatsApp, llamada, visita, catálogo o recordatorio.", "Crear tarea", "agenda"],
+    REDEMPTION_PENDING: ["Sin redención pendiente.", "Entra aquí cuando hay beneficio activo que el cliente aún no ha usado.", "Validar/redimir", "validator"],
+    REDEEMED: ["Sin redenciones registradas.", "Entra aquí cuando el cliente usa el ticket o beneficio y queda listo para medir venta.", "Ver redenciones", "redemptions"],
+    SALE_ATTRIBUTED: ["Sin venta atribuida.", "Entra aquí cuando registras una compra asociada a campaña, ticket, cliente o dinámica.", "Registrar venta", "sales"],
+    REBUY: ["Sin recompra sugerida.", "Entra aquí cuando un comprador anterior puede recibir ticket de regreso, Reward Pass o misión de recompra.", "Activar recompra", "reward-passes"],
+    REFERRAL: ["Sin referidos potenciales.", "Entra aquí cuando un cliente comprador puede traer nuevos clientes.", "Crear referido", "reward-passes"],
+    RECOVERY: ["Sin recuperación activa.", "Entra aquí con clientes dormidos, tickets vencidos o contactos sin seguimiento.", "Reactivar", "agenda"],
+  };
+  const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
+  return `
+    <div class="rms-stage-empty-block">
+      <strong>${escapeHtml(content[0])}</strong>
+      <small>${escapeHtml(content[1])}</small>
+      <button type="button" data-rms-empty-action="${escapeHtml(content[3])}">${escapeHtml(content[2])}</button>
+    </div>
+  `;
+}
+
+function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
   rmsStageBoard.innerHTML = stages.map((stage) => {
     const rows = opportunities.filter((item) => item.stage === stage.key).slice(0, 8);
@@ -23825,7 +25720,7 @@ function renderRmsStageBoard(stages = [], opportunities = []) {
               <strong>${escapeHtml(item.name)}</strong>
               <small>${escapeHtml(item.next_action?.title || "Revisar oportunidad")}</small>
             </button>
-          `).join("") || '<span class="rms-stage-empty">Sin clientes</span>'}
+          `).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : '<span class="rms-stage-empty">Sin clientes en esta etapa</span>')}
         </div>
       </article>
     `;
@@ -23889,6 +25784,12 @@ function rmsOpportunityCardMarkup(item = {}) {
 }
 
 function bindRmsMachineActions(root) {
+  root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
+    button.addEventListener("click", openRmsCollectorModal);
+  });
+  root.querySelectorAll("[data-rms-empty-action]").forEach((button) => {
+    button.addEventListener("click", () => handleRmsEmptyAction(button.dataset.rmsEmptyAction));
+  });
   root.querySelectorAll("[data-rms-primary]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsPrimary);
@@ -23974,6 +25875,505 @@ function openRmsOpportunityDetail(item = {}) {
   openLeadDetail({ id: item.source_id || item.lead_id, source_type: item.source_type || "PLAYER" });
 }
 
+const CLIENT_MISSION_TEMPLATES = [
+  {
+    key: "weekly_trivia",
+    name: "Trivia semanal con ranking",
+    type: "TRIVIA_WEEKLY",
+    description: "Pregunta semanal, puntos por participar y bonus por respuesta correcta. Top 5 gana recompensa.",
+    channel: "WhatsApp / QR / landing",
+    points_rules: [
+      { action_type: "TRIVIA_ANSWER", label: "Responder trivia", points: 10 },
+      { action_type: "TRIVIA_CORRECT", label: "Responder correctamente", points: 50 },
+      { action_type: "WEEKLY_PARTICIPATION", label: "Participar cada semana", points: 20 },
+    ],
+    ranking: { ranking_type: "POINTS", top_limit: 5 },
+    rewards: [
+      { position: 1, reward_name: "Reward Pass Premium", reward_type: "REWARD_PASS" },
+      { position: "2-3", reward_name: "Ticket especial", reward_type: "TICKET" },
+      { position: "4-5", reward_name: "Puntos dobles siguiente campana", reward_type: "POINTS" },
+    ],
+  },
+  {
+    key: "top_clients_week",
+    name: "Top clientes de la semana",
+    type: "CUSTOMER_RANKING",
+    description: "Ranking por compras, redenciones o participacion para premiar clientes destacados.",
+    channel: "tienda / WhatsApp / mixto",
+    points_rules: [
+      { action_type: "PURCHASE", label: "Comprar", points: 100 },
+      { action_type: "TICKET_REDEEMED", label: "Redimir ticket", points: 80 },
+      { action_type: "SURVEY_ANSWER", label: "Responder encuesta", points: 30 },
+    ],
+    ranking: { ranking_type: "POINTS", top_limit: 10 },
+    rewards: [{ position: "top_3", reward_name: "Beneficio especial", reward_type: "CUSTOM" }],
+  },
+  {
+    key: "rebuy_streak",
+    name: "Racha de recompra",
+    type: "REBUY_STREAK",
+    description: "Compra durante 3 meses seguidos y desbloquea un Reward Pass especial.",
+    channel: "postventa / WhatsApp",
+    points_rules: [
+      { action_type: "PURCHASE", label: "Comprar", points: 100 },
+      { action_type: "REBUY", label: "Recomprar", points: 150 },
+    ],
+    ranking: { ranking_type: "PURCHASES", top_limit: 10 },
+    rewards: [{ condition: "3_rebuys", reward_name: "Reward Pass especial", reward_type: "REWARD_PASS" }],
+  },
+];
+
+function missionTemplates() {
+  return state.missions?.templates?.length ? state.missions.templates : CLIENT_MISSION_TEMPLATES;
+}
+
+function missionTemplateByKey(key = "") {
+  return missionTemplates().find((template) => template.key === key) || missionTemplates()[0] || CLIENT_MISSION_TEMPLATES[0];
+}
+
+async function loadGamificationDashboard(options = {}) {
+  if (state.missionsLoaded && !options.force) return state.missions;
+  if (state.missionsLoading) return state.missions;
+  state.missionsLoading = true;
+  try {
+    const data = await api("/api/business/gamification/dashboard", { headers: authHeaders() });
+    state.missions = data;
+    state.missionsLoaded = true;
+    return data;
+  } finally {
+    state.missionsLoading = false;
+  }
+}
+
+function renderMissionsView() {
+  const data = state.missions || {};
+  const metrics = data.metrics || {};
+  const seasons = data.seasons || [];
+  const activeSeason = seasons.find((season) => season.status === "ACTIVE") || seasons[0] || null;
+  renderMissionsKpis(metrics, seasons);
+  renderMissionTemplates();
+  renderMissionActiveList(seasons);
+  renderMissionRewards(data.rewards || []);
+  if (activeSeason?.id) {
+    loadMissionLeaderboard(activeSeason.id).catch(() => renderMissionLeaderboard([]));
+  } else {
+    renderMissionLeaderboard([]);
+  }
+}
+
+function renderMissionsKpis(metrics = {}, seasons = []) {
+  if (!missionsKpiGrid) return;
+  const cards = [
+    ["Dinámicas activas", metrics.active_seasons || seasons.filter((item) => item.status === "ACTIVE").length, "Misiones en operación"],
+    ["Clientes participando", metrics.participants || 0, "Participantes con puntos"],
+    ["Puntos entregados", metrics.points_total || 0, "Puntos MG registrados"],
+    ["Recompensas pendientes", metrics.pending_rewards || 0, "Por validar o entregar"],
+    ["Tickets redimidos", metrics.redeemed_tickets || 0, "Redenciones asociables"],
+    ["Ventas asociadas", money(metrics.sales_amount || 0), "Revenue medible"],
+  ];
+  missionsKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
+    <article class="rms-kpi-card mission-kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(meta)}</small>
+    </article>
+  `).join("");
+}
+
+function renderMissionTemplates() {
+  if (!missionTemplateGrid) return;
+  missionTemplateGrid.innerHTML = missionTemplates().map((template) => `
+    <article class="mission-template-card">
+      <span class="mission-type">${escapeHtml(template.type || "TEMPORADA_MG")}</span>
+      <h4>${escapeHtml(template.name)}</h4>
+      <p>${escapeHtml(template.description || "")}</p>
+      <div class="mission-template-meta">
+        <span>${escapeHtml(template.channel || "mixto")}</span>
+        <span>Top ${Number(template.ranking?.top_limit || 10).toLocaleString("es-CO")}</span>
+      </div>
+      <button class="solid-button compact" type="button" data-open-mission-wizard="${escapeHtml(template.key)}">Usar plantilla</button>
+    </article>
+  `).join("");
+  bindMissionWizardOpeners(missionTemplateGrid);
+}
+
+function renderMissionActiveList(seasons = []) {
+  if (!missionActiveList) return;
+  missionActiveList.innerHTML = seasons.map((season) => `
+    <article class="mission-active-card">
+      <div>
+        <span class="status-chip ${season.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(season.status || "DRAFT")}</span>
+        <h4>${escapeHtml(season.name || "Dinámica MG")}</h4>
+        <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
+      </div>
+      <dl>
+        <div><dt>Participantes</dt><dd>${Number(season.participants_count || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>Puntos</dt><dd>${Number(season.points_total || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>Finaliza</dt><dd>${season.end_date ? formatDate(season.end_date) : "-"}</dd></div>
+      </dl>
+      <div class="button-row">
+        <button class="ghost-button" type="button" data-mission-agenda="${escapeHtml(season.id)}">Crear tareas</button>
+        <button class="ghost-button" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver ranking</button>
+      </div>
+    </article>
+  `).join("") || `
+    <div class="empty-state">
+      Aún no hay dinámicas activas. Crea una trivia semanal, un ranking de clientes o una racha de recompra para empezar.
+    </div>
+  `;
+  missionActiveList.querySelectorAll("[data-mission-agenda]").forEach((button) => {
+    button.addEventListener("click", () => createMissionAgendaTasks(button.dataset.missionAgenda));
+  });
+  missionActiveList.querySelectorAll("[data-mission-leaderboard]").forEach((button) => {
+    button.addEventListener("click", () => loadMissionLeaderboard(button.dataset.missionLeaderboard));
+  });
+}
+
+async function loadMissionLeaderboard(seasonId) {
+  if (!seasonId) {
+    renderMissionLeaderboard([]);
+    return;
+  }
+  const data = await api(`/api/business/gamification/leaderboards/${encodeURIComponent(seasonId)}`, { headers: authHeaders() });
+  renderMissionLeaderboard(data.leaderboard || []);
+}
+
+function renderMissionLeaderboard(rows = []) {
+  if (!missionLeaderboard) return;
+  missionLeaderboard.innerHTML = rows.map((row, index) => `
+    <div class="mission-rank-row">
+      <span>#${index + 1}</span>
+      <strong>${escapeHtml(row.name || "Cliente")}</strong>
+      <small>${Number(row.points || 0).toLocaleString("es-CO")} pts</small>
+    </div>
+  `).join("") || '<div class="empty-state compact">El ranking se llenará cuando los clientes empiecen a sumar puntos.</div>';
+}
+
+function renderMissionRewards(rewards = []) {
+  if (!missionRewardsPending) return;
+  missionRewardsPending.innerHTML = rewards.map((reward) => `
+    <article class="mission-reward-card">
+      <div>
+        <strong>${escapeHtml(reward.reward_name || "Recompensa")}</strong>
+        <small>${escapeHtml(reward.season_name || "Misión MG")}</small>
+      </div>
+      <button class="ghost-button" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Marcar entregado</button>
+    </article>
+  `).join("") || '<div class="empty-state compact">Sin recompensas pendientes por entregar.</div>';
+  missionRewardsPending.querySelectorAll("[data-mission-deliver-reward]").forEach((button) => {
+    button.addEventListener("click", () => deliverMissionReward(button.dataset.missionDeliverReward));
+  });
+}
+
+function bindMissionWizardOpeners(root = document) {
+  root.querySelectorAll("[data-open-mission-wizard]").forEach((button) => {
+    button.addEventListener("click", () => openMissionWizard(button.dataset.openMissionWizard || "weekly_trivia"));
+  });
+}
+
+function fillMissionWizardOptions() {
+  if (missionTemplateInput) {
+    missionTemplateInput.innerHTML = missionTemplates().map((template) => `
+      <option value="${escapeHtml(template.key)}">${escapeHtml(template.name)}</option>
+    `).join("");
+  }
+  if (missionCampaignInput) {
+    missionCampaignInput.innerHTML = '<option value="">Sin campaña asociada</option>' + (state.campaigns || []).map((campaign) => `
+      <option value="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || campaign.slug || "Campaña")}</option>
+    `).join("");
+  }
+}
+
+function templateTextLines(items = [], mapper) {
+  return items.map(mapper).filter(Boolean).join("\n");
+}
+
+function openMissionWizard(templateKey = "weekly_trivia") {
+  fillMissionWizardOptions();
+  const template = missionTemplateByKey(templateKey);
+  state.missionWizardTemplateKey = template.key;
+  if (missionTemplateInput) missionTemplateInput.value = template.key;
+  if (missionNameInput) missionNameInput.value = template.name || "";
+  if (missionDescriptionInput) missionDescriptionInput.value = template.description || "";
+  if (missionChannelInput) missionChannelInput.value = template.channel || missionChannelInput.value;
+  if (missionStartInput && !missionStartInput.value) missionStartInput.value = dateInputValue(new Date());
+  if (missionEndInput && !missionEndInput.value) missionEndInput.value = dateInputValue(new Date(Date.now() + 30 * 86400000));
+  if (missionRankingInput) missionRankingInput.value = template.ranking?.ranking_type || "POINTS";
+  if (missionTopLimitInput) missionTopLimitInput.value = String(template.ranking?.top_limit || 5);
+  if (missionPointsInput) {
+    missionPointsInput.value = templateTextLines(template.points_rules || [], (rule) => `${rule.label || rule.action_type}: +${rule.points || 0}`);
+  }
+  if (missionRewardsInput) {
+    missionRewardsInput.value = templateTextLines(template.rewards || [], (reward) => `${reward.position || reward.condition || "Condición"}: ${reward.reward_name || "Recompensa"} (${reward.reward_type || "CUSTOM"})`);
+  }
+  if (missionWizardMessage) missionWizardMessage.textContent = "";
+  missionWizardModal?.classList.remove("hidden");
+}
+
+function closeMissionWizard() {
+  missionWizardModal?.classList.add("hidden");
+}
+
+function parseMissionPoints(text = "") {
+  return String(text || "").split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const match = line.match(/^(.*?):\s*\+?(-?\d+)/);
+    return {
+      label: match ? match[1].trim() : line,
+      action_type: slugify(match ? match[1] : line).toUpperCase().replace(/-/g, "_"),
+      points: match ? Number(match[2]) : 0,
+    };
+  });
+}
+
+function parseMissionRewards(text = "") {
+  return String(text || "").split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const [condition, reward] = line.split(":");
+    return {
+      condition: (condition || "condicion").trim(),
+      reward_name: (reward || line).replace(/\([^)]*\)/g, "").trim(),
+      reward_type: (reward?.match(/\(([^)]+)\)/)?.[1] || "CUSTOM").trim().toUpperCase(),
+    };
+  });
+}
+
+async function submitMissionWizard(event) {
+  event.preventDefault();
+  const template = missionTemplateByKey(missionTemplateInput?.value || state.missionWizardTemplateKey);
+  const body = {
+    template_key: template.key,
+    campaign_id: missionCampaignInput?.value || null,
+    name: missionNameInput?.value?.trim() || template.name,
+    description: missionDescriptionInput?.value?.trim() || template.description,
+    type: template.type || "TEMPORADA_MG",
+    status: "ACTIVE",
+    start_date: missionStartInput?.value || null,
+    end_date: missionEndInput?.value || null,
+    channel: missionChannelInput?.value || template.channel || "mixto",
+    points_rules: parseMissionPoints(missionPointsInput?.value || ""),
+    ranking: {
+      ranking_type: missionRankingInput?.value || template.ranking?.ranking_type || "POINTS",
+      top_limit: Number(missionTopLimitInput?.value || template.ranking?.top_limit || 5),
+      privacy_mode: "ALIAS",
+    },
+    rewards: parseMissionRewards(missionRewardsInput?.value || ""),
+    settings: {
+      ux_goal: "mantener recordacion, participacion, recompra y revenue",
+      source_module: "gamification_missions",
+    },
+  };
+  try {
+    if (missionWizardMessage) missionWizardMessage.textContent = "Guardando dinámica...";
+    const data = await api("/api/business/gamification/seasons", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (missionCreateAgendaInput?.checked && data?.season?.id) {
+      await createMissionAgendaTasks(data.season.id, { quiet: true });
+    }
+    state.missionsLoaded = false;
+    await loadGamificationDashboard({ force: true, quiet: true });
+    renderMissionsView();
+    closeMissionWizard();
+    showFeedback("Dinámica MG creada y conectada con el portal.", "success", { title: "Misiones MG" });
+  } catch (error) {
+    if (missionWizardMessage) missionWizardMessage.textContent = error.message || "No se pudo crear la dinámica.";
+    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones MG" });
+  }
+}
+
+async function createMissionAgendaTasks(seasonId, options = {}) {
+  if (!seasonId) return;
+  try {
+    await api("/api/business/gamification/agenda/create-tasks", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ season_id: seasonId }),
+    });
+    state.leadAgendaLoaded = false;
+    if (!options.quiet) showFeedback("Tareas de Misiones MG creadas en la agenda.", "success", { title: "Agenda" });
+  } catch (error) {
+    if (!options.quiet) showFeedback(error.message || "No se pudieron crear las tareas.", "error", { title: "Agenda" });
+  }
+}
+
+async function deliverMissionReward(rewardId) {
+  if (!rewardId) return;
+  try {
+    await api(`/api/business/gamification/rewards/${encodeURIComponent(rewardId)}/deliver`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    state.missionsLoaded = false;
+    await loadGamificationDashboard({ force: true, quiet: true });
+    renderMissionsView();
+    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones MG" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones MG" });
+  }
+}
+
+function openRmsCollectorModal() {
+  renderRmsCollectorSummary();
+  rmsCollectorModal?.classList.remove("hidden");
+}
+
+function closeRmsCollectorModal() {
+  rmsCollectorModal?.classList.add("hidden");
+}
+
+function openRmsHowModal() {
+  rmsHowModal?.classList.remove("hidden");
+}
+
+function closeRmsHowModal() {
+  rmsHowModal?.classList.add("hidden");
+}
+
+function renderRmsCollectorSummary() {
+  if (!rmsCollectorSummary) return;
+  const source = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || "Fuente de clientes";
+  const capture = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || "Captura";
+  const coverage = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || "Cobertura";
+  const task = rmsCollectorAgendaInput?.value || "Contactar";
+  rmsCollectorSummary.innerHTML = `
+    <strong>Resumen del recolector</strong>
+    <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)} · Agenda: ${escapeHtml(task)}</p>
+  `;
+}
+
+function renderRmsCollectorActivation() {
+  if (!rmsCollectorActiveCard) return;
+  const activation = state.rmsCollectorActivation;
+  if (!activation) {
+    rmsCollectorActiveCard.classList.add("hidden");
+    rmsCollectorActiveCard.innerHTML = "";
+    return;
+  }
+  const source = activation.source_label || activation.source || "Fuente de clientes";
+  const capture = activation.capture_label || activation.capture || "Captura";
+  const coverage = activation.coverage_label || activation.coverage || "Cobertura";
+  const nextAction = activation.next_action || "Contactar por WhatsApp";
+  rmsCollectorActiveCard.classList.remove("hidden");
+  rmsCollectorActiveCard.innerHTML = `
+    <div>
+      <span class="mono-label">Recolector activo</span>
+      <h4>${escapeHtml(capture)} + ${escapeHtml(coverage)}</h4>
+      <p>Se creó una tarea en la agenda para operar este recolector. Todavía no crea oportunidades por sí solo: las oportunidades aparecerán cuando captures o selecciones contactos, tickets, campañas o leads reales.</p>
+    </div>
+    <dl>
+      <div><dt>Fuente</dt><dd>${escapeHtml(source)}</dd></div>
+      <div><dt>Agenda</dt><dd>${escapeHtml(nextAction)}</dd></div>
+      <div><dt>Verificación</dt><dd>Contactos > Agenda</dd></div>
+    </dl>
+    <div class="button-row">
+      <button class="solid-button compact" type="button" data-rms-empty-action="agenda">Ver agenda</button>
+      <button class="ghost-button" type="button" data-rms-empty-action="contacts-manual">Importar contactos</button>
+      <button class="ghost-button" type="button" data-rms-empty-action="campaigns">Crear campaña/QR</button>
+    </div>
+  `;
+  bindRmsMachineActions(rmsCollectorActiveCard);
+}
+
+async function submitRmsCollector(event) {
+  event.preventDefault();
+  const source = rmsCollectorSourceInput?.value || "store_visitors";
+  const capture = rmsCollectorCaptureInput?.value || "qr_ticket_capture";
+  const coverage = rmsCollectorCoverageInput?.value || "ticket_expiring";
+  const nextAction = rmsCollectorAgendaInput?.value || "Contactar por WhatsApp";
+  const sourceLabel = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || source;
+  const captureLabel = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || capture;
+  const coverageLabel = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || coverage;
+  try {
+    showFeedback("Activando recolector y creando tarea en agenda...", "loading", { title: "Máquina RMS", timeout: 0 });
+    const data = await api("/api/business/leads/agenda", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_type: "MARKETING",
+        note_type: "follow_up",
+        next_action: nextAction,
+        note: rmsCollectorExpectedInput?.value || "Recolector activo para alimentar Máquina RMS.",
+        reminder_at: new Date(Date.now() + 86400000).toISOString(),
+        agenda_priority: "HIGH",
+        checklist: [
+          { label: "Revisar capturas nuevas", done: false },
+          { label: "Contactar leads capturados", done: false },
+          { label: "Validar tickets o recompensas", done: false },
+        ],
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "opportunity_collector",
+          collector_type: capture,
+          customer_source: source,
+          coverage_type: coverage,
+        },
+      }),
+    });
+    state.rmsCollectorActivation = {
+      id: data?.item?.id || data?.note?.id || data?.id || "",
+      source,
+      source_label: sourceLabel,
+      capture,
+      capture_label: captureLabel,
+      coverage,
+      coverage_label: coverageLabel,
+      next_action: nextAction,
+      created_at: new Date().toISOString(),
+    };
+    state.leadAgendaLoaded = false;
+    closeRmsCollectorModal();
+    renderRmsCollectorActivation();
+    showFeedback("Recolector activo. Verifícalo en Contactos > Agenda; luego importa contactos o crea la campaña/QR que alimentará la cola.", "success", { title: "Máquina RMS" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo activar el recolector.", "error", { title: "Máquina RMS" });
+  }
+}
+
+function handleRmsEmptyAction(action = "") {
+  const target = String(action || "");
+  if (target === "gaming") {
+    setView("strategic-qr");
+    return;
+  }
+  if (target === "campaigns") {
+    setView("campaigns");
+    return;
+  }
+  if (target === "reward-passes") {
+    setView("reward-passes");
+    return;
+  }
+  if (target === "contacts" || target === "contacts-manual") {
+    setContactCenterTab(target === "contacts-manual" ? "manual" : "directory");
+    setView("leads");
+    return;
+  }
+  if (target === "agenda") {
+    setContactCenterTab("agenda");
+    setView("leads");
+    return;
+  }
+  if (target === "sales") {
+    setContactCenterTab("sales");
+    setView("leads");
+    return;
+  }
+  if (target === "redemptions") {
+    setView("redemptions");
+    return;
+  }
+  if (target === "validator") {
+    setView("validator");
+    return;
+  }
+  if (target === "affiliates") {
+    setView("affiliates");
+    return;
+  }
+  openRmsCollectorModal();
+}
+
 function renderAdminView() {
   if (!isAdmin()) {
     adminKpiGrid.innerHTML = "";
@@ -24033,6 +26433,14 @@ function handleRangeToggle() {
   if (state.currentView === "validator") {
     loadValidatorHistory();
   }
+  if (state.currentView === "channels") {
+    state.acquisitionChannelsLoaded = false;
+    state.acquisitionChannelEffortsLoaded = false;
+    Promise.all([
+      loadAcquisitionChannels({ force: true, quiet: true }),
+      loadChannelEfforts({ force: true, quiet: true }),
+    ]).then(renderAcquisitionChannelsView);
+  }
   if (isAdmin()) renderAdminView();
 }
 
@@ -24056,6 +26464,68 @@ logoutButton.addEventListener("click", () => {
   window.location.replace(window.location.pathname);
 });
 refreshButton.addEventListener("click", loadWorkspace);
+globalRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
+dashboardRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
+dashboardProfileTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-dashboard-profile]");
+  if (!button) return;
+  setDashboardProfile(button.dataset.dashboardProfile || "marketing");
+  renderDashboardBuilder();
+});
+dashboardWidgetLibrary?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-dashboard-add-widget]");
+  if (!button) return;
+  addDashboardWidget(button.dataset.dashboardAddWidget);
+});
+dashboardWidgetGrid?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-dashboard-remove-widget]");
+  if (removeButton) {
+    removeDashboardWidget(removeButton.dataset.dashboardRemoveWidget);
+    return;
+  }
+  const moveButton = event.target.closest("[data-dashboard-move-widget]");
+  if (moveButton) {
+    moveDashboardWidget(moveButton.dataset.dashboardMoveWidget, moveButton.dataset.direction);
+    return;
+  }
+  const routeButton = event.target.closest("[data-dashboard-open-route]");
+  if (routeButton) {
+    openDashboardBuilderRoute(routeButton.dataset.dashboardOpenRoute);
+  }
+});
+dashboardWidgetGrid?.addEventListener("dragstart", (event) => {
+  const card = event.target.closest("[data-dashboard-widget]");
+  if (!card) return;
+  state.dashboardBuilderDragWidget = card.dataset.dashboardWidget || "";
+  event.dataTransfer?.setData("text/plain", state.dashboardBuilderDragWidget);
+  card.classList.add("is-dragging");
+});
+dashboardWidgetGrid?.addEventListener("dragend", (event) => {
+  event.target.closest("[data-dashboard-widget]")?.classList.remove("is-dragging");
+  state.dashboardBuilderDragWidget = "";
+});
+dashboardWidgetGrid?.addEventListener("dragover", (event) => {
+  if (event.target.closest("[data-dashboard-widget]")) event.preventDefault();
+});
+dashboardWidgetGrid?.addEventListener("drop", (event) => {
+  const target = event.target.closest("[data-dashboard-widget]");
+  if (!target) return;
+  event.preventDefault();
+  reorderDashboardWidget(event.dataTransfer?.getData("text/plain") || state.dashboardBuilderDragWidget, target.dataset.dashboardWidget);
+});
+dashboardAdvancedToggleButton?.addEventListener("click", toggleDashboardAdvancedView);
+dashboardResetProfileButton?.addEventListener("click", resetDashboardBuilderLayout);
+revenueOnboarding?.querySelector("[data-revenue-open-wizard]")?.addEventListener("click", () => openRevenueActionWizard("capture"));
+revenueQuickActions?.querySelectorAll("[data-revenue-objective]").forEach((button) => {
+  button.addEventListener("click", () => openRevenueActionWizard(button.dataset.revenueObjective || "capture"));
+});
+revenueActionWizardCloseButton?.addEventListener("click", closeRevenueActionWizard);
+revenueActionWizardCancelButton?.addEventListener("click", closeRevenueActionWizard);
+revenueActionWizardForm?.addEventListener("submit", submitRevenueActionWizard);
+revenueActionObjectiveInput?.addEventListener("change", updateRevenueActionToolOptions);
+[revenueActionToolInput, revenueActionSegmentInput, revenueActionCoverageInput, revenueActionTaskInput, revenueActionDueInput].forEach((input) => {
+  input?.addEventListener("change", renderRevenueActionSummary);
+});
 searchInput.addEventListener("input", (event) => {
   state.filter = event.target.value || "";
   if (state.dashboard) renderDashboard();
@@ -24063,6 +26533,7 @@ searchInput.addEventListener("input", (event) => {
   renderLeadsView();
   renderRedemptionsView();
   renderSalesView();
+  if (state.currentView === "channels") renderAcquisitionChannelsView();
   if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
   if (state.currentView === "reward-passes") renderRewardPassesView();
   if (state.currentView === "validator") {
@@ -24072,6 +26543,9 @@ searchInput.addEventListener("input", (event) => {
   if (state.currentView === "rms-machine") {
     state.rmsMachineLoaded = false;
     loadRmsMachineData({ force: true, quiet: true }).then(renderRmsMachineView);
+  }
+  if (state.currentView === "missions") {
+    renderMissionsView();
   }
   if (isAdmin()) renderAdminView();
 });
@@ -24106,9 +26580,15 @@ adminCampaignSlugInput?.addEventListener("input", () => {
 });
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (button.dataset.contactCenterNav) setContactCenterTab(button.dataset.contactCenterNav);
+    if (button.dataset.contactCenterNav) {
+      openContactCenterSection(button.dataset.contactCenterNav);
+      return;
+    }
     setView(button.dataset.view);
   });
+});
+portalShortcutButtons.forEach((button) => {
+  button.addEventListener("click", () => navigatePortalShortcut(button.dataset.portalShortcut));
 });
 contactCenterTabs.forEach((button) => {
   button.addEventListener("click", () => {
@@ -24168,6 +26648,50 @@ rmsMachineOpenAgendaButton?.addEventListener("click", () => {
   setContactCenterTab("agenda");
   setView("leads");
 });
+rmsMachineCollectorButton?.addEventListener("click", openRmsCollectorModal);
+rmsMachineHowButton?.addEventListener("click", openRmsHowModal);
+rmsApplyRuleButton?.addEventListener("click", () => {
+  const hasOpportunities = (state.rmsMachine?.opportunities || []).length > 0;
+  if (!hasOpportunities) {
+    openRmsCollectorModal();
+    return;
+  }
+  state.rmsMachineLoaded = false;
+  loadRmsMachineData({ force: true }).then(renderRmsMachineView);
+});
+rmsEmptyStateGuide?.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
+  button.addEventListener("click", openRmsCollectorModal);
+});
+rmsEmptyStateGuide?.querySelectorAll("[data-rms-empty-action]").forEach((button) => {
+  button.addEventListener("click", () => handleRmsEmptyAction(button.dataset.rmsEmptyAction));
+});
+rmsCollectorCloseButton?.addEventListener("click", closeRmsCollectorModal);
+rmsCollectorCancelButton?.addEventListener("click", closeRmsCollectorModal);
+rmsCollectorForm?.addEventListener("submit", submitRmsCollector);
+[rmsCollectorSourceInput, rmsCollectorCaptureInput, rmsCollectorCoverageInput, rmsCollectorAgendaInput].forEach((input) => {
+  input?.addEventListener("change", renderRmsCollectorSummary);
+});
+rmsHowCloseButton?.addEventListener("click", closeRmsHowModal);
+rmsHowStartButton?.addEventListener("click", () => {
+  closeRmsHowModal();
+  openRmsCollectorModal();
+});
+missionsCreateButton?.addEventListener("click", () => openMissionWizard("weekly_trivia"));
+missionsRefreshButton?.addEventListener("click", () => {
+  state.missionsLoaded = false;
+  loadGamificationDashboard({ force: true }).then(renderMissionsView).catch((error) => {
+    showFeedback(error.message || "No se pudo actualizar Misiones MG.", "error", { title: "Misiones MG" });
+  });
+});
+missionsOpenAgendaButton?.addEventListener("click", () => {
+  setContactCenterTab("agenda");
+  setView("leads");
+});
+missionWizardCloseButton?.addEventListener("click", closeMissionWizard);
+missionWizardCancelButton?.addEventListener("click", closeMissionWizard);
+missionWizardForm?.addEventListener("submit", submitMissionWizard);
+missionTemplateInput?.addEventListener("change", () => openMissionWizard(missionTemplateInput.value));
+bindMissionWizardOpeners(document);
 ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
 });
@@ -24247,10 +26771,106 @@ campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
+acquisitionChannelForm?.addEventListener("submit", submitAcquisitionChannel);
+acquisitionChannelCancelButton?.addEventListener("click", () => resetAcquisitionChannelForm());
+channelEffortForm?.addEventListener("submit", submitChannelEffort);
+channelEffortCancelButton?.addEventListener("click", () => resetChannelEffortForm());
+refreshAcquisitionChannelsButton?.addEventListener("click", () => {
+  state.acquisitionChannelsLoaded = false;
+  state.acquisitionChannelEffortsLoaded = false;
+  Promise.all([
+    loadAcquisitionChannels({ force: true }),
+    loadChannelEfforts({ force: true }),
+  ]).then(renderAcquisitionChannelsView).catch((error) => {
+    showFeedback(error.message || "No se pudieron cargar los canales.", "error", { title: "Canales ROI" });
+  });
+});
+acquisitionChannelTable?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-channel-edit]");
+  const archiveButton = event.target.closest("[data-channel-archive]");
+  const createButton = event.target.closest("[data-channel-create]");
+  const detailButton = event.target.closest("[data-channel-detail]");
+  const effortButton = event.target.closest("[data-channel-add-effort]");
+  if (editButton) {
+    resetAcquisitionChannelForm(acquisitionChannelById(editButton.dataset.channelEdit));
+    acquisitionChannelNameInput?.focus();
+  }
+  if (archiveButton) {
+    archiveAcquisitionChannel(archiveButton.dataset.channelArchive);
+  }
+  if (createButton) {
+    createDetectedAcquisitionChannel(createButton.dataset.channelCreate);
+  }
+  if (detailButton) {
+    state.selectedAcquisitionChannelKey = detailButton.dataset.channelDetail || "";
+    renderAcquisitionChannelsView();
+  }
+  if (effortButton) {
+    resetChannelEffortForm({ channel_id: effortButton.dataset.channelAddEffort || "" });
+    channelEffortTitleInput?.focus();
+  }
+});
+acquisitionChannelDetailPanel?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-channel-edit]");
+  const createButton = event.target.closest("[data-channel-create]");
+  const salesButton = event.target.closest("[data-channel-open-sales]");
+  const campaignButton = event.target.closest("[data-channel-campaign-open]");
+  const effortButton = event.target.closest("[data-channel-add-effort]");
+  if (editButton) {
+    resetAcquisitionChannelForm(acquisitionChannelById(editButton.dataset.channelEdit));
+    acquisitionChannelNameInput?.focus();
+  }
+  if (createButton) {
+    createDetectedAcquisitionChannel(createButton.dataset.channelCreate);
+  }
+  if (salesButton) {
+    setView("sales");
+    if (customerAcquisitionChannelInput) customerAcquisitionChannelInput.value = salesButton.dataset.channelOpenSales || "";
+    customerAcquisitionCustomerLookupInput?.focus();
+    renderCustomerSaleOperationFeed();
+  }
+  if (campaignButton?.dataset.channelCampaignOpen) {
+    const campaign = campaignById(campaignButton.dataset.channelCampaignOpen);
+    if (campaign) {
+      state.selectedCampaignId = campaign.id;
+      state.selectedCampaign = campaign;
+      setView("campaigns");
+      renderCampaignList();
+      renderCampaignView();
+    }
+  }
+  if (effortButton) {
+    resetChannelEffortForm({ channel_id: effortButton.dataset.channelAddEffort || "" });
+    channelEffortTitleInput?.focus();
+  }
+});
+channelEffortTable?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-channel-effort-edit]");
+  const archiveButton = event.target.closest("[data-channel-effort-archive]");
+  if (editButton) {
+    resetChannelEffortForm(channelEffortById(editButton.dataset.channelEffortEdit));
+    channelEffortTitleInput?.focus();
+  }
+  if (archiveButton) {
+    archiveChannelEffort(archiveButton.dataset.channelEffortArchive);
+  }
+});
+acquisitionChannelQuickCreate?.querySelectorAll("[data-channel-template]").forEach((button) => {
+  button.addEventListener("click", () => applyAcquisitionChannelTemplate(button.dataset.channelTemplate || ""));
+});
 customerSaleAddItemButton?.addEventListener("click", () => {
   ensureCustomerSaleItems();
-  state.customerSaleItems.push(defaultCustomerSaleItem());
+  state.customerSaleItems.push({ ...defaultCustomerSaleItem(), is_open_product: true });
   renderCustomerSaleItems();
+  window.requestAnimationFrame(() => {
+    const rows = customerSaleItemsContainer?.querySelectorAll("[data-sale-item-index]");
+    const lastRow = rows?.[rows.length - 1];
+    lastRow?.querySelector("[data-open-product-input]")?.focus();
+  });
+});
+[customerAcquisitionCustomerLookupInput, customerAcquisitionNameInput, customerAcquisitionDocumentInput, customerAcquisitionPhoneInput, customerAcquisitionEmailInput, customerAcquisitionSourceInput, customerAcquisitionChannelInput, customerAcquisitionCampaignInput, customerAcquisitionAffiliateInput].forEach((input) => {
+  input?.addEventListener("input", renderCustomerSaleOperationFeed);
+  input?.addEventListener("change", renderCustomerSaleOperationFeed);
 });
 customerAcquisitionCustomerLookupInput?.addEventListener("change", () => {
   handleSalesCustomerSearchCommit();
@@ -24321,6 +26941,14 @@ subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRene
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
 featureUpgradeCloseButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
 featureUpgradeSecondaryButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
+featureUpgradePrimaryLink?.addEventListener("click", (event) => {
+  event.preventDefault();
+  closeFeatureUpgradeInterstitial();
+  setView("account");
+  window.setTimeout(() => {
+    document.getElementById("accountPortalPlansCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 80);
+});
 featureUpgradeModal?.addEventListener("click", (event) => {
   if (event.target === featureUpgradeModal) closeFeatureUpgradeInterstitial();
 });
@@ -24604,9 +27232,14 @@ document.querySelectorAll(".open-product-input").forEach((input) => {
 affiliatePurchaseAddItemButton?.addEventListener("click", () => {
   state.affiliatePurchaseItems = [
     ...normalizeAffiliatePurchaseItems(),
-    { name: "", quantity: 1, unit_price: 0 },
+    { name: "", quantity: 1, unit_price: 0, inventory_product_id: null, sku: null, barcode: null, is_open_product: true },
   ];
   renderAffiliatePurchaseItems();
+  window.requestAnimationFrame(() => {
+    const rows = affiliatePurchaseItemsList?.querySelectorAll("[data-affiliate-purchase-row]");
+    const lastRow = rows?.[rows.length - 1];
+    lastRow?.querySelector("[data-open-product-input]")?.focus();
+  });
 });
 affiliatePurchaseAmountInput?.addEventListener("input", updateAffiliatePurchaseTotals);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
@@ -24684,6 +27317,7 @@ battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
 setView("dashboard");
+renderDashboardBuilder();
 initPasswordResetFromUrl();
 setupPasswordRevealButtons();
 setActivationType(currentActivationType());
