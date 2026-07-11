@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=agenda-visibility-fix-20260711-v1">
+  <link rel="stylesheet" href="css/styles.css?v=agenda-ui-20260711-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -3429,13 +3429,14 @@
               <div class="contact-center-panel hidden" id="contactPanelManual" data-contact-center-panel="manual" role="tabpanel" aria-labelledby="contactTabManual" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelSales" data-contact-center-panel="sales" role="tabpanel" aria-labelledby="contactTabSales" hidden></div>
             </section>
-            <article class="surface-card data-table-card" id="leadAgendaCard">
+            <article class="surface-card data-table-card lead-agenda-card" id="leadAgendaCard">
               <div class="table-card-head">
-                <div>
+                <div class="lead-agenda-head-copy">
                   <span class="mono-label">Agenda comercial</span>
                   <h3>Cuándo llamar y qué hacer</h3>
+                  <p>Organiza llamadas, reuniones, recordatorios, campañas y tareas internas con una vista clara por prioridad, fecha y responsable.</p>
                 </div>
-                <span class="pill muted" id="leadAgendaCount">0 pendientes</span>
+                <span class="pill muted lead-agenda-count-pill" id="leadAgendaCount">0 pendientes</span>
               </div>
               <div class="lead-agenda-toolbar">
                 <div class="segment-tabs lead-agenda-view-tabs" role="tablist" aria-label="Visualizaciones de agenda">
@@ -3459,6 +3460,7 @@
                 </div>
               </div>
               <div class="lead-agenda-fast-actions" aria-label="Acciones rápidas de agenda">
+                <span class="lead-agenda-fast-label">Plantillas rápidas</span>
                 <button class="ghost-button" type="button" data-agenda-template="CALL">Llamar</button>
                 <button class="ghost-button" type="button" data-agenda-template="PROPOSAL">Propuesta</button>
                 <button class="ghost-button" type="button" data-agenda-template="MEETING">Reunión</button>
@@ -3468,6 +3470,13 @@
                 <button class="ghost-button" type="button" data-agenda-template="STRATEGY">Estrategia</button>
                 <button class="ghost-button" type="button" data-agenda-template="BULK_ACTIVATION">Masiva</button>
                 <button class="ghost-button" type="button" data-agenda-template="MARKETING">Marketing</button>
+              </div>
+              <div class="lead-agenda-form-head">
+                <div>
+                  <span class="mono-label">Nueva orden de trabajo</span>
+                  <strong>Crear tarea de seguimiento</strong>
+                </div>
+                <small>Elige alcance, contacto o campaña, define la acción y programa cuándo debe ejecutarse.</small>
               </div>
               <form class="lead-agenda-create-form" id="leadAgendaCreateForm">
                 <label>
@@ -6095,7 +6104,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=agenda-visibility-fix-20260711-v1" defer></script>
+  <script src="js/app.js?v=agenda-ui-20260711-v1" defer></script>
 </body>
 </html>
 

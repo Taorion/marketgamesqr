@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260711-agenda-visibility-fix-v1";
+const APP_VERSION = "empresa-20260711-agenda-ui-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -21332,6 +21332,9 @@ function agendaCardMarkup(item = {}, options = {}) {
   const meetingSummary = agendaMeetingSummary(item);
   const isMeeting = metadata.agenda_activity_type === "MEETING" || Boolean(metadata.meeting_mode || metadata.meeting_url || metadata.meeting_address);
   const hasLeadRef = !isOperationalAgendaSource(item.source_type);
+  const reminderDate = formatDateOnly(item.reminder_at);
+  const reminderTime = formatTimeOnly(item.reminder_at);
+  const contactLine = [item.lead_name || "Contacto", item.lead_phone || "", item.campaign_name || ""].filter(Boolean).join(" · ");
   if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
     return `
       <article class="lead-agenda-item is-editing">
@@ -21452,6 +21455,10 @@ function agendaCardMarkup(item = {}, options = {}) {
   }
   return `
     <article class="lead-agenda-item ${done ? "is-done" : ""}">
+      <div class="lead-agenda-time-block">
+        <strong>${escapeHtml(reminderTime)}</strong>
+        <span>${escapeHtml(reminderDate)}</span>
+      </div>
       <div class="lead-agenda-item-main">
         <div class="lead-agenda-meta-row">
           <span class="status-chip">${escapeHtml(agendaScopeLabel(scope))}</span>
@@ -21475,7 +21482,7 @@ function agendaCardMarkup(item = {}, options = {}) {
             `).join("")}
           </div>
         ` : ""}
-        <small>${escapeHtml(formatDate(item.reminder_at))} · ${escapeHtml(item.lead_name || "Contacto")} ${item.lead_phone ? `· ${escapeHtml(item.lead_phone)}` : ""}</small>
+        <small>${escapeHtml(contactLine)}</small>
       </div>
       <div class="lead-agenda-item-side">
         ${item.lead_company ? `<span class="table-secondary">${escapeHtml(item.lead_company)}</span>` : ""}
@@ -21503,12 +21510,13 @@ function renderAgendaKpis(rows = agendaRows()) {
   const urgent = openRows.filter((item) => String(item.agenda_priority || "").toUpperCase() === "URGENT").length;
   const averageProgress = rows.length ? Math.round(rows.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / rows.length) : 0;
   leadAgendaKpis.innerHTML = [
-    ["Pendientes", openRows.length, agendaLabelForRange()],
-    ["Hoy", today, "Llamadas o tareas del día"],
-    ["Vencidas", overdue, "Requieren acción inmediata"],
-    ["Urgentes", urgent, `${averageProgress}% avance promedio`],
-  ].map(([label, value, meta]) => `
-    <article class="kpi-card">
+    { label: "Pendientes", value: openRows.length, meta: agendaLabelForRange(), icon: "pending_actions", tone: "pending" },
+    { label: "Hoy", value: today, meta: "Llamadas o tareas del día", icon: "today", tone: "today" },
+    { label: "Vencidas", value: overdue, meta: "Requieren acción inmediata", icon: "priority_high", tone: "risk" },
+    { label: "Urgentes", value: urgent, meta: `${averageProgress}% avance promedio`, icon: "bolt", tone: "urgent" },
+  ].map(({ label, value, meta, icon, tone }) => `
+    <article class="kpi-card lead-agenda-kpi is-${escapeHtml(tone)}">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
       <span class="mono-label">${escapeHtml(label)}</span>
       <strong>${Number(value || 0).toLocaleString("es-CO")}</strong>
       <div class="kpi-meta">${escapeHtml(meta)}</div>
