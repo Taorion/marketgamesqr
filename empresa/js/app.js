@@ -1926,7 +1926,9 @@ function setupPasswordRevealButtons() {
 
 function readPreferredTheme() {
   try {
-    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme === "light" || storedTheme === "dark") return storedTheme;
+    return localStorage.getItem(LIGHT_MODE_KEY) === "1" ? "light" : "dark";
   } catch {
     return "dark";
   }
@@ -1937,18 +1939,25 @@ function applyPortalTheme(theme) {
   document.documentElement.dataset.theme = nextTheme;
   if (themeSwitch) themeSwitch.checked = nextTheme === "light";
   if (themeSwitchLabel) themeSwitchLabel.textContent = nextTheme === "light" ? "Claro" : "Oscuro";
+  if (themeSwitch) {
+    themeSwitch.setAttribute("aria-checked", nextTheme === "light" ? "true" : "false");
+    themeSwitch.title = nextTheme === "light" ? "Cambiar a perfil oscuro" : "Cambiar a perfil claro";
+  }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute("content", nextTheme === "light" ? "#f7faf9" : "#073b4c");
   try {
     localStorage.setItem(THEME_KEY, nextTheme);
+    if (nextTheme === "light") localStorage.setItem(LIGHT_MODE_KEY, "1");
+    else localStorage.removeItem(LIGHT_MODE_KEY);
   } catch {
     // Preference persistence is optional; the UI can still switch for this session.
   }
+  return nextTheme;
 }
 
 function togglePortalTheme() {
-  applyPortalTheme(themeSwitch?.checked ? "light" : "dark");
-  showFeedback(`Perfil ${themeSwitch?.checked ? "claro" : "oscuro"} activado.`, "info");
+  const nextTheme = applyPortalTheme(themeSwitch?.checked ? "light" : "dark");
+  showFeedback(`Perfil ${nextTheme === "light" ? "claro" : "oscuro"} activado.`, "info");
 }
 
 function showFeedback(message, kind = "success", options = {}) {

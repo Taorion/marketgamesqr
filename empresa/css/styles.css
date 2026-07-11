@@ -27581,3 +27581,238 @@ body[data-current-view="rms-machine"] .rms-event-log {
     max-height: none !important;
   }
 }
+
+/* 2026-07 theme switch contract: real dark mode wins over late light-fit rules. */
+:root[data-theme="dark"] {
+  --bg: #07110e;
+  --surface: #111f1a;
+  --surface-soft: #172a23;
+  --surface-muted: #20352d;
+  --surface-border: rgba(177, 199, 190, 0.18);
+  --text: #f4fbf7;
+  --text-primary: #f4fbf7;
+  --text-muted: #b7c9c1;
+  --text-soft: #8fa49b;
+  --primary: #9ff4d2;
+  --secondary: #54d6ab;
+  --secondary-soft: #7cfbff;
+  --secondary-pale: rgba(84, 214, 171, 0.16);
+  --green-panel: #0c2f26;
+  --shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .app-shell,
+:root[data-theme="dark"] .app-main,
+:root[data-theme="dark"] .content-shell {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(84, 214, 171, 0.12), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(124, 251, 255, 0.08), transparent 24%),
+    linear-gradient(135deg, #07110e 0%, #0d1b17 52%, #08120f 100%) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] .sidebar {
+  background: #0b1713 !important;
+  color: var(--text) !important;
+  border-right-color: rgba(177, 199, 190, 0.16) !important;
+  box-shadow: 10px 0 28px rgba(0, 0, 0, 0.18) !important;
+}
+
+:root[data-theme="dark"] .topbar {
+  background: rgba(8, 18, 15, 0.94) !important;
+  border-bottom-color: rgba(177, 199, 190, 0.14) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] :where(
+  .surface-card,
+  .data-table-card,
+  .chart-card,
+  .table-card,
+  .modal-card,
+  .kpi-card,
+  .metric-card,
+  .busy-card,
+  .login-card,
+  .affiliate-panel,
+  .affiliate-logo-panel,
+  .account-settings-card,
+  .rms-machine-principle,
+  .rms-workday-shell,
+  .rms-journey-shell,
+  .rms-playbook-shell,
+  .rms-intake-funnel-shell,
+  .rms-industrial-flow-shell,
+  .rms-event-log-shell
+) {
+  background: rgba(17, 31, 26, 0.96) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+:root[data-theme="dark"] :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  strong,
+  .table-card-head strong,
+  .kpi-card strong,
+  .metric-card strong,
+  .subhead,
+  .campaign-title
+) {
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] :where(
+  p,
+  small,
+  label,
+  td,
+  .table-secondary,
+  .table-muted,
+  .muted,
+  .chart-explainer,
+  .chart-note,
+  .kpi-meta
+) {
+  color: var(--text-muted) !important;
+}
+
+:root[data-theme="dark"] :where(.mono-label, th) {
+  color: #7cfbff !important;
+}
+
+:root[data-theme="dark"] :where(input, select, textarea, .search-shell) {
+  background: #0c1713 !important;
+  border-color: rgba(177, 199, 190, 0.22) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] :where(input::placeholder, textarea::placeholder) {
+  color: #81958d !important;
+}
+
+:root[data-theme="dark"] :where(table, thead, tbody, tr, td, th) {
+  background: transparent !important;
+  border-color: rgba(177, 199, 190, 0.14) !important;
+}
+
+:root[data-theme="dark"] .sidebar-brand,
+:root[data-theme="dark"] .sidebar-flow-card,
+:root[data-theme="dark"] .sidebar .nav-item {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(177, 199, 190, 0.12) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] .sidebar-brand h1,
+:root[data-theme="dark"] .sidebar-brand p,
+:root[data-theme="dark"] .sidebar-flow-card strong,
+:root[data-theme="dark"] .sidebar-flow-card small,
+:root[data-theme="dark"] .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+:root[data-theme="dark"] .sidebar .nav-item .material-symbols-outlined {
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] .sidebar .nav-item:hover {
+  background: rgba(84, 214, 171, 0.11) !important;
+  border-color: rgba(84, 214, 171, 0.32) !important;
+}
+
+:root[data-theme="dark"] .sidebar .nav-item.active {
+  background: rgba(84, 214, 171, 0.18) !important;
+  border-color: rgba(84, 214, 171, 0.46) !important;
+  box-shadow: inset 4px 0 0 #54d6ab, 0 10px 24px rgba(0, 0, 0, 0.22) !important;
+}
+
+:root[data-theme="dark"] .solid-button,
+:root[data-theme="dark"] .request-button {
+  background: linear-gradient(135deg, #0f8b69, #12647a) !important;
+  border-color: rgba(124, 251, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .ghost-button,
+:root[data-theme="dark"] .icon-button,
+:root[data-theme="dark"] .link-button,
+:root[data-theme="dark"] .nav-link-button {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(177, 199, 190, 0.18) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] .status-chip,
+:root[data-theme="dark"] .pill,
+:root[data-theme="dark"] .subscription-limit-chip {
+  background: rgba(84, 214, 171, 0.12) !important;
+  border-color: rgba(84, 214, 171, 0.22) !important;
+  color: #c9ffec !important;
+}
+
+:root[data-theme="dark"] .theme-switch {
+  background: rgba(2, 8, 23, 0.64) !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+  color: #e7fbff !important;
+}
+
+:root[data-theme="dark"] .theme-switch-track {
+  background: #07110e !important;
+  border-color: rgba(124, 251, 255, 0.22) !important;
+}
+
+:root[data-theme="dark"] .theme-switch-icon-dark {
+  color: #7cfbff !important;
+}
+
+:root[data-theme="dark"] .theme-switch-icon-light {
+  color: #8a7950 !important;
+}
+
+:root[data-theme="dark"] .profile-block {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(177, 199, 190, 0.18) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] {
+  --rms-ink: #f4fbf7;
+  --rms-muted: #b7c9c1;
+  --rms-panel: #111f1a;
+  --rms-soft: #172a23;
+  --rms-line: rgba(177, 199, 190, 0.18);
+  background:
+    radial-gradient(circle at 14% 4%, rgba(84, 214, 171, 0.13), transparent 28%),
+    linear-gradient(135deg, #07110e 0%, #0d1b17 100%) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-factory-console,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-column,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-factory-status-strip span,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-lead-unit,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-phase-operation,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-material,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-head {
+  background: rgba(17, 31, 26, 0.97) !important;
+  border-color: var(--rms-line) !important;
+  color: var(--text) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-material-line,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-metrics span,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-unit-meta span:not(.status-chip),
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-empty-block {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--rms-line) !important;
+  color: var(--text-muted) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-head > span {
+  background: rgba(84, 214, 171, 0.14) !important;
+  color: #c9ffec !important;
+  border-color: rgba(84, 214, 171, 0.28) !important;
+}
