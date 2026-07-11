@@ -7085,7 +7085,9 @@ function getDashboardBuilderStats() {
   const openAgenda = (Array.isArray(state.leadAgenda) ? state.leadAgenda : [])
     .filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase()))
     .length;
-  const rmsOpportunities = Object.values(state.rmsMachineData?.dailyQueue || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+  const rmsOpportunities = Array.isArray(state.rmsMachine?.opportunities)
+    ? state.rmsMachine.opportunities.length
+    : Object.values(state.rmsMachine?.dailyQueue || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
   const totalLeads = toNumber(summary.total_leads);
   const activeQr = toNumber(dashboard.summary?.active_qr);
   const totalQrRedeemed = toNumber(summary.total_qr_redeemed);
@@ -7253,6 +7255,7 @@ function renderDashboardBuilder() {
   }
   const dashboardSection = document.querySelector('.view-section[data-view="dashboard"]');
   dashboardSection?.classList.toggle("dashboard-builder-mode", !state.dashboardBuilderExpanded);
+  dashboardSection?.classList.toggle("dashboard-advanced-active", state.dashboardBuilderExpanded);
   dashboardAdvancedToggleButton?.classList.toggle("active", state.dashboardBuilderExpanded);
   if (dashboardAdvancedToggleButton) {
     dashboardAdvancedToggleButton.innerHTML = `
@@ -7356,7 +7359,7 @@ function toggleDashboardAdvancedView() {
   } catch {
     // Ignore storage failures.
   }
-  if (state.dashboardBuilderExpanded && state.dashboard) {
+  if (state.dashboardBuilderExpanded) {
     renderDashboard();
     return;
   }
