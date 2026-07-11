@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-actions-20260711-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rms-collector-lead-20260711-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -905,6 +905,40 @@
                       <option value="Recuperar cliente dormido">Recuperar cliente dormido</option>
                     </select>
                   </label>
+                  <div class="span-2 rms-collector-lead-entry">
+                    <div class="rms-collector-lead-head">
+                      <span class="mono-label">Ingresar lead ahora</span>
+                      <strong>Materia prima manual para el recolector</strong>
+                      <small>Opcional: si llenas estos datos, el lead queda creado y entra a la estación Recolector de Oportunidades.</small>
+                    </div>
+                    <div class="rms-collector-lead-grid">
+                      <label>
+                        Nombre del lead
+                        <input id="rmsCollectorLeadNameInput" type="text" maxlength="160" placeholder="Ej: Laura Gomez">
+                      </label>
+                      <label>
+                        WhatsApp / telefono
+                        <input id="rmsCollectorLeadPhoneInput" type="text" maxlength="40" placeholder="Ej: 3001234567">
+                      </label>
+                      <label>
+                        Correo
+                        <input id="rmsCollectorLeadEmailInput" type="email" maxlength="180" placeholder="correo@cliente.com">
+                      </label>
+                      <label>
+                        Prioridad
+                        <select id="rmsCollectorLeadPriorityInput">
+                          <option value="HIGH">Alta</option>
+                          <option value="MEDIUM">Media</option>
+                          <option value="LOW">Baja</option>
+                          <option value="URGENT">Urgente</option>
+                        </select>
+                      </label>
+                      <label class="span-2">
+                        Interes / gusto capturado
+                        <input id="rmsCollectorLeadInterestInput" type="text" maxlength="500" placeholder="Producto, necesidad, gusto, intención o contexto">
+                      </label>
+                    </div>
+                  </div>
                   <label class="span-2">
                     Resultado esperado
                     <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas en Máquina RMS y primera tarea de seguimiento en agenda.</textarea>
@@ -6211,7 +6245,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-actions-20260711-v1" defer></script>
+  <script src="js/app.js?v=rms-collector-lead-20260711-v1" defer></script>
 </body>
 </html>
 

@@ -28043,3 +28043,44 @@ body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
   color: #073b2d !important;
   text-shadow: none !important;
 }
+
+/* 2026-07 RMS collector manual intake: keep lead entry compact and readable. */
+.rms-collector-lead-entry {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(7, 80, 60, 0.16);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.92), rgba(255, 251, 235, 0.88));
+}
+
+.rms-collector-lead-head {
+  display: grid;
+  gap: 4px;
+}
+
+.rms-collector-lead-head strong {
+  color: #0b2d23;
+  font-size: 15px;
+}
+
+.rms-collector-lead-head small {
+  color: #4b635b;
+  line-height: 1.4;
+}
+
+.rms-collector-lead-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rms-collector-lead-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .rms-collector-lead-grid {
+    grid-template-columns: 1fr;
+  }
+}

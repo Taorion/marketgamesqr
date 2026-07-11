@@ -110,6 +110,11 @@ const rmsCollectorSourceInput = document.getElementById("rmsCollectorSourceInput
 const rmsCollectorCaptureInput = document.getElementById("rmsCollectorCaptureInput");
 const rmsCollectorCoverageInput = document.getElementById("rmsCollectorCoverageInput");
 const rmsCollectorAgendaInput = document.getElementById("rmsCollectorAgendaInput");
+const rmsCollectorLeadNameInput = document.getElementById("rmsCollectorLeadNameInput");
+const rmsCollectorLeadPhoneInput = document.getElementById("rmsCollectorLeadPhoneInput");
+const rmsCollectorLeadEmailInput = document.getElementById("rmsCollectorLeadEmailInput");
+const rmsCollectorLeadPriorityInput = document.getElementById("rmsCollectorLeadPriorityInput");
+const rmsCollectorLeadInterestInput = document.getElementById("rmsCollectorLeadInterestInput");
 const rmsCollectorExpectedInput = document.getElementById("rmsCollectorExpectedInput");
 const rmsCollectorSummary = document.getElementById("rmsCollectorSummary");
 const rmsHowModal = document.getElementById("rmsHowModal");
@@ -26951,9 +26956,12 @@ function renderRmsCollectorSummary() {
   const capture = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || "Captura";
   const coverage = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || "Cobertura";
   const task = rmsCollectorAgendaInput?.value || "Contactar";
+  const leadName = String(rmsCollectorLeadNameInput?.value || "").trim();
+  const leadContact = [rmsCollectorLeadPhoneInput?.value, rmsCollectorLeadEmailInput?.value].map((value) => String(value || "").trim()).filter(Boolean).join(" / ");
   rmsCollectorSummary.innerHTML = `
     <strong>Resumen del recolector</strong>
     <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)} · Agenda: ${escapeHtml(task)}</p>
+    ${leadName ? `<p>Lead: ${escapeHtml(leadName)}${leadContact ? ` · ${escapeHtml(leadContact)}` : ""} · Entrada: Recolector de Oportunidades</p>` : '<p>Sin lead manual cargado. Puedes activar solo el flujo o ingresar una persona ahora.</p>'}
   `;
 }
 
@@ -26999,8 +27007,85 @@ async function submitRmsCollector(event) {
   const sourceLabel = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || source;
   const captureLabel = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || capture;
   const coverageLabel = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || coverage;
+  const leadName = String(rmsCollectorLeadNameInput?.value || "").trim();
+  const leadPhone = String(rmsCollectorLeadPhoneInput?.value || "").trim();
+  const leadEmail = String(rmsCollectorLeadEmailInput?.value || "").trim();
+  const leadInterest = String(rmsCollectorLeadInterestInput?.value || "").trim();
+  const leadPriority = rmsCollectorLeadPriorityInput?.value || "HIGH";
+  const hasLeadDraft = Boolean(leadName || leadPhone || leadEmail || leadInterest);
+  if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail))) {
+    showFeedback("Para ingresar un lead en el recolector agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
+    return;
+  }
   try {
-    showFeedback("Activando recolector y creando tarea en agenda...", "loading", { title: "Máquina RMS", timeout: 0 });
+    showFeedback(hasLeadDraft ? "Ingresando lead al recolector RMS..." : "Activando recolector y creando tarea en agenda...", "loading", { title: "Máquina RMS", timeout: 0 });
+    let createdLead = null;
+    if (hasLeadDraft) {
+      const leadResult = await api("/api/business/contacts/manual", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: leadName,
+          phone: leadPhone || null,
+          email: leadEmail || null,
+          source: "Maquina RMS",
+          source_detail: `${sourceLabel} · ${captureLabel}`,
+          priority: leadPriority,
+          status: "NEW",
+          preferred_channel: leadPhone ? "WhatsApp" : "Email",
+          interest: leadInterest || captureLabel,
+          importance_reason: `Lead ingresado desde Recolector de Oportunidades RMS. Fuente: ${sourceLabel}. Cobertura: ${coverageLabel}.`,
+          notes: rmsCollectorExpectedInput?.value || "Lead ingresado desde recolector RMS.",
+        }),
+      });
+      createdLead = leadResult?.lead || null;
+      if (createdLead?.id) {
+        await api("/api/business/rms-machine/lead/phase", {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            source_id: createdLead.id,
+            source_type: "MANUAL",
+            lead_id: createdLead.id,
+            to_phase: "recoleccion",
+            priority: leadPriority,
+            recommended_action: nextAction,
+            last_operation: "collector_manual_intake",
+            last_material_sent: coverage,
+            reason: "Lead ingresado manualmente desde el recolector RMS.",
+            metadata: {
+              source_module: "rms_machine",
+              source_flow: "collector_manual_lead",
+              collector_type: capture,
+              customer_source: source,
+              coverage_type: coverage,
+            },
+          }),
+        });
+        await api("/api/business/rms-machine/actions/create-task", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            source_id: createdLead.id,
+            source_type: "MANUAL",
+            lead_id: createdLead.id,
+            stage: "recoleccion",
+            action_title: nextAction,
+            next_action: nextAction,
+            note: `Operar lead ingresado desde recolector RMS. Interes: ${leadInterest || captureLabel}. Cobertura: ${coverageLabel}.`,
+            due_at: new Date(Date.now() + 86400000).toISOString(),
+            coverage_type: coverage,
+            metadata: {
+              source_module: "rms_machine",
+              source_flow: "collector_manual_lead",
+              collector_type: capture,
+              customer_source: source,
+              coverage_type: coverage,
+            },
+          }),
+        });
+      }
+    }
     const data = await api("/api/business/leads/agenda", {
       method: "POST",
       headers: authHeaders(),
@@ -27036,10 +27121,33 @@ async function submitRmsCollector(event) {
       next_action: nextAction,
       created_at: new Date().toISOString(),
     };
+    if (hasLeadDraft) {
+      [rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadInterestInput].forEach((input) => {
+        if (input) input.value = "";
+      });
+      if (rmsCollectorLeadPriorityInput) rmsCollectorLeadPriorityInput.value = "HIGH";
+      state.contactFeedLoaded = false;
+      state.leadCrmLoaded = false;
+      state.manualContactsLoaded = false;
+      state.leadCrmPagination.offset = 0;
+    }
     state.leadAgendaLoaded = false;
+    state.rmsMachineLoaded = false;
     closeRmsCollectorModal();
+    await Promise.all([
+      loadRmsMachineData({ force: true, quiet: true }).catch(() => null),
+      hasLeadDraft ? loadLeadCrmData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
+      hasLeadDraft ? loadManualContactsData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
+    ]);
     renderRmsCollectorActivation();
-    showFeedback("Recolector activo. Verifícalo en Contactos > Agenda; luego importa contactos o crea la campaña/QR que alimentará la cola.", "success", { title: "Máquina RMS" });
+    renderRmsMachineView();
+    showFeedback(
+      hasLeadDraft
+        ? `${createdLead?.name || leadName} entró al Recolector de Oportunidades con tarea RMS.`
+        : "Recolector activo. Verifícalo en Contactos > Agenda; luego importa contactos o crea la campaña/QR que alimentará la cola.",
+      "success",
+      { title: "Máquina RMS" }
+    );
   } catch (error) {
     showFeedback(error.message || "No se pudo activar el recolector.", "error", { title: "Máquina RMS" });
   }
@@ -27416,8 +27524,9 @@ rmsEmptyStateGuide?.querySelectorAll("[data-rms-empty-action]").forEach((button)
 rmsCollectorCloseButton?.addEventListener("click", closeRmsCollectorModal);
 rmsCollectorCancelButton?.addEventListener("click", closeRmsCollectorModal);
 rmsCollectorForm?.addEventListener("submit", submitRmsCollector);
-[rmsCollectorSourceInput, rmsCollectorCaptureInput, rmsCollectorCoverageInput, rmsCollectorAgendaInput].forEach((input) => {
+[rmsCollectorSourceInput, rmsCollectorCaptureInput, rmsCollectorCoverageInput, rmsCollectorAgendaInput, rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadPriorityInput, rmsCollectorLeadInterestInput].forEach((input) => {
   input?.addEventListener("change", renderRmsCollectorSummary);
+  input?.addEventListener("input", renderRmsCollectorSummary);
 });
 rmsHowCloseButton?.addEventListener("click", closeRmsHowModal);
 rmsHowStartButton?.addEventListener("click", () => {
