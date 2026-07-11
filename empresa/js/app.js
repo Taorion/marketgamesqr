@@ -26278,17 +26278,85 @@ function toggleRmsSelection(id = "", selected = false) {
 
 function selectRmsPhaseForBulk(phase = "") {
   const ids = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase).map((item) => item.id);
+  const stage = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
+  const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
+  if (!ids.length) {
+    handleRmsEmptyStationOperation(phase, stage, operation);
+    return;
+  }
   state.rmsMachineSelectedIds = ids;
   if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = "";
   renderRmsMachineView();
-  const stage = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
-  const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
-  if (ids.length) {
-    showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
-    rmsBulkToolbar?.scrollIntoView({ behavior: "smooth", block: "center" });
-  } else {
-    showFeedback("Esta estación no tiene materia prima para operar todavía.", "info", { title: stage?.label || "Estación RMS" });
-  }
+  showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
+  rmsBulkToolbar?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) {
+  const title = stage?.label || "Estación RMS";
+  const actionLabel = operation?.buttonLabel || "Operar estación";
+  const routeByPhase = {
+    recoleccion: () => {
+      openRmsCollectorModal();
+      showFeedback("Abre el recolector para definir fuente, gancho, dato capturado y tarea de agenda.", "info", { title });
+    },
+    alimentacion: () => {
+      setContactCenterTab("manual");
+      setView("leads");
+      showFeedback("Carga o importa contactos para meter materia prima al embudo RMS.", "info", { title });
+    },
+    curaduria: () => {
+      setContactCenterTab("directory");
+      setView("leads");
+      showFeedback("Revisa contactos y completa teléfono, interés, origen, campaña o ticket.", "info", { title });
+    },
+    clasificacion: () => {
+      setContactCenterTab("agenda");
+      setView("leads");
+      showFeedback("Crea tareas para clasificar temperatura, prioridad y siguiente acción comercial.", "info", { title });
+    },
+    preprocesamiento: () => {
+      setView("missions");
+      showFeedback("Crea un gancho gamificado: ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
+    },
+    procesamiento: () => {
+      setContactCenterTab("agenda");
+      setView("leads");
+      showFeedback("Prepara tareas para enviar propuesta, catálogo, cotización, factura o material comercial.", "info", { title });
+    },
+    control_anti_fuga: () => {
+      setContactCenterTab("agenda");
+      setView("leads");
+      showFeedback("Abre agenda para crear control de tickets por vencer, clientes sin tarea o redenciones sin venta.", "info", { title });
+    },
+    accion_correctiva: () => {
+      setContactCenterTab("agenda");
+      setView("leads");
+      showFeedback("Crea recordatorios, llamadas o beneficios de recuperación para reprocesar clientes dormidos.", "info", { title });
+    },
+    cierre: () => {
+      setContactCenterTab("sales");
+      setView("leads");
+      showFeedback("Registra cierre, cuenta de cobro, pago pendiente o venta atribuida.", "info", { title });
+    },
+    revenue_generado: () => {
+      setContactCenterTab("sales");
+      setView("leads");
+      showFeedback("Revisa ventas y revenue atribuido para registrar el resultado comercial.", "info", { title });
+    },
+    postventa: () => {
+      setView("reward-passes");
+      showFeedback("Activa postventa con recompensa, reward pass, beneficio VIP o ticket de próxima compra.", "info", { title });
+    },
+    inteligencia: () => {
+      setView("dashboard");
+      showFeedback("Revisa qué campaña, gancho, fase o canal está produciendo revenue o fuga.", "info", { title });
+    },
+  };
+  const route = routeByPhase[phase] || (() => {
+    openRmsCollectorModal();
+    showFeedback(`${actionLabel}: primero alimenta la estación con oportunidades reales.`, "info", { title });
+  });
+  route();
 }
 
 function clearRmsSelection() {
