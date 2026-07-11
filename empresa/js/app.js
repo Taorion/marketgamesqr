@@ -77,6 +77,7 @@ const revenueActionWizardMessage = document.getElementById("revenueActionWizardM
 const rmsMachineKpis = document.getElementById("rmsMachineKpis");
 const rmsDailyQueue = document.getElementById("rmsDailyQueue");
 const rmsStageBoard = document.getElementById("rmsStageBoard");
+const rmsStationWorkspace = document.getElementById("rmsStationWorkspace");
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
 const rmsMachineRefreshButton = document.getElementById("rmsMachineRefreshButton");
@@ -1292,6 +1293,7 @@ let state = {
   rmsMachineLoading: false,
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
+  rmsStationPhase: "",
   rmsMachineFilters: {
     search: "",
     phase: "",
@@ -25908,6 +25910,7 @@ function renderRmsMachineView() {
   renderRmsAlerts(data.alerts || []);
   renderRmsDailyQueue(rmsDailySectionsFromOpportunities(opportunities));
   renderRmsMachineFilterOptions(stages);
+  renderRmsStationWorkspace(stages, data.opportunities || [], isEmpty);
   renderRmsStageBoard(stages, opportunities, isEmpty);
   renderRmsBulkToolbar();
   renderRmsEventLog(data.events || []);
@@ -26097,6 +26100,142 @@ function rmsStageEmptyMarkup(stage = {}) {
   `;
 }
 
+function rmsStationNextPhase(stage = {}, stages = []) {
+  const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
+  return stages.find((candidate) => candidate.key === operation.nextPhase) || null;
+}
+
+function rmsStationRows(phase = "", opportunities = []) {
+  return (opportunities || []).filter((item) => item.stage === phase);
+}
+
+function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = false) {
+  if (!rmsStationWorkspace) return;
+  if (!stages.length) {
+    rmsStationWorkspace.innerHTML = "";
+    rmsStationWorkspace.classList.add("hidden");
+    return;
+  }
+  const selectedPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "";
+  state.rmsStationPhase = selectedPhase;
+  const stageIndex = stages.findIndex((item) => item.key === selectedPhase);
+  const stage = stages[stageIndex] || stages[0];
+  const phase = stage.key;
+  const rows = rmsStationRows(phase, opportunities);
+  const operation = stage.operation || (state.rmsMachine?.operations || {})[phase] || {};
+  const nextPhase = rmsStationNextPhase(stage, stages);
+  const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
+  const taskCount = rows.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
+  const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.innerHTML = `
+    <div class="rms-station-workspace-head">
+      <div>
+        <span class="mono-label">Pantalla de estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
+        <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
+        <p>${escapeHtml(operation.primaryAction || "Operar materia prima comercial")} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
+      </div>
+      <div class="rms-station-workspace-actions">
+        <select data-rms-station-picker aria-label="Cambiar estación RMS">
+          ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
+        </select>
+        <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Seleccionar materia prima</button>
+        <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>Pasar lote a salida</button>
+      </div>
+    </div>
+    <div class="rms-station-operation-strip">
+      <article><span>Operación</span><strong>${escapeHtml(operation.primaryAction || "Operar estación")}</strong></article>
+      <article><span>Material</span><strong>${escapeHtml(operation.materialLabel || "Material sugerido")}</strong></article>
+      <article><span>Materia prima</span><strong>${rows.length.toLocaleString("es-CO")}</strong></article>
+      <article><span>Riesgo / tareas</span><strong>${riskCount.toLocaleString("es-CO")} / ${taskCount.toLocaleString("es-CO")}</strong></article>
+      <article><span>Revenue potencial</span><strong>${escapeHtml(money(revenue))}</strong></article>
+    </div>
+    <div class="rms-station-screen">
+      <div class="rms-station-screen-head">
+        <div>
+          <strong>Materia prima dentro de esta estación</strong>
+          <small>${rows.length ? "Cada lead permanece aquí hasta que una operación lo mueva a la siguiente estación." : "Esta estación está esperando materia prima comercial."}</small>
+        </div>
+        <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
+      </div>
+      <div class="rms-station-lead-list">
+        ${rows.length ? rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("") : rmsStationEmptyScreenMarkup(stage, operation)}
+      </div>
+    </div>
+  `;
+  bindRmsMachineActions(rmsStationWorkspace);
+  rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => {
+    openRmsStation(event.target.value || "");
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
+    selectRmsPhaseForBulk(phase);
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
+    if (!rows.length || !nextPhase) return;
+    state.rmsMachineSelectedIds = rows.map((item) => item.id);
+    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
+    await moveSelectedRmsPhase();
+  });
+  rmsStationWorkspace.querySelectorAll("[data-rms-move-next]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const item = rmsOpportunityById(button.dataset.rmsMoveNext);
+      if (!item || !nextPhase) return;
+      await moveRmsOpportunityToPhase(item, nextPhase.key, {
+        reason: `Avance desde estación ${stage.label || phase}`,
+        last_operation: operation.primaryActionKey || operation.primaryAction || `move_to_${nextPhase.key}`,
+      });
+    });
+  });
+}
+
+function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
+  return `
+    <div class="rms-station-empty-screen">
+      <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+      <strong>Esta estación no tiene materia prima.</strong>
+      <p>${escapeHtml(operation.description || operation.primaryAction || "Alimenta la máquina o mueve leads desde una estación anterior.")}</p>
+      <button class="solid-button" type="button" data-rms-empty-action="${stage.key === "recoleccion" ? "collector" : "contacts-manual"}">
+        ${escapeHtml(stage.key === "recoleccion" ? "Ingresar lead al recolector" : "Buscar o cargar leads")}
+      </button>
+    </div>
+  `;
+}
+
+function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operation = {}) {
+  const action = item.next_action || {};
+  const origin = item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
+  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin dato de contacto";
+  const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
+  return `
+    <article class="rms-station-lead-row" data-rms-station-lead="${escapeHtml(item.id)}">
+      <div class="rms-station-lead-main">
+        <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
+        <strong>${escapeHtml(item.name || "Contacto")}</strong>
+        <small>${escapeHtml(contact)}</small>
+      </div>
+      <dl class="rms-station-lead-facts">
+        <div><dt>Cómo llegó</dt><dd>${escapeHtml(origin)}</dd></div>
+        <div><dt>Interés</dt><dd>${escapeHtml(interest)}</dd></div>
+        <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
+        <div><dt>Ticket / cobertura</dt><dd>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</dd></div>
+      </dl>
+      <div class="rms-station-lead-action">
+        <span class="mono-label">Operación sugerida</span>
+        <strong>${escapeHtml(action.title || operation.primaryAction || "Operar lead")}</strong>
+        <p>${escapeHtml(action.description || item.why_now || operation.materialLabel || "Revisar ficha y crear siguiente acción.")}</p>
+      </div>
+      <div class="rms-station-lead-buttons">
+        <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
+        <button class="ghost-button compact" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
+        <button class="solid-button compact" type="button" data-rms-move-next="${escapeHtml(item.id)}" ${nextPhase ? "" : "disabled"}>
+          ${escapeHtml(nextPhase ? `Pasar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
+        </button>
+      </div>
+    </article>
+  `;
+}
+
 function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
   rmsStageBoard.innerHTML = stages.map((stage, index) => {
@@ -26108,7 +26247,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const taskCount = rowsAll.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     return `
-      <article class="rms-stage-column" data-rms-phase="${escapeHtml(stage.key)}">
+      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""}" data-rms-phase="${escapeHtml(stage.key)}">
         <div class="rms-stage-head">
           <div>
             <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")}</span>
@@ -26129,7 +26268,10 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
             <span>${taskCount.toLocaleString("es-CO")} tareas</span>
             <span>${money(revenue)}</span>
           </div>
-          <button class="solid-button compact" type="button" data-rms-phase-operation="${escapeHtml(stage.key)}">${escapeHtml(operation.buttonLabel || "Ejecutar estación")}</button>
+          <div class="rms-station-button-row">
+            <button class="solid-button compact" type="button" data-rms-open-station="${escapeHtml(stage.key)}">Entrar a estación</button>
+            <button class="ghost-button compact" type="button" data-rms-phase-operation="${escapeHtml(stage.key)}">${escapeHtml(operation.buttonLabel || "Operar lote")}</button>
+          </div>
         </div>
         <div class="rms-stage-material-line">
           <span>Materia prima</span>
@@ -26233,6 +26375,9 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-empty-action]").forEach((button) => {
     button.addEventListener("click", () => handleRmsEmptyAction(button.dataset.rmsEmptyAction));
   });
+  root.querySelectorAll("[data-rms-open-station]").forEach((button) => {
+    button.addEventListener("click", () => openRmsStation(button.dataset.rmsOpenStation || ""));
+  });
   root.querySelectorAll("[data-rms-primary]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsPrimary);
@@ -26268,6 +26413,13 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-phase-operation]").forEach((button) => {
     button.addEventListener("click", () => selectRmsPhaseForBulk(button.dataset.rmsPhaseOperation));
   });
+}
+
+function openRmsStation(phase = "") {
+  if (!phase) return;
+  state.rmsStationPhase = phase;
+  renderRmsMachineView();
+  rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function rmsOpportunityById(id = "") {
@@ -26517,6 +26669,59 @@ async function moveSelectedRmsPhase() {
     showFeedback("Fase RMS actualizada.", "success", { title: "Máquina RMS" });
   } catch (error) {
     showFeedback(error.message || "No se pudo mover la fase RMS.", "error", { title: "Máquina RMS" });
+  }
+}
+
+function rmsPriorityCode(item = {}) {
+  const raw = String(item.priority || item.rms_priority || "").trim().toUpperCase();
+  if (["LOW", "MEDIUM", "HIGH", "URGENT"].includes(raw)) return raw;
+  const score = Number(item.priority_score || 0);
+  if (score >= 85) return "URGENT";
+  if (score >= 65) return "HIGH";
+  if (score > 0 && score < 35) return "LOW";
+  return "MEDIUM";
+}
+
+async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) {
+  if (!item?.source_id || !toPhase) {
+    showFeedback("Este lead no tiene origen suficiente para moverlo de estación.", "info", { title: "Máquina RMS" });
+    return;
+  }
+  try {
+    showFeedback("Moviendo lead a la siguiente estación...", "loading", { title: "Máquina RMS", timeout: 0 });
+    await api("/api/business/rms-machine/lead/phase", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        to_phase: toPhase,
+        priority: rmsPriorityCode(item),
+        recommended_action: item.next_action?.title || item.raw_recommended_action || "",
+        last_operation: options.last_operation || `move_to_${toPhase}`,
+        last_material_sent: item.coverage_type || "",
+        revenue_potential: Number(item.revenue_potential || 0),
+        reason: options.reason || "Avance operativo desde pantalla de estación RMS.",
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "station_workspace",
+          from_phase: item.stage || null,
+          rms_opportunity_id: item.id || null,
+          campaign_id: item.campaign_id || null,
+          product_interest: item.product_interest || null,
+          ...(options.metadata || {}),
+        },
+      }),
+    });
+    state.rmsMachineSelectedIds = [];
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    state.rmsStationPhase = toPhase;
+    renderRmsMachineView();
+    showFeedback("Lead movido a la siguiente estación.", "success", { title: "Máquina RMS" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo mover el lead.", "error", { title: "Máquina RMS" });
   }
 }
 
@@ -27496,6 +27701,9 @@ rmsMachineSearchInput?.addEventListener("keydown", (event) => {
 });
 rmsMachinePhaseFilter?.addEventListener("change", () => {
   state.rmsMachineFilters.phase = rmsMachinePhaseFilter.value || "";
+  if (state.rmsMachineFilters.phase) {
+    state.rmsStationPhase = state.rmsMachineFilters.phase;
+  }
   renderRmsMachineView();
 });
 rmsMachinePriorityFilter?.addEventListener("change", () => {
