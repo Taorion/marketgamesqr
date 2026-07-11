@@ -118,6 +118,8 @@ const rmsCollectorLeadPriorityInput = document.getElementById("rmsCollectorLeadP
 const rmsCollectorLeadInterestInput = document.getElementById("rmsCollectorLeadInterestInput");
 const rmsCollectorExpectedInput = document.getElementById("rmsCollectorExpectedInput");
 const rmsCollectorSummary = document.getElementById("rmsCollectorSummary");
+const rmsCollectorSubmitButton = document.getElementById("rmsCollectorSubmitButton");
+const rmsCollectorLeadSubmitButton = document.getElementById("rmsCollectorLeadSubmitButton");
 const rmsHowModal = document.getElementById("rmsHowModal");
 const rmsHowCloseButton = document.getElementById("rmsHowCloseButton");
 const rmsHowStartButton = document.getElementById("rmsHowStartButton");
@@ -27143,6 +27145,7 @@ async function deliverMissionReward(rewardId) {
 
 function openRmsCollectorModal() {
   renderRmsCollectorSummary();
+  updateRmsCollectorSubmitButtons();
   rmsCollectorModal?.classList.remove("hidden");
 }
 
@@ -27158,6 +27161,23 @@ function closeRmsHowModal() {
   rmsHowModal?.classList.add("hidden");
 }
 
+function rmsCollectorHasLeadDraft() {
+  return Boolean(
+    String(rmsCollectorLeadNameInput?.value || "").trim()
+    || String(rmsCollectorLeadPhoneInput?.value || "").trim()
+    || String(rmsCollectorLeadEmailInput?.value || "").trim()
+    || String(rmsCollectorLeadInterestInput?.value || "").trim()
+  );
+}
+
+function updateRmsCollectorSubmitButtons() {
+  const hasLeadDraft = rmsCollectorHasLeadDraft();
+  const label = hasLeadDraft ? "Ingresar lead al recolector" : "Activar recolector";
+  if (rmsCollectorSubmitButton) rmsCollectorSubmitButton.textContent = label;
+  if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.textContent = hasLeadDraft ? "Ingresar lead al recolector" : "Escribe datos del lead";
+  if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.classList.toggle("is-waiting-lead", !hasLeadDraft);
+}
+
 function renderRmsCollectorSummary() {
   if (!rmsCollectorSummary) return;
   const source = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || "Fuente de clientes";
@@ -27171,6 +27191,7 @@ function renderRmsCollectorSummary() {
     <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)} · Agenda: ${escapeHtml(task)}</p>
     ${leadName ? `<p>Lead: ${escapeHtml(leadName)}${leadContact ? ` · ${escapeHtml(leadContact)}` : ""} · Entrada: Recolector de Oportunidades</p>` : '<p>Sin lead manual cargado. Puedes activar solo el flujo o ingresar una persona ahora.</p>'}
   `;
+  updateRmsCollectorSubmitButtons();
 }
 
 function renderRmsCollectorActivation() {
@@ -27220,7 +27241,7 @@ async function submitRmsCollector(event) {
   const leadEmail = String(rmsCollectorLeadEmailInput?.value || "").trim();
   const leadInterest = String(rmsCollectorLeadInterestInput?.value || "").trim();
   const leadPriority = rmsCollectorLeadPriorityInput?.value || "HIGH";
-  const hasLeadDraft = Boolean(leadName || leadPhone || leadEmail || leadInterest);
+  const hasLeadDraft = rmsCollectorHasLeadDraft();
   if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail))) {
     showFeedback("Para ingresar un lead en el recolector agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
     return;

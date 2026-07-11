@@ -28079,9 +28079,60 @@ body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
   grid-column: 1 / -1;
 }
 
+.rms-collector-lead-submit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(7, 80, 60, 0.16);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.rms-collector-lead-submit strong {
+  display: block;
+  color: #071913;
+}
+
+.rms-collector-lead-submit small {
+  color: #536a61;
+}
+
+.rms-collector-lead-submit .solid-button {
+  min-width: 210px;
+}
+
+.rms-collector-lead-submit .solid-button.is-waiting-lead {
+  background: #eef5f1 !important;
+  border-color: #c9ded5 !important;
+  color: #24463a !important;
+}
+
+#rmsCollectorForm .modal-actions {
+  position: sticky;
+  bottom: -1px;
+  z-index: 4;
+  padding: 12px;
+  border: 1px solid rgba(7, 80, 60, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -12px 28px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(10px);
+}
+
 @media (max-width: 720px) {
   .rms-collector-lead-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rms-collector-lead-submit {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-collector-lead-submit .solid-button,
+  #rmsCollectorForm .modal-actions > * {
+    width: 100%;
   }
 }
 

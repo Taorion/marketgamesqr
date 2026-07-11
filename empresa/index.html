@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-screen-20260711-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rms-collector-submit-20260711-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -939,6 +939,13 @@
                         <input id="rmsCollectorLeadInterestInput" type="text" maxlength="500" placeholder="Producto, necesidad, gusto, intención o contexto">
                       </label>
                     </div>
+                    <div class="rms-collector-lead-submit">
+                      <div>
+                        <strong>¿Ya tienes los datos del lead?</strong>
+                        <small>Presiona el botón para crearlo, meterlo al Recolector y dejar su primera tarea RMS.</small>
+                      </div>
+                      <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Ingresar lead al recolector</button>
+                    </div>
                   </div>
                   <label class="span-2">
                     Resultado esperado
@@ -947,7 +954,7 @@
                   <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
                   <div class="modal-actions span-2">
                     <button class="ghost-button" type="button" id="rmsCollectorCancelButton">Cancelar</button>
-                    <button class="solid-button" type="submit">Activar recolector</button>
+                    <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar recolector</button>
                   </div>
                 </form>
               </div>
@@ -6246,7 +6253,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-screen-20260711-v1" defer></script>
+  <script src="js/app.js?v=rms-collector-submit-20260711-v1" defer></script>
 </body>
 </html>
 
