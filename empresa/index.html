@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=agenda-ui-20260711-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rms-fit-board-20260711-v5">
 </head>
 <body>
   <main class="portal-shell">
@@ -629,12 +629,13 @@
             <div class="view-head rms-machine-head">
               <div>
                 <span class="mono-label">Revenue Factory</span>
-                <h2>Máquina RMS de Conversión</h2>
-                <p>Esta pantalla convierte leads, tickets, campañas y contactos en una cola diaria de acciones. Si no hay oportunidades, primero activa un recolector para alimentar la máquina.</p>
-                <span class="rms-flow-chip">Entrada → Procesamiento → Acción → Revenue</span>
+                <h2>Máquina RMS de Revenue</h2>
+                <p>No vende convenciendo uno por uno: procesa oportunidades en volumen, las clasifica, las protege con gamificación y las mueve por estaciones hasta convertirlas en revenue medible.</p>
+                <span class="rms-flow-chip">Recolectar → Curar → Clasificar → Gamificar → Accionar → Cerrar → Optimizar</span>
               </div>
               <div class="view-head-actions">
                 <button class="solid-button" id="rmsMachineCollectorButton" type="button">Alimentar Máquina RMS</button>
+                <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
                 <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver cómo funciona</button>
                 <button class="ghost-button" id="rmsMachineRefreshButton" type="button">Actualizar cola</button>
                 <button class="solid-button" id="rmsMachineOpenAgendaButton" type="button">Ver agenda</button>
@@ -644,10 +645,107 @@
             <section class="rms-machine-hero">
               <article class="rms-machine-principle">
                 <span class="mono-label">Concepto operativo</span>
-                <h3>El vendedor no entra a mirar contactos. Entra a operar una línea de conversión.</h3>
-                <p>La plataforma transforma atencion, dinamicas, datos, beneficios y seguimiento en oportunidades priorizadas con accion concreta.</p>
+                <h3>El vendedor deja de perseguir clientes y pasa a operar una planta comercial.</h3>
+                <p>La plataforma recolecta materia prima comercial, la cura, la clasifica, la protege con ganchos gamificados y prescribe la siguiente operacion de revenue.</p>
               </article>
               <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
+            </section>
+
+            <section class="rms-operator-toolbar surface-card">
+              <div>
+                <span class="mono-label">Modo Operario de Revenue</span>
+                <strong>No vendas a ciegas. Alimenta la máquina, revisa estados y ejecuta operaciones.</strong>
+              </div>
+              <label>
+                <span>Buscar materia prima</span>
+                <input id="rmsMachineSearchInput" type="search" placeholder="Nombre, telefono, campaña o interés">
+              </label>
+              <label>
+                <span>Fase</span>
+                <select id="rmsMachinePhaseFilter">
+                  <option value="">Todas las estaciones</option>
+                </select>
+              </label>
+              <label>
+                <span>Prioridad</span>
+                <select id="rmsMachinePriorityFilter">
+                  <option value="">Todas</option>
+                  <option value="HIGH">Alta</option>
+                  <option value="MEDIUM">Media</option>
+                  <option value="LOW">Baja</option>
+                </select>
+              </label>
+              <button class="solid-button" id="rmsMachineFilterButton" type="button">Actualizar proceso</button>
+            </section>
+
+            <section class="surface-card rms-journey-shell rms-factory-console">
+              <div class="card-head">
+                <div>
+                  <span class="mono-label">Mapa Operativo RMS</span>
+                  <h3 class="subhead">Tablero de operación de la fábrica de ventas</h3>
+                  <p class="chart-explainer">Cada estación contiene materia prima comercial real, indica qué operación ejecutar, qué material enviar y qué resultado registrar para avanzar al siguiente proceso.</p>
+                </div>
+                <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
+              </div>
+              <div class="rms-factory-status-strip" aria-label="Estado operativo de la fábrica RMS">
+                <span><strong>Entrada</strong><small>leads y clientes capturados</small></span>
+                <span><strong>Operación</strong><small>acción indicada por estación</small></span>
+                <span><strong>Material</strong><small>catálogo, ticket, cobro o reward</small></span>
+                <span><strong>Salida</strong><small>venta, recompra, referido o recuperación</small></span>
+              </div>
+              <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
+                <div>
+                  <span class="mono-label">Operación masiva</span>
+                  <strong id="rmsBulkSelectionCount">0 seleccionados</strong>
+                  <small>Selecciona clientes dentro de una estación y ejecuta la operación de fase.</small>
+                </div>
+                <select id="rmsBulkPhaseInput">
+                  <option value="">Mover a fase...</option>
+                </select>
+                <button class="ghost-button" id="rmsBulkCreateTasksButton" type="button">Crear tareas</button>
+                <button class="solid-button" id="rmsBulkExecuteButton" type="button">Ejecutar operación de fase</button>
+                <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
+              </div>
+              <div class="rms-stage-board" id="rmsStageBoard"></div>
+            </section>
+
+            <aside class="surface-card rms-lead-inspector hidden" id="rmsLeadInspector" aria-live="polite"></aside>
+
+            <section class="rms-alert-grid" id="rmsMachineAlerts"></section>
+
+            <section class="rms-workday-shell">
+              <div class="card-head">
+                <div>
+                  <span class="mono-label">Mi Dia RMS</span>
+                  <h3 class="subhead">Cola diaria de conversion</h3>
+                  <p class="chart-explainer">Ordena oportunidades por prioridad, riesgo de fuga y revenue potencial. Cada tarjeta tiene un siguiente paso.</p>
+                </div>
+                <span class="pill muted" id="rmsMachineGeneratedAt">Sin cargar</span>
+              </div>
+              <div class="rms-daily-queue" id="rmsDailyQueue"></div>
+            </section>
+
+            <section class="surface-card rms-intake-funnel-shell">
+              <div class="card-head">
+                <div>
+                  <span class="mono-label">Embudo de Alimentación</span>
+                  <h3 class="subhead">Fuentes → Captura → Gamificación anti-fuga → Oportunidad RMS</h3>
+                  <p class="chart-explainer">Aquí se ve si la máquina tiene suficiente materia prima y si la gamificación está reduciendo fuga antes de entrar al proceso comercial.</p>
+                </div>
+                <button class="ghost-button" type="button" data-rms-open-collector>Alimentar Máquina</button>
+              </div>
+              <div class="rms-intake-funnel" id="rmsIntakeFunnel"></div>
+            </section>
+
+            <section class="surface-card rms-industrial-flow-shell">
+              <div class="card-head">
+                <div>
+                  <span class="mono-label">Ruta Industrial RMS</span>
+                  <h3 class="subhead">Del material comercial crudo al revenue medido</h3>
+                  <p class="chart-explainer">La maquina no termina al capturar leads. Despues selecciona, clasifica, procesa, controla fuga, cierra, activa postventa y retroalimenta la inteligencia RMS.</p>
+                </div>
+              </div>
+              <div class="rms-industrial-flow" id="rmsIndustrialFlow"></div>
             </section>
 
             <section class="rms-empty-guide hidden" id="rmsEmptyStateGuide">
@@ -708,58 +806,44 @@
               </div>
             </section>
 
-            <section class="rms-workday-shell">
-              <div class="card-head">
-                <div>
-                  <span class="mono-label">Mi Dia RMS</span>
-                  <h3 class="subhead">Cola diaria de conversion</h3>
-                  <p class="chart-explainer">Ordena oportunidades por prioridad, riesgo de fuga y revenue potencial. Cada tarjeta tiene un siguiente paso.</p>
-                </div>
-                <span class="pill muted" id="rmsMachineGeneratedAt">Sin cargar</span>
-              </div>
-              <div class="rms-daily-queue" id="rmsDailyQueue"></div>
-            </section>
-
-            <section class="surface-card rms-journey-shell">
-              <div class="card-head">
-                <div>
-                  <span class="mono-label">Journey Industrializado de Revenue</span>
-                  <h3 class="subhead">Línea de Conversión</h3>
-                  <p class="chart-explainer">Vista por estaciones: captacion, interaccion, intencion, seguimiento, redencion, recompra y recuperacion.</p>
-                </div>
-                <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
-              </div>
-              <div class="rms-stage-board" id="rmsStageBoard"></div>
-            </section>
-
             <section class="surface-card rms-playbook-shell">
               <div class="card-head">
                 <div>
-                  <span class="mono-label">Playbook base</span>
-                  <h3 class="subhead">Regla de oro del proceso</h3>
+                  <span class="mono-label">Playbook industrial</span>
+                  <h3 class="subhead">Regla de oro de la Máquina RMS</h3>
                 </div>
               </div>
               <div class="rms-rule-grid">
                 <article>
-                  <strong>Etapa</strong>
-                  <p>Cada lead debe tener una posicion visible dentro del journey.</p>
+                  <strong>Materia prima visible</strong>
+                  <p>Cada cliente debe estar dentro de una estación hasta que una operación lo mueva.</p>
                 </article>
                 <article>
-                  <strong>Cobertura</strong>
-                  <p>Ticket, dinamica, beneficio, recompra, referido o recuperacion sostienen la atencion.</p>
+                  <strong>Gancho anti-fuga</strong>
+                  <p>Ticket, dinámica, beneficio, puntos o reward pass reducen pérdida de atención.</p>
                 </article>
                 <article>
-                  <strong>Prioridad</strong>
-                  <p>Score, riesgo, interaccion, compra y revenue potencial definen a quien atender primero.</p>
+                  <strong>Control de calidad</strong>
+                  <p>Riesgo, tarea pendiente, ticket por vencer y fase saturada indican dónde corregir.</p>
                 </article>
                 <article>
-                  <strong>Siguiente accion</strong>
-                  <p>La tarjeta debe terminar en una llamada, WhatsApp, agenda, venta, recompra o referido.</p>
+                  <strong>Salida medible</strong>
+                  <p>Cada operación debe terminar en tarea, nota, venta, recompra, referido o aprendizaje.</p>
                 </article>
               </div>
               <div class="rms-rule-action">
                 <button class="solid-button" id="rmsApplyRuleButton" type="button">Aplicar esta regla ahora</button>
               </div>
+            </section>
+
+            <section class="surface-card rms-event-log-shell">
+              <div class="card-head">
+                <div>
+                  <span class="mono-label">Bitácora de la Máquina</span>
+                  <h3 class="subhead">Últimos movimientos y operaciones</h3>
+                </div>
+              </div>
+              <div class="rms-event-log" id="rmsMachineEventLog"></div>
             </section>
 
             <div class="modal-shell hidden" id="rmsCollectorModal" role="dialog" aria-modal="true" aria-labelledby="rmsCollectorTitle">
@@ -3370,7 +3454,7 @@
                 <button class="ghost-button" id="exportLeadsButton" type="button">Descargar CSV</button>
               </div>
             </div>
-            <section class="contact-center-shell" id="contactCenterShell">
+            <section class="contact-center-shell" id="contactCenterShell" data-contact-stage="overview">
               <section class="contact-center-operator-panel surface-card">
                 <div>
                   <span class="mono-label" id="contactCenterStageMeta">Vista operativa</span>
@@ -3381,6 +3465,33 @@
                   <button class="solid-button" id="contactCenterPrimaryAction" type="button">Agregar prospecto</button>
                   <button class="ghost-button" id="contactCenterSecondaryAction" type="button">Exportar contactos</button>
                 </div>
+              </section>
+              <section class="contact-center-stage-rail" aria-label="Flujo operativo de contactos y ventas">
+                <article data-contact-rail="overview">
+                  <span>01</span>
+                  <strong>Priorizar</strong>
+                  <small>Cola diaria</small>
+                </article>
+                <article data-contact-rail="directory">
+                  <span>02</span>
+                  <strong>Perfilar</strong>
+                  <small>Ficha comercial</small>
+                </article>
+                <article data-contact-rail="tickets">
+                  <span>03</span>
+                  <strong>Activar</strong>
+                  <small>Ticket y beneficio</small>
+                </article>
+                <article data-contact-rail="agenda">
+                  <span>04</span>
+                  <strong>Seguir</strong>
+                  <small>Llamada o tarea</small>
+                </article>
+                <article data-contact-rail="sales">
+                  <span>05</span>
+                  <strong>Cerrar</strong>
+                  <small>Venta registrada</small>
+                </article>
               </section>
               <div class="segment-tabs contact-center-tabs" id="contactCenterTabs" role="tablist" aria-label="Secciones del centro de contactos">
                 <button class="segment-tab contact-center-tab-card active" id="contactTabOverview" data-contact-center-tab="overview" type="button" role="tab" aria-selected="true" aria-controls="contactPanelOverview">
@@ -5552,12 +5663,7 @@
                   <label>
                     <span>Monto total de la compra COP</span>
                     <input id="affiliatePurchaseAmountInput" type="text" inputmode="numeric" placeholder="Ej: 120.000">
-                    <small>Es suficiente para registrar la venta y sumar puntos al afiliado.</small>
-                  </label>
-                  <label>
-                    <span>Monto total de la compra COP</span>
-                    <input id="affiliatePurchaseAmountInput" type="text" inputmode="numeric" placeholder="Ej: 120.000">
-                    <small>Es suficiente para sumar puntos al afiliado. Los productos son opcionales.</small>
+                    <small>Es suficiente para registrar la venta y sumar puntos al afiliado. Los productos son opcionales.</small>
                   </label>
                   <div class="affiliate-purchase-summary">
                     <span>Total compra</span>
@@ -5744,6 +5850,7 @@
                       <th>Motivo</th>
                       <th>Fecha</th>
                       <th>Creado por</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="affiliateLedgerTable"></tbody>
@@ -6104,7 +6211,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=agenda-ui-20260711-v1" defer></script>
+  <script src="js/app.js?v=rms-fit-board-20260711-v5" defer></script>
 </body>
 </html>
 

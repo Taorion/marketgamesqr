@@ -11,6 +11,7 @@ const {
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
+  updateBusinessAffiliateLedgerEntry,
   deleteBusinessAffiliate,
   removeBusinessCampaignAffiliate,
 } = require("../controllers/affiliateController");
@@ -28,6 +29,7 @@ router.post("/businesses/:id/campaigns/:campaignId/affiliates", assignBusinessCa
 router.delete("/businesses/:id/campaigns/:campaignId/affiliates/:affiliateId", removeBusinessCampaignAffiliate);
 router.get("/businesses/:id/affiliates/:affiliateId", getBusinessAffiliate);
 router.post("/businesses/:id/affiliates/:affiliateId/points", awardBusinessAffiliatePoints);
+router.patch("/businesses/:id/affiliates/:affiliateId/ledger/:ledgerId", updateBusinessAffiliateLedgerEntry);
 router.post("/businesses/:id/affiliates/:affiliateId/reward-tickets", createBusinessAffiliateRewardTicket);
 router.delete("/businesses/:id/affiliates/:affiliateId", deleteBusinessAffiliate);
 

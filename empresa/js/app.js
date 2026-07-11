@@ -82,8 +82,24 @@ const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunit
 const rmsMachineRefreshButton = document.getElementById("rmsMachineRefreshButton");
 const rmsMachineOpenAgendaButton = document.getElementById("rmsMachineOpenAgendaButton");
 const rmsMachineCollectorButton = document.getElementById("rmsMachineCollectorButton");
+const rmsMachineHookButton = document.getElementById("rmsMachineHookButton");
 const rmsMachineHowButton = document.getElementById("rmsMachineHowButton");
 const rmsApplyRuleButton = document.getElementById("rmsApplyRuleButton");
+const rmsMachineSearchInput = document.getElementById("rmsMachineSearchInput");
+const rmsMachinePhaseFilter = document.getElementById("rmsMachinePhaseFilter");
+const rmsMachinePriorityFilter = document.getElementById("rmsMachinePriorityFilter");
+const rmsMachineFilterButton = document.getElementById("rmsMachineFilterButton");
+const rmsIntakeFunnel = document.getElementById("rmsIntakeFunnel");
+const rmsIndustrialFlow = document.getElementById("rmsIndustrialFlow");
+const rmsMachineAlerts = document.getElementById("rmsMachineAlerts");
+const rmsBulkToolbar = document.getElementById("rmsBulkToolbar");
+const rmsBulkSelectionCount = document.getElementById("rmsBulkSelectionCount");
+const rmsBulkPhaseInput = document.getElementById("rmsBulkPhaseInput");
+const rmsBulkCreateTasksButton = document.getElementById("rmsBulkCreateTasksButton");
+const rmsBulkExecuteButton = document.getElementById("rmsBulkExecuteButton");
+const rmsBulkClearButton = document.getElementById("rmsBulkClearButton");
+const rmsLeadInspector = document.getElementById("rmsLeadInspector");
+const rmsMachineEventLog = document.getElementById("rmsMachineEventLog");
 const rmsEmptyStateGuide = document.getElementById("rmsEmptyStateGuide");
 const rmsCollectorActiveCard = document.getElementById("rmsCollectorActiveCard");
 const rmsCollectorModal = document.getElementById("rmsCollectorModal");
@@ -1245,6 +1261,7 @@ let state = {
   contactFeedRetention: null,
   contactFeedGate: null,
   contactFeedLoaded: false,
+  contactFeedLoading: false,
   manualContacts: [],
   manualContactsLoaded: false,
   manualContactsLoading: false,
@@ -1268,6 +1285,13 @@ let state = {
   rmsMachine: null,
   rmsMachineLoaded: false,
   rmsMachineLoading: false,
+  rmsMachineSelectedIds: [],
+  rmsMachineInspectorId: "",
+  rmsMachineFilters: {
+    search: "",
+    phase: "",
+    priority: "",
+  },
   rmsCollectorActivation: null,
   missions: null,
   missionsLoaded: false,
@@ -1294,6 +1318,7 @@ let state = {
   selectedAffiliateId: null,
   selectedAffiliate: null,
   selectedAffiliateLedger: [],
+  affiliateLedgerEditingId: null,
   affiliateScannerStream: null,
   affiliateScannerLoopHandle: 0,
   affiliateScannerCanvas: document.createElement("canvas"),
@@ -2051,7 +2076,7 @@ function clearBusinessWorkspaceUi() {
     [strategicQrHistoryTable, 5, "Abre Gaming Center para cargar historial reciente."],
     [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
     [affiliateTable, 9, "Cargando afiliados..."],
-    [affiliateLedgerTable, 5, "Sin afiliado seleccionado."],
+    [affiliateLedgerTable, 6, "Sin afiliado seleccionado."],
     [acquisitionChannelTable, 12, "Abre Canales ROI para cargar canales de adquisición."],
     [inventoryTable, 7, "Abre Productos para cargar productos."],
     [competitionTable, 9, "Abre Radar Competitivo para cargar productos y precios."],
@@ -2160,6 +2185,7 @@ function resetBusinessScopedState(options = {}) {
   state.contactFeedRetention = null;
   state.contactFeedGate = null;
   state.contactFeedLoaded = false;
+  state.contactFeedLoading = false;
   state.manualContacts = [];
   state.manualContactsLoaded = false;
   state.manualContactsLoading = false;
@@ -2196,6 +2222,7 @@ function resetBusinessScopedState(options = {}) {
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
+  state.affiliateLedgerEditingId = null;
   state.affiliateScannerLastValue = "";
   state.affiliateScannerLastAt = 0;
   state.strategyWizardStep = 0;
@@ -2437,17 +2464,23 @@ async function loadContactFeedData(options = {}) {
     return;
   }
   if (state.contactFeedLoaded && !options.force) return;
+  if (state.contactFeedLoading && !options.force) return;
   if (!options.quiet) {
     showFeedback("Cargando leads visibles bajo demanda.", "loading", { title: "Leads", timeout: 0 });
   }
   const scopeKey = businessScopeKey();
-  const data = await apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null });
-  if (!isCurrentBusinessScope(scopeKey)) return;
-  state.contactFeed = data.contacts || [];
-  state.contactFeedRetention = data.retention || null;
-  state.contactFeedGate = data.lead_gate || null;
-  state.contactFeedLoaded = true;
-  if (!options.quiet) hideFeedback();
+  state.contactFeedLoading = true;
+  try {
+    const data = await apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: [], retention: null, lead_gate: null });
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.contactFeed = data.contacts || [];
+    state.contactFeedRetention = data.retention || null;
+    state.contactFeedGate = data.lead_gate || null;
+    state.contactFeedLoaded = true;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.contactFeedLoading = false;
+    if (!options.quiet) hideFeedback();
+  }
 }
 
 async function loadManualContactsData(options = {}) {
@@ -2547,17 +2580,21 @@ async function loadLeadCrmData(options = {}) {
     return;
   }
   if (state.leadCrmLoaded && !options.force) return;
+  if (state.leadCrmLoading && !options.force) return;
   state.leadCrmLoading = true;
   if (!options.quiet && leadCrmTable) {
     leadCrmTable.innerHTML = '<tr><td colspan="9">Cargando base de leads...</td></tr>';
   }
   const scopeKey = businessScopeKey();
-  const data = await apiSafe(`/api/business/leads/crm?${leadCrmQueryString()}`, { headers: authHeaders() }, { leads: [], pagination: { total: 0, limit: 40, offset: 0 } });
-  if (!isCurrentBusinessScope(scopeKey)) return;
-  state.leadCrmRows = data.leads || [];
-  state.leadCrmPagination = data.pagination || { total: 0, limit: 40, offset: 0 };
-  state.leadCrmLoaded = true;
-  state.leadCrmLoading = false;
+  try {
+    const data = await apiSafe(`/api/business/leads/crm?${leadCrmQueryString()}`, { headers: authHeaders() }, { leads: [], pagination: { total: 0, limit: 40, offset: 0 } });
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.leadCrmRows = data.leads || [];
+    state.leadCrmPagination = data.pagination || { total: 0, limit: 40, offset: 0 };
+    state.leadCrmLoaded = true;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.leadCrmLoading = false;
+  }
 }
 
 async function loadLeadAgendaContacts(options = {}) {
@@ -4117,6 +4154,7 @@ function setView(view) {
     }
   }
   if (view === "rms-machine") {
+    renderRmsMachineView();
     loadRmsMachineData({ quiet: true }).then(renderRmsMachineView).catch((error) => {
       showFeedback(error.message || "No se pudo cargar la Maquina RMS.", "error", { title: "Maquina RMS" });
       renderRmsMachineView();
@@ -22178,7 +22216,9 @@ function handleContactCenterStageAction(action = "") {
 
 function setContactCenterTab(tab = "overview") {
   const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
+  const contactCenterShell = document.getElementById("contactCenterShell");
   state.contactCenterTab = nextTab;
+  if (contactCenterShell) contactCenterShell.dataset.contactStage = nextTab;
   updateContactCenterStage(nextTab);
   if (state.currentView === "leads") {
     navButtons.forEach((button) => {
@@ -23934,6 +23974,7 @@ async function openAffiliateForPoints(affiliateId) {
   const changedAffiliate = state.selectedAffiliateId && state.selectedAffiliateId !== affiliateId;
   if (changedAffiliate) {
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
+    state.affiliateLedgerEditingId = null;
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
     setInlineMessage(affiliatePurchaseMessage, "", "info");
   }
@@ -23949,6 +23990,111 @@ async function openAffiliateForPoints(affiliateId) {
   setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
   affiliatePurchaseAmountInput?.focus();
   affiliatePurchaseAmountInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function renderAffiliateLedgerTable() {
+  if (!affiliateLedgerTable) return;
+  const ledger = state.selectedAffiliateLedger || [];
+  if (!state.selectedAffiliateId) {
+    affiliateLedgerTable.innerHTML = '<tr><td colspan="6">Sin afiliado seleccionado.</td></tr>';
+    return;
+  }
+  affiliateLedgerTable.innerHTML = ledger.map((item) => {
+    const isEditing = state.affiliateLedgerEditingId === item.id;
+    if (isEditing) {
+      return `
+        <tr class="affiliate-ledger-edit-row" data-affiliate-ledger-row="${escapeHtml(item.id)}">
+          <td><input type="text" inputmode="numeric" data-affiliate-ledger-field="amount" value="${escapeHtml(Number(item.amount || 0))}" aria-label="Monto del movimiento"></td>
+          <td><input type="number" min="0" step="1" data-affiliate-ledger-field="points_awarded" value="${escapeHtml(toNumber(item.points_awarded || 0))}" aria-label="Puntos del movimiento"></td>
+          <td><input type="text" maxlength="80" data-affiliate-ledger-field="reason" value="${escapeHtml(item.reason || "")}" aria-label="Motivo del movimiento"></td>
+          <td>${escapeHtml(formatDate(item.created_at))}</td>
+          <td>${escapeHtml(item.created_by_name || "-")}</td>
+          <td>
+            <div class="affiliate-ledger-actions">
+              <button class="solid-button" type="button" data-affiliate-ledger-save="${escapeHtml(item.id)}">Guardar</button>
+              <button class="ghost-button" type="button" data-affiliate-ledger-cancel>Cancelar</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    return `
+      <tr data-affiliate-ledger-row="${escapeHtml(item.id)}">
+        <td>${escapeHtml(money(item.amount))}</td>
+        <td>${escapeHtml(toNumber(item.points_awarded || 0))}</td>
+        <td>${escapeHtml(item.reason || "-")}</td>
+        <td>${escapeHtml(formatDate(item.created_at))}</td>
+        <td>${escapeHtml(item.created_by_name || "-")}</td>
+        <td><button class="ghost-button" type="button" data-affiliate-ledger-edit="${escapeHtml(item.id)}">Editar</button></td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="6">Sin movimientos registrados.</td></tr>';
+
+  affiliateLedgerTable.querySelectorAll("[data-affiliate-ledger-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.affiliateLedgerEditingId = button.dataset.affiliateLedgerEdit;
+      renderAffiliateLedgerTable();
+    });
+  });
+  affiliateLedgerTable.querySelectorAll("[data-affiliate-ledger-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.affiliateLedgerEditingId = null;
+      renderAffiliateLedgerTable();
+    });
+  });
+  affiliateLedgerTable.querySelectorAll("[data-affiliate-ledger-save]").forEach((button) => {
+    button.addEventListener("click", () => updateAffiliateLedgerEntry(button.dataset.affiliateLedgerSave, button));
+  });
+}
+
+async function updateAffiliateLedgerEntry(ledgerId, triggerButton = null) {
+  if (!state.selectedAffiliateId || !ledgerId || !session?.user?.business_id) return;
+  const row = Array.from(affiliateLedgerTable?.querySelectorAll("[data-affiliate-ledger-row]") || [])
+    .find((item) => item.dataset.affiliateLedgerRow === ledgerId);
+  if (!row) return;
+  const amount = parseAffiliatePurchaseAmount(row.querySelector('[data-affiliate-ledger-field="amount"]')?.value || "0");
+  const points = Number(row.querySelector('[data-affiliate-ledger-field="points_awarded"]')?.value || 0);
+  const reason = row.querySelector('[data-affiliate-ledger-field="reason"]')?.value.trim() || "PURCHASE";
+  if (!Number.isFinite(amount) || amount < 0) {
+    showFeedback("El monto debe ser 0 o mayor.", "error");
+    return;
+  }
+  if (!Number.isInteger(points) || points < 0) {
+    showFeedback("Los puntos deben ser un numero entero de 0 o mayor.", "error");
+    return;
+  }
+
+  setButtonLoading(triggerButton, true, "Guardando...");
+  try {
+    const affiliateId = state.selectedAffiliateId;
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${affiliateId}/ledger/${ledgerId}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        amount,
+        points_awarded: points,
+        reason,
+        metadata: {
+          source: "affiliate_ledger_edit_portal",
+        },
+      }),
+    });
+    state.affiliateLedgerEditingId = null;
+    state.selectedAffiliate = data.affiliate || state.selectedAffiliate;
+    state.selectedAffiliateLedger = (state.selectedAffiliateLedger || []).map((item) => (
+      item.id === ledgerId ? { ...item, ...(data.ledger || {}) } : item
+    ));
+    renderAffiliateLedgerTable();
+    await loadAffiliatesData();
+    state.selectedAffiliateId = affiliateId;
+    state.selectedAffiliate = data.affiliate || (state.affiliates || []).find((item) => item.id === affiliateId) || state.selectedAffiliate;
+    await renderAffiliatesView();
+    showFeedback(`Movimiento actualizado. Ajuste de puntos: ${Number(data.points_delta || 0).toLocaleString("es-CO")}.`, "success", { title: "Afiliado actualizado" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el movimiento.", "error");
+  } finally {
+    setButtonLoading(triggerButton, false);
+  }
 }
 
 async function searchAffiliateForPoints(value = affiliateFinderInput?.value) {
@@ -24150,7 +24296,8 @@ async function renderAffiliatesView() {
     setInlineMessage(affiliateReferralQrMessage, "", "info");
     renderAffiliateReferralQrResult(null);
     affiliateLedgerTitle.textContent = "Movimientos del afiliado";
-    affiliateLedgerTable.innerHTML = '<tr><td colspan="5">Sin afiliado seleccionado.</td></tr>';
+    state.affiliateLedgerEditingId = null;
+    renderAffiliateLedgerTable();
     return;
   }
 
@@ -24188,17 +24335,9 @@ async function renderAffiliatesView() {
     state.affiliateRewardUnlocks = detail.reward_unlocks || [];
     renderAffiliateRewardUnlocks();
     await renderAffiliateCardPreview(state.selectedAffiliate);
-    affiliateLedgerTable.innerHTML = (state.selectedAffiliateLedger || []).map((item) => `
-      <tr>
-        <td>${escapeHtml(money(item.amount))}</td>
-        <td>${escapeHtml(toNumber(item.points_awarded || 0))}</td>
-        <td>${escapeHtml(item.reason || "-")}</td>
-        <td>${escapeHtml(formatDate(item.created_at))}</td>
-        <td>${escapeHtml(item.created_by_name || "-")}</td>
-      </tr>
-    `).join("") || '<tr><td colspan="5">Sin movimientos registrados.</td></tr>';
+    renderAffiliateLedgerTable();
   } catch (error) {
-    affiliateLedgerTable.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+    affiliateLedgerTable.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -24831,6 +24970,147 @@ function channelEffortPayload() {
       measured_as: "channel_effort",
     },
   };
+}
+
+const RMS_FACTORY_STAGE_BLUEPRINT = [
+  {
+    key: "recoleccion",
+    label: "Recolector de Oportunidades",
+    operation: {
+      primaryAction: "Capturar materia prima comercial",
+      materialLabel: "QR, activacion, formulario o referido",
+      buttonLabel: "Recolectar",
+      nextPhase: "alimentacion",
+    },
+  },
+  {
+    key: "alimentacion",
+    label: "Embudo de Entrada",
+    operation: {
+      primaryAction: "Introducir lead al embudo RMS",
+      materialLabel: "Nombre, WhatsApp, origen e interes",
+      buttonLabel: "Meter a maquina",
+      nextPhase: "curaduria",
+    },
+  },
+  {
+    key: "curaduria",
+    label: "Curaduria Comercial",
+    operation: {
+      primaryAction: "Validar dato y limpiar oportunidad",
+      materialLabel: "Telefono, interes, origen, ticket y campana",
+      buttonLabel: "Curar datos",
+      nextPhase: "clasificacion",
+    },
+  },
+  {
+    key: "clasificacion",
+    label: "Clasificador RMS",
+    operation: {
+      primaryAction: "Clasificar estado comercial",
+      materialLabel: "Nuevo, interesado, caliente, comprador o dormido",
+      buttonLabel: "Clasificar",
+      nextPhase: "preprocesamiento",
+    },
+  },
+  {
+    key: "preprocesamiento",
+    label: "Preprocesador Gamificado",
+    operation: {
+      primaryAction: "Activar gancho gamificado anti-fuga",
+      materialLabel: "Ticket, beneficio, puntos, trivia o reward pass",
+      buttonLabel: "Activar gancho",
+      nextPhase: "procesamiento",
+    },
+  },
+  {
+    key: "procesamiento",
+    label: "Maquina RMS de Conversion",
+    operation: {
+      primaryAction: "Ejecutar operacion comercial",
+      materialLabel: "Propuesta, catalogo, ticket, cotizacion o factura",
+      buttonLabel: "Procesar",
+      nextPhase: "control_anti_fuga",
+    },
+  },
+  {
+    key: "control_anti_fuga",
+    label: "Control Anti-Fuga",
+    operation: {
+      primaryAction: "Detectar fuga o atasco",
+      materialLabel: "Ticket por vencer, sin tarea, sin respuesta o fase saturada",
+      buttonLabel: "Controlar fuga",
+      nextPhase: "accion_correctiva",
+    },
+  },
+  {
+    key: "accion_correctiva",
+    label: "Recuperacion RMS",
+    operation: {
+      primaryAction: "Corregir, reprocesar o recuperar",
+      materialLabel: "Recordatorio, reenviar ticket, llamada o ultimo beneficio",
+      buttonLabel: "Corregir",
+      nextPhase: "cierre",
+    },
+  },
+  {
+    key: "cierre",
+    label: "Cierre Comercial",
+    operation: {
+      primaryAction: "Ensamblar cierre comercial",
+      materialLabel: "Propuesta, factura, link de pago o cuenta de cobro",
+      buttonLabel: "Cerrar",
+      nextPhase: "revenue_generado",
+    },
+  },
+  {
+    key: "revenue_generado",
+    label: "Revenue Generado",
+    operation: {
+      primaryAction: "Registrar resultado comercial",
+      materialLabel: "Venta, redencion, recompra, referido o suscripcion",
+      buttonLabel: "Registrar revenue",
+      nextPhase: "postventa",
+    },
+  },
+  {
+    key: "postventa",
+    label: "Postventa Gamificada",
+    operation: {
+      primaryAction: "Empacar postventa gamificada",
+      materialLabel: "Agradecimiento, garantia, encuesta o ticket proxima compra",
+      buttonLabel: "Activar postventa",
+      nextPhase: "inteligencia",
+    },
+  },
+  {
+    key: "inteligencia",
+    label: "Inteligencia RMS",
+    operation: {
+      primaryAction: "Retroalimentar inteligencia RMS",
+      materialLabel: "Campana, gancho, vendedor, ticket, fuga y recompra",
+      buttonLabel: "Optimizar",
+      nextPhase: "recoleccion",
+    },
+  },
+];
+
+function rmsFactoryStages(data = {}) {
+  const serverStages = Array.isArray(data.stages) && data.stages.length ? data.stages : [];
+  const operations = data.operations || {};
+  const source = serverStages.length ? serverStages : RMS_FACTORY_STAGE_BLUEPRINT;
+  return source.map((stage) => {
+    const blueprint = RMS_FACTORY_STAGE_BLUEPRINT.find((item) => item.key === stage.key) || {};
+    return {
+      ...blueprint,
+      ...stage,
+      operation: {
+        ...(blueprint.operation || {}),
+        ...(operations[stage.key] || {}),
+        ...(stage.operation || {}),
+      },
+    };
+  });
 }
 
 async function loadChannelEfforts(options = {}) {
@@ -25557,14 +25837,17 @@ async function loadRmsMachineData(options = {}) {
   if (!options.quiet) renderRmsMachineLoading();
   try {
     const params = new URLSearchParams();
-    params.set("limit", "120");
+    params.set("limit", "180");
     params.set("section_limit", "18");
-    if (state.filter) params.set("search", state.filter);
-    const data = await api(`/api/business/rms-machine/daily-queue?${params.toString()}`, {
+    const search = state.rmsMachineFilters?.search || state.filter || "";
+    if (search) params.set("search", search);
+    if (state.rmsMachineFilters?.priority) params.set("priority", state.rmsMachineFilters.priority);
+    const data = await api(`/api/business/rms-machine?${params.toString()}`, {
       headers: authHeaders(),
     });
     state.rmsMachine = data;
     state.rmsMachineLoaded = true;
+    renderRmsMachineFilterOptions(rmsFactoryStages(data));
     return data;
   } finally {
     state.rmsMachineLoading = false;
@@ -25572,6 +25855,9 @@ async function loadRmsMachineData(options = {}) {
 }
 
 function renderRmsMachineLoading() {
+  renderRmsMachineFilterOptions(rmsFactoryStages());
+  renderRmsStageBoard(rmsFactoryStages(), [], true);
+  renderRmsBulkToolbar();
   if (rmsDailyQueue) {
     rmsDailyQueue.innerHTML = `
       <article class="rms-loading-card">
@@ -25587,7 +25873,8 @@ function renderRmsMachineLoading() {
 
 function renderRmsMachineView() {
   const data = state.rmsMachine || {};
-  const opportunities = data.opportunities || [];
+  const stages = rmsFactoryStages(data);
+  const opportunities = rmsVisibleOpportunities(data.opportunities || []);
   const metrics = data.metrics || {};
   const isEmpty = opportunities.length === 0 && Number(metrics.total_opportunities || 0) === 0;
   if (rmsMachineGeneratedAt) {
@@ -25599,8 +25886,38 @@ function renderRmsMachineView() {
   rmsEmptyStateGuide?.classList.toggle("hidden", !isEmpty);
   renderRmsCollectorActivation();
   renderRmsMachineKpis(metrics);
-  renderRmsDailyQueue(data.sections || []);
-  renderRmsStageBoard(data.stages || [], opportunities, isEmpty);
+  renderRmsIntakeFunnel(data.funnel || []);
+  renderRmsIndustrialFlow(data.process_flow || []);
+  renderRmsAlerts(data.alerts || []);
+  renderRmsDailyQueue(rmsDailySectionsFromOpportunities(opportunities));
+  renderRmsMachineFilterOptions(stages);
+  renderRmsStageBoard(stages, opportunities, isEmpty);
+  renderRmsBulkToolbar();
+  renderRmsEventLog(data.events || []);
+  renderRmsLeadInspector();
+}
+
+function rmsVisibleOpportunities(rows = []) {
+  const phase = state.rmsMachineFilters?.phase || "";
+  return rows.filter((item) => !phase || item.stage === phase);
+}
+
+function renderRmsMachineFilterOptions(stages = []) {
+  const options = ['<option value="">Todas las estaciones</option>'].concat((stages || []).map((stage) => (
+    `<option value="${escapeHtml(stage.key)}">${escapeHtml(stage.label)}</option>`
+  )));
+  if (rmsMachinePhaseFilter) {
+    const selected = state.rmsMachineFilters?.phase || "";
+    rmsMachinePhaseFilter.innerHTML = options.join("");
+    rmsMachinePhaseFilter.value = selected;
+  }
+  if (rmsBulkPhaseInput) {
+    const selected = rmsBulkPhaseInput.value || "";
+    rmsBulkPhaseInput.innerHTML = '<option value="">Mover a fase...</option>' + (stages || []).map((stage) => (
+      `<option value="${escapeHtml(stage.key)}">${escapeHtml(stage.label)}</option>`
+    )).join("");
+    if (selected) rmsBulkPhaseInput.value = selected;
+  }
 }
 
 function renderRmsMachineKpis(metrics = {}) {
@@ -25624,6 +25941,84 @@ function renderRmsMachineKpis(metrics = {}) {
       <small>${escapeHtml(meta)}</small>
     </article>
   `).join("");
+}
+
+function renderRmsIntakeFunnel(funnel = []) {
+  if (!rmsIntakeFunnel) return;
+  rmsIntakeFunnel.innerHTML = (funnel || []).map((item, index) => `
+    <article class="rms-funnel-step">
+      <span>${String(index + 1).padStart(2, "0")}</span>
+      <strong>${escapeHtml(item.value ?? 0)}</strong>
+      <h4>${escapeHtml(item.label || "Etapa")}</h4>
+      <p>${escapeHtml(item.meta || "")}</p>
+    </article>
+  `).join("") || '<div class="empty-state compact">El embudo se llenará cuando entren oportunidades.</div>';
+  bindRmsMachineActions(rmsIntakeFunnel);
+}
+
+function renderRmsIndustrialFlow(steps = []) {
+  if (!rmsIndustrialFlow) return;
+  rmsIndustrialFlow.innerHTML = (steps || []).map((step, index) => `
+    <article class="rms-industrial-step" data-rms-industrial-phase="${escapeHtml(step.phase || "")}">
+      <span>${String(index + 1).padStart(2, "0")}</span>
+      <div>
+        <strong>${escapeHtml(step.label || "Proceso")}</strong>
+        <p>${escapeHtml(step.description || "")}</p>
+      </div>
+      <dl>
+        <div><dt>Clientes</dt><dd>${Number(step.count || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>Riesgo</dt><dd>${Number(step.risk_count || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>Potencial</dt><dd>${escapeHtml(money(step.revenue_potential || 0))}</dd></div>
+      </dl>
+      <button class="ghost-button compact" type="button" data-rms-flow-phase="${escapeHtml(step.phase || "")}">
+        ${escapeHtml(step.operation?.buttonLabel || "Ver estación")}
+      </button>
+    </article>
+  `).join("") || '<div class="empty-state compact">La ruta industrial se activará cuando entren oportunidades RMS.</div>';
+  rmsIndustrialFlow.querySelectorAll("[data-rms-flow-phase]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsMachineFilters.phase = button.dataset.rmsFlowPhase || "";
+      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = state.rmsMachineFilters.phase;
+      renderRmsMachineView();
+      rmsStageBoard?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function renderRmsAlerts(alerts = []) {
+  if (!rmsMachineAlerts) return;
+  rmsMachineAlerts.innerHTML = (alerts || []).map((alert) => `
+    <article class="rms-alert-card">
+      <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+      <div>
+        <strong>${escapeHtml(alert.title || "Alerta RMS")}</strong>
+        <p>${escapeHtml(alert.detail || "")}</p>
+      </div>
+      <button class="ghost-button" type="button" data-rms-alert-phase="${escapeHtml(alert.phase || "")}">${escapeHtml(alert.action || "Resolver")}</button>
+    </article>
+  `).join("");
+  rmsMachineAlerts.querySelectorAll("[data-rms-alert-phase]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsMachineFilters.phase = button.dataset.rmsAlertPhase || "";
+      renderRmsMachineView();
+    });
+  });
+}
+
+function rmsDailySectionsFromOpportunities(opportunities = []) {
+  const labels = {
+    operate_now: "Operar ahora",
+    close_revenue: "Cierres y cobros",
+    tickets_to_redeem: "Tickets por activar",
+    rebuy: "Recompra y fidelización",
+    referrals: "Referidos potenciales",
+    recover: "Recuperar antes de perder",
+  };
+  return Object.keys(labels).map((key) => ({
+    key,
+    label: labels[key],
+    items: opportunities.filter((item) => item.section === key).slice(0, 18),
+  }));
 }
 
 function renderRmsDailyQueue(sections = []) {
@@ -25662,18 +26057,18 @@ function renderRmsDailyQueue(sections = []) {
 
 function rmsStageEmptyMarkup(stage = {}) {
   const map = {
-    ATTENTION_CAPTURED: ["Entrada de atención vacía.", "Alimenta esta estación con QR de vitrina, campaña, landing, evento o captura manual.", "Crear QR/campaña", "campaigns"],
-    GAMIFIED_INTERACTION: ["Sin interacción gamificada.", "Entra aquí cuando el cliente participa en trivia, ruleta, juego, reto, encuesta o misión.", "Crear dinámica", "gaming"],
-    INTENT_DETECTED: ["Sin intención detectada.", "Alimenta esta estación con preguntas de producto, categoría, presupuesto, urgencia o preferencia.", "Crear pregunta", "gaming"],
-    LEAD_CAPTURED: ["Sin lead capturado.", "Entra aquí cuando el cliente deja nombre, WhatsApp, email o se importa desde contactos.", "Ver/importar contactos", "contacts-manual"],
-    TICKET_ACTIVE: ["Sin ticket activo.", "Entra aquí cuando emites ticket, Reward Pass o beneficio con vencimiento.", "Crear cobertura", "reward-passes"],
-    FOLLOW_UP_PENDING: ["Sin seguimiento pendiente.", "Entra aquí cuando creas una tarea de WhatsApp, llamada, visita, catálogo o recordatorio.", "Crear tarea", "agenda"],
-    REDEMPTION_PENDING: ["Sin redención pendiente.", "Entra aquí cuando hay beneficio activo que el cliente aún no ha usado.", "Validar/redimir", "validator"],
-    REDEEMED: ["Sin redenciones registradas.", "Entra aquí cuando el cliente usa el ticket o beneficio y queda listo para medir venta.", "Ver redenciones", "redemptions"],
-    SALE_ATTRIBUTED: ["Sin venta atribuida.", "Entra aquí cuando registras una compra asociada a campaña, ticket, cliente o dinámica.", "Registrar venta", "sales"],
-    REBUY: ["Sin recompra sugerida.", "Entra aquí cuando un comprador anterior puede recibir ticket de regreso, Reward Pass o misión de recompra.", "Activar recompra", "reward-passes"],
-    REFERRAL: ["Sin referidos potenciales.", "Entra aquí cuando un cliente comprador puede traer nuevos clientes.", "Crear referido", "reward-passes"],
-    RECOVERY: ["Sin recuperación activa.", "Entra aquí con clientes dormidos, tickets vencidos o contactos sin seguimiento.", "Reactivar", "agenda"],
+    recoleccion: ["Sin materia prima nueva.", "Captura prospectos desde QR, activacion, formulario, referido o clientes dormidos.", "Alimentar maquina", "collector"],
+    alimentacion: ["Sin entrada al embudo.", "Aqui debe quedar la persona cuando ya entro oficialmente a la Maquina RMS.", "Importar contactos", "contacts-manual"],
+    curaduria: ["Sin curaduria pendiente.", "Aqui se valida telefono, interes, origen, campana, ticket y calidad del contacto.", "Completar datos", "contacts-manual"],
+    clasificacion: ["Sin clasificacion pendiente.", "Aqui se separa la materia prima por estado comercial, temperatura y prioridad.", "Crear tarea", "agenda"],
+    preprocesamiento: ["Sin gancho anti-fuga.", "Aqui se activa ticket, beneficio, trivia, reward pass o recordatorio corto.", "Crear ticket", "reward-passes"],
+    procesamiento: ["Sin procesamiento comercial.", "Aqui se envia propuesta, catalogo, cotizacion, factura o material comercial.", "Crear tarea", "agenda"],
+    control_anti_fuga: ["Sin fallas detectadas.", "Aqui se revisan tickets por vencer, clientes sin tarea, redenciones sin venta y atascos.", "Crear tarea", "agenda"],
+    accion_correctiva: ["Sin recuperacion activa.", "Aqui se corrige, reprocesa, llama, recuerda, reactiva o descarta.", "Crear tarea", "agenda"],
+    cierre: ["Sin cierres pendientes.", "Aqui se unen propuesta, beneficio, factura, pago y venta registrada.", "Registrar venta", "sales"],
+    revenue_generado: ["Sin revenue nuevo.", "Aqui sale venta, redencion, recompra, referido, renovacion o suscripcion.", "Ver ventas", "sales"],
+    postventa: ["Sin postventa pendiente.", "Aqui se envia agradecimiento, garantia, encuesta, reward pass o ticket proxima compra.", "Activar recompra", "reward-passes"],
+    inteligencia: ["Sin aprendizaje nuevo.", "Aqui se mide que campana, gancho, vendedor, ticket o fase produjo revenue o fuga.", "Ver agenda", "agenda"],
   };
   const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
   return `
@@ -25687,21 +26082,45 @@ function rmsStageEmptyMarkup(stage = {}) {
 
 function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
-  rmsStageBoard.innerHTML = stages.map((stage) => {
-    const rows = opportunities.filter((item) => item.stage === stage.key).slice(0, 8);
+  rmsStageBoard.innerHTML = stages.map((stage, index) => {
+    const rowsAll = opportunities.filter((item) => item.stage === stage.key);
+    const rows = rowsAll.slice(0, 8);
+    const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
+    const revenue = rowsAll.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
+    const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
+    const taskCount = rowsAll.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
+    const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     return `
-      <article class="rms-stage-column">
+      <article class="rms-stage-column" data-rms-phase="${escapeHtml(stage.key)}">
         <div class="rms-stage-head">
-          <strong>${escapeHtml(stage.label)}</strong>
-          <span>${Number(opportunities.filter((item) => item.stage === stage.key).length).toLocaleString("es-CO")}</span>
+          <div>
+            <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")}</span>
+            <strong>${escapeHtml(stage.label)}</strong>
+            <small>${escapeHtml(nextPhase ? `Salida: ${nextPhase.label}` : "Salida: permanece en control")}</small>
+          </div>
+          <span title="Materia prima en estación">${Number(rowsAll.length).toLocaleString("es-CO")}</span>
+        </div>
+        <div class="rms-phase-operation">
+          <span class="rms-operation-label">Orden de estación</span>
+          <strong>${escapeHtml(operation.primaryAction || "Operación recomendada")}</strong>
+          <div class="rms-station-material">
+            <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+            <small>${escapeHtml(operation.materialLabel || "Material comercial sugerido")}</small>
+          </div>
+          <div class="rms-station-metrics">
+            <span>${riskCount.toLocaleString("es-CO")} riesgo</span>
+            <span>${taskCount.toLocaleString("es-CO")} tareas</span>
+            <span>${money(revenue)}</span>
+          </div>
+          <button class="solid-button compact" type="button" data-rms-phase-operation="${escapeHtml(stage.key)}">${escapeHtml(operation.buttonLabel || "Ejecutar estación")}</button>
+        </div>
+        <div class="rms-stage-material-line">
+          <span>Materia prima</span>
+          <small>${rowsAll.length ? "Selecciona, opera o abre cada cliente." : "Esta estación queda esperando entrada."}</small>
         </div>
         <div class="rms-stage-items">
-          ${rows.map((item) => `
-            <button class="rms-stage-item" type="button" data-rms-detail="${escapeHtml(item.id)}">
-              <strong>${escapeHtml(item.name)}</strong>
-              <small>${escapeHtml(item.next_action?.title || "Revisar oportunidad")}</small>
-            </button>
-          `).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : '<span class="rms-stage-empty">Sin clientes en esta etapa</span>')}
+          ${rows.map(rmsStageLeadUnitMarkup).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : '<span class="rms-stage-empty">Sin clientes en esta estación</span>')}
+          ${rowsAll.length > rows.length ? `<span class="rms-stage-more">+${Number(rowsAll.length - rows.length).toLocaleString("es-CO")} más en esta estación</span>` : ""}
         </div>
       </article>
     `;
@@ -25764,6 +26183,32 @@ function rmsOpportunityCardMarkup(item = {}) {
   `;
 }
 
+function rmsStageLeadUnitMarkup(item = {}) {
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
+  return `
+    <article class="rms-lead-unit ${selected ? "selected" : ""}" data-rms-unit="${escapeHtml(item.id)}">
+      <label class="rms-unit-selector">
+        <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+        <span></span>
+      </label>
+      <button class="rms-unit-main" type="button" data-rms-inspect="${escapeHtml(item.id)}">
+        <strong>${escapeHtml(item.name || "Contacto")}</strong>
+        <small>${escapeHtml(item.campaign_name || item.channel || "Origen sin definir")}</small>
+        <em>${escapeHtml(item.next_action?.title || "Operar fase")}</em>
+      </button>
+      <div class="rms-unit-meta">
+        <span class="status-chip ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
+        <span>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "seguimiento")}</span>
+        <span>${escapeHtml(money(item.revenue_potential || 0))}</span>
+      </div>
+      <div class="rms-unit-actions">
+        <button class="ghost-button compact" type="button" data-rms-task="${escapeHtml(item.id)}">Tarea</button>
+        <button class="solid-button compact" type="button" data-rms-primary="${escapeHtml(item.id)}" data-rms-primary-mode="action">${escapeHtml(item.next_action?.primary_label || "Operar")}</button>
+      </div>
+    </article>
+  `;
+}
+
 function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
     button.addEventListener("click", openRmsCollectorModal);
@@ -25778,7 +26223,7 @@ function bindRmsMachineActions(root) {
       if (button.dataset.rmsPrimaryMode === "whatsapp") {
         openRmsWhatsApp(item);
       } else {
-        createRmsAgendaTaskFromOpportunity(item);
+        executeRmsOperation(item, { createTask: true, advancePhase: false });
       }
     });
   });
@@ -25794,10 +26239,58 @@ function bindRmsMachineActions(root) {
       if (item) openRmsOpportunityDetail(item);
     });
   });
+  root.querySelectorAll("[data-rms-inspect]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsMachineInspectorId = button.dataset.rmsInspect || "";
+      renderRmsLeadInspector();
+    });
+  });
+  root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => toggleRmsSelection(checkbox.dataset.rmsSelect, checkbox.checked));
+  });
+  root.querySelectorAll("[data-rms-phase-operation]").forEach((button) => {
+    button.addEventListener("click", () => selectRmsPhaseForBulk(button.dataset.rmsPhaseOperation));
+  });
 }
 
 function rmsOpportunityById(id = "") {
   return (state.rmsMachine?.opportunities || []).find((item) => String(item.id) === String(id)) || null;
+}
+
+function toggleRmsSelection(id = "", selected = false) {
+  const current = new Set(state.rmsMachineSelectedIds || []);
+  if (selected) current.add(id);
+  else current.delete(id);
+  state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+  renderRmsBulkToolbar();
+  const card = Array.from(document.querySelectorAll("[data-rms-unit]")).find((node) => node.dataset.rmsUnit === id);
+  card?.classList.toggle("selected", selected);
+}
+
+function selectRmsPhaseForBulk(phase = "") {
+  const ids = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase).map((item) => item.id);
+  state.rmsMachineSelectedIds = ids;
+  if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = "";
+  renderRmsMachineView();
+  const stage = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
+  const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
+  if (ids.length) {
+    showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
+    rmsBulkToolbar?.scrollIntoView({ behavior: "smooth", block: "center" });
+  } else {
+    showFeedback("Esta estación no tiene materia prima para operar todavía.", "info", { title: stage?.label || "Estación RMS" });
+  }
+}
+
+function clearRmsSelection() {
+  state.rmsMachineSelectedIds = [];
+  renderRmsMachineView();
+}
+
+function renderRmsBulkToolbar() {
+  const count = (state.rmsMachineSelectedIds || []).length;
+  if (rmsBulkSelectionCount) rmsBulkSelectionCount.textContent = `${count.toLocaleString("es-CO")} seleccionados`;
+  rmsBulkToolbar?.classList.toggle("has-selection", count > 0);
 }
 
 function openRmsWhatsApp(item = {}) {
@@ -25848,6 +26341,170 @@ async function createRmsAgendaTaskFromOpportunity(item = {}) {
   } catch (error) {
     showFeedback(error.message || "No se pudo crear la tarea RMS.", "error", { title: "Maquina RMS" });
   }
+}
+
+async function executeRmsOperation(item = {}, options = {}) {
+  if (!item?.source_id) return;
+  try {
+    showFeedback("Ejecutando operación RMS...", "loading", { title: "Máquina RMS", timeout: 0 });
+    const result = await api("/api/business/rms-machine/action", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        rms_phase: item.stage,
+        operation_key: item.next_action?.type || item.phase_operation?.primaryActionKey || "",
+        material_type: item.next_action?.material_type || "",
+        action_title: item.next_action?.title || "Operación RMS",
+        create_task: options.createTask !== false,
+        advance_phase: Boolean(options.advancePhase),
+      }),
+    });
+    if (result?.whatsapp_url) window.open(result.whatsapp_url, "_blank", "noopener");
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Operación ejecutada y registrada en la Máquina RMS.", "success", { title: "Máquina RMS" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo ejecutar la operación RMS.", "error", { title: "Máquina RMS" });
+  }
+}
+
+async function executeRmsBulkOperation(options = {}) {
+  const ids = state.rmsMachineSelectedIds || [];
+  if (!ids.length) {
+    showFeedback("Selecciona clientes dentro de una estación.", "info", { title: "Máquina RMS" });
+    return;
+  }
+  try {
+    showFeedback("Ejecutando operación masiva RMS...", "loading", { title: "Máquina RMS", timeout: 0 });
+    await api("/api/business/rms-machine/bulk-action", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        opportunity_ids: ids,
+        create_task: options.createTask !== false,
+        advance_phase: Boolean(options.advancePhase),
+      }),
+    });
+    state.rmsMachineSelectedIds = [];
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Operación masiva registrada. Las tareas quedaron en agenda.", "success", { title: "Máquina RMS" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo ejecutar la operación masiva.", "error", { title: "Máquina RMS" });
+  }
+}
+
+async function moveSelectedRmsPhase() {
+  const ids = state.rmsMachineSelectedIds || [];
+  const toPhase = rmsBulkPhaseInput?.value || "";
+  if (!ids.length || !toPhase) {
+    showFeedback("Selecciona clientes y una fase destino.", "info", { title: "Máquina RMS" });
+    return;
+  }
+  try {
+    showFeedback("Moviendo materia prima comercial...", "loading", { title: "Máquina RMS", timeout: 0 });
+    for (const id of ids) {
+      const item = rmsOpportunityById(id);
+      if (!item) continue;
+      await api("/api/business/rms-machine/lead/phase", {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          source_id: item.source_id,
+          source_type: item.source_type || "PLAYER",
+          lead_id: item.lead_id || null,
+          to_phase: toPhase,
+          priority: item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM",
+          recommended_action: item.next_action?.title || "",
+          revenue_potential: Number(item.revenue_potential || 0),
+          reason: "Movimiento manual desde Mapa Operativo RMS",
+        }),
+      });
+    }
+    state.rmsMachineSelectedIds = [];
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Fase RMS actualizada.", "success", { title: "Máquina RMS" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo mover la fase RMS.", "error", { title: "Máquina RMS" });
+  }
+}
+
+function renderRmsLeadInspector() {
+  if (!rmsLeadInspector) return;
+  const item = rmsOpportunityById(state.rmsMachineInspectorId);
+  if (!item) {
+    rmsLeadInspector.classList.add("hidden");
+    rmsLeadInspector.innerHTML = "";
+    return;
+  }
+  rmsLeadInspector.classList.remove("hidden");
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  rmsLeadInspector.innerHTML = `
+    <div class="rms-inspector-head">
+      <div>
+        <span class="mono-label">Panel operativo</span>
+        <h3>${escapeHtml(item.name || "Contacto")}</h3>
+        <p>${escapeHtml(item.stage_label || "")} · ${escapeHtml(item.why_now || "")}</p>
+      </div>
+      <button class="icon-button" type="button" data-rms-close-inspector title="Cerrar"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="rms-inspector-grid">
+      <div><span>WhatsApp</span><strong>${escapeHtml(item.phone || "Pendiente")}</strong></div>
+      <div><span>Email</span><strong>${escapeHtml(item.email || "Pendiente")}</strong></div>
+      <div><span>Origen</span><strong>${escapeHtml(item.campaign_name || item.channel || "-")}</strong></div>
+      <div><span>Revenue potencial</span><strong>${escapeHtml(money(item.revenue_potential || 0))}</strong></div>
+      <div><span>Tickets activos</span><strong>${Number(item.active_tickets || 0).toLocaleString("es-CO")}</strong></div>
+      <div><span>Compras</span><strong>${Number(item.purchase_count || 0).toLocaleString("es-CO")}</strong></div>
+    </div>
+    <section class="rms-inspector-operation">
+      <span class="mono-label">Siguiente operación</span>
+      <strong>${escapeHtml(item.next_action?.title || "Operar")}</strong>
+      <p>${escapeHtml(item.next_action?.description || "")}</p>
+      <small>Material sugerido: ${escapeHtml(item.next_action?.material_label || item.next_action?.material_type || "-")}</small>
+    </section>
+    <div class="rms-inspector-actions">
+      <button class="solid-button" type="button" data-rms-inspector-action="${escapeHtml(item.id)}">Ejecutar operación</button>
+      <button class="ghost-button" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
+      <button class="ghost-button" type="button" data-rms-detail="${escapeHtml(item.id)}">Abrir ficha completa</button>
+    </div>
+    <label class="rms-inspector-move">
+      <span>Mover a fase</span>
+      <select data-rms-inspector-move="${escapeHtml(item.id)}">
+        ${stages.map((stage) => `<option value="${escapeHtml(stage.key)}" ${stage.key === item.stage ? "selected" : ""}>${escapeHtml(stage.label)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+  bindRmsMachineActions(rmsLeadInspector);
+  rmsLeadInspector.querySelector("[data-rms-close-inspector]")?.addEventListener("click", () => {
+    state.rmsMachineInspectorId = "";
+    renderRmsLeadInspector();
+  });
+  rmsLeadInspector.querySelector("[data-rms-inspector-action]")?.addEventListener("click", () => executeRmsOperation(item, { createTask: true }));
+  rmsLeadInspector.querySelector("[data-rms-inspector-move]")?.addEventListener("change", async (event) => {
+    state.rmsMachineSelectedIds = [item.id];
+    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = event.target.value;
+    await moveSelectedRmsPhase();
+  });
+}
+
+function renderRmsEventLog(events = []) {
+  if (!rmsMachineEventLog) return;
+  rmsMachineEventLog.innerHTML = (events || []).map((event) => `
+    <article class="rms-event-item">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(event.event_type === "phase_moved" ? "sync_alt" : event.event_type === "task_created" ? "event_note" : "bolt")}</span>
+      <div>
+        <strong>${escapeHtml(event.event_title || "Evento RMS")}</strong>
+        <small>${escapeHtml([event.event_description, event.rms_phase].filter(Boolean).join(" · "))}</small>
+      </div>
+      <time>${escapeHtml(formatDate(event.created_at))}</time>
+    </article>
+  `).join("") || '<div class="empty-state compact">La bitácora se llenará cuando ejecutes operaciones RMS.</div>';
 }
 
 function openRmsOpportunityDetail(item = {}) {
@@ -26630,7 +27287,40 @@ rmsMachineOpenAgendaButton?.addEventListener("click", () => {
   setView("leads");
 });
 rmsMachineCollectorButton?.addEventListener("click", openRmsCollectorModal);
+rmsMachineHookButton?.addEventListener("click", () => setView("missions"));
 rmsMachineHowButton?.addEventListener("click", openRmsHowModal);
+rmsMachineFilterButton?.addEventListener("click", () => {
+  state.rmsMachineFilters = {
+    search: rmsMachineSearchInput?.value?.trim() || "",
+    phase: rmsMachinePhaseFilter?.value || "",
+    priority: rmsMachinePriorityFilter?.value || "",
+  };
+  state.rmsMachineLoaded = false;
+  loadRmsMachineData({ force: true }).then(renderRmsMachineView).catch((error) => {
+    showFeedback(error.message || "No se pudo filtrar la Máquina RMS.", "error", { title: "Máquina RMS" });
+  });
+});
+rmsMachineSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    rmsMachineFilterButton?.click();
+  }
+});
+rmsMachinePhaseFilter?.addEventListener("change", () => {
+  state.rmsMachineFilters.phase = rmsMachinePhaseFilter.value || "";
+  renderRmsMachineView();
+});
+rmsMachinePriorityFilter?.addEventListener("change", () => {
+  state.rmsMachineFilters.priority = rmsMachinePriorityFilter.value || "";
+  state.rmsMachineLoaded = false;
+  loadRmsMachineData({ force: true, quiet: true }).then(renderRmsMachineView);
+});
+rmsBulkExecuteButton?.addEventListener("click", () => executeRmsBulkOperation({ createTask: true, advancePhase: true }));
+rmsBulkCreateTasksButton?.addEventListener("click", () => executeRmsBulkOperation({ createTask: true, advancePhase: false }));
+rmsBulkPhaseInput?.addEventListener("change", () => {
+  if (rmsBulkPhaseInput.value) moveSelectedRmsPhase();
+});
+rmsBulkClearButton?.addEventListener("click", clearRmsSelection);
 rmsApplyRuleButton?.addEventListener("click", () => {
   const hasOpportunities = (state.rmsMachine?.opportunities || []).length > 0;
   if (!hasOpportunities) {
@@ -26640,7 +27330,7 @@ rmsApplyRuleButton?.addEventListener("click", () => {
   state.rmsMachineLoaded = false;
   loadRmsMachineData({ force: true }).then(renderRmsMachineView);
 });
-rmsEmptyStateGuide?.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
+document.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
   button.addEventListener("click", openRmsCollectorModal);
 });
 rmsEmptyStateGuide?.querySelectorAll("[data-rms-empty-action]").forEach((button) => {

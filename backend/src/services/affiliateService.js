@@ -322,6 +322,97 @@ async function listAffiliateLedger(businessId, affiliateId, user) {
   return result.rows;
 }
 
+async function updateAffiliateLedgerEntry(businessId, affiliateId, ledgerId, user, body) {
+  ensureBusinessAccess(user, businessId);
+
+  const requestedAmount = body.amount === undefined ? null : Number(body.amount);
+  const requestedPoints = body.points_awarded === undefined ? null : Number(body.points_awarded);
+  if (requestedAmount !== null && (!Number.isFinite(requestedAmount) || requestedAmount < 0)) {
+    throw badRequest("El monto del movimiento debe ser 0 o mayor.");
+  }
+  if (requestedPoints !== null && (!Number.isInteger(requestedPoints) || requestedPoints < 0)) {
+    throw badRequest("Los puntos del movimiento deben ser un numero entero de 0 o mayor.");
+  }
+
+  const result = await withTransaction(async (client) => {
+    const current = await client.query(
+      `select *
+       from affiliate_point_ledger
+       where business_id = $1 and affiliate_id = $2 and id = $3
+       for update`,
+      [businessId, affiliateId, ledgerId]
+    );
+    const currentLedger = current.rows[0];
+    if (!currentLedger) {
+      throw notFound("Affiliate ledger entry not found.");
+    }
+
+    const affiliate = await client.query(
+      `select id
+       from affiliates
+       where business_id = $1 and id = $2 and status <> 'DELETED'
+       for update`,
+      [businessId, affiliateId]
+    );
+    if (!affiliate.rowCount) {
+      throw notFound("Affiliate not found.");
+    }
+
+    const previousPoints = Number(currentLedger.points_awarded || 0);
+    const amount = requestedAmount === null ? Number(currentLedger.amount || 0) : requestedAmount;
+    const points = requestedPoints === null ? previousPoints : requestedPoints;
+    const pointDelta = points - previousPoints;
+    const reason = body.reason || currentLedger.reason || "PURCHASE";
+    const metadata = {
+      ...(body.metadata || {}),
+      edited: true,
+      edited_at: new Date().toISOString(),
+      edited_by_user_id: user.id,
+      previous_amount: Number(currentLedger.amount || 0),
+      previous_points_awarded: previousPoints,
+      previous_reason: currentLedger.reason || null,
+    };
+
+    const updatedLedger = await client.query(
+      `update affiliate_point_ledger
+       set amount = $4,
+           points_awarded = $5,
+           reason = $6,
+           metadata = coalesce(metadata, '{}'::jsonb) || $7::jsonb
+       where business_id = $1 and affiliate_id = $2 and id = $3
+       returning id, amount, points_awarded, reason, metadata, created_at`,
+      [businessId, affiliateId, ledgerId, amount, points, reason, metadata]
+    );
+
+    if (pointDelta !== 0) {
+      await client.query(
+        `update affiliates
+         set points_total = greatest(0, points_total + $3)
+         where id = $1 and business_id = $2`,
+        [affiliateId, businessId, pointDelta]
+      );
+    }
+
+    const updatedAffiliate = await client.query(
+      `select id, full_name, points_total
+       from affiliates
+       where id = $1 and business_id = $2`,
+      [affiliateId, businessId]
+    );
+
+    return {
+      ledger: updatedLedger.rows[0],
+      affiliate: updatedAffiliate.rows[0],
+      points_delta: pointDelta,
+    };
+  });
+
+  return {
+    ...result,
+    affiliate: await getAffiliate(businessId, affiliateId, user),
+  };
+}
+
 async function listAffiliateRewardRules(businessId, user, options = {}) {
   ensureBusinessAccess(user, businessId);
   const includeArchived = options.includeArchived === true;
@@ -737,4 +828,5 @@ module.exports = {
   listAffiliateLedger,
   removeAffiliateFromCampaign,
   awardAffiliatePoints,
+  updateAffiliateLedgerEntry,
 };

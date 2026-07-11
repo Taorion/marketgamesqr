@@ -94,8 +94,13 @@ const {
 const {
   createAgendaTask: createRmsAgendaTask,
   dailyQueue: rmsDailyQueue,
+  events: rmsEvents,
+  executeAction: executeRmsAction,
+  executeBulkAction: executeRmsBulkAction,
   journeys: rmsJourneys,
+  machine: rmsMachine,
   metrics: rmsMetrics,
+  movePhase: moveRmsPhase,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -139,10 +144,15 @@ router.get("/leads/agenda", agenda);
 router.post("/leads/agenda", createAgendaItem);
 router.patch("/leads/agenda/:noteId", updateAgendaItem);
 router.delete("/leads/agenda/:noteId", deleteAgendaItem);
+router.get("/rms-machine", rmsMachine);
 router.get("/rms-machine/daily-queue", rmsDailyQueue);
 router.get("/rms-machine/journeys", rmsJourneys);
 router.get("/rms-machine/metrics", rmsMetrics);
+router.get("/rms-machine/events", rmsEvents);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
+router.post("/rms-machine/action", executeRmsAction);
+router.post("/rms-machine/bulk-action", executeRmsBulkAction);
+router.patch("/rms-machine/lead/phase", moveRmsPhase);
 router.get("/gamification/dashboard", gamificationDashboard);
 router.get("/gamification/seasons", gamificationSeasons);
 router.post("/gamification/seasons", createGamificationSeason);

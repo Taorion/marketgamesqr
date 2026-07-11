@@ -15,6 +15,7 @@ const {
   awardAffiliatePoints,
   getPublicAffiliateCard,
   removeAffiliateFromCampaign,
+  updateAffiliateLedgerEntry,
 } = require("../services/affiliateService");
 const { validate } = require("../utils/validators");
 const { query } = require("../config/db");
@@ -41,6 +42,15 @@ const awardPointsSchema = z.object({
   metadata: z.record(z.any()).optional().nullable(),
 }).refine((body) => body.amount || body.points_awarded, {
   message: "Debes enviar un monto o puntos manuales.",
+});
+
+const updateLedgerEntrySchema = z.object({
+  amount: z.number().min(0).optional(),
+  points_awarded: z.number().int().min(0).optional(),
+  reason: z.string().trim().max(80).optional().nullable(),
+  metadata: z.record(z.any()).optional().nullable(),
+}).refine((body) => body.amount !== undefined || body.points_awarded !== undefined || body.reason !== undefined, {
+  message: "Debes enviar al menos monto, puntos o motivo.",
 });
 
 const campaignAffiliateSchema = z.object({
@@ -176,6 +186,23 @@ async function awardBusinessAffiliatePoints(req, res, next) {
   }
 }
 
+async function updateBusinessAffiliateLedgerEntry(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(updateLedgerEntrySchema, req.body);
+    const result = await updateAffiliateLedgerEntry(
+      req.params.id,
+      req.params.affiliateId,
+      req.params.ledgerId,
+      req.user,
+      body
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function listBusinessCampaignAffiliates(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
@@ -242,6 +269,7 @@ module.exports = {
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
+  updateBusinessAffiliateLedgerEntry,
   deleteBusinessAffiliate,
   removeBusinessCampaignAffiliate,
   getPublicAffiliateDigitalCard,
