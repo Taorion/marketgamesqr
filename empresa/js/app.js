@@ -1296,6 +1296,7 @@ let state = {
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
   rmsStationPhase: "",
+  rmsStationScreenOpen: false,
   rmsMachineFilters: {
     search: "",
     phase: "",
@@ -26111,9 +26112,146 @@ function rmsStationRows(phase = "", opportunities = []) {
   return (opportunities || []).filter((item) => item.stage === phase);
 }
 
+function rmsStationVisualMeta(phase = "") {
+  const map = {
+    recoleccion: {
+      icon: "travel_explore",
+      tone: "collector",
+      screenTitle: "Recolectar materia prima comercial",
+      visualLabel: "Recolector multifuente",
+      input: "Personas en vitrina, QR, activaciones, formularios, referidos y clientes dormidos.",
+      output: "Lead identificado para entrar al Embudo de Entrada.",
+      focus: "Capturar volumen con origen claro, dato de contacto e interés inicial.",
+      checklist: ["Origen de captura", "Nombre o alias", "WhatsApp / email", "Interés o contexto", "Gancho usado"],
+    },
+    alimentacion: {
+      icon: "input_circle",
+      tone: "intake",
+      screenTitle: "Meter el lead oficialmente a la máquina",
+      visualLabel: "Embudo de entrada",
+      input: "Leads recolectados que ya tienen algún dato útil.",
+      output: "Oportunidad lista para curaduría comercial.",
+      focus: "Confirmar que esta persona ya entró a la Máquina RMS y no queda suelta.",
+      checklist: ["Nombre", "WhatsApp", "Origen", "Campaña", "Fecha de entrada"],
+    },
+    curaduria: {
+      icon: "fact_check",
+      tone: "curation",
+      screenTitle: "Limpiar y validar la oportunidad",
+      visualLabel: "Mesa de curaduría",
+      input: "Leads ingresados al embudo con datos incompletos o sin validar.",
+      output: "Contacto útil, no basura, con prioridad mínima definida.",
+      focus: "Separar datos válidos de datos incompletos y completar lo que falta.",
+      checklist: ["Teléfono válido", "Interés real", "Origen claro", "Ticket/campaña", "Calidad del contacto"],
+    },
+    clasificacion: {
+      icon: "account_tree",
+      tone: "classifier",
+      screenTitle: "Clasificar por estado comercial",
+      visualLabel: "Clasificador RMS",
+      input: "Contactos válidos pendientes de temperatura y estado.",
+      output: "Lead clasificado como nuevo, interesado, caliente, comprador, dormido o referido.",
+      focus: "Decidir qué tipo de materia prima tienes antes de accionar.",
+      checklist: ["Estado comercial", "Temperatura", "Prioridad", "Siguiente acción", "Responsable"],
+    },
+    preprocesamiento: {
+      icon: "stadia_controller",
+      tone: "gamified",
+      screenTitle: "Proteger la oportunidad con gancho gamificado",
+      visualLabel: "Preprocesador anti-fuga",
+      input: "Oportunidades clasificadas que necesitan estímulo corto.",
+      output: "Lead cubierto con ticket, beneficio, trivia, puntos o reward pass.",
+      focus: "Evitar fuga antes de que el vendedor tenga que perseguir uno por uno.",
+      checklist: ["Ticket o beneficio", "Vencimiento", "Material corto", "Recordatorio", "Cobertura anti-fuga"],
+    },
+    procesamiento: {
+      icon: "precision_manufacturing",
+      tone: "conversion",
+      screenTitle: "Ejecutar la operación comercial",
+      visualLabel: "Máquina de conversión",
+      input: "Leads protegidos con interés activo.",
+      output: "Cliente con propuesta, catálogo, ticket, cotización o factura enviada.",
+      focus: "Enviar el material correcto según el estado y registrar la operación.",
+      checklist: ["Propuesta", "Catálogo", "Ticket", "Cotización", "Cuenta de cobro"],
+    },
+    control_anti_fuga: {
+      icon: "monitor_heart",
+      tone: "control",
+      screenTitle: "Detectar fuga, bloqueo o atasco",
+      visualLabel: "Control de calidad comercial",
+      input: "Oportunidades operadas que pueden enfriarse.",
+      output: "Riesgo detectado y tarea correctiva definida.",
+      focus: "Encontrar tickets por vencer, clientes sin tarea o cierres sin seguimiento.",
+      checklist: ["Sin tarea", "Ticket por vencer", "Sin respuesta", "Redención sin venta", "Fase saturada"],
+    },
+    accion_correctiva: {
+      icon: "build_circle",
+      tone: "recovery",
+      screenTitle: "Corregir, reprocesar o recuperar",
+      visualLabel: "Taller de recuperación",
+      input: "Leads atascados, fríos o en riesgo.",
+      output: "Cliente recuperado, movido, pospuesto o marcado como perdido.",
+      focus: "Aplicar una acción correctiva concreta para no perder materia prima comercial.",
+      checklist: ["Recordatorio", "Llamada", "Último beneficio", "Reenviar ticket", "Mover a recuperación"],
+    },
+    cierre: {
+      icon: "payments",
+      tone: "closing",
+      screenTitle: "Ensamblar el cierre comercial",
+      visualLabel: "Mesa de cierre",
+      input: "Clientes con intención y condiciones claras.",
+      output: "Pago pendiente, venta registrada o cierre confirmado.",
+      focus: "Unir propuesta, beneficio, factura, link de pago y validación final.",
+      checklist: ["Cotización", "Cuenta de cobro", "Factura", "Link de pago", "Pago pendiente"],
+    },
+    revenue_generado: {
+      icon: "query_stats",
+      tone: "revenue",
+      screenTitle: "Registrar el resultado comercial",
+      visualLabel: "Salida de revenue",
+      input: "Cierres, redenciones, recompras o suscripciones.",
+      output: "Revenue medido y atribuido a fuente, campaña, ticket o vendedor.",
+      focus: "Que la venta no quede solo en conversación: debe quedar registrada.",
+      checklist: ["Venta", "Redención", "Valor", "Campaña", "Atribución"],
+    },
+    postventa: {
+      icon: "redeem",
+      tone: "postsale",
+      screenTitle: "Empacar postventa gamificada",
+      visualLabel: "Empaque y postventa",
+      input: "Clientes convertidos que no deben enfriarse después de pagar.",
+      output: "Cliente con agradecimiento, reward, garantía, encuesta o ticket próxima compra.",
+      focus: "Convertir la compra en próxima compra, satisfacción y relación.",
+      checklist: ["Agradecimiento", "Garantía", "Encuesta", "Ticket próxima compra", "Reward pass"],
+    },
+    inteligencia: {
+      icon: "psychology",
+      tone: "intelligence",
+      screenTitle: "Retroalimentar la inteligencia RMS",
+      visualLabel: "Inteligencia de fábrica",
+      input: "Datos de campañas, ganchos, vendedores, tickets, fugas y ventas.",
+      output: "Aprendizaje para alimentar mejor el siguiente ciclo.",
+      focus: "Entender qué produce revenue, dónde se fuga y qué se debe optimizar.",
+      checklist: ["Campaña ganadora", "Gancho ganador", "Fase saturada", "Tasa de fuga", "Recompra / referido"],
+    },
+  };
+  return map[phase] || {
+    icon: "precision_manufacturing",
+    tone: "default",
+    screenTitle: "Operar estación RMS",
+    visualLabel: "Estación operativa",
+    input: "Materia prima comercial en proceso.",
+    output: "Oportunidad lista para la siguiente operación.",
+    focus: "Ejecutar la operación recomendada de esta fase.",
+    checklist: ["Dato", "Estado", "Operación", "Material", "Salida"],
+  };
+}
+
 function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStationWorkspace) return;
-  if (!stages.length) {
+  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
+  consoleShell?.classList.toggle("is-station-mode", Boolean(state.rmsStationScreenOpen));
+  if (!stages.length || !state.rmsStationScreenOpen) {
     rmsStationWorkspace.innerHTML = "";
     rmsStationWorkspace.classList.add("hidden");
     return;
@@ -26129,43 +26267,75 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const taskCount = rows.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
   const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
+  const visual = rmsStationVisualMeta(phase);
   rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
-    <div class="rms-station-workspace-head">
-      <div>
-        <span class="mono-label">Pantalla de estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
-        <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
-        <p>${escapeHtml(operation.primaryAction || "Operar materia prima comercial")} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
-      </div>
-      <div class="rms-station-workspace-actions">
-        <select data-rms-station-picker aria-label="Cambiar estación RMS">
-          ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
-        </select>
-        <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Seleccionar materia prima</button>
-        <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>Pasar lote a salida</button>
-      </div>
-    </div>
-    <div class="rms-station-operation-strip">
-      <article><span>Operación</span><strong>${escapeHtml(operation.primaryAction || "Operar estación")}</strong></article>
-      <article><span>Material</span><strong>${escapeHtml(operation.materialLabel || "Material sugerido")}</strong></article>
-      <article><span>Materia prima</span><strong>${rows.length.toLocaleString("es-CO")}</strong></article>
-      <article><span>Riesgo / tareas</span><strong>${riskCount.toLocaleString("es-CO")} / ${taskCount.toLocaleString("es-CO")}</strong></article>
-      <article><span>Revenue potencial</span><strong>${escapeHtml(money(revenue))}</strong></article>
-    </div>
-    <div class="rms-station-screen">
-      <div class="rms-station-screen-head">
-        <div>
-          <strong>Materia prima dentro de esta estación</strong>
-          <small>${rows.length ? "Cada lead permanece aquí hasta que una operación lo mueva a la siguiente estación." : "Esta estación está esperando materia prima comercial."}</small>
+    <div class="rms-station-screen-shell">
+      <div class="rms-station-workspace-head">
+        <div class="rms-station-identity">
+          <button class="ghost-button compact" type="button" data-rms-close-station>Volver al tablero</button>
+          <span class="mono-label">Pantalla independiente · Estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
+          <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
+          <p>${escapeHtml(visual.screenTitle)} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
         </div>
-        <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
+        <div class="rms-station-workspace-actions">
+          <select data-rms-station-picker aria-label="Cambiar estación RMS">
+            ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Seleccionar materia prima</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>Pasar lote a salida</button>
+        </div>
       </div>
-      <div class="rms-station-lead-list">
-        ${rows.length ? rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("") : rmsStationEmptyScreenMarkup(stage, operation)}
+
+      <div class="rms-station-visual-grid">
+        <section class="rms-station-visual-panel">
+          <div class="rms-station-icon-orbit">
+            <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
+          </div>
+          <div>
+            <span class="mono-label">${escapeHtml(visual.visualLabel)}</span>
+            <h4>${escapeHtml(visual.focus)}</h4>
+          </div>
+          <div class="rms-station-conveyor">
+            <article><span>Entrada</span><strong>${escapeHtml(visual.input)}</strong></article>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            <article><span>Salida</span><strong>${escapeHtml(visual.output)}</strong></article>
+          </div>
+        </section>
+
+        <aside class="rms-station-control-panel">
+          <span class="mono-label">Checklist de operación</span>
+          <ul>
+            ${(visual.checklist || []).map((item) => `<li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>${escapeHtml(item)}</li>`).join("")}
+          </ul>
+        </aside>
+      </div>
+
+      <div class="rms-station-operation-strip">
+        <article><span>Operación</span><strong>${escapeHtml(operation.primaryAction || "Operar estación")}</strong></article>
+        <article><span>Material</span><strong>${escapeHtml(operation.materialLabel || "Material sugerido")}</strong></article>
+        <article><span>Materia prima</span><strong>${rows.length.toLocaleString("es-CO")}</strong></article>
+        <article><span>Riesgo / tareas</span><strong>${riskCount.toLocaleString("es-CO")} / ${taskCount.toLocaleString("es-CO")}</strong></article>
+        <article><span>Revenue potencial</span><strong>${escapeHtml(money(revenue))}</strong></article>
+      </div>
+
+      <div class="rms-station-screen">
+        <div class="rms-station-screen-head">
+          <div>
+            <strong>Materia prima dentro de esta estación</strong>
+            <small>${rows.length ? "Cada lead permanece aquí hasta que una operación lo mueva a la siguiente estación." : "Esta estación está esperando materia prima comercial."}</small>
+          </div>
+          <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
+        </div>
+        <div class="rms-station-lead-list">
+          ${rows.length ? rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("") : rmsStationEmptyScreenMarkup(stage, operation)}
+        </div>
       </div>
     </div>
   `;
   bindRmsMachineActions(rmsStationWorkspace);
+  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => {
     openRmsStation(event.target.value || "");
   });
@@ -26420,8 +26590,15 @@ function bindRmsMachineActions(root) {
 function openRmsStation(phase = "") {
   if (!phase) return;
   state.rmsStationPhase = phase;
+  state.rmsStationScreenOpen = true;
   renderRmsMachineView();
   rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeRmsStation() {
+  state.rmsStationScreenOpen = false;
+  renderRmsMachineView();
+  rmsStageBoard?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function rmsOpportunityById(id = "") {
@@ -27724,6 +27901,7 @@ rmsMachinePhaseFilter?.addEventListener("change", () => {
   state.rmsMachineFilters.phase = rmsMachinePhaseFilter.value || "";
   if (state.rmsMachineFilters.phase) {
     state.rmsStationPhase = state.rmsMachineFilters.phase;
+    state.rmsStationScreenOpen = true;
   }
   renderRmsMachineView();
 });

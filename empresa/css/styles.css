@@ -29179,3 +29179,318 @@ body[data-current-view="rms-machine"] .rms-station-empty-screen p {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* 2026-07 RMS independent station screens: one station, one operating room. */
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-bulk-toolbar,
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-stage-board,
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-factory-status-strip {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode {
+  overflow: visible !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-screen-shell {
+  --station-accent: #0a7a57;
+  --station-accent-soft: #e6f7ef;
+  --station-accent-ink: #073b2d;
+  display: grid !important;
+  gap: 16px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace {
+  --station-accent: #0a7a57;
+  --station-accent-soft: #e6f7ef;
+  --station-accent-ink: #073b2d;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="collector"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="collector"] .rms-station-screen-shell {
+  --station-accent: #08785d;
+  --station-accent-soft: #e4f8ef;
+  --station-accent-ink: #063f31;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="intake"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="intake"] .rms-station-screen-shell {
+  --station-accent: #2267a6;
+  --station-accent-soft: #e7f1fb;
+  --station-accent-ink: #153f68;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="curation"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="curation"] .rms-station-screen-shell {
+  --station-accent: #7a5b0a;
+  --station-accent-soft: #fff7d8;
+  --station-accent-ink: #573f06;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="classifier"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="classifier"] .rms-station-screen-shell {
+  --station-accent: #5b55a3;
+  --station-accent-soft: #eeedfb;
+  --station-accent-ink: #35306f;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="gamified"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="gamified"] .rms-station-screen-shell {
+  --station-accent: #b64d16;
+  --station-accent-soft: #fff0e7;
+  --station-accent-ink: #79310c;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="conversion"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="conversion"] .rms-station-screen-shell {
+  --station-accent: #0f766e;
+  --station-accent-soft: #e1f8f5;
+  --station-accent-ink: #0b4c47;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="control"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="control"] .rms-station-screen-shell {
+  --station-accent: #b42318;
+  --station-accent-soft: #fff0ed;
+  --station-accent-ink: #7a1811;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="recovery"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="recovery"] .rms-station-screen-shell {
+  --station-accent: #8a4a0a;
+  --station-accent-soft: #fff2de;
+  --station-accent-ink: #603205;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="closing"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="closing"] .rms-station-screen-shell {
+  --station-accent: #075985;
+  --station-accent-soft: #e7f6ff;
+  --station-accent-ink: #063d5b;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="revenue"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="revenue"] .rms-station-screen-shell {
+  --station-accent: #147d3f;
+  --station-accent-soft: #e8f8ee;
+  --station-accent-ink: #0d552a;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="postsale"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="postsale"] .rms-station-screen-shell {
+  --station-accent: #9b2f5d;
+  --station-accent-soft: #fdebf3;
+  --station-accent-ink: #68203e;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="intelligence"],
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="intelligence"] .rms-station-screen-shell {
+  --station-accent: #334155;
+  --station-accent-soft: #edf2f7;
+  --station-accent-ink: #1f2937;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace {
+  padding: clamp(14px, 2vw, 22px) !important;
+  border-color: var(--station-accent, #0a7a57) !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--station-accent-soft, #e6f7ef) 100%) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head {
+  grid-template-columns: minmax(0, 1fr) minmax(290px, auto) !important;
+  border-color: rgba(7, 80, 60, 0.16) !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--station-accent-soft, #e6f7ef) 78%) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-identity {
+  display: grid !important;
+  gap: 6px !important;
+  justify-items: start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-identity .ghost-button {
+  margin-bottom: 4px !important;
+  border-color: rgba(7, 80, 60, 0.16) !important;
+  color: var(--station-accent-ink, #073b2d) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head .mono-label {
+  background: var(--station-accent-soft, #e6f7ef) !important;
+  border-color: rgba(7, 80, 60, 0.14) !important;
+  color: var(--station-accent-ink, #073b2d) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head h3 {
+  color: var(--station-accent-ink, #073b2d) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-visual-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr) !important;
+  gap: 14px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-visual-panel,
+body[data-current-view="rms-machine"] .rms-station-control-panel {
+  border: 1px solid rgba(7, 80, 60, 0.14) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-visual-panel {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  gap: 14px !important;
+  align-items: center !important;
+  padding: 16px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-icon-orbit {
+  display: grid !important;
+  place-items: center !important;
+  width: 78px !important;
+  height: 78px !important;
+  border: 1px solid rgba(7, 80, 60, 0.14) !important;
+  border-radius: 18px !important;
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, var(--station-accent-soft, #e6f7ef) 72%) !important;
+  color: var(--station-accent, #0a7a57) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-icon-orbit .material-symbols-outlined {
+  font-size: 38px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-visual-panel h4 {
+  margin: 4px 0 0 !important;
+  color: #071913 !important;
+  font-size: clamp(1rem, 1.4vw, 1.35rem) !important;
+  line-height: 1.18 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-conveyor {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin-top: 4px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-conveyor article {
+  min-height: 98px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(7, 80, 60, 0.1) !important;
+  border-radius: 14px !important;
+  background: #f8fcfa !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-conveyor > .material-symbols-outlined {
+  display: grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  background: var(--station-accent, #0a7a57) !important;
+  color: #ffffff !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-conveyor span,
+body[data-current-view="rms-machine"] .rms-station-control-panel .mono-label {
+  color: #5b7168 !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-conveyor strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #10251d !important;
+  line-height: 1.35 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-control-panel {
+  display: grid !important;
+  gap: 10px !important;
+  align-content: start !important;
+  padding: 16px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-control-panel ul {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-control-panel li {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  gap: 8px !important;
+  align-items: center !important;
+  padding: 9px !important;
+  border: 1px solid rgba(7, 80, 60, 0.1) !important;
+  border-radius: 10px !important;
+  background: #f8fcfa !important;
+  color: #10251d !important;
+  font-weight: 800 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-control-panel li .material-symbols-outlined {
+  color: var(--station-accent, #0a7a57) !important;
+  font-size: 18px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-operation-strip strong {
+  color: var(--station-accent-ink, #073b2d) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-visual-panel,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-control-panel,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-conveyor article,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-control-panel li {
+  background: #111f1a !important;
+  border-color: rgba(177, 199, 190, 0.22) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-visual-panel h4,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-conveyor strong,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-control-panel li {
+  color: #f4fbf7 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-station-icon-orbit {
+  background: rgba(84, 214, 171, 0.12) !important;
+}
+
+@media (max-width: 1080px) {
+  body[data-current-view="rms-machine"] .rms-station-visual-grid,
+  body[data-current-view="rms-machine"] .rms-station-visual-panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-icon-orbit {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-conveyor {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-conveyor > .material-symbols-outlined {
+    transform: rotate(90deg) !important;
+    justify-self: center !important;
+  }
+}
