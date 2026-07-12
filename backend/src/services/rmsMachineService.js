@@ -501,7 +501,7 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
       limit: Math.min(ids.length, 120),
       offset: 0,
     });
-    rows.push(...(data.rows || []));
+    rows.push(...(data.leads || data.rows || []));
   }
   return rows;
 }
@@ -588,7 +588,7 @@ function opportunityFromRow(row = {}, stateRow = null) {
 async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
   const data = await listLeadCrmRows(businessId, { ...filters, limit, offset: filters.offset || 0 });
-  const baseRows = data.rows || [];
+  const baseRows = data.leads || data.rows || [];
   const recentStateRows = await recentStateRowsForBusiness(businessId);
   const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
   const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
