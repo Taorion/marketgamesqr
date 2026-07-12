@@ -28923,6 +28923,103 @@ body[data-current-view="rms-machine"] .rms-station-workspace-actions select {
   font-weight: 800 !important;
 }
 
+body[data-current-view="rms-machine"] .rms-station-material-inventory {
+  display: grid !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(7, 80, 60, 0.14) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-head strong {
+  display: block !important;
+  margin-top: 4px !important;
+  color: var(--station-accent-ink, #073b2d) !important;
+  font-size: 1.05rem !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-head p {
+  margin: 3px 0 0 !important;
+  color: #52645c !important;
+  font-size: 0.88rem !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats,
+body[data-current-view="rms-machine"] .rms-station-material-buckets {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-buckets {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats article,
+body[data-current-view="rms-machine"] .rms-station-material-buckets > div {
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 1px solid rgba(7, 80, 60, 0.1) !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats article {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats span,
+body[data-current-view="rms-machine"] .rms-station-material-buckets > div > span:first-child {
+  color: #64756c !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-stats strong {
+  color: #10251d !important;
+  font-size: 1.3rem !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-buckets > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 7px !important;
+  align-content: flex-start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-buckets > div > span:first-child {
+  flex-basis: 100% !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-material-buckets span:not(:first-child) {
+  display: inline-flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+  max-width: 100% !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  background: var(--station-accent-soft, #e6f7ef) !important;
+  color: var(--station-accent-ink, #073b2d) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  overflow-wrap: anywhere !important;
+}
+
 body[data-current-view="rms-machine"] .rms-station-operation-strip {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
@@ -29174,6 +29271,11 @@ body[data-current-view="rms-machine"] .rms-station-empty-screen p {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
+  body[data-current-view="rms-machine"] .rms-station-material-stats,
+  body[data-current-view="rms-machine"] .rms-station-material-buckets {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
   body[data-current-view="rms-machine"] .rms-station-lead-row {
     grid-template-columns: 42px minmax(190px, 0.8fr) minmax(300px, 1.3fr) minmax(180px, 0.9fr) !important;
   }
@@ -29204,6 +29306,12 @@ body[data-current-view="rms-machine"] .rms-station-empty-screen p {
   }
 
   body[data-current-view="rms-machine"] .rms-station-operation-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-material-head,
+  body[data-current-view="rms-machine"] .rms-station-material-stats,
+  body[data-current-view="rms-machine"] .rms-station-material-buckets {
     grid-template-columns: 1fr !important;
   }
 

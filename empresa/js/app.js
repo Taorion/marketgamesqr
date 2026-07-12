@@ -26289,6 +26289,70 @@ function rmsStationRows(phase = "", opportunities = []) {
   return (opportunities || []).filter((item) => item.stage === phase);
 }
 
+function rmsStationMaterialLabel(item = {}) {
+  if (item.activation_name) return `Activacion: ${item.activation_name}`;
+  if (item.campaign_name) return `Campana: ${item.campaign_name}`;
+  if (item.source_label) return item.source_label;
+  return {
+    PLAYER: "Lead capturado",
+    MANUAL: "Ingreso manual",
+    BUYER: "Comprador",
+    AFFILIATE: "Afiliado / referido",
+  }[String(item.source_type || "").toUpperCase()] || "Lead";
+}
+
+function rmsStationTopCounts(rows = [], getter = () => "", limit = 4) {
+  const counts = new Map();
+  rows.forEach((item) => {
+    const label = String(getter(item) || "").trim();
+    if (!label || label === "-") return;
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([label, count]) => ({ label, count }));
+}
+
+function rmsStationCountChips(items = []) {
+  return items.length
+    ? items.map((item) => `<span>${escapeHtml(item.label)} <strong>${Number(item.count || 0).toLocaleString("es-CO")}</strong></span>`).join("")
+    : '<span>Sin clasificar <strong>0</strong></span>';
+}
+
+function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}) {
+  const withContact = rows.filter((item) => item.phone || item.email).length;
+  const withCampaign = rows.filter((item) => item.campaign_name || item.activation_name).length;
+  const withTicket = rows.filter((item) => Number(item.active_tickets || 0) > 0).length;
+  const highPriority = rows.filter((item) => Number(item.priority_score || 0) >= 70 || ["HIGH", "URGENT"].includes(String(item.care_priority || "").toUpperCase())).length;
+  const materialTypes = rmsStationTopCounts(rows, rmsStationMaterialLabel);
+  const channels = rmsStationTopCounts(rows, (item) => item.channel || item.source_detail || item.source_label);
+  const interests = rmsStationTopCounts(rows, (item) => item.product_interest || item.raw_recommended_action || item.coverage_type);
+  return `
+    <section class="rms-station-material-inventory" aria-label="Materia prima dentro de la estación">
+      <div class="rms-station-material-head">
+        <div>
+          <span class="mono-label">Materia prima adentro</span>
+          <strong>${Number(rows.length || 0).toLocaleString("es-CO")} leads en ${escapeHtml(stage.label || "esta estación")}</strong>
+          <p>${escapeHtml(operation.description || "Revisa datos, selecciona leads y autoriza la salida solo cuando estén listos para la siguiente estación.")}</p>
+        </div>
+        <button class="solid-button compact" type="button" data-rms-station-select-all="${escapeHtml(stage.key || "")}" ${rows.length ? "" : "disabled"}>Checkear lote</button>
+      </div>
+      <div class="rms-station-material-stats">
+        <article><span>Con dato contacto</span><strong>${withContact.toLocaleString("es-CO")}</strong></article>
+        <article><span>Con campaña/activación</span><strong>${withCampaign.toLocaleString("es-CO")}</strong></article>
+        <article><span>Con ticket activo</span><strong>${withTicket.toLocaleString("es-CO")}</strong></article>
+        <article><span>Alta prioridad</span><strong>${highPriority.toLocaleString("es-CO")}</strong></article>
+      </div>
+      <div class="rms-station-material-buckets">
+        <div><span>Tipo de materia</span>${rmsStationCountChips(materialTypes)}</div>
+        <div><span>Fuente / canal</span>${rmsStationCountChips(channels)}</div>
+        <div><span>Interés / cobertura</span>${rmsStationCountChips(interests)}</div>
+      </div>
+    </section>
+  `;
+}
+
 function rmsStationVisualMeta(phase = "") {
   const map = {
     recoleccion: {
@@ -26491,6 +26555,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </aside>
       </div>
 
+      ${rmsStationMaterialInventoryMarkup(rows, stage, operation)}
+
       <div class="rms-station-operation-strip">
         <article><span>Operación</span><strong>${escapeHtml(operation.primaryAction || "Operar estación")}</strong></article>
         <article><span>Material</span><strong>${escapeHtml(operation.materialLabel || "Material sugerido")}</strong></article>
@@ -26561,6 +26627,9 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin dato de contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
+  const material = rmsStationMaterialLabel(item);
+  const campaignChannel = [item.campaign_name || item.activation_name, item.channel].filter(Boolean).join(" / ") || "-";
+  const classification = [item.care_priority_label || item.priority_label, item.risk_label].filter(Boolean).join(" / ") || "-";
   return `
     <article class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
       <label class="rms-station-lead-check" title="Marcar lead para operar">
@@ -26573,9 +26642,13 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <small>${escapeHtml(contact)}</small>
       </div>
       <dl class="rms-station-lead-facts">
+        <div><dt>Materia prima</dt><dd>${escapeHtml(material)}</dd></div>
         <div><dt>Cómo llegó</dt><dd>${escapeHtml(origin)}</dd></div>
+        <div><dt>Campaña / canal</dt><dd>${escapeHtml(campaignChannel)}</dd></div>
         <div><dt>Interés</dt><dd>${escapeHtml(interest)}</dd></div>
         <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
+        <div><dt>Clasificación</dt><dd>${escapeHtml(classification)}</dd></div>
+        <div><dt>Score / riesgo</dt><dd>${Number(item.priority_score || 0).toLocaleString("es-CO")} / ${Number(item.risk_score || 0).toLocaleString("es-CO")}</dd></div>
         <div><dt>Ticket / cobertura</dt><dd>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</dd></div>
       </dl>
       <div class="rms-station-lead-action">
