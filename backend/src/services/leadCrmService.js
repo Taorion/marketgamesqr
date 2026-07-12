@@ -188,6 +188,17 @@ const LEAD_ACTIVATION_TYPES_WITH_TICKET = new Set([
 
 function listWhere(filters, params) {
   const clauses = [];
+  const sourceIds = Array.isArray(filters.source_ids)
+    ? filters.source_ids.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+  if (filters.source_type) {
+    params.push(String(filters.source_type || "").toUpperCase());
+    clauses.push(`source_type = $${params.length}`);
+  }
+  if (sourceIds.length) {
+    params.push(sourceIds);
+    clauses.push(`id = any($${params.length}::uuid[])`);
+  }
   const search = normalizeSearch(filters.search);
   const phoneSearch = normalizedDigits(filters.search);
   if (search) {

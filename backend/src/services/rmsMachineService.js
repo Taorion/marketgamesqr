@@ -474,6 +474,39 @@ async function stateRowsFor(businessId, rows = []) {
   return new Map(result.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
 }
 
+async function recentStateRowsForBusiness(businessId, limit = 240) {
+  const result = await query(
+    `select *
+       from rms_lead_state
+      where business_id = $1
+      order by updated_at desc
+      limit $2`,
+    [businessId, Math.min(Math.max(Number(limit || 240), 1), 500)]
+  );
+  return result.rows || [];
+}
+
+async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
+  const byType = refs.reduce((acc, row) => {
+    const type = crmSourceType({ source_type: row.source_type });
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(row.source_id);
+    return acc;
+  }, {});
+  const rows = [];
+  for (const [sourceType, ids] of Object.entries(byType)) {
+    const data = await listLeadCrmRows(businessId, {
+      ...filters,
+      source_type: sourceType,
+      source_ids: ids.slice(0, 120),
+      limit: Math.min(ids.length, 120),
+      offset: 0,
+    });
+    rows.push(...(data.rows || []));
+  }
+  return rows;
+}
+
 function opportunityFromRow(row = {}, stateRow = null) {
   const sourceType = crmSourceType(row);
   const autoPhase = deriveRmsPhase(row);
@@ -556,8 +589,26 @@ function opportunityFromRow(row = {}, stateRow = null) {
 async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
   const data = await listLeadCrmRows(businessId, { ...filters, limit, offset: filters.offset || 0 });
-  const stateMap = await stateRowsFor(businessId, data.rows || []);
-  const opportunities = (data.rows || []).map((row) => (
+  const baseRows = data.rows || [];
+  const recentStateRows = await recentStateRowsForBusiness(businessId);
+  const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
+  const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
+  const extraRows = missingStateRows.length
+    ? await leadRowsForStateRefs(businessId, missingStateRows, filters)
+    : [];
+  const mergedRows = [...baseRows];
+  extraRows.forEach((row) => {
+    const key = `${crmSourceType(row)}:${row.id}`;
+    if (!baseKeys.has(key)) {
+      baseKeys.add(key);
+      mergedRows.push(row);
+    }
+  });
+  const stateMap = new Map([
+    ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
+    ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
+  ]);
+  const opportunities = mergedRows.map((row) => (
     opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`))
   )).sort((a, b) => b.priority_score - a.priority_score || b.risk_score - a.risk_score);
   return {
