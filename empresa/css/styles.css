@@ -29068,6 +29068,14 @@ body[data-current-view="rms-machine"] .rms-stage-column.is-active-station {
   box-shadow: 0 0 0 3px rgba(10, 122, 87, 0.14), 0 18px 42px rgba(15, 23, 42, 0.12) !important;
 }
 
+body[data-current-view="rms-machine"] .rms-stage-column.is-active-station .rms-stage-head {
+  background: #e9f5ef !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-stage-column.is-active-station .rms-stage-head {
+  background: rgba(84, 214, 171, 0.12) !important;
+}
+
 body[data-current-view="rms-machine"] .rms-station-empty-screen {
   display: grid !important;
   justify-items: center !important;

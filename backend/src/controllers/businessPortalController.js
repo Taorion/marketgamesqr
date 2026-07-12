@@ -471,6 +471,23 @@ const manualLeadSchema = z.object({
 
 const manualLeadPatchSchema = manualLeadSchema;
 
+const manualLeadCsvRowSchema = manualLeadSchema.partial({
+  source: true,
+  status: true,
+  priority: true,
+}).extend({
+  name: z.string().trim().min(2).max(160),
+  source: z.string().trim().min(2).max(120).default("CSV import"),
+  status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"]).default("NEW"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+});
+
+const manualLeadCsvImportSchema = z.object({
+  source: z.string().trim().min(2).max(120).default("CSV import"),
+  source_detail: nullableText(220),
+  contacts: z.array(manualLeadCsvRowSchema).min(1).max(500),
+});
+
 const manualContactCampaignSchema = z.object({
   campaign_id: z.string().uuid(),
   channel: nullableText(120),
@@ -3943,16 +3960,21 @@ async function campaignLeads(req, res, next) {
   }
 }
 
+async function assertManualLeadWriteAccess(businessId) {
+  const subscription = await getBusinessSubscription(businessId);
+  if (subscription.plan.raw_status !== "ACTIVE") {
+    throw forbidden("La suscripcion del negocio no esta activa.");
+  }
+  if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
+    throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para recuperar tus leads y el portal.`);
+  }
+  return subscription;
+}
+
 async function createManualLead(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await getBusinessSubscription(businessId);
-    if (subscription.plan.raw_status !== "ACTIVE") {
-      throw forbidden("La suscripcion del negocio no esta activa.");
-    }
-    if (subscription.plan.category === "subscription" && !subscription.plan.portal_access_allowed) {
-      throw forbidden(`La mensualidad vencio y ya pasaron los ${subscription.plan.grace_period_days} dias de gracia. Renueva para recuperar tus leads y el portal.`);
-    }
+    await assertManualLeadWriteAccess(businessId);
     const body = validate(manualLeadSchema, req.body);
     if (!body.email && !body.phone) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
@@ -3989,6 +4011,74 @@ async function createManualLead(req, res, next) {
       ]
     );
     res.status(201).json({ lead: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function importManualLeadsCsv(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertManualLeadWriteAccess(businessId);
+    const body = validate(manualLeadCsvImportSchema, req.body);
+    const rows = body.contacts.map((contact, index) => ({
+      ...contact,
+      source: contact.source || body.source || "CSV import",
+      source_detail: contact.source_detail || body.source_detail,
+      status: contact.status || "NEW",
+      priority: contact.priority || "MEDIUM",
+      csv_row: index + 2,
+    }));
+    const invalidRows = rows
+      .filter((row) => !row.email && !row.phone)
+      .map((row) => row.csv_row);
+    if (invalidRows.length) {
+      throw badRequest(`Filas sin telefono ni correo: ${invalidRows.slice(0, 20).join(", ")}.`);
+    }
+
+    const inserted = await withTransaction(async (client) => {
+      const created = [];
+      for (const row of rows) {
+        const result = await client.query(
+          `insert into business_manual_leads
+             (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+              interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
+           returning id, name, email, phone, source, source_detail, status, priority, created_at`,
+          [
+            businessId,
+            req.user.id,
+            row.name,
+            row.email || null,
+            row.phone || null,
+            row.company || null,
+            row.job_title || null,
+            row.source,
+            row.source_detail || null,
+            row.interest || null,
+            row.importance_reason || null,
+            row.preferred_channel || null,
+            row.preferred_contact_time || null,
+            row.status,
+            row.priority,
+            row.notes || null,
+            JSON.stringify({
+              source: "manual_csv_import",
+              created_by_email: req.user.email || null,
+              csv_row: row.csv_row,
+              csv_import_source: body.source || "CSV import",
+              csv_source_detail: body.source_detail || null,
+              manual_job_title: row.job_title || null,
+              manual_importance_reason: row.importance_reason || null,
+            }),
+          ]
+        );
+        created.push(result.rows[0]);
+      }
+      return created;
+    });
+
+    res.status(201).json({ imported: inserted.length, contacts: inserted });
   } catch (error) {
     next(error);
   }
@@ -4547,7 +4637,7 @@ async function getContactFeedRows(businessId, retentionDays, limit = 1000, ticke
          limit 1
        ) q on true
        left join affiliates a on a.id = q.affiliate_id
-       left join interactive_activations ia on ia.id = coalesce(
+       left join interactive_activations ia on ia.company_id = p.business_id and ia.id = coalesce(
          case
            when p.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
            then (p.metadata->>'activation_id')::uuid
@@ -5311,6 +5401,7 @@ module.exports = {
   campaignLeads,
   listManualLeads,
   createManualLead,
+  importManualLeadsCsv,
   updateManualLead,
   assignManualLeadToCampaign,
   removeManualLeadFromCampaign,

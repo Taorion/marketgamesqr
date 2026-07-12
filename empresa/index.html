@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-detail-20260711-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rms-station-flow-20260712-v2">
 </head>
 <body>
   <main class="portal-shell">
@@ -3849,6 +3849,14 @@
                 <span class="pill muted">Seguimiento operativo</span>
               </div>
               <p class="chart-explainer">Registra contactos que llegan por correo, WhatsApp, llamada, feria o la página de contacto. Quedan mezclados en el feed comercial y en la exportación.</p>
+              <form class="modal-form" id="manualLeadCsvImportForm">
+                <label class="span-2"><span>CSV de leads</span><input id="manualLeadCsvFileInput" type="file" accept=".csv,text/csv"></label>
+                <label><span>Fuente del lote</span><input id="manualLeadCsvSourceInput" type="text" maxlength="120" value="CSV import" placeholder="CSV import, feria, base propia..."></label>
+                <label><span>Detalle lote</span><input id="manualLeadCsvSourceDetailInput" type="text" maxlength="220" placeholder="Campana, canal, activacion o evento"></label>
+                <label class="span-2"><span>Interes por defecto</span><input id="manualLeadCsvInterestInput" type="text" maxlength="500" placeholder="Se usa si la fila no trae interes"></label>
+                <p class="form-message span-2" id="manualLeadCsvMessage"></p>
+                <button class="ghost-button" id="manualLeadCsvSubmitButton" type="submit">Importar CSV al Recolector</button>
+              </form>
               <form class="modal-form" id="manualLeadForm">
                 <label><span>Nombre</span><input id="manualLeadNameInput" type="text" maxlength="160" required placeholder="Nombre del prospecto"></label>
                 <label><span>Empresa</span><input id="manualLeadCompanyInput" type="text" maxlength="180" placeholder="Empresa o marca"></label>
@@ -6253,7 +6261,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-detail-20260711-v1" defer></script>
+  <script src="js/app.js?v=rms-station-flow-20260712-v2" defer></script>
 </body>
 </html>
 

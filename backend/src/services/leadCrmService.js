@@ -281,6 +281,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          array_remove(array[p.campaign_id, latest_capture.campaign_id], null)::uuid[] as associated_campaign_ids,
          array_remove(array[
            latest_capture.channel,
+           ia.title,
            p.metadata->>'preferred_channel',
            p.metadata->>'source',
            p.metadata->>'lead_source',
@@ -293,6 +294,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
                or (lower(coalesce(p.metadata->>'source', '')) = 'captura_relampago' and nullif(p.metadata->>'asset_title', '') is not null)
              then 'Descarga de activo digital'
            end,
+           case when ia.id is not null then 'Activacion interactiva' end,
            p.metadata->>'source',
            p.metadata->>'lead_source',
            c.type,
@@ -343,9 +345,27 @@ async function listLeadCrmRows(businessId, filters = {}) {
            'lead_capture_name', latest_capture.activation_name,
            'campaign_id', latest_capture.campaign_id,
            'campaign_name', latest_capture.campaign_name
+         ) else '{}'::jsonb end
+         || case when ia.id is not null then jsonb_build_object(
+           'interactive_activation_id', ia.id,
+           'interactive_activation_name', ia.title,
+           'interactive_activation_type', ia.activation_type,
+           'activation_name', ia.title,
+           'activation_type', ia.activation_type,
+           'source_label', 'Activacion interactiva'
          ) else '{}'::jsonb end as metadata
        from players p
        left join campaigns c on c.id = p.campaign_id
+       left join interactive_activations ia on ia.company_id = p.business_id and ia.id = coalesce(
+         case
+           when p.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (p.metadata->>'activation_id')::uuid
+         end,
+         case
+           when p.metadata->>'interactive_activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+           then (p.metadata->>'interactive_activation_id')::uuid
+         end
+       )
        left join lateral (
          select
            s.id,

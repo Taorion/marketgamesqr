@@ -63,6 +63,7 @@ const {
   campaignLeads,
   listManualLeads,
   createManualLead,
+  importManualLeadsCsv,
   createManualLeadFromExistingLead,
   updateManualLead,
   assignManualLeadToCampaign,
@@ -133,6 +134,7 @@ router.patch("/users/:userId", updateBusinessUser);
 router.get("/contacts/feed", contactFeed);
 router.get("/contacts/manual", listManualLeads);
 router.post("/contacts/manual", createManualLead);
+router.post("/contacts/manual/import-csv", importManualLeadsCsv);
 router.post("/contacts/manual/from-lead/:leadId", createManualLeadFromExistingLead);
 router.post("/contacts/manual/:manualLeadId/campaigns", assignManualLeadToCampaign);
 router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", removeManualLeadFromCampaign);

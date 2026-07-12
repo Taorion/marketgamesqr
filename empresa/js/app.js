@@ -259,6 +259,13 @@ const manualLeadImportanceInput = document.getElementById("manualLeadImportanceI
 const manualLeadNotesInput = document.getElementById("manualLeadNotesInput");
 const manualLeadMessage = document.getElementById("manualLeadMessage");
 const manualLeadSubmitButton = document.getElementById("manualLeadSubmitButton");
+const manualLeadCsvImportForm = document.getElementById("manualLeadCsvImportForm");
+const manualLeadCsvFileInput = document.getElementById("manualLeadCsvFileInput");
+const manualLeadCsvSourceInput = document.getElementById("manualLeadCsvSourceInput");
+const manualLeadCsvSourceDetailInput = document.getElementById("manualLeadCsvSourceDetailInput");
+const manualLeadCsvInterestInput = document.getElementById("manualLeadCsvInterestInput");
+const manualLeadCsvMessage = document.getElementById("manualLeadCsvMessage");
+const manualLeadCsvSubmitButton = document.getElementById("manualLeadCsvSubmitButton");
 const campaignList = document.getElementById("campaignList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
@@ -20197,6 +20204,162 @@ function exportCampaignReport() {
   ]);
 }
 
+function parseCsvText(text = "") {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  const source = String(text || "").replace(/^\uFEFF/, "");
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function normalizeCsvHeader(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function csvCell(record = {}, aliases = []) {
+  for (const alias of aliases) {
+    const value = record[alias];
+    if (value !== undefined && String(value || "").trim()) return String(value).trim();
+  }
+  return "";
+}
+
+function normalizeCsvPriority(value = "") {
+  const key = normalizeCsvHeader(value);
+  if (["alta", "high", "urgente"].includes(key)) return "HIGH";
+  if (["baja", "low"].includes(key)) return "LOW";
+  return "MEDIUM";
+}
+
+function normalizeCsvStatus(value = "") {
+  const key = normalizeCsvHeader(value);
+  if (["contactado", "contacted"].includes(key)) return "CONTACTED";
+  if (["seguimiento", "follow_up", "followup"].includes(key)) return "FOLLOW_UP";
+  if (["convertido", "converted"].includes(key)) return "CONVERTED";
+  if (["perdido", "lost"].includes(key)) return "LOST";
+  return "NEW";
+}
+
+function manualLeadRowsFromCsv(text = "", defaults = {}) {
+  const rows = parseCsvText(text);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(normalizeCsvHeader);
+  return rows.slice(1).map((cells) => {
+    const record = {};
+    headers.forEach((header, index) => {
+      if (header) record[header] = cells[index] || "";
+    });
+    const firstName = csvCell(record, ["nombre", "name", "nombres", "first_name"]);
+    const lastName = csvCell(record, ["apellido", "apellidos", "last_name"]);
+    const campaign = csvCell(record, ["campana", "campaign", "campaign_name"]);
+    const channel = csvCell(record, ["canal", "channel", "preferred_channel"]);
+    const detail = csvCell(record, ["detalle_origen", "source_detail", "detalle", "asunto"]);
+    return {
+      name: [firstName, lastName].filter(Boolean).join(" ").trim(),
+      email: csvCell(record, ["correo", "email", "e_mail"]),
+      phone: csvCell(record, ["telefono", "phone", "whatsapp", "celular", "movil", "mobile"]),
+      company: csvCell(record, ["empresa", "company", "marca", "negocio"]),
+      job_title: csvCell(record, ["cargo", "job_title", "rol", "puesto"]),
+      source: csvCell(record, ["origen", "source", "fuente"]) || defaults.source,
+      source_detail: detail || [campaign ? `Campana: ${campaign}` : "", channel ? `Canal: ${channel}` : ""].filter(Boolean).join(" / ") || defaults.source_detail,
+      interest: csvCell(record, ["interes", "interest", "producto", "product_interest"]) || defaults.interest,
+      importance_reason: csvCell(record, ["importancia", "importance_reason", "motivo"]),
+      preferred_channel: channel || csvCell(record, ["canal_preferido"]),
+      preferred_contact_time: csvCell(record, ["hora", "momento", "preferred_contact_time"]),
+      priority: normalizeCsvPriority(csvCell(record, ["prioridad", "priority"])),
+      status: normalizeCsvStatus(csvCell(record, ["estado", "status"])),
+      notes: csvCell(record, ["notas", "notes", "observaciones", "comentarios"]),
+    };
+  }).filter((item) => item.name || item.email || item.phone);
+}
+
+async function importManualLeadsCsv(event) {
+  event?.preventDefault();
+  const file = manualLeadCsvFileInput?.files?.[0];
+  if (!file) {
+    setFormMessage(manualLeadCsvMessage, "Selecciona un archivo CSV.", "error");
+    return;
+  }
+  try {
+    if (manualLeadCsvSubmitButton) {
+      manualLeadCsvSubmitButton.disabled = true;
+      manualLeadCsvSubmitButton.textContent = "Importando...";
+    }
+    setFormMessage(manualLeadCsvMessage, "Leyendo CSV...", "info");
+    const contacts = manualLeadRowsFromCsv(await file.text(), {
+      source: String(manualLeadCsvSourceInput?.value || "CSV import").trim(),
+      source_detail: optionalInputValue(manualLeadCsvSourceDetailInput),
+      interest: optionalInputValue(manualLeadCsvInterestInput),
+    });
+    if (!contacts.length) {
+      throw new Error("El CSV no trae filas validas. Usa encabezados como nombre, telefono, correo, campana, canal e interes.");
+    }
+    const result = await api("/api/business/contacts/manual/import-csv", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source: String(manualLeadCsvSourceInput?.value || "CSV import").trim(),
+        source_detail: optionalInputValue(manualLeadCsvSourceDetailInput),
+        contacts,
+      }),
+    });
+    manualLeadCsvImportForm?.reset();
+    if (manualLeadCsvSourceInput) manualLeadCsvSourceInput.value = "CSV import";
+    state.contactFeedLoaded = false;
+    state.leadCrmLoaded = false;
+    state.manualContactsLoaded = false;
+    state.rmsMachineLoaded = false;
+    state.leadCrmPagination.offset = 0;
+    await Promise.all([
+      loadContactFeedData({ force: true, quiet: true }),
+      loadLeadCrmData({ force: true, quiet: true }),
+      loadManualContactsData({ force: true, quiet: true }),
+      state.currentView === "rms-machine" ? loadRmsMachineData({ force: true, quiet: true }) : Promise.resolve(null),
+    ]);
+    renderLeadsView();
+    if (state.currentView === "rms-machine") renderRmsMachineView();
+    setFormMessage(manualLeadCsvMessage, `${Number(result.imported || contacts.length).toLocaleString("es-CO")} leads importados al Recolector.`, "success");
+    showFeedback("CSV importado al Recolector RMS.", "success", { title: "Carga masiva lista" });
+  } catch (error) {
+    setFormMessage(manualLeadCsvMessage, error.message || "No se pudo importar el CSV.", "error");
+    showFeedback(error.message || "No se pudo importar el CSV.", "error");
+  } finally {
+    if (manualLeadCsvSubmitButton) {
+      manualLeadCsvSubmitButton.disabled = false;
+      manualLeadCsvSubmitButton.textContent = "Importar CSV al Recolector";
+    }
+  }
+}
+
 async function createManualLead(event) {
   event?.preventDefault();
   if (!manualLeadForm) return;
@@ -20238,6 +20401,7 @@ async function createManualLead(event) {
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
     state.manualContactsLoaded = false;
+    state.rmsMachineLoaded = false;
     state.leadCrmPagination.offset = 0;
     if (leadCrmSearchInput && result?.lead?.name) {
       leadCrmSearchInput.value = result.lead.name;
@@ -25896,14 +26060,19 @@ function renderRmsMachineLoading() {
 function renderRmsMachineView() {
   const data = state.rmsMachine || {};
   const stages = rmsFactoryStages(data);
-  const opportunities = rmsVisibleOpportunities(data.opportunities || []);
+  const allOpportunities = data.opportunities || [];
+  const opportunities = rmsVisibleOpportunities(allOpportunities);
   const metrics = data.metrics || {};
-  const isEmpty = opportunities.length === 0 && Number(metrics.total_opportunities || 0) === 0;
+  const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
+  const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
   if (rmsMachineOpportunityCount) {
-    rmsMachineOpportunityCount.textContent = `${Number(metrics.total_opportunities || opportunities.length).toLocaleString("es-CO")} oportunidades`;
+    const phase = state.rmsMachineFilters?.phase || "";
+    rmsMachineOpportunityCount.textContent = phase
+      ? `${opportunities.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
+      : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
   }
   rmsEmptyStateGuide?.classList.toggle("hidden", !isEmpty);
   renderRmsCollectorActivation();
@@ -25913,8 +26082,8 @@ function renderRmsMachineView() {
   renderRmsAlerts(data.alerts || []);
   renderRmsDailyQueue(rmsDailySectionsFromOpportunities(opportunities));
   renderRmsMachineFilterOptions(stages);
-  renderRmsStationWorkspace(stages, data.opportunities || [], isEmpty);
-  renderRmsStageBoard(stages, opportunities, isEmpty);
+  renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+  renderRmsStageBoard(stages, allOpportunities, isEmpty);
   renderRmsBulkToolbar();
   renderRmsEventLog(data.events || []);
   renderRmsLeadInspector();
@@ -25953,7 +26122,7 @@ function renderRmsMachineKpis(metrics = {}) {
     ["Revenue potencial", "Por proyectar", "Aquí se proyectará el valor de las oportunidades activas."],
   ] : [
     ["Oportunidades", metrics.total_opportunities || 0, "Base procesada"],
-    ["Atender ahora", metrics.attend_now || 0, `${Number(metrics.high_priority || 0).toLocaleString("es-CO")} alta prioridad`],
+    ["Atender ahora", metrics.operate_now || 0, `${Number(metrics.high_priority || 0).toLocaleString("es-CO")} alta prioridad`],
     ["En riesgo", metrics.recover || 0, `${Number(metrics.high_risk || 0).toLocaleString("es-CO")} con riesgo de fuga`],
     ["Revenue potencial", money(metrics.total_revenue_potential || 0), `${Number(metrics.attention_to_revenue_rate || 0).toLocaleString("es-CO")}% Attention to Revenue`],
   ];
@@ -26002,8 +26171,12 @@ function renderRmsIndustrialFlow(steps = []) {
     button.addEventListener("click", () => {
       state.rmsMachineFilters.phase = button.dataset.rmsFlowPhase || "";
       if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = state.rmsMachineFilters.phase;
+      if (state.rmsMachineFilters.phase) {
+        state.rmsStationPhase = state.rmsMachineFilters.phase;
+        state.rmsStationScreenOpen = true;
+      }
       renderRmsMachineView();
-      rmsStageBoard?.scrollIntoView({ behavior: "smooth", block: "start" });
+      rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
@@ -26023,6 +26196,10 @@ function renderRmsAlerts(alerts = []) {
   rmsMachineAlerts.querySelectorAll("[data-rms-alert-phase]").forEach((button) => {
     button.addEventListener("click", () => {
       state.rmsMachineFilters.phase = button.dataset.rmsAlertPhase || "";
+      if (state.rmsMachineFilters.phase) {
+        state.rmsStationPhase = state.rmsMachineFilters.phase;
+        state.rmsStationScreenOpen = true;
+      }
       renderRmsMachineView();
     });
   });
@@ -26257,10 +26434,10 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     return;
   }
   const selectedPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "";
-  state.rmsStationPhase = selectedPhase;
   const stageIndex = stages.findIndex((item) => item.key === selectedPhase);
   const stage = stages[stageIndex] || stages[0];
   const phase = stage.key;
+  state.rmsStationPhase = phase;
   const rows = rmsStationRows(phase, opportunities);
   const operation = stage.operation || (state.rmsMachine?.operations || {})[phase] || {};
   const nextPhase = rmsStationNextPhase(stage, stages);
@@ -26375,7 +26552,7 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
 
 function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operation = {}) {
   const action = item.next_action || {};
-  const origin = item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin dato de contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
@@ -26461,7 +26638,8 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
 
 function sectionLabelMeta(key = "") {
   const labels = {
-    attend_now: "Prioridad del dia",
+    operate_now: "Prioridad del dia",
+    close_revenue: "Cierres y cobros",
     recover: "Riesgo de fuga",
     tickets_to_redeem: "Beneficio activo",
     rebuy: "Postventa",
@@ -26487,7 +26665,7 @@ function rmsOpportunityCardMarkup(item = {}) {
         <small>${escapeHtml(item.stage_label || "-")} · ${escapeHtml(item.coverage_type || "seguimiento")}</small>
       </div>
       <dl class="rms-card-facts">
-        <div><dt>Origen</dt><dd>${escapeHtml(item.campaign_name || item.channel || "-")}</dd></div>
+        <div><dt>Origen</dt><dd>${escapeHtml(item.entry_summary || item.campaign_name || item.channel || "-")}</dd></div>
         <div><dt>Interes</dt><dd>${escapeHtml(item.product_interest || "-")}</dd></div>
         <div><dt>Score</dt><dd>${Number(item.priority_score || 0).toLocaleString("es-CO")}</dd></div>
         <div><dt>Revenue</dt><dd>${money(item.revenue_potential || 0)}</dd></div>
@@ -26524,7 +26702,7 @@ function rmsStageLeadUnitMarkup(item = {}) {
       </label>
       <button class="rms-unit-main" type="button" data-rms-inspect="${escapeHtml(item.id)}">
         <strong>${escapeHtml(item.name || "Contacto")}</strong>
-        <small>${escapeHtml(item.campaign_name || item.channel || "Origen sin definir")}</small>
+        <small>${escapeHtml(item.entry_summary || item.campaign_name || item.channel || "Origen sin definir")}</small>
         <em>${escapeHtml(item.next_action?.title || "Operar fase")}</em>
       </button>
       <div class="rms-unit-meta">
@@ -26590,13 +26768,18 @@ function bindRmsMachineActions(root) {
 function openRmsStation(phase = "") {
   if (!phase) return;
   state.rmsStationPhase = phase;
+  state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   renderRmsMachineView();
   rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function closeRmsStation() {
   state.rmsStationScreenOpen = false;
+  state.rmsStationPhase = "";
+  state.rmsMachineFilters.phase = "";
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
   renderRmsMachineView();
   rmsStageBoard?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -26926,7 +27109,7 @@ function renderRmsLeadInspector() {
     <div class="rms-inspector-grid">
       <div><span>WhatsApp</span><strong>${escapeHtml(item.phone || "Pendiente")}</strong></div>
       <div><span>Email</span><strong>${escapeHtml(item.email || "Pendiente")}</strong></div>
-      <div><span>Origen</span><strong>${escapeHtml(item.campaign_name || item.channel || "-")}</strong></div>
+      <div><span>Origen</span><strong>${escapeHtml(item.entry_summary || item.campaign_name || item.channel || "-")}</strong></div>
       <div><span>Revenue potencial</span><strong>${escapeHtml(money(item.revenue_potential || 0))}</strong></div>
       <div><span>Tickets activos</span><strong>${Number(item.active_tickets || 0).toLocaleString("es-CO")}</strong></div>
       <div><span>Compras</span><strong>${Number(item.purchase_count || 0).toLocaleString("es-CO")}</strong></div>
@@ -27902,6 +28085,9 @@ rmsMachinePhaseFilter?.addEventListener("change", () => {
   if (state.rmsMachineFilters.phase) {
     state.rmsStationPhase = state.rmsMachineFilters.phase;
     state.rmsStationScreenOpen = true;
+  } else {
+    state.rmsStationPhase = "";
+    state.rmsStationScreenOpen = false;
   }
   renderRmsMachineView();
 });
@@ -27968,6 +28154,7 @@ segmentTabs.forEach((tab, index) => {
 exportCampaignReportButton.addEventListener("click", exportCampaignReport);
 markReadyCampaignButton.addEventListener("click", markCampaignReady);
 manualLeadForm?.addEventListener("submit", createManualLead);
+manualLeadCsvImportForm?.addEventListener("submit", importManualLeadsCsv);
 exportLeadsButton.addEventListener("click", exportLeads);
 exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);

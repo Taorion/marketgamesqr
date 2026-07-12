@@ -215,6 +215,72 @@ function phaseLabel(phase) {
   return RMS_PHASES.find((item) => item.key === phase)?.label || phase;
 }
 
+function metadataObject(row = {}) {
+  return row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
+}
+
+function sourceTypeLabel(sourceType = "") {
+  return {
+    PLAYER: "Lead capturado",
+    MANUAL: "Ingreso manual",
+    BUYER: "Comprador",
+    AFFILIATE: "Afiliado / referido",
+  }[String(sourceType || "").toUpperCase()] || "Lead";
+}
+
+function entryContext(row = {}, sourceType = crmSourceType(row)) {
+  const metadata = metadataObject(row);
+  const activationName = firstPresent(
+    metadata.lead_capture_name,
+    metadata.interactive_activation_name,
+    metadata.activation_name,
+    metadata.activation_title
+  );
+  const activationType = firstPresent(metadata.interactive_activation_type, metadata.activation_type);
+  const campaignName = firstPresent(row.campaign_name, metadata.campaign_name);
+  const channel = firstPresent(row.channel, metadata.channel, metadata.preferred_channel, metadata.source);
+  const sourceLabel = firstPresent(
+    metadata.source_label,
+    metadata.lead_source,
+    metadata.source,
+    sourceTypeLabel(sourceType)
+  );
+  const sourceDetail = firstPresent(
+    metadata.source_detail,
+    metadata.attribution_subject,
+    metadata.asset_title,
+    metadata.form_source_detail,
+    row.source_detail,
+    row.company
+  );
+  const interest = firstPresent(
+    row.top_interest,
+    row.top_product,
+    row.top_category,
+    metadata.interest,
+    metadata.favorite_product,
+    metadata.product_interest,
+    metadata.manual_importance_reason
+  );
+  const summary = [
+    sourceLabel,
+    campaignName ? `Campana: ${campaignName}` : "",
+    activationName ? `Activacion: ${activationName}` : "",
+    activationType ? `Tipo: ${activationType}` : "",
+    channel ? `Canal: ${channel}` : "",
+  ].filter(Boolean).join(" / ");
+  return {
+    source_label: sourceLabel,
+    source_detail: sourceDetail,
+    campaign_name: campaignName,
+    activation_name: activationName,
+    activation_type: activationType,
+    channel,
+    interest,
+    summary: summary || sourceTypeLabel(sourceType),
+  };
+}
+
 function deriveRmsPhase(row = {}) {
   const purchases = Number(row.purchase_count || 0);
   const activeTickets = Number(row.active_tickets || 0);
@@ -411,13 +477,14 @@ async function stateRowsFor(businessId, rows = []) {
 function opportunityFromRow(row = {}, stateRow = null) {
   const sourceType = crmSourceType(row);
   const autoPhase = deriveRmsPhase(row);
-  const stage = normalizePhase(stateRow?.rms_phase, autoPhase);
+  const stage = stateRow?.rms_phase ? normalizePhase(stateRow.rms_phase, autoPhase) : "recoleccion";
   const priorityScore = calculateRmsPriority(row);
   const riskScore = calculateRmsRisk(row);
   const action = getPhaseRecommendedOperation(stage, row);
   const revenue = moneyNumber(stateRow?.revenue_potential) || revenuePotential(row);
   const section = dailySection(row, stage, priorityScore, riskScore);
   const name = row.name || "Contacto sin nombre";
+  const entry = entryContext(row, sourceType);
   return {
     id: `${sourceType}:${row.id}`,
     source_type: sourceType,
@@ -425,11 +492,17 @@ function opportunityFromRow(row = {}, stateRow = null) {
     lead_id: row.lead_id || row.id,
     name,
     first_name: String(name).split(/\s+/)[0] || "",
+    created_at: row.created_at || null,
     phone: row.phone || "",
     email: row.email || "",
     campaign_id: row.campaign_id || null,
-    campaign_name: row.campaign_name || "",
-    channel: row.channel || row.acquisition_channel || "",
+    campaign_name: entry.campaign_name || row.campaign_name || "",
+    channel: entry.channel || row.channel || row.acquisition_channel || "",
+    source_label: entry.source_label,
+    source_detail: entry.source_detail,
+    entry_summary: entry.summary,
+    activation_name: entry.activation_name,
+    activation_type: entry.activation_type,
     stage,
     stage_label: phaseLabel(stage),
     auto_stage: autoPhase,
@@ -443,7 +516,7 @@ function opportunityFromRow(row = {}, stateRow = null) {
     risk_label: riskLabel(riskScore),
     interest_score: Number(row.score_total || row.attention_score || 0),
     revenue_potential: revenue,
-    product_interest: firstPresent(row.top_interest, row.top_product, row.top_category, row.favorite_product, ""),
+    product_interest: firstPresent(entry.interest, row.favorite_product, ""),
     active_tickets: Number(row.active_tickets || 0),
     redeemed_tickets: Number(row.redeemed_tickets || 0),
     expired_tickets: Number(row.expired_tickets || 0),
@@ -469,7 +542,9 @@ function opportunityFromRow(row = {}, stateRow = null) {
     },
     phase_operation: action,
     next_action_due_at: dueAtForSection(section),
-    why_now: whyNow(row, stage, riskScore),
+    why_now: !stateRow && stage === "recoleccion"
+      ? `entro al Recolector por ${entry.summary}`
+      : whyNow(row, stage, riskScore),
     raw_recommended_action: row.recommended_action || "",
     persisted_state_id: stateRow?.id || null,
     last_operation: stateRow?.last_operation || "",
@@ -592,6 +667,7 @@ function rmsMetrics(opportunities = []) {
   return {
     total_opportunities: opportunities.length,
     operate_now: opportunities.filter((item) => item.section === "operate_now").length,
+    attend_now: opportunities.filter((item) => item.section === "operate_now").length,
     recover: opportunities.filter((item) => item.section === "recover").length,
     tickets_to_redeem: opportunities.filter((item) => item.section === "tickets_to_redeem").length,
     close_revenue: opportunities.filter((item) => item.section === "close_revenue").length,
