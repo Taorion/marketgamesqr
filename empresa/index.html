@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-flow-20260712-v6">
+  <link rel="stylesheet" href="css/styles.css?v=rms-station-lead-table-20260712-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -801,8 +801,8 @@
                   <li><span>2</span><strong>Crear una dinámica o campaña de captura</strong><button type="button" data-rms-empty-action="gaming">Crear dinámica</button></li>
                   <li><span>3</span><strong>Capturar datos o seleccionar contactos existentes</strong><button type="button" data-rms-empty-action="contacts">Ver contactos</button></li>
                   <li><span>4</span><strong>Asignar cobertura: ticket, beneficio, reto o recompensa</strong><button type="button" data-rms-empty-action="reward-passes">Crear cobertura</button></li>
-                  <li><span>5</span><strong>Crear primera tarea en agenda</strong><button type="button" data-rms-empty-action="agenda">Crear tarea</button></li>
-                  <li><span>6</span><strong>Ver oportunidades en la cola diaria</strong><button type="button" data-rms-open-collector>Activar recolector</button></li>
+                  <li><span>5</span><strong>Ver leads dentro del Recolector</strong><button type="button" data-rms-open-station="recoleccion">Ver estación</button></li>
+                  <li><span>6</span><strong>Mover leads cuando estén listos</strong><button type="button" data-rms-open-collector>Activar recolector</button></li>
                 </ol>
               </div>
             </section>
@@ -853,7 +853,7 @@
                   <div>
                     <span class="mono-label">Recolector de oportunidades</span>
                     <h3 id="rmsCollectorTitle">Alimentar Máquina RMS</h3>
-                    <p>Define la fuente, la captura, la cobertura y la tarea de agenda que sostendra el seguimiento.</p>
+                    <p>Define la fuente, la captura y la cobertura. Los datos ingresados quedan visibles como leads dentro de la estación Recolector.</p>
                   </div>
                   <button class="icon-button" type="button" id="rmsCollectorCloseButton" title="Cerrar">
                     <span class="material-symbols-outlined">close</span>
@@ -895,7 +895,7 @@
                     </select>
                   </label>
                   <label>
-                    Primera tarea de agenda
+                    Intención inicial del lead
                     <select id="rmsCollectorAgendaInput">
                       <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
                       <option value="Llamar cliente caliente">Llamar</option>
@@ -942,14 +942,14 @@
                     <div class="rms-collector-lead-submit">
                       <div>
                         <strong>¿Ya tienes los datos del lead?</strong>
-                        <small>Presiona el botón para crearlo, meterlo al Recolector y dejar su primera tarea RMS.</small>
+                        <small>Presiona el botón para crearlo y verlo dentro de la estación Recolector.</small>
                       </div>
                       <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Ingresar lead al recolector</button>
                     </div>
                   </div>
                   <label class="span-2">
                     Resultado esperado
-                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas en Máquina RMS y primera tarea de seguimiento en agenda.</textarea>
+                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas visibles dentro de la estación Recolector.</textarea>
                   </label>
                   <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
                   <div class="modal-actions span-2">
@@ -6261,7 +6261,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-flow-20260712-v6" defer></script>
+  <script src="js/app.js?v=rms-station-lead-table-20260712-v1" defer></script>
 </body>
 </html>
 

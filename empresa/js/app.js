@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260711-agenda-ui-v1";
+const APP_VERSION = "empresa-20260712-rms-station-lead-table-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -26260,15 +26260,15 @@ function rmsStageEmptyMarkup(stage = {}) {
     recoleccion: ["Sin materia prima nueva.", "Captura prospectos desde QR, activacion, formulario, referido o clientes dormidos.", "Alimentar maquina", "collector"],
     alimentacion: ["Sin entrada al embudo.", "Aqui debe quedar la persona cuando ya entro oficialmente a la Maquina RMS.", "Importar contactos", "contacts-manual"],
     curaduria: ["Sin curaduria pendiente.", "Aqui se valida telefono, interes, origen, campana, ticket y calidad del contacto.", "Completar datos", "contacts-manual"],
-    clasificacion: ["Sin clasificacion pendiente.", "Aqui se separa la materia prima por estado comercial, temperatura y prioridad.", "Crear tarea", "agenda"],
+    clasificacion: ["Sin clasificacion pendiente.", "Aqui se separa la materia prima por estado comercial, temperatura y prioridad.", "Ver leads", "contacts-manual"],
     preprocesamiento: ["Sin gancho anti-fuga.", "Aqui se activa ticket, beneficio, trivia, reward pass o recordatorio corto.", "Crear ticket", "reward-passes"],
-    procesamiento: ["Sin procesamiento comercial.", "Aqui se envia propuesta, catalogo, cotizacion, factura o material comercial.", "Crear tarea", "agenda"],
-    control_anti_fuga: ["Sin fallas detectadas.", "Aqui se revisan tickets por vencer, clientes sin tarea, redenciones sin venta y atascos.", "Crear tarea", "agenda"],
-    accion_correctiva: ["Sin recuperacion activa.", "Aqui se corrige, reprocesa, llama, recuerda, reactiva o descarta.", "Crear tarea", "agenda"],
+    procesamiento: ["Sin procesamiento comercial.", "Aqui se envia propuesta, catalogo, cotizacion, factura o material comercial.", "Ver leads", "contacts-manual"],
+    control_anti_fuga: ["Sin fallas detectadas.", "Aqui se revisan tickets por vencer, clientes sin salida, redenciones sin venta y atascos.", "Ver leads", "contacts-manual"],
+    accion_correctiva: ["Sin recuperacion activa.", "Aqui se corrige, reprocesa, llama, recuerda, reactiva o descarta.", "Ver leads", "contacts-manual"],
     cierre: ["Sin cierres pendientes.", "Aqui se unen propuesta, beneficio, factura, pago y venta registrada.", "Registrar venta", "sales"],
     revenue_generado: ["Sin revenue nuevo.", "Aqui sale venta, redencion, recompra, referido, renovacion o suscripcion.", "Ver ventas", "sales"],
     postventa: ["Sin postventa pendiente.", "Aqui se envia agradecimiento, garantia, encuesta, reward pass o ticket proxima compra.", "Activar recompra", "reward-passes"],
-    inteligencia: ["Sin aprendizaje nuevo.", "Aqui se mide que campana, gancho, vendedor, ticket o fase produjo revenue o fuga.", "Ver agenda", "agenda"],
+    inteligencia: ["Sin aprendizaje nuevo.", "Aqui se mide que campana, gancho, vendedor, ticket o fase produjo revenue o fuga.", "Ver leads", "contacts-manual"],
   };
   const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
   return `
@@ -26507,7 +26507,6 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const operation = stage.operation || (state.rmsMachine?.operations || {})[phase] || {};
   const nextPhase = rmsStationNextPhase(stage, stages);
   const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
-  const taskCount = rows.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
   const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
   const visual = rmsStationVisualMeta(phase);
   rmsStationWorkspace.classList.remove("hidden");
@@ -26561,21 +26560,19 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         <article><span>Operación</span><strong>${escapeHtml(operation.primaryAction || "Operar estación")}</strong></article>
         <article><span>Material</span><strong>${escapeHtml(operation.materialLabel || "Material sugerido")}</strong></article>
         <article><span>Materia prima</span><strong>${rows.length.toLocaleString("es-CO")}</strong></article>
-        <article><span>Riesgo / tareas</span><strong>${riskCount.toLocaleString("es-CO")} / ${taskCount.toLocaleString("es-CO")}</strong></article>
+        <article><span>Con riesgo</span><strong>${riskCount.toLocaleString("es-CO")}</strong></article>
         <article><span>Revenue potencial</span><strong>${escapeHtml(money(revenue))}</strong></article>
       </div>
 
       <div class="rms-station-screen">
         <div class="rms-station-screen-head">
           <div>
-            <strong>Materia prima dentro de esta estación</strong>
-            <small>${rows.length ? "Cada lead permanece aquí hasta que una operación lo mueva a la siguiente estación." : "Esta estación está esperando materia prima comercial."}</small>
+            <strong>Lista de leads dentro de esta estación</strong>
+            <small>${rows.length ? "Estos son los datos de los leads que están físicamente en esta estación RMS." : "Esta estación está esperando leads."}</small>
           </div>
           <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
         </div>
-        <div class="rms-station-lead-list">
-          ${rows.length ? rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("") : rmsStationEmptyScreenMarkup(stage, operation)}
-        </div>
+        ${rows.length ? rmsStationLeadTableMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
       </div>
     </div>
   `;
@@ -26620,50 +26617,75 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
   `;
 }
 
+function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  return `
+    <div class="rms-station-lead-table-wrap">
+      <table class="rms-station-lead-table">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Lead</th>
+            <th>Contacto</th>
+            <th>Origen / campaña</th>
+            <th>Interés</th>
+            <th>Estado en estación</th>
+            <th>Operar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operation = {}) {
-  const action = item.next_action || {};
   const selected = state.rmsMachineSelectedIds.includes(item.id);
   const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
-  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin dato de contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
   const material = rmsStationMaterialLabel(item);
   const campaignChannel = [item.campaign_name || item.activation_name, item.channel].filter(Boolean).join(" / ") || "-";
   const classification = [item.care_priority_label || item.priority_label, item.risk_label].filter(Boolean).join(" / ") || "-";
   return `
-    <article class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
-      <label class="rms-station-lead-check" title="Marcar lead para operar">
-        <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
-        <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
-      </label>
-      <div class="rms-station-lead-main">
+    <tr class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+      <td class="rms-station-check-cell">
+        <label class="rms-station-lead-check" title="Marcar lead para operar">
+          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+          <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
+        </label>
+      </td>
+      <td>
+        <strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>
         <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
-        <strong>${escapeHtml(item.name || "Contacto")}</strong>
-        <small>${escapeHtml(contact)}</small>
-      </div>
-      <dl class="rms-station-lead-facts">
-        <div><dt>Materia prima</dt><dd>${escapeHtml(material)}</dd></div>
-        <div><dt>Cómo llegó</dt><dd>${escapeHtml(origin)}</dd></div>
-        <div><dt>Campaña / canal</dt><dd>${escapeHtml(campaignChannel)}</dd></div>
-        <div><dt>Interés</dt><dd>${escapeHtml(interest)}</dd></div>
-        <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
-        <div><dt>Clasificación</dt><dd>${escapeHtml(classification)}</dd></div>
-        <div><dt>Score / riesgo</dt><dd>${Number(item.priority_score || 0).toLocaleString("es-CO")} / ${Number(item.risk_score || 0).toLocaleString("es-CO")}</dd></div>
-        <div><dt>Ticket / cobertura</dt><dd>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</dd></div>
-      </dl>
-      <div class="rms-station-lead-action">
-        <span class="mono-label">Operación sugerida</span>
-        <strong>${escapeHtml(action.title || operation.primaryAction || "Operar lead")}</strong>
-        <p>${escapeHtml(action.description || item.why_now || operation.materialLabel || "Revisar ficha y crear siguiente acción.")}</p>
-      </div>
-      <div class="rms-station-lead-buttons">
-        <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
-        <button class="ghost-button compact" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
-        <button class="solid-button compact" type="button" data-rms-move-next="${escapeHtml(item.id)}" ${nextPhase ? "" : "disabled"}>
-          ${escapeHtml(nextPhase ? `Autorizar salida a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
-        </button>
-      </div>
-    </article>
+        <small>${escapeHtml(material)}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(item.phone || "Sin WhatsApp")}</span>
+        <small>${escapeHtml(item.email || "Sin correo")}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(campaignChannel)}</span>
+        <small>${escapeHtml(origin)}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(interest)}</span>
+        <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(classification)}</span>
+        <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>
+      </td>
+      <td>
+        <div class="rms-station-lead-buttons">
+          <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
+          <button class="solid-button compact" type="button" data-rms-move-next="${escapeHtml(item.id)}" ${nextPhase ? "" : "disabled"}>
+            ${escapeHtml(nextPhase ? `Autorizar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
+          </button>
+        </div>
+      </td>
+    </tr>
   `;
 }
 
@@ -26675,7 +26697,6 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const revenue = rowsAll.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
-    const taskCount = rowsAll.filter((item) => item.agenda_status === "pending" || item.has_pending_task).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     return `
       <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""}" data-rms-phase="${escapeHtml(stage.key)}">
@@ -26696,7 +26717,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           </div>
           <div class="rms-station-metrics">
             <span>${riskCount.toLocaleString("es-CO")} riesgo</span>
-            <span>${taskCount.toLocaleString("es-CO")} tareas</span>
+            <span>${rowsAll.length.toLocaleString("es-CO")} leads</span>
             <span>${money(revenue)}</span>
           </div>
           <div class="rms-station-button-row">
@@ -26906,7 +26927,7 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
   const routeByPhase = {
     recoleccion: () => {
       openRmsCollectorModal();
-      showFeedback("Abre el recolector para definir fuente, gancho, dato capturado y tarea de agenda.", "info", { title });
+      showFeedback("Abre el recolector para ingresar leads y dejarlos visibles en la estación.", "info", { title });
     },
     alimentacion: () => {
       setContactCenterTab("manual");
@@ -26919,26 +26940,26 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
       showFeedback("Revisa contactos y completa teléfono, interés, origen, campaña o ticket.", "info", { title });
     },
     clasificacion: () => {
-      setContactCenterTab("agenda");
+      setContactCenterTab("directory");
       setView("leads");
-      showFeedback("Crea tareas para clasificar temperatura, prioridad y siguiente acción comercial.", "info", { title });
+      showFeedback("Revisa la lista de leads para clasificar temperatura, prioridad y estado comercial.", "info", { title });
     },
     preprocesamiento: () => {
       setView("missions");
       showFeedback("Crea un gancho gamificado: ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
     },
     procesamiento: () => {
-      setContactCenterTab("agenda");
+      setContactCenterTab("directory");
       setView("leads");
-      showFeedback("Prepara tareas para enviar propuesta, catálogo, cotización, factura o material comercial.", "info", { title });
+      showFeedback("Revisa los leads que deben recibir propuesta, catálogo, cotización, factura o material comercial.", "info", { title });
     },
     control_anti_fuga: () => {
-      setContactCenterTab("agenda");
+      setContactCenterTab("directory");
       setView("leads");
-      showFeedback("Abre agenda para crear control de tickets por vencer, clientes sin tarea o redenciones sin venta.", "info", { title });
+      showFeedback("Revisa leads con tickets por vencer, sin salida o con redenciones sin venta.", "info", { title });
     },
     accion_correctiva: () => {
-      setContactCenterTab("agenda");
+      setContactCenterTab("directory");
       setView("leads");
       showFeedback("Crea recordatorios, llamadas o beneficios de recuperación para reprocesar clientes dormidos.", "info", { title });
     },
@@ -27630,12 +27651,11 @@ function renderRmsCollectorSummary() {
   const source = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || "Fuente de clientes";
   const capture = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || "Captura";
   const coverage = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || "Cobertura";
-  const task = rmsCollectorAgendaInput?.value || "Contactar";
   const leadName = String(rmsCollectorLeadNameInput?.value || "").trim();
   const leadContact = [rmsCollectorLeadPhoneInput?.value, rmsCollectorLeadEmailInput?.value].map((value) => String(value || "").trim()).filter(Boolean).join(" / ");
   rmsCollectorSummary.innerHTML = `
     <strong>Resumen del recolector</strong>
-    <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)} · Agenda: ${escapeHtml(task)}</p>
+    <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)}</p>
     ${leadName ? `<p>Lead: ${escapeHtml(leadName)}${leadContact ? ` · ${escapeHtml(leadContact)}` : ""} · Entrada: Recolector de Oportunidades</p>` : '<p>Sin lead manual cargado. Puedes activar solo el flujo o ingresar una persona ahora.</p>'}
   `;
   updateRmsCollectorSubmitButtons();
@@ -27652,21 +27672,20 @@ function renderRmsCollectorActivation() {
   const source = activation.source_label || activation.source || "Fuente de clientes";
   const capture = activation.capture_label || activation.capture || "Captura";
   const coverage = activation.coverage_label || activation.coverage || "Cobertura";
-  const nextAction = activation.next_action || "Contactar por WhatsApp";
   rmsCollectorActiveCard.classList.remove("hidden");
   rmsCollectorActiveCard.innerHTML = `
     <div>
       <span class="mono-label">Recolector activo</span>
       <h4>${escapeHtml(capture)} + ${escapeHtml(coverage)}</h4>
-      <p>Se creó una tarea en la agenda para operar este recolector. Todavía no crea oportunidades por sí solo: las oportunidades aparecerán cuando captures o selecciones contactos, tickets, campañas o leads reales.</p>
+      <p>El recolector queda listo para recibir leads. Cada lead ingresado aparece como dato dentro de la estación Recolector, sin crear tarea de agenda.</p>
     </div>
     <dl>
       <div><dt>Fuente</dt><dd>${escapeHtml(source)}</dd></div>
-      <div><dt>Agenda</dt><dd>${escapeHtml(nextAction)}</dd></div>
-      <div><dt>Verificación</dt><dd>Contactos > Agenda</dd></div>
+      <div><dt>Entrada</dt><dd>${escapeHtml(capture)}</dd></div>
+      <div><dt>Verificación</dt><dd>Máquina RMS > Recolector</dd></div>
     </dl>
     <div class="button-row">
-      <button class="solid-button compact" type="button" data-rms-empty-action="agenda">Ver agenda</button>
+      <button class="solid-button compact" type="button" data-rms-open-station="recoleccion">Ver Recolector</button>
       <button class="ghost-button" type="button" data-rms-empty-action="contacts-manual">Importar contactos</button>
       <button class="ghost-button" type="button" data-rms-empty-action="campaigns">Crear campaña/QR</button>
     </div>
@@ -27679,7 +27698,6 @@ async function submitRmsCollector(event) {
   const source = rmsCollectorSourceInput?.value || "store_visitors";
   const capture = rmsCollectorCaptureInput?.value || "qr_ticket_capture";
   const coverage = rmsCollectorCoverageInput?.value || "ticket_expiring";
-  const nextAction = rmsCollectorAgendaInput?.value || "Contactar por WhatsApp";
   const sourceLabel = rmsCollectorSourceInput?.selectedOptions?.[0]?.textContent || source;
   const captureLabel = rmsCollectorCaptureInput?.selectedOptions?.[0]?.textContent || capture;
   const coverageLabel = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || coverage;
@@ -27694,7 +27712,7 @@ async function submitRmsCollector(event) {
     return;
   }
   try {
-    showFeedback(hasLeadDraft ? "Ingresando lead al recolector RMS..." : "Activando recolector y creando tarea en agenda...", "loading", { title: "Máquina RMS", timeout: 0 });
+    showFeedback(hasLeadDraft ? "Ingresando lead al Recolector..." : "Activando recolector...", "loading", { title: "Máquina RMS", timeout: 0 });
     let createdLead = null;
     if (hasLeadDraft) {
       const leadResult = await api("/api/business/contacts/manual", {
@@ -27711,7 +27729,7 @@ async function submitRmsCollector(event) {
           preferred_channel: leadPhone ? "WhatsApp" : "Email",
           interest: leadInterest || captureLabel,
           importance_reason: `Lead ingresado desde Recolector de Oportunidades RMS. Fuente: ${sourceLabel}. Cobertura: ${coverageLabel}.`,
-          notes: rmsCollectorExpectedInput?.value || "Lead ingresado desde recolector RMS.",
+          notes: rmsCollectorExpectedInput?.value || "Lead ingresado al Recolector RMS.",
         }),
       });
       createdLead = leadResult?.lead || null;
@@ -27725,8 +27743,8 @@ async function submitRmsCollector(event) {
             lead_id: createdLead.id,
             to_phase: "recoleccion",
             priority: leadPriority,
-            recommended_action: nextAction,
-            last_operation: "collector_manual_intake",
+            recommended_action: "",
+            last_operation: "",
             last_material_sent: coverage,
             reason: "Lead ingresado manualmente desde el recolector RMS.",
             metadata: {
@@ -27738,63 +27756,16 @@ async function submitRmsCollector(event) {
             },
           }),
         });
-        await api("/api/business/rms-machine/actions/create-task", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            source_id: createdLead.id,
-            source_type: "MANUAL",
-            lead_id: createdLead.id,
-            stage: "recoleccion",
-            action_title: nextAction,
-            next_action: nextAction,
-            note: `Operar lead ingresado desde recolector RMS. Interes: ${leadInterest || captureLabel}. Cobertura: ${coverageLabel}.`,
-            due_at: new Date(Date.now() + 86400000).toISOString(),
-            coverage_type: coverage,
-            metadata: {
-              source_module: "rms_machine",
-              source_flow: "collector_manual_lead",
-              collector_type: capture,
-              customer_source: source,
-              coverage_type: coverage,
-            },
-          }),
-        });
       }
     }
-    const data = await api("/api/business/leads/agenda", {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        source_type: "MARKETING",
-        note_type: "follow_up",
-        next_action: nextAction,
-        note: rmsCollectorExpectedInput?.value || "Recolector activo para alimentar Máquina RMS.",
-        reminder_at: new Date(Date.now() + 86400000).toISOString(),
-        agenda_priority: "HIGH",
-        checklist: [
-          { label: "Revisar capturas nuevas", done: false },
-          { label: "Contactar leads capturados", done: false },
-          { label: "Validar tickets o recompensas", done: false },
-        ],
-        metadata: {
-          source_module: "rms_machine",
-          source_flow: "opportunity_collector",
-          collector_type: capture,
-          customer_source: source,
-          coverage_type: coverage,
-        },
-      }),
-    });
     state.rmsCollectorActivation = {
-      id: data?.item?.id || data?.note?.id || data?.id || "",
+      id: createdLead?.id || `${source}:${capture}:${Date.now()}`,
       source,
       source_label: sourceLabel,
       capture,
       capture_label: captureLabel,
       coverage,
       coverage_label: coverageLabel,
-      next_action: nextAction,
       created_at: new Date().toISOString(),
     };
     if (hasLeadDraft) {
@@ -27807,7 +27778,6 @@ async function submitRmsCollector(event) {
       state.manualContactsLoaded = false;
       state.leadCrmPagination.offset = 0;
     }
-    state.leadAgendaLoaded = false;
     state.rmsMachineLoaded = false;
     if (hasLeadDraft && createdLead?.id) {
       state.rmsMachineFilters.search = "";
@@ -27837,8 +27807,8 @@ async function submitRmsCollector(event) {
     }
     showFeedback(
       hasLeadDraft
-        ? `${createdLead?.name || leadName} entró al Recolector de Oportunidades con tarea RMS.`
-        : "Recolector activo. Verifícalo en Contactos > Agenda; luego importa contactos o crea la campaña/QR que alimentará la cola.",
+        ? `${createdLead?.name || leadName} entró al Recolector de Oportunidades.`
+        : "Recolector activo. Ingresa leads, importa CSV o conecta una campaña/QR para alimentar la estación.",
       "success",
       { title: "Máquina RMS" }
     );

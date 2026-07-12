@@ -3992,7 +3992,7 @@ async function upsertManualLeadCollectorState(client, businessId, user, lead, op
       lead.id,
       lead.priority || options.priority || "MEDIUM",
       options.recommended_action || "Revisar lead ingresado al Recolector RMS",
-      options.last_operation || "collector_manual_intake",
+      options.last_operation || null,
       options.last_material_sent || lead.source || "manual",
       JSON.stringify({
         source_module: "rms_machine",
