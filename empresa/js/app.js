@@ -26431,6 +26431,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   if (!stages.length || !state.rmsStationScreenOpen) {
     rmsStationWorkspace.innerHTML = "";
     rmsStationWorkspace.classList.add("hidden");
+    delete rmsStationWorkspace.dataset.stationTheme;
     return;
   }
   const selectedPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "";
@@ -26451,12 +26452,13 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     <div class="rms-station-screen-shell">
       <div class="rms-station-workspace-head">
         <div class="rms-station-identity">
-          <button class="ghost-button compact" type="button" data-rms-close-station>Volver al tablero</button>
+          <button class="ghost-button compact rms-station-return-button" type="button" data-rms-close-station>← Todas las estaciones</button>
           <span class="mono-label">Pantalla independiente · Estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
           <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
           <p>${escapeHtml(visual.screenTitle)} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
         </div>
         <div class="rms-station-workspace-actions">
+          <button class="ghost-button rms-station-return-button" type="button" data-rms-close-station>Ver todas las estaciones</button>
           <select data-rms-station-picker aria-label="Cambiar estación RMS">
             ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
           </select>
@@ -26512,7 +26514,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     </div>
   `;
   bindRmsMachineActions(rmsStationWorkspace);
-  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+  rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => {
+    button.addEventListener("click", closeRmsStation);
+  });
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => {
     openRmsStation(event.target.value || "");
   });
@@ -26779,9 +26783,11 @@ function closeRmsStation() {
   state.rmsStationScreenOpen = false;
   state.rmsStationPhase = "";
   state.rmsMachineFilters.phase = "";
+  state.rmsMachineSelectedIds = [];
+  state.rmsMachineInspectorId = "";
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
   renderRmsMachineView();
-  rmsStageBoard?.scrollIntoView({ behavior: "smooth", block: "start" });
+  (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function rmsOpportunityById(id = "") {

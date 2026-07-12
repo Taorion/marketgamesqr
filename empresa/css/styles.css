@@ -29321,6 +29321,14 @@ body[data-current-view="rms-machine"] .rms-station-identity .ghost-button {
   color: var(--station-accent-ink, #073b2d) !important;
 }
 
+body[data-current-view="rms-machine"] .rms-station-return-button {
+  border-color: var(--station-accent, #0a7a57) !important;
+  background: #ffffff !important;
+  color: var(--station-accent-ink, #073b2d) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 10px 24px rgba(7, 80, 60, 0.12) !important;
+}
+
 body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-station-workspace-head .mono-label {
   background: var(--station-accent-soft, #e6f7ef) !important;
   border-color: rgba(7, 80, 60, 0.14) !important;
