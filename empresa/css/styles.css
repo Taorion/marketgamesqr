@@ -28987,7 +28987,7 @@ body[data-current-view="rms-machine"] .rms-station-lead-list {
 
 body[data-current-view="rms-machine"] .rms-station-lead-row {
   display: grid !important;
-  grid-template-columns: minmax(190px, 0.9fr) minmax(280px, 1.35fr) minmax(220px, 1fr) auto !important;
+  grid-template-columns: 42px minmax(190px, 0.9fr) minmax(280px, 1.35fr) minmax(220px, 1fr) auto !important;
   gap: 12px !important;
   align-items: stretch !important;
   padding: 12px !important;
@@ -28995,6 +28995,32 @@ body[data-current-view="rms-machine"] .rms-station-lead-row {
   border-radius: 14px !important;
   background: #ffffff !important;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-row.is-selected {
+  border-color: var(--station-accent, #0a7a57) !important;
+  box-shadow: 0 0 0 3px rgba(10, 122, 87, 0.12), 0 16px 34px rgba(15, 23, 42, 0.1) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-check {
+  display: grid !important;
+  place-items: center !important;
+  min-height: 100% !important;
+  border: 1px solid rgba(7, 80, 60, 0.1) !important;
+  border-radius: 10px !important;
+  background: #f6fbf8 !important;
+  cursor: pointer !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-check input {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-check .material-symbols-outlined {
+  color: var(--station-accent, #0a7a57) !important;
+  font-size: 1.35rem !important;
 }
 
 body[data-current-view="rms-machine"] .rms-station-lead-main,
@@ -29149,7 +29175,7 @@ body[data-current-view="rms-machine"] .rms-station-empty-screen p {
   }
 
   body[data-current-view="rms-machine"] .rms-station-lead-row {
-    grid-template-columns: minmax(190px, 0.8fr) minmax(300px, 1.3fr) minmax(180px, 0.9fr) !important;
+    grid-template-columns: 42px minmax(190px, 0.8fr) minmax(300px, 1.3fr) minmax(180px, 0.9fr) !important;
   }
 
   body[data-current-view="rms-machine"] .rms-station-lead-buttons {
@@ -29162,6 +29188,10 @@ body[data-current-view="rms-machine"] .rms-station-empty-screen p {
   body[data-current-view="rms-machine"] .rms-station-workspace-head,
   body[data-current-view="rms-machine"] .rms-station-lead-row {
     grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-lead-check {
+    min-height: 42px !important;
   }
 
   body[data-current-view="rms-machine"] .rms-station-workspace-actions {

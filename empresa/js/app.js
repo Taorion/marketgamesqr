@@ -26018,7 +26018,7 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
 
 async function loadRmsMachineData(options = {}) {
   if (state.rmsMachineLoaded && !options.force) return state.rmsMachine;
-  if (state.rmsMachineLoading) return state.rmsMachine;
+  if (state.rmsMachineLoading && !options.force) return state.rmsMachine;
   state.rmsMachineLoading = true;
   if (!options.quiet) renderRmsMachineLoading();
   try {
@@ -26556,12 +26556,17 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
 
 function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operation = {}) {
   const action = item.next_action || {};
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
   const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin dato de contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
   return `
-    <article class="rms-station-lead-row" data-rms-station-lead="${escapeHtml(item.id)}">
+    <article class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+      <label class="rms-station-lead-check" title="Marcar lead para operar">
+        <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+        <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
+      </label>
       <div class="rms-station-lead-main">
         <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
         <strong>${escapeHtml(item.name || "Contacto")}</strong>
@@ -26582,7 +26587,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
         <button class="ghost-button compact" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
         <button class="solid-button compact" type="button" data-rms-move-next="${escapeHtml(item.id)}" ${nextPhase ? "" : "disabled"}>
-          ${escapeHtml(nextPhase ? `Pasar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
+          ${escapeHtml(nextPhase ? `Autorizar salida a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
         </button>
       </div>
     </article>
@@ -26802,6 +26807,9 @@ function toggleRmsSelection(id = "", selected = false) {
   renderRmsBulkToolbar();
   const card = Array.from(document.querySelectorAll("[data-rms-unit]")).find((node) => node.dataset.rmsUnit === id);
   card?.classList.toggle("selected", selected);
+  const stationRow = Array.from(document.querySelectorAll("[data-rms-station-lead]")).find((node) => node.dataset.rmsStationLead === id);
+  stationRow?.classList.toggle("is-selected", selected);
+  stationRow?.querySelector(".rms-station-lead-check .material-symbols-outlined")?.replaceChildren(document.createTextNode(selected ? "check_circle" : "radio_button_unchecked"));
 }
 
 function selectRmsPhaseForBulk(phase = "") {
@@ -27734,8 +27742,20 @@ async function submitRmsCollector(event) {
       hasLeadDraft ? loadLeadCrmData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
       hasLeadDraft ? loadManualContactsData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
     ]);
+    if (hasLeadDraft && createdLead?.id) {
+      const opportunityId = `MANUAL:${createdLead.id}`;
+      state.rmsMachineFilters.phase = "recoleccion";
+      state.rmsStationPhase = "recoleccion";
+      state.rmsStationScreenOpen = true;
+      state.rmsMachineSelectedIds = [opportunityId];
+      state.rmsMachineInspectorId = opportunityId;
+      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "recoleccion";
+    }
     renderRmsCollectorActivation();
     renderRmsMachineView();
+    if (hasLeadDraft && createdLead?.id) {
+      rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     showFeedback(
       hasLeadDraft
         ? `${createdLead?.name || leadName} entró al Recolector de Oportunidades con tarea RMS.`
