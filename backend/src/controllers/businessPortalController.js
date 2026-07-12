@@ -3971,6 +3971,41 @@ async function assertManualLeadWriteAccess(businessId) {
   return subscription;
 }
 
+async function upsertManualLeadCollectorState(client, businessId, user, lead, options = {}) {
+  await client.query(
+    `insert into rms_lead_state
+       (business_id, source_type, source_id, lead_id, rms_phase, priority, recommended_action, last_operation, last_material_sent, revenue_potential, metadata, created_by, updated_by)
+     values ($1, 'MANUAL', $2, $2, 'recoleccion', $3, $4, $5, $6, 0, $7::jsonb, $8, $8)
+     on conflict (business_id, source_type, source_id)
+     do update set
+       lead_id = excluded.lead_id,
+       rms_phase = coalesce(rms_lead_state.rms_phase, excluded.rms_phase),
+       priority = excluded.priority,
+       recommended_action = coalesce(excluded.recommended_action, rms_lead_state.recommended_action),
+       last_operation = coalesce(excluded.last_operation, rms_lead_state.last_operation),
+       last_material_sent = coalesce(excluded.last_material_sent, rms_lead_state.last_material_sent),
+       metadata = coalesce(rms_lead_state.metadata, '{}'::jsonb) || excluded.metadata,
+       updated_by = excluded.updated_by,
+       updated_at = now()`,
+    [
+      businessId,
+      lead.id,
+      lead.priority || options.priority || "MEDIUM",
+      options.recommended_action || "Revisar lead ingresado al Recolector RMS",
+      options.last_operation || "collector_manual_intake",
+      options.last_material_sent || lead.source || "manual",
+      JSON.stringify({
+        source_module: "rms_machine",
+        source_flow: options.source_flow || "manual_lead_entry",
+        collector_type: options.collector_type || lead.source || "manual",
+        customer_source: lead.source || "Manual",
+        source_detail: lead.source_detail || null,
+      }),
+      user.id,
+    ]
+  );
+}
+
 async function createManualLead(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -3979,38 +4014,46 @@ async function createManualLead(req, res, next) {
     if (!body.email && !body.phone) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
-    const result = await query(
-      `insert into business_manual_leads
-         (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
-          interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
-       returning *`,
-      [
-        businessId,
-        req.user.id,
-        body.name,
-        body.email,
-        body.phone,
-        body.company,
-        body.job_title,
-        body.source || "Manual",
-        body.source_detail,
-        body.interest,
-        body.importance_reason,
-        body.preferred_channel,
-        body.preferred_contact_time,
-        body.status,
-        body.priority,
-        body.notes,
-        JSON.stringify({
-          source: "manual_portal_entry",
-          created_by_email: req.user.email || null,
-          manual_job_title: body.job_title || null,
-          manual_importance_reason: body.importance_reason || null,
-        }),
-      ]
-    );
-    res.status(201).json({ lead: result.rows[0] });
+    const lead = await withTransaction(async (client) => {
+      const result = await client.query(
+        `insert into business_manual_leads
+           (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+            interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
+         returning *`,
+        [
+          businessId,
+          req.user.id,
+          body.name,
+          body.email,
+          body.phone,
+          body.company,
+          body.job_title,
+          body.source || "Manual",
+          body.source_detail,
+          body.interest,
+          body.importance_reason,
+          body.preferred_channel,
+          body.preferred_contact_time,
+          body.status,
+          body.priority,
+          body.notes,
+          JSON.stringify({
+            source: "manual_portal_entry",
+            created_by_email: req.user.email || null,
+            manual_job_title: body.job_title || null,
+            manual_importance_reason: body.importance_reason || null,
+          }),
+        ]
+      );
+      await upsertManualLeadCollectorState(client, businessId, req.user, result.rows[0], {
+        source_flow: "manual_portal_entry",
+        recommended_action: body.preferred_channel ? `Contactar por ${body.preferred_channel}` : "Revisar lead ingresado al Recolector RMS",
+        last_material_sent: body.source || "Manual",
+      });
+      return result.rows[0];
+    });
+    res.status(201).json({ lead });
   } catch (error) {
     next(error);
   }
@@ -4073,6 +4116,12 @@ async function importManualLeadsCsv(req, res, next) {
             }),
           ]
         );
+        await upsertManualLeadCollectorState(client, businessId, req.user, result.rows[0], {
+          source_flow: "manual_csv_import",
+          recommended_action: row.preferred_channel ? `Contactar por ${row.preferred_channel}` : "Clasificar lead importado al Recolector RMS",
+          last_material_sent: row.source,
+          collector_type: "csv_import",
+        });
         created.push(result.rows[0]);
       }
       return created;
@@ -4341,6 +4390,14 @@ async function createManualLeadFromExistingLead(req, res, next) {
       [businessId, lead.email || null, lead.phone || null]
     );
     if (existing.rowCount) {
+      await withTransaction(async (client) => {
+        await upsertManualLeadCollectorState(client, businessId, req.user, existing.rows[0], {
+          source_flow: "lead_promoted_existing_contact",
+          recommended_action: "Revisar contacto existente en el Recolector RMS",
+          last_material_sent: existing.rows[0].source || sourceType,
+          collector_type: "existing_contact",
+        });
+      });
       return res.status(200).json({ lead: existing.rows[0], existed: true });
     }
 
@@ -4357,43 +4414,52 @@ async function createManualLeadFromExistingLead(req, res, next) {
         ? "Lead con compra registrada; conservar para seguimiento comercial."
         : "Lead agregado desde otra fuente para seguimiento interno.");
 
-    const result = await query(
-      `insert into business_manual_leads
-         (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
-          interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, null, $7, $8, $9, $10, $11, null, $12, $13, $14, $15::jsonb)
-       returning *`,
-      [
-        businessId,
-        req.user.id,
-        lead.name || "Contacto agregado",
-        lead.email || null,
-        lead.phone || null,
-        lead.organization || lead.metadata?.manual_company || null,
-        sourceLabel,
-        sourceDetail,
-        summary.top_interest || lead.interest || lead.metadata?.asset_title || null,
-        importanceReason,
-        lead.preferred_channel || "WhatsApp/email",
-        status,
-        priority,
-        req.body?.notes || `Agregado al directorio interno desde ${sourceLabel}.`,
-        JSON.stringify({
-          source: "lead_promoted_to_manual_contact",
-          created_by_email: req.user.email || null,
-          original_source_type: sourceType,
-          original_source_id: lead.id,
-          original_lead_id: lead.lead_id || null,
-          original_campaign_id: lead.campaign_id || null,
-          original_campaign_name: lead.campaign_name || null,
-          manual_importance_reason: importanceReason,
-          manual_status: status,
-          manual_priority: priority,
-          manual_company: lead.organization || null,
-        }),
-      ]
-    );
-    res.status(201).json({ lead: result.rows[0], existed: false });
+    const createdLead = await withTransaction(async (client) => {
+      const result = await client.query(
+        `insert into business_manual_leads
+           (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+            interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, null, $7, $8, $9, $10, $11, null, $12, $13, $14, $15::jsonb)
+         returning *`,
+        [
+          businessId,
+          req.user.id,
+          lead.name || "Contacto agregado",
+          lead.email || null,
+          lead.phone || null,
+          lead.organization || lead.metadata?.manual_company || null,
+          sourceLabel,
+          sourceDetail,
+          summary.top_interest || lead.interest || lead.metadata?.asset_title || null,
+          importanceReason,
+          lead.preferred_channel || "WhatsApp/email",
+          status,
+          priority,
+          req.body?.notes || `Agregado al directorio interno desde ${sourceLabel}.`,
+          JSON.stringify({
+            source: "lead_promoted_to_manual_contact",
+            created_by_email: req.user.email || null,
+            original_source_type: sourceType,
+            original_source_id: lead.id,
+            original_lead_id: lead.lead_id || null,
+            original_campaign_id: lead.campaign_id || null,
+            original_campaign_name: lead.campaign_name || null,
+            manual_importance_reason: importanceReason,
+            manual_status: status,
+            manual_priority: priority,
+            manual_company: lead.organization || null,
+          }),
+        ]
+      );
+      await upsertManualLeadCollectorState(client, businessId, req.user, result.rows[0], {
+        source_flow: "lead_promoted_to_manual_contact",
+        recommended_action: lead.preferred_channel ? `Contactar por ${lead.preferred_channel}` : "Revisar lead guardado en el Recolector RMS",
+        last_material_sent: sourceLabel,
+        collector_type: "promoted_lead",
+      });
+      return result.rows[0];
+    });
+    res.status(201).json({ lead: createdLead, existed: false });
   } catch (error) {
     next(error);
   }
