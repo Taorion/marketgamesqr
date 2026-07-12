@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260712-rms-station-lead-table-v1";
+const APP_VERSION = "empresa-20260712-rms-collector-input-output-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -26525,8 +26525,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           <select data-rms-station-picker aria-label="Cambiar estación RMS">
             ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
           </select>
-          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Seleccionar materia prima</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>Pasar lote a salida</button>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Chulear toda entrada</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>${escapeHtml(phase === "recoleccion" ? "Enviar salida al embudo" : "Enviar salida")}</button>
         </div>
       </div>
 
@@ -26567,12 +26567,12 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       <div class="rms-station-screen">
         <div class="rms-station-screen-head">
           <div>
-            <strong>Lista de leads dentro de esta estación</strong>
-            <small>${rows.length ? "Estos son los datos de los leads que están físicamente en esta estación RMS." : "Esta estación está esperando leads."}</small>
+            <strong>${escapeHtml(phase === "recoleccion" ? "Entrada y salida del Recolector" : "Entrada y salida de esta estación")}</strong>
+            <small>${rows.length ? "La entrada muestra todo lo recibido. La salida muestra solo lo chuleado para pasar a la siguiente estación." : "Esta estación está esperando leads."}</small>
           </div>
           <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
         </div>
-        ${rows.length ? rmsStationLeadTableMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
+        ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
       </div>
     </div>
   `;
@@ -26586,12 +26586,17 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
   });
-  rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
+  rmsStationWorkspace.querySelectorAll("[data-rms-station-bulk-next]").forEach((button) => button.addEventListener("click", async () => {
     if (!rows.length || !nextPhase) return;
-    state.rmsMachineSelectedIds = rows.map((item) => item.id);
+    const selectedRows = rmsStationSelectedRows(phase, rows);
+    if (!selectedRows.length) {
+      showFeedback("Primero chulea los leads hábiles en la entrada para ponerlos en salida.", "info", { title: stage.label || "Estación RMS" });
+      return;
+    }
+    state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
     if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
     await moveSelectedRmsPhase();
-  });
+  }));
   rmsStationWorkspace.querySelectorAll("[data-rms-move-next]").forEach((button) => {
     button.addEventListener("click", async () => {
       const item = rmsOpportunityById(button.dataset.rmsMoveNext);
@@ -26617,6 +26622,74 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
   `;
 }
 
+function rmsStationSelectedRows(phase = "", rows = []) {
+  const selected = new Set(state.rmsMachineSelectedIds || []);
+  return (rows || []).filter((item) => item.stage === phase && selected.has(item.id));
+}
+
+function rmsCollectorReadiness(item = {}) {
+  const hasContact = Boolean(item.phone || item.email);
+  const hasInterest = Boolean(item.product_interest || item.top_interest || item.interest || item.raw_recommended_action);
+  const hasOrigin = Boolean(item.entry_summary || item.source_detail || item.campaign_name || item.activation_name || item.channel || item.source_label);
+  const missing = [];
+  if (!hasContact) missing.push("contacto");
+  if (!hasInterest) missing.push("interés");
+  if (!hasOrigin) missing.push("origen");
+  return {
+    ready: hasContact && hasInterest,
+    label: hasContact && hasInterest ? "Lead hábil" : "Materia prima cruda",
+    detail: missing.length ? `Falta ${missing.join(", ")}` : "Cumple dato mínimo para entrar al embudo",
+  };
+}
+
+function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
+  const selectedRows = rmsStationSelectedRows(phase, rows);
+  return `
+    <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
+      <div class="rms-station-lane-head">
+        <div>
+          <span class="mono-label">Salida</span>
+          <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} lead(s) chuleado(s)</strong>
+          <small>${escapeHtml(nextPhase ? `Listos para enviar a ${nextPhase.label}.` : "Esta estación no tiene salida configurada.")}</small>
+        </div>
+        <button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
+          ${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
+        </button>
+      </div>
+      <div class="rms-station-output-list">
+        ${selectedRows.length ? selectedRows.map((item) => {
+          const readiness = rmsCollectorReadiness(item);
+          return `
+            <article>
+              <strong>${escapeHtml(item.name || "Contacto")}</strong>
+              <span>${escapeHtml(readiness.label)} · ${escapeHtml(item.phone || item.email || "Sin contacto")}</span>
+              <small>${escapeHtml(item.product_interest || item.entry_summary || item.source_detail || item.campaign_name || "Sin contexto")}</small>
+            </article>
+          `;
+        }).join("") : '<div class="empty-state compact">Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.</div>'}
+      </div>
+    </section>
+  `;
+}
+
+function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  return `
+    <div class="rms-station-lanes">
+      <section class="rms-station-lane rms-station-input-lane">
+        <div class="rms-station-lane-head">
+          <div>
+            <span class="mono-label">Entrada</span>
+            <strong>${Number(rows.length || 0).toLocaleString("es-CO")} dato(s) recibidos</strong>
+            <small>Materia prima sin convertir: aquí entran todos los datos capturados por manual, CSV o activaciones.</small>
+          </div>
+        </div>
+        ${rmsStationLeadTableMarkup(rows, stage, nextPhase, operation)}
+      </section>
+      ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
+    </div>
+  `;
+}
+
 function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
   return `
     <div class="rms-station-lead-table-wrap">
@@ -26628,8 +26701,8 @@ function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, oper
             <th>Contacto</th>
             <th>Origen / campaña</th>
             <th>Interés</th>
-            <th>Estado en estación</th>
-            <th>Operar</th>
+            <th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : "Estado en estación")}</th>
+            <th>Ficha</th>
           </tr>
         </thead>
         <tbody>
@@ -26648,6 +26721,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const material = rmsStationMaterialLabel(item);
   const campaignChannel = [item.campaign_name || item.activation_name, item.channel].filter(Boolean).join(" / ") || "-";
   const classification = [item.care_priority_label || item.priority_label, item.risk_label].filter(Boolean).join(" / ") || "-";
+  const readiness = rmsCollectorReadiness(item);
   return `
     <tr class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
       <td class="rms-station-check-cell">
@@ -26674,15 +26748,13 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
       </td>
       <td>
-        <span>${escapeHtml(classification)}</span>
+        <span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : classification)}</span>
+        ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>
       </td>
       <td>
         <div class="rms-station-lead-buttons">
           <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
-          <button class="solid-button compact" type="button" data-rms-move-next="${escapeHtml(item.id)}" ${nextPhase ? "" : "disabled"}>
-            ${escapeHtml(nextPhase ? `Autorizar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
-          </button>
         </div>
       </td>
     </tr>
@@ -26893,6 +26965,42 @@ function rmsOpportunityById(id = "") {
   return (state.rmsMachine?.opportunities || []).find((item) => String(item.id) === String(id)) || null;
 }
 
+function bindRmsStationOutputAction(container = rmsStationWorkspace) {
+  const phase = state.rmsStationPhase || "";
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stage = stages.find((item) => item.key === phase) || {};
+  const rows = rmsStationRows(phase, state.rmsMachine?.opportunities || []);
+  const nextPhase = rmsStationNextPhase(stage, stages);
+  container?.querySelectorAll("[data-rms-station-bulk-next]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const selectedRows = rmsStationSelectedRows(phase, rows);
+      if (!selectedRows.length || !nextPhase) {
+        showFeedback("Primero chulea los leads hábiles en la entrada.", "info", { title: stage.label || "Estación RMS" });
+        return;
+      }
+      state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
+      if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
+      await moveSelectedRmsPhase();
+    });
+  });
+}
+
+function updateRmsStationOutputPreview() {
+  if (!state.rmsStationScreenOpen || !state.rmsStationPhase) return;
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stage = stages.find((item) => item.key === state.rmsStationPhase);
+  if (!stage) return;
+  const rows = rmsStationRows(stage.key, state.rmsMachine?.opportunities || []);
+  const nextPhase = rmsStationNextPhase(stage, stages);
+  const output = Array.from(rmsStationWorkspace?.querySelectorAll("[data-rms-station-output]") || [])
+    .find((node) => node.dataset.rmsStationOutput === stage.key);
+  if (!output) return;
+  output.outerHTML = rmsStationOutputMarkup(stage.key, rows, nextPhase);
+  const updatedOutput = Array.from(rmsStationWorkspace?.querySelectorAll("[data-rms-station-output]") || [])
+    .find((node) => node.dataset.rmsStationOutput === stage.key);
+  bindRmsStationOutputAction(updatedOutput);
+}
+
 function toggleRmsSelection(id = "", selected = false) {
   const current = new Set(state.rmsMachineSelectedIds || []);
   if (selected) current.add(id);
@@ -26904,6 +27012,7 @@ function toggleRmsSelection(id = "", selected = false) {
   const stationRow = Array.from(document.querySelectorAll("[data-rms-station-lead]")).find((node) => node.dataset.rmsStationLead === id);
   stationRow?.classList.toggle("is-selected", selected);
   stationRow?.querySelector(".rms-station-lead-check .material-symbols-outlined")?.replaceChildren(document.createTextNode(selected ? "check_circle" : "radio_button_unchecked"));
+  updateRmsStationOutputPreview();
 }
 
 function selectRmsPhaseForBulk(phase = "") {
