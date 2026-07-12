@@ -27809,6 +27809,14 @@ async function submitRmsCollector(event) {
     }
     state.leadAgendaLoaded = false;
     state.rmsMachineLoaded = false;
+    if (hasLeadDraft && createdLead?.id) {
+      state.rmsMachineFilters.search = "";
+      state.rmsMachineFilters.priority = "";
+      state.rmsMachineFilters.phase = "recoleccion";
+      if (rmsMachineSearchInput) rmsMachineSearchInput.value = "";
+      if (rmsMachinePriorityFilter) rmsMachinePriorityFilter.value = "";
+      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "recoleccion";
+    }
     closeRmsCollectorModal();
     await Promise.all([
       loadRmsMachineData({ force: true, quiet: true }).catch(() => null),
@@ -27817,12 +27825,10 @@ async function submitRmsCollector(event) {
     ]);
     if (hasLeadDraft && createdLead?.id) {
       const opportunityId = `MANUAL:${createdLead.id}`;
-      state.rmsMachineFilters.phase = "recoleccion";
       state.rmsStationPhase = "recoleccion";
       state.rmsStationScreenOpen = true;
       state.rmsMachineSelectedIds = [opportunityId];
       state.rmsMachineInspectorId = opportunityId;
-      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "recoleccion";
     }
     renderRmsCollectorActivation();
     renderRmsMachineView();

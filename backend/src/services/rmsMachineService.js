@@ -496,7 +496,6 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
   const rows = [];
   for (const [sourceType, ids] of Object.entries(byType)) {
     const data = await listLeadCrmRows(businessId, {
-      ...filters,
       source_type: sourceType,
       source_ids: ids.slice(0, 120),
       limit: Math.min(ids.length, 120),
