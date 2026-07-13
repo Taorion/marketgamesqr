@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260713-dynamic-prelanding-form-builder-v1";
+const APP_VERSION = "empresa-20260713-activation-product-interest-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -741,6 +741,11 @@ const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput")
 const triviaBenefitProductModeInput = document.getElementById("triviaBenefitProductModeInput");
 const triviaBenefitProductInput = document.getElementById("triviaBenefitProductInput");
 const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput");
+const activationProductIntentPanel = document.querySelector(".activation-product-intent-panel");
+const activationProductIntentModeInput = document.getElementById("activationProductIntentModeInput");
+const activationProductIntentInput = document.getElementById("activationProductIntentInput");
+const activationProductIntentOpenInput = document.getElementById("activationProductIntentOpenInput");
+const activationProductIntentHelp = document.getElementById("activationProductIntentHelp");
 const triviaBenefitFulfillmentModeInput = document.getElementById("triviaBenefitFulfillmentModeInput");
 const triviaEcommerceCodeInput = document.getElementById("triviaEcommerceCodeInput");
 const triviaEcommerceUrlInput = document.getElementById("triviaEcommerceUrlInput");
@@ -13896,7 +13901,8 @@ function updateActivationFormBuilderCount() {
   if (!activationFormFieldCount) return;
   const rows = activationFormFieldRows();
   const activeRows = rows.filter((row) => row.querySelector("[data-activation-form-label]")?.value.trim());
-  activationFormFieldCount.textContent = `${activeRows.length.toLocaleString("es-CO")} de ${rows.length.toLocaleString("es-CO")} pregunta(s) listas`;
+  const publishedFields = activationCustomFieldsForProductIntent(collectActivationCustomFields(), activationProductIntentConfig());
+  activationFormFieldCount.textContent = `${publishedFields.length.toLocaleString("es-CO")} publicada(s) · ${activeRows.length.toLocaleString("es-CO")} diseñada(s)`;
 }
 
 function addActivationFormQuestion(seed = {}) {
@@ -13934,8 +13940,84 @@ function collectActivationCustomFields() {
     .filter(Boolean);
 }
 
+function activationProductOptionList() {
+  return activeInventoryProducts()
+    .map((product) => ({
+      product_id: product.id || null,
+      value: product.name || inventoryProductLabel(product),
+      label: inventoryProductLabel(product),
+      sku: product.sku || null,
+      category: product.category || product.product_category || null,
+    }))
+    .filter((option) => option.value)
+    .slice(0, 80);
+}
+
+function activationProductIntentConfig() {
+  const mode = String(activationProductIntentModeInput?.value || "OPEN_LEAD_CHOICE");
+  const safeMode = ["OPEN_LEAD_CHOICE", "PROMOTED_PRODUCT", "NO_PRODUCT"].includes(mode) ? mode : "OPEN_LEAD_CHOICE";
+  const selectedProduct = safeMode === "PROMOTED_PRODUCT" ? findInventoryProduct(activationProductIntentInput?.value) : null;
+  const rawProductName = safeMode === "PROMOTED_PRODUCT" ? productInputRawValue(activationProductIntentInput) : "";
+  return {
+    mode: safeMode,
+    required: safeMode !== "NO_PRODUCT",
+    product_id: selectedProduct?.id || null,
+    product_name: rawProductName || selectedProduct?.name || null,
+    options: activationProductOptionList(),
+    rms_field: "interest",
+  };
+}
+
+function activationProductInterestField(config = activationProductIntentConfig()) {
+  const hasOptions = Array.isArray(config.options) && config.options.length;
+  return {
+    id: "activation_product_interest",
+    key: "product_interest",
+    label: "Que producto o servicio te interesa?",
+    type: hasOptions ? "SELECT" : "TEXT",
+    options: hasOptions ? config.options.map((option) => ({ label: option.label, value: option.value })) : [],
+    help_text: hasOptions
+      ? "Elige el producto o servicio que quieres conocer para que el negocio clasifique tu solicitud."
+      : "Escribe el producto, servicio o categoria que quieres conocer.",
+    required: true,
+    rms_field: "interest",
+    order_index: -1,
+    source: "activation_product_interest",
+  };
+}
+
+function isProductInterestField(field = {}) {
+  const text = `${field.key || ""} ${field.label || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return field.rms_field === "interest" && /(producto|servicio|categoria|interes|interest)/.test(text);
+}
+
+function activationCustomFieldsForProductIntent(fields = [], config = activationProductIntentConfig()) {
+  const cleanFields = fields.map((field, index) => ({ ...field, order_index: index }));
+  if (config.mode === "NO_PRODUCT") return cleanFields;
+  if (config.mode === "PROMOTED_PRODUCT") {
+    return cleanFields.filter((field) => !isProductInterestField(field));
+  }
+  const productField = activationProductInterestField(config);
+  const interestIndex = cleanFields.findIndex(isProductInterestField);
+  if (interestIndex >= 0) {
+    const existing = cleanFields[interestIndex];
+    cleanFields[interestIndex] = {
+      ...existing,
+      ...productField,
+      id: existing.id || productField.id,
+      key: existing.key || productField.key,
+      label: existing.label || productField.label,
+      help_text: existing.help_text || productField.help_text,
+      required: true,
+      order_index: existing.order_index,
+    };
+    return cleanFields;
+  }
+  return [productField, ...cleanFields.map((field, index) => ({ ...field, order_index: index + 1 }))];
+}
+
 function validateActivationCustomFields() {
-  const fields = collectActivationCustomFields();
+  const fields = activationCustomFieldsForProductIntent(collectActivationCustomFields(), activationProductIntentConfig());
   const invalidChoice = fields.find((field) => ACTIVATION_FORM_CHOICE_TYPES.has(field.type) && field.options.length < 2);
   if (invalidChoice) {
     setInlineMessage(triviaLauncherMessage, `Agrega al menos dos opciones para "${invalidChoice.label}" en el formulario RMS.`, "error");
@@ -13947,10 +14029,49 @@ function validateActivationCustomFields() {
   return fields;
 }
 
+function validateActivationProductIntent() {
+  const config = activationProductIntentConfig();
+  if (config.mode !== "PROMOTED_PRODUCT" || config.product_name) return config;
+  setInlineMessage(triviaLauncherMessage, "Selecciona o escribe el producto promocionado por esta activación.", "error");
+  activationProductIntentInput?.focus();
+  return null;
+}
+
+function updateActivationProductIntentMode() {
+  const config = activationProductIntentConfig();
+  if (activationProductIntentPanel) {
+    activationProductIntentPanel.dataset.productIntentMode = config.mode;
+  }
+  const needsFixedProduct = config.mode === "PROMOTED_PRODUCT";
+  if (activationProductIntentInput) {
+    activationProductIntentInput.disabled = !needsFixedProduct;
+    activationProductIntentInput.required = needsFixedProduct;
+  }
+  if (activationProductIntentOpenInput) {
+    activationProductIntentOpenInput.disabled = !needsFixedProduct || activationProductIntentInput?.value !== OPEN_PRODUCT_VALUE;
+    activationProductIntentOpenInput.required = needsFixedProduct && activationProductIntentInput?.value === OPEN_PRODUCT_VALUE;
+  }
+  if (!activationProductIntentHelp) return;
+  const optionCount = config.options.length;
+  const messages = {
+    OPEN_LEAD_CHOICE: optionCount
+      ? `La prelanding agregará una pregunta obligatoria con ${optionCount.toLocaleString("es-CO")} producto(s) activos del inventario.`
+      : "La prelanding agregará una pregunta obligatoria de texto porque todavía no hay productos activos en inventario.",
+    PROMOTED_PRODUCT: config.product_name
+      ? `El lead no elegirá producto: RMS recibirá "${config.product_name}" como interés asociado.`
+      : "Selecciona el producto que esta activación promociona; el lead no tendrá que elegirlo.",
+    NO_PRODUCT: "No se agregará pregunta de producto ni producto fijo para esta activación.",
+  };
+  activationProductIntentHelp.textContent = messages[config.mode] || messages.OPEN_LEAD_CHOICE;
+}
+
 function syncActivationFormBuilder() {
   enhanceActivationFormRows();
+  const productConfig = activationProductIntentConfig();
   activationFormBuilder?.querySelectorAll("[data-activation-form-field]").forEach((row) => {
     const type = row.querySelector("[data-activation-form-type]")?.value || "TEXT";
+    const label = row.querySelector("[data-activation-form-label]")?.value.trim() || "";
+    const rmsField = row.querySelector("[data-activation-form-rms]")?.value || "custom";
     const optionsInput = row.querySelector("[data-activation-form-options]");
     const needsOptions = ACTIVATION_FORM_CHOICE_TYPES.has(type);
     optionsInput?.closest("label")?.classList.toggle("is-muted-field", !needsOptions);
@@ -13958,6 +14079,7 @@ function syncActivationFormBuilder() {
       optionsInput.value = "Bajo, Medio, Alto";
     }
     row.classList.toggle("is-empty-question", !row.querySelector("[data-activation-form-label]")?.value.trim());
+    row.classList.toggle("is-fixed-product-skipped", productConfig.mode === "PROMOTED_PRODUCT" && isProductInterestField({ label, rms_field: rmsField }));
   });
   updateActivationFormBuilderCount();
 }
@@ -14562,7 +14684,8 @@ function validateBenefitFulfillment(modeInput, codeInput, messageNode, contextLa
 
 function buildInteractiveActivationPayload(type, activationPayload) {
   const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
-  const customCaptureFields = collectActivationCustomFields();
+  const productInterest = activationProductIntentConfig();
+  const customCaptureFields = activationCustomFieldsForProductIntent(collectActivationCustomFields(), productInterest);
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   const fulfillment = benefitFulfillmentFromInputs(
     triviaBenefitFulfillmentModeInput,
@@ -14598,6 +14721,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       optional_fields: [],
       participant_lock: activationParticipantLockFromForm(),
       custom_fields: customCaptureFields,
+      product_interest: productInterest,
       form_schema_version: 1,
       form_title: "Formulario RMS antes del juego",
       rms_mapping_enabled: true,
@@ -14610,6 +14734,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     metadata: {
       benefit_product_scope: productScope,
       benefit_fulfillment: fulfillment,
+      product_interest_config: productInterest,
     },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
@@ -14941,9 +15066,11 @@ function requireCloseoutExpiryDate({ modeInput, dateInput, messageEl, actionLabe
 
 function validateTriviaLauncherForm() {
   updateTriviaExpiryMode();
+  updateActivationProductIntentMode();
   const type = currentActivationType();
   if (!validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
+  if (!validateActivationProductIntent()) return null;
   const activationFormFields = validateActivationCustomFields();
   if (!activationFormFields) return null;
   if (type === "TRIVIA") {
@@ -29599,9 +29726,13 @@ function handlePortalProductSelectionChange(productSelect) {
   if (productSelect === triviaBenefitProductInput || productSelect === triviaBenefitProductModeInput) {
     syncBenefitProductFields(triviaBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitLabelInput, triviaBenefitTypeInput);
   }
+  if (productSelect === activationProductIntentInput || productSelect === activationProductIntentModeInput) {
+    updateActivationProductIntentMode();
+    syncActivationFormBuilder();
+  }
 }
 
-[postSaleProductInput, validatorProductServiceInput, postSaleBenefitProductInput, postSaleBenefitProductModeInput, qrBatchBenefitProductInput, qrBatchBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitProductModeInput].forEach((field) => {
+[postSaleProductInput, validatorProductServiceInput, postSaleBenefitProductInput, postSaleBenefitProductModeInput, qrBatchBenefitProductInput, qrBatchBenefitProductModeInput, triviaBenefitProductInput, triviaBenefitProductModeInput, activationProductIntentInput, activationProductIntentModeInput].forEach((field) => {
   field?.addEventListener("change", () => handlePortalProductSelectionChange(field));
 });
 
@@ -29741,6 +29872,7 @@ updateSurveyQuestionEditors();
 updateActivationQuestionCountControls();
 updateBattleshipShipInputs();
 syncActivationFormBuilder();
+updateActivationProductIntentMode();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

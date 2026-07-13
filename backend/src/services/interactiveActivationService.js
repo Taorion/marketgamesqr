@@ -87,6 +87,7 @@ const CUSTOM_CAPTURE_FIELD_TYPES = new Set([
   "PHONE",
 ]);
 const CUSTOM_CAPTURE_CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "CHECKBOXES", "SELECT", "LEVEL"]);
+const PRODUCT_INTEREST_MODES = new Set(["OPEN_LEAD_CHOICE", "PROMOTED_PRODUCT", "NO_PRODUCT"]);
 const RMS_CAPTURE_FIELDS = new Set([
   "interest",
   "intent",
@@ -399,6 +400,39 @@ function normalizeCustomCaptureFields(fields = []) {
     .slice(0, 12);
 }
 
+function normalizeProductInterestOption(option = {}) {
+  if (option && typeof option === "object") {
+    const label = String(option.label || option.value || option.name || "").trim();
+    const value = String(option.value || option.name || label).trim();
+    if (!label || !value) return null;
+    return {
+      label,
+      value,
+      product_id: option.product_id || option.id || null,
+      sku: option.sku || null,
+      category: option.category || null,
+    };
+  }
+  const label = String(option || "").trim();
+  return label ? { label, value: label, product_id: null, sku: null, category: null } : null;
+}
+
+function normalizeProductInterestConfig(config = {}) {
+  const mode = PRODUCT_INTEREST_MODES.has(String(config.mode || "")) ? String(config.mode) : "NO_PRODUCT";
+  const productName = String(config.product_name || config.product || config.name || "").trim();
+  const options = Array.isArray(config.options)
+    ? config.options.map(normalizeProductInterestOption).filter(Boolean).slice(0, 80)
+    : [];
+  return {
+    mode,
+    required: config.required !== false && mode !== "NO_PRODUCT",
+    product_id: config.product_id || null,
+    product_name: productName || null,
+    options,
+    rms_field: "interest",
+  };
+}
+
 function normalizeCaptureConfig(config = {}) {
   const required = new Set(["name", "phone", "email", "document", ...(Array.isArray(config.required_fields) ? config.required_fields : [])]);
   const customFields = normalizeCustomCaptureFields(config.custom_fields || config.fields || []);
@@ -410,6 +444,7 @@ function normalizeCaptureConfig(config = {}) {
       : [],
     participant_lock: normalizeParticipantLock(config.participant_lock || {}),
     custom_fields: customFields,
+    product_interest: normalizeProductInterestConfig(config.product_interest || {}),
     form_schema_version: Number(config.form_schema_version || 1),
     rms_mapping_enabled: config.rms_mapping_enabled !== false,
     rms_entry_phase: config.rms_entry_phase || "recoleccion",
@@ -1179,7 +1214,9 @@ function hasCustomCaptureValue(value) {
 }
 
 function activationFormMetadata(activation, body = {}, extra = {}) {
-  const fields = normalizeCaptureConfig(activation.capture_config || {}).custom_fields || [];
+  const captureConfig = normalizeCaptureConfig(activation.capture_config || {});
+  const fields = captureConfig.custom_fields || [];
+  const productInterest = captureConfig.product_interest || {};
   const responses = customCaptureResponses(body);
   const labels = {};
   const rms = {
@@ -1204,12 +1241,33 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     }
   });
   const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+  if (productInterest.mode === "PROMOTED_PRODUCT" && productInterest.product_name) {
+    labels.product_interest = labels.product_interest || "Producto promocionado";
+    responses.product_interest = responses.product_interest || productInterest.product_name;
+    if (!summary.some((item) => item.key === "product_interest")) {
+      summary.unshift({
+        key: "product_interest",
+        label: "Producto promocionado",
+        value: productInterest.product_name,
+        rms_field: "interest",
+      });
+    }
+    rms.interest = rms.interest || productInterest.product_name;
+    rms.product_interest = productInterest.product_name;
+    rms.product_interest_mode = productInterest.mode;
+    rms.product_interest_id = productInterest.product_id || null;
+  } else if (productInterest.mode && productInterest.mode !== "NO_PRODUCT") {
+    rms.product_interest_mode = productInterest.mode;
+  }
+  const existingActivationForm = metadata.activation_form && typeof metadata.activation_form === "object" ? metadata.activation_form : {};
+  const existingRmsIntake = metadata.rms_intake && typeof metadata.rms_intake === "object" ? metadata.rms_intake : {};
   return {
     ...metadata,
     source_url: metadata.source_url || null,
     user_agent: metadata.user_agent || null,
     activation_form: {
       schema_version: activation.capture_config?.form_schema_version || 1,
+      ...existingActivationForm,
       fields: fields.map((field) => ({
         key: field.key,
         label: field.label,
@@ -1218,14 +1276,19 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
         help_text: field.help_text || null,
         rms_field: field.rms_field,
       })),
-      labels,
-      responses,
+      labels: {
+        ...(existingActivationForm.labels && typeof existingActivationForm.labels === "object" ? existingActivationForm.labels : {}),
+        ...labels,
+      },
+      responses: {
+        ...(existingActivationForm.responses && typeof existingActivationForm.responses === "object" ? existingActivationForm.responses : {}),
+        ...responses,
+      },
       summary,
-      ...(metadata.activation_form && typeof metadata.activation_form === "object" ? metadata.activation_form : {}),
     },
     rms_intake: {
+      ...existingRmsIntake,
       ...rms,
-      ...(metadata.rms_intake && typeof metadata.rms_intake === "object" ? metadata.rms_intake : {}),
     },
     ...extra,
   };

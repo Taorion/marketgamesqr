@@ -156,6 +156,11 @@ function customCaptureFields() {
     : [];
 }
 
+function productInterestConfig() {
+  const config = currentActivation?.capture_config?.product_interest;
+  return config && typeof config === "object" ? config : {};
+}
+
 function customFieldName(field) {
   return `custom_${field.key || field.id}`;
 }
@@ -307,8 +312,47 @@ function rmsIntakeFromCustomForm(form) {
   });
 }
 
+function applyFixedProductInterest(activationForm, rmsIntake) {
+  const config = productInterestConfig();
+  const productName = String(config.product_name || "").trim();
+  if (config.mode !== "PROMOTED_PRODUCT" || !productName) return { activationForm, rmsIntake };
+  const nextForm = {
+    ...activationForm,
+    labels: {
+      ...(activationForm.labels || {}),
+      product_interest: (activationForm.labels || {}).product_interest || "Producto promocionado",
+    },
+    responses: {
+      ...(activationForm.responses || {}),
+      product_interest: (activationForm.responses || {}).product_interest || productName,
+    },
+    summary: Array.isArray(activationForm.summary) && activationForm.summary.some((item) => item.key === "product_interest")
+      ? activationForm.summary
+      : [
+        {
+          key: "product_interest",
+          label: "Producto promocionado",
+          value: productName,
+          type: "FIXED_PRODUCT",
+          rms_field: "interest",
+        },
+        ...(activationForm.summary || []),
+      ],
+  };
+  const nextRms = {
+    ...rmsIntake,
+    interest: rmsIntake.interest || productName,
+    product_interest: productName,
+    product_interest_mode: config.mode,
+    product_interest_id: config.product_id || null,
+  };
+  return { activationForm: nextForm, rmsIntake: nextRms };
+}
+
 function participantPayload() {
   const activationForm = collectCustomFormResponses();
+  const rmsIntake = rmsIntakeFromCustomForm(activationForm);
+  const enriched = applyFixedProductInterest(activationForm, rmsIntake);
   return {
     name: participantName.value.trim(),
     phone: participantPhone.value.trim(),
@@ -317,8 +361,8 @@ function participantPayload() {
     metadata: {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
-      activation_form: activationForm,
-      rms_intake: rmsIntakeFromCustomForm(activationForm),
+      activation_form: enriched.activationForm,
+      rms_intake: enriched.rmsIntake,
     },
   };
 }

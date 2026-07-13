@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=dynamic-prelanding-form-builder-20260713-v1">
+  <link rel="stylesheet" href="css/styles.css?v=activation-product-interest-20260713-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -2156,6 +2156,34 @@
                     </label>
                     <label><span>Producto del beneficio</span><select id="triviaBenefitProductInput" data-product-select data-open-product-input="triviaBenefitProductOpenInput"></select><input id="triviaBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
                     <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder='{"percent":15}'></label>
+                    <section class="full activation-config-panel always-visible activation-product-intent-panel" data-product-intent-mode="OPEN_LEAD_CHOICE">
+                      <div class="activation-config-head">
+                        <strong>Producto de interés RMS</strong>
+                        <span>Define si esta activación promociona un producto puntual o si el lead debe elegirlo antes de jugar.</span>
+                      </div>
+                      <div class="activation-product-mode-grid">
+                        <label class="activation-product-intent-card">
+                          <span>Tipo de activación</span>
+                          <select id="activationProductIntentModeInput">
+                            <option value="OPEN_LEAD_CHOICE">Abierta: el lead escoge producto</option>
+                            <option value="PROMOTED_PRODUCT">Producto específico promocionado</option>
+                            <option value="NO_PRODUCT">Sin pregunta de producto</option>
+                          </select>
+                        </label>
+                        <label class="activation-product-intent-card" data-product-intent-fixed>
+                          <span>Producto asociado</span>
+                          <select id="activationProductIntentInput" data-product-select data-open-product-input="activationProductIntentOpenInput" data-placeholder="Seleccionar producto promocionado" data-open-label="Crear o escribir producto nuevo"></select>
+                          <input id="activationProductIntentOpenInput" class="open-product-input hidden" type="text" maxlength="180" placeholder="Producto nuevo o servicio promocionado">
+                        </label>
+                        <div class="activation-product-intent-summary">
+                          <span class="material-symbols-outlined">inventory_2</span>
+                          <div>
+                            <strong>Conecta activación, recolector y curaduría</strong>
+                            <small id="activationProductIntentHelp">La prelanding agregará una pregunta obligatoria con productos del inventario para clasificar el interés del lead.</small>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
                     <section class="full benefit-fulfillment-panel">
                       <div class="activation-config-head">
                         <strong>Entrega del beneficio</strong>
@@ -6461,7 +6489,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=dynamic-prelanding-form-builder-20260713-v1" defer></script>
+  <script src="js/app.js?v=activation-product-interest-20260713-v1" defer></script>
 </body>
 </html>
 
