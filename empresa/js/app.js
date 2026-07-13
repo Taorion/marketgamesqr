@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260712-rms-funnel-quality-output-v1";
+const APP_VERSION = "empresa-20260713-rms-funnel-curation-visual-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -26370,6 +26370,11 @@ function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}
   const materialTypes = rmsStationTopCounts(rows, rmsStationMaterialLabel);
   const channels = rmsStationTopCounts(rows, (item) => item.channel || item.source_detail || item.source_label);
   const interests = rmsStationTopCounts(rows, (item) => item.product_interest || item.raw_recommended_action || item.coverage_type);
+  const selectLabel = stage.key === "alimentacion"
+    ? "Seleccionar cualificados"
+    : stage.key === "curaduria"
+      ? "Chulear curados"
+      : "Checkear lote";
   return `
     <section class="rms-station-material-inventory" aria-label="Materia prima dentro de la estación">
       <div class="rms-station-material-head">
@@ -26378,7 +26383,7 @@ function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}
           <strong>${Number(rows.length || 0).toLocaleString("es-CO")} leads en ${escapeHtml(stage.label || "esta estación")}</strong>
           <p>${escapeHtml(operation.description || "Revisa datos, selecciona leads y autoriza la salida solo cuando estén listos para la siguiente estación.")}</p>
         </div>
-        <button class="solid-button compact" type="button" data-rms-station-select-all="${escapeHtml(stage.key || "")}" ${rows.length ? "" : "disabled"}>Checkear lote</button>
+        <button class="solid-button compact" type="button" data-rms-station-select-all="${escapeHtml(stage.key || "")}" ${rows.length ? "" : "disabled"}>${escapeHtml(selectLabel)}</button>
       </div>
       <div class="rms-station-material-stats">
         <article><span>Con dato contacto</span><strong>${withContact.toLocaleString("es-CO")}</strong></article>
@@ -26393,6 +26398,94 @@ function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}
       </div>
     </section>
   `;
+}
+
+function rmsFunnelQualityCounts(rows = []) {
+  return RMS_LEAD_QUALITY_OPTIONS.map((option) => ({
+    ...option,
+    count: rows.filter((item) => rmsLeadQualityValue(item) === option.value).length,
+  }));
+}
+
+function rmsCurationAudit(item = {}) {
+  const hasContact = Boolean(item.phone || item.email);
+  const hasOrigin = Boolean(item.entry_summary || item.source_detail || item.campaign_name || item.activation_name || item.channel || item.source_label);
+  const hasInterest = Boolean(item.product_interest || item.top_interest || item.interest || item.raw_recommended_action);
+  const hasCoverage = Boolean(item.campaign_name || item.activation_name || item.active_tickets || item.coverage_type);
+  const checks = [
+    { key: "contact", label: "Contacto", ok: hasContact },
+    { key: "origin", label: "Origen", ok: hasOrigin },
+    { key: "interest", label: "Interés", ok: hasInterest },
+    { key: "coverage", label: "Ticket/campaña", ok: hasCoverage },
+  ];
+  const missing = checks.filter((check) => !check.ok);
+  return {
+    checks,
+    missing,
+    ready: hasContact && hasOrigin && hasInterest,
+    label: missing.length ? `Falta ${missing.map((check) => check.label.toLowerCase()).join(", ")}` : "Dato curado",
+  };
+}
+
+function rmsStationFocusConsoleMarkup(phase = "", rows = [], nextPhase = null) {
+  if (phase === "alimentacion") {
+    const qualityCounts = rmsFunnelQualityCounts(rows);
+    const qualified = rmsStationOutputEligibleRows(phase, rows).length;
+    const unqualified = Math.max(0, rows.length - qualified);
+    return `
+      <section class="rms-station-focus-console is-funnel" aria-label="Consola visual del embudo">
+        <div class="rms-station-focus-copy">
+          <span class="mono-label">Compuerta del embudo</span>
+          <h4>La salida no depende de chulear al azar: exige una probabilidad explícita.</h4>
+          <p>${escapeHtml(qualified ? `${qualified.toLocaleString("es-CO")} lead(s) ya pueden pasar a ${nextPhase?.label || "Curaduría"}.` : "Selecciona calidad alta, media o baja para convertir entrada cruda en salida operable.")}</p>
+        </div>
+        <div class="rms-funnel-quality-board">
+          ${qualityCounts.map((quality) => {
+            const percent = rows.length ? Math.round((quality.count / rows.length) * 100) : 0;
+            return `
+              <article class="rms-quality-tile quality-${escapeHtml(quality.value.toLowerCase())}">
+                <span>${escapeHtml(quality.shortLabel)}</span>
+                <strong>${Number(quality.count || 0).toLocaleString("es-CO")}</strong>
+                <small>${escapeHtml(quality.detail)}</small>
+                <i style="--quality-fill:${percent}%"></i>
+              </article>
+            `;
+          }).join("")}
+          <article class="rms-quality-tile quality-pending">
+            <span>Sin decidir</span>
+            <strong>${unqualified.toLocaleString("es-CO")}</strong>
+            <small>No aparecen en salida hasta asignar calidad.</small>
+            <i style="--quality-fill:${rows.length ? Math.round((unqualified / rows.length) * 100) : 0}%"></i>
+          </article>
+        </div>
+      </section>
+    `;
+  }
+  if (phase === "curaduria") {
+    const audits = rows.map(rmsCurationAudit);
+    const ready = audits.filter((audit) => audit.ready).length;
+    const missingContact = audits.filter((audit) => audit.missing.some((check) => check.key === "contact")).length;
+    const missingOrigin = audits.filter((audit) => audit.missing.some((check) => check.key === "origin")).length;
+    const missingInterest = audits.filter((audit) => audit.missing.some((check) => check.key === "interest")).length;
+    const highQuality = rows.filter((item) => rmsLeadQualityValue(item) === "HIGH").length;
+    return `
+      <section class="rms-station-focus-console is-curation" aria-label="Mesa visual de curaduría">
+        <div class="rms-station-focus-copy">
+          <span class="mono-label">Mesa de curaduría</span>
+          <h4>Antes de clasificar, limpia basura comercial y deja el dato defendible.</h4>
+          <p>${escapeHtml(ready ? `${ready.toLocaleString("es-CO")} lead(s) tienen contacto, origen e interés mínimos.` : "La estación debe revelar qué dato falta antes de avanzar.")}</p>
+        </div>
+        <div class="rms-curation-audit-board">
+          <article><span>Curables hoy</span><strong>${ready.toLocaleString("es-CO")}</strong><small>Listos para clasificar</small></article>
+          <article><span>Alta calidad</span><strong>${highQuality.toLocaleString("es-CO")}</strong><small>Vienen fuertes del embudo</small></article>
+          <article><span>Sin contacto</span><strong>${missingContact.toLocaleString("es-CO")}</strong><small>Completar teléfono o correo</small></article>
+          <article><span>Sin origen</span><strong>${missingOrigin.toLocaleString("es-CO")}</strong><small>Fuente/campaña pendiente</small></article>
+          <article><span>Sin interés</span><strong>${missingInterest.toLocaleString("es-CO")}</strong><small>Necesidad sin confirmar</small></article>
+        </div>
+      </section>
+    `;
+  }
+  return "";
 }
 
 function rmsStationVisualMeta(phase = "") {
@@ -26601,6 +26694,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </aside>
       </div>
 
+      ${rmsStationFocusConsoleMarkup(phase, rows, nextPhase)}
+
       ${rmsStationMaterialInventoryMarkup(rows, stage, operation)}
 
       <div class="rms-station-operation-strip">
@@ -26701,10 +26796,12 @@ function rmsStationOutputEligibleRows(phase = "", rows = []) {
 function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
   const selectedRows = rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
-  const outputVerb = phase === "alimentacion" ? "lead(s) cualificado(s)" : "lead(s) chuleado(s)";
+  const outputVerb = phase === "alimentacion" ? "lead(s) cualificado(s)" : phase === "curaduria" ? "lead(s) curado(s)" : "lead(s) chuleado(s)";
   const emptyText = phase === "alimentacion"
     ? "Asigna calidad alta, media o baja para poner leads en la salida del embudo."
-    : "Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.";
+    : phase === "curaduria"
+      ? "Selecciona los leads con dato defendible para pasarlos al Clasificador RMS."
+      : "Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.";
   return `
     <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
       <div class="rms-station-lane-head">
@@ -26785,13 +26882,16 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const classification = [item.care_priority_label || item.priority_label, item.risk_label].filter(Boolean).join(" / ") || "-";
   const readiness = rmsCollectorReadiness(item);
   const quality = rmsLeadQualityLabel(item);
+  const curationAudit = rmsCurationAudit(item);
+  const qualityValue = rmsLeadQualityValue(item);
   const statusMarkup = stage.key === "alimentacion"
     ? `${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida del embudo` : "Selecciona calidad para enviarlo a salida")}</small>`
-    : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? quality : classification)}</span>
+    : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? curationAudit.label : classification)}</span>
         ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
+        ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(curationAudit.ready ? "Dato defendible para clasificar" : "Curar antes de clasificar")}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
-    <tr class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
       <td class="rms-station-check-cell">
         <label class="rms-station-lead-check" title="Marcar lead para operar">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
