@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260712-rms-collector-input-output-v1";
+const APP_VERSION = "empresa-20260712-rms-funnel-quality-output-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1302,6 +1302,7 @@ let state = {
   rmsMachineLoading: false,
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
+  rmsLeadQualityDraft: {},
   rmsStationPhase: "",
   rmsStationScreenOpen: false,
   rmsMachineFilters: {
@@ -26286,7 +26287,9 @@ function rmsStationNextPhase(stage = {}, stages = []) {
 }
 
 function rmsStationRows(phase = "", opportunities = []) {
-  return (opportunities || []).filter((item) => item.stage === phase);
+  const rows = (opportunities || []).filter((item) => item.stage === phase);
+  if (phase !== "curaduria") return rows;
+  return rows.slice().sort((a, b) => rmsLeadQualityRank(b) - rmsLeadQualityRank(a) || Number(b.priority_score || 0) - Number(a.priority_score || 0));
 }
 
 function rmsStationMaterialLabel(item = {}) {
@@ -26299,6 +26302,45 @@ function rmsStationMaterialLabel(item = {}) {
     BUYER: "Comprador",
     AFFILIATE: "Afiliado / referido",
   }[String(item.source_type || "").toUpperCase()] || "Lead";
+}
+
+const RMS_LEAD_QUALITY_OPTIONS = [
+  { value: "HIGH", label: "Calidad alta", shortLabel: "Alta", priority: "HIGH", detail: "Alta probabilidad de conversión" },
+  { value: "MEDIUM", label: "Calidad media", shortLabel: "Media", priority: "MEDIUM", detail: "Interés viable, requiere curaduría" },
+  { value: "LOW", label: "Calidad baja", shortLabel: "Baja", priority: "LOW", detail: "Dato débil o baja intención" },
+];
+
+function rmsLeadQualityOption(value = "") {
+  const normalized = String(value || "").trim().toUpperCase();
+  return RMS_LEAD_QUALITY_OPTIONS.find((item) => item.value === normalized) || null;
+}
+
+function rmsLeadQualityValue(item = {}) {
+  const draftValue = state.rmsLeadQualityDraft?.[item.id];
+  const storedValue = item.state_metadata?.lead_quality || item.state_metadata?.funnel_quality || item.lead_quality || "";
+  return rmsLeadQualityOption(draftValue || storedValue)?.value || "";
+}
+
+function rmsLeadQualityLabel(item = {}) {
+  const option = rmsLeadQualityOption(rmsLeadQualityValue(item));
+  return option?.label || "Sin calidad";
+}
+
+function rmsLeadQualityRank(item = {}) {
+  return { HIGH: 3, MEDIUM: 2, LOW: 1 }[rmsLeadQualityValue(item)] || 0;
+}
+
+function rmsLeadQualitySelectMarkup(item = {}) {
+  const selectedValue = rmsLeadQualityValue(item);
+  return `
+    <label class="rms-lead-quality-field">
+      <span>Probabilidad de conversión</span>
+      <select data-rms-lead-quality="${escapeHtml(item.id)}" aria-label="Calidad del lead">
+        <option value="">Seleccionar calidad</option>
+        ${RMS_LEAD_QUALITY_OPTIONS.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === selectedValue ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+      </select>
+    </label>
+  `;
 }
 
 function rmsStationTopCounts(rows = [], getter = () => "", limit = 4) {
@@ -26368,12 +26410,12 @@ function rmsStationVisualMeta(phase = "") {
     alimentacion: {
       icon: "input_circle",
       tone: "intake",
-      screenTitle: "Meter el lead oficialmente a la máquina",
+      screenTitle: "Cualificar el lead dentro del embudo",
       visualLabel: "Embudo de entrada",
       input: "Leads recolectados que ya tienen algún dato útil.",
-      output: "Oportunidad lista para curaduría comercial.",
-      focus: "Confirmar que esta persona ya entró a la Máquina RMS y no queda suelta.",
-      checklist: ["Nombre", "WhatsApp", "Origen", "Campaña", "Fecha de entrada"],
+      output: "Lead cualificado como calidad alta, media o baja para pasar a Curaduría.",
+      focus: "Decidir la probabilidad inicial de conversión antes de enviarlo a curaduría.",
+      checklist: ["Nombre", "WhatsApp", "Origen", "Interés", "Calidad alta/media/baja"],
     },
     curaduria: {
       icon: "fact_check",
@@ -26504,11 +26546,16 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const phase = stage.key;
   state.rmsStationPhase = phase;
   const rows = rmsStationRows(phase, opportunities);
+  const outputEligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const operation = stage.operation || (state.rmsMachine?.operations || {})[phase] || {};
   const nextPhase = rmsStationNextPhase(stage, stages);
   const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
   const visual = rmsStationVisualMeta(phase);
+  const selectAllLabel = phase === "alimentacion" ? "Seleccionar cualificados" : "Chulear toda entrada";
+  const screenHelpText = phase === "alimentacion"
+    ? "La entrada muestra leads recibidos del recolector. La salida muestra solo leads con calidad alta, media o baja."
+    : rows.length ? "La entrada muestra todo lo recibido. La salida muestra solo lo chuleado para pasar a la siguiente estación." : "Esta estación está esperando leads.";
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
@@ -26525,8 +26572,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           <select data-rms-station-picker aria-label="Cambiar estación RMS">
             ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
           </select>
-          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">Chulear toda entrada</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${rows.length && nextPhase ? "" : "disabled"}>${escapeHtml(phase === "recoleccion" ? "Enviar salida al embudo" : "Enviar salida")}</button>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${outputEligibleRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(phase === "recoleccion" ? "Enviar salida al embudo" : "Enviar salida")}</button>
         </div>
       </div>
 
@@ -26568,7 +26615,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         <div class="rms-station-screen-head">
           <div>
             <strong>${escapeHtml(phase === "recoleccion" ? "Entrada y salida del Recolector" : "Entrada y salida de esta estación")}</strong>
-            <small>${rows.length ? "La entrada muestra todo lo recibido. La salida muestra solo lo chuleado para pasar a la siguiente estación." : "Esta estación está esperando leads."}</small>
+            <small>${escapeHtml(screenHelpText)}</small>
           </div>
           <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
         </div>
@@ -26590,7 +26637,10 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     if (!rows.length || !nextPhase) return;
     const selectedRows = rmsStationSelectedRows(phase, rows);
     if (!selectedRows.length) {
-      showFeedback("Primero chulea los leads hábiles en la entrada para ponerlos en salida.", "info", { title: stage.label || "Estación RMS" });
+      const message = phase === "alimentacion"
+        ? "Primero asigna calidad alta, media o baja para poner leads en salida."
+        : "Primero chulea los leads hábiles en la entrada para ponerlos en salida.";
+      showFeedback(message, "info", { title: stage.label || "Estación RMS" });
       return;
     }
     state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
@@ -26624,7 +26674,7 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
 
 function rmsStationSelectedRows(phase = "", rows = []) {
   const selected = new Set(state.rmsMachineSelectedIds || []);
-  return (rows || []).filter((item) => item.stage === phase && selected.has(item.id));
+  return rmsStationOutputEligibleRows(phase, rows).filter((item) => item.stage === phase && selected.has(item.id));
 }
 
 function rmsCollectorReadiness(item = {}) {
@@ -26642,15 +26692,26 @@ function rmsCollectorReadiness(item = {}) {
   };
 }
 
+function rmsStationOutputEligibleRows(phase = "", rows = []) {
+  if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
+  if (phase !== "recoleccion") return rows || [];
+  return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
+}
+
 function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
   const selectedRows = rmsStationSelectedRows(phase, rows);
+  const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
+  const outputVerb = phase === "alimentacion" ? "lead(s) cualificado(s)" : "lead(s) chuleado(s)";
+  const emptyText = phase === "alimentacion"
+    ? "Asigna calidad alta, media o baja para poner leads en la salida del embudo."
+    : "Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.";
   return `
     <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
       <div class="rms-station-lane-head">
         <div>
           <span class="mono-label">Salida</span>
-          <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} lead(s) chuleado(s)</strong>
-          <small>${escapeHtml(nextPhase ? `Listos para enviar a ${nextPhase.label}.` : "Esta estación no tiene salida configurada.")}</small>
+          <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} ${escapeHtml(outputVerb)}</strong>
+          <small>${escapeHtml(nextPhase ? `Listos para enviar a ${nextPhase.label}. Disponibles para salida: ${eligibleRows.length} de ${rows.length}.` : "Esta estación no tiene salida configurada.")}</small>
         </div>
         <button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
           ${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
@@ -26659,14 +26720,15 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
       <div class="rms-station-output-list">
         ${selectedRows.length ? selectedRows.map((item) => {
           const readiness = rmsCollectorReadiness(item);
+          const quality = rmsLeadQualityOption(rmsLeadQualityValue(item));
           return `
             <article>
               <strong>${escapeHtml(item.name || "Contacto")}</strong>
-              <span>${escapeHtml(readiness.label)} · ${escapeHtml(item.phone || item.email || "Sin contacto")}</span>
+              <span>${escapeHtml(phase === "alimentacion" ? `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}` : `${readiness.label} · ${item.phone || item.email || "Sin contacto"}`)}</span>
               <small>${escapeHtml(item.product_interest || item.entry_summary || item.source_detail || item.campaign_name || "Sin contexto")}</small>
             </article>
           `;
-        }).join("") : '<div class="empty-state compact">Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.</div>'}
+        }).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
       </div>
     </section>
   `;
@@ -26701,7 +26763,7 @@ function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, oper
             <th>Contacto</th>
             <th>Origen / campaña</th>
             <th>Interés</th>
-            <th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : "Estado en estación")}</th>
+            <th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : stage.key === "alimentacion" ? "Calidad del lead" : "Estado en estación")}</th>
             <th>Ficha</th>
           </tr>
         </thead>
@@ -26722,6 +26784,12 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const campaignChannel = [item.campaign_name || item.activation_name, item.channel].filter(Boolean).join(" / ") || "-";
   const classification = [item.care_priority_label || item.priority_label, item.risk_label].filter(Boolean).join(" / ") || "-";
   const readiness = rmsCollectorReadiness(item);
+  const quality = rmsLeadQualityLabel(item);
+  const statusMarkup = stage.key === "alimentacion"
+    ? `${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida del embudo` : "Selecciona calidad para enviarlo a salida")}</small>`
+    : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? quality : classification)}</span>
+        ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
+        <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
     <tr class="rms-station-lead-row ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
       <td class="rms-station-check-cell">
@@ -26748,9 +26816,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
       </td>
       <td>
-        <span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : classification)}</span>
-        ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
-        <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>
+        ${statusMarkup}
       </td>
       <td>
         <div class="rms-station-lead-buttons">
@@ -26932,6 +26998,26 @@ function bindRmsMachineActions(root) {
       renderRmsLeadInspector();
     });
   });
+  root.querySelectorAll("[data-rms-lead-quality]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const id = select.dataset.rmsLeadQuality || "";
+      const value = rmsLeadQualityOption(select.value)?.value || "";
+      if (!state.rmsLeadQualityDraft) state.rmsLeadQualityDraft = {};
+      if (value) state.rmsLeadQualityDraft[id] = value;
+      else delete state.rmsLeadQualityDraft[id];
+      const current = new Set(state.rmsMachineSelectedIds || []);
+      if (value) current.add(id);
+      else current.delete(id);
+      state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+      renderRmsBulkToolbar();
+      renderRmsMachineView();
+      showFeedback(
+        value ? `${rmsLeadQualityOption(value)?.label || "Calidad asignada"}: lead puesto en salida del embudo.` : "Calidad removida: lead retirado de salida.",
+        "info",
+        { title: "Embudo de Entrada" }
+      );
+    });
+  });
   root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => toggleRmsSelection(checkbox.dataset.rmsSelect, checkbox.checked));
   });
@@ -26975,7 +27061,10 @@ function bindRmsStationOutputAction(container = rmsStationWorkspace) {
     button.addEventListener("click", async () => {
       const selectedRows = rmsStationSelectedRows(phase, rows);
       if (!selectedRows.length || !nextPhase) {
-        showFeedback("Primero chulea los leads hábiles en la entrada.", "info", { title: stage.label || "Estación RMS" });
+        const message = phase === "alimentacion"
+          ? "Primero cualifica leads con calidad alta, media o baja."
+          : "Primero chulea los leads hábiles en la entrada.";
+        showFeedback(message, "info", { title: stage.label || "Estación RMS" });
         return;
       }
       state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
@@ -27002,6 +27091,19 @@ function updateRmsStationOutputPreview() {
 }
 
 function toggleRmsSelection(id = "", selected = false) {
+  const item = rmsOpportunityById(id);
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion" && !rmsCollectorReadiness(item).ready) {
+    const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+    if (checkbox) checkbox.checked = false;
+    showFeedback("Completa contacto e interés antes de poner este lead en salida.", "info", { title: "Recolector RMS" });
+    return;
+  }
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "alimentacion" && item?.stage === "alimentacion" && !rmsLeadQualityValue(item)) {
+    const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+    if (checkbox) checkbox.checked = false;
+    showFeedback("Primero selecciona calidad alta, media o baja para poner este lead en salida.", "info", { title: "Embudo de Entrada" });
+    return;
+  }
   const current = new Set(state.rmsMachineSelectedIds || []);
   if (selected) current.add(id);
   else current.delete(id);
@@ -27016,11 +27118,20 @@ function toggleRmsSelection(id = "", selected = false) {
 }
 
 function selectRmsPhaseForBulk(phase = "") {
-  const ids = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase).map((item) => item.id);
+  const phaseRows = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase);
+  const eligibleRows = rmsStationOutputEligibleRows(phase, phaseRows);
+  const ids = eligibleRows.map((item) => item.id);
   const stage = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
   const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
-  if (!ids.length) {
+  if (!phaseRows.length) {
     handleRmsEmptyStationOperation(phase, stage, operation);
+    return;
+  }
+  if (!ids.length) {
+    const message = phase === "alimentacion"
+      ? "La salida del embudo exige calidad alta, media o baja. Cualifica al menos un lead antes de enviarlo a Curaduría."
+      : "La salida del recolector exige contacto e interés mínimo. Completa esos datos antes de enviar al embudo.";
+    showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
   state.rmsMachineSelectedIds = ids;
@@ -27226,6 +27337,11 @@ async function moveSelectedRmsPhase() {
     for (const id of ids) {
       const item = rmsOpportunityById(id);
       if (!item) continue;
+      const qualityOption = item.stage === "alimentacion" ? rmsLeadQualityOption(rmsLeadQualityValue(item)) : null;
+      if (item.stage === "alimentacion" && !qualityOption) {
+        showFeedback("Todos los leads del Embudo necesitan calidad alta, media o baja antes de pasar a Curaduría.", "info", { title: "Embudo de Entrada" });
+        continue;
+      }
       await api("/api/business/rms-machine/lead/phase", {
         method: "PATCH",
         headers: authHeaders(),
@@ -27234,12 +27350,24 @@ async function moveSelectedRmsPhase() {
           source_type: item.source_type || "PLAYER",
           lead_id: item.lead_id || null,
           to_phase: toPhase,
-          priority: item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM",
-          recommended_action: item.next_action?.title || "",
+          priority: qualityOption?.priority || (item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM"),
+          recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : item.next_action?.title || "",
+          last_operation: qualityOption ? "funnel_quality_classified" : undefined,
+          last_material_sent: qualityOption?.value || undefined,
           revenue_potential: Number(item.revenue_potential || 0),
-          reason: "Movimiento manual desde Mapa Operativo RMS",
+          reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : "Movimiento manual desde Mapa Operativo RMS",
+          metadata: qualityOption ? {
+            source_module: "rms_machine",
+            source_flow: "funnel_quality_output",
+            from_phase: item.stage,
+            lead_quality: qualityOption.value,
+            lead_quality_label: qualityOption.label,
+            lead_quality_detail: qualityOption.detail,
+            qualified_at: new Date().toISOString(),
+          } : {},
         }),
       });
+      if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[id];
     }
     state.rmsMachineSelectedIds = [];
     state.rmsMachineLoaded = false;
@@ -27266,6 +27394,11 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     showFeedback("Este lead no tiene origen suficiente para moverlo de estación.", "info", { title: "Máquina RMS" });
     return;
   }
+  const qualityOption = item.stage === "alimentacion" ? rmsLeadQualityOption(rmsLeadQualityValue(item)) : null;
+  if (item.stage === "alimentacion" && !qualityOption) {
+    showFeedback("Selecciona calidad alta, media o baja antes de enviar este lead a Curaduría.", "info", { title: "Embudo de Entrada" });
+    return;
+  }
   try {
     showFeedback("Moviendo lead a la siguiente estación...", "loading", { title: "Máquina RMS", timeout: 0 });
     await api("/api/business/rms-machine/lead/phase", {
@@ -27276,24 +27409,31 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
         source_type: item.source_type || "PLAYER",
         lead_id: item.lead_id || null,
         to_phase: toPhase,
-        priority: rmsPriorityCode(item),
-        recommended_action: item.next_action?.title || item.raw_recommended_action || "",
-        last_operation: options.last_operation || `move_to_${toPhase}`,
-        last_material_sent: item.coverage_type || "",
+        priority: qualityOption?.priority || rmsPriorityCode(item),
+        recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : item.next_action?.title || item.raw_recommended_action || "",
+        last_operation: qualityOption ? "funnel_quality_classified" : options.last_operation || `move_to_${toPhase}`,
+        last_material_sent: qualityOption?.value || item.coverage_type || "",
         revenue_potential: Number(item.revenue_potential || 0),
-        reason: options.reason || "Avance operativo desde pantalla de estación RMS.",
+        reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : options.reason || "Avance operativo desde pantalla de estación RMS.",
         metadata: {
           source_module: "rms_machine",
-          source_flow: "station_workspace",
+          source_flow: qualityOption ? "funnel_quality_output" : "station_workspace",
           from_phase: item.stage || null,
           rms_opportunity_id: item.id || null,
           campaign_id: item.campaign_id || null,
           product_interest: item.product_interest || null,
+          ...(qualityOption ? {
+            lead_quality: qualityOption.value,
+            lead_quality_label: qualityOption.label,
+            lead_quality_detail: qualityOption.detail,
+            qualified_at: new Date().toISOString(),
+          } : {}),
           ...(options.metadata || {}),
         },
       }),
     });
     state.rmsMachineSelectedIds = [];
+    if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[item.id];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     state.rmsStationPhase = toPhase;

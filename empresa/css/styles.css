@@ -29872,3 +29872,124 @@ body[data-current-view="rms-machine"] .rms-factory-console.is-station-mode .rms-
     justify-self: center !important;
   }
 }
+
+/* 2026-07 RMS collector input/output hardening: keep the inlet as a real table. */
+body[data-current-view="rms-machine"] .rms-station-lanes {
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.75fr) !important;
+  align-items: start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-input-lane,
+body[data-current-view="rms-machine"] .rms-station-output-lane {
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table-wrap {
+  overflow-x: auto !important;
+  border: 1px solid #d8e8df !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table {
+  width: 100% !important;
+  min-width: 1040px !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table .rms-station-lead-row {
+  display: table-row !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table th,
+body[data-current-view="rms-machine"] .rms-station-lead-table td {
+  padding: 11px 12px !important;
+  border-bottom: 1px solid #e4efe9 !important;
+  color: #10251d !important;
+  text-align: left !important;
+  vertical-align: top !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table th {
+  background: #eef8f3 !important;
+  color: #315348 !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table th:first-child,
+body[data-current-view="rms-machine"] .rms-station-lead-table td:first-child {
+  width: 62px !important;
+  text-align: center !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table th:last-child,
+body[data-current-view="rms-machine"] .rms-station-lead-table td:last-child {
+  width: 104px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table .rms-station-lead-row.is-selected td {
+  background: var(--station-accent-soft, #e6f7ef) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table .rms-station-lead-check {
+  width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 auto !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-lead-table .rms-station-lead-buttons {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-lead-quality-field {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-lead-quality-field span {
+  color: #5b7168 !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+}
+
+body[data-current-view="rms-machine"] .rms-lead-quality-field select {
+  width: 100% !important;
+  min-height: 36px !important;
+  border: 1px solid #bdd8cc !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #0b2d23 !important;
+  font-weight: 800 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-output-lane {
+  position: sticky !important;
+  top: 14px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-output-list {
+  grid-template-columns: 1fr !important;
+}
+
+@media (max-width: 1180px) {
+  body[data-current-view="rms-machine"] .rms-station-lanes {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-station-output-lane {
+    position: static !important;
+  }
+}
