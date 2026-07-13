@@ -30394,3 +30394,131 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
     width: 100%;
   }
 }
+
+body[data-current-view="rms-machine"] .rms-product-classifier {
+  display: grid !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(35, 103, 151, 0.16) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #f8fcff, #eef7ff) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier label {
+  display: grid !important;
+  gap: 5px !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier label span,
+body[data-current-view="rms-machine"] .rms-product-classifier-meta span {
+  color: #15527a !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier select,
+body[data-current-view="rms-machine"] .rms-product-classifier input {
+  min-height: 38px !important;
+  border-radius: 8px !important;
+  font-size: 0.82rem !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier-meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier-meta small {
+  color: #486170 !important;
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-product-classifier-actions .compact {
+  min-height: 34px !important;
+  padding: 7px 9px !important;
+  font-size: 0.72rem !important;
+}
+
+body[data-current-view="rms-machine"] .rms-capture-data-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-capture-data-chips span {
+  display: inline-grid !important;
+  gap: 2px !important;
+  max-width: 190px !important;
+  padding: 6px 8px !important;
+  border: 1px solid rgba(13, 107, 82, 0.16) !important;
+  border-radius: 8px !important;
+  background: #f1fbf6 !important;
+  color: #153d32 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="rms-machine"] .rms-capture-data-chips strong {
+  color: #0d6b52 !important;
+  font-size: 0.62rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="curation"] .rms-station-visual-panel {
+  background: linear-gradient(135deg, #ffffff, #edf7ff) !important;
+  border-color: rgba(35, 103, 151, 0.18) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="curation"] .rms-station-icon-orbit {
+  background: #e7f4ff !important;
+  color: #15527a !important;
+}
+
+body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme="curation"] .rms-station-output-lane {
+  border-color: rgba(35, 103, 151, 0.24) !important;
+  background: linear-gradient(180deg, #ffffff, #eef7ff) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-product-classifier {
+  border-color: rgba(111, 185, 231, 0.22) !important;
+  background: rgba(25, 45, 58, 0.9) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-product-classifier label span,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-product-classifier-meta span {
+  color: #bde3ff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-product-classifier-meta small {
+  color: #c2d3de !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-capture-data-chips span {
+  border-color: rgba(92, 214, 166, 0.18) !important;
+  background: rgba(92, 214, 166, 0.08) !important;
+  color: #d8f7ea !important;
+}
+
+@media (max-width: 920px) {
+  body[data-current-view="rms-machine"] .rms-product-classifier-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+}

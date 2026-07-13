@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260713-activation-rms-form-builder-v1";
+const APP_VERSION = "empresa-20260713-rms-curados-product-classifier-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1304,6 +1304,7 @@ let state = {
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
+  rmsProductClassificationDraft: {},
   rmsStationPhase: "",
   rmsStationScreenOpen: false,
   rmsMachineFilters: {
@@ -26411,6 +26412,75 @@ function rmsLeadQualitySelectMarkup(item = {}) {
   `;
 }
 
+function rmsClassifiedProductDraft(item = {}) {
+  return state.rmsProductClassificationDraft?.[item.id] || null;
+}
+
+function rmsClassifiedProductValue(item = {}) {
+  const draft = rmsClassifiedProductDraft(item);
+  if (draft?.product_select !== undefined) return draft.product_select;
+  if (item.classified_product_id) return inventoryProductSelectValue({ id: item.classified_product_id });
+  const matched = findInventoryProduct(item.classified_product_name || item.product_interest || "");
+  return matched ? inventoryProductSelectValue(matched) : (item.classified_product_name || item.product_interest ? OPEN_PRODUCT_VALUE : "");
+}
+
+function rmsClassifiedProductName(item = {}) {
+  const draft = rmsClassifiedProductDraft(item);
+  if (draft?.open_product_name) return draft.open_product_name;
+  const selected = rmsClassifiedProductValue(item);
+  const product = findInventoryProduct(selected);
+  return product?.name || item.classified_product_name || item.product_interest || "";
+}
+
+function rmsClassificationSourceLabel(item = {}) {
+  const source = String(item.classification_source || "").toLowerCase();
+  if (item.classification_is_manual || source.includes("manual")) return "Clasificación manual";
+  if (source === "auto_inventory_match") return "Clasificación automática por inventario";
+  if (source === "interest_without_inventory_match") return "Interés detectado sin producto creado";
+  return "Sin clasificación de producto";
+}
+
+function rmsProductClassificationMarkup(item = {}) {
+  const selected = rmsClassifiedProductValue(item);
+  const openValue = selected === OPEN_PRODUCT_VALUE ? rmsClassifiedProductName(item) : "";
+  const confidence = Math.round(Number(item.classification_confidence || 0) * 100);
+  return `
+    <div class="rms-product-classifier" data-rms-product-classifier="${escapeHtml(item.id)}">
+      <label>
+        <span>Producto / servicio interno</span>
+        <select data-rms-product-select="${escapeHtml(item.id)}" data-product-select data-placeholder="Sin producto clasificado" data-open-label="Crear o escribir producto nuevo">
+          ${inventoryProductSelectOptions(selected, { placeholder: "Sin producto clasificado", openLabel: "Crear o escribir producto nuevo" })}
+        </select>
+      </label>
+      <input class="open-product-input ${selected === OPEN_PRODUCT_VALUE ? "" : "hidden"}" data-rms-product-open="${escapeHtml(item.id)}" type="text" maxlength="180" value="${escapeHtml(openValue)}" placeholder="Nombre del producto o servicio nuevo">
+      <div class="rms-product-classifier-meta">
+        <span>${escapeHtml(rmsClassificationSourceLabel(item))}</span>
+        ${confidence ? `<small>${confidence}% de coincidencia</small>` : "<small>Requiere edición interna</small>"}
+      </div>
+      <div class="rms-product-classifier-actions">
+        <button class="ghost-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar</button>
+        <button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>
+        <button class="ghost-button compact danger-button" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>
+      </div>
+    </div>
+  `;
+}
+
+function rmsCaptureDataChips(item = {}) {
+  const summary = Array.isArray(item.capture_summary) ? item.capture_summary : [];
+  if (!summary.length) return "";
+  return `
+    <div class="rms-capture-data-chips">
+      ${summary.slice(0, 4).map((entry) => `
+        <span title="${escapeHtml(entry.label)}">
+          <strong>${escapeHtml(entry.label)}</strong>
+          ${escapeHtml(entry.value)}
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function rmsStationTopCounts(rows = [], getter = () => "", limit = 4) {
   const counts = new Map();
   rows.forEach((item) => {
@@ -26435,9 +26505,10 @@ function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}
   const withCampaign = rows.filter((item) => item.campaign_name || item.activation_name).length;
   const withTicket = rows.filter((item) => Number(item.active_tickets || 0) > 0).length;
   const highPriority = rows.filter((item) => Number(item.priority_score || 0) >= 70 || ["HIGH", "URGENT"].includes(String(item.care_priority || "").toUpperCase())).length;
+  const productClassified = rows.filter((item) => item.classified_product_id || item.classified_product_name || findInventoryProduct(item.product_interest || "")).length;
   const materialTypes = rmsStationTopCounts(rows, rmsStationMaterialLabel);
   const channels = rmsStationTopCounts(rows, (item) => item.channel || item.source_detail || item.source_label);
-  const interests = rmsStationTopCounts(rows, (item) => item.product_interest || item.raw_recommended_action || item.coverage_type);
+  const interests = rmsStationTopCounts(rows, (item) => item.classified_product_name || item.product_interest || item.raw_recommended_action || item.coverage_type);
   const selectLabel = stage.key === "alimentacion"
     ? "Seleccionar cualificados"
     : stage.key === "curaduria"
@@ -26457,7 +26528,7 @@ function rmsStationMaterialInventoryMarkup(rows = [], stage = {}, operation = {}
         <article><span>Con dato contacto</span><strong>${withContact.toLocaleString("es-CO")}</strong></article>
         <article><span>Con campaña/activación</span><strong>${withCampaign.toLocaleString("es-CO")}</strong></article>
         <article><span>Con ticket activo</span><strong>${withTicket.toLocaleString("es-CO")}</strong></article>
-        <article><span>Alta prioridad</span><strong>${highPriority.toLocaleString("es-CO")}</strong></article>
+        <article><span>${stage.key === "curaduria" ? "Clasificados producto" : "Alta prioridad"}</span><strong>${(stage.key === "curaduria" ? productClassified : highPriority).toLocaleString("es-CO")}</strong></article>
       </div>
       <div class="rms-station-material-buckets">
         <div><span>Tipo de materia</span>${rmsStationCountChips(materialTypes)}</div>
@@ -26536,19 +26607,22 @@ function rmsStationFocusConsoleMarkup(phase = "", rows = [], nextPhase = null) {
     const missingOrigin = audits.filter((audit) => audit.missing.some((check) => check.key === "origin")).length;
     const missingInterest = audits.filter((audit) => audit.missing.some((check) => check.key === "interest")).length;
     const highQuality = rows.filter((item) => rmsLeadQualityValue(item) === "HIGH").length;
+    const classified = rows.filter((item) => item.classified_product_id || item.classified_product_name || findInventoryProduct(item.product_interest || "")).length;
+    const noInventoryMatch = rows.filter((item) => item.product_interest && !item.classified_product_id && !findInventoryProduct(item.product_interest)).length;
     return `
       <section class="rms-station-focus-console is-curation" aria-label="Mesa visual de curaduría">
         <div class="rms-station-focus-copy">
-          <span class="mono-label">Mesa de curaduría</span>
-          <h4>Antes de clasificar, limpia basura comercial y deja el dato defendible.</h4>
-          <p>${escapeHtml(ready ? `${ready.toLocaleString("es-CO")} lead(s) tienen contacto, origen e interés mínimos.` : "La estación debe revelar qué dato falta antes de avanzar.")}</p>
+          <span class="mono-label">Curados por producto</span>
+          <h4>La calidad ya viene del embudo; aquí se amarra cada lead al producto o servicio interno.</h4>
+          <p>${escapeHtml(classified ? `${classified.toLocaleString("es-CO")} lead(s) ya tienen clasificación de producto o coincidencia automática.` : "Clasifica contra Productos o crea el producto si aún no existe en inventario.")}</p>
         </div>
         <div class="rms-curation-audit-board">
-          <article><span>Curables hoy</span><strong>${ready.toLocaleString("es-CO")}</strong><small>Listos para clasificar</small></article>
+          <article><span>Con producto</span><strong>${classified.toLocaleString("es-CO")}</strong><small>Manual o automático</small></article>
           <article><span>Alta calidad</span><strong>${highQuality.toLocaleString("es-CO")}</strong><small>Vienen fuertes del embudo</small></article>
+          <article><span>Sin match inventario</span><strong>${noInventoryMatch.toLocaleString("es-CO")}</strong><small>Crear producto aquí</small></article>
           <article><span>Sin contacto</span><strong>${missingContact.toLocaleString("es-CO")}</strong><small>Completar teléfono o correo</small></article>
-          <article><span>Sin origen</span><strong>${missingOrigin.toLocaleString("es-CO")}</strong><small>Fuente/campaña pendiente</small></article>
-          <article><span>Sin interés</span><strong>${missingInterest.toLocaleString("es-CO")}</strong><small>Necesidad sin confirmar</small></article>
+          <article><span>Dato curado</span><strong>${ready.toLocaleString("es-CO")}</strong><small>Contacto, origen e interés</small></article>
+          <article><span>Sin interés</span><strong>${missingInterest.toLocaleString("es-CO")}</strong><small>No se puede auto-clasificar</small></article>
         </div>
       </section>
     `;
@@ -26581,12 +26655,12 @@ function rmsStationVisualMeta(phase = "") {
     curaduria: {
       icon: "fact_check",
       tone: "curation",
-      screenTitle: "Limpiar y validar la oportunidad",
-      visualLabel: "Mesa de curaduría",
-      input: "Leads ingresados al embudo con datos incompletos o sin validar.",
-      output: "Contacto útil, no basura, con prioridad mínima definida.",
-      focus: "Separar datos válidos de datos incompletos y completar lo que falta.",
-      checklist: ["Teléfono válido", "Interés real", "Origen claro", "Ticket/campaña", "Calidad del contacto"],
+      screenTitle: "Curados: clasificar por producto interno",
+      visualLabel: "Curados por inventario",
+      input: "Leads que Embudo ya calificó como baja, media o alta calidad.",
+      output: "Lead curado y clasificado por producto o servicio de la empresa.",
+      focus: "Amarrar el interés del lead a Productos; si no existe, crearlo desde la estación.",
+      checklist: ["Calidad heredada del Embudo", "Producto del inventario", "Interés declarado", "Crear producto faltante", "Clasificación editable"],
     },
     clasificacion: {
       icon: "account_tree",
@@ -26857,6 +26931,7 @@ function rmsCollectorReadiness(item = {}) {
 
 function rmsStationOutputEligibleRows(phase = "", rows = []) {
   if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
+  if (phase === "curaduria") return (rows || []).filter((item) => Boolean(rmsClassifiedProductName(item)));
   if (phase !== "recoleccion") return rows || [];
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
@@ -26868,7 +26943,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
   const emptyText = phase === "alimentacion"
     ? "Asigna calidad alta, media o baja para poner leads en la salida del embudo."
     : phase === "curaduria"
-      ? "Selecciona los leads con dato defendible para pasarlos al Clasificador RMS."
+      ? "Guarda o confirma la clasificación por producto y chulea los leads que ya pueden avanzar."
       : "Chulea en la entrada los leads que sí cumplen el mínimo para pasar a la siguiente estación.";
   return `
     <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
@@ -26889,7 +26964,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
           return `
             <article>
               <strong>${escapeHtml(item.name || "Contacto")}</strong>
-              <span>${escapeHtml(phase === "alimentacion" ? `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}` : `${readiness.label} · ${item.phone || item.email || "Sin contacto"}`)}</span>
+              <span>${escapeHtml(phase === "alimentacion" ? `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}` : phase === "curaduria" ? `${rmsClassifiedProductName(item) || "Sin producto"} · ${rmsClassificationSourceLabel(item)}` : `${readiness.label} · ${item.phone || item.email || "Sin contacto"}`)}</span>
               <small>${escapeHtml(item.product_interest || item.entry_summary || item.source_detail || item.campaign_name || "Sin contexto")}</small>
             </article>
           `;
@@ -26956,7 +27031,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
     ? `${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida del embudo` : "Selecciona calidad para enviarlo a salida")}</small>`
     : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? curationAudit.label : classification)}</span>
         ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
-        ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(curationAudit.ready ? "Dato defendible para clasificar" : "Curar antes de clasificar")}</small>` : ""}
+        ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(rmsClassifiedProductName(item) ? "Producto clasificado" : "Producto pendiente")}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
     <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
@@ -26982,6 +27057,8 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
       <td>
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
+        ${stage.key === "recoleccion" ? rmsCaptureDataChips(item) : ""}
+        ${stage.key === "curaduria" ? rmsProductClassificationMarkup(item) : ""}
       </td>
       <td>
         ${statusMarkup}
@@ -27186,6 +27263,71 @@ function bindRmsMachineActions(root) {
       );
     });
   });
+  root.querySelectorAll("[data-rms-product-select]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const id = select.dataset.rmsProductSelect || "";
+      const item = rmsOpportunityById(id);
+      const openInput = Array.from(root.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === id);
+      const isOpen = select.value === OPEN_PRODUCT_VALUE;
+      openInput?.classList.toggle("hidden", !isOpen);
+      if (openInput) {
+        openInput.disabled = !isOpen;
+        if (isOpen && !openInput.value && item?.product_interest && !findInventoryProduct(item.product_interest)) {
+          openInput.value = item.product_interest;
+        }
+      }
+      if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
+      state.rmsProductClassificationDraft[id] = {
+        ...(state.rmsProductClassificationDraft[id] || {}),
+        product_select: select.value,
+        open_product_name: openInput?.value || "",
+      };
+      const current = new Set(state.rmsMachineSelectedIds || []);
+      if (select.value && select.value !== OPEN_PRODUCT_VALUE) current.add(id);
+      else if (openInput?.value.trim()) current.add(id);
+      state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+      const checkbox = Array.from(root.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+      if (checkbox && current.has(id)) {
+        checkbox.checked = true;
+        checkbox.closest("[data-rms-station-lead]")?.classList.add("is-selected");
+        checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode("check_circle"));
+      }
+      renderRmsBulkToolbar();
+      updateRmsStationOutputPreview();
+    });
+  });
+  root.querySelectorAll("[data-rms-product-open]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.dataset.rmsProductOpen || "";
+      if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
+      state.rmsProductClassificationDraft[id] = {
+        ...(state.rmsProductClassificationDraft[id] || {}),
+        product_select: OPEN_PRODUCT_VALUE,
+        open_product_name: input.value.trim(),
+      };
+      const current = new Set(state.rmsMachineSelectedIds || []);
+      if (input.value.trim()) current.add(id);
+      else current.delete(id);
+      state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+      const checkbox = Array.from(root.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+      if (checkbox) {
+        checkbox.checked = current.has(id);
+        checkbox.closest("[data-rms-station-lead]")?.classList.toggle("is-selected", current.has(id));
+        checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(current.has(id) ? "check_circle" : "radio_button_unchecked"));
+      }
+      renderRmsBulkToolbar();
+      updateRmsStationOutputPreview();
+    });
+  });
+  root.querySelectorAll("[data-rms-save-classification]").forEach((button) => {
+    button.addEventListener("click", () => handleRmsSaveClassification(button.dataset.rmsSaveClassification || ""));
+  });
+  root.querySelectorAll("[data-rms-create-product-classification]").forEach((button) => {
+    button.addEventListener("click", () => handleRmsCreateProductClassification(button.dataset.rmsCreateProductClassification || ""));
+  });
+  root.querySelectorAll("[data-rms-clear-classification]").forEach((button) => {
+    button.addEventListener("click", () => handleRmsClearClassification(button.dataset.rmsClearClassification || ""));
+  });
   root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => toggleRmsSelection(checkbox.dataset.rmsSelect, checkbox.checked));
   });
@@ -27200,6 +27342,9 @@ function openRmsStation(phase = "") {
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
+  if (phase === "curaduria" && !state.inventoryLoaded) {
+    loadInventoryProducts({ quiet: true }).then(renderRmsMachineView).catch(() => {});
+  }
   renderRmsMachineView();
   rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -27210,6 +27355,7 @@ function closeRmsStation() {
   state.rmsMachineFilters.phase = "";
   state.rmsMachineSelectedIds = [];
   state.rmsMachineInspectorId = "";
+  state.rmsProductClassificationDraft = {};
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
   renderRmsMachineView();
   (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -27258,6 +27404,161 @@ function updateRmsStationOutputPreview() {
   bindRmsStationOutputAction(updatedOutput);
 }
 
+function rmsClassificationDraftFromDom(item = {}) {
+  const select = Array.from(document.querySelectorAll("[data-rms-product-select]")).find((node) => node.dataset.rmsProductSelect === item.id);
+  const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
+  const selected = select?.value || rmsClassifiedProductValue(item);
+  const selectedProduct = findInventoryProduct(selected);
+  const openName = String(openInput?.value || "").trim();
+  return {
+    product_select: selected,
+    inventory_product_id: selectedProduct?.id || null,
+    product_name: selectedProduct?.name || openName || item.classified_product_name || item.product_interest || "",
+    product_category: selectedProduct?.category || "",
+    open_product_name: openName,
+  };
+}
+
+async function saveRmsProductClassification(item = {}, draft = null, options = {}) {
+  if (!item?.source_id) return;
+  const nextDraft = draft || rmsClassificationDraftFromDom(item);
+  if (!nextDraft.product_name && !options.clear) {
+    showFeedback("Selecciona un producto del inventario o escribe uno nuevo.", "info", { title: "Curados" });
+    return;
+  }
+  await api("/api/business/rms-machine/lead/phase", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      source_id: item.source_id,
+      source_type: item.source_type || "PLAYER",
+      lead_id: item.lead_id || null,
+      to_phase: item.stage || "curaduria",
+      priority: rmsPriorityCode(item),
+      recommended_action: options.clear ? "Clasificación de producto pendiente" : `Lead clasificado para ${nextDraft.product_name}`,
+      last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_curados",
+      last_material_sent: options.clear ? null : (nextDraft.inventory_product_id || nextDraft.product_name),
+      revenue_potential: Number(item.revenue_potential || 0),
+      reason: options.clear ? "Clasificación interna eliminada desde Curados." : `Clasificación interna en Curados: ${nextDraft.product_name}.`,
+      metadata: {
+        source_module: "rms_machine",
+        source_flow: "curados_product_classification",
+        from_phase: item.stage || "curaduria",
+        rms_opportunity_id: item.id || null,
+        lead_quality: rmsLeadQualityValue(item) || item.state_metadata?.lead_quality || null,
+        lead_quality_label: rmsLeadQualityLabel(item),
+        classified_product_id: options.clear ? null : nextDraft.inventory_product_id,
+        classified_product_name: options.clear ? null : nextDraft.product_name,
+        classified_product_category: options.clear ? null : nextDraft.product_category,
+        classification_source: options.clear ? "manual_clear" : (nextDraft.inventory_product_id ? "manual_inventory" : "manual_open_product"),
+        classification_confidence: options.clear ? 0 : 1,
+        classified_at: options.clear ? null : new Date().toISOString(),
+        product_interest: item.product_interest || null,
+      },
+    }),
+  });
+  if (state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[item.id];
+}
+
+function rmsProductClassificationMetadata(item = {}) {
+  const draft = rmsClassifiedProductDraft(item);
+  const selectedProduct = draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id);
+  const productName = draft?.open_product_name || selectedProduct?.name || item.classified_product_name || item.product_interest || "";
+  return productName ? {
+    classified_product_id: selectedProduct?.id || item.classified_product_id || null,
+    classified_product_name: productName,
+    classified_product_category: selectedProduct?.category || item.classified_product_category || "",
+    classification_source: selectedProduct?.id ? "station_output_inventory" : (item.classification_source || "station_output_open_interest"),
+    classification_confidence: selectedProduct?.id ? 1 : Number(item.classification_confidence || 0.35),
+    classified_at: item.state_metadata?.classified_at || new Date().toISOString(),
+  } : {};
+}
+
+async function handleRmsSaveClassification(id = "") {
+  const item = rmsOpportunityById(id);
+  if (!item) return;
+  try {
+    showFeedback("Guardando clasificación de producto...", "loading", { title: "Curados", timeout: 0 });
+    await saveRmsProductClassification(item);
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Clasificación guardada en Curados.", "success", { title: "Curados" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo guardar la clasificación.", "error", { title: "Curados" });
+  }
+}
+
+async function handleRmsCreateProductClassification(id = "") {
+  const item = rmsOpportunityById(id);
+  if (!item) return;
+  const draft = rmsClassificationDraftFromDom(item);
+  const productName = draft.open_product_name || draft.product_name;
+  if (!productName) {
+    showFeedback("Escribe el nombre del producto o servicio nuevo.", "info", { title: "Curados" });
+    return;
+  }
+  try {
+    showFeedback("Creando producto y clasificando lead...", "loading", { title: "Curados", timeout: 0 });
+    const data = await api("/api/business/inventory/products", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name: productName,
+        category: "RMS Curados",
+        unit_price: 0,
+        stock_quantity: 0,
+        min_stock_quantity: 0,
+        unit_label: "unidad",
+        status: "ACTIVE",
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "curados_create_product",
+          rms_opportunity_id: item.id || null,
+          lead_interest: item.product_interest || null,
+        },
+      }),
+    });
+    const saved = data.product;
+    state.inventoryProducts = [saved, ...(state.inventoryProducts || []).filter((product) => product.id !== saved.id)];
+    state.inventoryLoaded = true;
+    await saveRmsProductClassification(item, {
+      product_select: inventoryProductSelectValue(saved),
+      inventory_product_id: saved.id,
+      product_name: saved.name,
+      product_category: saved.category || "",
+      open_product_name: "",
+    });
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Producto creado y lead clasificado.", "success", { title: "Curados" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo crear el producto.", "error", { title: "Curados" });
+  }
+}
+
+async function handleRmsClearClassification(id = "") {
+  const item = rmsOpportunityById(id);
+  if (!item) return;
+  try {
+    showFeedback("Limpiando clasificación...", "loading", { title: "Curados", timeout: 0 });
+    await saveRmsProductClassification(item, {
+      product_select: "",
+      inventory_product_id: null,
+      product_name: "",
+      product_category: "",
+      open_product_name: "",
+    }, { clear: true });
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Clasificación eliminada. El lead queda pendiente en Curados.", "success", { title: "Curados" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo limpiar la clasificación.", "error", { title: "Curados" });
+  }
+}
+
 function toggleRmsSelection(id = "", selected = false) {
   const item = rmsOpportunityById(id);
   if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion" && !rmsCollectorReadiness(item).ready) {
@@ -27270,6 +27571,12 @@ function toggleRmsSelection(id = "", selected = false) {
     const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
     if (checkbox) checkbox.checked = false;
     showFeedback("Primero selecciona calidad alta, media o baja para poner este lead en salida.", "info", { title: "Embudo de Entrada" });
+    return;
+  }
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsClassifiedProductName(item)) {
+    const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+    if (checkbox) checkbox.checked = false;
+    showFeedback("Primero clasifica este lead por producto o servicio interno.", "info", { title: "Curados" });
     return;
   }
   const current = new Set(state.rmsMachineSelectedIds || []);
@@ -27298,7 +27605,9 @@ function selectRmsPhaseForBulk(phase = "") {
   if (!ids.length) {
     const message = phase === "alimentacion"
       ? "La salida del embudo exige calidad alta, media o baja. Cualifica al menos un lead antes de enviarlo a Curaduría."
-      : "La salida del recolector exige contacto e interés mínimo. Completa esos datos antes de enviar al embudo.";
+      : phase === "curaduria"
+        ? "La salida de Curados exige producto o servicio clasificado. Usa el selector de inventario o crea el producto."
+        : "La salida del recolector exige contacto e interés mínimo. Completa esos datos antes de enviar al embudo.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
@@ -27506,8 +27815,13 @@ async function moveSelectedRmsPhase() {
       const item = rmsOpportunityById(id);
       if (!item) continue;
       const qualityOption = item.stage === "alimentacion" ? rmsLeadQualityOption(rmsLeadQualityValue(item)) : null;
+      const productClassification = item.stage === "curaduria" ? rmsProductClassificationMetadata(item) : {};
       if (item.stage === "alimentacion" && !qualityOption) {
         showFeedback("Todos los leads del Embudo necesitan calidad alta, media o baja antes de pasar a Curaduría.", "info", { title: "Embudo de Entrada" });
+        continue;
+      }
+      if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+        showFeedback("Todos los leads de Curados necesitan producto o servicio antes de avanzar.", "info", { title: "Curados" });
         continue;
       }
       await api("/api/business/rms-machine/lead/phase", {
@@ -27519,23 +27833,27 @@ async function moveSelectedRmsPhase() {
           lead_id: item.lead_id || null,
           to_phase: toPhase,
           priority: qualityOption?.priority || (item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM"),
-          recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : item.next_action?.title || "",
-          last_operation: qualityOption ? "funnel_quality_classified" : undefined,
-          last_material_sent: qualityOption?.value || undefined,
+          recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || "",
+          last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : undefined,
+          last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || undefined,
           revenue_potential: Number(item.revenue_potential || 0),
-          reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : "Movimiento manual desde Mapa Operativo RMS",
-          metadata: qualityOption ? {
+          reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead curado y clasificado para ${productClassification.classified_product_name}.` : "Movimiento manual desde Mapa Operativo RMS",
+          metadata: {
             source_module: "rms_machine",
-            source_flow: "funnel_quality_output",
+            source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_output",
             from_phase: item.stage,
-            lead_quality: qualityOption.value,
-            lead_quality_label: qualityOption.label,
-            lead_quality_detail: qualityOption.detail,
-            qualified_at: new Date().toISOString(),
-          } : {},
+            ...(qualityOption ? {
+              lead_quality: qualityOption.value,
+              lead_quality_label: qualityOption.label,
+              lead_quality_detail: qualityOption.detail,
+              qualified_at: new Date().toISOString(),
+            } : {}),
+            ...productClassification,
+          },
         }),
       });
       if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[id];
+      if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[id];
     }
     state.rmsMachineSelectedIds = [];
     state.rmsMachineLoaded = false;
@@ -27563,8 +27881,13 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     return;
   }
   const qualityOption = item.stage === "alimentacion" ? rmsLeadQualityOption(rmsLeadQualityValue(item)) : null;
+  const productClassification = item.stage === "curaduria" ? rmsProductClassificationMetadata(item) : {};
   if (item.stage === "alimentacion" && !qualityOption) {
     showFeedback("Selecciona calidad alta, media o baja antes de enviar este lead a Curaduría.", "info", { title: "Embudo de Entrada" });
+    return;
+  }
+  if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+    showFeedback("Clasifica este lead por producto o servicio interno antes de enviarlo.", "info", { title: "Curados" });
     return;
   }
   try {
@@ -27578,14 +27901,14 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
         lead_id: item.lead_id || null,
         to_phase: toPhase,
         priority: qualityOption?.priority || rmsPriorityCode(item),
-        recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : item.next_action?.title || item.raw_recommended_action || "",
-        last_operation: qualityOption ? "funnel_quality_classified" : options.last_operation || `move_to_${toPhase}`,
-        last_material_sent: qualityOption?.value || item.coverage_type || "",
+        recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || item.raw_recommended_action || "",
+        last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : options.last_operation || `move_to_${toPhase}`,
+        last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || item.coverage_type || "",
         revenue_potential: Number(item.revenue_potential || 0),
-        reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : options.reason || "Avance operativo desde pantalla de estación RMS.",
+        reason: qualityOption ? `Lead cualificado en Embudo como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead curado y clasificado para ${productClassification.classified_product_name}.` : options.reason || "Avance operativo desde pantalla de estación RMS.",
         metadata: {
           source_module: "rms_machine",
-          source_flow: qualityOption ? "funnel_quality_output" : "station_workspace",
+          source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_workspace",
           from_phase: item.stage || null,
           rms_opportunity_id: item.id || null,
           campaign_id: item.campaign_id || null,
@@ -27596,12 +27919,14 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
             lead_quality_detail: qualityOption.detail,
             qualified_at: new Date().toISOString(),
           } : {}),
+          ...productClassification,
           ...(options.metadata || {}),
         },
       }),
     });
     state.rmsMachineSelectedIds = [];
     if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[item.id];
+    if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[item.id];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     state.rmsStationPhase = toPhase;

@@ -5,7 +5,7 @@ const { createLeadAgendaItem, listLeadCrmRows } = require("./leadCrmService");
 const RMS_PHASES = [
   { key: "recoleccion", label: "Recolector de Oportunidades", short_label: "Recolectar" },
   { key: "alimentacion", label: "Embudo de Entrada", short_label: "Alimentar" },
-  { key: "curaduria", label: "Curaduria Comercial", short_label: "Curar" },
+  { key: "curaduria", label: "Curados", short_label: "Curados" },
   { key: "clasificacion", label: "Clasificador RMS", short_label: "Clasificar" },
   { key: "preprocesamiento", label: "Preprocesador Gamificado", short_label: "Gamificar" },
   { key: "procesamiento", label: "Maquina RMS de Conversion", short_label: "Procesar" },
@@ -36,8 +36,8 @@ const LEGACY_PHASE_ALIASES = {
 const INDUSTRIAL_PROCESS = [
   { key: "recoleccion", label: "Recoleccion", phase: "recoleccion", description: "QR, activaciones, formularios, referidos, campanas y contactos existentes." },
   { key: "alimentacion", label: "Alimentacion", phase: "alimentacion", description: "La persona entra oficialmente como materia prima comercial RMS." },
-  { key: "curaduria", label: "Curaduria", phase: "curaduria", description: "Se valida dato minimo, origen, interes, campana y calidad del contacto." },
-  { key: "clasificacion", label: "Clasificacion", phase: "clasificacion", description: "Se separa por estado comercial, prioridad, ticket, temperatura y posibilidad de avance." },
+  { key: "curaduria", label: "Curados", phase: "curaduria", description: "Se recibe la calidad del embudo y se clasifica por producto o servicio interno." },
+  { key: "clasificacion", label: "Clasificacion operativa", phase: "clasificacion", description: "Se separa por estado comercial, prioridad, ticket, temperatura y posibilidad de avance." },
   { key: "preprocesamiento", label: "Preprocesamiento gamificado", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
   { key: "procesamiento", label: "Procesamiento comercial", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
   { key: "control", label: "Control anti-fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
@@ -70,11 +70,11 @@ const PHASE_OPERATIONS = {
     whatsappTemplateKey: "first_contact",
   },
   curaduria: {
-    primaryAction: "Validar dato y limpiar oportunidad",
-    primaryActionKey: "curate_lead",
-    suggestedMaterialType: "checklist_validacion",
-    materialLabel: "Telefono, interes, origen, ticket y campana",
-    buttonLabel: "Curar datos",
+    primaryAction: "Clasificar por producto o servicio",
+    primaryActionKey: "product_classification",
+    suggestedMaterialType: "inventario_productos_servicios",
+    materialLabel: "Producto interno, servicio, categoria e interes declarado",
+    buttonLabel: "Clasificar producto",
     nextPhase: "clasificacion",
     agendaTaskType: "validation",
     whatsappTemplateKey: "first_contact",
@@ -219,6 +219,97 @@ function metadataObject(row = {}) {
   return row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata : {};
 }
 
+function normalizeProductLookup(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function inventoryProductsForBusiness(businessId) {
+  const result = await query(
+    `select id, name, sku, barcode, category, brand, unit_price, status
+     from business_inventory_products
+     where business_id = $1 and status <> 'ARCHIVED'
+     order by updated_at desc, name asc
+     limit 500`,
+    [businessId]
+  );
+  return result.rows;
+}
+
+function productClassificationFor(row = {}, stateRow = null, inventoryProducts = []) {
+  const metadata = metadataObject(row);
+  const stateMetadata = stateRow?.metadata && typeof stateRow.metadata === "object" ? stateRow.metadata : {};
+  const manualProductId = stateMetadata.classified_product_id || stateMetadata.product_classification_id || null;
+  const manualProductName = stateMetadata.classified_product_name || stateMetadata.product_classification_name || "";
+  if (manualProductId || manualProductName) {
+    const product = manualProductId ? inventoryProducts.find((item) => String(item.id) === String(manualProductId)) : null;
+    return {
+      product_id: manualProductId || product?.id || null,
+      product_name: manualProductName || product?.name || "",
+      product_category: stateMetadata.classified_product_category || product?.category || "",
+      source: stateMetadata.classification_source || "manual_curados",
+      confidence: Number(stateMetadata.classification_confidence || 1),
+      is_manual: true,
+    };
+  }
+  const interest = firstPresent(
+    row.top_interest,
+    row.top_product,
+    row.top_category,
+    row.product_interest,
+    metadata.rms_intake?.interest,
+    metadata.interest,
+    metadata.favorite_product,
+    metadata.product_interest
+  );
+  const needle = normalizeProductLookup(interest);
+  if (!needle) {
+    return { product_id: null, product_name: "", product_category: "", source: "missing_interest", confidence: 0, is_manual: false };
+  }
+  const scored = inventoryProducts
+    .map((product) => {
+      const candidates = [product.name, product.sku, product.barcode, product.category, product.brand].map(normalizeProductLookup).filter(Boolean);
+      let score = 0;
+      if (candidates.some((candidate) => candidate === needle)) score = 1;
+      else if (candidates.some((candidate) => candidate.includes(needle) || needle.includes(candidate))) score = 0.72;
+      return { product, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  const match = scored[0];
+  if (!match) {
+    return { product_id: null, product_name: interest, product_category: "", source: "interest_without_inventory_match", confidence: 0.35, is_manual: false };
+  }
+  return {
+    product_id: match.product.id,
+    product_name: match.product.name,
+    product_category: match.product.category || "",
+    source: "auto_inventory_match",
+    confidence: match.score,
+    is_manual: false,
+  };
+}
+
+function activationFormSummary(row = {}) {
+  const metadata = metadataObject(row);
+  const form = metadata.activation_form && typeof metadata.activation_form === "object" ? metadata.activation_form : {};
+  const summary = Array.isArray(form.summary) ? form.summary : [];
+  return summary
+    .map((item) => ({
+      key: String(item.key || "").slice(0, 80),
+      label: String(item.label || item.key || "Dato").slice(0, 120),
+      value: Array.isArray(item.value) ? item.value.join(", ") : String(item.value ?? ""),
+      rms_field: String(item.rms_field || "custom").slice(0, 80),
+    }))
+    .filter((item) => item.value)
+    .slice(0, 8);
+}
+
 function sourceTypeLabel(sourceType = "") {
   return {
     PLAYER: "Lead capturado",
@@ -322,7 +413,7 @@ function operationDescription(phase, product, channel) {
   const descriptions = {
     recoleccion: "Capturar prospectos desde QR, vitrina, activacion, formulario, referido o cliente dormido.",
     alimentacion: `Introducir el lead al embudo RMS con dato minimo y canal ${channel}.`,
-    curaduria: `Validar telefono, interes, origen, campana y calidad antes de operar ${product}.`,
+    curaduria: `Clasificar el lead contra inventario interno segun su interes en ${product}.`,
     clasificacion: "Separar por estado comercial, temperatura, ticket, prioridad y posibilidad de avance.",
     preprocesamiento: "Aplicar gancho gamificado anti-fuga antes de que la oportunidad se enfrie.",
     procesamiento: `Ejecutar propuesta, catalogo, ticket, cotizacion o factura relacionada con ${product}.`,
@@ -506,7 +597,7 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
   return rows;
 }
 
-function opportunityFromRow(row = {}, stateRow = null) {
+function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
   const sourceType = crmSourceType(row);
   const autoPhase = deriveRmsPhase(row);
   const stage = stateRow?.rms_phase ? normalizePhase(stateRow.rms_phase, autoPhase) : "recoleccion";
@@ -517,6 +608,8 @@ function opportunityFromRow(row = {}, stateRow = null) {
   const section = dailySection(row, stage, priorityScore, riskScore);
   const name = row.name || "Contacto sin nombre";
   const entry = entryContext(row, sourceType);
+  const productClassification = productClassificationFor(row, stateRow, inventoryProducts);
+  const formSummary = activationFormSummary(row);
   return {
     id: `${sourceType}:${row.id}`,
     source_type: sourceType,
@@ -549,6 +642,14 @@ function opportunityFromRow(row = {}, stateRow = null) {
     interest_score: Number(row.score_total || row.attention_score || 0),
     revenue_potential: revenue,
     product_interest: firstPresent(entry.interest, row.favorite_product, ""),
+    classified_product_id: productClassification.product_id,
+    classified_product_name: productClassification.product_name,
+    classified_product_category: productClassification.product_category,
+    classification_source: productClassification.source,
+    classification_confidence: productClassification.confidence,
+    classification_is_manual: productClassification.is_manual,
+    capture_summary: formSummary,
+    rms_intake: metadataObject(row).rms_intake || {},
     active_tickets: Number(row.active_tickets || 0),
     redeemed_tickets: Number(row.redeemed_tickets || 0),
     expired_tickets: Number(row.expired_tickets || 0),
@@ -607,8 +708,9 @@ async function listRmsOpportunities(businessId, filters = {}) {
     ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
     ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
   ]);
+  const inventoryProducts = await inventoryProductsForBusiness(businessId);
   const opportunities = mergedRows.map((row) => (
-    opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`))
+    opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`), inventoryProducts)
   )).sort((a, b) => b.priority_score - a.priority_score || b.risk_score - a.risk_score);
   return {
     opportunities,
@@ -654,7 +756,7 @@ function buildIntakeFunnel(opportunities = []) {
   return [
     { key: "sources", label: "Recoleccion", value: Math.max(scans, opportunities.length), meta: "QR, campañas, contactos y activaciones" },
     { key: "captured", label: "Alimentacion", value: captured, meta: "Con dato minimo para entrar a la maquina" },
-    { key: "curated", label: "Curaduria", value: opportunities.filter((item) => item.phone || item.email || item.product_interest).length, meta: "Dato, origen e interes revisables" },
+    { key: "curated", label: "Curados", value: opportunities.filter((item) => item.phone || item.email || item.product_interest).length, meta: "Calidad del embudo y producto interno" },
     { key: "interactions", label: "Gancho gamificado", value: interactions, meta: "Interacciones, juegos, activaciones o respuestas" },
     { key: "protected", label: "Proteccion anti-fuga", value: protectedCount, meta: "Ticket, beneficio, recompensa o seguimiento" },
     { key: "ready", label: "Oportunidad RMS", value: opportunities.length, meta: "Materia prima lista para estaciones" },
