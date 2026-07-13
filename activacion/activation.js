@@ -241,6 +241,7 @@ function renderCustomFormFields(activation) {
           <strong>${escapeHtml(field.label)}</strong>
           ${field.required ? "<small>Obligatoria</small>" : "<small>Opcional</small>"}
         </div>
+        ${field.help_text ? `<p class="activation-form-help">${escapeHtml(field.help_text)}</p>` : ""}
         ${renderCustomInput(field, index)}
       </article>
     `).join("")}
@@ -284,6 +285,7 @@ function collectCustomFormResponses() {
       label: field.label,
       type: field.type,
       required: field.required,
+      help_text: field.help_text || null,
       rms_field: field.rms_field || "custom",
     })),
     labels,

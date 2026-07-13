@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260713-rms-curados-product-classifier-v1";
+const APP_VERSION = "empresa-20260713-dynamic-prelanding-form-builder-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -763,6 +763,9 @@ const minigameFireIntervalInput = document.getElementById("minigameFireIntervalI
 const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
 const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
 const activationFormBuilder = document.getElementById("activationFormBuilder");
+const activationFormFieldCount = document.getElementById("activationFormFieldCount");
+const activationFormAddQuestionButton = document.getElementById("activationFormAddQuestionButton");
+const activationFormAddChoiceQuestionButton = document.getElementById("activationFormAddChoiceQuestionButton");
 const minigameSpecificTitle = document.getElementById("minigameSpecificTitle");
 const minigameSpecificSummary = document.getElementById("minigameSpecificSummary");
 const minigameSpecificConfigPanel = document.getElementById("minigameSpecificConfigPanel");
@@ -13791,6 +13794,35 @@ function splitOptionList(value) {
 }
 
 const ACTIVATION_FORM_CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "CHECKBOXES", "SELECT", "LEVEL"]);
+const ACTIVATION_FORM_TYPES = [
+  ["TEXT", "Texto corto"],
+  ["TEXTAREA", "Texto largo"],
+  ["SINGLE_CHOICE", "Opcion unica"],
+  ["MULTIPLE_CHOICE", "Seleccion multiple"],
+  ["CHECKBOXES", "Checks"],
+  ["SELECT", "Lista desplegable"],
+  ["RATING", "Calificacion 1 a 5"],
+  ["SCALE", "Escala 1 a 10"],
+  ["LEVEL", "Nivel bajo/medio/alto"],
+  ["YES_NO", "Si / No"],
+  ["NUMBER", "Numero"],
+  ["DATE", "Fecha"],
+  ["EMAIL", "Correo"],
+  ["PHONE", "Telefono"],
+];
+const ACTIVATION_FORM_RMS_FIELDS = [
+  ["interest", "Interes / producto"],
+  ["intent", "Intencion de compra"],
+  ["priority", "Prioridad"],
+  ["budget", "Presupuesto"],
+  ["purchase_window", "Momento de compra"],
+  ["preferred_channel", "Canal preferido"],
+  ["category", "Categoria / segmento"],
+  ["level", "Nivel"],
+  ["rating", "Calificacion"],
+  ["notes", "Nota para curaduria"],
+  ["custom", "Dato adicional"],
+];
 
 function activationFormFieldKey(value, fallback) {
   return String(value || "")
@@ -13802,6 +13834,82 @@ function activationFormFieldKey(value, fallback) {
     .slice(0, 48) || fallback;
 }
 
+function activationFormOptionMarkup(items = [], selectedValue = "") {
+  return items.map(([value, label]) => `<option value="${escapeHtml(value)}" ${String(value) === String(selectedValue) ? "selected" : ""}>${escapeHtml(label)}</option>`).join("");
+}
+
+function activationFormFieldRows() {
+  return Array.from(activationFormBuilder?.querySelectorAll("[data-activation-form-field]") || []);
+}
+
+function activationFormRowMarkup(index = 1, field = {}) {
+  const type = field.type || "TEXT";
+  const rmsField = field.rms_field || "custom";
+  const label = field.label || "";
+  const options = Array.isArray(field.options) ? field.options.join(", ") : (field.options || "");
+  return `
+    <article class="activation-form-field-row" data-activation-form-field="${index}">
+      <div class="activation-form-row-head">
+        <span>Pregunta ${index}</span>
+        <button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button>
+      </div>
+      <label class="activation-form-question-label"><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" value="${escapeHtml(label)}" placeholder="Ej: Que producto te interesa?"></label>
+      <label><span>Tipo de control</span>
+        <select data-activation-form-type>${activationFormOptionMarkup(ACTIVATION_FORM_TYPES, type)}</select>
+      </label>
+      <label><span>Opciones / niveles</span><input data-activation-form-options type="text" value="${escapeHtml(options)}" placeholder="Opcion A, Opcion B, Opcion C"></label>
+      <label><span>Uso RMS</span>
+        <select data-activation-form-rms>${activationFormOptionMarkup(ACTIVATION_FORM_RMS_FIELDS, rmsField)}</select>
+      </label>
+      <label class="activation-form-help-field"><span>Ayuda / contexto</span><input data-activation-form-help type="text" maxlength="220" value="${escapeHtml(field.help_text || "")}" placeholder="Texto de ayuda opcional para el lead"></label>
+      <label class="activation-form-required"><input data-activation-form-required type="checkbox" ${field.required ? "checked" : ""}><span>Obligatoria</span></label>
+    </article>
+  `;
+}
+
+function enhanceActivationFormRows() {
+  const rows = activationFormFieldRows();
+  rows.forEach((row, index) => {
+    const position = index + 1;
+    row.dataset.activationFormField = String(position);
+    row.classList.add("is-enhanced");
+    if (!row.querySelector(".activation-form-row-head")) {
+      const head = document.createElement("div");
+      head.className = "activation-form-row-head";
+      head.innerHTML = `<span>Pregunta ${position}</span><button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button>`;
+      row.insertBefore(head, row.firstElementChild);
+    } else {
+      const title = row.querySelector(".activation-form-row-head span");
+      if (title) title.textContent = `Pregunta ${position}`;
+    }
+    if (!row.querySelector("[data-activation-form-help]")) {
+      const helpLabel = document.createElement("label");
+      helpLabel.className = "activation-form-help-field";
+      helpLabel.innerHTML = '<span>Ayuda / contexto</span><input data-activation-form-help type="text" maxlength="220" placeholder="Texto de ayuda opcional para el lead">';
+      const required = row.querySelector(".activation-form-required");
+      row.insertBefore(helpLabel, required || null);
+    }
+  });
+}
+
+function updateActivationFormBuilderCount() {
+  if (!activationFormFieldCount) return;
+  const rows = activationFormFieldRows();
+  const activeRows = rows.filter((row) => row.querySelector("[data-activation-form-label]")?.value.trim());
+  activationFormFieldCount.textContent = `${activeRows.length.toLocaleString("es-CO")} de ${rows.length.toLocaleString("es-CO")} pregunta(s) listas`;
+}
+
+function addActivationFormQuestion(seed = {}) {
+  if (!activationFormBuilder) return;
+  const nextIndex = activationFormFieldRows().length + 1;
+  activationFormBuilder.insertAdjacentHTML("beforeend", activationFormRowMarkup(nextIndex, seed));
+  enhanceActivationFormRows();
+  syncActivationFormBuilder();
+  const row = activationFormFieldRows().at(-1);
+  row?.scrollIntoView({ behavior: "smooth", block: "center" });
+  row?.querySelector("[data-activation-form-label]")?.focus();
+}
+
 function collectActivationCustomFields() {
   return Array.from(activationFormBuilder?.querySelectorAll("[data-activation-form-field]") || [])
     .map((row, index) => {
@@ -13809,12 +13917,14 @@ function collectActivationCustomFields() {
       if (!label) return null;
       const type = row.querySelector("[data-activation-form-type]")?.value || "TEXT";
       const options = splitOptionList(row.querySelector("[data-activation-form-options]")?.value);
+      const helpText = row.querySelector("[data-activation-form-help]")?.value.trim() || "";
       return {
         id: `activation_form_${index + 1}`,
         key: activationFormFieldKey(label, `field_${index + 1}`),
         label,
         type,
         options: ACTIVATION_FORM_CHOICE_TYPES.has(type) ? options : [],
+        help_text: helpText || null,
         required: Boolean(row.querySelector("[data-activation-form-required]")?.checked),
         rms_field: row.querySelector("[data-activation-form-rms]")?.value || "custom",
         order_index: index,
@@ -13838,6 +13948,7 @@ function validateActivationCustomFields() {
 }
 
 function syncActivationFormBuilder() {
+  enhanceActivationFormRows();
   activationFormBuilder?.querySelectorAll("[data-activation-form-field]").forEach((row) => {
     const type = row.querySelector("[data-activation-form-type]")?.value || "TEXT";
     const optionsInput = row.querySelector("[data-activation-form-options]");
@@ -13846,7 +13957,9 @@ function syncActivationFormBuilder() {
     if (type === "LEVEL" && optionsInput && !optionsInput.value.trim()) {
       optionsInput.value = "Bajo, Medio, Alto";
     }
+    row.classList.toggle("is-empty-question", !row.querySelector("[data-activation-form-label]")?.value.trim());
   });
+  updateActivationFormBuilderCount();
 }
 
 function collectSurveyQuestions() {
@@ -29584,6 +29697,34 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
 battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
+activationFormAddQuestionButton?.addEventListener("click", () => addActivationFormQuestion({
+  type: "TEXT",
+  rms_field: "custom",
+  required: false,
+}));
+activationFormAddChoiceQuestionButton?.addEventListener("click", () => addActivationFormQuestion({
+  type: "SINGLE_CHOICE",
+  options: "Opcion A, Opcion B, Opcion C",
+  rms_field: "interest",
+  required: true,
+}));
+activationFormBuilder?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-activation-form-remove]");
+  if (!removeButton) return;
+  const row = removeButton.closest("[data-activation-form-field]");
+  const rows = activationFormFieldRows();
+  if (rows.length <= 1) {
+    row?.querySelectorAll("input").forEach((input) => {
+      if (input.type === "checkbox") input.checked = false;
+      else input.value = "";
+    });
+    row?.querySelector("[data-activation-form-type]") && (row.querySelector("[data-activation-form-type]").value = "TEXT");
+    row?.querySelector("[data-activation-form-rms]") && (row.querySelector("[data-activation-form-rms]").value = "custom");
+  } else {
+    row?.remove();
+  }
+  syncActivationFormBuilder();
+});
 activationFormBuilder?.addEventListener("change", syncActivationFormBuilder);
 activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 

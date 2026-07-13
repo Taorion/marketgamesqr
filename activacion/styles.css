@@ -285,6 +285,14 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.activation-form-help {
+  margin: -2px 0 0;
+  color: #60716c;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .activation-form-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
