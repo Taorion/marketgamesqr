@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260713-gaming-activations-layout-v1";
+const APP_VERSION = "empresa-20260713-gaming-rms-form-wide-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -13894,6 +13894,11 @@ function enhanceActivationFormRows() {
       const required = row.querySelector(".activation-form-required");
       row.insertBefore(helpLabel, required || null);
     }
+    row.querySelector("[data-activation-form-label]")?.closest("label")?.classList.add("activation-form-question-label");
+    row.querySelector("[data-activation-form-type]")?.closest("label")?.classList.add("activation-form-type-field");
+    row.querySelector("[data-activation-form-options]")?.closest("label")?.classList.add("activation-form-options-field");
+    row.querySelector("[data-activation-form-rms]")?.closest("label")?.classList.add("activation-form-rms-field");
+    row.querySelector("[data-activation-form-help]")?.closest("label")?.classList.add("activation-form-help-field");
   });
 }
 
