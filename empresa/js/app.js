@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260713-rms-funnel-curation-visual-v1";
+const APP_VERSION = "empresa-20260713-activation-rms-form-builder-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -762,6 +762,7 @@ const minigameLivesInput = document.getElementById("minigameLivesInput");
 const minigameFireIntervalInput = document.getElementById("minigameFireIntervalInput");
 const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
 const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
+const activationFormBuilder = document.getElementById("activationFormBuilder");
 const minigameSpecificTitle = document.getElementById("minigameSpecificTitle");
 const minigameSpecificSummary = document.getElementById("minigameSpecificSummary");
 const minigameSpecificConfigPanel = document.getElementById("minigameSpecificConfigPanel");
@@ -13788,6 +13789,65 @@ function splitOptionList(value) {
     .slice(0, 8);
 }
 
+const ACTIVATION_FORM_CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "CHECKBOXES", "SELECT", "LEVEL"]);
+
+function activationFormFieldKey(value, fallback) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48) || fallback;
+}
+
+function collectActivationCustomFields() {
+  return Array.from(activationFormBuilder?.querySelectorAll("[data-activation-form-field]") || [])
+    .map((row, index) => {
+      const label = row.querySelector("[data-activation-form-label]")?.value.trim() || "";
+      if (!label) return null;
+      const type = row.querySelector("[data-activation-form-type]")?.value || "TEXT";
+      const options = splitOptionList(row.querySelector("[data-activation-form-options]")?.value);
+      return {
+        id: `activation_form_${index + 1}`,
+        key: activationFormFieldKey(label, `field_${index + 1}`),
+        label,
+        type,
+        options: ACTIVATION_FORM_CHOICE_TYPES.has(type) ? options : [],
+        required: Boolean(row.querySelector("[data-activation-form-required]")?.checked),
+        rms_field: row.querySelector("[data-activation-form-rms]")?.value || "custom",
+        order_index: index,
+        source: "activation_form_builder",
+      };
+    })
+    .filter(Boolean);
+}
+
+function validateActivationCustomFields() {
+  const fields = collectActivationCustomFields();
+  const invalidChoice = fields.find((field) => ACTIVATION_FORM_CHOICE_TYPES.has(field.type) && field.options.length < 2);
+  if (invalidChoice) {
+    setInlineMessage(triviaLauncherMessage, `Agrega al menos dos opciones para "${invalidChoice.label}" en el formulario RMS.`, "error");
+    const row = Array.from(activationFormBuilder?.querySelectorAll("[data-activation-form-field]") || [])
+      .find((item) => item.querySelector("[data-activation-form-label]")?.value.trim() === invalidChoice.label);
+    row?.querySelector("[data-activation-form-options]")?.focus();
+    return null;
+  }
+  return fields;
+}
+
+function syncActivationFormBuilder() {
+  activationFormBuilder?.querySelectorAll("[data-activation-form-field]").forEach((row) => {
+    const type = row.querySelector("[data-activation-form-type]")?.value || "TEXT";
+    const optionsInput = row.querySelector("[data-activation-form-options]");
+    const needsOptions = ACTIVATION_FORM_CHOICE_TYPES.has(type);
+    optionsInput?.closest("label")?.classList.toggle("is-muted-field", !needsOptions);
+    if (type === "LEVEL" && optionsInput && !optionsInput.value.trim()) {
+      optionsInput.value = "Bajo, Medio, Alto";
+    }
+  });
+}
+
 function collectSurveyQuestions() {
   const count = getActivationQuestionCount("SURVEY", 1);
   return Array.from(document.querySelectorAll("[data-survey-question]"))
@@ -14388,6 +14448,7 @@ function validateBenefitFulfillment(modeInput, codeInput, messageNode, contextLa
 
 function buildInteractiveActivationPayload(type, activationPayload) {
   const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
+  const customCaptureFields = collectActivationCustomFields();
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   const fulfillment = benefitFulfillmentFromInputs(
     triviaBenefitFulfillmentModeInput,
@@ -14422,6 +14483,11 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       required_fields: ["name", "phone", "email", "document"],
       optional_fields: [],
       participant_lock: activationParticipantLockFromForm(),
+      custom_fields: customCaptureFields,
+      form_schema_version: 1,
+      form_title: "Formulario RMS antes del juego",
+      rms_mapping_enabled: true,
+      rms_entry_phase: "recoleccion",
     },
     visual_config: {
       source: "ticket_center_activation_builder",
@@ -14764,6 +14830,8 @@ function validateTriviaLauncherForm() {
   const type = currentActivationType();
   if (!validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
+  const activationFormFields = validateActivationCustomFields();
+  if (!activationFormFields) return null;
   if (type === "TRIVIA") {
     updateTriviaQuestionVisibility();
   }
@@ -29191,6 +29259,8 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
 battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
+activationFormBuilder?.addEventListener("change", syncActivationFormBuilder);
+activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
@@ -29204,6 +29274,7 @@ updateTriviaExpiryMode();
 updateSurveyQuestionEditors();
 updateActivationQuestionCountControls();
 updateBattleshipShipInputs();
+syncActivationFormBuilder();
 renderShell();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {

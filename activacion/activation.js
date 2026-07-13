@@ -12,6 +12,7 @@ const participantName = document.getElementById("participantName");
 const participantPhone = document.getElementById("participantPhone");
 const participantEmail = document.getElementById("participantEmail");
 const participantDocument = document.getElementById("participantDocument");
+const activationCustomForm = document.getElementById("activationCustomForm");
 const experienceStage = document.getElementById("experienceStage");
 const experienceTitle = document.getElementById("experienceTitle");
 const experienceCopy = document.getElementById("experienceCopy");
@@ -149,7 +150,163 @@ function setProgress(done = 0, total = 1) {
   progressPanel.classList.remove("hidden");
 }
 
+function customCaptureFields() {
+  return Array.isArray(currentActivation?.capture_config?.custom_fields)
+    ? currentActivation.capture_config.custom_fields
+    : [];
+}
+
+function customFieldName(field) {
+  return `custom_${field.key || field.id}`;
+}
+
+function customFieldOptions(field) {
+  if (Array.isArray(field.options) && field.options.length) return field.options;
+  if (field.type === "YES_NO") return ["Si", "No"];
+  if (field.type === "LEVEL") return ["Bajo", "Medio", "Alto"];
+  if (field.type === "RATING") return Array.from({ length: 5 }, (_, index) => String(index + 1));
+  if (field.type === "SCALE") return Array.from({ length: 10 }, (_, index) => String(index + 1));
+  return [];
+}
+
+function optionValue(option) {
+  return String(option?.value || option?.label || option || "");
+}
+
+function optionLabel(option) {
+  return String(option?.label || option?.value || option || "");
+}
+
+function renderCustomInput(field, index) {
+  const name = customFieldName(field);
+  const required = field.required ? "required" : "";
+  const options = customFieldOptions(field);
+  const commonAttrs = `data-custom-field="${escapeHtml(field.key)}" ${required}`;
+  if (["SINGLE_CHOICE", "YES_NO", "RATING", "SCALE", "LEVEL"].includes(field.type)) {
+    return `<div class="activation-form-options" role="radiogroup">
+      ${options.map((option) => `
+        <label class="activation-form-option">
+          <input type="radio" name="${escapeHtml(name)}" value="${escapeHtml(optionValue(option))}" ${commonAttrs}>
+          <span>${escapeHtml(optionLabel(option))}</span>
+        </label>
+      `).join("")}
+    </div>`;
+  }
+  if (["MULTIPLE_CHOICE", "CHECKBOXES"].includes(field.type)) {
+    return `<div class="activation-form-options">
+      ${options.map((option) => `
+        <label class="activation-form-option">
+          <input type="checkbox" name="${escapeHtml(name)}" value="${escapeHtml(optionValue(option))}" data-custom-field="${escapeHtml(field.key)}">
+          <span>${escapeHtml(optionLabel(option))}</span>
+        </label>
+      `).join("")}
+    </div>`;
+  }
+  if (field.type === "SELECT") {
+    return `<select ${commonAttrs}>
+      <option value="">Selecciona una opcion</option>
+      ${options.map((option) => `<option value="${escapeHtml(optionValue(option))}">${escapeHtml(optionLabel(option))}</option>`).join("")}
+    </select>`;
+  }
+  if (field.type === "TEXTAREA") {
+    return `<textarea ${commonAttrs} rows="3" maxlength="1000" placeholder="Escribe tu respuesta"></textarea>`;
+  }
+  const inputType = {
+    NUMBER: "number",
+    DATE: "date",
+    EMAIL: "email",
+    PHONE: "tel",
+  }[field.type] || "text";
+  return `<input type="${inputType}" ${commonAttrs} maxlength="240" placeholder="Tu respuesta">`;
+}
+
+function renderCustomFormFields(activation) {
+  const fields = Array.isArray(activation.capture_config?.custom_fields) ? activation.capture_config.custom_fields : [];
+  if (!activationCustomForm) return;
+  if (!fields.length) {
+    activationCustomForm.classList.add("hidden");
+    activationCustomForm.innerHTML = "";
+    return;
+  }
+  activationCustomForm.innerHTML = `
+    <div class="activation-custom-head">
+      <span>Formulario del negocio</span>
+      <strong>Cuéntanos un poco más antes de jugar</strong>
+      <p>Estas respuestas ayudan al negocio a entender tu interes y atenderte mejor.</p>
+    </div>
+    ${fields.map((field, index) => `
+      <article class="activation-form-field" data-custom-card="${escapeHtml(field.key)}">
+        <div class="activation-form-title">
+          <span>${index + 1}</span>
+          <strong>${escapeHtml(field.label)}</strong>
+          ${field.required ? "<small>Obligatoria</small>" : "<small>Opcional</small>"}
+        </div>
+        ${renderCustomInput(field, index)}
+      </article>
+    `).join("")}
+  `;
+  activationCustomForm.classList.remove("hidden");
+}
+
+function collectCustomFormResponses() {
+  const fields = customCaptureFields();
+  const responses = {};
+  const labels = {};
+  const summary = [];
+  fields.forEach((field) => {
+    const key = field.key;
+    const inputs = Array.from(activationCustomForm?.querySelectorAll("[data-custom-field]") || [])
+      .filter((input) => input.dataset.customField === key);
+    let value = "";
+    if (["MULTIPLE_CHOICE", "CHECKBOXES"].includes(field.type)) {
+      value = inputs.filter((input) => input.checked).map((input) => input.value);
+    } else if (["SINGLE_CHOICE", "YES_NO", "RATING", "SCALE", "LEVEL"].includes(field.type)) {
+      value = inputs.find((input) => input.checked)?.value || "";
+    } else {
+      value = inputs[0]?.value?.trim() || "";
+    }
+    if (Array.isArray(value) ? value.length : value) {
+      responses[key] = value;
+      labels[key] = field.label;
+      summary.push({
+        key,
+        label: field.label,
+        value,
+        type: field.type,
+        rms_field: field.rms_field || "custom",
+      });
+    }
+  });
+  return {
+    schema_version: currentActivation?.capture_config?.form_schema_version || 1,
+    fields: fields.map((field) => ({
+      key: field.key,
+      label: field.label,
+      type: field.type,
+      required: field.required,
+      rms_field: field.rms_field || "custom",
+    })),
+    labels,
+    responses,
+    summary,
+  };
+}
+
+function rmsIntakeFromCustomForm(form) {
+  return (form.summary || []).reduce((acc, item) => {
+    if (item.rms_field && item.rms_field !== "custom") {
+      acc[item.rms_field] = item.value;
+    }
+    return acc;
+  }, {
+    source: "activation_custom_form",
+    phase: "recoleccion",
+    activation_type: currentActivation?.activation_type || null,
+  });
+}
+
 function participantPayload() {
+  const activationForm = collectCustomFormResponses();
   return {
     name: participantName.value.trim(),
     phone: participantPhone.value.trim(),
@@ -158,6 +315,8 @@ function participantPayload() {
     metadata: {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
+      activation_form: activationForm,
+      rms_intake: rmsIntakeFromCustomForm(activationForm),
     },
   };
 }
@@ -171,8 +330,8 @@ function renderActivation(activation) {
   businessName.textContent = activation.business?.name || "MarketGames RMS";
   activationTitle.textContent = activation.title;
   activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
-    ? "Registra tus datos y raspa la superficie para descubrir el premio."
-    : activation.description || "Deja tus datos y completa la experiencia para desbloquear tu QR.";
+    ? "Registra tus datos, responde el formulario y raspa la superficie para descubrir el premio."
+    : activation.description || "Deja tus datos, responde el formulario y completa la experiencia para desbloquear tu QR.";
   document.title = `${activation.title} | Activacion MarketGames`;
   card.classList.toggle("is-premium", isPremium(activation));
   syncCaptureRequirements(activation);
@@ -183,8 +342,8 @@ function renderActivation(activation) {
   }
   setStatus(
     activation.activation_type === "SCRATCH_WIN"
-      ? "Primero registra tus datos. Luego raspa para descubrir tu premio."
-      : "Primero registra tus datos. Luego completa la experiencia para obtener tu beneficio.",
+      ? "Primero registra tus datos y responde el formulario. Luego raspa para descubrir tu premio."
+      : "Primero registra tus datos y responde el formulario. Luego completa la experiencia para obtener tu beneficio.",
     "success"
   );
   participantForm.classList.remove("hidden");
@@ -206,6 +365,7 @@ function syncCaptureRequirements(activation) {
   if (documentLabel) documentLabel.textContent = requiresDocument ? "Documento" : "Documento";
   participantPhone.required = requiredFields.has("phone");
   participantPhone.placeholder = "Obligatorio";
+  renderCustomFormFields(activation);
 }
 
 async function loadActivation() {
@@ -2912,12 +3072,15 @@ async function completeActivation(payload = {}) {
     button.textContent = "Generando...";
   }
   try {
+    const basePayload = participantPayload();
     const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/complete`, {
       method: "POST",
       body: JSON.stringify({
-        ...participantPayload(),
+        ...basePayload,
         ...payload,
         metadata: {
+          ...(basePayload.metadata || {}),
+          ...(payload.metadata || {}),
           source_url: window.location.href,
           user_agent: navigator.userAgent,
         },

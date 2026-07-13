@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-funnel-curation-visual-20260713-v1">
+  <link rel="stylesheet" href="css/styles.css?v=activation-rms-form-builder-20260713-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -2206,6 +2206,195 @@
                       </div>
                       <small class="activation-help">Teléfono, correo y documento son obligatorios en la landing para controlar intentos y evitar beneficios duplicados. Cada QR generado descuenta tickets.</small>
                     </div>
+                    <section class="full activation-config-panel always-visible activation-form-builder-panel">
+                      <div class="activation-config-head">
+                        <strong>Formulario RMS antes del juego</strong>
+                        <span>Define las preguntas que el lead responde antes de jugar o desbloquear el beneficio.</span>
+                      </div>
+                      <div class="activation-form-builder" id="activationFormBuilder">
+                        <article class="activation-form-field-row" data-activation-form-field="1">
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" value="Que producto o categoria te interesa?" placeholder="Que quieres conocer o comprar?"></label>
+                          <label><span>Tipo de control</span>
+                            <select data-activation-form-type>
+                              <option value="TEXT">Texto corto</option>
+                              <option value="TEXTAREA">Texto largo</option>
+                              <option value="SINGLE_CHOICE" selected>Opcion unica</option>
+                              <option value="MULTIPLE_CHOICE">Seleccion multiple</option>
+                              <option value="CHECKBOXES">Checks</option>
+                              <option value="SELECT">Lista desplegable</option>
+                              <option value="RATING">Calificacion 1 a 5</option>
+                              <option value="SCALE">Escala 1 a 10</option>
+                              <option value="LEVEL">Nivel bajo/medio/alto</option>
+                              <option value="YES_NO">Si / No</option>
+                              <option value="NUMBER">Numero</option>
+                              <option value="DATE">Fecha</option>
+                            </select>
+                          </label>
+                          <label><span>Opciones</span><input data-activation-form-options type="text" value="Producto A, Producto B, Servicio, Asesoria" placeholder="Interesado, cotizando, listo para comprar"></label>
+                          <label><span>Uso RMS</span>
+                            <select data-activation-form-rms>
+                              <option value="interest" selected>Interes / producto</option>
+                              <option value="intent">Intencion de compra</option>
+                              <option value="priority">Prioridad</option>
+                              <option value="budget">Presupuesto</option>
+                              <option value="purchase_window">Momento de compra</option>
+                              <option value="preferred_channel">Canal preferido</option>
+                              <option value="category">Categoria / segmento</option>
+                              <option value="level">Nivel</option>
+                              <option value="rating">Calificacion</option>
+                              <option value="notes">Nota para curaduria</option>
+                              <option value="custom">Dato adicional</option>
+                            </select>
+                          </label>
+                          <label class="activation-form-required"><input data-activation-form-required type="checkbox" checked><span>Obligatoria</span></label>
+                        </article>
+                        <article class="activation-form-field-row" data-activation-form-field="2">
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" value="Que tan listo estas para comprar?" placeholder="Que nivel de interes tiene?"></label>
+                          <label><span>Tipo de control</span>
+                            <select data-activation-form-type>
+                              <option value="TEXT">Texto corto</option>
+                              <option value="TEXTAREA">Texto largo</option>
+                              <option value="SINGLE_CHOICE">Opcion unica</option>
+                              <option value="MULTIPLE_CHOICE">Seleccion multiple</option>
+                              <option value="CHECKBOXES">Checks</option>
+                              <option value="SELECT">Lista desplegable</option>
+                              <option value="RATING">Calificacion 1 a 5</option>
+                              <option value="SCALE">Escala 1 a 10</option>
+                              <option value="LEVEL" selected>Nivel bajo/medio/alto</option>
+                              <option value="YES_NO">Si / No</option>
+                              <option value="NUMBER">Numero</option>
+                              <option value="DATE">Fecha</option>
+                            </select>
+                          </label>
+                          <label><span>Opciones</span><input data-activation-form-options type="text" value="Curioso, Comparando, Listo para comprar" placeholder="Bajo, Medio, Alto"></label>
+                          <label><span>Uso RMS</span>
+                            <select data-activation-form-rms>
+                              <option value="interest">Interes / producto</option>
+                              <option value="intent" selected>Intencion de compra</option>
+                              <option value="priority">Prioridad</option>
+                              <option value="budget">Presupuesto</option>
+                              <option value="purchase_window">Momento de compra</option>
+                              <option value="preferred_channel">Canal preferido</option>
+                              <option value="category">Categoria / segmento</option>
+                              <option value="level">Nivel</option>
+                              <option value="rating">Calificacion</option>
+                              <option value="notes">Nota para curaduria</option>
+                              <option value="custom">Dato adicional</option>
+                            </select>
+                          </label>
+                          <label class="activation-form-required"><input data-activation-form-required type="checkbox" checked><span>Obligatoria</span></label>
+                        </article>
+                        <article class="activation-form-field-row" data-activation-form-field="3">
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" value="Que beneficio te motivaria a volver?" placeholder="Que incentivo mueve al lead?"></label>
+                          <label><span>Tipo de control</span>
+                            <select data-activation-form-type>
+                              <option value="TEXT">Texto corto</option>
+                              <option value="TEXTAREA">Texto largo</option>
+                              <option value="SINGLE_CHOICE">Opcion unica</option>
+                              <option value="MULTIPLE_CHOICE" selected>Seleccion multiple</option>
+                              <option value="CHECKBOXES">Checks</option>
+                              <option value="SELECT">Lista desplegable</option>
+                              <option value="RATING">Calificacion 1 a 5</option>
+                              <option value="SCALE">Escala 1 a 10</option>
+                              <option value="LEVEL">Nivel bajo/medio/alto</option>
+                              <option value="YES_NO">Si / No</option>
+                              <option value="NUMBER">Numero</option>
+                              <option value="DATE">Fecha</option>
+                            </select>
+                          </label>
+                          <label><span>Opciones</span><input data-activation-form-options type="text" value="Descuento, Regalo, Puntos, Asesoria, Evento" placeholder="Descuento, regalo, puntos"></label>
+                          <label><span>Uso RMS</span>
+                            <select data-activation-form-rms>
+                              <option value="interest">Interes / producto</option>
+                              <option value="intent">Intencion de compra</option>
+                              <option value="priority">Prioridad</option>
+                              <option value="budget">Presupuesto</option>
+                              <option value="purchase_window">Momento de compra</option>
+                              <option value="preferred_channel">Canal preferido</option>
+                              <option value="category" selected>Categoria / segmento</option>
+                              <option value="level">Nivel</option>
+                              <option value="rating">Calificacion</option>
+                              <option value="notes">Nota para curaduria</option>
+                              <option value="custom">Dato adicional</option>
+                            </select>
+                          </label>
+                          <label class="activation-form-required"><input data-activation-form-required type="checkbox"><span>Obligatoria</span></label>
+                        </article>
+                        <article class="activation-form-field-row" data-activation-form-field="4">
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" placeholder="Cuando te gustaria que te contactemos?"></label>
+                          <label><span>Tipo de control</span>
+                            <select data-activation-form-type>
+                              <option value="TEXT">Texto corto</option>
+                              <option value="TEXTAREA">Texto largo</option>
+                              <option value="SINGLE_CHOICE">Opcion unica</option>
+                              <option value="MULTIPLE_CHOICE">Seleccion multiple</option>
+                              <option value="CHECKBOXES">Checks</option>
+                              <option value="SELECT">Lista desplegable</option>
+                              <option value="RATING">Calificacion 1 a 5</option>
+                              <option value="SCALE">Escala 1 a 10</option>
+                              <option value="LEVEL">Nivel bajo/medio/alto</option>
+                              <option value="YES_NO">Si / No</option>
+                              <option value="NUMBER">Numero</option>
+                              <option value="DATE">Fecha</option>
+                            </select>
+                          </label>
+                          <label><span>Opciones</span><input data-activation-form-options type="text" placeholder="Hoy, esta semana, este mes"></label>
+                          <label><span>Uso RMS</span>
+                            <select data-activation-form-rms>
+                              <option value="interest">Interes / producto</option>
+                              <option value="intent">Intencion de compra</option>
+                              <option value="priority">Prioridad</option>
+                              <option value="budget">Presupuesto</option>
+                              <option value="purchase_window" selected>Momento de compra</option>
+                              <option value="preferred_channel">Canal preferido</option>
+                              <option value="category">Categoria / segmento</option>
+                              <option value="level">Nivel</option>
+                              <option value="rating">Calificacion</option>
+                              <option value="notes">Nota para curaduria</option>
+                              <option value="custom">Dato adicional</option>
+                            </select>
+                          </label>
+                          <label class="activation-form-required"><input data-activation-form-required type="checkbox"><span>Obligatoria</span></label>
+                        </article>
+                        <article class="activation-form-field-row" data-activation-form-field="5">
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" placeholder="Observacion libre para curaduria"></label>
+                          <label><span>Tipo de control</span>
+                            <select data-activation-form-type>
+                              <option value="TEXT">Texto corto</option>
+                              <option value="TEXTAREA" selected>Texto largo</option>
+                              <option value="SINGLE_CHOICE">Opcion unica</option>
+                              <option value="MULTIPLE_CHOICE">Seleccion multiple</option>
+                              <option value="CHECKBOXES">Checks</option>
+                              <option value="SELECT">Lista desplegable</option>
+                              <option value="RATING">Calificacion 1 a 5</option>
+                              <option value="SCALE">Escala 1 a 10</option>
+                              <option value="LEVEL">Nivel bajo/medio/alto</option>
+                              <option value="YES_NO">Si / No</option>
+                              <option value="NUMBER">Numero</option>
+                              <option value="DATE">Fecha</option>
+                            </select>
+                          </label>
+                          <label><span>Opciones</span><input data-activation-form-options type="text" placeholder="Solo para listas, checks o niveles"></label>
+                          <label><span>Uso RMS</span>
+                            <select data-activation-form-rms>
+                              <option value="interest">Interes / producto</option>
+                              <option value="intent">Intencion de compra</option>
+                              <option value="priority">Prioridad</option>
+                              <option value="budget">Presupuesto</option>
+                              <option value="purchase_window">Momento de compra</option>
+                              <option value="preferred_channel">Canal preferido</option>
+                              <option value="category">Categoria / segmento</option>
+                              <option value="level">Nivel</option>
+                              <option value="rating">Calificacion</option>
+                              <option value="notes" selected>Nota para curaduria</option>
+                              <option value="custom">Dato adicional</option>
+                            </select>
+                          </label>
+                          <label class="activation-form-required"><input data-activation-form-required type="checkbox"><span>Obligatoria</span></label>
+                        </article>
+                      </div>
+                      <small class="activation-help">Estas respuestas viajan con el lead al Recolector RMS y quedan listas para Embudo, Curaduria y clasificacion comercial.</small>
+                    </section>
                     <label data-activation-config="TRIVIA">
                       <span>Número de preguntas</span>
                       <input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required>
@@ -6261,7 +6450,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-funnel-curation-visual-20260713-v1" defer></script>
+  <script src="js/app.js?v=activation-rms-form-builder-20260713-v1" defer></script>
 </body>
 </html>
 

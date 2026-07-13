@@ -70,6 +70,36 @@ const ACTIVATION_CATALOG = [
 
 const CATALOG_BY_TYPE = new Map(ACTIVATION_CATALOG.map((item) => [item.type, item]));
 const JSONB_ACTIVATION_FIELDS = new Set(["reward_config", "game_config", "interaction_config", "capture_config", "visual_config"]);
+const CUSTOM_CAPTURE_FIELD_TYPES = new Set([
+  "TEXT",
+  "TEXTAREA",
+  "SINGLE_CHOICE",
+  "MULTIPLE_CHOICE",
+  "CHECKBOXES",
+  "SELECT",
+  "RATING",
+  "SCALE",
+  "LEVEL",
+  "YES_NO",
+  "NUMBER",
+  "DATE",
+  "EMAIL",
+  "PHONE",
+]);
+const CUSTOM_CAPTURE_CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "CHECKBOXES", "SELECT", "LEVEL"]);
+const RMS_CAPTURE_FIELDS = new Set([
+  "interest",
+  "intent",
+  "priority",
+  "budget",
+  "purchase_window",
+  "preferred_channel",
+  "category",
+  "level",
+  "rating",
+  "notes",
+  "custom",
+]);
 
 function escapeSvg(value) {
   return String(value ?? "")
@@ -303,8 +333,74 @@ function normalizeParticipantLock(config = {}) {
   };
 }
 
+function customFieldKey(value, fallback) {
+  const key = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+  return key || fallback;
+}
+
+function normalizeCustomCaptureField(field = {}, index = 0) {
+  const label = String(field.label || field.question || field.name || "").trim();
+  if (!label) return null;
+  const type = CUSTOM_CAPTURE_FIELD_TYPES.has(String(field.type || "").toUpperCase())
+    ? String(field.type || "").toUpperCase()
+    : "TEXT";
+  const key = customFieldKey(field.key || field.id || label, `field_${index + 1}`);
+  const options = Array.isArray(field.options)
+    ? field.options
+      .map((option) => {
+        if (option && typeof option === "object") {
+          const optionLabel = String(option.label || option.value || "").trim();
+          if (!optionLabel) return null;
+          return {
+            label: optionLabel,
+            value: String(option.value || optionLabel).trim(),
+          };
+        }
+        const optionLabel = String(option || "").trim();
+        return optionLabel ? { label: optionLabel, value: optionLabel } : null;
+      })
+      .filter(Boolean)
+      .slice(0, 10)
+    : [];
+  const rmsField = RMS_CAPTURE_FIELDS.has(String(field.rms_field || "").toLowerCase())
+    ? String(field.rms_field).toLowerCase()
+    : "custom";
+  return {
+    id: String(field.id || key),
+    key,
+    label,
+    type,
+    options: CUSTOM_CAPTURE_CHOICE_TYPES.has(type) ? options : [],
+    required: field.required === true,
+    rms_field: rmsField,
+    order_index: Number.isFinite(Number(field.order_index)) ? Number(field.order_index) : index,
+  };
+}
+
+function normalizeCustomCaptureFields(fields = []) {
+  if (!Array.isArray(fields)) return [];
+  const seen = new Set();
+  return fields
+    .map(normalizeCustomCaptureField)
+    .filter(Boolean)
+    .map((field, index) => {
+      let key = field.key;
+      while (seen.has(key)) key = `${field.key}_${index + 1}`;
+      seen.add(key);
+      return { ...field, key, id: field.id || key };
+    })
+    .slice(0, 12);
+}
+
 function normalizeCaptureConfig(config = {}) {
   const required = new Set(["name", "phone", "email", "document", ...(Array.isArray(config.required_fields) ? config.required_fields : [])]);
+  const customFields = normalizeCustomCaptureFields(config.custom_fields || config.fields || []);
   return {
     ...config,
     required_fields: Array.from(required),
@@ -312,6 +408,10 @@ function normalizeCaptureConfig(config = {}) {
       ? config.optional_fields.filter((field) => !required.has(field))
       : [],
     participant_lock: normalizeParticipantLock(config.participant_lock || {}),
+    custom_fields: customFields,
+    form_schema_version: Number(config.form_schema_version || 1),
+    rms_mapping_enabled: config.rms_mapping_enabled !== false,
+    rms_entry_phase: config.rms_entry_phase || "recoleccion",
   };
 }
 
@@ -829,6 +929,7 @@ async function startInteractiveParticipant(slug, body) {
     await assertDuplicateParticipant(client, activation, body);
     const gameSessionToken = createSecureToken();
     const player = await createPlayer(client, activation, body, { status: "started" });
+    const metadata = activationFormMetadata(activation, body, { status: "started" });
     const participantResult = await client.query(
       `insert into interactive_activation_participants
         (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
@@ -843,7 +944,7 @@ async function startInteractiveParticipant(slug, body) {
         body.document || body.document_id || null,
         body.phone || null,
         body.email || null,
-        jsonParam(body.metadata, {}),
+        jsonParam(metadata, {}),
         gameSessionToken,
       ]
     );
@@ -885,6 +986,9 @@ async function completeInteractiveParticipant(slug, body) {
     await persistAnswers(client, activation.id, participant.id, answers);
     const pendingReview = activation.reward_mode === "manual_approval";
     const status = pendingReview ? "pending_review" : rewardPayload ? "rewarded" : "completed";
+    const metadata = activationFormMetadata(activation, body, {
+      anti_abuse: antiAbuseSummary(activation, participant, body, score),
+    });
 
     await client.query(
       `update interactive_activation_participants
@@ -901,12 +1005,7 @@ async function completeInteractiveParticipant(slug, body) {
         score,
         resultProfile || null,
         status,
-        jsonParam({
-          source_url: body.metadata?.source_url || null,
-          user_agent: body.metadata?.user_agent || null,
-          ip_hint: body.metadata?.ip_hint || null,
-          anti_abuse: antiAbuseSummary(activation, participant, body, score),
-        }, {}),
+        jsonParam(metadata, {}),
       ]
     );
 
@@ -1065,6 +1164,71 @@ async function assertDuplicateParticipant(client, activation, body) {
   }
 }
 
+function customCaptureResponses(body = {}) {
+  const source = body.metadata?.activation_form?.responses
+    || body.metadata?.custom_form_responses
+    || body.custom_form_responses
+    || {};
+  return source && typeof source === "object" ? source : {};
+}
+
+function hasCustomCaptureValue(value) {
+  if (Array.isArray(value)) return value.some((item) => String(item || "").trim());
+  return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+function activationFormMetadata(activation, body = {}, extra = {}) {
+  const fields = normalizeCaptureConfig(activation.capture_config || {}).custom_fields || [];
+  const responses = customCaptureResponses(body);
+  const labels = {};
+  const rms = {
+    source: "activation_custom_form",
+    activation_id: activation.id,
+    activation_type: activation.activation_type,
+    phase: "recoleccion",
+  };
+  const summary = [];
+  fields.forEach((field) => {
+    const value = responses[field.key];
+    if (!hasCustomCaptureValue(value)) return;
+    labels[field.key] = field.label;
+    summary.push({
+      key: field.key,
+      label: field.label,
+      value,
+      rms_field: field.rms_field,
+    });
+    if (field.rms_field && field.rms_field !== "custom") {
+      rms[field.rms_field] = value;
+    }
+  });
+  const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : {};
+  return {
+    ...metadata,
+    source_url: metadata.source_url || null,
+    user_agent: metadata.user_agent || null,
+    activation_form: {
+      schema_version: activation.capture_config?.form_schema_version || 1,
+      fields: fields.map((field) => ({
+        key: field.key,
+        label: field.label,
+        type: field.type,
+        required: field.required,
+        rms_field: field.rms_field,
+      })),
+      labels,
+      responses,
+      summary,
+      ...(metadata.activation_form && typeof metadata.activation_form === "object" ? metadata.activation_form : {}),
+    },
+    rms_intake: {
+      ...rms,
+      ...(metadata.rms_intake && typeof metadata.rms_intake === "object" ? metadata.rms_intake : {}),
+    },
+    ...extra,
+  };
+}
+
 function assertRequiredCaptureFields(activation, body) {
   const requiredFields = new Set(["name", "phone", "email", "document", ...(activation.capture_config?.required_fields || [])]);
   const document = body.document || body.document_id || "";
@@ -1084,6 +1248,12 @@ function assertRequiredCaptureFields(activation, body) {
       };
       throw badRequest(`El campo ${labels[field] || field} es obligatorio para esta activacion.`);
     }
+  }
+  const responses = customCaptureResponses(body);
+  const customFields = normalizeCaptureConfig(activation.capture_config || {}).custom_fields || [];
+  const missingCustomField = customFields.find((field) => field.required && !hasCustomCaptureValue(responses[field.key]));
+  if (missingCustomField) {
+    throw badRequest(`El campo ${missingCustomField.label} es obligatorio para esta activacion.`);
   }
 }
 
@@ -1105,6 +1275,7 @@ async function lockParticipant(client, activation, participantId) {
 async function createParticipantInsideCompletion(client, activation, body) {
   await assertDuplicateParticipant(client, activation, body);
   const player = await createPlayer(client, activation, body, { status: "completed" });
+  const metadata = activationFormMetadata(activation, body, { status: "completed" });
   const result = await client.query(
     `insert into interactive_activation_participants
       (activation_id, company_id, player_id, name, document, phone, email, metadata, status)
@@ -1118,13 +1289,14 @@ async function createParticipantInsideCompletion(client, activation, body) {
       body.document || body.document_id || null,
       body.phone || null,
       body.email || null,
-      jsonParam(body.metadata, {}),
+      jsonParam(metadata, {}),
     ]
   );
   return result.rows[0];
 }
 
 async function createPlayer(client, activation, body, metadata = {}) {
+  const formMetadata = activationFormMetadata(activation, body, metadata);
   const result = await client.query(
     `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
      values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
@@ -1141,7 +1313,13 @@ async function createPlayer(client, activation, body, metadata = {}) {
         source: "interactive_activation",
         activation_id: activation.id,
         activation_type: activation.activation_type,
-        ...metadata,
+        activation_title: activation.title || null,
+        lead_source: "Activacion interactiva",
+        lead_origin: "activation_form",
+        interest: formMetadata.rms_intake?.interest || null,
+        intent: formMetadata.rms_intake?.intent || null,
+        lead_priority_signal: formMetadata.rms_intake?.priority || formMetadata.rms_intake?.level || null,
+        ...formMetadata,
       }, {}),
     ]
   );
@@ -1394,6 +1572,8 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         participant_id: participant.id,
         score: participant.score || null,
         result_profile: participant.result_profile || null,
+        activation_form: participant.metadata?.activation_form || null,
+        rms_intake: participant.metadata?.rms_intake || null,
         reward: rewardPayload,
       }, {}),
     ]
@@ -1421,6 +1601,8 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         public_code: publicCode,
         score: participant.score || null,
         result_profile: participant.result_profile || null,
+        activation_form: participant.metadata?.activation_form || null,
+        rms_intake: participant.metadata?.rms_intake || null,
         reward_source: rewardPayload.reward_source,
         selected_benefit: rewardPayload,
       }, {}),

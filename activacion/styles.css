@@ -204,6 +204,130 @@ button:focus-visible {
   outline: none;
 }
 
+.activation-custom-form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #c9dad4;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fbfefd, #eef8f4);
+}
+
+.is-premium .activation-custom-form {
+  border-color: rgba(214, 183, 92, .28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(214, 183, 92, .08));
+}
+
+.activation-custom-head {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(17, 133, 104, .12);
+}
+
+.activation-custom-head span,
+.activation-form-title small {
+  color: #0d6b52;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.activation-custom-head strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.activation-custom-head p {
+  margin: 0;
+  color: #60716c;
+  font-size: 13px;
+}
+
+.activation-form-field {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #dce8e4;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .78);
+}
+
+.is-premium .activation-form-field {
+  border-color: rgba(214, 183, 92, .2);
+  background: rgba(255, 255, 255, .06);
+}
+
+.activation-form-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.activation-form-title > span {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #0d6b52;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.activation-form-title strong {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.activation-form-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.activation-form-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #cfe0db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.activation-form-option input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.activation-form-option span {
+  overflow-wrap: anywhere;
+}
+
+.is-premium .activation-custom-head span,
+.is-premium .activation-form-title small {
+  color: #d6b75c;
+}
+
+.is-premium .activation-form-title > span {
+  background: #d6b75c;
+  color: #111;
+}
+
+.is-premium .activation-form-option {
+  border-color: rgba(214, 183, 92, .22);
+  background: rgba(255, 255, 255, .08);
+}
+
 .progress-panel {
   display: grid;
   gap: 10px;
@@ -741,6 +865,7 @@ button:focus-visible {
   .answer-grid,
   .choice-grid,
   .reveal-grid,
+  .activation-form-options,
   .scratch-option-grid {
     grid-template-columns: 1fr;
   }
