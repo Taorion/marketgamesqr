@@ -32583,3 +32583,213 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
     max-height: 260px !important;
   }
 }
+
+/* Gaming Center activation single-column UX correction */
+.ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid.dashboard-charts {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid.dashboard-charts > .surface-card,
+.ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid.dashboard-charts > .modal-shell {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card,
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card {
+  max-width: 1180px !important;
+  margin-inline: auto !important;
+  overflow: visible !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card > .table-card-head,
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: start !important;
+  align-items: start !important;
+  gap: 8px !important;
+  padding: 0 0 14px !important;
+  margin: 0 0 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--activation-clean-line, rgba(28, 83, 65, 0.1)) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head > div,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card > .table-card-head > div,
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card > .table-card-head > div {
+  display: grid !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head h3,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card > .table-card-head h3,
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card > .table-card-head h3 {
+  max-width: 980px !important;
+  margin: 0 !important;
+  font-size: 1.22rem !important;
+  line-height: 1.16 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head .status-chip,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card > .table-card-head .status-chip {
+  justify-self: start !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.25 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-command-strip {
+  grid-template-columns: minmax(0, 1fr) !important;
+  max-width: 980px !important;
+  margin: 0 auto 14px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-activation-nav,
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note {
+  max-width: 980px !important;
+  margin-inline: auto !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-launcher-form,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form {
+  grid-template-columns: minmax(0, 1fr) !important;
+  max-width: 980px !important;
+  margin-inline: auto !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-product-mode-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-toolbar,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row,
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-options-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fields-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > *,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > *,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > * {
+  grid-column: 1 / -1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fieldset {
+  width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design .activation-type-picker {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  max-width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option {
+  min-height: 58px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 18px !important;
+  border-color: var(--activation-clean-border, rgba(28, 83, 65, 0.14)) !important;
+  border-radius: 8px !important;
+  background: #fbfdfc !important;
+  box-shadow: none !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card .chart-explainer {
+  max-width: 980px !important;
+  margin: 0 auto !important;
+  padding: 12px !important;
+  border: 1px solid var(--activation-clean-line, rgba(28, 83, 65, 0.1)) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft, #f6faf8) !important;
+  color: var(--activation-clean-muted, #5f7069) !important;
+  line-height: 1.4 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fieldset {
+  display: grid !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  padding: 11px !important;
+  border: 1px solid var(--activation-clean-line, rgba(28, 83, 65, 0.1)) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft, #f6faf8) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fieldset legend {
+  color: #163f31 !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  line-height: 1.18 !important;
+  text-transform: uppercase !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form :where(input, select, textarea) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 42px !important;
+  border-radius: 8px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form textarea {
+  min-height: 86px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-field-row {
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form .inline-actions,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form .form-message,
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form .solid-button {
+  width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form .solid-button {
+  min-height: 46px !important;
+  border-radius: 8px !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card {
+  background: #0f1a16 !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-card .chart-explainer,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fieldset {
+  border-color: rgba(177, 199, 190, 0.13) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-form > label > span,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-fieldset legend {
+  color: #d8f7ea !important;
+}
+
+@media (max-width: 720px) {
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design .activation-type-picker {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .lead-capture-field-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
