@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=gaming-activations-fit-20260713-v1">
+  <link rel="stylesheet" href="css/styles.css?v=gaming-activations-layout-20260713-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -1988,6 +1988,14 @@
                     <p>El sistema soporta 50 tipos: votación de producto, selector de estilo, curador de regalo, diagnosticos, lista de espera, reserva, carta sellada, invitación privada, raspa digital, toca y revela, termómetro, minijuegos y experiencias premium. Este constructor rápido crea las dinámicas base; todas emiten QR único solo al generar beneficio y consumen tickets del saldo.</p>
                   </div>
                   <form class="modal-form trivia-launcher-form" id="triviaLauncherForm">
+                    <section class="full activation-builder-section activation-builder-design">
+                      <div class="activation-builder-section-head">
+                        <span>01</span>
+                        <div>
+                          <strong>Diseño de la activación</strong>
+                          <small>Selecciona la dinámica, la campaña y el contenido público que verá el lead.</small>
+                        </div>
+                      </div>
                     <label class="full association-field">
                       <span>Campaña que medirá esta activación</span>
                       <select id="triviaCampaignInput"></select>
@@ -2155,6 +2163,15 @@
                     <label><span>Máximo de tickets</span><input id="triviaMaxWinnersInput" type="number" min="1" max="100000" step="1" placeholder="Sin limite"></label>
                     <label class="full"><span>Descripcion para la landing</span><textarea id="triviaDescriptionInput" rows="3" placeholder="Responde bien y recibe tu ticket para redimir en tienda."></textarea></label>
                     <label class="full"><span>Mensaje genérico para invitar</span><textarea id="triviaInviteMessageInput" rows="3" maxlength="1000">Hola, te invito a jugar {titulo}. Abre este enlace, deja tus datos y participa: {link}</textarea><small>Usa {link}, {titulo} y {negocio}; el sistema los reemplaza cuando crea la activación.</small></label>
+                    </section>
+                    <section class="full activation-builder-section activation-builder-reward">
+                      <div class="activation-builder-section-head">
+                        <span>02</span>
+                        <div>
+                          <strong>Beneficio, producto e interés RMS</strong>
+                          <small>Define qué recibe el ganador y cómo se clasifica el interés comercial antes de jugar.</small>
+                        </div>
+                      </div>
                     <label><span>Beneficio base del ticket</span><input id="triviaBenefitLabelInput" type="text" placeholder="Beneficio desbloqueado por participar" required></label>
                     <label><span>Tipo de beneficio</span>
                       <select id="triviaBenefitTypeInput">
@@ -2240,6 +2257,15 @@
                       </label>
                       <label><span>Fecha personalizada</span><input id="triviaExpiresAtInput" type="datetime-local"></label>
                     </section>
+                    </section>
+                    <section class="full activation-builder-section activation-builder-rules">
+                      <div class="activation-builder-section-head">
+                        <span>03</span>
+                        <div>
+                          <strong>Reglas de participación</strong>
+                          <small>Controla repetición, recuperación de beneficio y protección contra usos duplicados.</small>
+                        </div>
+                      </div>
                     <div class="full activation-config-panel always-visible">
                       <div class="activation-config-head">
                         <strong>Control de participación</strong>
@@ -2256,7 +2282,15 @@
                       </div>
                       <small class="activation-help">Teléfono, correo y documento son obligatorios en la landing para controlar intentos y evitar beneficios duplicados. Cada QR generado descuenta tickets.</small>
                     </div>
-                    <section class="full activation-config-panel always-visible activation-form-builder-panel">
+                    </section>
+                    <section class="full activation-config-panel always-visible activation-form-builder-panel activation-builder-form">
+                      <div class="activation-builder-section-head">
+                        <span>04</span>
+                        <div>
+                          <strong>Formulario RMS del lead</strong>
+                          <small>Define las preguntas que alimentan Recolector, Embudo, Curaduría y clasificación.</small>
+                        </div>
+                      </div>
                       <div class="activation-config-head">
                         <strong>Formulario RMS antes del juego</strong>
                         <span>Define las preguntas que el lead responde antes de jugar o desbloquear el beneficio.</span>
@@ -2456,6 +2490,14 @@
                       </div>
                       <small class="activation-help">Estas respuestas viajan con el lead al Recolector RMS y quedan listas para Embudo, Curaduria y clasificacion comercial.</small>
                     </section>
+                    <section class="full activation-builder-section activation-builder-gameplay">
+                      <div class="activation-builder-section-head">
+                        <span>05</span>
+                        <div>
+                          <strong>Configuración del juego</strong>
+                          <small>Ajusta preguntas, opciones, score y parámetros de la dinámica seleccionada.</small>
+                        </div>
+                      </div>
                     <label data-activation-config="TRIVIA">
                       <span>Número de preguntas</span>
                       <input id="triviaQuestionCountInput" type="number" min="1" max="5" value="1" required>
@@ -2779,7 +2821,8 @@
                       <small class="activation-help" id="minigameSpecificHelp">Estos campos se guardan en la activación y controlan la lógica del juego público.</small>
                       <small class="activation-help">Los minijuegos agregan validación de sesión, duración y score. El control de intentos se configura arriba y aplica igual que en las demas activaciones.</small>
                     </div>
-                    <button class="solid-button" type="submit">Lanzar activación</button>
+                    </section>
+                    <button class="solid-button activation-launch-submit" type="submit">Lanzar activación</button>
                     <p class="error-line" id="triviaLauncherMessage" role="status" aria-live="polite"></p>
                   </form>
                   <div class="trivia-launcher-result hidden" id="triviaLauncherResult"></div>
@@ -6511,7 +6554,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=gaming-activations-fit-20260713-v1" defer></script>
+  <script src="js/app.js?v=gaming-activations-layout-20260713-v1" defer></script>
 </body>
 </html>
 
