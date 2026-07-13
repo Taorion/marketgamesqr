@@ -32000,3 +32000,586 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
     width: 100% !important;
   }
 }
+
+/* Gaming Center activation clean UX reset */
+.ticket-center-panel[data-ticket-panel="trivia"] {
+  --activation-clean-border: rgba(28, 83, 65, 0.14);
+  --activation-clean-line: rgba(28, 83, 65, 0.1);
+  --activation-clean-surface: #ffffff;
+  --activation-clean-soft: #f6faf8;
+  --activation-clean-soft-2: #eef6f2;
+  --activation-clean-ink: #102a21;
+  --activation-clean-muted: #5f7069;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] *,
+.ticket-center-panel[data-ticket-panel="trivia"] *::before,
+.ticket-center-panel[data-ticket-panel="trivia"] *::after {
+  box-sizing: border-box !important;
+  min-width: 0;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card {
+  padding: 18px !important;
+  overflow: visible !important;
+  border-color: var(--activation-clean-border) !important;
+  background: #fbfdfc !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin-bottom: 14px !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid var(--activation-clean-line) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-command-strip {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+  padding: 8px !important;
+  border: 1px solid var(--activation-clean-border) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-surface) !important;
+  box-shadow: none !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage {
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  gap: 1px 8px !important;
+  min-height: 54px !important;
+  padding: 9px 10px !important;
+  border: 1px solid var(--activation-clean-line) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage .material-symbols-outlined {
+  grid-row: 1 / span 2 !important;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 1.18rem !important;
+  border-radius: 8px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage strong,
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage small {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage strong {
+  color: var(--activation-clean-ink) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-stage small {
+  color: var(--activation-clean-muted) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.15 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-activation-nav,
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note {
+  margin: 0 0 12px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--activation-clean-border) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-surface) !important;
+  box-shadow: none !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-activation-nav {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 7px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-activation-nav span {
+  margin: 0 !important;
+  padding: 6px 9px !important;
+  border: 1px solid var(--activation-clean-line) !important;
+  border-radius: 999px !important;
+  background: var(--activation-clean-soft) !important;
+  color: #24473b !important;
+  font-size: 0.74rem !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note strong {
+  color: var(--activation-clean-ink) !important;
+  font-size: 0.84rem !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note p {
+  max-width: 1120px !important;
+  margin: 0 !important;
+  color: var(--activation-clean-muted) !important;
+  font-size: 0.79rem !important;
+  line-height: 1.34 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-launcher-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  align-items: start !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 1px solid var(--activation-clean-border) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-surface) !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > .full,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > label.full,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > .activation-type-picker,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > .activation-config-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > .trivia-question-builder,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-builder-section-head,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-form-builder-toolbar,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-form-builder,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-help,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-config-head {
+  grid-column: 1 / -1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid var(--activation-clean-line) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head > span {
+  display: grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border: 1px solid rgba(13, 107, 82, 0.16) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft-2) !important;
+  color: #0a6f51 !important;
+  font-size: 0.82rem !important;
+  font-weight: 950 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head strong {
+  color: var(--activation-clean-ink) !important;
+  font-size: 1rem !important;
+  line-height: 1.15 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head small {
+  display: block !important;
+  max-width: 920px !important;
+  margin-top: 2px !important;
+  color: var(--activation-clean-muted) !important;
+  font-size: 0.78rem !important;
+  line-height: 1.28 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-config-panel label,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-panel label,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-panel label,
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor label {
+  display: grid !important;
+  align-content: start !important;
+  gap: 7px !important;
+  min-height: auto !important;
+  margin: 0 !important;
+  padding: 11px !important;
+  border: 1px solid var(--activation-clean-line) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft) !important;
+  overflow: visible !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-config-panel label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-panel label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-panel label > span,
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor label > span {
+  color: #163f31 !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  line-height: 1.18 !important;
+  text-transform: uppercase !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section :where(input, select, textarea),
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form :where(input, select, textarea),
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-config-panel :where(input, select, textarea),
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-panel :where(input, select, textarea),
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-panel :where(input, select, textarea),
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor :where(input, select, textarea) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 42px !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
+  line-height: 1.24 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section textarea,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form textarea {
+  min-height: 86px !important;
+  resize: vertical !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design > label:not(.association-field):not(.full),
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-reward > label,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-gameplay > label:not(.full) {
+  grid-column: span 1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design > .association-field,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-reward > .activation-product-intent-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-reward > .benefit-fulfillment-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-reward > .benefit-expiration-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-rules > .activation-config-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-gameplay > .activation-config-panel,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-gameplay > .trivia-question-builder {
+  grid-column: 1 / -1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design .activation-type-picker {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)) !important;
+  gap: 8px !important;
+  max-height: 312px !important;
+  padding: 8px !important;
+  overflow: auto !important;
+  border: 1px solid var(--activation-clean-line) !important;
+  border-radius: 8px !important;
+  background: #f9fcfb !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option {
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  gap: 2px 8px !important;
+  align-items: center !important;
+  min-height: 62px !important;
+  padding: 9px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option .material-symbols-outlined {
+  grid-row: 1 / span 2 !important;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 1.16rem !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option strong,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option small {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option strong {
+  font-size: 0.8rem !important;
+  line-height: 1.12 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-type-option small {
+  font-size: 0.7rem !important;
+  line-height: 1.14 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-product-mode-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-grid,
+.ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-product-intent-summary,
+.ticket-center-panel[data-ticket-panel="trivia"] .fulfillment-summary-card {
+  grid-column: 1 / -1 !important;
+  min-height: auto !important;
+  padding: 11px !important;
+  border: 1px solid rgba(13, 107, 82, 0.12) !important;
+  border-radius: 8px !important;
+  background: #eef8f3 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 12px !important;
+  border: 1px solid var(--activation-clean-line) !important;
+  border-radius: 8px !important;
+  background: var(--activation-clean-soft) !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-toolbar strong {
+  color: var(--activation-clean-ink) !important;
+  font-size: 0.94rem !important;
+  line-height: 1.18 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-toolbar small {
+  max-width: 760px !important;
+  color: var(--activation-clean-muted) !important;
+  font-size: 0.78rem !important;
+  line-height: 1.3 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(13, 107, 82, 0.16) !important;
+  border-left: 4px solid #0b7a55 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-head,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-question-label,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-options-field,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-help-field,
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-required {
+  grid-column: 1 / -1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row label {
+  padding: 10px !important;
+  border-radius: 8px !important;
+  background: #f8fbfa !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 30px !important;
+  padding-bottom: 2px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-head span {
+  min-height: 24px !important;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-question-label input {
+  min-height: 46px !important;
+  font-size: 0.94rem !important;
+  font-weight: 780 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-required {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-height: 42px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-required input {
+  width: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  padding: 0 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form > .activation-help {
+  display: block !important;
+  margin: 0 !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(13, 107, 82, 0.12) !important;
+  border-radius: 8px !important;
+  background: #eef8f3 !important;
+  color: #31594a !important;
+  font-size: 0.8rem !important;
+  font-weight: 780 !important;
+  line-height: 1.35 !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-builder,
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor,
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-options-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-options-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .trivia-launcher-form > button[type="submit"] {
+  justify-self: stretch !important;
+  min-height: 46px !important;
+  border-radius: 8px !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] {
+  --activation-clean-border: rgba(177, 199, 190, 0.16);
+  --activation-clean-line: rgba(177, 199, 190, 0.12);
+  --activation-clean-surface: #111f1a;
+  --activation-clean-soft: rgba(255, 255, 255, 0.04);
+  --activation-clean-soft-2: rgba(92, 214, 166, 0.1);
+  --activation-clean-ink: #f3fbf6;
+  --activation-clean-muted: #b7c9c1;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card {
+  background: #0f1a16 !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .interactive-activation-nav,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .interactive-catalog-note,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-command-strip {
+  background: var(--activation-clean-surface) !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section > label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-config-panel label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-panel label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-panel label,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .trivia-question-editor label {
+  border-color: rgba(177, 199, 190, 0.13) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section label > span,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form label > span,
+:root[data-theme="dark"] .ticket-center-panel[data-ticket-panel="trivia"] .activation-config-panel label > span {
+  color: #d8f7ea !important;
+}
+
+@media (max-width: 980px) {
+  .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card > .table-card-head,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-command-strip,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-product-mode-grid,
+  .ticket-center-panel[data-ticket-panel="trivia"] .benefit-fulfillment-grid,
+  .ticket-center-panel[data-ticket-panel="trivia"] .benefit-expiration-grid,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row,
+  .ticket-center-panel[data-ticket-panel="trivia"] .trivia-options-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design > label:not(.association-field):not(.full),
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-reward > label,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-gameplay > label:not(.full) {
+    grid-column: 1 / -1 !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-actions {
+    justify-content: stretch !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-form-builder-actions .ghost-button {
+    flex: 1 1 160px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-builder-card {
+    padding: 12px !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section,
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form {
+    padding: 12px !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head {
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-section-head > span {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-design .activation-type-picker {
+    grid-template-columns: 1fr !important;
+    max-height: 260px !important;
+  }
+}
