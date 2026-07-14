@@ -39378,20 +39378,41 @@ body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
 
 body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
   display: grid !important;
-  grid-auto-flow: initial !important;
-  grid-auto-columns: initial !important;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(292px, 340px) !important;
+  grid-template-columns: none !important;
   gap: clamp(14px, 1.6vw, 20px) !important;
-  overflow: visible !important;
-  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 2px 4px 18px !important;
+  scroll-snap-type: x proximity !important;
+  scrollbar-gutter: stable both-edges !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::-webkit-scrollbar {
+  height: 10px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::-webkit-scrollbar-track {
+  border-radius: 999px !important;
+  background: rgba(18, 99, 71, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(255, 254, 250, 0.9) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, rgba(18, 99, 71, 0.52), rgba(39, 117, 159, 0.46)) !important;
 }
 
 body[data-current-view="rms-machine"] .portal-shell .rms-stage-column {
   display: grid !important;
   align-content: start !important;
   gap: 14px !important;
-  min-width: 0 !important;
+  min-width: 292px !important;
+  width: 100% !important;
   padding: 16px !important;
+  scroll-snap-align: start !important;
   border: 1px solid rgba(18, 99, 71, 0.12) !important;
   border-radius: 20px !important;
   background: rgba(255, 255, 255, 0.72) !important;
@@ -39514,8 +39535,17 @@ body[data-current-view="rms-machine"] .portal-shell .rms-station-lane {
 }
 
 @media (max-width: 760px) {
-  body[data-current-view="rms-machine"] .portal-shell .rms-stage-board,
+  body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
+    grid-auto-columns: minmax(82vw, 88vw) !important;
+    grid-template-columns: none !important;
+    padding-inline: 2px !important;
+  }
+
   body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-stage-column {
+    min-width: 82vw !important;
   }
 }
