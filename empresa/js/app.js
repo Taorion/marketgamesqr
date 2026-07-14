@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-portal-deep-calm-ui-v1";
+const APP_VERSION = "empresa-20260714-portal-activation-modern-ui-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -2167,11 +2167,12 @@ function setQuietZoneExpanded(zone, expanded, options = {}) {
   if (button) {
     button.setAttribute("aria-expanded", expanded ? "true" : "false");
     const nextButtonState = expanded ? "expanded" : "collapsed";
-    if (button.dataset.quietToggleState !== nextButtonState) {
+    const staleToggleCopy = /unfold_|Desplegar|Replegar/.test(button.textContent || "");
+    if (button.dataset.quietToggleState !== nextButtonState || staleToggleCopy) {
       button.dataset.quietToggleState = nextButtonState;
+      button.setAttribute("aria-label", expanded ? "Cerrar sección" : "Ver sección");
       button.innerHTML = `
-        <span class="material-symbols-outlined" aria-hidden="true">${expanded ? "unfold_less" : "unfold_more"}</span>
-        <span>${expanded ? "Replegar" : "Desplegar"}</span>
+        <span>${expanded ? "Cerrar sección" : "Ver sección"}</span>
       `;
     }
   }
