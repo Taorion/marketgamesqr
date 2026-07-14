@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-cac-benchmark-card-v1";
+const APP_VERSION = "empresa-20260714-strategic-ticket-kpis-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -9687,7 +9687,7 @@ async function renderValidatorView() {
 
 function strategicMetricCard(label, value, accent = "default") {
   return `
-    <article class="surface-card kpi-card">
+    <article class="surface-card kpi-card strategic-ticket-kpi-card">
       <span class="mono-label">${escapeHtml(label)}</span>
       <strong class="kpi-value ${accent}">${escapeHtml(value)}</strong>
     </article>
@@ -11961,12 +11961,12 @@ function renderStrategicQrView() {
     strategicMetricCard("Tickets", creditBalance, creditTone),
     strategicMetricCard("Tickets usados", creditUsed, "default"),
     strategicMetricCard("Uso cartera", credits ? `${Number(credits.used_rate || 0).toFixed(1)}%` : "-", credits?.low_balance ? "warning" : "default"),
-    strategicMetricCard("Tickets genericos", String(metrics.post_sale_generated || 0)),
-    strategicMetricCard("Genericos redimidos", String(metrics.post_sale_redeemed || 0)),
+    strategicMetricCard("Tickets genéricos", String(metrics.post_sale_generated || 0)),
+    strategicMetricCard("Genéricos redimidos", String(metrics.post_sale_redeemed || 0)),
     strategicMetricCard("Tasa de redención", `${Number((metrics.repurchase_rate || 0) * 100).toFixed(1)}%`),
-    strategicMetricCard("Tickets activación", String(metrics.trivia_generated || 0), "highlight"),
+    strategicMetricCard("Activación", String(metrics.trivia_generated || 0), "highlight"),
     strategicMetricCard("Paquetes", String(metrics.qr_batches_generated || 0)),
-    strategicMetricCard("ticket etiqueta reclamados", String(metrics.label_qr_claimed_or_active || 0)),
+    strategicMetricCard("Etiquetas reclamadas", String(metrics.label_qr_claimed_or_active || 0)),
     strategicMetricCard("Vencidos", String(metrics.expired_without_redeem || 0), "warning"),
   ].join("");
   if (credits) {
