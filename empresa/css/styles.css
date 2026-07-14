@@ -39294,12 +39294,33 @@ body .portal-shell .view-section.active:not([hidden]) {
   display: block !important;
   width: 100% !important;
   min-width: 0 !important;
+  max-width: min(100%, 1480px) !important;
+  margin-inline: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
 }
 
 body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"].active:not([hidden]) {
-  display: block !important;
+  display: grid !important;
+  gap: clamp(22px, 2.4vw, 36px) !important;
+  max-width: min(100%, 1560px) !important;
+}
+
+body .portal-shell .content-shell {
+  padding: clamp(26px, 3vw, 46px) clamp(24px, 3.4vw, 54px) clamp(44px, 4vw, 72px) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .content-shell {
+  padding-inline: clamp(28px, 3.8vw, 62px) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > * {
+  margin-inline: clamp(2px, 0.4vw, 8px) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-factory-console {
+  margin-top: clamp(4px, 0.7vw, 12px) !important;
+  margin-bottom: clamp(12px, 1.8vw, 28px) !important;
 }
 
 body .portal-shell .sidebar-nav {
@@ -39367,7 +39388,7 @@ body[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-mac
 body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
   display: grid !important;
   gap: clamp(18px, 2vw, 28px) !important;
-  padding: clamp(18px, 2.2vw, 30px) !important;
+  padding: clamp(22px, 2.5vw, 36px) !important;
   border: 1px solid rgba(18, 99, 71, 0.12) !important;
   border-radius: 22px !important;
   background:
@@ -39381,8 +39402,8 @@ body[data-current-view="rms-machine"] .portal-shell .rms-stage-board-guide {
   grid-template-columns: minmax(0, 1fr) auto !important;
   gap: 16px !important;
   align-items: center !important;
-  margin: -4px 2px -6px !important;
-  padding: 0 2px 12px !important;
+  margin: 0 clamp(4px, 0.8vw, 12px) -2px !important;
+  padding: 4px clamp(2px, 0.5vw, 8px) 14px !important;
   border-bottom: 1px solid rgba(18, 99, 71, 0.1) !important;
 }
 
@@ -39429,8 +39450,9 @@ body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
   gap: clamp(14px, 1.6vw, 20px) !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  margin-inline: -2px !important;
-  padding: 4px 4px 20px !important;
+  margin-inline: clamp(2px, 0.6vw, 10px) !important;
+  padding: 8px clamp(12px, 1.4vw, 20px) 24px !important;
+  scroll-padding-inline: clamp(12px, 1.4vw, 20px) !important;
   scroll-snap-type: x proximity !important;
   scrollbar-gutter: stable both-edges !important;
   -webkit-overflow-scrolling: touch !important;
@@ -39617,8 +39639,22 @@ body[data-current-view="rms-machine"] .portal-shell .rms-station-lane {
 }
 
 @media (max-width: 760px) {
+  body .portal-shell .content-shell,
+  body[data-current-view="rms-machine"] .portal-shell .content-shell {
+    padding: 20px 16px 44px !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] {
+    gap: 20px !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > * {
+    margin-inline: 0 !important;
+  }
+
   body[data-current-view="rms-machine"] .portal-shell .rms-stage-board-guide {
     grid-template-columns: minmax(0, 1fr) !important;
+    margin-inline: 0 !important;
   }
 
   body[data-current-view="rms-machine"] .portal-shell .rms-stage-board-guide-actions {
@@ -39628,7 +39664,9 @@ body[data-current-view="rms-machine"] .portal-shell .rms-station-lane {
   body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
     grid-auto-columns: minmax(82vw, 88vw) !important;
     grid-template-columns: none !important;
-    padding-inline: 2px !important;
+    margin-inline: 0 !important;
+    padding-inline: 10px !important;
+    scroll-padding-inline: 10px !important;
   }
 
   body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row {
