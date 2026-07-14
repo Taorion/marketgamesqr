@@ -38904,3 +38904,191 @@ body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-value 
     grid-column: 1 / -1 !important;
   }
 }
+
+/* Dark theme contrast rescue: restore readable text after light canvas overrides. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #071512;
+  --surface: #0e211c;
+  --surface-soft: #132b25;
+  --surface-muted: #18352d;
+  --surface-border: rgba(151, 211, 190, 0.2);
+  --text: #f1fbf7;
+  --text-primary: #ffffff;
+  --text-muted: #c8ded6;
+  --text-soft: #9fb9af;
+  --primary: #9bf0c8;
+  --secondary: #66d9ad;
+  --secondary-soft: #b6f4d7;
+  --secondary-pale: rgba(102, 217, 173, 0.14);
+  --green-panel: #0f3d31;
+  --open-canvas-bg: #071512;
+  --open-canvas-ink: #f1fbf7;
+  --open-canvas-muted: #c8ded6;
+  --open-canvas-soft: #9fb9af;
+  --open-canvas-line: rgba(151, 211, 190, 0.2);
+  --open-canvas-faint-line: rgba(151, 211, 190, 0.12);
+  --infinite-canvas-base: #071512;
+  --infinite-canvas-ink: #f1fbf7;
+  --infinite-canvas-muted: #c8ded6;
+  --infinite-canvas-soft: #9fb9af;
+  --infinite-canvas-line: rgba(151, 211, 190, 0.18);
+  --infinite-canvas-faint: rgba(151, 211, 190, 0.1);
+  --infinite-canvas-sheet: rgba(14, 33, 28, 0.82);
+  --guided-canvas-ink: #f1fbf7;
+  --guided-canvas-muted: #c8ded6;
+  --guided-canvas-soft: #9fb9af;
+  --guided-canvas-panel: rgba(14, 33, 28, 0.84);
+  --guided-canvas-panel-soft: rgba(19, 43, 37, 0.74);
+  --deep-bg: #071512;
+  --deep-bg-green: #0a1f1a;
+  --deep-bg-blue: #0a1c26;
+  --deep-bg-white: #0d1f1b;
+  --deep-surface: rgba(14, 33, 28, 0.88);
+  --deep-surface-green: rgba(15, 61, 49, 0.84);
+  --deep-surface-blue: rgba(13, 49, 66, 0.78);
+  --deep-surface-soft: rgba(19, 43, 37, 0.7);
+  --deep-ink: #f1fbf7;
+  --deep-muted: #c8ded6;
+  --deep-soft: #9fb9af;
+  --deep-green: #78e0b4;
+  --deep-blue: #8fd4f4;
+  --deep-line: rgba(151, 211, 190, 0.16);
+  --deep-green-line: rgba(120, 224, 180, 0.22);
+  --deep-blue-line: rgba(143, 212, 244, 0.2);
+  --deep-shadow-soft: 0 18px 52px rgba(0, 0, 0, 0.26);
+  --deep-shadow-tight: 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme="dark"] html,
+:root[data-theme="dark"] body {
+  color: #f1fbf7 !important;
+  background:
+    linear-gradient(90deg, rgba(120, 224, 180, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(143, 212, 244, 0.04) 1px, transparent 1px),
+    linear-gradient(145deg, #071512 0%, #0a1f1a 42%, #0a1c26 74%, #071512 100%) !important;
+  background-size: 104px 104px, 104px 104px, 100% 100% !important;
+  background-attachment: fixed !important;
+}
+
+:root[data-theme="dark"] body .portal-shell,
+:root[data-theme="dark"] body .app-shell,
+:root[data-theme="dark"] body .app-main,
+:root[data-theme="dark"] body .content-shell,
+:root[data-theme="dark"] body .view-section,
+:root[data-theme="dark"] body .view-section.active {
+  color: #f1fbf7 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(h1, h2, h3, h4, h5, h6, strong, b, label, legend, th, .card-title, .dashboard-widget-value, .kpi-value, .table-card-head strong, .view-head h1, .view-head h2, .view-title-block h1) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(p, small, span, td, li, dd, dt, .table-secondary, .kpi-meta, .dashboard-widget-meta, .dashboard-widget-body, .muted, .activation-help, .form-message, .chart-explainer) {
+  color: #c8ded6 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.mono-label, .badge, .status-pill, .chip, .pill, .feature-tier-badge) {
+  color: #dff9ee !important;
+  background: rgba(120, 224, 180, 0.12) !important;
+  border-color: rgba(120, 224, 180, 0.24) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.topbar, .sidebar, .view-section.active, .subscription-banner, .surface-card, .data-table-card, .chart-card, .map-card, .insight-card, .stat-card, .kpi-card, .metric-card, .activation-panel, .activation-form-panel, .activation-preview-panel, .activation-share-panel, .lead-directory-card, .lead-detail-card, .lead-agenda-card, .agenda-panel, .table-card, .inventory-card, .sales-panel, .profile-card, .billing-card, .account-panel, .reward-pass-panel, .modal-card, .busy-card, .quiet-zone, .contact-center-shell, .contact-center-panel, .dashboard-builder-shell, .dashboard-widget-library, .dashboard-canvas, .dashboard-widget-card, .dashboard-widget-preview, .revenue-workspace, .next-best-action-card, .revenue-objective-card, .revenue-onboarding, .revenue-path-step) {
+  color: #f1fbf7 !important;
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background:
+    linear-gradient(180deg, rgba(14, 33, 28, 0.9), rgba(10, 28, 38, 0.74)),
+    #0e211c !important;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.topbar, .sidebar) {
+  background:
+    linear-gradient(180deg, rgba(10, 31, 26, 0.96), rgba(7, 21, 18, 0.94)) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(input, select, textarea, .password-field, .open-product-input, [contenteditable="true"]) {
+  color: #f1fbf7 !important;
+  background: rgba(7, 21, 18, 0.82) !important;
+  border-color: rgba(151, 211, 190, 0.22) !important;
+  box-shadow: inset 0 0 0 1px rgba(151, 211, 190, 0.05) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(input, select, textarea)::placeholder {
+  color: #9fb9af !important;
+}
+
+:root[data-theme="dark"] body .portal-shell select option,
+:root[data-theme="dark"] body .portal-shell select optgroup {
+  color: #f1fbf7 !important;
+  background: #0e211c !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.ghost-button, .icon-button, .link-button, .dashboard-profile-tabs button, .quiet-zone-toggle, .ticket-center-menu button, .segment-tab, .contact-center-tab-card) {
+  color: #e8fff5 !important;
+  background: rgba(14, 33, 28, 0.72) !important;
+  border-color: rgba(151, 211, 190, 0.18) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.ghost-button:hover, .icon-button:hover, .dashboard-profile-tabs button.active, .segment-tab.active, .ticket-center-menu button.active) {
+  color: #ffffff !important;
+  background: rgba(120, 224, 180, 0.16) !important;
+  border-color: rgba(120, 224, 180, 0.32) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.solid-button, button[type="submit"]) {
+  color: #062018 !important;
+  background: linear-gradient(135deg, #a8f4d0, #7bdcb5) !important;
+  border-color: rgba(168, 244, 208, 0.46) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(.table-wrap, .table-responsive, .lead-table-scroll, .agenda-table-wrap) {
+  background: rgba(7, 21, 18, 0.72) !important;
+  border-color: rgba(151, 211, 190, 0.16) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell table,
+:root[data-theme="dark"] body .portal-shell tbody,
+:root[data-theme="dark"] body .portal-shell tr {
+  color: #f1fbf7 !important;
+  background: transparent !important;
+}
+
+:root[data-theme="dark"] body .portal-shell thead th,
+:root[data-theme="dark"] body .portal-shell th {
+  color: #ffffff !important;
+  background: rgba(120, 224, 180, 0.12) !important;
+  border-bottom-color: rgba(151, 211, 190, 0.18) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell tbody td,
+:root[data-theme="dark"] body .portal-shell td {
+  color: #d7ebe4 !important;
+  background: rgba(14, 33, 28, 0.48) !important;
+  border-bottom-color: rgba(151, 211, 190, 0.1) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell tbody tr:hover td {
+  background: rgba(120, 224, 180, 0.09) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .portal-gaming-entry.gaming-core-entry,
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library,
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="dashboard"] .dashboard-library-item {
+  color: #f1fbf7 !important;
+  border-color: rgba(151, 211, 190, 0.18) !important;
+  background:
+    linear-gradient(135deg, rgba(15, 61, 49, 0.86), rgba(13, 49, 66, 0.72)),
+    #0e211c !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .portal-gaming-entry.gaming-core-entry :where(strong, small),
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="dashboard"] .dashboard-library-item :where(strong, small, em) {
+  color: #f1fbf7 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .material-symbols-outlined {
+  color: inherit;
+}
