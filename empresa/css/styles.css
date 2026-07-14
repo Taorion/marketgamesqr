@@ -39092,3 +39092,194 @@ body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-value 
 :root[data-theme="dark"] body .portal-shell .material-symbols-outlined {
   color: inherit;
 }
+
+/* Revenue onboarding guide polish: clearer 3-step flow and CTA hierarchy. */
+body .portal-shell .revenue-onboarding {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(260px, 0.86fr) repeat(3, minmax(190px, 1fr)) minmax(210px, auto) !important;
+  gap: clamp(12px, 1.5vw, 18px) !important;
+  align-items: stretch !important;
+  padding: clamp(18px, 2.1vw, 28px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(20, 124, 91, 0.14) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 254, 250, 0.92), rgba(237, 248, 241, 0.72) 48%, rgba(237, 247, 252, 0.58)),
+    #fffefa !important;
+  box-shadow: 0 14px 38px rgba(23, 83, 65, 0.07) !important;
+}
+
+body .portal-shell .revenue-onboarding::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 6px !important;
+  background: linear-gradient(180deg, #16865e, #27759f) !important;
+}
+
+body .portal-shell .revenue-onboarding > div {
+  display: grid !important;
+  align-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 4px clamp(6px, 1vw, 12px) 4px 8px !important;
+}
+
+body .portal-shell .revenue-onboarding > div .mono-label {
+  width: fit-content !important;
+  color: #126347 !important;
+  background: rgba(22, 134, 94, 0.1) !important;
+  border-color: rgba(22, 134, 94, 0.18) !important;
+}
+
+body .portal-shell .revenue-onboarding h3 {
+  max-width: 16ch !important;
+  margin: 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.25rem, 1.55vw, 1.78rem) !important;
+  line-height: 1.08 !important;
+  font-weight: 840 !important;
+}
+
+body .portal-shell .revenue-onboarding article {
+  position: relative !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 128px !important;
+  padding: 18px 16px 16px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(18, 99, 71, 0.1) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+body .portal-shell .revenue-onboarding article::before {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  margin-bottom: 2px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #e8f8ef, #e8f4fb) !important;
+  color: #126347 !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+  box-shadow: inset 0 0 0 1px rgba(18, 99, 71, 0.12) !important;
+}
+
+body .portal-shell .revenue-onboarding article:nth-of-type(1)::before {
+  content: "01" !important;
+}
+
+body .portal-shell .revenue-onboarding article:nth-of-type(2)::before {
+  content: "02" !important;
+}
+
+body .portal-shell .revenue-onboarding article:nth-of-type(3)::before {
+  content: "03" !important;
+}
+
+body .portal-shell .revenue-onboarding article strong {
+  color: #102c25 !important;
+  font-size: 0.98rem !important;
+  line-height: 1.24 !important;
+  font-weight: 820 !important;
+}
+
+body .portal-shell .revenue-onboarding article p {
+  max-width: 28ch !important;
+  color: #5e766f !important;
+  font-size: 0.86rem !important;
+  line-height: 1.45 !important;
+}
+
+body .portal-shell .revenue-onboarding .solid-button {
+  align-self: center !important;
+  justify-self: end !important;
+  width: min(100%, 230px) !important;
+  min-height: 54px !important;
+  padding: 13px 16px !important;
+  border-radius: 16px !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  background: linear-gradient(135deg, #126347, #27759f) !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 34px rgba(18, 99, 71, 0.18) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding {
+  border-color: rgba(151, 211, 190, 0.18) !important;
+  background:
+    linear-gradient(135deg, rgba(14, 33, 28, 0.94), rgba(15, 61, 49, 0.82) 46%, rgba(13, 49, 66, 0.76)),
+    #0e211c !important;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.24) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding h3,
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding article strong {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding > div .mono-label {
+  color: #dff9ee !important;
+  background: rgba(120, 224, 180, 0.12) !important;
+  border-color: rgba(120, 224, 180, 0.24) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding article {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.48) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding article::before {
+  background: rgba(120, 224, 180, 0.14) !important;
+  color: #dff9ee !important;
+  box-shadow: inset 0 0 0 1px rgba(120, 224, 180, 0.2) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding article p {
+  color: #c8ded6 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .revenue-onboarding .solid-button {
+  color: #062018 !important;
+  background: linear-gradient(135deg, #a8f4d0, #7bdcb5) !important;
+}
+
+@media (max-width: 1280px) {
+  body .portal-shell .revenue-onboarding {
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(180px, 1fr)) !important;
+  }
+
+  body .portal-shell .revenue-onboarding .solid-button {
+    grid-column: 1 / -1 !important;
+    justify-self: start !important;
+    width: auto !important;
+    min-width: 260px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body .portal-shell .revenue-onboarding {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .portal-shell .revenue-onboarding h3 {
+    max-width: 24ch !important;
+  }
+
+  body .portal-shell .revenue-onboarding article {
+    min-height: auto !important;
+  }
+
+  body .portal-shell .revenue-onboarding .solid-button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
