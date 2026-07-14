@@ -38219,3 +38219,46 @@ body .portal-shell .login-vision-copy p {
     font-size: clamp(2.35rem, 12vw, 3.6rem) !important;
   }
 }
+
+/* Login brand cleanup: keep the mark free, without a container box. */
+body .portal-shell .login-vision-brand {
+  width: fit-content !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body .portal-shell .login-vision-brand .brand-logo,
+body .portal-shell .login-brand .brand-logo {
+  width: 52px !important;
+  height: 52px !important;
+  flex: 0 0 52px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body .portal-shell .login-vision-brand strong {
+  color: #102c25 !important;
+  font-size: 0.98rem !important;
+}
+
+body .portal-shell .login-vision-brand span {
+  color: #5e766f !important;
+  font-size: 0.8rem !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-vision-brand {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+@media (max-width: 560px) {
+  body .portal-shell .login-vision-brand {
+    width: fit-content !important;
+  }
+}
