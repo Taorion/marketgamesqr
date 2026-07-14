@@ -37367,3 +37367,118 @@ body[data-current-view="rms-machine"] .rms-tutorial-actions .solid-button {
     grid-column: 2 !important;
   }
 }
+
+/* Portal dropdown soft border normalization */
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --dropdown-soft-border: rgba(35, 111, 153, 0.18);
+  --dropdown-soft-border-strong: rgba(15, 115, 84, 0.28);
+  --dropdown-soft-bg: rgba(255, 254, 250, 0.92);
+  --dropdown-soft-bg-2: rgba(236, 248, 241, 0.58);
+  --dropdown-soft-text: #102c25;
+}
+
+body .portal-shell select,
+body .portal-shell .view-section select,
+body .portal-shell .modal-form select,
+body .portal-shell .modal-card select,
+body .portal-shell [data-product-select],
+body .portal-shell .inline-selects select,
+body .portal-shell .command-filters select,
+body .portal-shell .command-table-toolbar select,
+body .portal-shell .lead-agenda-controls select,
+body .portal-shell .lead-agenda-create-form select,
+body .portal-shell .lead-agenda-edit-form select,
+body .portal-shell .rms-operator-toolbar select,
+body .portal-shell .rms-bulk-toolbar select,
+body .portal-shell .rms-station-workspace-actions select,
+body .portal-shell .rms-lead-quality-field select,
+body .portal-shell .rms-product-classifier select,
+body .portal-shell .activation-product-intent-card select,
+body .portal-shell .activation-form-field-row select,
+body .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] select,
+body .portal-shell .view-section[data-view="leads"] select,
+body .portal-shell .view-section[data-view="rms-machine"] select,
+body .portal-shell .view-section[data-view="strategic-qr"] select,
+body .portal-shell .view-section[data-view="campaigns"] select,
+body .portal-shell .view-section[data-view="account"] select,
+body .portal-shell .view-section[data-view="affiliates"] select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-width: 0 !important;
+  border: 1px solid var(--dropdown-soft-border) !important;
+  border-color: var(--dropdown-soft-border) !important;
+  outline: 0 !important;
+  border-radius: var(--deep-radius-control, 18px) !important;
+  color: var(--dropdown-soft-text) !important;
+  background-color: var(--dropdown-soft-bg) !important;
+  background-image:
+    linear-gradient(180deg, var(--dropdown-soft-bg), var(--dropdown-soft-bg-2)),
+    url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%230f7354' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat, no-repeat !important;
+  background-position: 0 0, right 14px center !important;
+  background-size: 100% 100%, 16px 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62), 0 8px 18px rgba(15, 44, 36, 0.035) !important;
+  padding-right: 44px !important;
+}
+
+body .portal-shell select:hover,
+body .portal-shell .view-section select:hover,
+body .portal-shell .modal-form select:hover,
+body .portal-shell [data-product-select]:hover {
+  border-color: rgba(15, 115, 84, 0.24) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68), 0 10px 22px rgba(15, 44, 36, 0.055) !important;
+}
+
+body .portal-shell select:focus,
+body .portal-shell select:focus-visible,
+body .portal-shell .view-section select:focus,
+body .portal-shell .view-section select:focus-visible,
+body .portal-shell .modal-form select:focus,
+body .portal-shell .modal-form select:focus-visible,
+body .portal-shell [data-product-select]:focus,
+body .portal-shell [data-product-select]:focus-visible {
+  border-color: var(--dropdown-soft-border-strong) !important;
+  box-shadow: 0 0 0 4px rgba(35, 111, 153, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+body .portal-shell select:disabled,
+body .portal-shell .view-section select:disabled,
+body .portal-shell .modal-form select:disabled {
+  border-color: rgba(94, 118, 111, 0.16) !important;
+  color: rgba(94, 118, 111, 0.72) !important;
+  background-image:
+    linear-gradient(180deg, rgba(245, 248, 246, 0.88), rgba(236, 242, 239, 0.72)),
+    url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%235e766f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  box-shadow: none !important;
+}
+
+body .portal-shell select option,
+body .portal-shell select optgroup {
+  background: #fffefa !important;
+  color: #102c25 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell select,
+:root[data-theme="dark"] body .portal-shell .view-section select,
+:root[data-theme="dark"] body .portal-shell .modal-form select,
+:root[data-theme="dark"] body .portal-shell [data-product-select] {
+  --dropdown-soft-border: rgba(177, 199, 190, 0.24);
+  --dropdown-soft-border-strong: rgba(84, 214, 171, 0.36);
+  --dropdown-soft-bg: rgba(17, 31, 26, 0.96);
+  --dropdown-soft-bg-2: rgba(22, 43, 36, 0.9);
+  --dropdown-soft-text: #f4fbf7;
+  color: var(--dropdown-soft-text) !important;
+  border-color: var(--dropdown-soft-border) !important;
+  background-image:
+    linear-gradient(180deg, var(--dropdown-soft-bg), var(--dropdown-soft-bg-2)),
+    url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%2354d6ab' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 18px rgba(0, 0, 0, 0.16) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell select option,
+:root[data-theme="dark"] body .portal-shell select optgroup {
+  background: #111f1a !important;
+  color: #f4fbf7 !important;
+}
