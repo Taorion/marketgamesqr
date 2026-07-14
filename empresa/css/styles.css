@@ -38518,3 +38518,125 @@ body .portal-shell .revenue-onboarding article {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Gaming Center dashboard entry: calmer shape, no raw icon ligature text. */
+body .portal-shell .portal-gaming-entry.gaming-core-entry {
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) 40px !important;
+  align-items: center !important;
+  gap: clamp(14px, 2vw, 22px) !important;
+  min-height: auto !important;
+  margin: 0 0 22px !important;
+  padding: clamp(16px, 2.2vw, 24px) clamp(18px, 2.6vw, 30px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(30, 116, 86, 0.16) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(90deg, rgba(18, 128, 92, 0.12), rgba(55, 128, 181, 0.09)),
+    linear-gradient(180deg, rgba(255, 254, 250, 0.98), rgba(239, 249, 244, 0.9)) !important;
+  color: #112b24 !important;
+  box-shadow: 0 14px 34px rgba(18, 73, 57, 0.1) !important;
+  text-align: left !important;
+  transform: none !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry::after {
+  display: none !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry:hover,
+body .portal-shell .portal-gaming-entry.gaming-core-entry:focus-visible {
+  border-color: rgba(24, 111, 83, 0.26) !important;
+  background:
+    linear-gradient(90deg, rgba(18, 128, 92, 0.16), rgba(55, 128, 181, 0.12)),
+    linear-gradient(180deg, #ffffff, #edf9f3) !important;
+  box-shadow: 0 18px 42px rgba(18, 73, 57, 0.13) !important;
+  transform: translateY(-1px) !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:first-child,
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:last-child {
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-indent: 0 !important;
+  white-space: nowrap !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:first-child {
+  width: 52px !important;
+  height: 52px !important;
+  background:
+    linear-gradient(135deg, rgba(22, 128, 91, 0.16), rgba(46, 116, 170, 0.12)),
+    #f9fffc !important;
+  color: #126347 !important;
+  box-shadow: inset 0 0 0 1px rgba(18, 99, 71, 0.12) !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:first-child::before {
+  content: "MG" !important;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 0.86rem !important;
+  font-weight: 900 !important;
+  color: #126347 !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:last-child {
+  justify-self: end !important;
+  width: 40px !important;
+  height: 40px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(18, 99, 71, 0.14) !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:last-child::before {
+  content: "" !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-right: 2px solid #126347 !important;
+  border-bottom: 2px solid #126347 !important;
+  transform: rotate(-45deg) !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry strong {
+  max-width: none !important;
+  color: #102c25 !important;
+  font-size: clamp(1.05rem, 1.5vw, 1.38rem) !important;
+  font-weight: 820 !important;
+  line-height: 1.15 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+body .portal-shell .portal-gaming-entry.gaming-core-entry small {
+  max-width: 82ch !important;
+  margin-top: 5px !important;
+  color: #5e766f !important;
+  font-size: clamp(0.86rem, 1vw, 0.96rem) !important;
+  font-weight: 560 !important;
+  line-height: 1.42 !important;
+  letter-spacing: 0 !important;
+}
+
+@media (max-width: 720px) {
+  body .portal-shell .portal-gaming-entry.gaming-core-entry {
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 15px !important;
+    border-radius: 16px !important;
+  }
+
+  body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:first-child {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:last-child {
+    display: none !important;
+  }
+}
