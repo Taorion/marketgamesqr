@@ -16,69 +16,151 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-dropdown-soft-ui-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-premium-login-rms-ui-20260714-v1">
 </head>
 <body>
   <main class="portal-shell">
     <section class="login-screen" id="loginPanel">
-      <div class="login-card">
-        <div class="login-brand">
-          <img class="brand-icon brand-logo" src="/img/MGLogo-01.png" alt="Market Games">
-          <div>
-            <h1>Market Games</h1>
-            <p>Business Intelligence</p>
+      <div class="login-experience">
+        <section class="login-vision" aria-label="Poder operativo de Market Games">
+          <div class="login-vision-brand">
+            <img class="brand-icon brand-logo" src="/img/MGLogo-01.png" alt="Market Games">
+            <div>
+              <strong>Market Games</strong>
+              <span>Quality Revenue RMS</span>
+            </div>
           </div>
-        </div>
-        <div class="login-copy">
-          <h2>Portal empresa</h2>
-          <p>Analítica de campañas, redenciones y ventas atribuidas.</p>
-        </div>
-        <form class="login-form" id="loginForm">
-          <label>
-            <span>Email</span>
-            <input id="emailInput" type="email" autocomplete="email" required>
-          </label>
-          <label>
-            <span>Password</span>
-            <div class="password-field">
-              <input id="passwordInput" type="password" autocomplete="current-password" required>
-              <button class="password-reveal-button" type="button" data-password-toggle="passwordInput" aria-label="Mostrar password" aria-pressed="false">
-                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
-              </button>
+
+          <div class="login-vision-copy">
+            <span class="mono-label">Fábrica de ventas automatizada</span>
+            <h1>La máquina RMS convierte juego, datos y seguimiento en revenue medible.</h1>
+            <p>Activaciones gamificadas alimentan el recolector, el embudo cura la oportunidad y la operación comercial recibe leads clasificados para vender con precisión.</p>
+          </div>
+
+          <div class="login-machine-visual" aria-label="Flujo de la máquina RMS">
+            <div class="login-machine-flow">
+              <article>
+                <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                <strong>Activación</strong>
+                <small>QR, juego, premio y formulario</small>
+              </article>
+              <i aria-hidden="true"></i>
+              <article>
+                <span class="material-symbols-outlined" aria-hidden="true">database</span>
+                <strong>Recolector</strong>
+                <small>Lead discriminado por canal e interés</small>
+              </article>
+              <i aria-hidden="true"></i>
+              <article class="is-core">
+                <span class="material-symbols-outlined" aria-hidden="true">precision_manufacturing</span>
+                <strong>Máquina RMS</strong>
+                <small>Embudo, curaduría, clasificación y agenda</small>
+              </article>
+              <i aria-hidden="true"></i>
+              <article>
+                <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                <strong>Venta</strong>
+                <small>Seguimiento, redención y revenue</small>
+              </article>
             </div>
-          </label>
-          <button class="solid-button" type="submit">Entrar</button>
-        </form>
-        <p class="error-line" id="loginError"></p>
-        <form class="login-form" id="passwordResetRequestForm">
-          <label>
-            <span>Recuperar acceso</span>
-            <input id="passwordResetEmailInput" type="email" autocomplete="email" placeholder="correo@empresa.com">
-          </label>
-          <button class="ghost-button" type="submit">Enviar recuperación</button>
-        </form>
-        <form class="login-form hidden" id="passwordResetForm">
-          <label>
-            <span>Nuevo password</span>
-            <div class="password-field">
-              <input id="passwordResetNewInput" type="password" minlength="8" autocomplete="new-password">
-              <button class="password-reveal-button" type="button" data-password-toggle="passwordResetNewInput" aria-label="Mostrar password" aria-pressed="false">
-                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
-              </button>
+
+            <div class="login-machine-core">
+              <div>
+                <span>Entrada gamificada</span>
+                <strong>Batalla naval · Termómetro · Captura relámpago · QR físico</strong>
+              </div>
+              <div>
+                <span>Clasificación RMS</span>
+                <strong>Baja · Media · Alta · Producto · Servicio · Prioridad</strong>
+              </div>
+              <div>
+                <span>Salida comercial</span>
+                <strong>Agenda · Contacto · Redención · Recompra · Referido</strong>
+              </div>
             </div>
-          </label>
-          <label>
-            <span>Confirmar password</span>
-            <div class="password-field">
-              <input id="passwordResetConfirmInput" type="password" minlength="8" autocomplete="new-password">
-              <button class="password-reveal-button" type="button" data-password-toggle="passwordResetConfirmInput" aria-label="Mostrar password" aria-pressed="false">
-                <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
-              </button>
+          </div>
+
+          <div class="login-proof-grid" aria-label="Resultados que organiza el portal">
+            <article>
+              <span>01</span>
+              <strong>Captura datos valiosos antes del juego</strong>
+            </article>
+            <article>
+              <span>02</span>
+              <strong>Filtra oportunidades listas para el embudo</strong>
+            </article>
+            <article>
+              <span>03</span>
+              <strong>Conecta cada lead con producto y seguimiento</strong>
+            </article>
+          </div>
+        </section>
+
+        <aside class="login-access-panel" aria-label="Inicio de sesión al portal">
+          <div class="login-card">
+            <div class="login-brand">
+              <img class="brand-icon brand-logo" src="/img/MGLogo-01.png" alt="Market Games">
+              <div>
+                <h1>Portal premium</h1>
+                <p>Acceso privado Market Games</p>
+              </div>
             </div>
-          </label>
-          <button class="solid-button" type="submit">Actualizar password</button>
-        </form>
-        <p class="error-line" id="passwordResetMessage"></p>
+            <div class="login-copy">
+              <span class="mono-label">Business Intelligence</span>
+              <h2>Entrar al centro de revenue</h2>
+              <p>Gestiona activaciones, leads, embudo, curaduría, productos, agenda y ventas desde una sola máquina operativa.</p>
+            </div>
+            <form class="login-form" id="loginForm">
+              <label>
+                <span>Email corporativo</span>
+                <input id="emailInput" type="email" autocomplete="email" required>
+              </label>
+              <label>
+                <span>Password</span>
+                <div class="password-field">
+                  <input id="passwordInput" type="password" autocomplete="current-password" required>
+                  <button class="password-reveal-button" type="button" data-password-toggle="passwordInput" aria-label="Mostrar password" aria-pressed="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  </button>
+                </div>
+              </label>
+              <button class="solid-button" type="submit">
+                <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                Entrar al portal
+              </button>
+            </form>
+            <p class="error-line" id="loginError"></p>
+            <form class="login-form login-recovery-form" id="passwordResetRequestForm">
+              <label>
+                <span>Recuperar acceso</span>
+                <input id="passwordResetEmailInput" type="email" autocomplete="email" placeholder="correo@empresa.com">
+              </label>
+              <button class="ghost-button" type="submit">Enviar recuperación</button>
+            </form>
+            <form class="login-form hidden" id="passwordResetForm">
+              <label>
+                <span>Nuevo password</span>
+                <div class="password-field">
+                  <input id="passwordResetNewInput" type="password" minlength="8" autocomplete="new-password">
+                  <button class="password-reveal-button" type="button" data-password-toggle="passwordResetNewInput" aria-label="Mostrar password" aria-pressed="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  </button>
+                </div>
+              </label>
+              <label>
+                <span>Confirmar password</span>
+                <div class="password-field">
+                  <input id="passwordResetConfirmInput" type="password" minlength="8" autocomplete="new-password">
+                  <button class="password-reveal-button" type="button" data-password-toggle="passwordResetConfirmInput" aria-label="Mostrar password" aria-pressed="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  </button>
+                </div>
+              </label>
+              <button class="solid-button" type="submit">Actualizar password</button>
+            </form>
+            <p class="error-line" id="passwordResetMessage"></p>
+          </div>
+        </aside>
       </div>
     </section>
 
@@ -6572,7 +6654,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-dropdown-soft-ui-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-premium-login-rms-ui-20260714-v1" defer></script>
 </body>
 </html>
 
