@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-portal-activation-organization-ui-v1";
+const APP_VERSION = "empresa-20260714-portal-rms-tutorial-ui-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -86,6 +86,10 @@ const rmsMachineCollectorButton = document.getElementById("rmsMachineCollectorBu
 const rmsMachineHookButton = document.getElementById("rmsMachineHookButton");
 const rmsMachineHowButton = document.getElementById("rmsMachineHowButton");
 const rmsApplyRuleButton = document.getElementById("rmsApplyRuleButton");
+const rmsTutorialSteps = document.getElementById("rmsTutorialSteps");
+const rmsTutorialPanel = document.getElementById("rmsTutorialPanel");
+const rmsTutorialProgressLabel = document.getElementById("rmsTutorialProgressLabel");
+const rmsTutorialProgressBar = document.getElementById("rmsTutorialProgressBar");
 const rmsMachineSearchInput = document.getElementById("rmsMachineSearchInput");
 const rmsMachinePhaseFilter = document.getElementById("rmsMachinePhaseFilter");
 const rmsMachinePriorityFilter = document.getElementById("rmsMachinePriorityFilter");
@@ -1356,6 +1360,7 @@ let state = {
   rmsProductClassificationDraft: {},
   rmsStationPhase: "",
   rmsStationScreenOpen: false,
+  rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
     phase: "",
@@ -26572,6 +26577,196 @@ function renderRmsMachineLoading() {
   }
 }
 
+const RMS_TUTORIAL_STEPS = [
+  {
+    key: "lead-input",
+    phase: "recoleccion",
+    icon: "input_circle",
+    title: "Meter leads a la máquina",
+    subtitle: "Recolector",
+    actionLabel: "Abrir recolector",
+    action: "collector",
+    input: "Leads de activaciones, QR, campañas, formularios, WhatsApp, eventos o carga manual.",
+    operation: "Registrar contacto, origen, interés, producto preguntado y consentimiento para que el lead deje de ser visitante anónimo.",
+    output: "Materia prima comercial visible en Recolector, lista para decidir si merece entrar al embudo.",
+    operatorHint: "Si el lead no tiene contacto o interés mínimo, todavía no se fabrica venta: se completa o se deja fuera.",
+  },
+  {
+    key: "funnel-gate",
+    phase: "alimentacion",
+    icon: "filter_alt",
+    title: "Pasar solo lo que merece embudo",
+    subtitle: "Embudo",
+    actionLabel: "Ver Embudo",
+    action: "station",
+    input: "Leads seleccionados desde Recolector, no toda la base cruda.",
+    operation: "Revisar datos capturados, intención, canal, campaña y señales de interés para asignar calidad alta, media o baja.",
+    output: "Lead cualificado con probabilidad inicial de conversión y listo para curaduría.",
+    operatorHint: "La calidad vive en el embudo. No es producto: es probabilidad de venta.",
+  },
+  {
+    key: "curation",
+    phase: "curaduria",
+    icon: "fact_check",
+    title: "Curar el dato antes de vender",
+    subtitle: "Curados",
+    actionLabel: "Ver Curados",
+    action: "station",
+    input: "Leads con calidad definida y datos de formularios, activaciones o campañas.",
+    operation: "Completar teléfono, interés, fuente, respuestas clave y señales que ayudan a entender qué necesita el lead.",
+    output: "Lead confiable, entendible y listo para clasificación interna.",
+    operatorHint: "Aquí se limpia el dato. Si está incompleto, la máquina no debe empujarlo a ventas todavía.",
+  },
+  {
+    key: "classification",
+    phase: "clasificacion",
+    icon: "category",
+    title: "Clasificar por producto o servicio",
+    subtitle: "Clasificación",
+    actionLabel: "Ver clasificación",
+    action: "station",
+    input: "Lead curado con señales de interés o una respuesta directa de producto.",
+    operation: "Amarrar el lead al producto, servicio, línea o inventario interno. Si no existe, se crea desde la estación.",
+    output: "Lead ordenado por oferta comercial concreta para que la empresa sepa qué venderle.",
+    operatorHint: "Esta clasificación no es calidad; es el interés comercial interno de la empresa.",
+  },
+  {
+    key: "anti-leak",
+    phase: "preprocesamiento",
+    icon: "sports_esports",
+    title: "Poner un gancho anti-fuga",
+    subtitle: "Gamificación",
+    actionLabel: "Crear gancho",
+    action: "missions",
+    input: "Lead clasificado que puede enfriarse si no recibe una razón para volver.",
+    operation: "Asignar ticket, reward pass, trivia, beneficio, recordatorio, ranking o misión para mantener atención.",
+    output: "Lead protegido con una razón medible para redimir, responder, agendar o comprar.",
+    operatorHint: "La gamificación no es decoración: es un mecanismo para reducir fuga antes de la venta.",
+  },
+  {
+    key: "commercial-action",
+    phase: "procesamiento",
+    icon: "send",
+    title: "Ejecutar la acción comercial",
+    subtitle: "Procesamiento",
+    actionLabel: "Ver procesamiento",
+    action: "station",
+    input: "Lead clasificado y cubierto con gancho, producto o siguiente paso claro.",
+    operation: "Enviar catálogo, WhatsApp, cotización, llamada, agenda, factura, demostración o propuesta.",
+    output: "Lead con una acción de venta registrada, trazable y medible.",
+    operatorHint: "Aquí se fabrica el avance comercial: toda acción debe dejar huella para medir revenue.",
+  },
+  {
+    key: "revenue",
+    phase: "cierre",
+    icon: "payments",
+    title: "Cerrar, medir y retroalimentar",
+    subtitle: "Revenue",
+    actionLabel: "Ver cierres",
+    action: "station",
+    input: "Oportunidades con propuesta, beneficio, agenda o intención de compra.",
+    operation: "Registrar venta, redención, recompra, referido o pérdida; luego aprender qué canal y gancho funcionó.",
+    output: "Revenue medible y aprendizaje para alimentar mejor el siguiente ciclo RMS.",
+    operatorHint: "La máquina no termina al vender: postventa e inteligencia alimentan la próxima venta.",
+  },
+];
+
+function renderRmsTutorial() {
+  if (!rmsTutorialSteps || !rmsTutorialPanel) return;
+  const total = RMS_TUTORIAL_STEPS.length;
+  const index = Math.min(Math.max(Number(state.rmsTutorialStep || 0), 0), total - 1);
+  const step = RMS_TUTORIAL_STEPS[index] || RMS_TUTORIAL_STEPS[0];
+  const progress = total ? ((index + 1) / total) * 100 : 0;
+  state.rmsTutorialStep = index;
+
+  if (rmsTutorialProgressLabel) rmsTutorialProgressLabel.textContent = `Paso ${index + 1} de ${total}`;
+  if (rmsTutorialProgressBar) rmsTutorialProgressBar.style.width = `${progress}%`;
+
+  rmsTutorialSteps.innerHTML = RMS_TUTORIAL_STEPS.map((item, itemIndex) => `
+    <button class="rms-tutorial-step ${itemIndex === index ? "is-active" : ""}" type="button" data-rms-tutorial-step="${itemIndex}" aria-pressed="${itemIndex === index ? "true" : "false"}">
+      <span>${String(itemIndex + 1).padStart(2, "0")}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <small>${escapeHtml(item.subtitle)}</small>
+    </button>
+  `).join("");
+
+  rmsTutorialPanel.innerHTML = `
+    <div class="rms-tutorial-panel-head">
+      <span class="rms-tutorial-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(step.icon)}</span>
+      <div>
+        <span class="mono-label">${escapeHtml(step.subtitle)}</span>
+        <h4>${escapeHtml(step.title)}</h4>
+        <p>${escapeHtml(step.operatorHint)}</p>
+      </div>
+    </div>
+    <div class="rms-tutorial-flow">
+      <article>
+        <span>Entrada</span>
+        <strong>${escapeHtml(step.input)}</strong>
+      </article>
+      <i class="material-symbols-outlined" aria-hidden="true">arrow_forward</i>
+      <article>
+        <span>Operación</span>
+        <strong>${escapeHtml(step.operation)}</strong>
+      </article>
+      <i class="material-symbols-outlined" aria-hidden="true">arrow_forward</i>
+      <article>
+        <span>Salida</span>
+        <strong>${escapeHtml(step.output)}</strong>
+      </article>
+    </div>
+    <div class="rms-tutorial-actions">
+      <button class="ghost-button" type="button" data-rms-tutorial-prev ${index === 0 ? "disabled" : ""}>Paso anterior</button>
+      <button class="solid-button" type="button" data-rms-tutorial-action="${escapeHtml(step.action)}" data-rms-tutorial-phase="${escapeHtml(step.phase)}">${escapeHtml(step.actionLabel)}</button>
+      <button class="ghost-button" type="button" data-rms-tutorial-next ${index >= total - 1 ? "disabled" : ""}>Siguiente paso</button>
+    </div>
+  `;
+
+  rmsTutorialSteps.querySelectorAll("[data-rms-tutorial-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsTutorialStep = Number(button.dataset.rmsTutorialStep || 0);
+      renderRmsTutorial();
+    });
+  });
+  rmsTutorialPanel.querySelector("[data-rms-tutorial-prev]")?.addEventListener("click", () => {
+    state.rmsTutorialStep = Math.max(0, index - 1);
+    renderRmsTutorial();
+  });
+  rmsTutorialPanel.querySelector("[data-rms-tutorial-next]")?.addEventListener("click", () => {
+    state.rmsTutorialStep = Math.min(total - 1, index + 1);
+    renderRmsTutorial();
+  });
+  bindRmsMachineActions(rmsTutorialPanel);
+}
+
+function handleRmsTutorialAction(action = "", phase = "") {
+  if (action === "collector") {
+    openRmsCollectorModal();
+    showFeedback("Aquí ingresas o seleccionas leads para alimentar la Máquina RMS.", "info", { title: "Tutorial RMS" });
+    return;
+  }
+  if (action === "missions") {
+    setView("missions");
+    showFeedback("Crea el gancho que reduce fuga: ticket, reward, misión o dinámica.", "info", { title: "Tutorial RMS" });
+    return;
+  }
+  if (phase) {
+    openRmsStation(phase);
+    showFeedback("Esta es la estación real donde se ejecuta este paso del tutorial.", "info", { title: "Tutorial RMS" });
+  }
+}
+
+function focusRmsTutorial() {
+  setView("rms-machine");
+  state.rmsStationScreenOpen = false;
+  state.rmsStationPhase = "";
+  state.rmsMachineFilters.phase = "";
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  renderRmsMachineView();
+  document.getElementById("rmsMachineTutorial")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  showFeedback("Sigue el tutorial paso a paso para entender cómo la Máquina RMS fabrica ventas.", "info", { title: "Tutorial RMS" });
+}
+
 function renderRmsMachineView() {
   const data = state.rmsMachine || {};
   const stages = rmsFactoryStages(data);
@@ -26591,6 +26786,7 @@ function renderRmsMachineView() {
   }
   rmsEmptyStateGuide?.classList.toggle("hidden", !isEmpty);
   renderRmsCollectorActivation();
+  renderRmsTutorial();
   renderRmsMachineKpis(metrics);
   renderRmsIntakeFunnel(data.funnel || []);
   renderRmsIndustrialFlow(data.process_flow || []);
@@ -27658,6 +27854,9 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-open-station]").forEach((button) => {
     button.addEventListener("click", () => openRmsStation(button.dataset.rmsOpenStation || ""));
+  });
+  root.querySelectorAll("[data-rms-tutorial-action]").forEach((button) => {
+    button.addEventListener("click", () => handleRmsTutorialAction(button.dataset.rmsTutorialAction || "", button.dataset.rmsTutorialPhase || ""));
   });
   root.querySelectorAll("[data-rms-primary]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -29324,7 +29523,7 @@ rmsMachineOpenAgendaButton?.addEventListener("click", () => {
 });
 rmsMachineCollectorButton?.addEventListener("click", openRmsCollectorModal);
 rmsMachineHookButton?.addEventListener("click", () => setView("missions"));
-rmsMachineHowButton?.addEventListener("click", openRmsHowModal);
+rmsMachineHowButton?.addEventListener("click", focusRmsTutorial);
 rmsMachineFilterButton?.addEventListener("click", () => {
   state.rmsMachineFilters = {
     search: rmsMachineSearchInput?.value?.trim() || "",

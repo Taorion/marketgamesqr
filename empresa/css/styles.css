@@ -36834,3 +36834,299 @@ body[data-current-view="strategic-qr"] .gaming-activation-list-card table {
     width: 100% !important;
   }
 }
+
+/* RMS guided tutorial: teach the factory process inside the machine. */
+body[data-current-view="rms-machine"] .rms-machine-tutorial {
+  display: grid !important;
+  gap: clamp(22px, 2.5vw, 34px) !important;
+  padding: clamp(26px, 3vw, 44px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.16) !important;
+  border-radius: 32px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 254, 250, 0.95), rgba(235, 248, 241, 0.82) 52%, rgba(234, 246, 252, 0.72)),
+    #fffefa !important;
+  box-shadow: 0 24px 70px rgba(15, 44, 36, 0.1) !important;
+  overflow: visible !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px) !important;
+  gap: 22px !important;
+  align-items: end !important;
+  padding-bottom: 22px !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.12) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-head h3 {
+  max-width: 720px !important;
+  margin: 8px 0 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.5rem, 2.1vw, 2rem) !important;
+  line-height: 1.1 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-head p {
+  max-width: 780px !important;
+  margin: 10px 0 0 !important;
+  color: #5e766f !important;
+  line-height: 1.6 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-progress {
+  display: grid !important;
+  gap: 10px !important;
+  align-content: end !important;
+  padding: 16px !important;
+  border: 1px solid rgba(35, 111, 153, 0.14) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 254, 250, 0.72) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-progress span {
+  color: #236f99 !important;
+  font-size: 0.82rem !important;
+  font-weight: 850 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-progress div {
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: rgba(35, 111, 153, 0.12) !important;
+  overflow: hidden !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-progress i {
+  display: block !important;
+  width: 14.285% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg, #0f7354, #236f99) !important;
+  transition: width 180ms ease !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-shell {
+  display: grid !important;
+  grid-template-columns: minmax(240px, 0.42fr) minmax(0, 1fr) !important;
+  gap: clamp(18px, 2vw, 28px) !important;
+  align-items: stretch !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-steps {
+  display: grid !important;
+  gap: 10px !important;
+  align-content: start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step {
+  width: 100% !important;
+  min-height: 76px !important;
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  gap: 4px 12px !important;
+  align-items: center !important;
+  padding: 13px !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 254, 250, 0.72) !important;
+  color: #102c25 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step:hover,
+body[data-current-view="rms-machine"] .rms-tutorial-step:focus-visible {
+  border-color: rgba(35, 111, 153, 0.24) !important;
+  background: rgba(234, 246, 252, 0.62) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step.is-active {
+  border-color: rgba(15, 115, 84, 0.24) !important;
+  background:
+    linear-gradient(90deg, rgba(236, 248, 241, 0.96), rgba(234, 246, 252, 0.82)),
+    #fffefa !important;
+  box-shadow: 0 14px 32px rgba(15, 44, 36, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step > span {
+  grid-row: 1 / span 2 !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(15, 115, 84, 0.1) !important;
+  color: #0f7354 !important;
+  font-weight: 900 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step strong {
+  min-width: 0 !important;
+  font-size: 0.96rem !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-step small {
+  min-width: 0 !important;
+  color: #5e766f !important;
+  line-height: 1.25 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial-panel {
+  display: grid !important;
+  gap: 22px !important;
+  min-width: 0 !important;
+  padding: clamp(22px, 2.5vw, 34px) !important;
+  border: 1px solid rgba(35, 111, 153, 0.14) !important;
+  border-radius: 28px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.92), rgba(255, 254, 250, 0.68)),
+    rgba(234, 246, 252, 0.34) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-panel-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-icon {
+  width: 64px !important;
+  height: 64px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(15, 115, 84, 0.16) !important;
+  border-radius: 20px !important;
+  background: #ecf8f1 !important;
+  color: #0f7354 !important;
+  font-size: 34px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-panel-head h4 {
+  max-width: 720px !important;
+  margin: 7px 0 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.34rem, 2vw, 1.9rem) !important;
+  line-height: 1.12 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-panel-head p {
+  max-width: 760px !important;
+  margin: 10px 0 0 !important;
+  color: #5e766f !important;
+  line-height: 1.58 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-flow {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-flow article {
+  display: grid !important;
+  gap: 8px !important;
+  align-content: start !important;
+  min-height: 152px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 254, 250, 0.82) !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-flow article span {
+  color: #236f99 !important;
+  font-size: 0.76rem !important;
+  font-weight: 880 !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-flow article strong {
+  color: #102c25 !important;
+  line-height: 1.45 !important;
+  font-weight: 720 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-flow > i {
+  align-self: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #0f7354, #236f99) !important;
+  color: #ffffff !important;
+  font-size: 20px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding-top: 2px !important;
+}
+
+body[data-current-view="rms-machine"] .rms-tutorial-actions button {
+  min-width: 150px !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-machine-tutorial,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-machine-tutorial-panel,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-step,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-flow article,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-machine-tutorial-progress {
+  border-color: rgba(177, 199, 190, 0.18) !important;
+  background: rgba(17, 31, 26, 0.94) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-machine-tutorial-head h3,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-step strong,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-panel-head h4,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-flow article strong {
+  color: #f4fbf7 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-machine-tutorial-head p,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-step small,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .rms-tutorial-panel-head p {
+  color: #b1c7be !important;
+}
+
+@media (max-width: 1180px) {
+  body[data-current-view="rms-machine"] .rms-machine-tutorial-shell,
+  body[data-current-view="rms-machine"] .rms-tutorial-flow {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-machine-tutorial-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-tutorial-flow > i {
+    transform: rotate(90deg) !important;
+    justify-self: center !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-current-view="rms-machine"] .rms-machine-tutorial-head,
+  body[data-current-view="rms-machine"] .rms-machine-tutorial-steps,
+  body[data-current-view="rms-machine"] .rms-tutorial-panel-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-tutorial-actions {
+    display: grid !important;
+  }
+
+  body[data-current-view="rms-machine"] .rms-tutorial-actions button {
+    width: 100% !important;
+  }
+}
