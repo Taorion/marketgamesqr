@@ -35291,3 +35291,368 @@ textarea,
     padding: 20px !important;
   }
 }
+
+/* Calm rounded palette: no sharp visible corners */
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --calm-white: #fffefa;
+  --calm-white-soft: #f8fbf7;
+  --calm-green-0: #f0faf3;
+  --calm-green-1: #e1f3e7;
+  --calm-green-2: #cfe8da;
+  --calm-blue-0: #edf7fc;
+  --calm-blue-1: #dff0f8;
+  --calm-blue-2: #cfe4ef;
+  --calm-ink: #102c25;
+  --calm-muted: #58746c;
+  --calm-line: rgba(20, 86, 66, 0.14);
+  --calm-line-blue: rgba(38, 105, 143, 0.16);
+  --calm-radius-xs: 10px;
+  --calm-radius-sm: 14px;
+  --calm-radius-md: 18px;
+  --calm-radius-lg: 24px;
+  --calm-radius-xl: 30px;
+  --calm-radius-pill: 999px;
+}
+
+body {
+  color: var(--calm-ink) !important;
+  background:
+    linear-gradient(90deg, rgba(21, 128, 87, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(39, 116, 156, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, var(--calm-white) 0%, var(--calm-green-0) 30%, var(--calm-blue-0) 66%, var(--calm-white-soft) 100%) !important;
+  background-size: 92px 92px, 92px 92px, 100% 100% !important;
+  background-attachment: fixed !important;
+}
+
+.view-section.active,
+.login-card,
+.modal-card,
+.busy-card {
+  border-radius: var(--calm-radius-xl) !important;
+  overflow: hidden !important;
+}
+
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.insight-card,
+.stat-card,
+.kpi-card,
+.metric-card,
+.qr-option-card,
+.campaign-card,
+.activation-card,
+.activation-game-card,
+.activation-panel,
+.activation-form-panel,
+.activation-preview-panel,
+.activation-share-panel,
+.lead-directory-card,
+.lead-detail-card,
+.lead-agenda-card,
+.agenda-panel,
+.table-card,
+.inventory-card,
+.sales-panel,
+.profile-card,
+.billing-card,
+.account-panel,
+.reward-pass-panel,
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.lead-agenda-column,
+.lead-agenda-card-item,
+.rms-station-lane,
+.rms-station-card,
+.rms-lead-inspector,
+.campaign-cost-section,
+.campaign-cost-answer-card,
+.campaign-cost-detail-card,
+.competition-card,
+.affiliate-stat-card,
+.affiliate-step,
+.season-launch-card,
+.qr-workflow-card,
+.activation-question-row,
+.activation-product-row,
+.activation-form-field-row,
+.trivia-question-editor,
+.quiet-zone,
+.contact-center-shell,
+.contact-center-panel,
+.contact-center-operator-panel,
+.contact-center-tab-card,
+.contact-center-stage-rail,
+.subscription-banner,
+.gaming-core-entry,
+.search-shell,
+.sidebar-flow-card,
+.dashboard-builder-layout,
+.dashboard-canvas,
+.dashboard-widget-library,
+.table-wrap,
+.table-responsive,
+.lead-table-scroll,
+.agenda-table-wrap,
+.empty-state,
+.placeholder-card,
+.table-empty,
+.error-line,
+.form-message,
+.qr-result,
+.ticket-status-board,
+.ticket-flow-track,
+.rms-stage-board,
+.rms-daily-queue,
+.portal-location-pill {
+  border-radius: var(--calm-radius-lg) !important;
+  overflow: hidden !important;
+}
+
+.surface-card,
+.data-table-card,
+.quiet-zone,
+.contact-center-panel,
+.dashboard-canvas,
+.dashboard-widget-library {
+  border-color: var(--calm-line) !important;
+}
+
+.surface-card:nth-of-type(4n + 1),
+.quiet-zone:nth-of-type(4n + 1),
+.dashboard-widget-card:nth-of-type(4n + 1),
+.activation-form-field-row:nth-of-type(4n + 1) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.84), rgba(255, 254, 250, 0.64)),
+    var(--calm-green-0) !important;
+}
+
+.surface-card:nth-of-type(4n + 2),
+.quiet-zone:nth-of-type(4n + 2),
+.dashboard-widget-card:nth-of-type(4n + 2),
+.activation-form-field-row:nth-of-type(4n + 2) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.8), rgba(255, 254, 250, 0.58)),
+    var(--calm-blue-0) !important;
+}
+
+.surface-card:nth-of-type(4n + 3),
+.quiet-zone:nth-of-type(4n + 3),
+.dashboard-widget-card:nth-of-type(4n + 3),
+.activation-form-field-row:nth-of-type(4n + 3) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.88), rgba(255, 254, 250, 0.66)),
+    var(--calm-white) !important;
+}
+
+.surface-card:nth-of-type(4n),
+.quiet-zone:nth-of-type(4n),
+.dashboard-widget-card:nth-of-type(4n),
+.activation-form-field-row:nth-of-type(4n) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.82), rgba(255, 254, 250, 0.62)),
+    var(--calm-green-1) !important;
+}
+
+button,
+.btn,
+.solid-button,
+.ghost-button,
+.icon-button,
+.link-button,
+.nav-item,
+.sidebar-nav a,
+.segment-tab,
+.contact-center-tab-card,
+.ticket-center-menu button,
+.dashboard-profile-tabs button,
+.activation-type-option,
+.quiet-zone-toggle,
+.portal-location-pill,
+.theme-switch-track,
+.feature-tier-badge,
+.mono-label,
+.badge,
+.status-pill,
+.chip,
+.pill {
+  border-radius: var(--calm-radius-pill) !important;
+}
+
+input,
+select,
+textarea,
+.password-field,
+.modal-form input,
+.modal-form select,
+.modal-form textarea,
+.view-section input,
+.view-section select,
+.view-section textarea,
+.open-product-input,
+[contenteditable="true"] {
+  border: 1px solid rgba(38, 105, 143, 0.12) !important;
+  border-bottom-color: rgba(20, 86, 66, 0.2) !important;
+  border-radius: var(--calm-radius-md) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.86), rgba(255, 254, 250, 0.66)),
+    rgba(240, 250, 243, 0.42) !important;
+  padding-inline: 14px !important;
+  overflow: hidden !important;
+}
+
+textarea,
+.view-section textarea,
+.modal-form textarea {
+  border-radius: var(--calm-radius-lg) !important;
+  padding: 14px !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  border-radius: 6px !important;
+}
+
+input[type="radio"] {
+  border-radius: var(--calm-radius-pill) !important;
+}
+
+table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  overflow: hidden !important;
+}
+
+thead th:first-child,
+tbody tr:first-child td:first-child {
+  border-top-left-radius: var(--calm-radius-md) !important;
+}
+
+thead th:last-child,
+tbody tr:first-child td:last-child {
+  border-top-right-radius: var(--calm-radius-md) !important;
+}
+
+tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--calm-radius-md) !important;
+}
+
+tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--calm-radius-md) !important;
+}
+
+.sidebar {
+  border-top-right-radius: var(--calm-radius-xl) !important;
+  border-bottom-right-radius: var(--calm-radius-xl) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.86), rgba(240, 250, 243, 0.74)),
+    var(--calm-white) !important;
+}
+
+.topbar {
+  border-bottom-left-radius: var(--calm-radius-lg) !important;
+  border-bottom-right-radius: var(--calm-radius-lg) !important;
+  background:
+    linear-gradient(90deg, rgba(255, 254, 250, 0.84), rgba(237, 247, 252, 0.76), rgba(240, 250, 243, 0.76)) !important;
+}
+
+.view-section.active {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.76), rgba(255, 254, 250, 0.56)),
+    linear-gradient(120deg, rgba(240, 250, 243, 0.74), rgba(237, 247, 252, 0.56) 58%, rgba(255, 254, 250, 0.7)) !important;
+}
+
+.dashboard-profile-tabs button.active,
+.ticket-center-menu button.active,
+.segment-tab.active,
+.contact-center-tab-card.active,
+[role="tab"].active,
+.activation-type-option.active,
+.sidebar .nav-item.active {
+  border-radius: var(--calm-radius-pill) !important;
+  background:
+    linear-gradient(90deg, rgba(225, 243, 231, 0.95), rgba(223, 240, 248, 0.82)),
+    var(--calm-white) !important;
+}
+
+.quiet-zone.is-collapsed {
+  border-radius: var(--calm-radius-lg) !important;
+}
+
+.modal-shell {
+  border-radius: var(--calm-radius-xl) !important;
+}
+
+.modal-shell::before,
+.modal-shell::after,
+.busy-overlay::before,
+.busy-overlay::after {
+  border-radius: var(--calm-radius-xl) !important;
+}
+
+img,
+canvas,
+video,
+iframe,
+svg,
+.chart-card canvas,
+.map-card canvas,
+.chart-card svg,
+.map-card svg,
+.qr-result img,
+.business-logo-preview,
+.reward-pass-card-preview,
+.affiliate-card-preview-wrap {
+  border-radius: var(--calm-radius-md) !important;
+  overflow: hidden !important;
+}
+
+.material-symbols-outlined,
+.profile-avatar,
+.brand-icon,
+.contact-tab-icon {
+  border-radius: var(--calm-radius-pill) !important;
+}
+
+@media (max-width: 900px) {
+  .view-section.active,
+  .login-card,
+  .modal-card {
+    border-radius: var(--calm-radius-lg) !important;
+  }
+
+  .surface-card,
+  .data-table-card,
+  .quiet-zone,
+  .contact-center-panel,
+  .table-wrap,
+  .table-responsive,
+  .lead-table-scroll,
+  .agenda-table-wrap {
+    border-radius: var(--calm-radius-md) !important;
+  }
+}
+
+body:not(#calmRoundedForceA#calmRoundedForceB#calmRoundedForceC) .portal-shell :where(div, section, article, aside, header, footer, nav, form, label, input, select, textarea, button, table, thead, tbody, tr, th, td, img, canvas, svg, iframe, video, a, span) {
+  border-radius: var(--calm-radius-sm) !important;
+}
+
+body:not(#calmRoundedForceA#calmRoundedForceB#calmRoundedForceC) .portal-shell :where(.view-section.active, .surface-card, .data-table-card, .chart-card, .map-card, .insight-card, .stat-card, .kpi-card, .metric-card, .activation-panel, .activation-form-panel, .activation-preview-panel, .lead-directory-card, .lead-detail-card, .lead-agenda-card, .agenda-panel, .table-card, .inventory-card, .sales-panel, .profile-card, .billing-card, .account-panel, .reward-pass-panel, .modal-card, .quiet-zone, .contact-center-shell, .contact-center-panel, .dashboard-canvas, .dashboard-widget-library, .table-wrap, .table-responsive, .lead-table-scroll, .agenda-table-wrap, .empty-state, .placeholder-card, .table-empty, .error-line, .form-message) {
+  border-radius: var(--calm-radius-lg) !important;
+  overflow: hidden !important;
+}
+
+body:not(#calmRoundedForceA#calmRoundedForceB#calmRoundedForceC) .portal-shell :where(.view-section.active, .login-card, .modal-card, .busy-card) {
+  border-radius: var(--calm-radius-xl) !important;
+}
+
+body:not(#calmRoundedForceA#calmRoundedForceB#calmRoundedForceC) .portal-shell :where(button, .btn, .solid-button, .ghost-button, .icon-button, .link-button, .nav-item, .segment-tab, .contact-center-tab-card, .ticket-center-menu button, .dashboard-profile-tabs button, .activation-type-option, .quiet-zone-toggle, .portal-location-pill, .theme-switch-track, .feature-tier-badge, .mono-label, .badge, .status-pill, .chip, .pill, .material-symbols-outlined, .profile-avatar, .brand-icon, .contact-tab-icon) {
+  border-radius: var(--calm-radius-pill) !important;
+}
+
+body:not(#calmRoundedForceA#calmRoundedForceB#calmRoundedForceC) .portal-shell :where(input, select, textarea, .password-field, .open-product-input, [contenteditable="true"]) {
+  border-radius: var(--calm-radius-md) !important;
+}
