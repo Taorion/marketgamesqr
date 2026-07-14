@@ -38152,3 +38152,41 @@ body .portal-shell .login-card .hidden {
     width: 100% !important;
   }
 }
+
+/* Login radius correction: calmer, less inflated geometry. */
+body .portal-shell .login-machine-visual,
+body .portal-shell .login-card {
+  border-radius: 18px !important;
+}
+
+body .portal-shell .login-rms-command,
+body .portal-shell .login-machine-flow article {
+  border-radius: 14px !important;
+}
+
+body .portal-shell .login-vision-brand,
+body .portal-shell .login-machine-core div,
+body .portal-shell .login-form input,
+body .portal-shell .login-card .password-field input,
+body .portal-shell .login-card .solid-button,
+body .portal-shell .login-card .ghost-button {
+  border-radius: 12px !important;
+}
+
+body .portal-shell .login-vision-brand .brand-logo,
+body .portal-shell .login-brand .brand-logo,
+body .portal-shell .login-machine-flow .material-symbols-outlined,
+body .portal-shell .login-card .password-reveal-button,
+body .portal-shell .login-rms-signal span,
+body .portal-shell .login-technology-strip span,
+body .portal-shell .login-vision-copy .mono-label,
+body .portal-shell .login-card .mono-label {
+  border-radius: 10px !important;
+}
+
+@media (max-width: 560px) {
+  body .portal-shell .login-machine-visual,
+  body .portal-shell .login-card {
+    border-radius: 16px !important;
+  }
+}
