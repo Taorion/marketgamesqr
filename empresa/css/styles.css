@@ -40355,3 +40355,64 @@ body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dash
     width: 100% !important;
   }
 }
+
+/* Market Games as Sales Machine: RMS is the portal core, every module supports it. */
+body .portal-shell .sidebar-flow-card {
+  border-color: rgba(15, 115, 84, 0.16) !important;
+  background:
+    linear-gradient(135deg, rgba(236, 248, 241, 0.94), rgba(234, 246, 252, 0.62)),
+    #fffefa !important;
+}
+
+body .portal-shell .sidebar-flow-card strong {
+  color: #102c25 !important;
+  font-size: 1rem !important;
+  line-height: 1.18 !important;
+}
+
+body .portal-shell .nav-item[data-view="rms-machine"] {
+  min-height: 54px !important;
+  margin: 3px 0 8px !important;
+  border-color: rgba(15, 115, 84, 0.2) !important;
+  background:
+    linear-gradient(135deg, rgba(223, 246, 233, 0.98), rgba(231, 246, 253, 0.78)),
+    #f7fcf9 !important;
+  color: #0f5d43 !important;
+  box-shadow: inset 4px 0 0 rgba(18, 99, 71, 0.78), 0 10px 24px rgba(15, 115, 84, 0.08) !important;
+}
+
+body .portal-shell .nav-item[data-view="rms-machine"] .material-symbols-outlined {
+  color: #0f7354 !important;
+  font-size: 1.35rem !important;
+}
+
+body .portal-shell .nav-item[data-view="rms-machine"] span:last-child {
+  font-weight: 860 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .revenue-global-button {
+  background:
+    linear-gradient(135deg, #0f7354, #27759f) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(15, 115, 84, 0.18) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-label::after {
+  content: "SaaS Sales Machine" !important;
+  display: inline-flex !important;
+  margin-left: 8px !important;
+  padding-left: 8px !important;
+  border-left: 1px solid rgba(15, 115, 84, 0.18) !important;
+  color: #27759f !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .nav-item[data-view="rms-machine"] {
+  border-color: rgba(151, 211, 190, 0.18) !important;
+  background: rgba(151, 211, 190, 0.12) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .sidebar-flow-card {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.44) !important;
+}

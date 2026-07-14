@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-dashboard-builder-head-v1";
+const APP_VERSION = "empresa-20260714-rms-core-entry-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1256,7 +1256,7 @@ const lightTestMode = routeLightMode || (() => {
 
 let session = loadSession();
 let state = {
-  currentView: "dashboard",
+  currentView: "rms-machine",
   dashboardBuilderProfile: "marketing",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
@@ -7032,7 +7032,7 @@ function navigateRevenueRoute(route = "") {
     setView("validator");
     return;
   }
-  setView(target || "dashboard");
+  setView(target || "rms-machine");
 }
 
 function updateRevenueActionToolOptions() {
@@ -29342,7 +29342,7 @@ logoutButton.addEventListener("click", () => {
   window.location.replace(window.location.pathname);
 });
 refreshButton.addEventListener("click", loadWorkspace);
-globalRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
+globalRevenueActionButton?.addEventListener("click", openRmsCollectorModal);
 dashboardRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
 dashboardProfileTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-profile]");
@@ -30270,7 +30270,7 @@ activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
-setView("dashboard");
+setView("rms-machine");
 renderDashboardBuilder();
 initPasswordResetFromUrl();
 setupPasswordRevealButtons();

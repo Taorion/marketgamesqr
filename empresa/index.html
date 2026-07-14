@@ -16,9 +16,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-dashboard-builder-head-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-rms-core-entry-20260714-v1">
 </head>
-<body>
+<body data-current-view="rms-machine">
   <main class="portal-shell">
     <section class="login-screen" id="loginPanel">
       <div class="login-experience">
@@ -198,8 +198,8 @@
 
         <section class="sidebar-flow-card" aria-label="Ruta operativa RMS">
           <span class="mono-label">Ruta operativa</span>
-          <strong>Generar revenue medible</strong>
-          <small>Entrada → Activación → Seguimiento → Venta</small>
+          <strong>Operar la Máquina RMS</strong>
+          <small>Leads → Estaciones → Agenda → Revenue real</small>
           <div class="sidebar-flow-actions">
             <button type="button" data-portal-shortcut="campaigns">Capturar</button>
             <button type="button" data-portal-shortcut="strategic-qr">Activar</button>
@@ -209,14 +209,14 @@
         </section>
 
         <nav class="sidebar-nav">
-          <span class="nav-group-label">Centro operativo</span>
-          <button class="nav-item active" data-view="dashboard" type="button">
-            <span class="material-symbols-outlined">dashboard</span>
-            <span>Centro de Revenue</span>
-          </button>
-          <button class="nav-item nav-item-core" data-view="rms-machine" type="button">
+          <span class="nav-group-label">Núcleo Sales Machine</span>
+          <button class="nav-item nav-item-core active" data-view="rms-machine" type="button">
             <span class="material-symbols-outlined">precision_manufacturing</span>
             <span>Máquina RMS</span>
+          </button>
+          <button class="nav-item" data-view="dashboard" type="button">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Centro de Revenue</span>
           </button>
           <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
             <span class="material-symbols-outlined">event_note</span>
@@ -306,7 +306,7 @@
           <div class="topbar-actions">
             <button class="solid-button revenue-global-button" id="globalRevenueActionButton" type="button">
               <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
-              Crear acción de revenue
+              Alimentar Máquina RMS
             </button>
             <a class="ghost-button nav-link-button" href="/">Home</a>
             <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
@@ -364,7 +364,7 @@
             </div>
           </div>
 
-          <section class="view-section active dashboard-builder-mode" data-view="dashboard">
+          <section class="view-section dashboard-builder-mode" data-view="dashboard" hidden>
             <div class="view-head">
               <div>
                 <h2>Centro de Comando Revenue Marketing</h2>
@@ -733,12 +733,12 @@
             </section>
           </section>
 
-          <section class="view-section" data-view="rms-machine">
+          <section class="view-section active" data-view="rms-machine">
             <div class="view-head rms-machine-head">
               <div class="rms-machine-head-copy">
-                <span class="mono-label">Revenue Factory</span>
-                <h2>Máquina RMS de Revenue</h2>
-                <p>No vende convenciendo uno por uno: procesa oportunidades en volumen, las clasifica, las protege con gamificación y las mueve por estaciones hasta convertirlas en revenue medible.</p>
+                <span class="mono-label">Sales Machine Core</span>
+                <h2>Máquina RMS: el centro de Market Games</h2>
+                <p>Market Games se usa para operar una máquina de ventas: recibe leads, los procesa por estaciones, prescribe seguimiento y revela qué acciones producen revenue real. Campañas, Gaming Center, agenda, productos y analítica existen para alimentar y mejorar esta Máquina RMS.</p>
                 <div class="rms-flow-chip" aria-label="Flujo operativo RMS">
                   <span>Recolectar</span>
                   <span>Curar</span>
@@ -761,8 +761,8 @@
             <section class="rms-machine-hero">
               <article class="rms-machine-principle">
                 <span class="mono-label">Concepto operativo</span>
-                <h3>El vendedor deja de perseguir clientes y pasa a operar una planta comercial.</h3>
-                <p>La plataforma recolecta materia prima comercial, la cura, la clasifica, la protege con ganchos gamificados y prescribe la siguiente operacion de revenue.</p>
+                <h3>El portal no empieza en reportes: empieza en la operación que fabrica ventas.</h3>
+                <p>La Máquina RMS es el espacio de trabajo principal. Las demás secciones capturan materia prima comercial, activan atención, organizan agenda, clasifican interés o miden el resultado para que la máquina opere mejor.</p>
               </article>
               <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
             </section>
@@ -6699,7 +6699,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-dashboard-builder-head-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-rms-core-entry-20260714-v1" defer></script>
 </body>
 </html>
 
