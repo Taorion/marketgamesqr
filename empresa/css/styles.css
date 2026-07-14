@@ -39283,3 +39283,239 @@ body .portal-shell .revenue-onboarding .solid-button {
     min-width: 0 !important;
   }
 }
+
+/* Portal navigation recovery: keep sections and RMS stations visibly separated. */
+body .portal-shell .view-section[hidden],
+body .portal-shell .view-section:not(.active) {
+  display: none !important;
+}
+
+body .portal-shell .view-section.active:not([hidden]) {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"].active:not([hidden]) {
+  display: block !important;
+}
+
+body .portal-shell .sidebar-nav {
+  display: grid !important;
+  gap: 7px !important;
+  padding: 10px 0 28px !important;
+}
+
+body .portal-shell .sidebar .nav-group-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 16px 4px 7px !important;
+  color: rgba(16, 44, 37, 0.68) !important;
+  font-size: 0.68rem !important;
+  line-height: 1.1 !important;
+  font-weight: 860 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+body .portal-shell .sidebar .nav-group-label::after {
+  content: "" !important;
+  flex: 1 1 auto !important;
+  height: 1px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, rgba(18, 99, 71, 0.2), rgba(39, 117, 159, 0.04)) !important;
+}
+
+body .portal-shell .nav-item {
+  min-height: 46px !important;
+  padding: 10px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 16px !important;
+  color: #49645b !important;
+  background: transparent !important;
+}
+
+body .portal-shell .nav-item:hover,
+body .portal-shell .nav-item:focus-visible {
+  color: #102c25 !important;
+  border-color: rgba(18, 99, 71, 0.12) !important;
+  background: rgba(237, 248, 241, 0.66) !important;
+}
+
+body .portal-shell .nav-item.active {
+  color: #0f5d43 !important;
+  border-color: rgba(18, 99, 71, 0.18) !important;
+  background: linear-gradient(135deg, rgba(237, 248, 241, 0.96), rgba(237, 247, 252, 0.72)) !important;
+  box-shadow: inset 4px 0 0 rgba(18, 99, 71, 0.68) !important;
+}
+
+body .portal-shell .nav-item.nav-item-core:not(.active) {
+  color: #205f4b !important;
+  background: rgba(255, 254, 250, 0.48) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-machine"] {
+  color: #0f5d43 !important;
+  border-color: rgba(18, 99, 71, 0.2) !important;
+  background: linear-gradient(135deg, rgba(223, 246, 233, 0.98), rgba(231, 246, 253, 0.78)) !important;
+  box-shadow: inset 4px 0 0 rgba(18, 99, 71, 0.74) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+  display: grid !important;
+  gap: clamp(18px, 2vw, 28px) !important;
+  padding: clamp(18px, 2.2vw, 30px) !important;
+  border: 1px solid rgba(18, 99, 71, 0.12) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 254, 250, 0.92), rgba(237, 248, 241, 0.76) 48%, rgba(237, 247, 252, 0.62)),
+    #fffefa !important;
+  box-shadow: 0 18px 48px rgba(23, 83, 65, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
+  display: grid !important;
+  grid-auto-flow: initial !important;
+  grid-auto-columns: initial !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: clamp(14px, 1.6vw, 20px) !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column {
+  display: grid !important;
+  align-content: start !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+  padding: 16px !important;
+  border: 1px solid rgba(18, 99, 71, 0.12) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column.is-active-station {
+  border-color: rgba(18, 99, 71, 0.28) !important;
+  background: linear-gradient(135deg, rgba(237, 248, 241, 0.96), rgba(237, 247, 252, 0.82)) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  align-items: start !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-head strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #102c25 !important;
+  font-size: 1rem !important;
+  line-height: 1.22 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-head small,
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-line small,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-material small {
+  color: #5e766f !important;
+  line-height: 1.35 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-phase-operation,
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-items {
+  display: grid !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row .solid-button,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row .ghost-button {
+  width: 100% !important;
+  min-height: 42px !important;
+  border-radius: 14px !important;
+  white-space: normal !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-lead-unit {
+  border: 1px solid rgba(18, 99, 71, 0.1) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 254, 250, 0.82) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace {
+  display: grid !important;
+  gap: clamp(16px, 1.8vw, 24px) !important;
+  padding: clamp(18px, 2vw, 28px) !important;
+  border: 1px solid rgba(18, 99, 71, 0.14) !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 254, 250, 0.96), rgba(237, 248, 241, 0.82)),
+    #fffefa !important;
+  box-shadow: 0 18px 46px rgba(23, 83, 65, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace.hidden {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-head,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-screen,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-visual-panel,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-control-panel,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-material-inventory,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-lane {
+  border-radius: 20px !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .sidebar .nav-group-label {
+  color: #c8ded6 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .sidebar .nav-group-label::after {
+  background: linear-gradient(90deg, rgba(120, 224, 180, 0.26), rgba(143, 212, 244, 0.05)) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .nav-item,
+:root[data-theme="dark"] body .portal-shell .nav-item.nav-item-core:not(.active) {
+  color: #c8ded6 !important;
+  background: rgba(14, 33, 28, 0.42) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .nav-item:hover,
+:root[data-theme="dark"] body .portal-shell .nav-item:focus-visible,
+:root[data-theme="dark"] body .portal-shell .nav-item.active,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-machine"] {
+  color: #ffffff !important;
+  border-color: rgba(120, 224, 180, 0.28) !important;
+  background: rgba(120, 224, 180, 0.14) !important;
+  box-shadow: inset 4px 0 0 rgba(120, 224, 180, 0.78) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-column,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-lead-unit {
+  color: #f1fbf7 !important;
+  border-color: rgba(151, 211, 190, 0.18) !important;
+  background:
+    linear-gradient(135deg, rgba(14, 33, 28, 0.9), rgba(10, 28, 38, 0.74)),
+    #0e211c !important;
+}
+
+@media (max-width: 760px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-stage-board,
+  body[data-current-view="rms-machine"] .portal-shell .rms-station-button-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
