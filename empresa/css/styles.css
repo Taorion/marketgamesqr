@@ -33592,3 +33592,749 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
     width: 100% !important;
   }
 }
+
+/* Portal-wide Open Canvas Minimal UI */
+:root,
+:root[data-theme="dark"] {
+  --bg: #f7f8f6;
+  --surface: transparent;
+  --surface-soft: rgba(18, 37, 30, 0.035);
+  --surface-muted: rgba(18, 37, 30, 0.06);
+  --surface-border: rgba(18, 37, 30, 0.12);
+  --text: #101d18;
+  --text-primary: #101d18;
+  --text-muted: #5c6b64;
+  --text-soft: #78827d;
+  --primary: #0d2f24;
+  --secondary: #0b7a55;
+  --secondary-soft: #0b7a55;
+  --secondary-pale: rgba(11, 122, 85, 0.08);
+  --green-panel: #0b7a55;
+  --shadow: none;
+  --radius: 8px;
+  --open-canvas-bg: #f7f8f6;
+  --open-canvas-ink: #101d18;
+  --open-canvas-muted: #5c6b64;
+  --open-canvas-soft: #78827d;
+  --open-canvas-line: rgba(18, 37, 30, 0.12);
+  --open-canvas-faint-line: rgba(18, 37, 30, 0.07);
+  --open-canvas-field: rgba(18, 37, 30, 0.18);
+  --open-canvas-accent: #0b7a55;
+  --open-canvas-blue: #225f86;
+  --open-canvas-amber: #956012;
+}
+
+html,
+body {
+  background: var(--open-canvas-bg) !important;
+  color: var(--open-canvas-ink) !important;
+}
+
+body,
+.portal-shell,
+.app-shell,
+.app-main,
+.content-shell,
+.view-section,
+.view-section[data-view],
+.view-section[data-view="account"],
+.view-section[data-view="affiliates"],
+.view-section[data-view="strategic-qr"],
+.view-section[data-view="campaigns"],
+.view-section[data-view="competition"],
+.view-section[data-view="rms-machine"] {
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+  border-color: var(--open-canvas-line) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.content-shell {
+  max-width: 1440px !important;
+  margin-inline: auto !important;
+  padding-inline: clamp(18px, 3vw, 42px) !important;
+}
+
+.topbar,
+.sidebar,
+.login-card,
+.subscription-banner,
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.placeholder-card,
+.kpi-card,
+.dark-hero-card,
+.dark-insight-card,
+.geo-branch-card,
+.busy-card,
+.modal-card,
+.command-center-loading,
+.dashboard-builder-shell,
+.dashboard-widget-library,
+.dashboard-canvas,
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.contact-center-operator-panel,
+.lead-directory-command,
+.rms-operator-toolbar,
+.rms-journey-shell,
+.rms-intake-funnel-shell,
+.rms-industrial-flow-shell,
+.rms-playbook-shell,
+.rms-event-log-shell,
+.account-profile-card,
+.account-settings-card,
+.account-deal-card,
+.portal-pricing-card,
+.qr-credit-shop-card,
+.campaign-rail,
+.campaign-cost-card,
+.campaign-config-card,
+.campaign-relations-card,
+.campaign-roi-summary-card,
+.campaign-channel-roi-card,
+.campaign-assistant-tab-card,
+.insight-card,
+.missions-panel,
+.ticket-module-card,
+.reward-pass-form-card,
+.reward-pass-preview-card,
+.reward-pass-detail-card,
+.affiliate-panel,
+.affiliate-finder-panel,
+.affiliate-ranking-card,
+.affiliate-logo-panel,
+.affiliate-reward-panel,
+.affiliate-referral-panel,
+.inventory-form-card,
+.inventory-table-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+}
+
+.topbar::before,
+.topbar::after,
+.sidebar::before,
+.sidebar::after,
+.login-card::before,
+.login-card::after,
+.subscription-banner::before,
+.subscription-banner::after,
+.surface-card::before,
+.surface-card::after,
+.data-table-card::before,
+.data-table-card::after,
+.chart-card::before,
+.chart-card::after,
+.map-card::before,
+.map-card::after,
+.placeholder-card::before,
+.placeholder-card::after,
+.kpi-card::before,
+.kpi-card::after,
+.dark-hero-card::before,
+.dark-hero-card::after,
+.dark-insight-card::before,
+.dark-insight-card::after,
+.modal-card::before,
+.modal-card::after,
+.view-section::before,
+.view-section::after {
+  display: none !important;
+  content: none !important;
+}
+
+.sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid var(--open-canvas-line) !important;
+  padding: 22px 16px !important;
+}
+
+.topbar {
+  background: rgba(247, 248, 246, 0.92) !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.login-screen {
+  background: var(--open-canvas-bg) !important;
+}
+
+.login-card {
+  width: min(100%, 440px) !important;
+  padding: 28px 0 !important;
+  border-top: 1px solid var(--open-canvas-line) !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+}
+
+.brand-icon,
+.profile-avatar,
+.busy-spinner,
+.material-symbols-outlined {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.sidebar-flow-card,
+.subscription-banner,
+.gaming-core-entry,
+.action-feedback,
+.busy-card {
+  border: 0 !important;
+  border-top: 1px solid var(--open-canvas-line) !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-brand h1,
+.login-brand h1,
+.view-head h2,
+.view-head h1,
+.table-card-head h3,
+.card-head h3,
+.dashboard-canvas-head h3,
+.surface-card h3,
+.data-table-card h3,
+.kpi-card strong,
+.dark-hero-card strong,
+.dark-insight-card h3,
+.subscription-banner h3,
+.modal-head h3,
+.modal-card h3,
+.account-profile-card h3,
+.account-settings-card h3,
+.affiliate-panel strong,
+.inventory-form-card strong {
+  color: var(--open-canvas-ink) !important;
+  text-shadow: none !important;
+  letter-spacing: 0 !important;
+}
+
+.view-head {
+  margin: 0 0 28px !important;
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.view-head h2 {
+  font-size: clamp(32px, 3.2vw, 52px) !important;
+  line-height: 0.98 !important;
+  font-weight: 820 !important;
+}
+
+.view-head p,
+.sidebar-brand p,
+.login-brand p,
+.login-copy p,
+.table-secondary,
+.table-card-subtitle,
+.card-head p,
+.view-section p,
+.surface-card p,
+.data-table-card p,
+.placeholder-card p,
+.map-card p,
+.subscription-banner p,
+.modal-card p,
+.kpi-meta,
+.profile-detail span,
+.account-meta-grid span,
+.affiliate-card-note,
+.affiliate-card-meta,
+.inventory-muted,
+small {
+  color: var(--open-canvas-muted) !important;
+  text-shadow: none !important;
+}
+
+.mono-label,
+.nav-group-label,
+.table-card-head .mono-label,
+.view-section .mono-label {
+  color: var(--open-canvas-soft) !important;
+  letter-spacing: 0 !important;
+  font-weight: 820 !important;
+}
+
+.view-section.active {
+  display: block;
+}
+
+.view-section.active > * + *,
+.charts-grid,
+.tables-grid,
+.account-settings-grid,
+.inventory-layout,
+.campaign-layout,
+.reward-pass-layout,
+.affiliate-layout,
+.missions-dashboard-grid,
+.insight-grid,
+.dashboard-deep-grid,
+.strategic-ticket-generators,
+.strategic-ticket-operations {
+  gap: 26px !important;
+}
+
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.placeholder-card,
+.kpi-card,
+.account-profile-card,
+.account-settings-card,
+.affiliate-panel,
+.inventory-form-card,
+.inventory-table-card,
+.missions-panel,
+.ticket-module-card,
+.reward-pass-form-card,
+.reward-pass-preview-card,
+.reward-pass-detail-card {
+  padding: 0 0 22px !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  overflow: visible !important;
+}
+
+.table-card-head,
+.card-head,
+.modal-head,
+.dashboard-canvas-head,
+.rail-head,
+.qr-workflow-head,
+.campaign-cost-section-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+  margin: 0 0 16px !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-faint-line) !important;
+  background: transparent !important;
+}
+
+.kpi-grid,
+.business-kpis,
+.ticket-module-kpis,
+.sales-kpis,
+.dashboard-widget-grid {
+  gap: 18px !important;
+}
+
+.kpi-card {
+  min-height: 0 !important;
+}
+
+.kpi-card strong,
+.kpi-value,
+.metric-value {
+  font-size: clamp(1.6rem, 2.6vw, 2.5rem) !important;
+  font-weight: 780 !important;
+}
+
+.kpi-card.highlight,
+.status-chip,
+.pill,
+.segment-tab,
+.badge,
+.activation-metric-stack span,
+.lead-quality-chip {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.status-chip,
+.pill,
+.badge,
+.segment-tab {
+  color: var(--open-canvas-muted) !important;
+  border-bottom: 1px solid var(--open-canvas-faint-line) !important;
+  padding-inline: 0 !important;
+}
+
+.nav-item,
+.sidebar-flow-actions button,
+.dashboard-profile-tabs button,
+.contact-tab,
+.ticket-center-tab,
+.campaign-tab-button,
+.competition-tab,
+.segment-tab {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--open-canvas-muted) !important;
+  box-shadow: none !important;
+}
+
+.nav-item {
+  min-height: 38px !important;
+  padding: 0 0 0 10px !important;
+  border-left: 2px solid transparent !important;
+}
+
+.nav-item:hover,
+.nav-item.active,
+.nav-item-core:not(.active),
+.contact-tab:hover,
+.contact-tab.active,
+.ticket-center-tab:hover,
+.ticket-center-tab.active,
+.campaign-tab-button:hover,
+.campaign-tab-button.active,
+.competition-tab:hover,
+.competition-tab.active,
+.dashboard-profile-tabs button:hover,
+.dashboard-profile-tabs button.active {
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+  border-color: var(--open-canvas-accent) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.nav-item .material-symbols-outlined,
+.nav-item-core:not(.active) .material-symbols-outlined {
+  color: currentColor !important;
+}
+
+.solid-button,
+.ghost-button,
+.request-button,
+.danger-button,
+.link-button,
+.icon-button,
+.field-help {
+  min-height: 38px !important;
+  border: 1px solid var(--open-canvas-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.solid-button,
+.request-button {
+  border-color: var(--open-canvas-accent) !important;
+  color: var(--open-canvas-accent) !important;
+  font-weight: 800 !important;
+}
+
+.danger-button {
+  border-color: rgba(198, 40, 40, 0.42) !important;
+  color: #a12222 !important;
+}
+
+.solid-button:hover,
+.ghost-button:hover,
+.request-button:hover,
+.danger-button:hover,
+.link-button:hover,
+.icon-button:hover,
+.field-help:hover {
+  background: rgba(18, 37, 30, 0.045) !important;
+  transform: none !important;
+}
+
+.solid-button::before,
+.solid-button::after,
+.ghost-button::before,
+.ghost-button::after,
+.request-button::before,
+.request-button::after,
+.icon-button::before,
+.icon-button::after,
+.nav-item::before,
+.nav-item::after,
+.link-button::before,
+.link-button::after {
+  display: none !important;
+  content: none !important;
+}
+
+.search-shell,
+.profile-block,
+.theme-switch,
+.inline-selects,
+.table-toolbar,
+.filter-row,
+.lead-directory-search-row,
+.activation-share-search > div {
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+input,
+select,
+textarea,
+.modal-form input,
+.modal-form select,
+.modal-form textarea,
+.view-section input,
+.view-section select,
+.view-section textarea,
+.view-section[data-view="account"] input,
+.view-section[data-view="account"] select,
+.view-section[data-view="account"] textarea,
+.view-section[data-view="affiliates"] input,
+.view-section[data-view="affiliates"] select,
+.view-section[data-view="affiliates"] textarea,
+.view-section[data-view="strategic-qr"] input,
+.view-section[data-view="strategic-qr"] select,
+.view-section[data-view="strategic-qr"] textarea,
+.view-section[data-view="campaigns"] input,
+.view-section[data-view="campaigns"] select,
+.view-section[data-view="campaigns"] textarea {
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-field) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.modal-form input:focus,
+.modal-form select:focus,
+.modal-form textarea:focus,
+.view-section input:focus,
+.view-section select:focus,
+.view-section textarea:focus {
+  border-bottom-color: var(--open-canvas-accent) !important;
+  box-shadow: 0 1px 0 var(--open-canvas-accent) !important;
+  outline: 0 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--open-canvas-soft) !important;
+}
+
+.modal-form label,
+.lead-agenda-create-form label,
+.inventory-form label,
+.affiliate-form label,
+.account-profile-form label,
+.reward-pass-form label,
+.campaign-form-grid label,
+.sales-form label {
+  padding: 0 0 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-faint-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.modal-form label span,
+.lead-agenda-create-form label span,
+.inventory-form label span,
+.affiliate-form label span,
+.account-profile-form label span,
+.reward-pass-form label span,
+.campaign-form-grid label span,
+.sales-form label span {
+  color: var(--open-canvas-muted) !important;
+  font-size: 0.76rem !important;
+  font-weight: 820 !important;
+  text-transform: none !important;
+}
+
+.table-wrap,
+.table-responsive,
+.lead-table-scroll,
+.agenda-table-wrap {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  background: transparent !important;
+}
+
+thead th,
+th {
+  border: 0 !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  background: transparent !important;
+  color: var(--open-canvas-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+}
+
+tbody td,
+td {
+  border: 0 !important;
+  border-top: 1px solid var(--open-canvas-faint-line) !important;
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+}
+
+tbody tr,
+.view-section[data-view="affiliates"] table,
+.view-section[data-view="affiliates"] th,
+.view-section[data-view="affiliates"] td {
+  background: transparent !important;
+  color: var(--open-canvas-ink) !important;
+}
+
+tbody tr:hover {
+  background: rgba(18, 37, 30, 0.035) !important;
+}
+
+.modal-shell {
+  background: rgba(247, 248, 246, 0.78) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.modal-card {
+  padding: 26px !important;
+  border-top: 1px solid var(--open-canvas-line) !important;
+  border-bottom: 1px solid var(--open-canvas-line) !important;
+  background: #f7f8f6 !important;
+}
+
+.modal-actions,
+.modal-button-row,
+.inline-actions,
+.button-row,
+.qr-batch-actions,
+.ticket-status-actions,
+.strategic-ticket-actions-cell,
+.activation-share-actions,
+.activation-manage-actions {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dashboard-builder-layout,
+.dashboard-canvas,
+.dashboard-widget-library,
+.dashboard-widget-grid,
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.lead-agenda-card,
+.lead-agenda-board,
+.lead-agenda-column,
+.lead-agenda-card-item,
+.contact-center-shell,
+.rms-machine-shell,
+.rms-station-workspace,
+.rms-station-lane,
+.rms-station-card,
+.rms-lead-inspector,
+.campaign-cost-shell,
+.campaign-cost-section,
+.campaign-cost-answer-card,
+.campaign-cost-detail-card,
+.competition-panel,
+.competition-card,
+.affiliate-stat-card,
+.affiliate-step,
+.affiliate-card-preview-wrap,
+.business-logo-preview,
+.reward-pass-card-preview,
+.season-launch-card,
+.qr-workflow-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.lead-agenda-column,
+.lead-agenda-card-item,
+.rms-station-lane,
+.rms-station-card,
+.campaign-cost-section,
+.campaign-cost-answer-card,
+.campaign-cost-detail-card,
+.competition-card,
+.affiliate-stat-card,
+.affiliate-step,
+.season-launch-card,
+.qr-workflow-card {
+  padding: 0 0 16px !important;
+  border-bottom: 1px solid var(--open-canvas-faint-line) !important;
+}
+
+.chart-card canvas,
+.map-card canvas,
+.chart-card svg,
+.map-card svg {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.profile-avatar,
+.brand-icon,
+.material-symbols-outlined {
+  background: transparent !important;
+}
+
+.error-line,
+.form-message,
+.table-empty,
+.empty-state,
+.placeholder-card {
+  border: 0 !important;
+  border-left: 2px solid var(--open-canvas-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.error-line[data-kind="success"],
+.form-message[data-kind="success"] {
+  border-left-color: var(--open-canvas-accent) !important;
+}
+
+.error-line[data-kind="error"],
+.form-message[data-kind="error"] {
+  border-left-color: #a12222 !important;
+}
+
+@media (max-width: 900px) {
+  .content-shell {
+    padding-inline: 16px !important;
+  }
+
+  .topbar {
+    background: #f7f8f6 !important;
+  }
+
+  .modal-card {
+    padding: 18px !important;
+  }
+}
