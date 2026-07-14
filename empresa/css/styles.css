@@ -38262,3 +38262,259 @@ body .portal-shell .login-vision-brand span {
     width: fit-content !important;
   }
 }
+
+/* Centro de Revenue visual organization: wider reading lanes and calmer dashboard layout. */
+body .portal-shell .view-section[data-view="dashboard"] {
+  display: grid !important;
+  gap: clamp(24px, 2.6vw, 40px) !important;
+  min-width: 0 !important;
+}
+
+body .portal-shell .view-section[data-view="dashboard"] > .view-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: clamp(20px, 2.4vw, 34px) 0 clamp(18px, 2vw, 28px) !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.12) !important;
+}
+
+body .portal-shell .view-section[data-view="dashboard"] > .view-head > div,
+body .portal-shell .dashboard-builder-head > div,
+body .portal-shell .dashboard-canvas-head > div,
+body .portal-shell .revenue-workspace-head > div {
+  min-width: 0 !important;
+  max-width: 980px !important;
+}
+
+body .portal-shell .view-section[data-view="dashboard"] > .view-head h2 {
+  max-width: 22ch !important;
+  margin: 0 !important;
+  font-size: clamp(2.45rem, 4.2vw, 4.9rem) !important;
+  line-height: 0.98 !important;
+  font-weight: 860 !important;
+}
+
+body .portal-shell .view-section[data-view="dashboard"] > .view-head p,
+body .portal-shell .dashboard-builder-head p,
+body .portal-shell .dashboard-canvas-head p,
+body .portal-shell .dashboard-widget-library p,
+body .portal-shell .revenue-workspace-head p,
+body .portal-shell .next-best-action-card p,
+body .portal-shell .revenue-onboarding p,
+body .portal-shell .revenue-path-step p {
+  max-width: 82ch !important;
+  min-width: 0 !important;
+  color: #526b63 !important;
+  font-size: 0.98rem !important;
+  line-height: 1.58 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  text-wrap: pretty !important;
+}
+
+body .portal-shell .dashboard-builder-shell {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  gap: clamp(22px, 2.4vw, 34px) !important;
+  padding: clamp(22px, 2.6vw, 36px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.86), rgba(239, 249, 244, 0.64)),
+    rgba(255, 254, 250, 0.86) !important;
+  box-shadow: 0 18px 52px rgba(15, 44, 36, 0.06) !important;
+}
+
+body .portal-shell .dashboard-builder-head,
+body .portal-shell .dashboard-canvas-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: clamp(18px, 2vw, 28px) !important;
+  align-items: start !important;
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body .portal-shell .dashboard-builder-head h3,
+body .portal-shell .dashboard-canvas-head h3,
+body .portal-shell .dashboard-widget-library h4,
+body .portal-shell .revenue-workspace-head h3,
+body .portal-shell .next-best-action-card h3,
+body .portal-shell .revenue-onboarding h3 {
+  max-width: 26ch !important;
+  margin: 6px 0 8px !important;
+  color: #102c25 !important;
+  font-size: clamp(1.45rem, 2vw, 2.25rem) !important;
+  line-height: 1.08 !important;
+  font-weight: 820 !important;
+  text-wrap: balance !important;
+}
+
+body .portal-shell .dashboard-builder-layout {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 0.34fr) minmax(0, 1fr) !important;
+  gap: clamp(24px, 2.6vw, 40px) !important;
+  align-items: start !important;
+  min-width: 0 !important;
+}
+
+body .portal-shell .dashboard-widget-library,
+body .portal-shell .dashboard-canvas,
+body .portal-shell .dashboard-widget-card,
+body .portal-shell .next-best-action-card,
+body .portal-shell .revenue-objective-card,
+body .portal-shell .revenue-onboarding,
+body .portal-shell .revenue-path-step {
+  min-width: 0 !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 254, 250, 0.82) !important;
+  box-shadow: 0 14px 36px rgba(15, 44, 36, 0.045) !important;
+}
+
+body .portal-shell .dashboard-widget-library,
+body .portal-shell .dashboard-canvas,
+body .portal-shell .next-best-action-card,
+body .portal-shell .revenue-objective-card {
+  padding: clamp(20px, 2vw, 30px) !important;
+}
+
+body .portal-shell .dashboard-widget-grid {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: clamp(16px, 1.8vw, 24px) !important;
+}
+
+body .portal-shell .dashboard-widget-card {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 18px !important;
+}
+
+body .portal-shell .dashboard-profile-tabs,
+body .portal-shell .dashboard-canvas-actions {
+  width: fit-content !important;
+  max-width: 100% !important;
+  justify-self: end !important;
+  flex-wrap: wrap !important;
+}
+
+body .portal-shell .dashboard-profile-tabs button,
+body .portal-shell .dashboard-canvas-actions button {
+  white-space: normal !important;
+  min-width: 0 !important;
+}
+
+body .portal-shell .revenue-workspace {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  gap: clamp(22px, 2.5vw, 38px) !important;
+  padding: clamp(22px, 2.6vw, 36px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.9), rgba(234, 246, 252, 0.46)),
+    #fffefa !important;
+  box-shadow: 0 18px 52px rgba(15, 44, 36, 0.055) !important;
+}
+
+body .portal-shell .revenue-workspace-head,
+body .portal-shell .revenue-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(420px, 1.08fr) minmax(420px, 0.92fr) !important;
+  gap: clamp(22px, 2.5vw, 36px) !important;
+  align-items: stretch !important;
+  min-width: 0 !important;
+}
+
+body .portal-shell .revenue-workspace-head {
+  align-items: start !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.1) !important;
+}
+
+body .portal-shell .revenue-workspace-head .solid-button {
+  justify-self: end !important;
+  align-self: start !important;
+  width: auto !important;
+  min-width: 230px !important;
+  max-width: 100% !important;
+}
+
+body .portal-shell .revenue-objective-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 18px !important;
+}
+
+body .portal-shell .revenue-objective-grid button,
+body .portal-shell .revenue-path-step button {
+  min-height: 58px !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  text-align: left !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+}
+
+body .portal-shell .revenue-path-guide {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 14px !important;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+}
+
+body .portal-shell .revenue-onboarding {
+  grid-template-columns: minmax(320px, 0.9fr) repeat(3, minmax(220px, 1fr)) auto !important;
+  gap: 16px !important;
+  align-items: center !important;
+  padding: clamp(18px, 2vw, 28px) !important;
+}
+
+body .portal-shell .revenue-onboarding article {
+  min-width: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  body .portal-shell .dashboard-builder-head,
+  body .portal-shell .dashboard-canvas-head,
+  body .portal-shell .dashboard-builder-layout,
+  body .portal-shell .revenue-workspace-head,
+  body .portal-shell .revenue-main-grid,
+  body .portal-shell .revenue-onboarding {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .portal-shell .dashboard-profile-tabs,
+  body .portal-shell .dashboard-canvas-actions,
+  body .portal-shell .revenue-workspace-head .solid-button {
+    justify-self: start !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body .portal-shell .dashboard-builder-shell,
+  body .portal-shell .revenue-workspace {
+    padding: 18px !important;
+    border-radius: 16px !important;
+  }
+
+  body .portal-shell .view-section[data-view="dashboard"] > .view-head h2 {
+    font-size: clamp(2rem, 10vw, 3.3rem) !important;
+  }
+
+  body .portal-shell .dashboard-widget-grid,
+  body .portal-shell .revenue-objective-grid,
+  body .portal-shell .revenue-path-guide {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
