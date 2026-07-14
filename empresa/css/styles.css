@@ -36432,3 +36432,405 @@ body[data-current-view="strategic-qr"] .data-table-card .table-card-head {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Gaming Center activation organization and readability pass */
+body[data-current-view="strategic-qr"] .ticket-center-panel[data-ticket-panel="trivia"] {
+  --activation-readable-max: 1120px;
+  --activation-text-max: 780px;
+  --activation-panel-gap: clamp(22px, 2.4vw, 34px);
+  --activation-field-gap: clamp(14px, 1.6vw, 22px);
+}
+
+body[data-current-view="strategic-qr"] .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid.dashboard-charts {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: var(--activation-panel-gap) !important;
+  max-width: min(100%, 1240px) !important;
+  margin-inline: auto !important;
+  padding: 0 !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-builder-card,
+body[data-current-view="strategic-qr"] .lead-capture-card,
+body[data-current-view="strategic-qr"] .gaming-activation-list-card {
+  width: 100% !important;
+  max-width: var(--activation-readable-max) !important;
+  margin-inline: auto !important;
+  padding: clamp(26px, 3.2vw, 44px) !important;
+  display: grid !important;
+  gap: var(--activation-panel-gap) !important;
+  overflow: visible !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-builder-card > .table-card-head,
+body[data-current-view="strategic-qr"] .lead-capture-card > .table-card-head,
+body[data-current-view="strategic-qr"] .gaming-activation-list-card > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: start !important;
+  justify-items: start !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: var(--activation-text-max) !important;
+  margin: 0 !important;
+  padding: 0 0 20px !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.12) !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-builder-card > .table-card-head > div,
+body[data-current-view="strategic-qr"] .lead-capture-card > .table-card-head > div,
+body[data-current-view="strategic-qr"] .gaming-activation-list-card > .table-card-head > div {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-builder-card > .table-card-head h3,
+body[data-current-view="strategic-qr"] .lead-capture-card > .table-card-head h3,
+body[data-current-view="strategic-qr"] .gaming-activation-list-card > .table-card-head h3 {
+  max-width: var(--activation-text-max) !important;
+  margin: 0 !important;
+  font-size: clamp(1.38rem, 2.1vw, 2rem) !important;
+  line-height: 1.12 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="strategic-qr"] .table-card-subtitle,
+body[data-current-view="strategic-qr"] .chart-explainer,
+body[data-current-view="strategic-qr"] .interactive-catalog-note p {
+  max-width: var(--activation-text-max) !important;
+  font-size: 0.98rem !important;
+  line-height: 1.6 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="strategic-qr"] .status-chip {
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-command-strip {
+  width: 100% !important;
+  max-width: var(--activation-readable-max) !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 14px !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-stage {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-content: start !important;
+  align-items: start !important;
+  gap: 4px 12px !important;
+  min-width: 0 !important;
+  min-height: 90px !important;
+  padding: 16px !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-stage .material-symbols-outlined {
+  grid-row: 1 / span 2 !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-stage strong,
+body[data-current-view="strategic-qr"] .gaming-activation-stage small {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.28 !important;
+}
+
+body[data-current-view="strategic-qr"] .interactive-activation-nav {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: var(--activation-readable-max) !important;
+  margin: 0 !important;
+  padding: 12px !important;
+}
+
+body[data-current-view="strategic-qr"] .interactive-activation-nav span {
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: 100% !important;
+  padding: 8px 12px !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+
+body[data-current-view="strategic-qr"] .interactive-catalog-note,
+body[data-current-view="strategic-qr"] .chart-explainer {
+  width: 100% !important;
+  max-width: var(--activation-readable-max) !important;
+  margin: 0 !important;
+  padding: 18px 20px !important;
+}
+
+body[data-current-view="strategic-qr"] .trivia-launcher-form,
+body[data-current-view="strategic-qr"] .lead-capture-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: var(--activation-field-gap) !important;
+  width: 100% !important;
+  max-width: var(--activation-readable-max) !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="strategic-qr"] .trivia-launcher-form > .full,
+body[data-current-view="strategic-qr"] .trivia-launcher-form > .span-2,
+body[data-current-view="strategic-qr"] .lead-capture-form > .full,
+body[data-current-view="strategic-qr"] .lead-capture-form > .span-2,
+body[data-current-view="strategic-qr"] .lead-capture-fieldset,
+body[data-current-view="strategic-qr"] .activation-launch-submit,
+body[data-current-view="strategic-qr"] #triviaLauncherMessage {
+  grid-column: 1 / -1 !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section,
+body[data-current-view="strategic-qr"] .activation-config-panel.always-visible,
+body[data-current-view="strategic-qr"] .activation-form-builder-panel {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: var(--activation-field-gap) !important;
+  align-items: start !important;
+  width: 100% !important;
+  padding: clamp(22px, 2.5vw, 34px) !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section-head,
+body[data-current-view="strategic-qr"] .activation-config-head,
+body[data-current-view="strategic-qr"] .activation-form-builder-toolbar,
+body[data-current-view="strategic-qr"] .activation-form-builder,
+body[data-current-view="strategic-qr"] .activation-product-mode-grid,
+body[data-current-view="strategic-qr"] .activation-type-picker,
+body[data-current-view="strategic-qr"] .activation-builder-section > .full,
+body[data-current-view="strategic-qr"] .activation-builder-section > .span-2,
+body[data-current-view="strategic-qr"] .activation-config-panel > .full,
+body[data-current-view="strategic-qr"] .activation-config-panel > .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section-head,
+body[data-current-view="strategic-qr"] .activation-config-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+  max-width: var(--activation-text-max) !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 2px !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section-head strong,
+body[data-current-view="strategic-qr"] .activation-config-head strong {
+  font-size: clamp(1.06rem, 1.35vw, 1.26rem) !important;
+  line-height: 1.2 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section-head small,
+body[data-current-view="strategic-qr"] .activation-config-head span {
+  max-width: 68ch !important;
+  line-height: 1.58 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section > label,
+body[data-current-view="strategic-qr"] .activation-config-panel label,
+body[data-current-view="strategic-qr"] .lead-capture-form > label,
+body[data-current-view="strategic-qr"] .lead-capture-fieldset {
+  display: grid !important;
+  align-content: start !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 16px !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section label > span,
+body[data-current-view="strategic-qr"] .activation-config-panel label > span,
+body[data-current-view="strategic-qr"] .lead-capture-form label > span,
+body[data-current-view="strategic-qr"] .lead-capture-fieldset legend {
+  max-width: 100% !important;
+  color: var(--activation-fresh-ink) !important;
+  font-size: 0.82rem !important;
+  font-weight: 780 !important;
+  line-height: 1.3 !important;
+  text-transform: none !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section label small,
+body[data-current-view="strategic-qr"] .activation-config-panel label small,
+body[data-current-view="strategic-qr"] .lead-capture-form label small {
+  max-width: 68ch !important;
+  color: var(--activation-fresh-muted) !important;
+  line-height: 1.5 !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section :where(input, select, textarea),
+body[data-current-view="strategic-qr"] .activation-config-panel :where(input, select, textarea),
+body[data-current-view="strategic-qr"] .lead-capture-form :where(input, select, textarea) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  line-height: 1.35 !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-builder-section textarea,
+body[data-current-view="strategic-qr"] .activation-config-panel textarea,
+body[data-current-view="strategic-qr"] .lead-capture-form textarea {
+  min-height: 110px !important;
+  resize: vertical !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-type-picker {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+  gap: 12px !important;
+  max-height: 430px !important;
+  overflow: auto !important;
+  padding: 14px !important;
+  scrollbar-width: thin !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-type-option {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: start !important;
+  gap: 4px 10px !important;
+  min-height: 86px !important;
+  padding: 14px !important;
+  text-align: left !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-type-option .material-symbols-outlined {
+  grid-row: 1 / span 2 !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-type-option strong,
+body[data-current-view="strategic-qr"] .activation-type-option small {
+  min-width: 0 !important;
+  line-height: 1.25 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-product-mode-grid,
+body[data-current-view="strategic-qr"] .survey-builder-grid,
+body[data-current-view="strategic-qr"] .trivia-options-grid,
+body[data-current-view="strategic-qr"] .reveal-card-grid,
+body[data-current-view="strategic-qr"] .benefit-fulfillment-grid,
+body[data-current-view="strategic-qr"] .benefit-expiration-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: var(--activation-field-gap) !important;
+  width: 100% !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-form-builder-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 18px !important;
+  align-items: center !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-form-builder-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-form-builder {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 16px !important;
+  max-height: 520px !important;
+  overflow: auto !important;
+  scrollbar-width: thin !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-form-field-row,
+body[data-current-view="strategic-qr"] .lead-capture-field-row {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.1fr) minmax(170px, 0.8fr) minmax(170px, 0.8fr) auto !important;
+  gap: 12px !important;
+  align-items: end !important;
+}
+
+body[data-current-view="strategic-qr"] .activation-launch-submit,
+body[data-current-view="strategic-qr"] #leadCaptureSubmitButton {
+  justify-self: start !important;
+  min-width: min(100%, 260px) !important;
+  min-height: 52px !important;
+  padding-inline: 24px !important;
+}
+
+body[data-current-view="strategic-qr"] .table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+body[data-current-view="strategic-qr"] .gaming-activation-list-card table {
+  min-width: 760px !important;
+}
+
+@media (max-width: 1080px) {
+  body[data-current-view="strategic-qr"] .gaming-activation-command-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body[data-current-view="strategic-qr"] .trivia-launcher-form,
+  body[data-current-view="strategic-qr"] .lead-capture-form,
+  body[data-current-view="strategic-qr"] .activation-builder-section,
+  body[data-current-view="strategic-qr"] .activation-config-panel.always-visible,
+  body[data-current-view="strategic-qr"] .activation-product-mode-grid,
+  body[data-current-view="strategic-qr"] .survey-builder-grid,
+  body[data-current-view="strategic-qr"] .trivia-options-grid,
+  body[data-current-view="strategic-qr"] .reveal-card-grid,
+  body[data-current-view="strategic-qr"] .benefit-fulfillment-grid,
+  body[data-current-view="strategic-qr"] .benefit-expiration-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="strategic-qr"] .activation-form-field-row,
+  body[data-current-view="strategic-qr"] .lead-capture-field-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="strategic-qr"] .gaming-activation-builder-card,
+  body[data-current-view="strategic-qr"] .lead-capture-card,
+  body[data-current-view="strategic-qr"] .gaming-activation-list-card {
+    padding: 22px !important;
+  }
+
+  body[data-current-view="strategic-qr"] .gaming-activation-command-strip,
+  body[data-current-view="strategic-qr"] .activation-type-picker {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="strategic-qr"] .activation-form-builder-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="strategic-qr"] .activation-form-builder-actions {
+    justify-content: stretch !important;
+  }
+
+  body[data-current-view="strategic-qr"] .activation-form-builder-actions .ghost-button {
+    width: 100% !important;
+  }
+}
