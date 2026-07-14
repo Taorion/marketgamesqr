@@ -34735,3 +34735,231 @@ button,
     padding-inline: 16px !important;
   }
 }
+
+/* Guided friendly canvas and collapsible operating zones */
+:root,
+:root[data-theme="dark"] {
+  --guided-canvas-mint: #eef8f1;
+  --guided-canvas-sage: #dcefe4;
+  --guided-canvas-white: #fffefa;
+  --guided-canvas-blue: #e7f3fb;
+  --guided-canvas-blue-line: rgba(39, 117, 159, 0.13);
+  --guided-canvas-green-line: rgba(26, 126, 87, 0.13);
+  --guided-canvas-ink: #123028;
+  --guided-canvas-muted: #557169;
+  --guided-canvas-soft: #78908a;
+  --guided-canvas-accent: #16865e;
+  --guided-canvas-accent-2: #27759f;
+  --guided-canvas-panel: rgba(255, 255, 250, 0.72);
+  --guided-canvas-panel-soft: rgba(255, 255, 250, 0.52);
+}
+
+body {
+  color: var(--guided-canvas-ink) !important;
+  background:
+    linear-gradient(90deg, rgba(22, 134, 94, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(39, 117, 159, 0.05) 1px, transparent 1px),
+    linear-gradient(120deg, rgba(238, 248, 241, 0.92) 0%, rgba(255, 254, 250, 0.9) 34%, rgba(231, 243, 251, 0.78) 68%, rgba(245, 250, 246, 0.92) 100%),
+    var(--guided-canvas-mint) !important;
+  background-size: 78px 78px, 78px 78px, 100% 100%, auto !important;
+  background-attachment: fixed !important;
+}
+
+.view-section.active {
+  border-color: rgba(26, 126, 87, 0.1) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.7), rgba(255, 254, 250, 0.5)),
+    linear-gradient(90deg, rgba(238, 248, 241, 0.62), rgba(231, 243, 251, 0.42) 76%, rgba(255, 254, 250, 0.56)) !important;
+}
+
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.insight-card,
+.stat-card,
+.kpi-card,
+.metric-card,
+.qr-option-card,
+.campaign-card,
+.activation-card,
+.activation-game-card,
+.activation-panel,
+.activation-form-panel,
+.activation-preview-panel,
+.activation-share-panel,
+.lead-directory-card,
+.lead-detail-card,
+.lead-agenda-card,
+.agenda-panel,
+.table-card,
+.inventory-card,
+.sales-panel,
+.profile-card,
+.billing-card,
+.account-panel,
+.reward-pass-panel,
+.modal-card {
+  border-color: rgba(26, 126, 87, 0.1) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.74), rgba(255, 254, 250, 0.56)),
+    linear-gradient(90deg, rgba(238, 248, 241, 0.22), rgba(231, 243, 251, 0.18)) !important;
+}
+
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.lead-agenda-column,
+.lead-agenda-card-item,
+.rms-station-lane,
+.rms-station-card,
+.rms-lead-inspector,
+.campaign-cost-section,
+.campaign-cost-answer-card,
+.campaign-cost-detail-card,
+.competition-card,
+.affiliate-stat-card,
+.affiliate-step,
+.season-launch-card,
+.qr-workflow-card,
+.activation-question-row,
+.activation-product-row,
+.activation-form-field-row,
+.trivia-question-editor {
+  border-color: rgba(39, 117, 159, 0.11) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.58), rgba(255, 254, 250, 0.42)),
+    linear-gradient(90deg, rgba(238, 248, 241, 0.22), rgba(231, 243, 251, 0.16)) !important;
+}
+
+.topbar,
+.sidebar,
+.login-card {
+  background: rgba(255, 254, 250, 0.76) !important;
+}
+
+.search-shell,
+.subscription-banner,
+.gaming-core-entry {
+  border-color: rgba(39, 117, 159, 0.12) !important;
+  background:
+    linear-gradient(90deg, rgba(238, 248, 241, 0.7), rgba(231, 243, 251, 0.46)),
+    rgba(255, 254, 250, 0.58) !important;
+}
+
+.quiet-zone {
+  position: relative !important;
+  transition: background-color 160ms ease, border-color 160ms ease !important;
+}
+
+.quiet-zone-control-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 16px !important;
+}
+
+.quiet-zone-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(39, 117, 159, 0.16) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 254, 250, 0.7) !important;
+  color: var(--guided-canvas-muted) !important;
+  box-shadow: none !important;
+  font-size: 0.78rem !important;
+  font-weight: 760 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.quiet-zone-toggle:hover,
+.quiet-zone-toggle:focus-visible {
+  border-color: rgba(22, 134, 94, 0.28) !important;
+  color: var(--guided-canvas-accent) !important;
+  background: rgba(238, 248, 241, 0.88) !important;
+}
+
+.quiet-zone-toggle .material-symbols-outlined {
+  font-size: 1rem !important;
+  line-height: 1 !important;
+}
+
+.quiet-zone.is-collapsed {
+  padding-block: clamp(14px, 1.6vw, 20px) !important;
+  border-color: rgba(39, 117, 159, 0.1) !important;
+  background:
+    linear-gradient(90deg, rgba(238, 248, 241, 0.48), rgba(231, 243, 251, 0.32)),
+    rgba(255, 254, 250, 0.46) !important;
+}
+
+.quiet-zone.is-collapsed > :not(.quiet-zone-control-head) {
+  display: none !important;
+}
+
+.quiet-zone.is-collapsed .quiet-zone-control-head {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  border-bottom-color: transparent !important;
+}
+
+.action-feedback {
+  right: clamp(16px, 3vw, 42px) !important;
+  bottom: clamp(16px, 3vw, 36px) !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+  border: 1px solid rgba(26, 126, 87, 0.16) !important;
+  background: rgba(255, 254, 250, 0.86) !important;
+  color: var(--guided-canvas-ink) !important;
+  box-shadow: 0 18px 50px rgba(18, 48, 40, 0.08) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.action-feedback.info {
+  border-color: rgba(39, 117, 159, 0.18) !important;
+}
+
+.action-feedback strong {
+  color: var(--guided-canvas-ink) !important;
+}
+
+.action-feedback p {
+  color: var(--guided-canvas-muted) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.modal-form input:focus,
+.modal-form select:focus,
+.modal-form textarea:focus,
+.view-section input:focus,
+.view-section select:focus,
+.view-section textarea:focus {
+  border-bottom-color: var(--guided-canvas-accent-2) !important;
+  box-shadow: 0 1px 0 var(--guided-canvas-accent-2) !important;
+}
+
+tbody tr:hover,
+.activation-type-option:hover,
+.nav-item:hover {
+  background: rgba(238, 248, 241, 0.62) !important;
+}
+
+@media (max-width: 900px) {
+  body,
+  .login-screen {
+    background-size: 58px 58px, 58px 58px, 100% 100%, auto !important;
+  }
+
+  .quiet-zone-control-head {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .quiet-zone-toggle {
+    width: fit-content !important;
+  }
+}

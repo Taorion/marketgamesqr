@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-portal-infinite-canvas-spaced-v1";
+const APP_VERSION = "empresa-20260714-portal-guided-canvas-zones-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -1185,6 +1185,47 @@ const snapshotNotesInput = document.getElementById("snapshotNotesInput");
 const snapshotModalMessage = document.getElementById("snapshotModalMessage");
 const routeParams = new URLSearchParams(window.location.search);
 const LIGHT_MODE_KEY = "marketgames_portal_light_mode";
+const QUIET_ZONE_STORAGE_KEY = "marketgames_portal_quiet_zones_v1";
+const QUIET_ZONE_SELECTOR = [
+  ".view-section.active > section",
+  ".view-section.active > article",
+  ".view-section.active .activation-builder-section",
+  ".view-section.active .activation-config-panel.always-visible",
+  ".view-section.active .data-table-card",
+  ".view-section.active .lead-agenda-card",
+  ".view-section.active .agenda-panel",
+  ".view-section.active .rms-station-lane",
+  ".view-section.active .rms-lead-inspector",
+  ".view-section.active .dashboard-widget-card",
+  ".view-section.active .campaign-cost-section",
+  ".view-section.active .competition-card",
+  ".view-section.active .affiliate-step",
+].join(",");
+const QUIET_ZONE_HEAD_SELECTOR = [
+  ":scope > .view-head",
+  ":scope > .table-card-head",
+  ":scope > .section-header",
+  ":scope > .card-header",
+  ":scope > .panel-header",
+  ":scope > .activation-builder-section-head",
+  ":scope > .activation-config-head",
+  ":scope > .dashboard-builder-head",
+  ":scope > .dashboard-canvas-head",
+  ":scope > .revenue-workspace-head",
+  ":scope > .rms-station-header",
+  ":scope > .lead-directory-header",
+  ":scope > .modal-head",
+].join(",");
+const QUIET_ZONE_DEFAULT_OPEN_COUNT = {
+  dashboard: 2,
+  "strategic-qr": 3,
+  "rms-machine": 3,
+  leads: 2,
+  campaigns: 2,
+  account: 2,
+};
+let quietCanvasEnhanceTimer = 0;
+let quietCanvasObserver = null;
 const routeLightMode = ["1", "true", "yes"].includes(String(routeParams.get("lite") || "").toLowerCase());
 const routeDisableLightMode = ["0", "false", "no", "off"].includes(String(routeParams.get("lite") || "").toLowerCase());
 if (routeLightMode) {
@@ -2048,6 +2089,123 @@ function setInlineMessage(element, message, kind = "info") {
   if (message && element.id === "triviaLauncherMessage" && kind === "error") {
     element.scrollIntoView({ behavior: "smooth", block: "center" });
   }
+}
+
+function quietZoneTitle(zone) {
+  const titleNode = zone.querySelector(":scope > .quiet-zone-control-head h2, :scope > .quiet-zone-control-head h3, :scope > .quiet-zone-control-head h4, :scope > .quiet-zone-control-head strong, :scope > .quiet-zone-control-head .card-title, :scope > .quiet-zone-control-head .mono-label");
+  return String(titleNode?.textContent || zone.getAttribute("aria-label") || "Zona").trim().replace(/\s+/g, " ").slice(0, 80);
+}
+
+function quietZoneKey(zone, index, view) {
+  const explicit = zone.id || zone.dataset.quietZoneKey || zone.dataset.view || zone.dataset.activationConfig || "";
+  const title = quietZoneTitle(zone).toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, "-").replace(/^-|-$/g, "");
+  return `${view || "portal"}:${explicit || title || index}`;
+}
+
+function readQuietZoneState(key) {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(QUIET_ZONE_STORAGE_KEY) || "{}");
+    return Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeQuietZoneState(key, expanded) {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(QUIET_ZONE_STORAGE_KEY) || "{}");
+    saved[key] = Boolean(expanded);
+    window.localStorage.setItem(QUIET_ZONE_STORAGE_KEY, JSON.stringify(saved));
+  } catch {
+    // The disclosure state is only a convenience; the UI still works without storage.
+  }
+}
+
+function setQuietZoneExpanded(zone, expanded, options = {}) {
+  const button = zone.querySelector(":scope > .quiet-zone-control-head .quiet-zone-toggle");
+  zone.classList.toggle("is-collapsed", !expanded);
+  zone.dataset.quietZoneExpanded = expanded ? "1" : "0";
+  if (button) {
+    button.setAttribute("aria-expanded", expanded ? "true" : "false");
+    const nextButtonState = expanded ? "expanded" : "collapsed";
+    if (button.dataset.quietToggleState !== nextButtonState) {
+      button.dataset.quietToggleState = nextButtonState;
+      button.innerHTML = `
+        <span class="material-symbols-outlined" aria-hidden="true">${expanded ? "unfold_less" : "unfold_more"}</span>
+        <span>${expanded ? "Replegar" : "Desplegar"}</span>
+      `;
+    }
+  }
+  if (options.persist && zone.dataset.quietZoneKey) {
+    writeQuietZoneState(zone.dataset.quietZoneKey, expanded);
+  }
+  if (options.feedback) {
+    const title = quietZoneTitle(zone);
+    showFeedback(expanded ? `${title} visible.` : `${title} queda resumida.`, "info", {
+      title: expanded ? "Zona desplegada" : "Vista enfocada",
+      timeout: 1800,
+    });
+  }
+}
+
+function shouldSkipQuietZone(zone, activeView) {
+  if (!zone || zone.closest(".modal-shell") || zone.closest(".busy-overlay")) return true;
+  if (zone.matches(".view-head, .quiet-zone, .hidden, [hidden], [data-quiet-zone-ignore]")) return true;
+  if (zone.classList.contains("subscription-banner") || zone.classList.contains("busy-overlay")) return true;
+  if (activeView === "validator" && zone.closest('[data-view="validator"]')) return true;
+  return !zone.querySelector(QUIET_ZONE_HEAD_SELECTOR);
+}
+
+function enhanceQuietCanvas() {
+  const activeSection = document.querySelector(".view-section.active");
+  if (!activeSection) return;
+  const activeView = activeSection.dataset.view || state.currentView || "dashboard";
+  const openCount = QUIET_ZONE_DEFAULT_OPEN_COUNT[activeView] ?? 2;
+  const candidates = Array.from(activeSection.querySelectorAll(QUIET_ZONE_SELECTOR))
+    .filter((zone) => !shouldSkipQuietZone(zone, activeView));
+
+  candidates.forEach((zone, index) => {
+    const head = zone.querySelector(QUIET_ZONE_HEAD_SELECTOR);
+    if (!head) return;
+    zone.classList.add("quiet-zone");
+    head.classList.add("quiet-zone-control-head");
+
+    const key = quietZoneKey(zone, index, activeView);
+    zone.dataset.quietZoneKey = key;
+
+    let button = head.querySelector(":scope > .quiet-zone-toggle");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "quiet-zone-toggle";
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const expanded = zone.dataset.quietZoneExpanded !== "1";
+        setQuietZoneExpanded(zone, expanded, { persist: true, feedback: true });
+      });
+      head.appendChild(button);
+    }
+
+    const saved = readQuietZoneState(key);
+    const expanded = saved === null ? index < openCount : Boolean(saved);
+    setQuietZoneExpanded(zone, expanded);
+  });
+
+  activeSection.dataset.quietZonesReady = candidates.length ? "1" : "0";
+}
+
+function scheduleQuietCanvasEnhancement() {
+  window.clearTimeout(quietCanvasEnhanceTimer);
+  quietCanvasEnhanceTimer = window.setTimeout(enhanceQuietCanvas, 90);
+}
+
+function startQuietCanvasObserver() {
+  if (quietCanvasObserver || !window.MutationObserver) return;
+  const shell = document.querySelector(".content-shell");
+  if (!shell) return;
+  quietCanvasObserver = new MutationObserver(() => scheduleQuietCanvasEnhancement());
+  quietCanvasObserver.observe(shell, { childList: true, subtree: true });
 }
 
 function renderSkeletonCards(container, count = 4) {
@@ -4312,6 +4470,7 @@ function setView(view) {
   if (view === "reward-passes") renderRewardPassesView();
   if (view === "branches") renderBranchesView();
   if (view === "admin") renderAdminView();
+  scheduleQuietCanvasEnhancement();
 }
 
 function togglePortalMenu() {
@@ -29879,6 +30038,8 @@ updateBattleshipShipInputs();
 syncActivationFormBuilder();
 updateActivationProductIntentMode();
 renderShell();
+startQuietCanvasObserver();
+scheduleQuietCanvasEnhancement();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
 if (paymentResult === "success") {
   showFeedback("Pago aprobado. Si Mercado Pago ya notificó el webhook, los tickets apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
