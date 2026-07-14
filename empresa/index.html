@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-login-sales-machine-title-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-rms-map-clarity-20260714-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -822,21 +822,21 @@
                 <div>
                   <span class="mono-label">Mapa Operativo RMS</span>
                   <h3 class="subhead">Tablero de operación de la fábrica de ventas</h3>
-                  <p class="chart-explainer">Cada estación contiene materia prima comercial real, indica qué operación ejecutar, qué material enviar y qué resultado registrar para avanzar al siguiente proceso.</p>
+                  <p class="chart-explainer">Lee la fábrica de izquierda a derecha: entra un lead, se ejecuta una operación, se envía material comercial y se registra la salida.</p>
                 </div>
                 <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
               </div>
               <div class="rms-factory-status-strip" aria-label="Estado operativo de la fábrica RMS">
-                <span><strong>Entrada</strong><small>leads y clientes capturados</small></span>
-                <span><strong>Operación</strong><small>acción indicada por estación</small></span>
-                <span><strong>Material</strong><small>catálogo, ticket, cobro o reward</small></span>
-                <span><strong>Salida</strong><small>venta, recompra, referido o recuperación</small></span>
+                <span><em>01</em><strong>Entrada</strong><small>Leads capturados</small></span>
+                <span><em>02</em><strong>Operación</strong><small>Siguiente acción</small></span>
+                <span><em>03</em><strong>Material</strong><small>Catálogo, ticket o cobro</small></span>
+                <span><em>04</em><strong>Salida</strong><small>Venta o recuperación</small></span>
               </div>
               <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
                 <div>
                   <span class="mono-label">Operación masiva</span>
                   <strong id="rmsBulkSelectionCount">0 seleccionados</strong>
-                  <small>Selecciona clientes dentro de una estación y ejecuta la operación de fase.</small>
+                  <small>Marca oportunidades en una estación y aplica una acción por lote.</small>
                 </div>
                 <select id="rmsBulkPhaseInput">
                   <option value="">Mover a fase...</option>
@@ -6994,7 +6994,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-login-sales-machine-title-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-rms-map-clarity-20260714-v1" defer></script>
 </body>
 </html>
 

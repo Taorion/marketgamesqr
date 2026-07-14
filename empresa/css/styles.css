@@ -41089,3 +41089,303 @@ body[data-current-view="rms-machine"] .portal-shell .rms-machine-head + .rms-mac
     flex-basis: 100% !important;
   }
 }
+
+/* RMS operational map clarity: readable status path and compact bulk actions. */
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-factory-console {
+  display: grid !important;
+  gap: clamp(14px, 1.8vw, 22px) !important;
+  padding: clamp(18px, 2.5vw, 30px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.11) !important;
+  border-radius: 20px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.96), rgba(247, 252, 250, 0.92)),
+    #fffefa !important;
+  box-shadow: 0 16px 42px rgba(15, 44, 36, 0.055) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console::before,
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console::after {
+  display: none !important;
+  content: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 0 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.1) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head > div {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head .mono-label {
+  color: #27759f !important;
+  font-size: 0.76rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head h3 {
+  max-width: 720px !important;
+  margin: 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.18rem, 1.6vw, 1.55rem) !important;
+  line-height: 1.16 !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head p {
+  max-width: 86ch !important;
+  margin: 0 !important;
+  color: #5e766f !important;
+  font-size: 0.94rem !important;
+  line-height: 1.48 !important;
+  font-weight: 540 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console #rmsMachineOpportunityCount {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 124px !important;
+  min-height: 42px !important;
+  padding: 9px 14px !important;
+  border: 1px solid rgba(15, 115, 84, 0.14) !important;
+  border-radius: 14px !important;
+  background: rgba(236, 248, 241, 0.78) !important;
+  color: #0f7354 !important;
+  font-size: 0.88rem !important;
+  font-weight: 820 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip span {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "num title"
+    "num copy" !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  row-gap: 2px !important;
+  min-height: 64px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip span::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid rgba(15, 115, 84, 0.22);
+  border-right: 2px solid rgba(15, 115, 84, 0.22);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip span:last-child::after {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip em {
+  grid-area: num !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  background: rgba(15, 115, 84, 0.1) !important;
+  color: #0f7354 !important;
+  font-style: normal !important;
+  font-size: 0.72rem !important;
+  font-weight: 880 !important;
+  line-height: 1 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip strong {
+  grid-area: title !important;
+  min-width: 0 !important;
+  color: #102c25 !important;
+  font-size: 0.92rem !important;
+  line-height: 1.14 !important;
+  font-weight: 820 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip small {
+  grid-area: copy !important;
+  min-width: 0 !important;
+  color: #668079 !important;
+  font-size: 0.78rem !important;
+  line-height: 1.24 !important;
+  font-weight: 560 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(250px, 1fr) minmax(180px, 230px) auto auto auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  border: 1px solid rgba(39, 117, 159, 0.14) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(90deg, rgba(237, 247, 252, 0.76), rgba(246, 252, 249, 0.76)),
+    rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar > div {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "label count"
+    "help help" !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  row-gap: 3px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar .mono-label {
+  grid-area: label !important;
+  color: #27759f !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console #rmsBulkSelectionCount {
+  grid-area: count !important;
+  color: #102c25 !important;
+  font-size: 0.94rem !important;
+  line-height: 1.16 !important;
+  font-weight: 820 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar small {
+  grid-area: help !important;
+  max-width: 62ch !important;
+  color: #668079 !important;
+  font-size: 0.8rem !important;
+  line-height: 1.32 !important;
+  font-weight: 540 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar select,
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar button {
+  min-height: 38px !important;
+  border-radius: 12px !important;
+  font-size: 0.84rem !important;
+  line-height: 1.12 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar select {
+  width: 100% !important;
+  border-color: rgba(39, 117, 159, 0.18) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #17362f !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar .solid-button {
+  background: #0f7354 !important;
+  border-color: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar .ghost-button {
+  border-color: rgba(15, 115, 84, 0.14) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  color: #205f4b !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-factory-console,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip span,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.48) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head h3,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip strong,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console #rmsBulkSelectionCount {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head p,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip small,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar small {
+  color: #c8ded6 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 1180px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 240px) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar button {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head,
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-console #rmsMachineOpportunityCount {
+    justify-self: start !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip span::after {
+    display: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-factory-status-strip {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
