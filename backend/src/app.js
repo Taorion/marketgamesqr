@@ -11,6 +11,7 @@ const portalRoutes = require("./routes/portalRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const businessPortalRoutes = require("./routes/businessPortalRoutes");
 const businessQrRoutes = require("./routes/businessQrRoutes");
+const smartCatalogRoutes = require("./routes/smartCatalogRoutes");
 const interactiveActivationRoutes = require("./routes/interactiveActivationRoutes");
 const leadCaptureRoutes = require("./routes/leadCaptureRoutes");
 const digitalAssetRoutes = require("./routes/digitalAssetRoutes");
@@ -19,6 +20,7 @@ const salesRoutes = require("./routes/salesRoutes");
 const publicGameRoutes = require("./routes/publicGameRoutes");
 const publicQrRoutes = require("./routes/publicQrRoutes");
 const publicAffiliateRoutes = require("./routes/publicAffiliateRoutes");
+const publicSmartCatalogRoutes = require("./routes/publicSmartCatalogRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
@@ -172,6 +174,7 @@ app.use("/api/portal", portalRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/business", businessPortalRoutes);
 app.use("/api/business/qr", businessQrRoutes);
+app.use("/api/business/catalogs", smartCatalogRoutes);
 app.use("/api/business/interactive-activations", interactiveActivationRoutes);
 app.use("/api/business/lead-capture-activations", leadCaptureRoutes);
 app.use("/api/business/digital-assets", digitalAssetRoutes);
@@ -181,6 +184,7 @@ app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
 app.use("/api/public", publicAffiliateRoutes);
+app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
@@ -210,6 +214,7 @@ app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public"
 app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/activacion", express.static(path.join(__dirname, "../..", "activacion")));
 app.use("/captura", express.static(path.join(__dirname, "../..", "captura")));
+app.use("/smart-catalog", express.static(path.join(__dirname, "../..", "smart-catalog")));
 app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
@@ -228,6 +233,9 @@ app.get("/activacion/:slug", (_req, res) => {
 });
 app.get("/captura/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "captura", "index.html"));
+});
+app.get(["/c/:catalogSlug", "/c/:catalogSlug/:productSlug"], (_req, res) => {
+  res.sendFile(path.join(__dirname, "../..", "smart-catalog", "index.html"));
 });
 app.get("/", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");

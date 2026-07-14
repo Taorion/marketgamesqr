@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-gaming-shortcut-position-v1";
+const APP_VERSION = "empresa-20260714-smart-catalog-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -152,6 +152,23 @@ const missionTopLimitInput = document.getElementById("missionTopLimitInput");
 const missionRewardsInput = document.getElementById("missionRewardsInput");
 const missionCreateAgendaInput = document.getElementById("missionCreateAgendaInput");
 const missionWizardMessage = document.getElementById("missionWizardMessage");
+const smartCatalogRefreshButton = document.getElementById("smartCatalogRefreshButton");
+const smartCatalogSeedDoctorAngieButton = document.getElementById("smartCatalogSeedDoctorAngieButton");
+const smartCatalogDashboardGrid = document.getElementById("smartCatalogDashboardGrid");
+const smartCatalogPublicLink = document.getElementById("smartCatalogPublicLink");
+const smartCatalogCopyLinkButton = document.getElementById("smartCatalogCopyLinkButton");
+const smartCatalogOpenPublicButton = document.getElementById("smartCatalogOpenPublicButton");
+const smartCatalogForm = document.getElementById("smartCatalogForm");
+const smartCatalogMessage = document.getElementById("smartCatalogMessage");
+const smartCatalogCampaignSelect = document.getElementById("smartCatalogCampaignSelect");
+const smartCatalogTable = document.getElementById("smartCatalogTable");
+const smartCatalogProductForm = document.getElementById("smartCatalogProductForm");
+const smartCatalogProductCatalogSelect = document.getElementById("smartCatalogProductCatalogSelect");
+const smartCatalogProductMessage = document.getElementById("smartCatalogProductMessage");
+const smartCatalogProductTable = document.getElementById("smartCatalogProductTable");
+const smartCatalogIntentTable = document.getElementById("smartCatalogIntentTable");
+const smartCatalogTabButtons = Array.from(document.querySelectorAll("[data-smart-catalog-tab]"));
+const smartCatalogPanels = Array.from(document.querySelectorAll("[data-smart-catalog-panel]"));
 const leadFeedKpiGrid = document.getElementById("leadFeedKpiGrid");
 const leadFeedRetention = document.getElementById("leadFeedRetention");
 const leadFeedTable = document.getElementById("leadFeedTable");
@@ -1371,6 +1388,14 @@ let state = {
   missionsLoaded: false,
   missionsLoading: false,
   missionWizardTemplateKey: "weekly_trivia",
+  smartCatalogs: [],
+  smartCatalogDashboard: null,
+  smartCatalogProducts: [],
+  smartCatalogIntents: [],
+  smartCatalogSelectedCatalogId: "",
+  smartCatalogTab: "dashboard",
+  smartCatalogLoaded: false,
+  smartCatalogLoading: false,
   leadCrmFilters: {
     search: "",
     campaign_id: "",
@@ -3603,6 +3628,7 @@ const viewFeatureMap = {
   dashboard: "portal_access",
   "rms-machine": "leads_view",
   missions: "leads_view",
+  "smart-catalogs": "portal_access",
   account: null,
   campaigns: "portal_access",
   competition: "campaign_comparison",
@@ -4407,6 +4433,13 @@ function setView(view) {
       renderMissionsView();
     });
   }
+  if (view === "smart-catalogs") {
+    renderSmartCatalogView();
+    loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
+      showFeedback(error.message || "No se pudo cargar Catálogos MG.", "error", { title: "Catálogos MG" });
+      renderSmartCatalogView();
+    });
+  }
   if (view === "account") {
     loadStrategicQrData({ groups: ["core"], quiet: true }).then(() => {
       renderQrCreditShop();
@@ -4998,6 +5031,14 @@ async function loadWorkspace() {
     state.triviaLaunchers = [];
     state.affiliatesLoaded = false;
     state.strategicQrLoaded = false;
+    state.smartCatalogs = [];
+    state.smartCatalogDashboard = null;
+    state.smartCatalogProducts = [];
+    state.smartCatalogIntents = [];
+    state.smartCatalogSelectedCatalogId = "";
+    state.smartCatalogTab = "dashboard";
+    state.smartCatalogLoaded = false;
+    state.smartCatalogLoading = false;
     state.ticketCenterLoadedAt = {};
     state.adminCampaigns = adminCampaignData?.campaigns || [];
     renderSubscriptionBanner();
@@ -7139,6 +7180,7 @@ function navigatePortalShortcut(target = "") {
     campaigns: "campaigns",
     "strategic-qr": "strategic-qr",
     missions: "missions",
+    "smart-catalogs": "smart-catalogs",
     "rms-machine": "rms-machine",
     "reward-passes": "reward-passes",
     validator: "validator",
@@ -7151,6 +7193,373 @@ function navigatePortalShortcut(target = "") {
     admin: "admin",
   };
   if (viewMap[shortcut]) setView(viewMap[shortcut]);
+}
+
+function smartCatalogSelectedCatalog() {
+  return (state.smartCatalogs || []).find((catalog) => catalog.id === state.smartCatalogSelectedCatalogId) || state.smartCatalogs?.[0] || null;
+}
+
+function smartCatalogPublicUrl(catalog) {
+  if (!catalog) return "";
+  return catalog.public_url || `${window.location.origin}/c/${encodeURIComponent(catalog.slug || "")}`;
+}
+
+function smartCatalogStatusLabel(status) {
+  const labels = {
+    ACTIVE: "Activo",
+    DRAFT: "Borrador",
+    PAUSED: "Pausado",
+    ARCHIVED: "Archivado",
+    INTENT_CREATED: "Intención",
+    CONTACTED: "Contactado",
+    WON: "Vendido",
+    LOST: "Perdido",
+    POST_SALE_SENT: "Postventa enviada",
+    AVAILABLE: "Disponible",
+    LIMITED: "Limitado",
+    OUT_OF_STOCK: "Agotado",
+    HIDDEN: "Oculto",
+  };
+  return labels[status] || status || "-";
+}
+
+function smartCatalogStatusClass(status) {
+  if (["ACTIVE", "WON", "POST_SALE_SENT", "AVAILABLE"].includes(status)) return "ok";
+  if (["DRAFT", "PAUSED", "INTENT_CREATED", "CONTACTED", "LIMITED"].includes(status)) return "pending";
+  return "danger";
+}
+
+function smartCatalogMetricValue(value, type = "number") {
+  if (type === "money") return money(value || 0);
+  if (type === "rate") return `${Number(value || 0).toLocaleString("es-CO")}%`;
+  return Number(value || 0).toLocaleString("es-CO");
+}
+
+function smartCatalogFormPayload(form) {
+  const data = new FormData(form);
+  const payload = Object.fromEntries(data.entries());
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === "") payload[key] = null;
+  });
+  return payload;
+}
+
+function renderSmartCatalogCampaignOptions() {
+  if (!smartCatalogCampaignSelect) return;
+  const selected = smartCatalogCampaignSelect.value;
+  smartCatalogCampaignSelect.innerHTML = [
+    '<option value="">Sin campaña</option>',
+    ...(state.campaigns || []).map((campaign) => (
+      `<option value="${escapeHtml(campaign.id)}" ${campaign.id === selected ? "selected" : ""}>${escapeHtml(campaign.name || campaign.slug || "Campaña")}</option>`
+    )),
+  ].join("");
+}
+
+function renderSmartCatalogCatalogOptions() {
+  if (!smartCatalogProductCatalogSelect) return;
+  const catalogs = state.smartCatalogs || [];
+  if (!state.smartCatalogSelectedCatalogId && catalogs[0]) state.smartCatalogSelectedCatalogId = catalogs[0].id;
+  smartCatalogProductCatalogSelect.innerHTML = catalogs.length
+    ? catalogs.map((catalog) => `<option value="${escapeHtml(catalog.id)}" ${catalog.id === state.smartCatalogSelectedCatalogId ? "selected" : ""}>${escapeHtml(catalog.title)}</option>`).join("")
+    : '<option value="">Crea un catálogo primero</option>';
+}
+
+function renderSmartCatalogDashboard() {
+  if (!smartCatalogDashboardGrid) return;
+  const summary = state.smartCatalogDashboard?.summary || {};
+  const metrics = [
+    ["Catálogos activos", summary.active_catalogs, "Landings públicas listas"],
+    ["Vistas", summary.catalog_views, "Tráfico medido en catálogo"],
+    ["Clics WhatsApp", summary.whatsapp_clicks, "Señales de intención"],
+    ["Leads creados", summary.leads_created, "Captura desde catálogo"],
+    ["Revenue potencial", summary.revenue_potential, "Valor estimado por producto", "money"],
+    ["Vista → WhatsApp", summary.view_to_whatsapp_rate, "Conversión de interés", "rate"],
+  ];
+  smartCatalogDashboardGrid.innerHTML = metrics.map(([label, value, meta, type]) => `
+    <article class="surface-card kpi-card smart-catalog-kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong class="kpi-value">${escapeHtml(smartCatalogMetricValue(value, type))}</strong>
+      <p class="kpi-meta">${escapeHtml(meta)}</p>
+    </article>
+  `).join("");
+}
+
+function renderSmartCatalogPublishPanel() {
+  const catalog = smartCatalogSelectedCatalog();
+  const url = smartCatalogPublicUrl(catalog);
+  if (smartCatalogPublicLink) {
+    smartCatalogPublicLink.textContent = catalog
+      ? `${catalog.title} · ${url}`
+      : "Selecciona o crea un catálogo activo.";
+  }
+  if (smartCatalogCopyLinkButton) smartCatalogCopyLinkButton.disabled = !url;
+  if (smartCatalogOpenPublicButton) smartCatalogOpenPublicButton.disabled = !url;
+}
+
+function renderSmartCatalogTables() {
+  const catalogs = state.smartCatalogs || [];
+  if (smartCatalogTable) {
+    smartCatalogTable.innerHTML = catalogs.length ? catalogs.map((catalog) => {
+      const active = catalog.id === state.smartCatalogSelectedCatalogId;
+      return `
+        <tr class="${active ? "is-selected-row" : ""}">
+          <td><strong>${escapeHtml(catalog.title)}</strong><small>${escapeHtml(catalog.public_url || catalog.slug || "")}</small></td>
+          <td><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
+          <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
+          <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
+          <td>
+            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Usar</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Copiar</button>
+          </td>
+        </tr>
+      `;
+    }).join("") : '<tr><td colspan="5">Crea tu primer catálogo accionable para publicar una landing conectada a WhatsApp.</td></tr>';
+  }
+
+  if (smartCatalogProductTable) {
+    const products = state.smartCatalogProducts || [];
+    smartCatalogProductTable.innerHTML = products.length ? products.map((product) => `
+      <tr>
+        <td><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.short_description || product.description || "")}</small></td>
+        <td>${escapeHtml(product.category || "-")}</td>
+        <td>${product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
+        <td><span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span></td>
+        <td>
+          <button class="ghost-button compact" type="button" data-smart-product-feature="${escapeHtml(product.id)}">${product.is_featured ? "Quitar destaque" : "Destacar"}</button>
+          <button class="ghost-button compact" type="button" data-smart-product-hide="${escapeHtml(product.id)}">${product.stock_status === "HIDDEN" ? "Mostrar" : "Ocultar"}</button>
+        </td>
+      </tr>
+    `).join("") : '<tr><td colspan="5">Agrega productos, servicios, combos o asesorías para activar el botón de WhatsApp.</td></tr>';
+  }
+
+  if (smartCatalogIntentTable) {
+    const intents = state.smartCatalogIntents || [];
+    smartCatalogIntentTable.innerHTML = intents.length ? intents.map((intent) => `
+      <tr>
+        <td><strong>${escapeHtml(intent.lead_name || intent.customer_name || "Lead de catálogo")}</strong><small>${escapeHtml(intent.lead_phone || intent.customer_phone || intent.customer_email || "")}</small></td>
+        <td><strong>${escapeHtml(intent.product_name || "Producto")}</strong><small>${escapeHtml(intent.catalog_title || "")}</small></td>
+        <td><span class="status-chip ${smartCatalogStatusClass(intent.status)}">${escapeHtml(smartCatalogStatusLabel(intent.status))}</span></td>
+        <td>${money(intent.sale_amount || intent.product_price || 0)}</td>
+        <td class="smart-catalog-intent-actions">
+          <button class="ghost-button compact" type="button" data-smart-intent-task="${escapeHtml(intent.id)}">Tarea</button>
+          <button class="solid-button compact" type="button" data-smart-intent-won="${escapeHtml(intent.id)}">Vendido</button>
+          <button class="ghost-button compact" type="button" data-smart-intent-ticket="${escapeHtml(intent.id)}">Ticket postventa</button>
+        </td>
+      </tr>
+    `).join("") : '<tr><td colspan="5">Las personas que presionen “Ordenar por WhatsApp” aparecerán aquí como intención comercial.</td></tr>';
+  }
+}
+
+function renderSmartCatalogTopProducts() {
+  const panel = document.querySelector('[data-smart-catalog-panel="dashboard"] .smart-catalog-dashboard-grid');
+  if (!panel) return;
+  const topProducts = state.smartCatalogDashboard?.top_products || [];
+  const existing = panel.querySelector(".smart-catalog-top-products");
+  existing?.remove();
+  const article = document.createElement("article");
+  article.className = "smart-catalog-top-products";
+  article.innerHTML = `
+    <span class="mono-label">Más intención</span>
+    <h3>Productos que están moviendo WhatsApp</h3>
+    <div>
+      ${topProducts.length ? topProducts.slice(0, 5).map((product) => `
+        <p><strong>${escapeHtml(product.name || "Producto")}</strong><span>${Number(product.intents || 0).toLocaleString("es-CO")} intenciones · ${Number(product.whatsapp_clicks || 0).toLocaleString("es-CO")} clics</span></p>
+      `).join("") : "<p><strong>Sin eventos todavía</strong><span>Publica el link o conéctalo a una activación QR.</span></p>"}
+    </div>
+  `;
+  panel.appendChild(article);
+}
+
+function renderSmartCatalogView() {
+  renderSmartCatalogCampaignOptions();
+  renderSmartCatalogCatalogOptions();
+  smartCatalogTabButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.smartCatalogTab === state.smartCatalogTab);
+  });
+  smartCatalogPanels.forEach((panel) => {
+    const active = panel.dataset.smartCatalogPanel === state.smartCatalogTab;
+    panel.classList.toggle("active", active);
+    panel.hidden = !active;
+  });
+  renderSmartCatalogDashboard();
+  renderSmartCatalogPublishPanel();
+  renderSmartCatalogTables();
+  renderSmartCatalogTopProducts();
+}
+
+async function loadSmartCatalogData(options = {}) {
+  if (state.smartCatalogLoading) return;
+  if (state.smartCatalogLoaded && !options.force) return;
+  state.smartCatalogLoading = true;
+  try {
+    const [dashboardData, catalogData] = await Promise.all([
+      api("/api/business/catalogs/dashboard", { headers: authHeaders() }),
+      api("/api/business/catalogs", { headers: authHeaders() }),
+    ]);
+    state.smartCatalogDashboard = dashboardData;
+    state.smartCatalogs = catalogData.catalogs || [];
+    if (!state.smartCatalogSelectedCatalogId && state.smartCatalogs[0]) {
+      state.smartCatalogSelectedCatalogId = state.smartCatalogs[0].id;
+    }
+    if (state.smartCatalogSelectedCatalogId) {
+      await loadSmartCatalogDetail(state.smartCatalogSelectedCatalogId, { quiet: true });
+    }
+    state.smartCatalogLoaded = true;
+  } finally {
+    state.smartCatalogLoading = false;
+  }
+}
+
+async function loadSmartCatalogDetail(catalogId, options = {}) {
+  if (!catalogId) {
+    state.smartCatalogProducts = [];
+    state.smartCatalogIntents = [];
+    return;
+  }
+  const data = await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}`, { headers: authHeaders() });
+  state.smartCatalogSelectedCatalogId = catalogId;
+  state.smartCatalogProducts = data.products || [];
+  state.smartCatalogIntents = data.intents || [];
+  state.smartCatalogs = (state.smartCatalogs || []).map((catalog) => (
+    catalog.id === data.catalog?.id ? { ...catalog, ...data.catalog } : catalog
+  ));
+  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos MG" });
+}
+
+function setSmartCatalogTab(tab) {
+  state.smartCatalogTab = tab || "dashboard";
+  renderSmartCatalogView();
+}
+
+async function refreshSmartCatalogs(options = {}) {
+  state.smartCatalogLoaded = false;
+  await loadSmartCatalogData({ force: true });
+  renderSmartCatalogView();
+  if (!options.quiet) showFeedback("Catálogos MG actualizado.", "success", { title: "MG Smart Catalog" });
+}
+
+async function submitSmartCatalog(event) {
+  event.preventDefault();
+  if (!smartCatalogForm) return;
+  setInlineMessage(smartCatalogMessage, "Creando catálogo accionable...", "info");
+  try {
+    const payload = smartCatalogFormPayload(smartCatalogForm);
+    const data = await api("/api/business/catalogs", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
+    smartCatalogForm.reset();
+    setInlineMessage(smartCatalogMessage, "Catálogo creado. Agrega productos y comparte el link público.", "success");
+    await refreshSmartCatalogs({ quiet: true });
+    setSmartCatalogTab("products");
+  } catch (error) {
+    setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear el catálogo.", "error");
+  }
+}
+
+async function submitSmartCatalogProduct(event) {
+  event.preventDefault();
+  if (!smartCatalogProductForm) return;
+  const payload = smartCatalogFormPayload(smartCatalogProductForm);
+  const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
+  if (!catalogId) {
+    setInlineMessage(smartCatalogProductMessage, "Primero crea o selecciona un catálogo.", "error");
+    return;
+  }
+  payload.price = payload.price === null ? null : Number(payload.price || 0);
+  payload.is_featured = smartCatalogProductForm.querySelector('[name="is_featured"]')?.checked || false;
+  delete payload.catalog_id;
+  setInlineMessage(smartCatalogProductMessage, "Agregando producto al catálogo...", "info");
+  try {
+    await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}/products`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    smartCatalogProductForm.reset();
+    smartCatalogProductCatalogSelect.value = catalogId;
+    await loadSmartCatalogDetail(catalogId, { quiet: true });
+    state.smartCatalogLoaded = false;
+    await loadSmartCatalogData({ force: true });
+    setInlineMessage(smartCatalogProductMessage, "Producto agregado. La landing pública ya puede mostrarlo.", "success");
+    renderSmartCatalogView();
+  } catch (error) {
+    setInlineMessage(smartCatalogProductMessage, error.message || "No se pudo agregar el producto.", "error");
+  }
+}
+
+async function copySmartCatalogLink(catalogId = "") {
+  const catalog = catalogId
+    ? (state.smartCatalogs || []).find((item) => item.id === catalogId)
+    : smartCatalogSelectedCatalog();
+  const url = smartCatalogPublicUrl(catalog);
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    showFeedback("Link público copiado.", "success", { title: "Catálogos MG" });
+  } catch {
+    window.prompt("Link público del catálogo", url);
+  }
+}
+
+async function updateSmartCatalogProduct(productId, patch) {
+  const catalogId = state.smartCatalogSelectedCatalogId;
+  if (!catalogId || !productId) return;
+  await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}/products/${encodeURIComponent(productId)}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(patch),
+  });
+  await loadSmartCatalogDetail(catalogId, { quiet: true });
+  renderSmartCatalogView();
+}
+
+async function smartCatalogIntentAction(intentId, action) {
+  if (!intentId) return;
+  const intent = (state.smartCatalogIntents || []).find((item) => item.id === intentId);
+  try {
+    if (action === "task") {
+      await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/create-agenda-task`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          next_action: "Contactar por WhatsApp y cerrar pedido",
+          priority: "HIGH",
+        }),
+      });
+      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos MG" });
+    }
+    if (action === "won") {
+      await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          sale_amount: intent?.sale_amount || intent?.product_price || 0,
+          currency: intent?.sale_currency || intent?.product_currency || "COP",
+          notes: "Venta marcada desde Catálogos MG.",
+        }),
+      });
+      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos MG" });
+    }
+    if (action === "ticket") {
+      await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/send-post-sale-ticket`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          sale_amount: intent?.sale_amount || intent?.product_price || 0,
+          currency: intent?.sale_currency || intent?.product_currency || "COP",
+          benefit_label: "Beneficio postventa por tu compra",
+          benefit_type: "CUSTOM",
+        }),
+      });
+      showFeedback("Ticket postventa generado.", "success", { title: "Postventa MG" });
+    }
+    await refreshSmartCatalogs({ quiet: true });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos MG" });
+  }
 }
 
 const DASHBOARD_BUILDER_STORAGE_KEY = "marketgames_dashboard_builder_v2";
@@ -30267,6 +30676,73 @@ activationFormBuilder?.addEventListener("click", (event) => {
 });
 activationFormBuilder?.addEventListener("change", syncActivationFormBuilder);
 activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
+smartCatalogTabButtons.forEach((button) => {
+  button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
+});
+smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos MG" })));
+smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
+  try {
+    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos MG", timeout: 0 });
+    const data = await api("/api/business/catalogs/templates/doctor-angie", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({}),
+    });
+    state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
+    await refreshSmartCatalogs({ quiet: true });
+    setSmartCatalogTab("products");
+    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos MG" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos MG" });
+  }
+});
+smartCatalogForm?.addEventListener("submit", submitSmartCatalog);
+smartCatalogProductForm?.addEventListener("submit", submitSmartCatalogProduct);
+smartCatalogProductCatalogSelect?.addEventListener("change", async () => {
+  const catalogId = smartCatalogProductCatalogSelect.value;
+  await loadSmartCatalogDetail(catalogId, { quiet: true });
+  renderSmartCatalogView();
+});
+smartCatalogCopyLinkButton?.addEventListener("click", () => copySmartCatalogLink());
+smartCatalogOpenPublicButton?.addEventListener("click", () => {
+  const url = smartCatalogPublicUrl(smartCatalogSelectedCatalog());
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
+});
+smartCatalogTable?.addEventListener("click", async (event) => {
+  const selectButton = event.target.closest("[data-smart-catalog-select]");
+  const copyButton = event.target.closest("[data-smart-catalog-copy]");
+  if (selectButton) {
+    await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
+    renderSmartCatalogView();
+  }
+  if (copyButton) {
+    await copySmartCatalogLink(copyButton.dataset.smartCatalogCopy);
+  }
+});
+smartCatalogProductTable?.addEventListener("click", async (event) => {
+  const featureButton = event.target.closest("[data-smart-product-feature]");
+  const hideButton = event.target.closest("[data-smart-product-hide]");
+  try {
+    if (featureButton) {
+      const product = (state.smartCatalogProducts || []).find((item) => item.id === featureButton.dataset.smartProductFeature);
+      await updateSmartCatalogProduct(featureButton.dataset.smartProductFeature, { is_featured: !product?.is_featured });
+    }
+    if (hideButton) {
+      const product = (state.smartCatalogProducts || []).find((item) => item.id === hideButton.dataset.smartProductHide);
+      await updateSmartCatalogProduct(hideButton.dataset.smartProductHide, { stock_status: product?.stock_status === "HIDDEN" ? "AVAILABLE" : "HIDDEN" });
+    }
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el producto.", "error", { title: "Productos" });
+  }
+});
+smartCatalogIntentTable?.addEventListener("click", (event) => {
+  const taskButton = event.target.closest("[data-smart-intent-task]");
+  const wonButton = event.target.closest("[data-smart-intent-won]");
+  const ticketButton = event.target.closest("[data-smart-intent-ticket]");
+  if (taskButton) smartCatalogIntentAction(taskButton.dataset.smartIntentTask, "task");
+  if (wonButton) smartCatalogIntentAction(wonButton.dataset.smartIntentWon, "won");
+  if (ticketButton) smartCatalogIntentAction(ticketButton.dataset.smartIntentTicket, "ticket");
+});
 
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());

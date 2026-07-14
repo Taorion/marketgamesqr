@@ -306,30 +306,43 @@ async function createPostSaleQr(businessId, user, body) {
 
     const attributionSource = body.metadata?.attribution_source || "POST_SALE";
     const attributionSubject = body.metadata?.attribution_subject || body.product_name || null;
-    const saleResult = await client.query(
-      `insert into business_sales
-        (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, branch_id, notes, metadata, acquisition_source, acquisition_channel, customer_document_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-       returning *`,
-      [
-        businessId,
-        body.campaign_id || null,
-        body.customer_name || null,
-        body.customer_phone || null,
-        body.customer_email || null,
-        body.product_name || null,
-        body.sale_amount,
-        body.currency,
-        user.id,
-        body.branch_id || user.branch_id || null,
-        body.notes || null,
-        body.metadata || {},
-        attributionSource,
-        attributionSubject,
-        body.document_id || null,
-      ]
-    );
-    const sale = saleResult.rows[0];
+    const existingSaleId = body.existing_sale_id || body.metadata?.existing_sale_id || null;
+    let sale;
+    if (existingSaleId) {
+      const existingSale = await client.query(
+        "select * from business_sales where id = $1 and business_id = $2",
+        [existingSaleId, businessId]
+      );
+      if (!existingSale.rowCount) {
+        throw badRequest("La venta asociada al ticket postventa no existe para este negocio.");
+      }
+      sale = existingSale.rows[0];
+    } else {
+      const saleResult = await client.query(
+        `insert into business_sales
+          (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, branch_id, notes, metadata, acquisition_source, acquisition_channel, customer_document_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         returning *`,
+        [
+          businessId,
+          body.campaign_id || null,
+          body.customer_name || null,
+          body.customer_phone || null,
+          body.customer_email || null,
+          body.product_name || null,
+          body.sale_amount,
+          body.currency,
+          user.id,
+          body.branch_id || user.branch_id || null,
+          body.notes || null,
+          body.metadata || {},
+          attributionSource,
+          attributionSubject,
+          body.document_id || null,
+        ]
+      );
+      sale = saleResult.rows[0];
+    }
 
     const token = createSecureToken();
     const expiresAt = resolveExpiration(body);

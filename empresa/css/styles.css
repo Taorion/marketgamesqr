@@ -40518,3 +40518,340 @@ body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry:focus-vis
     display: none !important;
   }
 }
+
+/* MG Smart Catalog: actionable catalog station connected to RMS. */
+body .portal-shell .view-section[data-view="smart-catalogs"] {
+  --catalog-green: #0f7354;
+  --catalog-blue: #27759f;
+  --catalog-ink: #102c25;
+  --catalog-muted: #5d766e;
+  --catalog-line: rgba(15, 115, 84, 0.14);
+  padding-bottom: clamp(40px, 6vw, 84px) !important;
+}
+
+body .portal-shell .smart-catalog-head {
+  align-items: flex-start !important;
+  gap: 22px !important;
+  margin-bottom: 18px !important;
+}
+
+body .portal-shell .smart-catalog-head h2 {
+  color: var(--catalog-ink) !important;
+  letter-spacing: 0 !important;
+}
+
+body .portal-shell .smart-catalog-head p {
+  max-width: 78ch !important;
+  color: var(--catalog-muted) !important;
+  line-height: 1.5 !important;
+}
+
+body .portal-shell .smart-catalog-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px) !important;
+  gap: clamp(18px, 3vw, 34px) !important;
+  align-items: stretch !important;
+  margin: 0 0 22px !important;
+  padding: clamp(18px, 3vw, 28px) !important;
+  border: 1px solid var(--catalog-line) !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(151, 211, 190, 0.26), transparent 34%),
+    linear-gradient(135deg, rgba(244, 251, 247, 0.98), rgba(236, 247, 252, 0.9) 54%, rgba(255, 254, 250, 0.96)) !important;
+  box-shadow: 0 18px 42px rgba(15, 44, 36, 0.06) !important;
+}
+
+body .portal-shell .smart-catalog-hero h3 {
+  max-width: 920px !important;
+  margin: 8px 0 10px !important;
+  color: var(--catalog-ink) !important;
+  font-size: clamp(1.45rem, 2.4vw, 2.25rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+}
+
+body .portal-shell .smart-catalog-hero p {
+  max-width: 76ch !important;
+  margin: 0 !important;
+  color: var(--catalog-muted) !important;
+  font-size: 0.98rem !important;
+  line-height: 1.55 !important;
+}
+
+body .portal-shell .smart-catalog-publish-panel {
+  display: grid !important;
+  align-content: center !important;
+  gap: 12px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(39, 117, 159, 0.16) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+body .portal-shell .smart-catalog-publish-panel span {
+  color: var(--catalog-blue) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+body .portal-shell .smart-catalog-publish-panel strong {
+  overflow-wrap: anywhere !important;
+  color: var(--catalog-ink) !important;
+  font-size: 0.94rem !important;
+  line-height: 1.35 !important;
+}
+
+body .portal-shell .smart-catalog-publish-panel > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+body .portal-shell .smart-catalog-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 20px 0 !important;
+  padding: 8px !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+body .portal-shell .smart-catalog-tabs button {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: #58746b !important;
+  font: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 750 !important;
+  cursor: pointer !important;
+}
+
+body .portal-shell .smart-catalog-tabs button.active {
+  border-color: rgba(15, 115, 84, 0.18) !important;
+  background: linear-gradient(135deg, rgba(236, 248, 241, 0.98), rgba(234, 246, 252, 0.88)) !important;
+  color: var(--catalog-green) !important;
+}
+
+body .portal-shell .smart-catalog-panel {
+  display: none !important;
+}
+
+body .portal-shell .smart-catalog-panel.active {
+  display: block !important;
+}
+
+body .portal-shell .smart-catalog-dashboard-grid,
+body .portal-shell .smart-catalog-settings {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+body .portal-shell .smart-catalog-step,
+body .portal-shell .smart-catalog-settings article,
+body .portal-shell .smart-catalog-top-products {
+  padding: 18px !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: 0 12px 30px rgba(15, 44, 36, 0.045) !important;
+}
+
+body .portal-shell .smart-catalog-step span {
+  color: var(--catalog-blue) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+}
+
+body .portal-shell .smart-catalog-step strong,
+body .portal-shell .smart-catalog-settings strong,
+body .portal-shell .smart-catalog-top-products h3 {
+  display: block !important;
+  margin: 8px 0 6px !important;
+  color: var(--catalog-ink) !important;
+  font-size: 1.02rem !important;
+  line-height: 1.25 !important;
+}
+
+body .portal-shell .smart-catalog-step p,
+body .portal-shell .smart-catalog-settings p {
+  margin: 0 !important;
+  color: var(--catalog-muted) !important;
+  line-height: 1.48 !important;
+}
+
+body .portal-shell .smart-catalog-top-products {
+  grid-column: 1 / -1 !important;
+}
+
+body .portal-shell .smart-catalog-top-products div {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+body .portal-shell .smart-catalog-top-products p {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-top: 1px solid rgba(15, 115, 84, 0.1) !important;
+}
+
+body .portal-shell .smart-catalog-top-products p span {
+  color: var(--catalog-muted) !important;
+  text-align: right !important;
+}
+
+body .portal-shell .smart-catalog-split {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr) !important;
+  gap: clamp(16px, 2.5vw, 28px) !important;
+  align-items: start !important;
+}
+
+body .portal-shell .smart-catalog-form {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(15, 115, 84, 0.13) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 14px 34px rgba(15, 44, 36, 0.05) !important;
+}
+
+body .portal-shell .smart-catalog-form .form-section-head h3 {
+  margin: 4px 0 0 !important;
+  color: var(--catalog-ink) !important;
+  font-size: 1.12rem !important;
+  line-height: 1.2 !important;
+}
+
+body .portal-shell .smart-catalog-form label {
+  display: grid !important;
+  gap: 7px !important;
+  color: var(--catalog-ink) !important;
+  font-size: 0.86rem !important;
+  font-weight: 760 !important;
+}
+
+body .portal-shell .smart-catalog-form input,
+body .portal-shell .smart-catalog-form select,
+body .portal-shell .smart-catalog-form textarea {
+  width: 100% !important;
+  min-height: 42px !important;
+  border: 1px solid rgba(15, 115, 84, 0.16) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #17362f !important;
+  font: inherit !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  box-shadow: none !important;
+}
+
+body .portal-shell .smart-catalog-form textarea {
+  min-height: 92px !important;
+  resize: vertical !important;
+}
+
+body .portal-shell .smart-catalog-check {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body .portal-shell .smart-catalog-check input {
+  width: 18px !important;
+  min-height: 18px !important;
+}
+
+body .portal-shell .smart-catalog-table-card {
+  border-color: rgba(15, 115, 84, 0.12) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 253, 250, 0.82)) !important;
+}
+
+body .portal-shell .smart-catalog-table-card table td strong {
+  display: block !important;
+  color: var(--catalog-ink) !important;
+  line-height: 1.25 !important;
+}
+
+body .portal-shell .smart-catalog-table-card table td small {
+  display: block !important;
+  max-width: 42ch !important;
+  margin-top: 4px !important;
+  color: var(--catalog-muted) !important;
+  line-height: 1.35 !important;
+}
+
+body .portal-shell .smart-catalog-table-card tr.is-selected-row {
+  background: rgba(236, 248, 241, 0.72) !important;
+}
+
+body .portal-shell .smart-catalog-intent-actions {
+  min-width: 280px !important;
+}
+
+body .portal-shell .smart-catalog-intent-actions .compact {
+  margin: 2px !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="smart-catalogs"] {
+  --catalog-ink: #f4fff9;
+  --catalog-muted: #c6ddd4;
+  --catalog-line: rgba(151, 211, 190, 0.16);
+}
+
+:root[data-theme="dark"] body .portal-shell .smart-catalog-hero,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-form,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-step,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-settings article,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-top-products,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-publish-panel,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-tabs {
+  background: rgba(7, 21, 18, 0.58) !important;
+  border-color: rgba(151, 211, 190, 0.16) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .smart-catalog-form input,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-form select,
+:root[data-theme="dark"] body .portal-shell .smart-catalog-form textarea {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: rgba(151, 211, 190, 0.2) !important;
+}
+
+@media (max-width: 1100px) {
+  body .portal-shell .smart-catalog-hero,
+  body .portal-shell .smart-catalog-split {
+    grid-template-columns: 1fr !important;
+  }
+
+  body .portal-shell .smart-catalog-dashboard-grid,
+  body .portal-shell .smart-catalog-settings {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .portal-shell .smart-catalog-hero {
+    padding: 16px !important;
+  }
+
+  body .portal-shell .smart-catalog-tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+  }
+
+  body .portal-shell .smart-catalog-tabs button {
+    flex: 0 0 auto !important;
+  }
+}

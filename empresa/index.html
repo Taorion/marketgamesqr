@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-gaming-shortcut-position-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-smart-catalog-20260714-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -235,6 +235,10 @@
           <button class="nav-item nav-item-core" data-view="missions" type="button">
             <span class="material-symbols-outlined">emoji_events</span>
             <span>Temporadas y Misiones MG</span>
+          </button>
+          <button class="nav-item" data-view="smart-catalogs" type="button">
+            <span class="material-symbols-outlined">storefront</span>
+            <span>Catálogos MG</span>
           </button>
           <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
             <span class="material-symbols-outlined">group</span>
@@ -3266,6 +3270,296 @@
 
             <div class="ticket-center-panel" data-ticket-panel="next">
               <section class="ticket-module-grid next-ticket-grid" id="nextTicketBoard"></section>
+            </div>
+          </section>
+
+          <section class="view-section" data-view="smart-catalogs">
+            <div class="view-head smart-catalog-head">
+              <div>
+                <nav class="breadcrumb">
+                  <span>Máquina RMS</span>
+                  <span class="material-symbols-outlined">chevron_right</span>
+                  <span>Catálogo accionable</span>
+                </nav>
+                <h2>Catálogos MG</h2>
+                <p>El catálogo no es una vitrina pasiva. Es una estación de conversión conectada a WhatsApp, activaciones, leads, agenda y Máquina RMS.</p>
+              </div>
+              <div class="head-actions">
+                <button class="ghost-button" id="smartCatalogRefreshButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+                  Actualizar
+                </button>
+                <button class="ghost-button" id="smartCatalogSeedDoctorAngieButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                  Plantilla Doctora Angie
+                </button>
+              </div>
+            </div>
+
+            <section class="smart-catalog-hero">
+              <div>
+                <span class="mono-label">MG Smart Catalog</span>
+                <h3>Activación → catálogo → WhatsApp → venta manual → ticket postventa → recompra</h3>
+                <p>Crea una landing pública rápida para productos o servicios, mide cada clic comercial y convierte la intención en materia prima de la Máquina RMS.</p>
+              </div>
+              <div class="smart-catalog-publish-panel">
+                <span>Link público</span>
+                <strong id="smartCatalogPublicLink">Selecciona o crea un catálogo activo.</strong>
+                <div>
+                  <button class="ghost-button compact" id="smartCatalogCopyLinkButton" type="button">Copiar link</button>
+                  <button class="solid-button compact" id="smartCatalogOpenPublicButton" type="button">Abrir landing</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="kpi-grid smart-catalog-kpis" id="smartCatalogDashboardGrid"></section>
+
+            <nav class="smart-catalog-tabs" aria-label="Secciones de Catálogos MG">
+              <button class="active" data-smart-catalog-tab="dashboard" type="button">Dashboard</button>
+              <button data-smart-catalog-tab="catalogs" type="button">Catálogos</button>
+              <button data-smart-catalog-tab="products" type="button">Productos</button>
+              <button data-smart-catalog-tab="intents" type="button">Intenciones</button>
+              <button data-smart-catalog-tab="settings" type="button">Configuración</button>
+            </nav>
+
+            <div class="smart-catalog-panels">
+              <section class="smart-catalog-panel active" data-smart-catalog-panel="dashboard">
+                <div class="smart-catalog-dashboard-grid">
+                  <article class="smart-catalog-step">
+                    <span>01</span>
+                    <strong>Crear catálogo</strong>
+                    <p>Nombre, marca, WhatsApp receptor, color y conexión opcional a campaña o activación.</p>
+                  </article>
+                  <article class="smart-catalog-step">
+                    <span>02</span>
+                    <strong>Agregar productos</strong>
+                    <p>Productos físicos, servicios, combos, asesorías, planes, bonos o experiencias.</p>
+                  </article>
+                  <article class="smart-catalog-step">
+                    <span>03</span>
+                    <strong>Publicar y medir</strong>
+                    <p>Landing pública, clics a WhatsApp, intención comercial, lead, agenda y ticket postventa.</p>
+                  </article>
+                </div>
+              </section>
+
+              <section class="smart-catalog-panel" data-smart-catalog-panel="catalogs">
+                <div class="smart-catalog-split">
+                  <form class="smart-catalog-form" id="smartCatalogForm">
+                    <div class="form-section-head">
+                      <span class="mono-label">Crear catálogo en 5 minutos</span>
+                      <h3>Datos de la marca y publicación</h3>
+                    </div>
+                    <label>
+                      <span>Nombre del catálogo</span>
+                      <input name="title" type="text" placeholder="Productos de la Doctora Angie" required>
+                    </label>
+                    <label>
+                      <span>Descripción</span>
+                      <textarea name="description" rows="3" placeholder="Productos saludables seleccionados para acompañar tu bienestar."></textarea>
+                    </label>
+                    <label>
+                      <span>Marca visible</span>
+                      <input name="brand_name" type="text" placeholder="Dra. Angie">
+                    </label>
+                    <label>
+                      <span>WhatsApp receptor</span>
+                      <input name="whatsapp_number" type="tel" placeholder="573001112233" required>
+                    </label>
+                    <label>
+                      <span>CTA por defecto</span>
+                      <select name="default_cta_label">
+                        <option value="Ordenar por WhatsApp">Ordenar por WhatsApp</option>
+                        <option value="Saber más">Saber más</option>
+                        <option value="Solicitar información">Solicitar información</option>
+                        <option value="Reservar">Reservar</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Color del catálogo</span>
+                      <input name="theme_color" type="color" value="#0f7354">
+                    </label>
+                    <label>
+                      <span>Campaña conectada</span>
+                      <select name="linked_campaign_id" id="smartCatalogCampaignSelect">
+                        <option value="">Sin campaña</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Estado</span>
+                      <select name="status">
+                        <option value="ACTIVE">Publicar activo</option>
+                        <option value="DRAFT">Guardar borrador</option>
+                        <option value="PAUSED">Pausado</option>
+                      </select>
+                    </label>
+                    <p class="form-message" id="smartCatalogMessage"></p>
+                    <button class="solid-button" type="submit">Crear catálogo</button>
+                  </form>
+
+                  <article class="data-table-card smart-catalog-table-card">
+                    <div class="table-card-head">
+                      <div>
+                        <span class="mono-label">Catálogos publicados</span>
+                        <h3>Vitrinas accionables</h3>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Catálogo</th>
+                            <th>Estado</th>
+                            <th>WhatsApp</th>
+                            <th>Vistas</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody id="smartCatalogTable"></tbody>
+                      </table>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="smart-catalog-panel" data-smart-catalog-panel="products">
+                <div class="smart-catalog-split">
+                  <form class="smart-catalog-form" id="smartCatalogProductForm">
+                    <div class="form-section-head">
+                      <span class="mono-label">Productos y servicios</span>
+                      <h3>Agregar al catálogo</h3>
+                    </div>
+                    <label>
+                      <span>Catálogo</span>
+                      <select name="catalog_id" id="smartCatalogProductCatalogSelect" required></select>
+                    </label>
+                    <label>
+                      <span>Nombre</span>
+                      <input name="name" type="text" placeholder="Combo energía saludable" required>
+                    </label>
+                    <label>
+                      <span>Descripción corta</span>
+                      <textarea name="short_description" rows="3" placeholder="Snack + bebida funcional para entrenar mejor."></textarea>
+                    </label>
+                    <label>
+                      <span>Categoría</span>
+                      <input name="category" type="text" placeholder="Combos fitness">
+                    </label>
+                    <label>
+                      <span>Tipo</span>
+                      <select name="product_type">
+                        <option value="physical">Físico</option>
+                        <option value="service">Servicio</option>
+                        <option value="combo">Combo</option>
+                        <option value="advisory">Asesoría</option>
+                        <option value="plan">Plan</option>
+                        <option value="voucher">Bono</option>
+                        <option value="experience">Experiencia</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Precio</span>
+                      <input name="price" type="number" min="0" step="1000" placeholder="45000">
+                    </label>
+                    <label>
+                      <span>Imagen URL</span>
+                      <input name="image_url" type="url" placeholder="https://...">
+                    </label>
+                    <label>
+                      <span>Botón</span>
+                      <select name="cta_label">
+                        <option value="Ordenar por WhatsApp">Ordenar por WhatsApp</option>
+                        <option value="Saber más">Saber más</option>
+                        <option value="Solicitar asesoría">Solicitar asesoría</option>
+                        <option value="Reservar">Reservar</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Disponibilidad</span>
+                      <select name="stock_status">
+                        <option value="AVAILABLE">Disponible</option>
+                        <option value="LIMITED">Limitado</option>
+                        <option value="OUT_OF_STOCK">Agotado</option>
+                        <option value="HIDDEN">Oculto</option>
+                      </select>
+                    </label>
+                    <label class="smart-catalog-check">
+                      <input name="is_featured" type="checkbox">
+                      <span>Destacar producto</span>
+                    </label>
+                    <p class="form-message" id="smartCatalogProductMessage"></p>
+                    <button class="solid-button" type="submit">Agregar producto</button>
+                  </form>
+
+                  <article class="data-table-card smart-catalog-table-card">
+                    <div class="table-card-head">
+                      <div>
+                        <span class="mono-label">Productos visibles</span>
+                        <h3>Oferta conectada a WhatsApp</h3>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody id="smartCatalogProductTable"></tbody>
+                      </table>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="smart-catalog-panel" data-smart-catalog-panel="intents">
+                <article class="data-table-card smart-catalog-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Intenciones y pedidos</span>
+                      <h3>Clics comerciales listos para seguimiento</h3>
+                    </div>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Cliente</th>
+                          <th>Producto</th>
+                          <th>Estado</th>
+                          <th>Revenue potencial</th>
+                          <th>Siguiente acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="smartCatalogIntentTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+
+              <section class="smart-catalog-panel" data-smart-catalog-panel="settings">
+                <div class="smart-catalog-settings">
+                  <article>
+                    <span class="mono-label">Configuración operativa</span>
+                    <h3>Reglas MVP del catálogo</h3>
+                    <p>El catálogo crea leads básicos si el visitante no viene identificado, registra eventos, crea intención comercial y alimenta RMS con cobertura tipo catálogo.</p>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                    <strong>QR y activaciones</strong>
+                    <p>Conecta el catálogo desde campañas, QR o activaciones para medir origen, aliado, gimnasio o sucursal.</p>
+                  </article>
+                  <article>
+                    <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
+                    <strong>Ticket postventa</strong>
+                    <p>Desde una intención vendida puedes generar ticket postventa para garantía, encuesta, recompra o referido.</p>
+                  </article>
+                </div>
+              </section>
             </div>
           </section>
 
@@ -6700,7 +6994,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-gaming-shortcut-position-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-smart-catalog-20260714-v1" defer></script>
 </body>
 </html>
 

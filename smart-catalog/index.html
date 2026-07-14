@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo MG</title>
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/png" href="/img/MGLogo-01.png">
+  <link rel="stylesheet" href="/smart-catalog/styles.css?v=smart-catalog-public-20260714-v1">
+</head>
+<body>
+  <main class="catalog-shell">
+    <section class="catalog-hero" id="catalogHero">
+      <div class="catalog-brand-line">
+        <img id="catalogLogo" src="/img/MGLogo-01.png" alt="Market Games">
+        <span id="catalogBrand">Market Games</span>
+      </div>
+      <p class="catalog-kicker">Catálogo accionable conectado a WhatsApp y Máquina RMS</p>
+      <h1 id="catalogTitle">Cargando catálogo...</h1>
+      <p id="catalogDescription">Ordena o solicita información directamente por WhatsApp.</p>
+      <div class="catalog-hero-actions">
+        <button class="primary-button" id="catalogContactButton" type="button">Contactar negocio</button>
+        <a class="secondary-button" href="/" rel="noopener">Powered by Market Games</a>
+      </div>
+    </section>
+
+    <section class="activation-benefit hidden" id="activationBenefit"></section>
+
+    <nav class="category-strip" id="categoryStrip" aria-label="Categorías"></nav>
+
+    <section class="featured-section hidden" id="featuredSection">
+      <div class="section-head">
+        <span>Producto destacado</span>
+        <h2>Recomendado para ti</h2>
+      </div>
+      <div class="product-grid featured-grid" id="featuredGrid"></div>
+    </section>
+
+    <section class="products-section">
+      <div class="section-head">
+        <span>Productos y servicios</span>
+        <h2>Escoge lo que te interesa</h2>
+        <p>El catálogo no es una vitrina pasiva. Es una estación de conversión dentro de la Máquina RMS.</p>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <strong>Este catálogo aún no tiene productos visibles.</strong>
+        <p>Vuelve pronto o contacta directamente al negocio.</p>
+      </div>
+    </section>
+  </main>
+
+  <button class="floating-whatsapp" id="floatingWhatsappButton" type="button">WhatsApp</button>
+
+  <div class="intent-modal hidden" id="intentModal" role="dialog" aria-modal="true" aria-labelledby="intentTitle">
+    <form class="intent-card" id="intentForm">
+      <button class="modal-close" id="intentCloseButton" type="button" aria-label="Cerrar">×</button>
+      <span class="modal-kicker">Pedido por WhatsApp</span>
+      <h2 id="intentTitle">Completa tus datos</h2>
+      <p id="intentProductSummary">Usaremos estos datos solo para preparar el mensaje y registrar la intención comercial.</p>
+      <label>
+        <span>Nombre</span>
+        <input id="intentNameInput" type="text" autocomplete="name" required>
+      </label>
+      <label>
+        <span>WhatsApp</span>
+        <input id="intentPhoneInput" type="tel" autocomplete="tel" required>
+      </label>
+      <label>
+        <span>Correo opcional</span>
+        <input id="intentEmailInput" type="email" autocomplete="email">
+      </label>
+      <p class="form-message" id="intentMessage"></p>
+      <button class="primary-button" type="submit">Abrir WhatsApp</button>
+    </form>
+  </div>
+
+  <script src="/smart-catalog/app.js?v=smart-catalog-public-20260714-v1" defer></script>
+</body>
+</html>
