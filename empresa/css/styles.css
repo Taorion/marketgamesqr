@@ -40855,3 +40855,237 @@ body .portal-shell .smart-catalog-intent-actions .compact {
     flex: 0 0 auto !important;
   }
 }
+
+/* RMS core header reset: calmer, aligned, and action-first without a misplaced location chip. */
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  align-items: start !important;
+  width: 100% !important;
+  margin: 0 0 clamp(18px, 2vw, 28px) !important;
+  padding: clamp(22px, 3vw, 38px) clamp(20px, 3.2vw, 46px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 20px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.96), rgba(246, 252, 249, 0.92)),
+    #fffefa !important;
+  box-shadow: 0 12px 34px rgba(15, 44, 36, 0.045) !important;
+  overflow: visible !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head::before,
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head::after {
+  display: none !important;
+  content: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head > .portal-location-pill {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head-copy {
+  display: grid !important;
+  gap: 13px !important;
+  max-width: min(100%, 1040px) !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-label {
+  display: inline-flex !important;
+  width: fit-content !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #27759f !important;
+  font-family: inherit !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-label::before {
+  content: "Máquina RMS";
+  display: inline-flex !important;
+  margin-right: 10px !important;
+  padding-right: 10px !important;
+  border-right: 1px solid rgba(15, 115, 84, 0.16) !important;
+  color: #0f7354 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-label::after {
+  content: none !important;
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head h2 {
+  max-width: 860px !important;
+  margin: 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.62rem, 2.45vw, 2.55rem) !important;
+  line-height: 1.08 !important;
+  font-weight: 840 !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head p {
+  max-width: 92ch !important;
+  margin: 0 !important;
+  color: #5e766f !important;
+  font-size: clamp(0.95rem, 0.95vw, 1.02rem) !important;
+  line-height: 1.56 !important;
+  font-weight: 540 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0 !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 4px 0 0 !important;
+  padding: 7px 8px !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.64) !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip > span {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 6px 12px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #205f4b !important;
+  font-size: 0.78rem !important;
+  line-height: 1 !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip > span:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: 1px;
+  height: 14px;
+  background: rgba(15, 115, 84, 0.14);
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 1040px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions button {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  flex: 0 1 auto !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  font-size: 0.88rem !important;
+  line-height: 1.15 !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions .solid-button {
+  border-color: #0f7354 !important;
+  background: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions .ghost-button {
+  border-color: rgba(15, 115, 84, 0.14) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  color: #205f4b !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions #rmsMachineOpenAgendaButton {
+  border-color: rgba(39, 117, 159, 0.2) !important;
+  background: rgba(237, 247, 252, 0.86) !important;
+  color: #1f688f !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-machine-head + .rms-machine-hero {
+  margin-top: 0 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background:
+    linear-gradient(180deg, rgba(9, 28, 23, 0.94), rgba(10, 38, 31, 0.9)),
+    #091c17 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-machine-head h2 {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-machine-head p {
+  color: #c8ded6 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions .ghost-button {
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip > span,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions .ghost-button {
+  color: #dff9ee !important;
+}
+
+@media (max-width: 880px) {
+  body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head {
+    padding: 20px !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip {
+    width: 100% !important;
+    border-radius: 16px !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip > span {
+    flex: 1 1 33.333% !important;
+    justify-content: center !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions button {
+    flex: 1 1 calc(50% - 10px) !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-flow-chip > span {
+    flex-basis: 50% !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions button {
+    flex-basis: 100% !important;
+  }
+}
