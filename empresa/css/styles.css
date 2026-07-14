@@ -40002,3 +40002,103 @@ body[data-current-view="dashboard"] .portal-shell .revenue-workspace {
     margin-inline: 0 !important;
   }
 }
+
+/* CAC benchmark card: keep acquisition cost guidance readable and not squeezed. */
+body[data-current-view="dashboard"] .portal-shell .cac-trend-card {
+  display: grid !important;
+  gap: clamp(16px, 1.8vw, 24px) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-trend-card .card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 330px) !important;
+  gap: clamp(16px, 2vw, 28px) !important;
+  align-items: start !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-trend-card .card-head > div:first-child {
+  min-width: 0 !important;
+  max-width: 760px !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-trend-card .chart-explainer {
+  max-width: 68ch !important;
+  margin-top: 8px !important;
+  color: #5e766f !important;
+  font-size: 0.94rem !important;
+  line-height: 1.52 !important;
+  text-wrap: pretty !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note {
+  display: grid !important;
+  align-content: start !important;
+  gap: 7px !important;
+  width: 100% !important;
+  max-width: 330px !important;
+  justify-self: end !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(39, 117, 159, 0.14) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(237, 248, 241, 0.88), rgba(237, 247, 252, 0.72)),
+    rgba(255, 254, 250, 0.86) !important;
+  color: #102c25 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note span {
+  display: inline-flex !important;
+  width: fit-content !important;
+  padding: 5px 8px !important;
+  border: 1px solid rgba(18, 99, 71, 0.12) !important;
+  border-radius: 999px !important;
+  color: #27759f !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  font-size: 0.68rem !important;
+  line-height: 1 !important;
+  font-weight: 860 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note strong {
+  color: #102c25 !important;
+  font-size: clamp(0.96rem, 1vw, 1.08rem) !important;
+  line-height: 1.24 !important;
+  font-weight: 840 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note small {
+  color: #5e766f !important;
+  font-size: 0.82rem !important;
+  line-height: 1.42 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .cac-trend-card canvas {
+  margin-top: 0 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note {
+  color: #f1fbf7 !important;
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background: rgba(7, 21, 18, 0.48) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note strong {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note span,
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note small {
+  color: #dff9ee !important;
+}
+
+@media (max-width: 980px) {
+  body[data-current-view="dashboard"] .portal-shell .cac-trend-card .card-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .cac-benchmark-note {
+    max-width: none !important;
+    justify-self: stretch !important;
+  }
+}

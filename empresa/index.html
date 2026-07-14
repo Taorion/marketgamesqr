@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-dashboard-head-margins-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-cac-benchmark-card-20260714-v1">
 </head>
 <body>
   <main class="portal-shell">
@@ -569,14 +569,18 @@
                 <canvas id="businessTrendChart" width="900" height="320"></canvas>
               </article>
 
-              <article class="surface-card chart-card">
+              <article class="surface-card chart-card cac-trend-card">
                 <div class="card-head">
                   <div>
                     <span class="mono-label">Costo de captación</span>
                     <h3 class="subhead">CAC por campaña activa o reciente</h3>
                     <p class="chart-explainer">Mide cuánto cuesta convertir un cliente con compra atribuida. Debe leerse junto al ticket promedio y al ROI.</p>
                   </div>
-                  <span class="chart-note" id="cacTrendNote">Costo por lead por campaña</span>
+                  <div class="chart-note cac-benchmark-note" id="cacTrendNote">
+                    <span>Benchmark visual</span>
+                    <strong>CAC sano por debajo del ticket promedio</strong>
+                    <small>Compáralo con ROI y margen por campaña.</small>
+                  </div>
                 </div>
                 <canvas id="cacTrendChart" width="900" height="320"></canvas>
               </article>
@@ -6695,7 +6699,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-dashboard-head-margins-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-cac-benchmark-card-20260714-v1" defer></script>
 </body>
 </html>
 

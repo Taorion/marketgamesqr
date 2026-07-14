@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-dashboard-head-margins-v1";
+const APP_VERSION = "empresa-20260714-cac-benchmark-card-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -7668,9 +7668,9 @@ function renderDashboard() {
   dashboardHealthText.textContent = roiLabel === "-"
     ? "Aún no hay ventas suficientes para evaluar ROI, CPL y CAC con criterio comercial."
     : `El ROI actual es ${roiLabel}, el costo por venta esta en ${money(summary.cost_per_observed_customer || summary.cost_per_acquired_customer)} y el ticket promedio ronda ${money(avgTicket)}. En tickets estratégicos, postventa redime ${postSaleRedemptionRate}% y los claims convierten ${strategicRedemptionRate}% a redención.`;
-  cacTrendNote.textContent = avgTicket
-    ? `Benchmark visual: CAC sano cuando queda claramente por debajo del ticket promedio de ${money(avgTicket)}.`
-    : "Benchmark visual: compara el CAC contra el ticket promedio y el ROI de cada campaña.";
+  cacTrendNote.innerHTML = avgTicket
+    ? `<span>Benchmark visual</span><strong>CAC sano por debajo de ${escapeHtml(money(avgTicket))}</strong><small>Compáralo con ticket promedio, ROI y margen por campaña.</small>`
+    : "<span>Benchmark visual</span><strong>Compara CAC contra ticket promedio</strong><small>Úsalo junto al ROI de cada campaña.</small>";
 
   recentRedemptionsTable.innerHTML = recentRedemptions.map((item) => `
     <tr>
