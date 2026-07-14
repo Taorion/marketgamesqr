@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-rms-map-clarity-v1";
+const APP_VERSION = "empresa-20260714-rms-daily-queue-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -27339,11 +27339,15 @@ function rmsDailySectionsFromOpportunities(opportunities = []) {
     referrals: "Referidos potenciales",
     recover: "Recuperar antes de perder",
   };
-  return Object.keys(labels).map((key) => ({
-    key,
-    label: labels[key],
-    items: opportunities.filter((item) => item.section === key).slice(0, 18),
-  }));
+  return Object.keys(labels).map((key) => {
+    const rows = opportunities.filter((item) => item.section === key);
+    return {
+      key,
+      label: labels[key],
+      total: rows.length,
+      items: rows.slice(0, 4),
+    };
+  });
 }
 
 function renderRmsDailyQueue(sections = []) {
@@ -27370,10 +27374,11 @@ function renderRmsDailyQueue(sections = []) {
           <span class="mono-label">${escapeHtml(sectionLabelMeta(section.key))}</span>
           <h3>${escapeHtml(section.label)}</h3>
         </div>
-        <strong>${Number(section.items?.length || 0).toLocaleString("es-CO")}</strong>
+        <strong>${Number(section.total || section.items?.length || 0).toLocaleString("es-CO")}</strong>
       </div>
       <div class="rms-card-stack">
         ${(section.items || []).map(rmsOpportunityCardMarkup).join("") || '<div class="empty-state compact">Sin oportunidades en esta cola por ahora.</div>'}
+        ${Number(section.total || 0) > (section.items || []).length ? `<div class="rms-queue-more">+${Number(section.total - section.items.length).toLocaleString("es-CO")} oportunidades más. Abre la estación correspondiente para operar el lote completo.</div>` : ""}
       </div>
     </article>
   `).join("") || '<div class="empty-state">Aun no hay oportunidades para procesar.</div>';
@@ -28206,13 +28211,11 @@ function rmsOpportunityCardMarkup(item = {}) {
         <small>${escapeHtml(item.stage_label || "-")} · ${escapeHtml(item.coverage_type || "seguimiento")}</small>
       </div>
       <dl class="rms-card-facts">
-        <div><dt>Origen</dt><dd>${escapeHtml(item.entry_summary || item.campaign_name || item.channel || "-")}</dd></div>
-        <div><dt>Interes</dt><dd>${escapeHtml(item.product_interest || "-")}</dd></div>
-        <div><dt>Score</dt><dd>${Number(item.priority_score || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>Interés</dt><dd>${escapeHtml(item.product_interest || "-")}</dd></div>
         <div><dt>Revenue</dt><dd>${money(item.revenue_potential || 0)}</dd></div>
       </dl>
       <div class="rms-card-reason">
-        <span class="mono-label">Por que ahora</span>
+        <span class="mono-label">Señal RMS</span>
         <p>${escapeHtml(item.why_now || "Oportunidad priorizada por la Maquina RMS.")}</p>
       </div>
       <div class="rms-next-action">

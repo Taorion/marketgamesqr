@@ -41389,3 +41389,318 @@ body[data-current-view="rms-machine"] .portal-shell .rms-factory-console .rms-bu
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* RMS daily queue: compact executive worklist instead of long repeated cards. */
+body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell {
+  display: grid !important;
+  gap: 16px !important;
+  padding: clamp(18px, 2.4vw, 28px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.11) !important;
+  border-radius: 20px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.96), rgba(247, 252, 250, 0.92)),
+    #fffefa !important;
+  box-shadow: 0 16px 42px rgba(15, 44, 36, 0.055) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  align-items: start !important;
+  margin: 0 !important;
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.1) !important;
+  background: transparent !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head h3 {
+  margin: 0 !important;
+  color: #102c25 !important;
+  font-size: clamp(1.18rem, 1.6vw, 1.55rem) !important;
+  line-height: 1.16 !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head p {
+  max-width: 78ch !important;
+  margin: 4px 0 0 !important;
+  color: #5e766f !important;
+  font-size: 0.94rem !important;
+  line-height: 1.48 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell #rmsMachineGeneratedAt {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(39, 117, 159, 0.16) !important;
+  border-radius: 12px !important;
+  background: rgba(237, 247, 252, 0.78) !important;
+  color: #1f688f !important;
+  font-size: 0.8rem !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-daily-queue {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(310px, 380px) !important;
+  grid-template-columns: none !important;
+  gap: 14px !important;
+  overflow-x: auto !important;
+  padding: 2px 2px 12px !important;
+  scroll-snap-type: x proximity !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-section {
+  min-width: 0 !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: none !important;
+  scroll-snap-align: start !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(15, 115, 84, 0.09) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head .mono-label {
+  color: #27759f !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head h3 {
+  margin: 3px 0 0 !important;
+  color: #102c25 !important;
+  font-size: 1rem !important;
+  line-height: 1.18 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head > strong {
+  min-width: 36px !important;
+  height: 32px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: rgba(15, 115, 84, 0.1) !important;
+  color: #0f7354 !important;
+  font-size: 0.9rem !important;
+  font-weight: 860 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-stack {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-opportunity-card {
+  display: grid !important;
+  gap: 9px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(15, 115, 84, 0.1) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 10px 24px rgba(15, 44, 36, 0.04) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-topline,
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title,
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 7px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-topline {
+  flex-wrap: wrap !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title {
+  display: grid !important;
+  gap: 3px !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title strong {
+  color: #102c25 !important;
+  font-size: 1rem !important;
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title small {
+  color: #668079 !important;
+  font-size: 0.78rem !important;
+  line-height: 1.28 !important;
+  text-align: left !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-priority,
+body[data-current-view="rms-machine"] .portal-shell .rms-risk {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 24px !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+  font-weight: 840 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-facts {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-facts div {
+  min-width: 0 !important;
+  padding: 8px !important;
+  border: 1px solid rgba(15, 115, 84, 0.08) !important;
+  border-radius: 12px !important;
+  background: rgba(246, 252, 249, 0.7) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-facts dt {
+  color: #668079 !important;
+  font-size: 0.68rem !important;
+  line-height: 1 !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-facts dd {
+  margin: 4px 0 0 !important;
+  color: #17362f !important;
+  font-size: 0.84rem !important;
+  line-height: 1.25 !important;
+  font-weight: 760 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-reason {
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: rgba(237, 247, 252, 0.62) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-reason .mono-label {
+  color: #27759f !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-reason p,
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action p {
+  margin: 3px 0 0 !important;
+  color: #5e766f !important;
+  font-size: 0.8rem !important;
+  line-height: 1.36 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  border: 1px solid rgba(15, 115, 84, 0.09) !important;
+  border-radius: 12px !important;
+  background: rgba(236, 248, 241, 0.64) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action .material-symbols-outlined {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action strong {
+  color: #102c25 !important;
+  font-size: 0.86rem !important;
+  line-height: 1.2 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions {
+  flex-wrap: wrap !important;
+  margin-top: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions .solid-button,
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions .ghost-button {
+  flex: 1 1 auto !important;
+  min-height: 34px !important;
+  padding: 8px 10px !important;
+  border-radius: 11px !important;
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-more {
+  padding: 10px !important;
+  border: 1px dashed rgba(15, 115, 84, 0.18) !important;
+  border-radius: 14px !important;
+  background: rgba(246, 252, 249, 0.7) !important;
+  color: #5e766f !important;
+  font-size: 0.8rem !important;
+  line-height: 1.35 !important;
+  font-weight: 620 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-queue-section,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-opportunity-card {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.48) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head h3,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-queue-head h3,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-card-title strong,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-card-facts dd,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-next-action strong {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head p,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-card-title small,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-card-reason p,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-next-action p,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-queue-more {
+  color: #c8ded6 !important;
+}
+
+@media (max-width: 900px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell > .card-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell #rmsMachineGeneratedAt {
+    justify-self: start !important;
+    white-space: normal !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-daily-queue {
+    grid-auto-columns: minmax(286px, 86vw) !important;
+  }
+}
