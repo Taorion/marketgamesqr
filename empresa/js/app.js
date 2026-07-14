@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-rms-station-card-polish-v1";
+const APP_VERSION = "empresa-20260714-revenue-header-clean-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -2159,7 +2159,7 @@ function renderPortalLocationPill(activeSection) {
     head.prepend(pill);
   }
   pill.innerHTML = `
-    <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+    <span class="portal-location-icon" aria-hidden="true"></span>
     <strong>Estás en</strong>
     <span>${escapeHtml(activePortalLocationLabel(activeSection))}</span>
   `;
