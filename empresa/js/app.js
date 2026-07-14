@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-portal-guided-canvas-zones-v1";
+const APP_VERSION = "empresa-20260714-portal-spacious-tabs-zones-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -2096,6 +2096,45 @@ function quietZoneTitle(zone) {
   return String(titleNode?.textContent || zone.getAttribute("aria-label") || "Zona").trim().replace(/\s+/g, " ").slice(0, 80);
 }
 
+function cleanPortalLabelFromNode(node) {
+  if (!node) return "";
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll(".material-symbols-outlined, .feature-tier-badge, .quiet-zone-toggle").forEach((item) => item.remove());
+  return String(clone.textContent || "").trim().replace(/\s+/g, " ").slice(0, 90);
+}
+
+function activePortalLocationLabel(activeSection) {
+  const primary = cleanPortalLabelFromNode(navButtons.find((button) => button.classList.contains("active"))) || "Portal";
+  const localTab = activeSection?.querySelector([
+    ".contact-center-tab-card.active strong",
+    ".ticket-center-menu button.active",
+    ".dashboard-profile-tabs button.active",
+    ".segment-tab.active",
+    "[role='tab'].active",
+  ].join(","));
+  const secondary = cleanPortalLabelFromNode(localTab);
+  return secondary && !primary.toLowerCase().includes(secondary.toLowerCase())
+    ? `${primary} / ${secondary}`
+    : primary;
+}
+
+function renderPortalLocationPill(activeSection) {
+  const head = activeSection?.querySelector(":scope > .view-head");
+  if (!head) return;
+  let pill = head.querySelector(":scope > .portal-location-pill");
+  if (!pill) {
+    pill = document.createElement("div");
+    pill.className = "portal-location-pill";
+    pill.setAttribute("aria-label", "Ubicación actual en el portal");
+    head.prepend(pill);
+  }
+  pill.innerHTML = `
+    <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+    <strong>Estás en</strong>
+    <span>${escapeHtml(activePortalLocationLabel(activeSection))}</span>
+  `;
+}
+
 function quietZoneKey(zone, index, view) {
   const explicit = zone.id || zone.dataset.quietZoneKey || zone.dataset.view || zone.dataset.activationConfig || "";
   const title = quietZoneTitle(zone).toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, "-").replace(/^-|-$/g, "");
@@ -2159,6 +2198,7 @@ function shouldSkipQuietZone(zone, activeView) {
 function enhanceQuietCanvas() {
   const activeSection = document.querySelector(".view-section.active");
   if (!activeSection) return;
+  renderPortalLocationPill(activeSection);
   const activeView = activeSection.dataset.view || state.currentView || "dashboard";
   const openCount = QUIET_ZONE_DEFAULT_OPEN_COUNT[activeView] ?? 2;
   const candidates = Array.from(activeSection.querySelectorAll(QUIET_ZONE_SELECTOR))

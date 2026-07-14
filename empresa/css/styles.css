@@ -34963,3 +34963,331 @@ tbody tr:hover,
     width: fit-content !important;
   }
 }
+
+/* Spacious location-aware portal refinement */
+:root,
+:root[data-theme="dark"] {
+  --spacious-bg-a: #f4fbf6;
+  --spacious-bg-b: #fffefa;
+  --spacious-bg-c: #eaf5fb;
+  --spacious-bg-d: #edf6ef;
+  --spacious-surface-green: rgba(239, 249, 242, 0.78);
+  --spacious-surface-blue: rgba(235, 247, 253, 0.74);
+  --spacious-surface-white: rgba(255, 254, 250, 0.82);
+  --spacious-surface-sage: rgba(232, 243, 235, 0.7);
+  --spacious-line: rgba(23, 83, 65, 0.14);
+  --spacious-line-blue: rgba(42, 103, 139, 0.16);
+  --spacious-active: #0d6f51;
+  --spacious-active-blue: #1f6f98;
+  --spacious-ink: #102b24;
+  --spacious-muted: #58726a;
+}
+
+body {
+  background:
+    linear-gradient(90deg, rgba(13, 111, 81, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(31, 111, 152, 0.045) 1px, transparent 1px),
+    linear-gradient(145deg, var(--spacious-bg-a) 0%, var(--spacious-bg-b) 33%, var(--spacious-bg-c) 66%, var(--spacious-bg-d) 100%) !important;
+  background-size: 86px 86px, 86px 86px, 100% 100% !important;
+  background-attachment: fixed !important;
+}
+
+.content-shell {
+  padding: calc(var(--topbar-height) + 56px) clamp(42px, 5vw, 96px) 96px !important;
+}
+
+.view-section.active {
+  max-width: 1500px !important;
+  margin: 0 auto 64px !important;
+  padding: clamp(34px, 3.8vw, 60px) !important;
+  border: 1px solid rgba(23, 83, 65, 0.12) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.68), rgba(255, 254, 250, 0.5)),
+    linear-gradient(110deg, rgba(239, 249, 242, 0.76), rgba(235, 247, 253, 0.5) 58%, rgba(255, 254, 250, 0.68)) !important;
+}
+
+.view-section.active > * + * {
+  margin-top: clamp(28px, 3vw, 46px) !important;
+}
+
+.view-head {
+  max-width: none !important;
+  margin-bottom: clamp(34px, 3.5vw, 54px) !important;
+  padding-bottom: 26px !important;
+}
+
+.portal-location-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: fit-content !important;
+  margin: 0 0 20px !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(31, 111, 152, 0.16) !important;
+  border-radius: 999px !important;
+  background:
+    linear-gradient(90deg, rgba(239, 249, 242, 0.92), rgba(235, 247, 253, 0.76)),
+    rgba(255, 254, 250, 0.82) !important;
+  color: var(--spacious-muted) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+}
+
+.portal-location-pill .material-symbols-outlined {
+  color: var(--spacious-active-blue) !important;
+  font-size: 1rem !important;
+}
+
+.portal-location-pill strong {
+  color: var(--spacious-active) !important;
+}
+
+.portal-location-pill span:last-child {
+  color: var(--spacious-ink) !important;
+  font-weight: 760 !important;
+}
+
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.insight-card,
+.stat-card,
+.kpi-card,
+.metric-card,
+.qr-option-card,
+.campaign-card,
+.activation-card,
+.activation-game-card,
+.activation-panel,
+.activation-form-panel,
+.activation-preview-panel,
+.activation-share-panel,
+.lead-directory-card,
+.lead-detail-card,
+.lead-agenda-card,
+.agenda-panel,
+.table-card,
+.inventory-card,
+.sales-panel,
+.profile-card,
+.billing-card,
+.account-panel,
+.reward-pass-panel,
+.modal-card,
+.quiet-zone {
+  padding: clamp(24px, 2.4vw, 38px) !important;
+  margin-inline: 0 !important;
+}
+
+.surface-card:nth-of-type(4n + 1),
+.quiet-zone:nth-of-type(4n + 1),
+.dashboard-widget-card:nth-of-type(4n + 1),
+.activation-form-field-row:nth-of-type(4n + 1) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.76), rgba(255, 254, 250, 0.56)),
+    var(--spacious-surface-green) !important;
+}
+
+.surface-card:nth-of-type(4n + 2),
+.quiet-zone:nth-of-type(4n + 2),
+.dashboard-widget-card:nth-of-type(4n + 2),
+.activation-form-field-row:nth-of-type(4n + 2) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.72), rgba(255, 254, 250, 0.52)),
+    var(--spacious-surface-blue) !important;
+}
+
+.surface-card:nth-of-type(4n + 3),
+.quiet-zone:nth-of-type(4n + 3),
+.dashboard-widget-card:nth-of-type(4n + 3),
+.activation-form-field-row:nth-of-type(4n + 3) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.82), rgba(255, 254, 250, 0.62)),
+    var(--spacious-surface-white) !important;
+}
+
+.surface-card:nth-of-type(4n),
+.quiet-zone:nth-of-type(4n),
+.dashboard-widget-card:nth-of-type(4n),
+.activation-form-field-row:nth-of-type(4n) {
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.72), rgba(255, 254, 250, 0.54)),
+    var(--spacious-surface-sage) !important;
+}
+
+.table-card-head,
+.section-header,
+.card-header,
+.panel-header,
+.activation-panel-head,
+.activation-builder-section-head,
+.activation-config-head,
+.rms-station-header,
+.lead-directory-header,
+.quiet-zone-control-head {
+  margin-bottom: clamp(20px, 2vw, 30px) !important;
+  padding-bottom: 18px !important;
+}
+
+.sidebar {
+  padding: 32px 20px !important;
+}
+
+.sidebar-nav {
+  gap: 8px !important;
+}
+
+.sidebar .nav-item,
+.sidebar-nav a {
+  min-height: 44px !important;
+  padding: 11px 13px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+}
+
+.sidebar .nav-item.active,
+:root[data-theme="light"] .sidebar .nav-item.active,
+:root[data-theme="dark"] .sidebar .nav-item.active {
+  position: relative !important;
+  border-color: rgba(13, 111, 81, 0.22) !important;
+  background:
+    linear-gradient(90deg, rgba(13, 111, 81, 0.15), rgba(235, 247, 253, 0.58)),
+    rgba(255, 254, 250, 0.82) !important;
+  color: var(--spacious-ink) !important;
+  box-shadow: inset 4px 0 0 var(--spacious-active) !important;
+}
+
+.sidebar .nav-item.active::after {
+  content: "Actual" !important;
+  margin-left: auto !important;
+  padding: 3px 7px !important;
+  border-radius: 999px !important;
+  background: rgba(13, 111, 81, 0.12) !important;
+  color: var(--spacious-active) !important;
+  font-size: 0.66rem !important;
+  font-weight: 820 !important;
+}
+
+.sidebar .nav-item.active .material-symbols-outlined,
+.sidebar .nav-item.active > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+  color: var(--spacious-active) !important;
+}
+
+.dashboard-profile-tabs button.active,
+.ticket-center-menu button.active,
+.segment-tab.active,
+.contact-center-tab-card.active,
+[role="tab"].active,
+.activation-type-option.active {
+  border-color: rgba(31, 111, 152, 0.24) !important;
+  background:
+    linear-gradient(90deg, rgba(239, 249, 242, 0.9), rgba(235, 247, 253, 0.74)),
+    rgba(255, 254, 250, 0.82) !important;
+  color: var(--spacious-ink) !important;
+  box-shadow: inset 0 -3px 0 var(--spacious-active-blue) !important;
+}
+
+.ticket-center-menu button.active::before,
+.segment-tab.active::before,
+.dashboard-profile-tabs button.active::before,
+.contact-center-tab-card.active::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 8px !important;
+  height: 8px !important;
+  margin-right: 7px !important;
+  border-radius: 999px !important;
+  background: var(--spacious-active) !important;
+  vertical-align: middle !important;
+}
+
+.contact-center-tab-card.active {
+  box-shadow: inset 4px 0 0 var(--spacious-active), inset 0 -3px 0 var(--spacious-active-blue) !important;
+}
+
+.quiet-zone {
+  border-color: rgba(23, 83, 65, 0.12) !important;
+}
+
+.quiet-zone.is-collapsed {
+  padding: clamp(18px, 2vw, 26px) clamp(22px, 2.4vw, 34px) !important;
+}
+
+.quiet-zone-toggle {
+  min-height: 38px !important;
+  padding: 9px 13px !important;
+  border-color: rgba(13, 111, 81, 0.18) !important;
+  background: rgba(255, 254, 250, 0.86) !important;
+  color: var(--spacious-active) !important;
+}
+
+.table-wrap,
+.table-responsive,
+.lead-table-scroll,
+.agenda-table-wrap {
+  margin-top: 14px !important;
+  border-color: rgba(31, 111, 152, 0.14) !important;
+}
+
+input,
+select,
+textarea,
+.modal-form input,
+.modal-form select,
+.modal-form textarea,
+.view-section input,
+.view-section select,
+.view-section textarea {
+  padding-inline: 4px !important;
+}
+
+@media (max-width: 1180px) {
+  .content-shell {
+    padding-inline: clamp(26px, 4.6vw, 54px) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .content-shell {
+    padding: calc(var(--topbar-height) + 26px) 18px 52px !important;
+  }
+
+  .view-section.active {
+    padding: 22px !important;
+    margin-bottom: 34px !important;
+  }
+
+  .portal-location-pill {
+    margin-bottom: 16px !important;
+    white-space: normal !important;
+  }
+
+  .surface-card,
+  .data-table-card,
+  .chart-card,
+  .map-card,
+  .insight-card,
+  .stat-card,
+  .kpi-card,
+  .metric-card,
+  .activation-card,
+  .activation-panel,
+  .activation-form-panel,
+  .activation-preview-panel,
+  .lead-directory-card,
+  .lead-detail-card,
+  .lead-agenda-card,
+  .agenda-panel,
+  .table-card,
+  .inventory-card,
+  .sales-panel,
+  .profile-card,
+  .billing-card,
+  .account-panel,
+  .reward-pass-panel,
+  .modal-card,
+  .quiet-zone {
+    padding: 20px !important;
+  }
+}
