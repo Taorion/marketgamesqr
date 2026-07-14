@@ -42292,3 +42292,127 @@ body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry small {
 :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head .portal-location-icon::after {
   background: #cfefff !important;
 }
+
+/* Revenue overview alignment: header, Gaming Center entry and builder read as one ordered stack. */
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active:not([hidden]) {
+  align-content: start !important;
+  gap: clamp(14px, 1.6vw, 22px) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head,
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry,
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell {
+  width: min(100% - clamp(16px, 2vw, 34px), 1160px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+  padding: clamp(22px, 2.4vw, 34px) clamp(24px, 3vw, 42px) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head > div {
+  max-width: 780px !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry {
+  grid-template-columns: 34px minmax(0, 1fr) 16px !important;
+  align-items: center !important;
+  min-height: 58px !important;
+  margin-top: -2px !important;
+  margin-bottom: 0 !important;
+  padding: 10px 12px !important;
+  gap: 12px !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-mark,
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-arrow {
+  flex: 0 0 auto !important;
+  align-self: center !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-arrow {
+  justify-self: center !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry > span:nth-child(2) {
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell {
+  margin-top: 0 !important;
+  padding: clamp(18px, 2.2vw, 30px) !important;
+  border-radius: 20px !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head.quiet-zone-control-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "copy"
+    "tabs"
+    "toggle" !important;
+  gap: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head > div:first-child {
+  max-width: 780px !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head h3 {
+  max-width: 38ch !important;
+  margin: 8px 0 8px !important;
+  font-size: clamp(1.18rem, 1.55vw, 1.62rem) !important;
+  line-height: 1.18 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head p {
+  max-width: 74ch !important;
+  font-size: 0.92rem !important;
+  line-height: 1.5 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head .dashboard-profile-tabs {
+  justify-self: start !important;
+  width: min(100%, 460px) !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head .dashboard-profile-tabs button {
+  min-width: 0 !important;
+  min-height: 38px !important;
+  padding: 8px 10px !important;
+  white-space: nowrap !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head > .quiet-zone-toggle {
+  justify-self: start !important;
+  min-height: 34px !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  font-size: 0.76rem !important;
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head,
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry,
+  body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell {
+    width: 100% !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head .dashboard-profile-tabs {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head .dashboard-profile-tabs button {
+    white-space: normal !important;
+  }
+}
