@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-rms-remove-industrial-route-20260714-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-rms-serial-stations-20260714-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -822,15 +822,15 @@
                 <div>
                   <span class="mono-label">Mapa Operativo RMS</span>
                   <h3 class="subhead">Tablero de operación de la fábrica de ventas</h3>
-                  <p class="chart-explainer">Lee la fábrica de izquierda a derecha: entra un lead, se ejecuta una operación, se envía material comercial y se registra la salida.</p>
+                  <p class="chart-explainer">Lee la fábrica de izquierda a derecha: no son cajas aisladas. Cada estación procesa clientes con una operación concreta y los pasa a la siguiente hasta acercarlos al cierre.</p>
                 </div>
                 <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
               </div>
               <div class="rms-factory-status-strip" aria-label="Estado operativo de la fábrica RMS">
-                <span><em>01</em><strong>Entrada</strong><small>Leads capturados</small></span>
-                <span><em>02</em><strong>Operación</strong><small>Siguiente acción</small></span>
-                <span><em>03</em><strong>Material</strong><small>Catálogo, ticket o cobro</small></span>
-                <span><em>04</em><strong>Salida</strong><small>Venta o recuperación</small></span>
+                <span><em>01</em><strong>Cliente entra</strong><small>Lead, QR, catálogo o referido</small></span>
+                <span><em>02</em><strong>Estación procesa</strong><small>Beneficio, descuento, anuncio o tarea</small></span>
+                <span><em>03</em><strong>Salida avanza</strong><small>Se pasa a la siguiente estación</small></span>
+                <span><em>04</em><strong>Revenue se mide</strong><small>Cierre, postventa o recuperación</small></span>
               </div>
               <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
                 <div>
@@ -849,12 +849,14 @@
               <div class="rms-stage-board-guide" aria-label="Guía del carril de estaciones RMS">
                 <div>
                   <span class="mono-label">Carril de estaciones RMS</span>
-                  <strong>Desliza horizontalmente y entra a la estación que vas a operar.</strong>
+                  <strong>Trabaja una estación, ejecuta su operación y pasa los clientes listos a la siguiente.</strong>
+                  <small>La máquina no obliga a convencer uno por uno: en volumen aplica señales, beneficios y seguimiento hasta que el interés real aparece.</small>
                 </div>
                 <div class="rms-stage-board-guide-actions">
                   <span>Entrada</span>
-                  <span>Operación</span>
-                  <span>Salida</span>
+                  <span>Procesar</span>
+                  <span>Pasar salida</span>
+                  <span>Cerrar</span>
                 </div>
               </div>
               <div class="rms-stage-board" id="rmsStageBoard"></div>
@@ -6983,7 +6985,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-rms-remove-industrial-route-20260714-v1" defer></script>
+  <script src="js/app.js?v=portal-rms-serial-stations-20260714-v1" defer></script>
 </body>
 </html>
 

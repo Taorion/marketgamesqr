@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-rms-remove-industrial-route-v1";
+const APP_VERSION = "empresa-20260714-rms-serial-stations-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -28134,6 +28134,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
 
 function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
+  const totalStages = Math.max(stages.length, 1);
   rmsStageBoard.innerHTML = stages.map((stage, index) => {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
     const rows = rowsAll.slice(0, 8);
@@ -28141,15 +28142,27 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const revenue = rowsAll.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
+    const progressPercent = totalStages > 1 ? Math.round((index / (totalStages - 1)) * 100) : 100;
+    const stationRole = index === 0 ? "Entrada de materia prima" : nextPhase ? "Procesar y avanzar" : "Cierre y aprendizaje";
+    const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
     return `
-      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""}" data-rms-phase="${escapeHtml(stage.key)}">
+      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" style="--rms-stage-progress:${progressPercent}%">
         <div class="rms-stage-head">
           <div>
-            <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")}</span>
+            <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")} de ${String(totalStages).padStart(2, "0")}</span>
             <strong>${escapeHtml(stage.label)}</strong>
-            <small>${escapeHtml(nextPhase ? `Salida: ${nextPhase.label}` : "Salida: permanece en control")}</small>
+            <small>${escapeHtml(stationRole)}</small>
           </div>
           <span title="Materia prima en estación">${Number(rowsAll.length).toLocaleString("es-CO")}</span>
+        </div>
+        <div class="rms-stage-flow-indicator" aria-label="Progreso de esta estación hacia cierre">
+          <span>Inicio</span>
+          <div><i></i></div>
+          <span>Cierre</span>
+        </div>
+        <div class="rms-stage-transfer-note">
+          <span class="material-symbols-outlined" aria-hidden="true">east</span>
+          <strong>${escapeHtml(nextPhase ? `Después pasa a ${nextLabel}` : "Última salida: medir revenue")}</strong>
         </div>
         <div class="rms-phase-operation">
           <span class="rms-operation-label">Orden de estación</span>
