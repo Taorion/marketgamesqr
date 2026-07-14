@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-portal-rms-tutorial-ui-v1";
+const APP_VERSION = "empresa-20260714-portal-rms-tutorial-polish-ui-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -26684,13 +26684,18 @@ function renderRmsTutorial() {
 
   rmsTutorialSteps.innerHTML = RMS_TUTORIAL_STEPS.map((item, itemIndex) => `
     <button class="rms-tutorial-step ${itemIndex === index ? "is-active" : ""}" type="button" data-rms-tutorial-step="${itemIndex}" aria-pressed="${itemIndex === index ? "true" : "false"}">
-      <span>${String(itemIndex + 1).padStart(2, "0")}</span>
+      <span class="rms-tutorial-step-number">${String(itemIndex + 1).padStart(2, "0")}</span>
+      <i class="material-symbols-outlined" aria-hidden="true">${escapeHtml(item.icon)}</i>
       <strong>${escapeHtml(item.title)}</strong>
       <small>${escapeHtml(item.subtitle)}</small>
     </button>
   `).join("");
 
   rmsTutorialPanel.innerHTML = `
+    <div class="rms-tutorial-stage-chip">
+      <span>Estación guiada</span>
+      <strong>${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</strong>
+    </div>
     <div class="rms-tutorial-panel-head">
       <span class="rms-tutorial-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(step.icon)}</span>
       <div>
