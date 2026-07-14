@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260714-revenue-header-gaming-v1";
+const APP_VERSION = "empresa-20260714-rms-station-card-polish-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -27959,7 +27959,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
 function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
   return `
     <div class="rms-station-empty-screen">
-      <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+      <span class="rms-station-empty-icon" aria-hidden="true"></span>
       <strong>Esta estación no tiene materia prima.</strong>
       <p>${escapeHtml(operation.description || operation.primaryAction || "Alimenta la máquina o mueve leads desde una estación anterior.")}</p>
       <button class="solid-button" type="button" data-rms-empty-action="${stage.key === "recoleccion" ? "collector" : "contacts-manual"}">
@@ -28146,7 +28146,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const stationRole = index === 0 ? "Entrada de materia prima" : nextPhase ? "Procesar y avanzar" : "Cierre y aprendizaje";
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
     return `
-      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" style="--rms-stage-progress:${progressPercent}%">
+      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""} ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" style="--rms-stage-progress:${progressPercent}%">
         <div class="rms-stage-head">
           <div>
             <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")} de ${String(totalStages).padStart(2, "0")}</span>
@@ -28161,14 +28161,14 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           <span>Cierre</span>
         </div>
         <div class="rms-stage-transfer-note">
-          <span class="material-symbols-outlined" aria-hidden="true">east</span>
+          <span class="rms-stage-transfer-icon" aria-hidden="true"></span>
           <strong>${escapeHtml(nextPhase ? `Después pasa a ${nextLabel}` : "Última salida: medir revenue")}</strong>
         </div>
         <div class="rms-phase-operation">
           <span class="rms-operation-label">Orden de estación</span>
           <strong>${escapeHtml(operation.primaryAction || "Operación recomendada")}</strong>
           <div class="rms-station-material">
-            <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+            <span class="rms-stage-material-icon" aria-hidden="true"></span>
             <small>${escapeHtml(operation.materialLabel || "Material comercial sugerido")}</small>
           </div>
           <div class="rms-station-metrics">
@@ -28186,7 +28186,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           <small>${rowsAll.length ? "Selecciona, opera o abre cada cliente." : "Esta estación queda esperando entrada."}</small>
         </div>
         <div class="rms-stage-items">
-          ${rows.map(rmsStageLeadUnitMarkup).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : '<span class="rms-stage-empty">Sin clientes en esta estación</span>')}
+          ${rows.map(rmsStageLeadUnitMarkup).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : `<span class="rms-stage-empty">Esperando clientes listos para ${escapeHtml(operation.buttonLabel || "operar")}</span>`)}
           ${rowsAll.length > rows.length ? `<span class="rms-stage-more">+${Number(rowsAll.length - rows.length).toLocaleString("es-CO")} más en esta estación</span>` : ""}
         </div>
       </article>

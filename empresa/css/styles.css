@@ -42040,3 +42040,169 @@ body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
     margin-top: -4px !important;
   }
 }
+
+/* RMS station cards polish: no icon ligature text, clearer empty stations. */
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column {
+  gap: 12px !important;
+  border-radius: 18px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column.is-empty-stage {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(247, 252, 250, 0.64)),
+    rgba(255, 254, 250, 0.72) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column.is-empty-stage .rms-stage-head > span {
+  color: #668079 !important;
+  background: rgba(237, 247, 252, 0.68) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-column.is-empty-stage .rms-stage-transfer-note {
+  opacity: 0.76 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-head small {
+  font-size: 0.78rem !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-transfer-note {
+  grid-template-columns: 26px minmax(0, 1fr) !important;
+  padding: 8px 9px !important;
+  border-radius: 13px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-transfer-icon,
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-icon,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-icon {
+  display: inline-grid !important;
+  place-items: center !important;
+  position: relative !important;
+  width: 26px !important;
+  height: 26px !important;
+  flex: 0 0 26px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-transfer-icon {
+  background: #27759f !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-transfer-icon::before {
+  content: "" !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  transform: rotate(-45deg) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-icon {
+  border: 1px solid rgba(15, 115, 84, 0.13) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-icon::before {
+  content: "" !important;
+  width: 12px !important;
+  height: 10px !important;
+  border: 2px solid #0f7354 !important;
+  border-top-width: 4px !important;
+  border-radius: 3px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-icon {
+  width: 52px !important;
+  height: 52px !important;
+  border: 1px solid rgba(39, 117, 159, 0.14) !important;
+  background: linear-gradient(135deg, rgba(237, 247, 252, 0.82), rgba(237, 248, 241, 0.72)) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-icon::before {
+  content: "" !important;
+  width: 22px !important;
+  height: 16px !important;
+  border: 2px solid #27759f !important;
+  border-top-width: 6px !important;
+  border-radius: 5px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-material .material-symbols-outlined,
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-transfer-note .material-symbols-outlined,
+body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-screen .material-symbols-outlined {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-phase-operation {
+  gap: 9px !important;
+  padding: 11px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-metrics span {
+  min-width: 0 !important;
+  padding: 7px 8px !important;
+  font-size: 0.72rem !important;
+  text-align: center !important;
+  white-space: normal !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-line {
+  display: grid !important;
+  gap: 3px !important;
+  padding: 9px 0 0 !important;
+  border-top: 1px solid rgba(18, 99, 71, 0.08) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-stage-empty {
+  display: grid !important;
+  place-items: center !important;
+  min-height: 58px !important;
+  padding: 12px !important;
+  border: 1px dashed rgba(39, 117, 159, 0.18) !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(135deg, rgba(237, 247, 252, 0.5), rgba(237, 248, 241, 0.5)),
+    rgba(255, 254, 250, 0.68) !important;
+  color: #5e766f !important;
+  font-size: 0.8rem !important;
+  line-height: 1.35 !important;
+  font-weight: 680 !important;
+  text-align: center !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-column.is-empty-stage,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-empty {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.42) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-icon {
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-icon {
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-material-icon::before {
+  border-color: #dff9ee !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-empty-icon::before {
+  border-color: #cfefff !important;
+}
+
+@media (max-width: 760px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-station-metrics {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
