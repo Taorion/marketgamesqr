@@ -34338,3 +34338,400 @@ tbody tr:hover {
     padding: 18px !important;
   }
 }
+
+/* Portal-wide Infinite Canvas spacing correction */
+:root,
+:root[data-theme="dark"] {
+  --infinite-canvas-base: #f6f7f4;
+  --infinite-canvas-ink: #13251e;
+  --infinite-canvas-muted: #52635c;
+  --infinite-canvas-soft: #7a8a83;
+  --infinite-canvas-line: rgba(19, 37, 30, 0.12);
+  --infinite-canvas-faint: rgba(19, 37, 30, 0.07);
+  --infinite-canvas-field: rgba(19, 37, 30, 0.16);
+  --infinite-canvas-sheet: rgba(255, 255, 255, 0.66);
+  --infinite-canvas-soft-sheet: rgba(255, 255, 255, 0.42);
+  --infinite-canvas-accent: #0b7a55;
+  --infinite-canvas-blue: #225f86;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: var(--infinite-canvas-ink) !important;
+  background:
+    linear-gradient(90deg, rgba(19, 37, 30, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(19, 37, 30, 0.045) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(11, 122, 85, 0.055) 0%, transparent 28%, rgba(34, 95, 134, 0.05) 68%, transparent 100%),
+    var(--infinite-canvas-base) !important;
+  background-attachment: fixed !important;
+  background-size: 72px 72px, 72px 72px, 100% 100%, auto !important;
+}
+
+.portal-shell,
+.workspace,
+.app-main {
+  background: transparent !important;
+}
+
+.content-shell {
+  width: 100% !important;
+  padding: calc(var(--topbar-height) + 42px) clamp(28px, 4.5vw, 76px) 76px !important;
+}
+
+.view-section.active {
+  max-width: 1540px !important;
+  margin: 0 auto 48px !important;
+  padding: clamp(26px, 3vw, 46px) !important;
+  border: 1px solid var(--infinite-canvas-faint) !important;
+  border-radius: 8px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.42)),
+    linear-gradient(90deg, rgba(11, 122, 85, 0.035), transparent 32%, rgba(34, 95, 134, 0.03)) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.view-head {
+  max-width: 1160px !important;
+  margin: 0 0 clamp(28px, 3vw, 44px) !important;
+  padding: 0 0 24px !important;
+  border-bottom: 1px solid var(--infinite-canvas-line) !important;
+}
+
+.view-title-block {
+  max-width: 900px !important;
+}
+
+.view-title-block h1,
+.view-head h1,
+.section-header h2,
+.card-title,
+.table-card-head h2 {
+  color: var(--infinite-canvas-ink) !important;
+  letter-spacing: 0 !important;
+}
+
+.view-title-block p,
+.view-head p,
+.section-header p,
+.card-subtitle,
+.table-card-head p {
+  max-width: 760px !important;
+  color: var(--infinite-canvas-muted) !important;
+  line-height: 1.62 !important;
+}
+
+.cards-grid,
+.stats-grid,
+.dashboard-grid,
+.charts-grid,
+.tables-grid,
+.insight-grid,
+.qr-options-grid,
+.campaign-grid,
+.activation-dashboard-grid,
+.activation-games-grid,
+.activation-form-grid,
+.activation-play-grid,
+.activation-share-grid,
+.lead-directory-grid,
+.rms-station-grid,
+.rms-machine-grid,
+.rms-machine-layout,
+.rms-station-workspace,
+.contact-center-shell,
+.agenda-board,
+.lead-agenda-board,
+.dashboard-builder-layout,
+.dashboard-widget-grid,
+.campaign-cost-grid,
+.competition-grid,
+.affiliate-grid,
+.account-grid {
+  gap: clamp(20px, 2.2vw, 34px) !important;
+}
+
+.surface-card,
+.data-table-card,
+.chart-card,
+.map-card,
+.insight-card,
+.stat-card,
+.kpi-card,
+.metric-card,
+.qr-option-card,
+.campaign-card,
+.activation-card,
+.activation-game-card,
+.activation-panel,
+.activation-form-panel,
+.activation-preview-panel,
+.activation-share-panel,
+.lead-directory-card,
+.lead-detail-card,
+.lead-agenda-card,
+.agenda-panel,
+.table-card,
+.inventory-card,
+.sales-panel,
+.profile-card,
+.billing-card,
+.account-panel,
+.reward-pass-panel,
+.modal-card {
+  padding: clamp(20px, 2.1vw, 32px) !important;
+  border: 1px solid var(--infinite-canvas-faint) !important;
+  border-radius: 8px !important;
+  background: var(--infinite-canvas-sheet) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-widget-card,
+.dashboard-widget-preview,
+.lead-agenda-column,
+.lead-agenda-card-item,
+.rms-station-lane,
+.rms-station-card,
+.rms-lead-inspector,
+.campaign-cost-section,
+.campaign-cost-answer-card,
+.campaign-cost-detail-card,
+.competition-card,
+.affiliate-stat-card,
+.affiliate-step,
+.season-launch-card,
+.qr-workflow-card,
+.activation-question-row,
+.activation-product-row {
+  padding: clamp(16px, 1.7vw, 24px) !important;
+  border: 1px solid var(--infinite-canvas-faint) !important;
+  border-radius: 8px !important;
+  background: var(--infinite-canvas-soft-sheet) !important;
+  box-shadow: none !important;
+}
+
+.surface-card > .surface-card,
+.activation-form-panel .activation-question-row,
+.activation-form-panel .activation-product-row,
+.lead-agenda-column .lead-agenda-card-item,
+.rms-station-lane .rms-station-card {
+  background: rgba(255, 255, 255, 0.32) !important;
+}
+
+.table-card-head,
+.section-header,
+.card-header,
+.panel-header,
+.activation-panel-head,
+.rms-station-header,
+.lead-directory-header {
+  margin: 0 0 22px !important;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid var(--infinite-canvas-line) !important;
+}
+
+.table-wrap,
+.table-responsive,
+.lead-table-scroll,
+.agenda-table-wrap {
+  padding: 0 !important;
+  border: 1px solid var(--infinite-canvas-faint) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+  overflow: auto !important;
+}
+
+table {
+  min-width: 760px !important;
+}
+
+thead th,
+th {
+  padding: 14px 16px !important;
+  background: rgba(255, 255, 255, 0.44) !important;
+  border-bottom: 1px solid var(--infinite-canvas-line) !important;
+}
+
+tbody td,
+td {
+  padding: 15px 16px !important;
+  border-top: 1px solid var(--infinite-canvas-faint) !important;
+}
+
+input,
+select,
+textarea,
+.modal-form input,
+.modal-form select,
+.modal-form textarea,
+.view-section input,
+.view-section select,
+.view-section textarea,
+.view-section[data-view="account"] input,
+.view-section[data-view="account"] select,
+.view-section[data-view="account"] textarea,
+.view-section[data-view="affiliates"] input,
+.view-section[data-view="affiliates"] select,
+.view-section[data-view="affiliates"] textarea,
+.view-section[data-view="strategic-qr"] input,
+.view-section[data-view="strategic-qr"] select,
+.view-section[data-view="strategic-qr"] textarea,
+.view-section[data-view="campaigns"] input,
+.view-section[data-view="campaigns"] select,
+.view-section[data-view="campaigns"] textarea {
+  min-height: 44px !important;
+  padding: 10px 0 11px !important;
+  border-bottom-color: var(--infinite-canvas-field) !important;
+  line-height: 1.35 !important;
+}
+
+textarea,
+.view-section textarea,
+.modal-form textarea {
+  min-height: 104px !important;
+  resize: vertical !important;
+}
+
+.modal-form label,
+.lead-agenda-create-form label,
+.inventory-form label,
+.affiliate-form label,
+.account-profile-form label,
+.reward-pass-form label,
+.campaign-form-grid label,
+.sales-form label {
+  gap: 8px !important;
+  padding: 0 0 14px !important;
+}
+
+.button-row,
+.modal-actions,
+.modal-button-row,
+.inline-actions,
+.activation-share-actions,
+.activation-manage-actions,
+.qr-batch-actions,
+.ticket-status-actions,
+.strategic-ticket-actions-cell {
+  gap: 12px !important;
+  padding-top: 18px !important;
+}
+
+.btn,
+button,
+.nav-item,
+.sidebar-nav a {
+  letter-spacing: 0 !important;
+}
+
+.sidebar {
+  padding: 28px 18px !important;
+  border-right: 1px solid var(--infinite-canvas-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.sidebar-brand {
+  margin-bottom: 28px !important;
+  padding-bottom: 22px !important;
+  border-bottom: 1px solid var(--infinite-canvas-line) !important;
+}
+
+.topbar {
+  padding-inline: clamp(24px, 3.4vw, 56px) !important;
+  border-bottom: 1px solid var(--infinite-canvas-line) !important;
+  background: rgba(246, 247, 244, 0.78) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.login-screen {
+  padding: clamp(24px, 5vw, 72px) !important;
+  background:
+    linear-gradient(90deg, rgba(19, 37, 30, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(19, 37, 30, 0.045) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(11, 122, 85, 0.06), transparent 32%, rgba(34, 95, 134, 0.052)),
+    var(--infinite-canvas-base) !important;
+  background-size: 72px 72px, 72px 72px, 100% 100%, auto !important;
+}
+
+.login-card {
+  padding: clamp(28px, 4vw, 48px) !important;
+  border: 1px solid var(--infinite-canvas-line) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.empty-state,
+.placeholder-card,
+.table-empty,
+.error-line,
+.form-message {
+  padding: clamp(16px, 2vw, 24px) !important;
+  border: 1px solid var(--infinite-canvas-faint) !important;
+  border-left: 2px solid var(--infinite-canvas-accent) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.36) !important;
+}
+
+@media (max-width: 1180px) {
+  .content-shell {
+    padding-inline: clamp(22px, 4vw, 44px) !important;
+  }
+
+  .view-section.active {
+    padding: clamp(22px, 3.6vw, 34px) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body,
+  .login-screen {
+    background-size: 56px 56px, 56px 56px, 100% 100%, auto !important;
+  }
+
+  .content-shell {
+    padding: calc(var(--topbar-height) + 22px) 16px 42px !important;
+  }
+
+  .view-section.active {
+    margin-bottom: 28px !important;
+    padding: 18px !important;
+  }
+
+  .surface-card,
+  .data-table-card,
+  .chart-card,
+  .map-card,
+  .insight-card,
+  .stat-card,
+  .kpi-card,
+  .metric-card,
+  .activation-card,
+  .activation-panel,
+  .activation-form-panel,
+  .activation-preview-panel,
+  .lead-directory-card,
+  .lead-detail-card,
+  .lead-agenda-card,
+  .agenda-panel,
+  .table-card,
+  .inventory-card,
+  .sales-panel,
+  .profile-card,
+  .billing-card,
+  .account-panel,
+  .reward-pass-panel,
+  .modal-card {
+    padding: 18px !important;
+  }
+
+  .topbar {
+    padding-inline: 16px !important;
+  }
+}
