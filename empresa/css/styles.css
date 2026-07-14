@@ -40416,3 +40416,105 @@ body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-labe
   border-color: rgba(151, 211, 190, 0.14) !important;
   background: rgba(7, 21, 18, 0.44) !important;
 }
+
+/* Gaming Center shortcut: dashboard-only, below the header, no icon-font leakage. */
+body .portal-shell .portal-gaming-entry.gaming-core-entry {
+  display: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) 32px !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: min(100%, 920px) !important;
+  min-height: 0 !important;
+  margin: -10px 0 clamp(18px, 2vw, 28px) !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(15, 115, 84, 0.12) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(90deg, rgba(236, 248, 241, 0.86), rgba(234, 246, 252, 0.58)),
+    rgba(255, 254, 250, 0.88) !important;
+  color: #102c25 !important;
+  box-shadow: 0 10px 26px rgba(15, 44, 36, 0.055) !important;
+  transform: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry::after {
+  display: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-mark {
+  display: grid !important;
+  place-items: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  color: #0f7354 !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 115, 84, 0.12) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry strong {
+  color: #102c25 !important;
+  font-size: clamp(0.98rem, 1.1vw, 1.14rem) !important;
+  line-height: 1.18 !important;
+  font-weight: 820 !important;
+  text-transform: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry small {
+  max-width: 72ch !important;
+  margin-top: 3px !important;
+  color: #5e766f !important;
+  font-size: 0.86rem !important;
+  line-height: 1.36 !important;
+  font-weight: 560 !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-arrow {
+  justify-self: end !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-right: 2px solid #0f7354 !important;
+  border-bottom: 2px solid #0f7354 !important;
+  transform: rotate(-45deg) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry:hover,
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry:focus-visible {
+  border-color: rgba(15, 115, 84, 0.2) !important;
+  background:
+    linear-gradient(90deg, rgba(223, 246, 233, 0.92), rgba(231, 246, 253, 0.68)),
+    #fffefa !important;
+  box-shadow: 0 14px 32px rgba(15, 44, 36, 0.08) !important;
+  transform: translateY(-1px) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: rgba(7, 21, 18, 0.42) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry strong {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry small {
+  color: #c8ded6 !important;
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-arrow {
+    display: none !important;
+  }
+}
