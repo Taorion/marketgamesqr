@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-egress-session-safe-20260715-v1">
+  <link rel="stylesheet" href="css/styles.css?v=portal-agenda-views-visible-20260715-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -4317,12 +4317,30 @@
               </div>
               <div class="lead-agenda-toolbar">
                 <div class="segment-tabs lead-agenda-view-tabs" role="tablist" aria-label="Visualizaciones de agenda">
-                  <button class="segment-tab active" data-agenda-view="list" type="button">Lista</button>
-                  <button class="segment-tab" data-agenda-view="board" type="button">Tablero</button>
-                  <button class="segment-tab" data-agenda-view="day" type="button">Horario</button>
-                  <button class="segment-tab" data-agenda-view="week" type="button">Semana</button>
-                  <button class="segment-tab" data-agenda-view="month" type="button">Mes</button>
-                  <button class="segment-tab" data-agenda-view="year" type="button">Año</button>
+                  <button class="segment-tab active" data-agenda-view="list" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">format_list_bulleted</span>
+                    <strong>Lista de tareas</strong>
+                  </button>
+                  <button class="segment-tab" data-agenda-view="board" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">view_kanban</span>
+                    <strong>Tablero</strong>
+                  </button>
+                  <button class="segment-tab" data-agenda-view="day" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">today</span>
+                    <strong>Calendario día</strong>
+                  </button>
+                  <button class="segment-tab" data-agenda-view="week" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_view_week</span>
+                    <strong>Semana</strong>
+                  </button>
+                  <button class="segment-tab" data-agenda-view="month" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <strong>Mes</strong>
+                  </button>
+                  <button class="segment-tab" data-agenda-view="year" type="button">
+                    <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                    <strong>Año</strong>
+                  </button>
                 </div>
                 <div class="lead-agenda-controls">
                   <button class="ghost-button" id="leadAgendaPrevButton" type="button">Anterior</button>
@@ -6985,7 +7003,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-egress-session-safe-20260715-v1" defer></script>
+  <script src="js/app.js?v=portal-agenda-views-visible-20260715-v1" defer></script>
 </body>
 </html>
 
