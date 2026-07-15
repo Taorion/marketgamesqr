@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-sidebar-tier-badges-v1";
+const APP_VERSION = "empresa-20260715-dashboard-library-tiles-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -7917,7 +7917,7 @@ function renderDashboardBuilder() {
       <button class="dashboard-library-item ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}">
         <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(widget.icon)}</span>
         <span><strong>${escapeHtml(widget.title)}</strong><small>${escapeHtml(widget.category)}</small></span>
-        <em>${active ? "Agregado" : "Agregar"}</em>
+        <em><span class="material-symbols-outlined" aria-hidden="true">${active ? "check" : "add"}</span>${active ? "En tablero" : "Añadir"}</em>
       </button>
     `;
   }).join("");
