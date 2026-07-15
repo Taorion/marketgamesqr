@@ -44096,6 +44096,81 @@ html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .hea
   }
 }
 
+/* Campaigns header actions: keep controls under the title, not as a side panel. */
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "copy"
+    "actions" !important;
+  align-items: start !important;
+  gap: clamp(16px, 2vw, 22px) !important;
+  padding: clamp(24px, 3vw, 36px) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > div:first-of-type {
+  max-width: 920px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > .head-actions {
+  justify-self: stretch !important;
+  align-self: start !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 14px 0 0 !important;
+  border-top: 1px solid rgba(22, 96, 75, 0.11) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #requestCampaignButton {
+  order: 1 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #editCampaignButton {
+  order: 2 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #campaignStrategyAssistantButton {
+  order: 3 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #exportCampaignReportButton {
+  order: 4 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #markReadyCampaignButton {
+  order: 5 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 36px !important;
+  padding: 8px 13px !important;
+  border-radius: 9px !important;
+  font-size: 0.86rem !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #campaignStrategyAssistantButton {
+  min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > .head-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 /* Agenda workspace: make calendar and task list modes visible again. */
 html body .portal-shell .lead-agenda-card {
   display: grid !important;
