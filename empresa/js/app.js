@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-gaming-center-head-compact-v1";
+const APP_VERSION = "empresa-20260715-sidebar-tier-badges-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -3647,8 +3647,8 @@ const viewFeatureMap = {
 
 const planTierOrder = ["STARTER", "GROWTH", "PRO", "GLOBAL"];
 const planTierBadges = {
-  GROWTH: { label: "Medium", icon: "workspace_premium" },
-  PRO: { label: "Premium", icon: "diamond" },
+  GROWTH: { label: "Medium", shortLabel: "MED", icon: "workspace_premium" },
+  PRO: { label: "Premium", shortLabel: "PRO", icon: "diamond" },
 };
 const featureRequiredPlanFallback = {
   portal_access: "STARTER",
@@ -3763,10 +3763,12 @@ function applyFeatureTierBadge(element, requiredCode, options = {}) {
   if (!meta) return;
   const badge = document.createElement("span");
   badge.className = `feature-tier-badge ${code === "PRO" ? "is-premium" : "is-medium"}`;
-  badge.setAttribute("aria-label", `Feature ${meta.label}`);
+  const badgeLabel = options.short ? (meta.shortLabel || meta.label.charAt(0)) : meta.label;
+  badge.title = `Requiere plan ${meta.label}`;
+  badge.setAttribute("aria-label", `Requiere plan ${meta.label}`);
   badge.innerHTML = `
-    <span class="material-symbols-outlined" aria-hidden="true">${meta.icon}</span>
-    <span>${escapeHtml(options.short ? meta.label.charAt(0) : meta.label)}</span>
+    <span class="${options.short ? "feature-tier-dot" : "material-symbols-outlined"}" aria-hidden="true">${options.short ? "" : meta.icon}</span>
+    <span>${escapeHtml(badgeLabel)}</span>
   `;
   element.appendChild(badge);
   element.dataset.featureTier = code;
@@ -4325,7 +4327,7 @@ function applyPlanNavigation() {
     const adminOnly = button.dataset.view === "admin";
     button.classList.toggle("hidden", adminOnly && !isAdmin());
     const requiredCode = requiredPlanForFeature(feature);
-    applyFeatureTierBadge(button, requiredCode);
+    applyFeatureTierBadge(button, requiredCode, { short: true });
     const locked = !hasPlanFeature(feature);
     button.classList.toggle("plan-locked", locked);
     button.disabled = false;
