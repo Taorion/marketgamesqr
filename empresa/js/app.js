@@ -1,9 +1,11 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-campaign-header-compact-v1";
+const APP_VERSION = "empresa-20260715-egress-session-safe-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
+const API_CLIENT_CACHE_TTL_MS = 20000;
+const ACTIVITY_POLL_INTERVAL_MS = 90000;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -1283,6 +1285,7 @@ let state = {
   activityVersion: "",
   activityPollingTimer: 0,
   activityRefreshInFlight: false,
+  apiResponseCache: new Map(),
   commandCenter: null,
   commandCenterFilters: {
     range: "30d",
@@ -1884,12 +1887,8 @@ function loadSession() {
     const rawSession = localStorage.getItem(SESSION_KEY);
     const storedVersion = localStorage.getItem(APP_VERSION_KEY);
     if (rawSession && storedVersion !== APP_VERSION) {
-      clearBusinessScopedStorage("", { all: true });
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.removeItem(VALIDATOR_SESSION_KEY);
-      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Por seguridad cerramos tu sesión anterior; inicia sesión de nuevo para cargar la version vigente.");
+      localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Actualizamos el portal. Mantuvimos tu sesión activa y cargamos la versión vigente.");
       localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
-      return null;
     }
     localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
     const parsed = normalizeSession(JSON.parse(rawSession));
@@ -2400,6 +2399,7 @@ function resetBusinessScopedState(options = {}) {
     : session || {};
   stopActivityPolling();
   clearQrBatchProgressTimer();
+  clearApiResponseCache();
   state.dashboard = null;
   state.activityVersion = "";
   state.activityRefreshInFlight = false;
@@ -2621,8 +2621,55 @@ function startQrBatchProgress(quantity) {
   }, 180);
 }
 
+function clearApiResponseCache() {
+  state.apiResponseCache?.clear?.();
+}
+
+function apiRequestMethod(options = {}) {
+  return String(options.method || "GET").toUpperCase();
+}
+
+function apiCachePath(path) {
+  try {
+    const url = new URL(path, window.location.origin);
+    return `${url.pathname}?${url.searchParams.toString()}`;
+  } catch {
+    return String(path || "");
+  }
+}
+
+function isCacheableApiRequest(path, options = {}) {
+  if (options.noClientCache) return false;
+  if (apiRequestMethod(options) !== "GET") return false;
+  if (options.body) return false;
+  const value = String(path || "");
+  if (!value.startsWith("/api/")) return false;
+  if (value.includes("/activity") || value.includes("/version")) return false;
+  return true;
+}
+
+function cloneApiPayload(value) {
+  if (value === null || value === undefined) return value;
+  try {
+    return window.structuredClone ? window.structuredClone(value) : JSON.parse(JSON.stringify(value));
+  } catch {
+    return value;
+  }
+}
+
+function apiCacheKey(path) {
+  return `${businessScopeKey()}::${apiCachePath(path)}`;
+}
+
 async function api(path, options = {}) {
-  const { planGate = true, ...fetchOptions } = options;
+  const { planGate = true, noClientCache = false, ...fetchOptions } = options;
+  const cacheOptions = { ...fetchOptions, noClientCache };
+  const cacheable = isCacheableApiRequest(path, cacheOptions);
+  const cacheKey = cacheable ? apiCacheKey(path) : "";
+  const cached = cacheKey ? state.apiResponseCache?.get(cacheKey) : null;
+  if (cached && Date.now() - cached.at < API_CLIENT_CACHE_TTL_MS) {
+    return cloneApiPayload(cached.data);
+  }
   const response = await fetch(path, {
     ...fetchOptions,
     headers: {
@@ -2650,6 +2697,11 @@ async function api(path, options = {}) {
       showPlanGateFromApiError(error);
     }
     throw error;
+  }
+  if (apiRequestMethod(fetchOptions) !== "GET") {
+    clearApiResponseCache();
+  } else if (cacheKey) {
+    state.apiResponseCache.set(cacheKey, { at: Date.now(), data: cloneApiPayload(data) });
   }
   return data;
 }
@@ -5117,7 +5169,7 @@ function startActivityPolling() {
   stopActivityPolling();
   if (lightTestMode) return;
   if (!session?.user?.business_id || isPrepaidValidatorOnly()) return;
-  state.activityPollingTimer = window.setInterval(checkBusinessActivity, 30000);
+  state.activityPollingTimer = window.setInterval(checkBusinessActivity, ACTIVITY_POLL_INTERVAL_MS);
 }
 
 async function checkBusinessActivity() {

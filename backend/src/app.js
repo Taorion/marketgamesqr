@@ -37,7 +37,19 @@ const packageJson = require("../../package.json");
 const app = express();
 const projectRoot = path.join(__dirname, "../..");
 const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
+const staticOptions = { setHeaders: setUtf8StaticHeaders };
 const utf8StaticExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
+const longCacheStaticExtensions = new Set([
+  ".css",
+  ".js",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".svg",
+  ".woff",
+  ".woff2",
+]);
 
 function setUtf8StaticHeaders(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -46,6 +58,11 @@ function setUtf8StaticHeaders(res, filePath) {
     if (currentType && !String(currentType).toLowerCase().includes("charset=")) {
       res.setHeader("Content-Type", `${currentType}; charset=utf-8`);
     }
+  }
+  if (ext === ".html") {
+    res.setHeader("Cache-Control", "no-cache, must-revalidate");
+  } else if (longCacheStaticExtensions.has(ext)) {
+    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
   }
 }
 
@@ -191,7 +208,7 @@ app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
-app.use(express.static(marketGamesWebRoot, { setHeaders: setUtf8StaticHeaders }));
+app.use(express.static(marketGamesWebRoot, staticOptions));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
   if (req.query.token) {
@@ -201,13 +218,13 @@ function redirectLegacyValidator(req, res) {
 }
 
 app.get(["/validador", "/validador/", "/qr-validador", "/qr-validador/"], redirectLegacyValidator);
-app.use("/demo", express.static(path.join(__dirname, "../..", "demo")));
-app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa")));
-app.use("/admin", express.static(path.join(__dirname, "../..", "admin")));
-app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes")));
-app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos")));
-app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad")));
-app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos")));
+app.use("/demo", express.static(path.join(__dirname, "../..", "demo"), staticOptions));
+app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa"), staticOptions));
+app.use("/admin", express.static(path.join(__dirname, "../..", "admin"), staticOptions));
+app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes"), staticOptions));
+app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos"), staticOptions));
+app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad"), staticOptions));
+app.use("/campana-productos", express.static(path.join(__dirname, "../..", "campana-productos"), staticOptions));
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
 app.use("/carnet-afiliado", express.static(path.join(__dirname, "../..", "carnet-afiliado")));
 app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
