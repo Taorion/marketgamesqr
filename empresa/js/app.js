@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-campaign-section-reflow-v1";
+const APP_VERSION = "empresa-20260715-campaign-header-compact-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -2152,6 +2152,10 @@ function renderPortalLocationPill(activeSection) {
   const head = activeSection?.querySelector(":scope > .view-head");
   if (!head) return;
   let pill = head.querySelector(":scope > .portal-location-pill");
+  if (activeSection?.dataset.view === "campaigns") {
+    pill?.remove();
+    return;
+  }
   if (!pill) {
     pill = document.createElement("div");
     pill.className = "portal-location-pill";
