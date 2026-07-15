@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-agenda-views-visible-v1";
+const APP_VERSION = "empresa-20260715-campaign-head-polish-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const workspace = document.getElementById("workspace");
@@ -17064,9 +17064,9 @@ function renderNoCampaignState() {
   hideFeedback();
   campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
   campaignStateGrid.innerHTML = "";
-  campaignBreadcrumb.textContent = "Sin campaña";
-  campaignHeroTitle.textContent = "Campaña";
-  campaignHeroSubtitle.textContent = "Analisis de rendimiento multicanal y tasa de conversión.";
+  campaignBreadcrumb.textContent = "Sin campaña seleccionada";
+  campaignHeroTitle.textContent = "Campañas y QR";
+  campaignHeroSubtitle.textContent = "Crea campañas, conecta QR y mide rendimiento multicanal, inversión, leads y conversión.";
   editCampaignButton.classList.add("hidden");
   markReadyCampaignButton.classList.add("hidden");
   campaignInsightText.textContent = "No hay campañas registradas para este negocio.";
