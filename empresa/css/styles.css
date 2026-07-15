@@ -43001,3 +43001,87 @@ body .portal-shell .view-section[data-view="campaigns"] .campaign-channel-roi-ca
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Calmer button radius: rounded, but no exaggerated pill buttons. */
+body .portal-shell {
+  --mg-control-radius: 10px;
+  --mg-control-radius-lg: 12px;
+  --mg-control-radius-sm: 8px;
+  --mg-icon-button-radius: 9px;
+}
+
+body .portal-shell :where(
+  button,
+  .btn,
+  .solid-button,
+  .ghost-button,
+  .request-button,
+  .danger-button,
+  .link-button,
+  .segment-tab,
+  .campaign-tab-button,
+  .dashboard-profile-tabs button,
+  .ticket-center-menu button,
+  .smart-catalog-tabs button,
+  .campaign-section-tabs button,
+  .quiet-zone-toggle,
+  .activation-type-option,
+  .revenue-objective-grid button,
+  .revenue-path-step button,
+  .rms-tutorial-actions button,
+  .rms-bulk-toolbar button,
+  .rms-card-actions button,
+  .rms-station-button-row button,
+  .activation-form-builder-actions button,
+  .season-launch-actions button,
+  .lead-agenda-mini-actions button,
+  .ticket-status-actions button,
+  .qr-batch-actions button,
+  .table-actions button,
+  .modal-actions button,
+  .button-row button,
+  .modal-button-row button
+) {
+  border-radius: var(--mg-control-radius) !important;
+}
+
+body .portal-shell :where(
+  .solid-button,
+  .ghost-button,
+  .request-button,
+  .danger-button,
+  .link-button,
+  .revenue-global-button,
+  button[type="submit"]
+) {
+  border-radius: var(--mg-control-radius-lg) !important;
+}
+
+body .portal-shell :where(
+  .icon-button,
+  button.icon-button,
+  .password-reveal-button,
+  .command-chart-help-button,
+  .campaign-cost-row .icon-button,
+  .campaign-cost-row-head .icon-button,
+  .sales-item-row .icon-button,
+  .dashboard-widget-actions .icon-button,
+  .dashboard-widget-top .icon-button,
+  .rms-station-screen-head > button
+) {
+  border-radius: var(--mg-icon-button-radius) !important;
+}
+
+body .portal-shell :where(
+  .dashboard-library-item em,
+  .feature-tier-badge,
+  .badge,
+  .status-pill,
+  .status-chip,
+  .chip,
+  .pill,
+  .mono-label,
+  .portal-location-pill
+) {
+  border-radius: var(--mg-control-radius-sm) !important;
+}
