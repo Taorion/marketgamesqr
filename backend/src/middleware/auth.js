@@ -12,7 +12,7 @@ async function authRequired(req, _res, next) {
     }
 
     const payload = jwt.verify(token, env.jwtSecret);
-    if (payload.session_version !== env.appSessionVersion) {
+    if (env.enforceSessionVersion && payload.session_version !== env.appSessionVersion) {
       throw unauthorized("El portal fue actualizado. Inicia sesion de nuevo para cargar la version vigente.");
     }
 

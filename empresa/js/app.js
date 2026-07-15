@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-agenda-views-visible-v1";
+const APP_VERSION = "empresa-20260715-session-no-kick-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 20000;
@@ -1948,17 +1948,47 @@ function clearSession(options = {}) {
   }
 }
 
+function normalizeSessionNoticeText(message = "") {
+  return String(message || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isDeployUpdateLoginNotice(message = "") {
+  const text = normalizeSessionNoticeText(message);
+  if (!text) return false;
+  return text.includes("portal fue actualizado")
+    || text.includes("portal se actualizo")
+    || text.includes("inicia sesion de nuevo para cargar la version vigente")
+    || text.includes("portal fue actualizado. inicia sesion");
+}
+
 function consumeAppUpdateNotice() {
   try {
     const notice = localStorage.getItem(APP_UPDATE_NOTICE_KEY) || "";
     if (notice) localStorage.removeItem(APP_UPDATE_NOTICE_KEY);
-    return notice;
+    return isDeployUpdateLoginNotice(notice) ? "" : notice;
   } catch {
     return "";
   }
 }
 
 function forceLoginAfterSessionIssue(message) {
+  if (isDeployUpdateLoginNotice(message)) {
+    try {
+      localStorage.removeItem(APP_UPDATE_NOTICE_KEY);
+      localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+    } catch {
+      // Storage is optional; keeping the in-memory session is what prevents the logout.
+    }
+    showFeedback("El portal se actualizó sin cerrar tu sesión. Intenta de nuevo la acción.", "info", {
+      title: "Portal actualizado",
+    });
+    return;
+  }
   clearSession();
   try {
     localStorage.setItem(APP_UPDATE_NOTICE_KEY, message || "Tu sesión debe actualizarse. Inicia sesión de nuevo.");
@@ -2687,7 +2717,7 @@ async function api(path, options = {}) {
   })() : {};
   if (!response.ok) {
     if (response.status === 401) {
-      forceLoginAfterSessionIssue(data.error?.message || "Tu sesión expiro o el portal fue actualizado. Inicia sesión de nuevo para continuar.");
+      forceLoginAfterSessionIssue(data.error?.message || "Tu sesión expiro. Inicia sesión de nuevo para continuar.");
     }
     const error = new Error(apiErrorMessage(data, response, rawText));
     error.status = response.status;
