@@ -46450,3 +46450,40 @@ html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-s
 html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button .sidebar-sales-machine-ignition {
   display: none !important;
 }
+
+/* Dashboard block picker: remove external status bars and keep states inside each control. */
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item,
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item:hover,
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+  border-left-width: 1px !important;
+  border-left-color: rgba(35, 121, 96, 0.14) !important;
+  box-shadow: 0 8px 18px rgba(18, 58, 47, 0.055) !important;
+}
+
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item::before,
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+  background:
+    linear-gradient(180deg, rgba(245, 253, 249, 0.98), rgba(238, 250, 245, 0.94)) !important;
+  border-color: rgba(42, 169, 127, 0.25) !important;
+}
+
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active > .material-symbols-outlined {
+  background: rgba(225, 248, 239, 0.96) !important;
+  color: #087c5d !important;
+}
+
+html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active em {
+  border-color: rgba(42, 169, 127, 0.24) !important;
+  background: rgba(226, 248, 239, 0.82) !important;
+  color: #087254 !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+  border-color: rgba(79, 211, 164, 0.28) !important;
+  background: rgba(17, 61, 49, 0.74) !important;
+}
