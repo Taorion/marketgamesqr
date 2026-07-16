@@ -37515,7 +37515,7 @@ body .portal-shell .login-access-panel {
 
 body .portal-shell .login-vision {
   display: grid !important;
-  grid-template-rows: auto minmax(0, auto) auto auto !important;
+  grid-template-rows: minmax(0, auto) auto auto !important;
   align-content: center !important;
   gap: clamp(22px, 3vw, 38px) !important;
   padding: clamp(10px, 2vw, 28px) 0 !important;
@@ -38219,6 +38219,16 @@ body .portal-shell .login-title-logo {
   flex: 0 0 clamp(82px, 6.1vw, 112px) !important;
   object-fit: contain !important;
   filter: drop-shadow(0 18px 30px rgba(10, 54, 43, 0.18)) !important;
+}
+
+/* Single-title login brand: avoid duplicated Sales Machine label above the hero. */
+body .portal-shell .login-vision > .login-vision-copy {
+  align-self: end !important;
+}
+
+body .portal-shell .login-vision:not(:has(.login-vision-brand)) {
+  grid-template-rows: minmax(0, auto) auto auto !important;
+  gap: clamp(18px, 2.4vw, 30px) !important;
 }
 
 body .portal-shell .login-vision-copy p {
