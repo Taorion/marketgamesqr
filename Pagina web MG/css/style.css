@@ -4807,6 +4807,14 @@ body:has(.rms-home)::before {
   box-shadow: 0 16px 46px rgba(7, 47, 39, 0.08);
 }
 
+.rms-home .site-header .brand {
+  display: none;
+}
+
+.rms-home .site-header .nav-wrap {
+  justify-content: flex-end;
+}
+
 .rms-home .brand-mark {
   border-radius: 18px;
   border: 1px solid rgba(9, 82, 70, 0.18);
