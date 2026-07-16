@@ -41705,6 +41705,184 @@ body[data-current-view="rms-machine"] .portal-shell .rms-queue-more {
   }
 }
 
+/* RMS daily queue: vertical work tray instead of compressed operational columns. */
+body[data-current-view="rms-machine"] .portal-shell .rms-workday-shell {
+  padding: clamp(18px, 2.1vw, 26px) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-daily-queue {
+  display: grid !important;
+  grid-auto-flow: row !important;
+  grid-auto-columns: initial !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 16px !important;
+  overflow: visible !important;
+  padding: 2px 0 0 !important;
+  scroll-snap-type: none !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-section {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(178px, 0.26fr) minmax(0, 1fr) !important;
+  gap: clamp(14px, 1.8vw, 22px) !important;
+  padding: clamp(14px, 1.7vw, 20px) !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(90deg, rgba(246, 252, 249, 0.92), rgba(255, 255, 255, 0.88) 38%, rgba(237, 247, 252, 0.5)),
+    #ffffff !important;
+  align-items: start !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head {
+  position: sticky !important;
+  top: 86px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  align-self: start !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head h3 {
+  margin-top: 4px !important;
+  max-width: 15ch !important;
+  font-size: clamp(1rem, 1.2vw, 1.18rem) !important;
+  line-height: 1.18 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-head > strong {
+  justify-self: start !important;
+  min-width: auto !important;
+  height: auto !important;
+  padding: 8px 11px !important;
+  border-radius: 10px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-stack {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)) !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-opportunity-card {
+  min-width: 0 !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "badges actions"
+    "title actions"
+    "facts facts"
+    "reason reason"
+    "next next" !important;
+  align-items: start !important;
+  gap: 10px 14px !important;
+  padding: 14px !important;
+  border-radius: 13px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-topline {
+  grid-area: badges !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title {
+  grid-area: title !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-title strong {
+  font-size: clamp(1.03rem, 1.1vw, 1.18rem) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-facts {
+  grid-area: facts !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(118px, 0.65fr) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-reason {
+  grid-area: reason !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action {
+  grid-area: next !important;
+  grid-template-columns: 22px minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-next-action .material-symbols-outlined {
+  display: inline-flex !important;
+  width: 22px !important;
+  height: 22px !important;
+  color: #0f7354 !important;
+  font-size: 21px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: minmax(112px, 1fr) !important;
+  gap: 8px !important;
+  min-width: 132px !important;
+  max-width: 154px !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions .solid-button,
+body[data-current-view="rms-machine"] .portal-shell .rms-card-actions .ghost-button {
+  width: 100% !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  white-space: normal !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-section .empty-state.compact,
+body[data-current-view="rms-machine"] .portal-shell .rms-queue-more {
+  grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 1100px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-queue-section {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-queue-head {
+    position: static !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-queue-head h3 {
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-opportunity-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "badges"
+      "title"
+      "facts"
+      "reason"
+      "next"
+      "actions" !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-card-facts {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-current-view="rms-machine"] .portal-shell .rms-card-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-current-view="rms-machine"] .portal-shell .rms-card-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 /* RMS serial station flow: make the station board read as one process, not separate boxes. */
 body[data-current-view="rms-machine"] .portal-shell .rms-stage-board-guide {
   position: relative !important;
