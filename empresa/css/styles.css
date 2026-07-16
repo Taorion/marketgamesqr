@@ -47387,3 +47387,511 @@ html body .portal-shell :where(
 ) {
   background: rgba(3, 12, 9, 0.72) !important;
 }
+
+/* Campaigns and QR final organization polish: compact, readable, no squeezed columns. */
+html body .portal-shell .view-section[data-view="campaigns"] {
+  --campaign-radius: 12px;
+  --campaign-radius-lg: 14px;
+  display: grid !important;
+  align-content: start !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "copy"
+    "actions" !important;
+  align-items: start !important;
+  gap: clamp(15px, 1.8vw, 20px) !important;
+  min-height: 0 !important;
+  padding: clamp(22px, 2.8vw, 34px) !important;
+  border: 1px solid rgba(22, 96, 75, 0.14) !important;
+  border-radius: var(--campaign-radius-lg) !important;
+  background:
+    linear-gradient(118deg, rgba(249, 254, 251, 0.98), rgba(240, 250, 246, 0.92) 58%, rgba(242, 249, 253, 0.86)),
+    #ffffff !important;
+  box-shadow: 0 14px 28px rgba(18, 52, 42, 0.05) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head::before,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head::after,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > .portal-location-pill {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > div:first-of-type {
+  grid-area: copy !important;
+  display: grid !important;
+  justify-items: start !important;
+  gap: 8px !important;
+  max-width: 980px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-breadcrumb {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 5px 9px !important;
+  border: 1px solid rgba(15, 116, 88, 0.15) !important;
+  border-radius: 8px !important;
+  background: rgba(235, 250, 242, 0.72) !important;
+  box-shadow: none !important;
+  color: #0f6f54 !important;
+  font: 800 0.72rem/1 Inter, system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-breadcrumb .material-symbols-outlined {
+  width: 10px !important;
+  min-width: 10px !important;
+  overflow: hidden !important;
+  color: rgba(15, 116, 88, 0.6) !important;
+  font-family: Inter, system-ui, sans-serif !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-breadcrumb .material-symbols-outlined::before {
+  content: "/" !important;
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] #campaignHeroTitle {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #10251f !important;
+  font-size: clamp(2.25rem, 4vw, 3.5rem) !important;
+  font-weight: 860 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] #campaignHeroSubtitle {
+  max-width: 78ch !important;
+  margin: 0 !important;
+  color: #3f5e54 !important;
+  font-size: clamp(0.96rem, 1vw, 1.05rem) !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > .head-actions {
+  grid-area: actions !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(22, 96, 75, 0.11) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .hidden {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #requestCampaignButton { order: 1 !important; }
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #editCampaignButton { order: 2 !important; }
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #campaignStrategyAssistantButton { order: 3 !important; }
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #exportCampaignReportButton { order: 4 !important; }
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #markReadyCampaignButton { order: 5 !important; }
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: 0.86rem !important;
+  font-weight: 760 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button {
+  background: #0f7458 !important;
+  border-color: #0f7458 !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+  background: rgba(255, 255, 255, 0.62) !important;
+  border-color: rgba(22, 96, 75, 0.2) !important;
+  color: #174b3d !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] #campaignStateGrid:empty,
+html body .portal-shell .view-section[data-view="campaigns"] #campaignKpiGrid:empty {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] #campaignStateGrid,
+html body .portal-shell .view-section[data-view="campaigns"] #campaignKpiGrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] :where(.kpi-card, .surface-card, .data-table-card, .chart-card, .table-card) {
+  border-radius: var(--campaign-radius) !important;
+  border-color: rgba(22, 96, 75, 0.14) !important;
+  box-shadow: 0 10px 24px rgba(18, 52, 42, 0.045) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-roi-summary-card,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-channel-roi-card {
+  display: grid !important;
+  gap: 14px !important;
+  padding: clamp(18px, 2vw, 24px) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .table-card-head h3,
+html body .portal-shell .view-section[data-view="campaigns"] .card-head h3,
+html body .portal-shell .view-section[data-view="campaigns"] .insight-card h3 {
+  margin: 0 !important;
+  color: #132820 !important;
+  font-size: clamp(1.05rem, 1.35vw, 1.35rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .chart-explainer,
+html body .portal-shell .view-section[data-view="campaigns"] .chart-note,
+html body .portal-shell .view-section[data-view="campaigns"] .insight-card p,
+html body .portal-shell .view-section[data-view="campaigns"] .explain-card p {
+  max-width: 76ch !important;
+  color: #536e64 !important;
+  font-size: 0.94rem !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  align-items: start !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-layout > .campaign-rail {
+  position: relative !important;
+  top: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(130px, 180px) minmax(220px, 280px) minmax(0, 1fr) !important;
+  align-items: end !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  padding: 16px !important;
+  border-radius: var(--campaign-radius) !important;
+  background:
+    linear-gradient(118deg, rgba(248, 254, 251, 0.96), rgba(242, 250, 247, 0.9) 58%, rgba(245, 250, 253, 0.82)),
+    #ffffff !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-rail .rail-head,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-rail label {
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-rail select {
+  width: 100% !important;
+  min-height: 40px !important;
+  border-radius: 8px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-list:empty {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px 12px !important;
+  min-width: 0 !important;
+  padding: 14px !important;
+  border: 1px solid rgba(22, 96, 75, 0.14) !important;
+  border-radius: var(--campaign-radius) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item::before {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item.active {
+  border-color: rgba(15, 116, 88, 0.42) !important;
+  background: rgba(238, 250, 245, 0.92) !important;
+  box-shadow: inset 4px 0 0 #0f7458 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item h3,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item p {
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item h3 {
+  color: #132820 !important;
+  font-size: 1rem !important;
+  line-height: 1.16 !important;
+  font-weight: 820 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item p {
+  color: #5a7269 !important;
+  font-size: 0.86rem !important;
+  line-height: 1.35 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 6px 0 0 !important;
+  border-top: 1px solid rgba(22, 96, 75, 0.1) !important;
+  color: #526d63 !important;
+  font-size: 0.78rem !important;
+  line-height: 1.2 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-item-row strong {
+  color: #15372d !important;
+  font: 780 0.78rem/1.2 Inter, system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-layout > .campaign-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(16px, 1.9vw, 24px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-content > * {
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-section-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 8px !important;
+  border: 1px solid rgba(22, 96, 75, 0.12) !important;
+  border-radius: var(--campaign-radius) !important;
+  background: rgba(247, 253, 250, 0.9) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-section-tabs button {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-content: start !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  min-height: 50px !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  white-space: normal !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-section-tabs button > span:last-child {
+  display: block !important;
+  min-width: 0 !important;
+  color: inherit !important;
+  font-size: 0.93rem !important;
+  font-weight: 760 !important;
+  line-height: 1.14 !important;
+  letter-spacing: 0 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-tab-mark {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 8px !important;
+  writing-mode: horizontal-tb !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-overview-grid,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-charts,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-explain-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(14px, 1.7vw, 20px) !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-explain-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-overview-grid > *,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-charts > *,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-explain-grid > * {
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .dark-hero-card {
+  min-height: 0 !important;
+  border-radius: var(--campaign-radius) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-meta-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-meta-grid > div {
+  min-width: 0 !important;
+  border-radius: 8px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] :where(.table-wrap, .table-responsive) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .table-wrap table {
+  min-width: 760px !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] th,
+html body .portal-shell .view-section[data-view="campaigns"] td {
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  letter-spacing: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-layout > .campaign-rail,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-overview-grid,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-charts,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-explain-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-section-tabs,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-list,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-meta-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions {
+    display: grid !important;
+  }
+
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .solid-button,
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+    width: 100% !important;
+    white-space: normal !important;
+  }
+
+  html body .portal-shell .view-section[data-view="campaigns"] .campaign-item {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] > .campaign-head,
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] > .campaign-layout > .campaign-rail,
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] .campaign-section-tabs,
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] :where(.campaign-item, .surface-card, .data-table-card, .chart-card, .table-card, .kpi-card) {
+  color: #f5fff9 !important;
+  border-color: rgba(167, 220, 199, 0.22) !important;
+  background: #0d211b !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] :where(#campaignHeroTitle, .campaign-item h3, .table-card-head h3, .card-head h3, .insight-card h3, .campaign-item-row strong) {
+  color: #f7fffb !important;
+}
+
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] :where(#campaignHeroSubtitle, .chart-explainer, .chart-note, .insight-card p, .explain-card p, .campaign-item p, .campaign-item-row) {
+  color: #d4e9df !important;
+}
+
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] .campaign-breadcrumb,
+:root[data-theme="dark"] .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions .ghost-button {
+  color: #e9fff6 !important;
+  border-color: rgba(167, 220, 199, 0.28) !important;
+  background: rgba(13, 33, 27, 0.92) !important;
+}
