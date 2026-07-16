@@ -1,4 +1,5 @@
 const express = require("express");
+const { rateLimit } = require("../middleware/rateLimit");
 const {
   createMotoRewardQr,
   createDemoQr,
@@ -22,17 +23,21 @@ const {
 
 const router = express.Router();
 
-router.post("/moto-pescuezo/qr", createMotoRewardQr);
-router.post("/demo/:type/qr", createDemoQr);
-router.post("/product-preferences/qr", createProductPreferenceQr);
-router.post("/campaigns/:businessSlug/:campaignSlug/lead-qr", createPublicCampaignLeadQr);
-router.get("/trivias/:slug", publicGetTrivia);
-router.post("/trivias/:slug/attempts", publicSubmitTrivia);
-router.get("/activations/:slug", publicGetInteractiveActivation);
-router.post("/activations/:slug/participants", publicStartInteractiveActivation);
-router.post("/activations/:slug/complete", publicCompleteInteractiveActivation);
-router.get("/lead-captures/:token", publicGetLeadCapture);
-router.post("/lead-captures/:token/submissions", publicSubmitLeadCapture);
-router.get("/lead-captures/download/:downloadToken", publicDownloadLeadCapture);
+const publicReadLimit = rateLimit({ keyPrefix: "public-game-read", max: 240, windowMs: 15 * 60_000 });
+const publicActionLimit = rateLimit({ keyPrefix: "public-game-action", max: 60, windowMs: 15 * 60_000 });
+const publicDownloadLimit = rateLimit({ keyPrefix: "public-game-download", max: 30, windowMs: 15 * 60_000 });
+
+router.post("/moto-pescuezo/qr", publicActionLimit, createMotoRewardQr);
+router.post("/demo/:type/qr", publicActionLimit, createDemoQr);
+router.post("/product-preferences/qr", publicActionLimit, createProductPreferenceQr);
+router.post("/campaigns/:businessSlug/:campaignSlug/lead-qr", publicActionLimit, createPublicCampaignLeadQr);
+router.get("/trivias/:slug", publicReadLimit, publicGetTrivia);
+router.post("/trivias/:slug/attempts", publicActionLimit, publicSubmitTrivia);
+router.get("/activations/:slug", publicReadLimit, publicGetInteractiveActivation);
+router.post("/activations/:slug/participants", publicActionLimit, publicStartInteractiveActivation);
+router.post("/activations/:slug/complete", publicActionLimit, publicCompleteInteractiveActivation);
+router.get("/lead-captures/:token", publicReadLimit, publicGetLeadCapture);
+router.post("/lead-captures/:token/submissions", publicActionLimit, publicSubmitLeadCapture);
+router.get("/lead-captures/download/:downloadToken", publicDownloadLimit, publicDownloadLeadCapture);
 
 module.exports = router;

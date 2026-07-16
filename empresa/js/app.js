@@ -1,11 +1,12 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260716-rms-first-entry-v1";
+const APP_VERSION = "empresa-20260716-egress-guard-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
-const API_CLIENT_CACHE_TTL_MS = 45000;
-const ACTIVITY_POLL_INTERVAL_MS = 240000;
+const API_CLIENT_CACHE_TTL_MS = 300000;
+const ACTIVITY_POLL_INTERVAL_MS = 900000;
+const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -5276,6 +5277,7 @@ function startActivityPolling() {
   stopActivityPolling();
   if (lightTestMode) return;
   if (!session?.user?.business_id || isPrepaidValidatorOnly()) return;
+  if (!ACTIVITY_POLLING_VIEWS.has(state.currentView)) return;
   state.activityPollingTimer = window.setInterval(checkBusinessActivity, ACTIVITY_POLL_INTERVAL_MS);
 }
 
