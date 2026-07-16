@@ -45038,3 +45038,329 @@ html body .portal-shell .view-section[data-view="affiliates"] #affiliateLedgerTa
     width: 100% !important;
   }
 }
+
+/* Affiliates compact operations pass: remove oversized hero/card feel from the workspace. */
+html body .portal-shell .view-section[data-view="affiliates"] {
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+  min-height: 0 !important;
+  padding: 20px 22px !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.98), rgba(246, 252, 249, 0.9) 62%, rgba(239, 248, 253, 0.55)),
+    #ffffff !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head > .portal-location-pill {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head > div {
+  max-width: 920px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head .mono-label {
+  display: inline-flex !important;
+  width: fit-content !important;
+  padding: 0 0 5px !important;
+  border: 0 !important;
+  border-bottom: 2px solid rgba(15, 115, 84, 0.2) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #0f7354 !important;
+  font-size: 0.72rem !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head h2 {
+  margin: 4px 0 8px !important;
+  max-width: 720px !important;
+  font-size: clamp(2rem, 3.2vw, 3.2rem) !important;
+  line-height: 1.02 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head p {
+  max-width: 88ch !important;
+  font-size: 0.94rem !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head .view-head-actions {
+  align-self: center !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-dashboard-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-stat-card {
+  min-height: 96px !important;
+  padding: 14px !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-stat-card strong {
+  margin: 5px 0 !important;
+  font-size: clamp(1.5rem, 2.05vw, 2rem) !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-stat-card p {
+  font-size: 0.82rem !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-strip {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.45fr) !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-card {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(220px, 0.32fr) minmax(0, 0.68fr) !important;
+  gap: 18px !important;
+  min-height: 0 !important;
+  padding: 14px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-card h3 {
+  margin: 4px 0 6px !important;
+  font-size: clamp(1.12rem, 1.35vw, 1.45rem) !important;
+  line-height: 1.12 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-card p {
+  font-size: 0.9rem !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps li {
+  min-height: 76px !important;
+  padding: 12px !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  gap: 8px 10px !important;
+  align-items: start !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps li span {
+  grid-row: 1 / span 2 !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps li strong,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps li small {
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-next-action-card,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-ranking-card {
+  min-height: 170px !important;
+  padding: 14px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-next-action-card h3 {
+  margin: 6px 0 8px !important;
+  font-size: clamp(1.1rem, 1.35vw, 1.42rem) !important;
+  line-height: 1.15 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-ranking-card .table-card-head {
+  margin-bottom: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-top-list {
+  gap: 8px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-top-row {
+  min-height: 52px !important;
+  padding: 8px 10px !important;
+  border-radius: 999px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-operation-feed {
+  padding: 12px !important;
+  gap: 9px !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-operation-feed .commerce-feed-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  padding-bottom: 2px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-operation-feed .commerce-feed-step {
+  min-height: 82px !important;
+  padding: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-finder-panel {
+  padding: 14px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-finder-panel .table-card-head {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  margin-bottom: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-finder-grid {
+  grid-template-columns: minmax(320px, 1fr) repeat(3, minmax(118px, auto)) !important;
+  align-items: end !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-logo-panel {
+  display: grid !important;
+  padding: 12px 14px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-logo-panel .table-card-head {
+  margin-bottom: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-logo-grid {
+  grid-template-columns: 86px minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .business-logo-preview {
+  min-height: 78px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-logo-copy p {
+  margin-bottom: 8px !important;
+  font-size: 0.84rem !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-layout {
+  grid-template-columns: minmax(320px, 0.78fr) minmax(500px, 1.22fr) !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-layout > .affiliate-panel,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-layout > .data-table-card {
+  padding: 14px !important;
+  border-radius: 13px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-panel .table-card-head,
+html body .portal-shell .view-section[data-view="affiliates"] .data-table-card .table-card-head {
+  margin-bottom: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-form,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-reward-rule-form {
+  gap: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-card-actions {
+  gap: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] :where(.affiliate-form, .affiliate-card-actions, .affiliate-reward-rule-form, .stacked-field) label,
+html body .portal-shell .view-section[data-view="affiliates"] .stacked-field {
+  padding: 9px !important;
+  border-radius: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-card-preview-wrap {
+  max-height: 340px !important;
+  overflow: auto !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-selected-summary {
+  margin-bottom: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-purchase-builder,
+html body .portal-shell .view-section[data-view="affiliates"] .benefit-fulfillment-panel,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-flow {
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-reward-panel {
+  align-self: start !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .table-card-head,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-referral-flow,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .stacked-field,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-card-note,
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .qr-result {
+  grid-column: 1 !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-card-actions {
+  grid-column: 2 !important;
+  grid-row: 1 / span 5 !important;
+  align-self: start !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-flow {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-steps {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+html body .portal-shell .view-section[data-view="affiliates"] .data-table-card .table-wrap {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-strip,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-command-card,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-card-actions,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .table-card-head,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-referral-flow,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .stacked-field,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .affiliate-card-note,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-referral-panel > .qr-result {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+}
+
+@media (max-width: 920px) {
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  html body .portal-shell .view-section[data-view="affiliates"] > .view-head,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-flow-steps,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-dashboard-grid,
+  html body .portal-shell .view-section[data-view="affiliates"] .affiliate-finder-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
