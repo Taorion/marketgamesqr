@@ -46487,3 +46487,206 @@ html body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-l
   border-color: rgba(79, 211, 164, 0.28) !important;
   background: rgba(17, 61, 49, 0.74) !important;
 }
+
+/* Collapsed sidebar: clean tool rail, icons only. */
+html body .portal-shell .app-shell.sidebar-collapsed {
+  --collapsed-sidebar-width: 72px;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar {
+  width: var(--collapsed-sidebar-width) !important;
+  padding: 14px 10px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  background:
+    linear-gradient(180deg, rgba(250, 255, 252, 0.98), rgba(236, 249, 244, 0.92)) !important;
+  border-right-color: rgba(36, 110, 86, 0.1) !important;
+  box-shadow: 10px 0 28px rgba(22, 58, 47, 0.045) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar::-webkit-scrollbar,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar::before,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand {
+  width: 46px !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0 !important;
+  margin: 0 auto 6px !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand > div,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand h1,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand p,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-group-label,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .mono-label,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .request-button,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > span:not(.material-symbols-outlined),
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > .feature-tier-badge {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand .brand-logo {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  padding: 4px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(28, 107, 84, 0.12) !important;
+  box-shadow: 0 8px 18px rgba(22, 58, 47, 0.08) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  place-items: center !important;
+  margin: 2px auto 8px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  border-color: rgba(15, 116, 88, 0.24) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(22, 58, 47, 0.08) !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button:hover,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button:focus-visible,
+html body[data-current-view="rms-machine"] .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button {
+  border-color: rgba(236, 178, 35, 0.46) !important;
+  background: linear-gradient(135deg, #0d5f48, #177c82) !important;
+  box-shadow: 0 10px 20px rgba(15, 116, 88, 0.16) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button::before,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button::after,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button .sidebar-sales-machine-copy,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button .sidebar-sales-machine-ignition {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button .sidebar-sales-machine-logo {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button .sidebar-sales-machine-logo img {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain !important;
+  filter: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 4px 0 18px !important;
+  display: grid !important;
+  gap: 8px !important;
+  justify-items: center !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  gap: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  text-align: center !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item::before,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > .material-symbols-outlined {
+  width: 28px !important;
+  height: 28px !important;
+  display: grid !important;
+  place-items: center !important;
+  margin: 0 !important;
+  border-radius: 7px !important;
+  color: #31564c !important;
+  background: transparent !important;
+  font-size: 1.18rem !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item:hover,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item:focus-visible {
+  border-color: rgba(28, 107, 84, 0.16) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item.active,
+html body[data-current-view="rms-machine"] .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item[data-view="rms-machine"] {
+  border-color: rgba(15, 116, 88, 0.24) !important;
+  background: rgba(220, 246, 236, 0.94) !important;
+  box-shadow: inset 3px 0 0 rgba(15, 116, 88, 0.72) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item.active > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #087254 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .app-main {
+  margin-left: var(--collapsed-sidebar-width) !important;
+  width: calc(100% - var(--collapsed-sidebar-width)) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .topbar {
+  left: var(--collapsed-sidebar-width) !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .app-shell.sidebar-collapsed .sidebar {
+  background: linear-gradient(180deg, rgba(8, 28, 24, 0.98), rgba(10, 42, 35, 0.94)) !important;
+  border-right-color: rgba(151, 211, 190, 0.12) !important;
+  box-shadow: 10px 0 26px rgba(0, 0, 0, 0.18) !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > .material-symbols-outlined {
+  color: rgba(231, 248, 242, 0.82) !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item:hover,
+:root[data-theme="dark"] html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item.active {
+  border-color: rgba(151, 211, 190, 0.2) !important;
+  background: rgba(20, 77, 62, 0.78) !important;
+}
