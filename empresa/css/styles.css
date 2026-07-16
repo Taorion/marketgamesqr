@@ -46143,3 +46143,64 @@ html body[data-current-view="leads"] .portal-shell .contact-center-tabs .contact
   border-color: rgba(151, 211, 190, 0.14) !important;
   background: rgba(14, 34, 29, 0.72) !important;
 }
+
+/* Hard override: remove oval/pill geometry from the contact-center tab buttons. */
+html body .portal-shell #contactCenterTabs.contact-center-tabs {
+  border-radius: 6px !important;
+  gap: 7px !important;
+  padding: 7px !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card,
+html body[data-current-view="leads"] .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card,
+:root html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card {
+  min-width: 126px !important;
+  min-height: 54px !important;
+  height: 54px !important;
+  max-height: 54px !important;
+  grid-template-columns: 26px minmax(0, 1fr) 24px !important;
+  gap: 7px !important;
+  padding: 8px 9px !important;
+  border-radius: 6px !important;
+  clip-path: inset(0 round 6px) !important;
+  background: #fbfffd !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card::before,
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card::after {
+  display: none !important;
+  content: none !important;
+  border-radius: 0 !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card:hover,
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card.active {
+  border-radius: 6px !important;
+  clip-path: inset(0 round 6px) !important;
+  box-shadow: inset 0 -2px 0 #0f7458 !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card .contact-tab-icon {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  border-radius: 5px !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card em {
+  min-width: 22px !important;
+  width: auto !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  padding: 0 5px !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card .contact-tab-copy strong {
+  font-size: 0.8rem !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tabs > button.segment-tab.contact-center-tab-card .contact-tab-copy small {
+  font-size: 0.62rem !important;
+}
