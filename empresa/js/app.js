@@ -1,11 +1,11 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260715-session-no-kick-v1";
+const APP_VERSION = "empresa-20260716-portal-runtime-lean-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
-const API_CLIENT_CACHE_TTL_MS = 20000;
-const ACTIVITY_POLL_INTERVAL_MS = 90000;
+const API_CLIENT_CACHE_TTL_MS = 45000;
+const ACTIVITY_POLL_INTERVAL_MS = 240000;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -1321,6 +1321,9 @@ let state = {
   businessProfile: null,
   subscription: null,
   access: null,
+  dashboardLoading: false,
+  accountWorkspaceLoaded: false,
+  accountWorkspaceLoading: false,
   businessUsers: [],
   campaignGroups: null,
   campaigns: [],
@@ -2437,6 +2440,9 @@ function resetBusinessScopedState(options = {}) {
   state.businessProfile = null;
   state.subscription = targetSession.user?.subscription || null;
   state.access = null;
+  state.dashboardLoading = false;
+  state.accountWorkspaceLoaded = false;
+  state.accountWorkspaceLoading = false;
   state.filter = "";
   state.commandCenter = null;
   state.commandCenterFilters = {
@@ -4450,6 +4456,60 @@ async function ensureSelectedCampaignLoaded(options = {}) {
   await selectCampaign(state.selectedCampaignId);
 }
 
+async function loadDashboardData(options = {}) {
+  if (!session?.user?.business_id) return;
+  if (state.dashboard && state.commandCenter && !options.force) return;
+  if (state.dashboardLoading && !options.force) return;
+  const scopeKey = businessScopeKey();
+  state.dashboardLoading = true;
+  if (!options.quiet) {
+    showFeedback("Cargando Centro de Revenue bajo demanda.", "loading", { title: "Dashboard", timeout: 0 });
+  }
+  try {
+    const [dashboardData, commandCenterData] = await Promise.all([
+      api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
+      apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter),
+    ]);
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.dashboard = dashboardData || null;
+    state.commandCenter = commandCenterData || null;
+    state.subscription = dashboardData?.subscription || state.subscription || session.user?.subscription || null;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.dashboardLoading = false;
+    if (!options.quiet) hideFeedback();
+  }
+}
+
+async function loadAccountWorkspaceData(options = {}) {
+  if (!session?.user?.business_id) return;
+  if (state.accountWorkspaceLoaded && !options.force) return;
+  if (state.accountWorkspaceLoading && !options.force) return;
+  const scopeKey = businessScopeKey();
+  state.accountWorkspaceLoading = true;
+  if (!options.quiet) {
+    showFeedback("Cargando cuenta, planes y saldo operativo.", "loading", { title: "Cuenta", timeout: 0 });
+  }
+  try {
+    const [businessProfileData, subscriptionPlansData, businessUsersData] = await Promise.all([
+      apiSafe("/api/business/profile?includeLogo=1", { headers: authHeaders() }, { business: null, subscription: state.subscription || session.user?.subscription || null }),
+      apiSafe("/api/public/subscription-plans", {}, { plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [] }),
+      apiSafe("/api/business/users", { headers: authHeaders() }, { users: state.businessUsers || [] }),
+      loadStrategicQrData({ groups: ["core"], quiet: true }),
+    ]);
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    mergeBusinessProfile(businessProfileData.business || null);
+    state.subscription = businessProfileData.subscription || state.subscription || session.user?.subscription || null;
+    state.subscriptionPlans = subscriptionPlansData.plans || state.subscriptionPlans || [];
+    state.prepaidReference = subscriptionPlansData.prepaid_reference || state.prepaidReference || [];
+    state.pricing = subscriptionPlansData.pricing || state.pricing;
+    state.businessUsers = businessUsersData.users || [];
+    state.accountWorkspaceLoaded = true;
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) state.accountWorkspaceLoading = false;
+    if (!options.quiet) hideFeedback();
+  }
+}
+
 function setView(view) {
   const requestedView = view;
   if (view === "sales") {
@@ -4502,8 +4562,26 @@ function setView(view) {
     tab.classList.toggle("active", active);
   });
 
-  if (view === "dashboard" && state.dashboard) {
-    renderDashboard();
+  if (view === "dashboard") {
+    if (state.dashboard) {
+      renderDashboard();
+    } else {
+      renderSkeletonCards(businessKpiGrid, 4);
+      if (commandCenterRoot) {
+        commandCenterRoot.innerHTML = `
+          <article class="command-center-loading surface-card">
+            <span class="busy-spinner" aria-hidden="true"></span>
+            <div>
+              <strong>Cargando Centro de Revenue</strong>
+              <p>El dashboard pesado se carga solo cuando abres esta vista.</p>
+            </div>
+          </article>
+        `;
+      }
+    }
+    loadDashboardData({ quiet: true }).then(renderDashboard).catch((error) => {
+      showFeedback(error.message || "No se pudo cargar el Centro de Revenue.", "error", { title: "Dashboard" });
+    });
     if (!state.missionsLoaded) {
       loadGamificationDashboard({ quiet: true }).then(renderRevenueWorkspace).catch(() => {});
     }
@@ -4529,8 +4607,8 @@ function setView(view) {
     });
   }
   if (view === "account") {
-    loadStrategicQrData({ groups: ["core"], quiet: true }).then(() => {
-      renderQrCreditShop();
+    loadAccountWorkspaceData({ quiet: true }).then(() => {
+      renderBusinessLogoPanel();
       renderAccountView();
     }).catch(() => {});
     if (!state.digitalAssetsLoaded || !state.leadCaptureLoaded) {
@@ -5047,26 +5125,20 @@ async function loadWorkspace() {
     strategicQrHistoryTable.innerHTML = '<tr><td colspan="5">Abre Gaming Center para cargar historial reciente.</td></tr>';
   }
 
-  const sessionBusinessProfile = sessionBusinessProfileForActiveBusiness();
-  const needsLogoPayload = !lightTestMode && (!(state.businessProfile?.logo_data_url
-    || sessionBusinessProfile?.logo_data_url
-    || sessionBusinessProfile?.settings?.logo_data_url)
-    || !(state.businessProfile?.ticket_frame_data_url
-      || sessionBusinessProfile?.ticket_frame_data_url
-      || sessionBusinessProfile?.settings?.ticket_frame_data_url));
-  const profileEndpoint = `/api/business/profile${needsLogoPayload ? "?includeLogo=1" : ""}`;
-  const shouldLoadDashboardData = !lightTestMode && (state.currentView === "dashboard" || !state.dashboard);
+  const profileEndpoint = "/api/business/profile";
+  const shouldLoadDashboardData = !lightTestMode && state.currentView === "dashboard";
+  const shouldLoadAccountData = !lightTestMode && state.currentView === "account";
   const requests = [
     apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
-    shouldLoadDashboardData ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard || {}),
+    shouldLoadDashboardData ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard || null),
     shouldLoadDashboardData ? apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null) : Promise.resolve(state.commandCenter || null),
     api("/api/business/campaigns", { headers: authHeaders() }),
     apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null }),
-    apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
-    apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
+    shouldLoadAccountData ? apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }) : Promise.resolve({ credit_account: state.qrCreditAccount || null }),
+    shouldLoadAccountData ? apiSafe("/api/public/subscription-plans", {}, { plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [] }) : Promise.resolve({ plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [], pricing: state.pricing }),
     Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention || null, lead_gate: state.contactFeedGate || null }),
-    lightTestMode ? Promise.resolve({ users: [] }) : apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
-    lightTestMode ? Promise.resolve({ activity: null }) : apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
+    shouldLoadAccountData ? apiSafe("/api/business/users", { headers: authHeaders() }, { users: state.businessUsers || [] }) : Promise.resolve({ users: state.businessUsers || [] }),
+    Promise.resolve({ activity: null }),
   ];
 
   if (isAdmin()) {
@@ -5082,7 +5154,7 @@ async function loadWorkspace() {
     state.activityVersion = activityData.activity?.version || state.activityVersion || "";
     state.summary = campaignData.summary || null;
     mergeBusinessProfile(businessProfileData.business || null);
-    state.subscription = businessProfileData.subscription || dashboardData.subscription || session.user?.subscription || null;
+    state.subscription = businessProfileData.subscription || dashboardData?.subscription || session.user?.subscription || null;
     state.campaignGroups = campaignData.groups || null;
     state.campaigns = campaignData.campaigns || [];
     state.qrCreditAccount = accessData.access?.ticketAccount || creditData.credit_account || businessProfileData.credit_account || null;
@@ -5105,6 +5177,7 @@ async function loadWorkspace() {
     state.leadAgendaRange = null;
     state.editingAgendaId = null;
     state.businessUsers = businessUsersData.users || [];
+    state.accountWorkspaceLoaded = shouldLoadAccountData;
     state.businessBranches = [];
     state.businessBranchesLoaded = false;
     state.businessBranchesLoading = false;
@@ -5229,14 +5302,14 @@ async function refreshLiveBusinessData() {
   try {
     const shouldRefreshDashboard = state.currentView === "dashboard";
     const shouldRefreshContacts = state.currentView === "leads" || state.contactFeedLoaded;
-    const [dashboardData, commandCenterData, campaignData, contactFeedData, activityData] = await Promise.all([
+    const shouldRefreshCampaigns = state.currentView === "campaigns" || viewNeedsCampaignData(state.currentView);
+    const [dashboardData, commandCenterData, campaignData, contactFeedData] = await Promise.all([
       shouldRefreshDashboard ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard),
       shouldRefreshDashboard ? apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter) : Promise.resolve(state.commandCenter),
-      api("/api/business/campaigns", { headers: authHeaders() }),
+      shouldRefreshCampaigns ? api("/api/business/campaigns", { headers: authHeaders() }) : Promise.resolve({ summary: state.summary, groups: state.campaignGroups, campaigns: state.campaigns }),
       shouldRefreshContacts
         ? apiSafe("/api/business/contacts/feed?limit=120", { headers: authHeaders() }, { contacts: state.contactFeed || [], retention: state.contactFeedRetention })
         : Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention, lead_gate: state.contactFeedGate }),
-      apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null }),
     ]);
     if (refreshSeq !== state.workspaceLoadSeq || session?.user?.business_id !== refreshBusinessId) return;
 
@@ -5249,16 +5322,17 @@ async function refreshLiveBusinessData() {
     state.contactFeedRetention = contactFeedData.retention || null;
     state.contactFeedGate = contactFeedData.lead_gate || null;
     state.contactFeedLoaded = shouldRefreshContacts ? true : state.contactFeedLoaded;
-    state.activityVersion = activityData.activity?.version || state.activityVersion;
 
     if (shouldRefreshDashboard) renderDashboard();
-    renderCampaignStateGrid();
-    renderCampaignList();
-    renderCampaignAssociationInputs();
+    if (shouldRefreshCampaigns) {
+      renderCampaignStateGrid();
+      renderCampaignList();
+      renderCampaignAssociationInputs();
+    }
     if (state.currentView === "leads") renderLeadsView();
     if (shouldRefreshDashboard) renderCommandCenter();
 
-    if (state.selectedCampaignId && state.campaigns.some((item) => item.id === state.selectedCampaignId) && viewNeedsCampaignData(state.currentView)) {
+    if (shouldRefreshCampaigns && state.selectedCampaignId && state.campaigns.some((item) => item.id === state.selectedCampaignId) && viewNeedsCampaignData(state.currentView)) {
       await selectCampaign(state.selectedCampaignId);
     }
     if (state.strategicQrLoaded || state.currentView === "strategic-qr") {
@@ -29847,6 +29921,15 @@ window.addEventListener("pageshow", (event) => {
   resetBusinessScopedState({ session: storedSession });
   session = storedSession;
   renderShell();
+});
+document.addEventListener("visibilitychange", () => {
+  if (!session?.user?.business_id || lightTestMode || isPrepaidValidatorOnly()) return;
+  if (document.hidden) {
+    stopActivityPolling();
+    return;
+  }
+  startActivityPolling();
+  checkBusinessActivity();
 });
 logoutButton.addEventListener("click", () => {
   stopValidatorScanner();

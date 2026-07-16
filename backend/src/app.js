@@ -62,7 +62,7 @@ function setUtf8StaticHeaders(res, filePath) {
   if (ext === ".html") {
     res.setHeader("Cache-Control", "no-cache, must-revalidate");
   } else if (longCacheStaticExtensions.has(ext)) {
-    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", "public, max-age=2592000, stale-while-revalidate=604800");
   }
 }
 
