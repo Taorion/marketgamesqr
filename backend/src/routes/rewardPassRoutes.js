@@ -1,5 +1,9 @@
 const express = require("express");
 const { authRequired } = require("../middleware/auth");
+const {
+  cacheBusinessResponse,
+  invalidateBusinessResponseCache,
+} = require("../middleware/businessResponseCache");
 const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   acquisitionReceipt,
@@ -19,13 +23,17 @@ const router = express.Router();
 const requirePrizeProgram = requireBusinessFeature("prize_program");
 
 router.use(authRequired);
-router.get("/context", requirePrizeProgram, rewardPassContext);
-router.get("/", requirePortalAccess, requirePrizeProgram, list);
-router.get("/metrics", requirePortalAccess, requirePrizeProgram, metrics);
+router.use(invalidateBusinessResponseCache());
+
+const rewardPassCache = cacheBusinessResponse({ keyPrefix: "reward-passes", ttlMs: 180_000 });
+
+router.get("/context", requirePrizeProgram, rewardPassCache, rewardPassContext);
+router.get("/", requirePortalAccess, requirePrizeProgram, rewardPassCache, list);
+router.get("/metrics", requirePortalAccess, requirePrizeProgram, rewardPassCache, metrics);
 router.post("/", requirePortalAccess, requirePrizeProgram, create);
 router.get("/validator/:token", validateToken);
 router.post("/validator/:token/redeem", redeemToken);
-router.get("/:id", requirePortalAccess, requirePrizeProgram, get);
+router.get("/:id", requirePortalAccess, requirePrizeProgram, rewardPassCache, get);
 router.get("/:id/pdf", requirePortalAccess, requirePrizeProgram, downloadPdf);
 router.get("/:id/acquisition-receipt.pdf", requirePortalAccess, requirePrizeProgram, acquisitionReceipt);
 router.post("/:id/cancel", requirePortalAccess, requirePrizeProgram, cancel);
