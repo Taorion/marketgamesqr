@@ -47162,3 +47162,228 @@ html body .portal-shell :where(
     box-shadow: none !important;
   }
 }
+
+/* Dark mode readability guard: high-contrast text across the full portal. */
+:root[data-theme="dark"] {
+  --bg: #071410;
+  --surface: #0d211b;
+  --surface-soft: #122c24;
+  --surface-muted: #19372e;
+  --surface-border: rgba(167, 220, 199, 0.24);
+  --text: #f5fff9;
+  --text-primary: #f5fff9;
+  --text-muted: #d4e9df;
+  --text-soft: #b8d2c7;
+  --primary: #bff7df;
+  --secondary: #73e6bd;
+  --secondary-soft: #9cf6d4;
+  --secondary-pale: rgba(120, 224, 180, 0.16);
+  --green-panel: #0f3a2f;
+  --shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .portal-shell {
+  background: #071410 !important;
+  color: #f5fff9 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  strong,
+  b,
+  label,
+  th,
+  .kpi-value,
+  .metric-value,
+  .section-title,
+  .view-title,
+  .card-title
+) {
+  color: #f7fffb !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  p,
+  small,
+  span,
+  td,
+  li,
+  dt,
+  dd,
+  .kpi-meta,
+  .card-meta,
+  .form-hint,
+  .section-copy,
+  .text-muted
+) {
+  color: #d4e9df !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .mono-label,
+  .eyebrow,
+  .badge,
+  .pill,
+  .chip,
+  .tag,
+  .status-pill
+) {
+  color: #dffbef !important;
+  border-color: rgba(151, 236, 202, 0.28) !important;
+  background: rgba(120, 224, 180, 0.13) !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .surface-card,
+  .command-panel,
+  .dashboard-widget,
+  .kpi-card,
+  .view-head,
+  .quiet-zone,
+  .rms-stage-card,
+  .rms-daily-card,
+  .rms-station-card,
+  .contact-center-panel,
+  .contact-center-tab-rail,
+  .lead-agenda-card,
+  .affiliate-panel,
+  .smart-catalog-panel,
+  .campaign-panel,
+  .modal-card,
+  .table-wrap,
+  .table-responsive,
+  .sidebar
+) {
+  color: #f5fff9 !important;
+  border-color: rgba(167, 220, 199, 0.2) !important;
+  background: #0d211b !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  input,
+  select,
+  textarea,
+  .input-like,
+  .search-input
+) {
+  color: #f7fffb !important;
+  background: #0a1b16 !important;
+  border-color: rgba(167, 220, 199, 0.3) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(input, select, textarea)::placeholder {
+  color: #9fbaaf !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  table,
+  thead,
+  tbody,
+  tr,
+  td,
+  th
+) {
+  color: #e8f8f1 !important;
+  border-color: rgba(167, 220, 199, 0.16) !important;
+}
+
+:root[data-theme="dark"] .portal-shell thead :where(th, td),
+:root[data-theme="dark"] .portal-shell .table-header {
+  color: #f4fff9 !important;
+  background: #122c24 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .ghost-button,
+  .nav-link-button,
+  .quiet-zone-toggle,
+  button:not(.solid-button):not(.icon-button)
+) {
+  color: #e9fff6 !important;
+  border-color: rgba(167, 220, 199, 0.26) !important;
+  background: rgba(13, 33, 27, 0.92) !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .ghost-button,
+  .nav-link-button,
+  .quiet-zone-toggle,
+  button:not(.solid-button):not(.icon-button)
+) * {
+  color: #e9fff6 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(.solid-button, .primary-button) {
+  color: #052018 !important;
+  background: #87f2c7 !important;
+  border-color: #87f2c7 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(.solid-button, .primary-button) * {
+  color: #052018 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(.icon-button, .material-symbols-outlined) {
+  color: inherit;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .nav-item,
+  .sidebar a,
+  .sidebar button,
+  .contact-center-tab-card
+) {
+  color: #e8f8f1 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .nav-item.active,
+  .contact-center-tab-card.active,
+  [aria-selected="true"]
+) {
+  color: #f8fffb !important;
+  background: #123a2f !important;
+  border-color: rgba(135, 242, 199, 0.42) !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  a,
+  [role="link"],
+  .link-button
+) {
+  color: #9cf6d4 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .error-line,
+  .form-message.is-error,
+  .text-danger
+) {
+  color: #ffb4b4 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .success-line,
+  .form-message.is-success,
+  .text-success
+) {
+  color: #a8ffd9 !important;
+}
+
+:root[data-theme="dark"] .portal-shell :where(
+  .busy-overlay,
+  .modal-shell,
+  .chart-focus-overlay,
+  .lead-detail-workspace
+) {
+  background: rgba(3, 12, 9, 0.72) !important;
+}
