@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "Market Games QR",
   "short_name": "Market Games",
-  "description": "Portal Universal QR para medir ROI real de publicidad, campanas, redenciones, leads y ventas atribuidas.",
+  "description": "Portal Market Games Quality Revenue RMS para medir ROI real de publicidad, campanas, redenciones, leads y ventas atribuidas.",
   "lang": "es-CO",
   "start_url": "/",
   "scope": "/",
