@@ -1250,6 +1250,8 @@ const QUIET_ZONE_DEFAULT_OPEN_COUNT = {
 };
 let quietCanvasEnhanceTimer = 0;
 let quietCanvasObserver = null;
+let quietCanvasEnhancePending = false;
+let quietCanvasEnhanceIdle = false;
 const routeLightMode = ["1", "true", "yes"].includes(String(routeParams.get("lite") || "").toLowerCase());
 const routeDisableLightMode = ["0", "false", "no", "off"].includes(String(routeParams.get("lite") || "").toLowerCase());
 if (routeLightMode) {
@@ -2304,16 +2306,32 @@ function enhanceQuietCanvas() {
 }
 
 function scheduleQuietCanvasEnhancement() {
-  window.clearTimeout(quietCanvasEnhanceTimer);
-  quietCanvasEnhanceTimer = window.setTimeout(enhanceQuietCanvas, 90);
+  if (quietCanvasEnhancePending) return;
+  if (quietCanvasEnhanceTimer) {
+    if (quietCanvasEnhanceIdle && window.cancelIdleCallback) {
+      window.cancelIdleCallback(quietCanvasEnhanceTimer);
+    } else {
+      window.clearTimeout(quietCanvasEnhanceTimer);
+    }
+  }
+  quietCanvasEnhancePending = true;
+  const run = () => {
+    quietCanvasEnhanceTimer = 0;
+    quietCanvasEnhanceIdle = false;
+    quietCanvasEnhancePending = false;
+    enhanceQuietCanvas();
+  };
+  if (window.requestIdleCallback) {
+    quietCanvasEnhanceIdle = true;
+    quietCanvasEnhanceTimer = window.requestIdleCallback(run, { timeout: 650 });
+    return;
+  }
+  quietCanvasEnhanceIdle = false;
+  quietCanvasEnhanceTimer = window.setTimeout(run, 180);
 }
 
 function startQuietCanvasObserver() {
-  if (quietCanvasObserver || !window.MutationObserver) return;
-  const shell = document.querySelector(".content-shell");
-  if (!shell) return;
-  quietCanvasObserver = new MutationObserver(() => scheduleQuietCanvasEnhancement());
-  quietCanvasObserver.observe(shell, { childList: true, subtree: true });
+  quietCanvasObserver = null;
 }
 
 function renderSkeletonCards(container, count = 4) {
