@@ -46904,3 +46904,119 @@ html body[data-current-view="leads"] .portal-shell .view-section[data-view="lead
   border-color: rgba(151, 211, 190, 0.16) !important;
   background: rgba(8, 24, 20, 0.45) !important;
 }
+
+/* Contact center tabs: readable labels with stable icon and counter zones. */
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(142px, 1fr) !important;
+  grid-template-columns: none !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  border-radius: 10px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card {
+  min-width: 142px !important;
+  width: 100% !important;
+  min-height: 58px !important;
+  height: 58px !important;
+  max-height: none !important;
+  grid-template-columns: 30px minmax(70px, 1fr) 28px !important;
+  gap: 8px !important;
+  align-items: center !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-icon {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 7px !important;
+  font-size: 17px !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+  align-content: center !important;
+  text-align: left !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy strong,
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy small {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  letter-spacing: 0 !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy strong {
+  color: #0f241e !important;
+  font-size: 0.84rem !important;
+  line-height: 1.05 !important;
+  font-weight: 860 !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy small {
+  margin-top: 0 !important;
+  color: #587067 !important;
+  font-size: 0.66rem !important;
+  line-height: 1.08 !important;
+  font-weight: 650 !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card em {
+  justify-self: end !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  padding: 0 6px !important;
+  border-radius: 6px !important;
+  font-size: 0.68rem !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card:hover,
+html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card.active {
+  border-radius: 8px !important;
+}
+
+@media (min-width: 1320px) {
+  html body .portal-shell #contactCenterTabs.contact-center-tab-rail {
+    grid-auto-columns: minmax(148px, 1fr) !important;
+  }
+
+  html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card {
+    min-width: 148px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body .portal-shell #contactCenterTabs.contact-center-tab-rail {
+    grid-auto-columns: minmax(150px, 74vw) !important;
+  }
+}
+
+:root[data-theme="dark"] html body .portal-shell #contactCenterTabs.contact-center-tab-rail {
+  background: rgba(8, 24, 20, 0.48) !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy strong {
+  color: #f3fff9 !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy small {
+  color: #c7ded6 !important;
+}
