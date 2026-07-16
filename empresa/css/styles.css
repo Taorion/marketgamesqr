@@ -48250,3 +48250,489 @@ html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.cont
 :root[data-theme="dark"] html body .portal-shell #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card .contact-tab-copy small {
   color: #d4e9df !important;
 }
+
+/* Reward Pass PRO final organization: premium gift-card workbench. */
+html body .portal-shell .view-section[data-view="reward-passes"] {
+  --rp-ink: #10251f;
+  --rp-muted: #526d63;
+  --rp-soft: #f4faf6;
+  --rp-line: rgba(20, 124, 91, 0.14);
+  --rp-green: #0f7458;
+  --rp-blue: #25799b;
+  display: grid !important;
+  align-content: start !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: clamp(14px, 2vw, 22px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: clamp(22px, 2.7vw, 32px) !important;
+  border: 1px solid var(--rp-line) !important;
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(249, 194, 77, 0.16), transparent 25%),
+    linear-gradient(118deg, rgba(255, 254, 250, 0.98), rgba(239, 249, 244, 0.92) 58%, rgba(241, 248, 252, 0.84)),
+    #ffffff !important;
+  box-shadow: 0 14px 30px rgba(18, 52, 42, 0.055) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head::before {
+  content: "featured_seasonal_and_gifts" !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(15, 116, 88, 0.12), rgba(247, 190, 65, 0.16)) !important;
+  color: var(--rp-green) !important;
+  font-family: "Material Symbols Outlined" !important;
+  font-size: 1.75rem !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 116, 88, 0.13) !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head > div:first-of-type {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  max-width: 900px !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head .mono-label {
+  width: fit-content !important;
+  padding: 5px 8px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: rgba(15, 116, 88, 0.08) !important;
+  color: #0f6f54 !important;
+  box-shadow: inset 0 -1px 0 rgba(15, 116, 88, 0.22) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head h2 {
+  margin: 0 !important;
+  color: var(--rp-ink) !important;
+  font-size: clamp(2.2rem, 4vw, 3.7rem) !important;
+  line-height: 0.98 !important;
+  font-weight: 870 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head p {
+  max-width: 76ch !important;
+  margin: 0 !important;
+  color: var(--rp-muted) !important;
+  font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .view-head-actions {
+  justify-self: end !important;
+  align-self: center !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .view-head-actions .ghost-button,
+html body .portal-shell .view-section[data-view="reward-passes"] .solid-button,
+html body .portal-shell .view-section[data-view="reward-passes"] .ghost-button {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .reward-pass-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+html body .portal-shell .reward-pass-kpis .kpi-card {
+  min-height: 106px !important;
+  padding: 14px !important;
+  border: 1px solid var(--rp-line) !important;
+  border-radius: 11px !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: 0 8px 18px rgba(18, 52, 42, 0.04) !important;
+}
+
+html body .portal-shell .reward-pass-kpis .kpi-card strong {
+  color: var(--rp-ink) !important;
+  font-size: clamp(1.35rem, 1.8vw, 2rem) !important;
+  line-height: 1.05 !important;
+}
+
+html body .portal-shell .reward-pass-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.28fr) minmax(340px, 0.72fr) !important;
+  align-items: start !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .reward-pass-form-card,
+html body .portal-shell .reward-pass-preview-card,
+html body .portal-shell .view-section[data-view="reward-passes"] > .data-table-card,
+html body .portal-shell .reward-pass-detail-card {
+  min-width: 0 !important;
+  padding: clamp(18px, 2vw, 24px) !important;
+  border: 1px solid var(--rp-line) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 253, 250, 0.82)),
+    #ffffff !important;
+  box-shadow: 0 12px 26px rgba(18, 52, 42, 0.045) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+  margin: 0 0 14px !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid rgba(20, 124, 91, 0.1) !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .table-card-head strong {
+  color: var(--rp-ink) !important;
+  font-size: clamp(1.05rem, 1.35vw, 1.35rem) !important;
+  line-height: 1.14 !important;
+  font-weight: 830 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .reward-pass-ticket-context {
+  display: grid !important;
+  align-items: center !important;
+  min-height: 42px !important;
+  margin: 0 0 14px !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(15, 116, 88, 0.14) !important;
+  border-radius: 9px !important;
+  background: #eef8f3 !important;
+  color: #1f5a46 !important;
+  font-size: 0.86rem !important;
+  font-weight: 760 !important;
+  line-height: 1.28 !important;
+}
+
+html body .portal-shell .reward-pass-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+html body .portal-shell .reward-pass-form label {
+  display: grid !important;
+  align-content: start !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  min-height: auto !important;
+  margin: 0 !important;
+  padding: 11px !important;
+  border: 1px solid rgba(20, 124, 91, 0.11) !important;
+  border-radius: 9px !important;
+  background: rgba(248, 253, 250, 0.86) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .reward-pass-form label > span {
+  color: #183d31 !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .reward-pass-form :where(input, select, textarea) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 40px !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  border-color: rgba(20, 124, 91, 0.18) !important;
+  background: #ffffff !important;
+  color: var(--rp-ink) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.22 !important;
+}
+
+html body .portal-shell .reward-pass-form .validator-checkline {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  min-height: 44px !important;
+}
+
+html body .portal-shell .reward-pass-form .validator-checkline input {
+  width: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .reward-pass-form .span-2,
+html body .portal-shell .reward-pass-form .modal-actions {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell .reward-pass-form .modal-actions {
+  padding: 12px 0 0 !important;
+  border-top: 1px solid rgba(20, 124, 91, 0.1) !important;
+}
+
+html body .portal-shell .reward-pass-form .modal-button-row {
+  justify-content: flex-end !important;
+}
+
+html body .portal-shell .reward-pass-form #rewardPassCreateButton {
+  min-width: 210px !important;
+  min-height: 42px !important;
+  background: linear-gradient(135deg, var(--rp-green), var(--rp-blue)) !important;
+  border-color: transparent !important;
+}
+
+html body .portal-shell .reward-pass-preview-card {
+  position: sticky !important;
+  top: calc(var(--topbar-height, 0px) + 14px) !important;
+  display: grid !important;
+  gap: 14px !important;
+}
+
+html body .portal-shell .reward-pass-card-preview {
+  display: grid !important;
+  min-height: 280px !important;
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(247, 190, 65, 0.2), transparent 28%),
+    linear-gradient(135deg, #064033, #0e6d53 58%, #1f6f91) !important;
+  box-shadow: 0 16px 34px rgba(13, 72, 56, 0.2) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .reward-pass-card-inner {
+  display: grid !important;
+  align-content: end !important;
+  gap: 10px !important;
+  min-height: 100% !important;
+  padding: clamp(22px, 2.2vw, 30px) !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .reward-pass-card-inner span {
+  width: fit-content !important;
+  padding: 5px 8px !important;
+  border-radius: 7px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #eafff5 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .reward-pass-card-inner strong {
+  color: #ffffff !important;
+  font-size: clamp(2.1rem, 3.5vw, 3.2rem) !important;
+  line-height: 0.96 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .reward-pass-card-inner p,
+html body .portal-shell .reward-pass-card-inner small {
+  max-width: 34ch !important;
+  color: rgba(255, 255, 255, 0.84) !important;
+  line-height: 1.34 !important;
+}
+
+html body .portal-shell .reward-pass-preview-card .affiliate-card-actions {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body .portal-shell .reward-pass-preview-card .affiliate-card-actions .ghost-button {
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 8px 9px !important;
+  font-size: 0.78rem !important;
+  white-space: normal !important;
+}
+
+html body .portal-shell .reward-pass-preview-card .affiliate-card-note {
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(20, 124, 91, 0.1) !important;
+  border-radius: 9px !important;
+  background: rgba(248, 253, 250, 0.86) !important;
+  color: var(--rp-muted) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.35 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] > .data-table-card {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .inline-selects select {
+  min-height: 38px !important;
+  border-radius: 8px !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] .table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  border: 1px solid rgba(20, 124, 91, 0.1) !important;
+  border-radius: 10px !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] table {
+  min-width: 920px !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] th {
+  background: #f3faf6 !important;
+  color: #0f6f54 !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .view-section[data-view="reward-passes"] td {
+  color: #263f36 !important;
+  font-size: 0.86rem !important;
+  line-height: 1.28 !important;
+}
+
+html body .portal-shell #rewardPassTable tr.active td {
+  background: rgba(238, 250, 245, 0.88) !important;
+}
+
+html body .portal-shell #rewardPassTable td:last-child {
+  min-width: 250px !important;
+}
+
+html body .portal-shell .reward-pass-table-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .reward-pass-table-actions .ghost-button {
+  min-height: 32px !important;
+  padding: 6px 8px !important;
+  border-radius: 7px !important;
+  font-size: 0.74rem !important;
+}
+
+html body .portal-shell .reward-pass-detail-card {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+html body .portal-shell .reward-pass-detail-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+html body .portal-shell .reward-pass-detail-item {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  padding: 12px !important;
+  border: 1px solid rgba(20, 124, 91, 0.1) !important;
+  border-radius: 9px !important;
+  background: rgba(248, 253, 250, 0.86) !important;
+}
+
+html body .portal-shell .reward-pass-detail-item span {
+  color: #5d746b !important;
+  font-size: 0.72rem !important;
+  font-weight: 760 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .reward-pass-detail-item strong {
+  min-width: 0 !important;
+  color: var(--rp-ink) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.25 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1280px) {
+  html body .portal-shell .reward-pass-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body .portal-shell .reward-pass-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .reward-pass-preview-card {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 780px) {
+  html body .portal-shell .view-section[data-view="reward-passes"] > .view-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .view-section[data-view="reward-passes"] > .view-head::before {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  html body .portal-shell .reward-pass-kpis,
+  html body .portal-shell .reward-pass-form,
+  html body .portal-shell .reward-pass-preview-card .affiliate-card-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+:root[data-theme="dark"] html body .portal-shell .view-section[data-view="reward-passes"] {
+  --rp-ink: #f7fffb;
+  --rp-muted: #d4e9df;
+  --rp-line: rgba(167, 220, 199, 0.2);
+}
+
+:root[data-theme="dark"] html body .portal-shell .view-section[data-view="reward-passes"] > .view-head,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-form-card,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-preview-card,
+:root[data-theme="dark"] html body .portal-shell .view-section[data-view="reward-passes"] > .data-table-card,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-detail-card,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-kpis .kpi-card {
+  color: #f5fff9 !important;
+  border-color: var(--rp-line) !important;
+  background: #0d211b !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .reward-pass-form label,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-detail-item,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-preview-card .affiliate-card-note,
+:root[data-theme="dark"] html body .portal-shell .reward-pass-ticket-context {
+  border-color: rgba(167, 220, 199, 0.16) !important;
+  background: rgba(7, 20, 16, 0.5) !important;
+  color: #d4e9df !important;
+}

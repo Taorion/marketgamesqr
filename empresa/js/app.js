@@ -25799,11 +25799,13 @@ function renderRewardPassTable() {
       <td>${escapeHtml(formatDateShort(item.issued_at))}</td>
       <td>${escapeHtml(formatDateShort(item.expires_at))}</td>
       <td>
-        <button class="ghost-button" type="button" data-rp-view="${escapeHtml(item.id)}">Ver</button>
-        <button class="ghost-button" type="button" data-rp-pdf="${escapeHtml(item.id)}">Descargar</button>
-        <button class="ghost-button" type="button" data-rp-copy="${escapeHtml(item.public_url || "")}">Copiar link</button>
-        <button class="ghost-button" type="button" data-rp-wa="${escapeHtml(item.id)}">WhatsApp</button>
-        ${item.current_balance_cop >= item.initial_value_cop && item.status !== "cancelled" ? `<button class="ghost-button danger-button" type="button" data-rp-cancel="${escapeHtml(item.id)}">Anular</button>` : ""}
+        <div class="reward-pass-table-actions">
+          <button class="ghost-button" type="button" data-rp-view="${escapeHtml(item.id)}">Ver</button>
+          <button class="ghost-button" type="button" data-rp-pdf="${escapeHtml(item.id)}">Descargar</button>
+          <button class="ghost-button" type="button" data-rp-copy="${escapeHtml(item.public_url || "")}">Copiar link</button>
+          <button class="ghost-button" type="button" data-rp-wa="${escapeHtml(item.id)}">WhatsApp</button>
+          ${item.current_balance_cop >= item.initial_value_cop && item.status !== "cancelled" ? `<button class="ghost-button danger-button" type="button" data-rp-cancel="${escapeHtml(item.id)}">Anular</button>` : ""}
+        </div>
       </td>
     </tr>
   `).join("") || '<tr><td colspan="9">Todavia no hay Reward Pass emitidos.</td></tr>';
