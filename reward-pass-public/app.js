@@ -87,7 +87,7 @@ async function render() {
           <div>
             <div class="rp-eyebrow">Gift Card Digital Propia</div>
             <h1 class="rp-title">${isClaim ? "DESCUBRE TU GIFT CARD" : "REWARD PASS"}</h1>
-            <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por MarketGames QR Portal.</p>
+            <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por Sales Machine.</p>
             <div class="rp-value">
               <span>${isClaim ? "Solo falta este paso" : "Saldo disponible"}</span>
               <strong>${isClaim ? "ACTIVAR" : money(officialValue)}</strong>
@@ -180,7 +180,7 @@ async function render() {
       document.getElementById("rpShareButton")?.addEventListener("click", async () => {
         const shareData = {
           title: "Mi Gift Card Digital",
-          text: `Mi Reward Pass de ${pass.company?.name || "MarketGames QR"}: ${money(officialValue)} COP disponibles.`,
+          text: `Mi Reward Pass de ${pass.company?.name || "Sales Machine"}: ${money(officialValue)} COP disponibles.`,
           url: shareUrl,
         };
         try {
@@ -201,7 +201,7 @@ async function render() {
           if (shareMessage) shareMessage.textContent = "Ingresa un numero de WhatsApp valido.";
           return;
         }
-        const text = encodeURIComponent(`Te comparto mi Gift Card Digital de ${pass.company?.name || "MarketGames QR"} por ${money(officialValue)} COP. Link oficial: ${shareUrl}`);
+        const text = encodeURIComponent(`Te comparto mi Gift Card Digital de ${pass.company?.name || "Sales Machine"} por ${money(officialValue)} COP. Link oficial: ${shareUrl}`);
         window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener");
       });
     }

@@ -42,7 +42,7 @@ const WORLD = {
 // Si alguno falta, se dibuja un placeholder y en consola queda indicado cual reemplazar.
 const assetFiles = {
   background: "img/BackgroundGame.png", // Fondo/escenografia.
-  logo: "img/logo.png", // Logo de marca Pescuezo.
+  logo: "img/SaleMachineLogo.png", // Logo de marca Pescuezo.
   bike: "img/MainCharacteMoto.png", // Moto principal del jugador.
   track: "img/pista.png", // Pista horizontal inicial.
   ramp: "img/rampa.png", // Rampa de salida.

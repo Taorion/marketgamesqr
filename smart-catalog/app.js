@@ -131,10 +131,10 @@ function renderProducts() {
 
 function renderCatalog() {
   const catalog = state.catalog;
-  document.title = `${catalog.title} | Catálogo MG`;
+  document.title = `${catalog.title} | Catálogo Sales Machine`;
   catalogTitle.textContent = catalog.title;
   catalogDescription.textContent = catalog.description || "Ordena o solicita información directamente por WhatsApp.";
-  catalogBrand.textContent = catalog.brand_name || catalog.business_name || "Market Games";
+  catalogBrand.textContent = catalog.brand_name || catalog.business_name || "Sales Machine";
   if (catalog.brand_logo_url) catalogLogo.src = catalog.brand_logo_url;
   if (catalog.theme_color) document.documentElement.style.setProperty("--green", catalog.theme_color);
   if (catalog.cover_image_url) {
