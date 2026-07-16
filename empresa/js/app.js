@@ -7331,6 +7331,12 @@ async function submitRevenueActionWizard(event) {
 function navigatePortalShortcut(target = "") {
   const shortcut = String(target || "").trim();
   if (!shortcut) return;
+  if (shortcut === "rms-stations") {
+    setView("rms-machine");
+    focusRmsMachineStations({ delay: 180 });
+    focusRmsMachineStations({ delay: 760, behavior: "auto" });
+    return;
+  }
   const contactTabs = {
     agenda: "agenda",
     contacts: "overview",
@@ -7359,6 +7365,22 @@ function navigatePortalShortcut(target = "") {
     admin: "admin",
   };
   if (viewMap[shortcut]) setView(viewMap[shortcut]);
+}
+
+function focusRmsMachineStations(options = {}) {
+  state.rmsStationScreenOpen = false;
+  state.rmsStationPhase = "";
+  state.rmsMachineFilters.phase = "";
+  state.rmsMachineSelectedIds = [];
+  state.rmsMachineInspectorId = "";
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  renderRmsMachineView();
+  const delay = Number.isFinite(options.delay) ? options.delay : 120;
+  const behavior = options.behavior || "smooth";
+  window.setTimeout(() => {
+    const target = rmsStageBoard || document.querySelector(".rms-stage-board-guide") || rmsStationWorkspace;
+    target?.scrollIntoView({ behavior, block: "start" });
+  }, delay);
 }
 
 function smartCatalogSelectedCatalog() {

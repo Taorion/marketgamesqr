@@ -45877,3 +45877,145 @@ body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-button > 
   background: linear-gradient(135deg, #0f7354 0%, #116d66 52%, #1f658c 100%) !important;
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22) !important;
 }
+
+/* Factory start button: the primary ignition control for the RMS stations. */
+body .portal-shell .sidebar-sales-machine-button {
+  position: relative !important;
+  isolation: isolate !important;
+  min-height: 112px !important;
+  grid-template-columns: 60px minmax(0, 1fr) 38px !important;
+  gap: 13px !important;
+  padding: 15px 13px !important;
+  overflow: hidden !important;
+  border-color: rgba(12, 91, 66, 0.26) !important;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(236, 178, 35, 0.32), transparent 28%),
+    linear-gradient(135deg, #0b3f33 0%, #0f7354 52%, #236f99 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 18px 36px rgba(9, 47, 38, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-button::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 10px auto 10px 8px !important;
+  width: 4px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #efb629, #22c6a7) !important;
+  box-shadow: 0 0 18px rgba(34, 198, 167, 0.38) !important;
+  z-index: -1 !important;
+}
+
+body .portal-shell .sidebar-sales-machine-button::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px) !important;
+  background-size: 18px 18px !important;
+  opacity: 0.36 !important;
+  pointer-events: none !important;
+  z-index: -2 !important;
+}
+
+body .portal-shell .sidebar-sales-machine-button:hover,
+body .portal-shell .sidebar-sales-machine-button:focus-visible {
+  transform: translateY(-2px) !important;
+  border-color: rgba(236, 178, 35, 0.52) !important;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(236, 178, 35, 0.4), transparent 30%),
+    linear-gradient(135deg, #0a4d3c 0%, #0f7c5a 52%, #267aa7 100%) !important;
+  box-shadow: 0 24px 44px rgba(9, 47, 38, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.13) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-logo {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(237, 249, 244, 0.72)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 12px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-logo img {
+  width: 50px !important;
+  height: 50px !important;
+  filter: drop-shadow(0 8px 12px rgba(8, 43, 34, 0.18)) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-copy > span {
+  color: #f4cb5a !important;
+  font-size: 0.64rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+body .portal-shell .sidebar-sales-machine-copy strong {
+  color: #ffffff !important;
+  font-size: 1.13rem !important;
+  line-height: 1.02 !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-copy small {
+  max-width: 17ch !important;
+  color: rgba(255, 255, 255, 0.76) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.18 !important;
+}
+
+body .portal-shell .sidebar-sales-machine-ignition {
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(244, 203, 90, 0.54) !important;
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle, rgba(244, 203, 90, 0.96) 0 34%, rgba(244, 203, 90, 0.22) 36% 62%, rgba(255, 255, 255, 0.12) 64% 100%) !important;
+  box-shadow: 0 0 0 5px rgba(244, 203, 90, 0.1), 0 12px 20px rgba(0, 0, 0, 0.16) !important;
+}
+
+body .portal-shell .sidebar-sales-machine-ignition .material-symbols-outlined {
+  color: #083528 !important;
+  font-size: 1.24rem !important;
+  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .sidebar-sales-machine-button {
+  border-color: rgba(244, 203, 90, 0.58) !important;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(236, 178, 35, 0.44), transparent 30%),
+    linear-gradient(135deg, #0b3f33 0%, #0f7354 52%, #236f99 100%) !important;
+}
+
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-button {
+  min-height: 58px !important;
+  grid-template-columns: 1fr !important;
+  padding: 8px !important;
+}
+
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-button::before,
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-button::after,
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-ignition {
+  display: none !important;
+}
+
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-logo {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-logo img {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .sidebar-sales-machine-button,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .sidebar-sales-machine-button {
+  border-color: rgba(244, 203, 90, 0.42) !important;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(236, 178, 35, 0.36), transparent 30%),
+    linear-gradient(135deg, #092e27 0%, #0d624c 54%, #1d5f87 100%) !important;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
