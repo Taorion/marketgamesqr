@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260716-portal-runtime-lean-v1";
+const APP_VERSION = "empresa-20260716-rms-first-entry-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 45000;
@@ -2595,7 +2595,7 @@ function resetBusinessScopedState(options = {}) {
   state.loadedBusinessId = targetSession.user?.business_id || null;
   state.workspaceLoadSeq += 1;
   if (!keepView) {
-    state.currentView = "dashboard";
+    state.currentView = "rms-machine";
   }
   clearBusinessWorkspaceUi();
 }
@@ -4782,13 +4782,17 @@ function applyInitialRouteParams() {
   const urlParams = new URLSearchParams(window.location.search);
   const requestedView = urlParams.get("view");
   const urlToken = urlParams.get("token");
-  if (requestedView && viewFeatureMap[requestedView] !== undefined) {
-    setView(requestedView);
-  }
   if (urlToken) {
     setView("validator");
     validatorQrTokenInput.value = urlToken;
     validateValidatorToken(urlToken);
+    return;
+  }
+  setView("rms-machine");
+  if (requestedView) {
+    urlParams.delete("view");
+    const nextSearch = urlParams.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || ""}`);
   }
 }
 
