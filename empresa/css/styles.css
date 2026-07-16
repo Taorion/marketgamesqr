@@ -38264,6 +38264,75 @@ body .portal-shell .login-vision-brand span {
 }
 
 /* Centro de Revenue visual organization: wider reading lanes and calmer dashboard layout. */
+/* Sales Machine login logo prominence: visible brand mark without a heavy container. */
+body .portal-shell .login-vision-brand {
+  align-items: center !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  margin-bottom: clamp(-6px, -0.4vw, 0px) !important;
+}
+
+body .portal-shell .login-vision-brand .brand-logo {
+  width: clamp(88px, 7vw, 118px) !important;
+  height: clamp(88px, 7vw, 118px) !important;
+  flex: 0 0 clamp(88px, 7vw, 118px) !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 18px 28px rgba(10, 54, 43, 0.16)) !important;
+}
+
+body .portal-shell .login-vision-brand strong {
+  font-size: clamp(1.08rem, 1.25vw, 1.34rem) !important;
+  line-height: 1.05 !important;
+}
+
+body .portal-shell .login-vision-brand span {
+  font-size: clamp(0.82rem, 0.9vw, 0.95rem) !important;
+}
+
+body .portal-shell .login-brand {
+  gap: 16px !important;
+}
+
+body .portal-shell .login-brand .brand-logo {
+  width: 68px !important;
+  height: 68px !important;
+  flex: 0 0 68px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 12px 22px rgba(10, 54, 43, 0.12)) !important;
+}
+
+@media (max-width: 1180px) {
+  body .portal-shell .login-vision-brand .brand-logo {
+    width: 84px !important;
+    height: 84px !important;
+    flex-basis: 84px !important;
+  }
+
+  body .portal-shell .login-brand .brand-logo {
+    width: 60px !important;
+    height: 60px !important;
+    flex-basis: 60px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body .portal-shell .login-vision-brand {
+    gap: 14px !important;
+  }
+
+  body .portal-shell .login-vision-brand .brand-logo {
+    width: 72px !important;
+    height: 72px !important;
+    flex-basis: 72px !important;
+  }
+
+  body .portal-shell .login-brand .brand-logo {
+    width: 54px !important;
+    height: 54px !important;
+    flex-basis: 54px !important;
+  }
+}
+
+/* Centro de Revenue visual organization: wider reading lanes and calmer dashboard layout. */
 body .portal-shell .view-section[data-view="dashboard"] {
   display: grid !important;
   gap: clamp(24px, 2.6vw, 40px) !important;
