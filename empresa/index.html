@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-machine-login-single-title-20260716-v1">
+  <link rel="stylesheet" href="css/styles.css?v=sales-machine-sidebar-fabricar-ventas-20260716-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -191,17 +191,17 @@
           </div>
         </div>
 
-        <section class="sidebar-flow-card" aria-label="Ruta operativa RMS">
-          <span class="mono-label">Ruta operativa</span>
-          <strong>Operar la Máquina RMS</strong>
-          <small>Leads → Estaciones → Agenda → Revenue real</small>
-          <div class="sidebar-flow-actions">
-            <button type="button" data-portal-shortcut="campaigns">Capturar</button>
-            <button type="button" data-portal-shortcut="strategic-qr">Activar</button>
-            <button type="button" data-portal-shortcut="rms-machine">Procesar</button>
-            <button type="button" data-portal-shortcut="agenda">Seguir</button>
-          </div>
-        </section>
+        <button class="sidebar-sales-machine-button" type="button" data-portal-shortcut="rms-machine" aria-label="Abrir Fabricar Ventas en la Máquina RMS">
+          <span class="sidebar-sales-machine-logo">
+            <img src="/img/SaleMachineLogo.png" alt="" aria-hidden="true">
+          </span>
+          <span class="sidebar-sales-machine-copy">
+            <span>Sales Machine</span>
+            <strong>Fabricar Ventas</strong>
+            <small>Entrada principal a la Máquina RMS</small>
+          </span>
+          <span class="material-symbols-outlined" aria-hidden="true">east</span>
+        </button>
 
         <nav class="sidebar-nav">
           <span class="nav-group-label">Núcleo Sales Machine</span>
