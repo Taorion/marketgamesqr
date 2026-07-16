@@ -38579,7 +38579,7 @@ body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outl
 }
 
 body .portal-shell .portal-gaming-entry.gaming-core-entry .material-symbols-outlined:first-child::before {
-  content: "MG" !important;
+  content: "SM" !important;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   font-size: 0.86rem !important;
   font-weight: 900 !important;
@@ -40356,7 +40356,7 @@ body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dash
   }
 }
 
-/* Market Games as Sales Machine: RMS is the portal core, every module supports it. */
+/* Sales Machine as Sales Machine: RMS is the portal core, every module supports it. */
 body .portal-shell .sidebar-flow-card {
   border-color: rgba(15, 115, 84, 0.16) !important;
   background:
@@ -40519,7 +40519,7 @@ body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry:focus-vis
   }
 }
 
-/* MG Smart Catalog: actionable catalog station connected to RMS. */
+/* Sales Machine Smart Catalog: actionable catalog station connected to RMS. */
 body .portal-shell .view-section[data-view="smart-catalogs"] {
   --catalog-green: #0f7354;
   --catalog-blue: #27759f;

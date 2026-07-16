@@ -1693,13 +1693,13 @@ const DATA_DICTIONARY = {
   affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con tickets o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendación.", example: "Un cliente compra por ticket de un afiliado.", decisión: "Premia afiliados con alto ticket y entregales más tickets." },
   branch: { name: "Sucursal", description: "Punto físico o sede donde se redime, vende o atiende.", formula: "Agrupación de redenciones y ventas por branch_id.", example: "Sucursal Norte convierte mejor que Centro.", decisión: "Replica prácticas de la sede líder y capacita sedes rezagadas." },
   campaign: { name: "Campaña", description: "Estrategia comercial o promocional conectada a tickets, leads y revenue.", formula: "Datos agrupados por campaign_id.", example: "Feria Junio, Lanzamiento postventa o pauta Instagram.", decisión: "Escala campañas con conversión y revenue; optimiza las de solo leads." },
-  mg_score: { name: "MG Revenue Score", description: "Score de salud comercial que resume redención, conversión, revenue, referidos, sucursales y calidad de datos.", formula: "Promedio ponderado de dimensiones RMS normalizadas de 0 a 100.", example: "82/100 indica buena salud con oportunidades puntuales.", decisión: "Usa las dimensiones bajas para priorizar la siguiente mejora." },
+  mg_score: { name: "SM Revenue Score", description: "Score de salud comercial que resume redención, conversión, revenue, referidos, sucursales y calidad de datos.", formula: "Promedio ponderado de dimensiones RMS normalizadas de 0 a 100.", example: "82/100 indica buena salud con oportunidades puntuales.", decisión: "Usa las dimensiones bajas para priorizar la siguiente mejora." },
 };
 
 const CHART_FOCUS_REGISTRY = {
   "executive-summary": { title: "Modo ejecutivo RMS", subtitle: "Resumen para socios y decisiones rapidas", chartType: "summary", primaryMetric: "revenue", description: "Resume revenue, canal ganador, campaña ganadora, sucursal líder y riesgo principal.", calculation: "Combina KPIs y rankings del periodo filtrado.", businessMeaning: "Permite explicar en una reunion que estrategia trajo ventas reales.", recommendedActions: ["Presenta este resumen en comite comercial.", "Abre el detalle del canal o campaña ganadora.", "Convierte el riesgo principal en tarea operativa."], supportedDrilldowns: ["campaign", "channel", "branch"], relatedMetrics: ["revenue", "conversion_rate", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "campaign", "branch"] },
   "rms-funnel": { title: "Funnel RMS", subtitle: "De campaña a revenue", chartType: "funnel", primaryMetric: "conversion_rate", description: "Muestra como avanzan las personas desde la campaña hasta la venta.", calculation: "Cuenta etapas del flujo: leads, tickets generados, reclamados, redimidos, ventas y revenue.", businessMeaning: "Permite detectar donde se pierde valor comercial.", recommendedActions: ["Si hay muchos leads y pocos tickets, revisa captura.", "Si hay muchos tickets y pocas redenciones, crea urgencia.", "Si hay redenciones sin venta, revisa oferta o cierre en tienda."], supportedDrilldowns: ["stage", "campaign", "channel", "branch"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redemption_rate", "conversion_rate", "revenue"] },
-  "revenue-score": { title: "MG Revenue Score", subtitle: "Salud comercial del RMS", chartType: "radar", primaryMetric: "mg_score", description: "Evalúa dimensiones comerciales clave en una escala de 0 a 100.", calculation: "Promedia dimensiones normalizadas de captación, redención, conversión, revenue, fidelización, referidos, sucursales y calidad de datos.", businessMeaning: "Convierte muchos indicadores en una lectura ejecutiva accionable.", recommendedActions: ["Ataca primero la dimensión con menor score.", "Usa el radar para explicar fortalezas y riesgos.", "Compara contra el periodo anterior después de cada ajuste."], supportedDrilldowns: ["dimensión"], relatedMetrics: ["mg_score", "redemption_rate", "conversion_rate", "revenue"], dataDictionaryKeys: ["mg_score", "redemption_rate", "conversion_rate", "revenue"] },
+  "revenue-score": { title: "SM Revenue Score", subtitle: "Salud comercial del RMS", chartType: "radar", primaryMetric: "mg_score", description: "Evalúa dimensiones comerciales clave en una escala de 0 a 100.", calculation: "Promedia dimensiones normalizadas de captación, redención, conversión, revenue, fidelización, referidos, sucursales y calidad de datos.", businessMeaning: "Convierte muchos indicadores en una lectura ejecutiva accionable.", recommendedActions: ["Ataca primero la dimensión con menor score.", "Usa el radar para explicar fortalezas y riesgos.", "Compara contra el periodo anterior después de cada ajuste."], supportedDrilldowns: ["dimensión"], relatedMetrics: ["mg_score", "redemption_rate", "conversion_rate", "revenue"], dataDictionaryKeys: ["mg_score", "redemption_rate", "conversion_rate", "revenue"] },
   timeline: { title: "Línea temporal multiserie", subtitle: "Leads, tickets, redenciones, ventas y revenue por fecha", chartType: "line", primaryMetric: "revenue", description: "Muestra la evolución del ciclo RMS en el tiempo.", calculation: "Agrupa eventos por día dentro del periodo filtrado.", businessMeaning: "Ayuda a detectar días fuertes, caídas y anomalías.", recommendedActions: ["Investiga picos y caídas.", "Replica los días con mayor conversión.", "Cruza con activaciones comerciales o eventos."], supportedDrilldowns: ["date", "metric"], relatedMetrics: ["lead", "qr_generated", "redeemed_qr", "revenue"], dataDictionaryKeys: ["lead", "qr_generated", "redeemed_qr", "revenue"] },
   heatmap: { title: "Heatmap horario", subtitle: "Redenciones por día y hora", chartType: "heatmap", primaryMetric: "redemptions", description: "Muestra cuando se concentran las redenciones.", calculation: "Cuenta redenciones por día de semana y hora.", businessMeaning: "Sirve para reforzar equipo, horarios y activaciones.", recommendedActions: ["Refuerza vendedores en horas calientes.", "Activa recordatorios antes de los mejores bloques.", "Compara sucursales si una hora convierte mejor."], supportedDrilldowns: ["weekday", "hour"], relatedMetrics: ["redeemed_qr", "branch", "conversion_rate"], dataDictionaryKeys: ["redeemed_qr", "branch", "conversion_rate"] },
   matrix: { title: "Matriz campaña vs canal", subtitle: "Cruce exacto entre estrategia y fuente", chartType: "matrix", primaryMetric: "revenue", description: "Cruza campañas con canales para encontrar combinaciones rentables.", calculation: "Agrupa leads, tickets, redenciones, ventas y revenue por campaña y canal.", businessMeaning: "Identifica que combinacion merece repetirse, optimizarse o pausarse.", recommendedActions: ["Escala celdas con revenue alto.", "Optimiza celdas con leads pero baja venta.", "Investiga celdas vacias con gasto o esfuerzo comercial."], supportedDrilldowns: ["campaign", "channel", "metric"], relatedMetrics: ["campaign", "channel", "revenue", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "conversion_rate"] },
@@ -2335,7 +2335,7 @@ function clearBusinessWorkspaceUi() {
     if (typeof form.reset === "function") form.reset();
   });
   if (profileName) profileName.textContent = "Sesión";
-  if (profileAvatar) profileAvatar.textContent = "MG";
+  if (profileAvatar) profileAvatar.textContent = "SM";
   if (passwordInput) passwordInput.value = "";
   if (searchInput) searchInput.value = "";
   if (requestCampaignButton) requestCampaignButton.textContent = "Nueva campaña";
@@ -3653,7 +3653,7 @@ function initials(value) {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || "")
-    .join("") || "MG";
+    .join("") || "SM";
 }
 
 function nestedValue(row, key) {
@@ -4518,7 +4518,7 @@ function setView(view) {
   }
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
-    showFeedback("Ese módulo es interno de Market Games. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
+    showFeedback("Ese módulo es interno de Sales Machine. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
     if (view !== fallbackView) setView(fallbackView);
     return;
   }
@@ -4595,14 +4595,14 @@ function setView(view) {
   }
   if (view === "missions") {
     loadGamificationDashboard({ quiet: true }).then(renderMissionsView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Misiones MG.", "error", { title: "Misiones MG" });
+      showFeedback(error.message || "No se pudo cargar Misiones Sales Machine.", "error", { title: "Misiones Sales Machine" });
       renderMissionsView();
     });
   }
   if (view === "smart-catalogs") {
     renderSmartCatalogView();
     loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Catálogos MG.", "error", { title: "Catálogos MG" });
+      showFeedback(error.message || "No se pudo cargar Catálogos Sales Machine.", "error", { title: "Catálogos Sales Machine" });
       renderSmartCatalogView();
     });
   }
@@ -4765,7 +4765,7 @@ function renderShell() {
       }
 
       profileName.textContent = session.user.full_name || session.user.email || "Business User";
-      profileAvatar.textContent = initials(session.user.full_name || session.user.email || "MG");
+      profileAvatar.textContent = initials(session.user.full_name || session.user.email || "SM");
       requestCampaignButton.textContent = isAdmin()
         ? (session.user.business_id ? "New Campaign" : "Admin Campaigns")
         : "Nueva campaña";
@@ -5744,7 +5744,7 @@ function renderAffiliateNetwork(data = {}) {
   return `
     <svg class="command-network" viewBox="0 0 600 340" role="img" aria-label="Red de afiliados y referidos">
       <circle class="center-node" cx="${centerX}" cy="${centerY}" r="34"></circle>
-      <text x="${centerX}" y="${centerY + 5}" text-anchor="middle">MG</text>
+      <text x="${centerX}" y="${centerY + 5}" text-anchor="middle">SM</text>
       ${nodes.slice(0, 14).map((node, index) => {
         const angle = (Math.PI * 2 * index) / Math.max(1, nodes.length);
         const radius = 110 + ((index % 3) * 24);
@@ -5929,7 +5929,7 @@ function renderGuidedRevenueFeed(data = {}) {
     {
       priority: scoreValue >= 70 ? "win" : scoreValue >= 45 ? "alert" : "risk",
       eyebrow: "Lectura inicial",
-      title: `MG Revenue Score: ${scoreValue}/100`,
+      title: `SM Revenue Score: ${scoreValue}/100`,
       metric: scoreLabel,
       what: "Es la salud comercial del negocio en el periodo filtrado. Combina redención, conversión, revenue, sucursales y calidad de datos.",
       signal: `El sistema interpreta el negocio como: ${scoreLabel}.`,
@@ -6058,7 +6058,7 @@ function renderCommandCenter() {
     <div class="command-center">
       <section class="command-hero">
         <div>
-          <span class="mono-label">Market Games RMS</span>
+          <span class="mono-label">Sales Machine RMS</span>
           <h2>Centro de comando de revenue marketing</h2>
           <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, sucursales y revenue real.</p>
           <div class="command-hero-actions">
@@ -6085,7 +6085,7 @@ function renderCommandCenter() {
       <section class="command-main-grid">
         <article class="command-panel revenue-score-panel" data-command-focus="revenue-score" tabindex="0" role="button">
           <div class="command-panel-head">
-            <div><span class="mono-label">MG Revenue Score</span><h3>${score.score}/100 · ${escapeHtml(score.status)}</h3></div>
+            <div><span class="mono-label">SM Revenue Score</span><h3>${score.score}/100 · ${escapeHtml(score.status)}</h3></div>
             ${commandPanelActions("revenue-score")}
             <span class="score-orbit">${score.score}</span>
           </div>
@@ -6647,7 +6647,7 @@ function focusPrimaryMetric(chartId, context = {}) {
     const kpi = (data.kpis || []).find((item) => item.key === chartId.split(":")[1]);
     return { label: kpi?.label || meta.title, value: kpi?.value || "-", hint: kpi?.help || meta.businessMeaning };
   }
-  if (chartId === "revenue-score") return { label: "MG Revenue Score", value: `${data.revenue_score?.score || 0}/100`, hint: data.revenue_score?.status || "Sin datos" };
+  if (chartId === "revenue-score") return { label: "SM Revenue Score", value: `${data.revenue_score?.score || 0}/100`, hint: data.revenue_score?.status || "Sin datos" };
   if (chartId === "rms-funnel") {
     const last = (data.funnel || []).slice(-1)[0];
     return { label: last?.label || "Revenue", value: commandValue(last?.value || 0, last?.format || "money"), hint: "Resultado final del embudo RMS." };
@@ -7589,7 +7589,7 @@ async function loadSmartCatalogDetail(catalogId, options = {}) {
   state.smartCatalogs = (state.smartCatalogs || []).map((catalog) => (
     catalog.id === data.catalog?.id ? { ...catalog, ...data.catalog } : catalog
   ));
-  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos MG" });
+  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Sales Machine" });
 }
 
 function setSmartCatalogTab(tab) {
@@ -7601,7 +7601,7 @@ async function refreshSmartCatalogs(options = {}) {
   state.smartCatalogLoaded = false;
   await loadSmartCatalogData({ force: true });
   renderSmartCatalogView();
-  if (!options.quiet) showFeedback("Catálogos MG actualizado.", "success", { title: "MG Smart Catalog" });
+  if (!options.quiet) showFeedback("Catálogos Sales Machine actualizado.", "success", { title: "Sales Machine Smart Catalog" });
 }
 
 async function submitSmartCatalog(event) {
@@ -7664,7 +7664,7 @@ async function copySmartCatalogLink(catalogId = "") {
   if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
-    showFeedback("Link público copiado.", "success", { title: "Catálogos MG" });
+    showFeedback("Link público copiado.", "success", { title: "Catálogos Sales Machine" });
   } catch {
     window.prompt("Link público del catálogo", url);
   }
@@ -7695,7 +7695,7 @@ async function smartCatalogIntentAction(intentId, action) {
           priority: "HIGH",
         }),
       });
-      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos MG" });
+      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Sales Machine" });
     }
     if (action === "won") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
@@ -7704,10 +7704,10 @@ async function smartCatalogIntentAction(intentId, action) {
         body: JSON.stringify({
           sale_amount: intent?.sale_amount || intent?.product_price || 0,
           currency: intent?.sale_currency || intent?.product_currency || "COP",
-          notes: "Venta marcada desde Catálogos MG.",
+          notes: "Venta marcada desde Catálogos Sales Machine.",
         }),
       });
-      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos MG" });
+      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Sales Machine" });
     }
     if (action === "ticket") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/send-post-sale-ticket`, {
@@ -7720,11 +7720,11 @@ async function smartCatalogIntentAction(intentId, action) {
           benefit_type: "CUSTOM",
         }),
       });
-      showFeedback("Ticket postventa generado.", "success", { title: "Postventa MG" });
+      showFeedback("Ticket postventa generado.", "success", { title: "Postventa Sales Machine" });
     }
     await refreshSmartCatalogs({ quiet: true });
   } catch (error) {
-    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos MG" });
+    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Sales Machine" });
   }
 }
 
@@ -9722,7 +9722,7 @@ function renderCampaignView() {
               : `<strong>${escapeHtml(value)}</strong>`}
         </article>
       `).join("")
-    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Market Games aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
+    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Sales Machine aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
   renderCampaignRelationsPanel();
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
@@ -17307,7 +17307,7 @@ function renderNoCampaignState() {
   renderAdminView();
   adminPanelMessage.textContent = isAdmin()
     ? "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`."
-    : "Usa el panel `/admin` para la operación interna de Market Games.";
+    : "Usa el panel `/admin` para la operación interna de Sales Machine.";
   rangeButton.textContent = state.rangeDays ? `Últimos ${state.rangeDays} días` : "Todo el historial";
   drawDualLineChart(businessTrendChart, [], [], "count", ["Leads", "Redenciones"], [NEON_CHART.cyan, NEON_CHART.magenta]);
   drawSimpleLineChart(cacTrendChart, [], NEON_CHART.yellow, "Costo por lead");
@@ -17381,7 +17381,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "objective", label: "Qué quieres lograr", type: "single", optionsKey: "objectives" },
   ] },
   { id: "massification", kicker: "Paso 3", title: "Estrategia de Masificación", help: "Una campaña poderosa atrae varias personas, captura datos, entrega valor, filtra interés y activa seguimiento comercial.", fields: [
-    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. MarketGames captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
+    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. Sales Machine captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
     { key: "acquisitionMode", label: "Modo de atracción", type: "single", optionsKey: "acquisitionModes" },
     { key: "leadMagnet", label: "Excusa de valor", type: "single", optionsKey: "leadMagnets" },
     { key: "targetPublic", label: "Público a atraer", type: "single", optionsKey: "targetPublics" },
@@ -17435,7 +17435,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "hasDigitalAsset", label: "Incluye activo descargable", type: "single", options: ["Sí", "No"] },
     { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://..." },
   ] },
-  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "MarketGames usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
+  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Sales Machine usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
     { key: "maxParticipants", label: "Participaciones máximas", type: "number", placeholder: "300" },
     { key: "participationFrequency", label: "Frecuencia", type: "single", options: ["Una vez por persona", "Varias veces", "Una vez por día", "Por compra"] },
     { key: "ticketLogic", label: "Cuándo se genera ticket", type: "multi", optionsKey: "ticketTypes" },
@@ -17613,7 +17613,7 @@ function strategyObjectiveText(answers = state.strategyWizardAnswers || {}) {
 
 function strategyCampaignName(answers = state.strategyWizardAnswers || {}) {
   if (answers.campaignName) return answers.campaignName;
-  const brand = answers.businessName || "MarketGames";
+  const brand = answers.businessName || "Sales Machine";
   const objective = normalizeInventoryLookup(answers.objective || "");
   const prefix = objective.includes("recompra") ? "Reto de Recompra" : objective.includes("refer") ? "Reto de Referidos" : objective.includes("lead") ? "Captura Relámpago" : "Campaña Gamificada";
   return `${prefix} ${brand}`.trim();
@@ -18877,7 +18877,7 @@ async function shareTicketQrFile({ filename, dataUrl, text }) {
   const file = new File([blob], filenameForDataUrl(filename, dataUrl), { type: blob.type || "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
-      title: "Ticket QR Market Games",
+      title: "Ticket QR Sales Machine",
       text,
       files: [file],
     });
@@ -19271,7 +19271,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const photoSource = affiliatePhotoSource(affiliate);
   const qrSource = affiliateQrSource(affiliate);
   const photo = await loadImageDataUrl(photoSource);
-  const platformLogo = await loadImageDataUrl("/img/MGLogo-01.png");
+  const platformLogo = await loadImageDataUrl("/img/SaleMachineLogo.png");
   const qrImg = await loadImageDataUrl(qrSource);
 
   {
@@ -19359,7 +19359,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "right";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("MARKET GAMES", width - 92, 104);
+  ctx.fillText("SALES MACHINE", width - 92, 104);
   ctx.fillStyle = palette.ink;
   ctx.font = "900 48px Inter, Arial, sans-serif";
   ctx.fillText(String(points), width - 92, 164);
@@ -19738,7 +19738,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   } else {
     ctx.fillStyle = "#7cfbff";
     ctx.font = "900 13px Inter, Arial, sans-serif";
-    ctx.fillText("MARKET GAMES", width - 156, 706);
+    ctx.fillText("SALES MACHINE", width - 156, 706);
   }
   ctx.textAlign = "left";
 
@@ -25673,7 +25673,7 @@ function renderRewardPassContext() {
   const cost = toNumber(context.reward_pass_ticket_cost || 1);
   const balance = toNumber(context.ticket_balance || context.qr_balance || 0);
   if (rewardPassTicketContext) {
-    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} MarketGames. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Sales Machine. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }
 
@@ -25714,7 +25714,7 @@ function renderRewardPassMetrics() {
     ["Valor redimido", money(metrics.total_redeemed_cop || 0), `${toNumber(metrics.redemption_count || 0)} redenciones`],
     ["Saldo pendiente", money(metrics.pending_balance_cop || 0), `${toNumber(metrics.partially_redeemed_count || 0)} parciales`],
     ["Saldo vencido", money(metrics.expired_balance_cop || 0), `${toNumber(metrics.expired_count || 0)} vencidos`],
-    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico MarketGames"],
+    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico Sales Machine"],
   ];
   if (rewardPassKpiGrid) {
     rewardPassKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
@@ -26032,7 +26032,7 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.font = "500 22px Inter, sans-serif";
   const pending = pass.status === "pending_claim";
   ctx.fillText(pending ? "Escanea este QR para reclamar y activar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
-  ctx.fillText("Administrado por MarketGames QR Portal.", 94, 642);
+  ctx.fillText("Administrado por Sales Machine QR Portal.", 94, 642);
   if (pass.qr_image_data_url) {
     const qrImage = await new Promise((resolve, reject) => {
       const img = new Image();
@@ -29346,7 +29346,7 @@ function renderMissionsKpis(metrics = {}, seasons = []) {
   const cards = [
     ["Dinámicas activas", metrics.active_seasons || seasons.filter((item) => item.status === "ACTIVE").length, "Misiones en operación"],
     ["Clientes participando", metrics.participants || 0, "Participantes con puntos"],
-    ["Puntos entregados", metrics.points_total || 0, "Puntos MG registrados"],
+    ["Puntos entregados", metrics.points_total || 0, "Puntos Sales Machine registrados"],
     ["Recompensas pendientes", metrics.pending_rewards || 0, "Por validar o entregar"],
     ["Tickets redimidos", metrics.redeemed_tickets || 0, "Redenciones asociables"],
     ["Ventas asociadas", money(metrics.sales_amount || 0), "Revenue medible"],
@@ -29383,7 +29383,7 @@ function renderMissionActiveList(seasons = []) {
     <article class="mission-active-card">
       <div>
         <span class="status-chip ${season.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(season.status || "DRAFT")}</span>
-        <h4>${escapeHtml(season.name || "Dinámica MG")}</h4>
+        <h4>${escapeHtml(season.name || "Dinámica Sales Machine")}</h4>
         <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
       </div>
       <dl>
@@ -29435,7 +29435,7 @@ function renderMissionRewards(rewards = []) {
     <article class="mission-reward-card">
       <div>
         <strong>${escapeHtml(reward.reward_name || "Recompensa")}</strong>
-        <small>${escapeHtml(reward.season_name || "Misión MG")}</small>
+        <small>${escapeHtml(reward.season_name || "Misión Sales Machine")}</small>
       </div>
       <button class="ghost-button" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Marcar entregado</button>
     </article>
@@ -29555,10 +29555,10 @@ async function submitMissionWizard(event) {
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
     closeMissionWizard();
-    showFeedback("Dinámica MG creada y conectada con el portal.", "success", { title: "Misiones MG" });
+    showFeedback("Dinámica Sales Machine creada y conectada con el portal.", "success", { title: "Misiones Sales Machine" });
   } catch (error) {
     if (missionWizardMessage) missionWizardMessage.textContent = error.message || "No se pudo crear la dinámica.";
-    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones MG" });
+    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Sales Machine" });
   }
 }
 
@@ -29571,7 +29571,7 @@ async function createMissionAgendaTasks(seasonId, options = {}) {
       body: JSON.stringify({ season_id: seasonId }),
     });
     state.leadAgendaLoaded = false;
-    if (!options.quiet) showFeedback("Tareas de Misiones MG creadas en la agenda.", "success", { title: "Agenda" });
+    if (!options.quiet) showFeedback("Tareas de Misiones Sales Machine creadas en la agenda.", "success", { title: "Agenda" });
   } catch (error) {
     if (!options.quiet) showFeedback(error.message || "No se pudieron crear las tareas.", "error", { title: "Agenda" });
   }
@@ -29587,9 +29587,9 @@ async function deliverMissionReward(rewardId) {
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
-    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones MG" });
+    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Sales Machine" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones MG" });
+    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Sales Machine" });
   }
 }
 
@@ -30199,7 +30199,7 @@ missionsCreateButton?.addEventListener("click", () => openMissionWizard("weekly_
 missionsRefreshButton?.addEventListener("click", () => {
   state.missionsLoaded = false;
   loadGamificationDashboard({ force: true }).then(renderMissionsView).catch((error) => {
-    showFeedback(error.message || "No se pudo actualizar Misiones MG.", "error", { title: "Misiones MG" });
+    showFeedback(error.message || "No se pudo actualizar Misiones Sales Machine.", "error", { title: "Misiones Sales Machine" });
   });
 });
 missionsOpenAgendaButton?.addEventListener("click", () => {
@@ -30870,10 +30870,10 @@ activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 smartCatalogTabButtons.forEach((button) => {
   button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
 });
-smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos MG" })));
+smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Sales Machine" })));
 smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
   try {
-    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos MG", timeout: 0 });
+    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos Sales Machine", timeout: 0 });
     const data = await api("/api/business/catalogs/templates/doctor-angie", {
       method: "POST",
       headers: authHeaders(),
@@ -30882,9 +30882,9 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     await refreshSmartCatalogs({ quiet: true });
     setSmartCatalogTab("products");
-    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos MG" });
+    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos Sales Machine" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos MG" });
+    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Sales Machine" });
   }
 });
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);

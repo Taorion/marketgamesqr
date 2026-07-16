@@ -2,7 +2,7 @@
   "name": "marketgamesqr-portal-rms",
   "version": "1.0.0",
   "private": true,
-  "description": "MarketGamesQR Portal RMS for ticket-based campaigns, validation, redemptions, leads and attributed revenue.",
+  "description": "Sales Machine Portal RMS for ticket-based campaigns, validation, redemptions, leads and attributed revenue.",
   "main": "backend/src/server.js",
   "scripts": {
     "start": "node backend/src/server.js",

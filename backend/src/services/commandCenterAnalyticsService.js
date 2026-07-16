@@ -1109,7 +1109,7 @@ function buildInsights(current, previous, charts, score) {
     insights.push(["opportunity", "Canal ganador", `${topChannel.label} esta generando ${topChannel.sales} ventas registradas.`, "Escala este canal y mide si mantiene ticket y conversion."]);
   }
   if (score.score < 50) {
-    insights.push(["risk", "MG Revenue Score bajo", `El score esta en ${score.score}/100.`, "Completa datos de ventas, canal y sucursal para mejorar decisionabilidad."]);
+    insights.push(["risk", "SM Revenue Score bajo", `El score esta en ${score.score}/100.`, "Completa datos de ventas, canal y sucursal para mejorar decisionabilidad."]);
   }
 
   if (!insights.length) {

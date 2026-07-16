@@ -17,7 +17,7 @@ body {
   padding: 22px;
   background:
     linear-gradient(135deg, rgba(249, 252, 251, .96), rgba(225, 237, 235, .86)),
-    url("/img/MGLogo-01.png") center 8% / 190px auto no-repeat;
+    url("/img/SaleMachineLogo.png") center 8% / 190px auto no-repeat;
 }
 
 .activation-card {

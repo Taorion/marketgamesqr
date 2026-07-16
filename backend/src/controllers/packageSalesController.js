@@ -42,7 +42,7 @@ const portalSignupSchema = publicSignupBaseSchema.extend({
 
 function requireMarketAdmin(user) {
   if (!["ADMIN_MARKET_GAMES", "ADMIN"].includes(user.role)) {
-    throw forbidden("Only Market Games admins can perform this action.");
+    throw forbidden("Only Sales Machine admins can perform this action.");
   }
 }
 
@@ -207,7 +207,7 @@ async function createPackageRequest(req, res, next) {
 
 async function createPrepaidSignup(req, res, next) {
   try {
-    throw badRequest("La activacion publica por tickets esta deshabilitada. Elige un plan mensual para activar MarketGamesQR.");
+    throw badRequest("La activacion publica por tickets esta deshabilitada. Elige un plan mensual para activar Sales Machine.");
   } catch (error) {
     next(error);
   }

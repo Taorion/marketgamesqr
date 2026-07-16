@@ -1,7 +1,7 @@
 const captureCard = document.getElementById("captureCard");
 const token = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
 let currentPayload = null;
-const MARKET_GAMES_LOGO = "/img/MGLogo-01.png";
+const SALES_MACHINE_LOGO = "/img/SaleMachineLogo.png";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -39,11 +39,11 @@ function fieldInput(field) {
 }
 
 function logoSource(business = {}) {
-  return business.logo_data_url || business.logo_url || MARKET_GAMES_LOGO;
+  return business.logo_data_url || business.logo_url || SALES_MACHINE_LOGO;
 }
 
 function logoAlt(business = {}) {
-  return `Logo de ${business.name || "MarketGamesQR"}`;
+  return `Logo de ${business.name || "Sales Machine"}`;
 }
 
 function assetLabel(asset = {}) {
@@ -73,7 +73,7 @@ function formatFileSize(bytes) {
   return `${Math.round((value / (1024 * 1024)) * 10) / 10} MB`;
 }
 
-function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, businessName = "MarketGamesQR") {
+function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, businessName = "Sales Machine") {
   const title = publicMessage.title || activation.name || asset.title || "Recibe tu material digital";
   const subtitle = publicMessage.subtitle || "";
   const assetDescription = asset.description || activation.description || "";
@@ -104,7 +104,7 @@ function render(payload) {
   const asset = activation.asset || {};
   const formConfig = activation.form_config || {};
   const publicMessage = activation.public_message || {};
-  const businessName = business.name || "MarketGamesQR";
+  const businessName = business.name || "Sales Machine";
   const pageTitle = publicMessage.title || asset.title || activation.name || "Recibe tu material digital";
   const rawSubtitle = publicMessage.subtitle || "";
   const rawAssetDescription = asset.description || activation.description || "";
@@ -114,7 +114,7 @@ function render(payload) {
   document.title = `${pageTitle} | ${businessName}`;
   captureCard.innerHTML = `
     <div class="brand-row">
-      <img src="${escapeHtml(logoSource(business))}" alt="${escapeHtml(logoAlt(business))}" onerror="this.onerror=null;this.src='${MARKET_GAMES_LOGO}';">
+      <img src="${escapeHtml(logoSource(business))}" alt="${escapeHtml(logoAlt(business))}" onerror="this.onerror=null;this.src='${SALES_MACHINE_LOGO}';">
       <div>
         <strong>${escapeHtml(businessName)}</strong>
         <span>Material exclusivo para visitantes</span>

@@ -458,7 +458,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
       items: [
         {
           id: plan.code,
-          title: `${plan.name} - renovacion ${periodLabel} Market Games`,
+          title: `${plan.name} - renovacion ${periodLabel} Sales Machine`,
           quantity: 1,
           unit_price: Number(charge.price_cop),
           currency_id: "COP",
@@ -587,7 +587,7 @@ async function createSubscriptionAutoRenewal(user, body) {
   const preapproval = await mpRequest("/preapproval", {
     method: "POST",
     body: JSON.stringify({
-      reason: `${plan.name} - portal Market Games (${periodLabel})`,
+      reason: `${plan.name} - portal Sales Machine (${periodLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: user.email,
       back_url: appUrl("/empresa/?subscription=automatic"),
@@ -798,7 +798,7 @@ async function createPortalSignupCheckout(client, payload) {
   const preapproval = await mpRequest("/preapproval", {
     method: "POST",
     body: JSON.stringify({
-      reason: `${plan.name} - portal Market Games (${billingLabel})`,
+      reason: `${plan.name} - portal Sales Machine (${billingLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: payload.email,
       back_url: appUrl("/paquetes/?signup=card"),

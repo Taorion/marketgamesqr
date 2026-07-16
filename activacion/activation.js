@@ -373,12 +373,12 @@ function isPremium(activation) {
 
 function renderActivation(activation) {
   currentActivation = activation;
-  businessName.textContent = activation.business?.name || "MarketGames RMS";
+  businessName.textContent = activation.business?.name || "Sales Machine RMS";
   activationTitle.textContent = activation.title;
   activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
     ? "Registra tus datos, responde el formulario y raspa la superficie para descubrir el premio."
     : activation.description || "Deja tus datos, responde el formulario y completa la experiencia para desbloquear tu QR.";
-  document.title = `${activation.title} | Activacion MarketGames`;
+  document.title = `${activation.title} | Activacion Sales Machine`;
   card.classList.toggle("is-premium", isPremium(activation));
   syncCaptureRequirements(activation);
   if (!activation.active) {
@@ -2467,7 +2467,7 @@ function drawRoulette(ctx, cx, cy, r, segments, angle, stopping, landed = null) 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = "900 18px monospace";
-  ctx.fillText("MG", cx, cy);
+  ctx.fillText("SM", cx, cy);
 
   ctx.save();
   ctx.shadowColor = "rgba(0, 0, 0, .45)";
@@ -3208,7 +3208,7 @@ async function renderResult(data) {
 }
 
 function rewardQrFilename() {
-  return "beneficio-marketgames-qr.png";
+  return "beneficio-sales-machine-qr.png";
 }
 
 function loadImageDataUrl(src) {
@@ -3270,7 +3270,7 @@ function dataUrlToFile(dataUrl, filename) {
 }
 
 async function shareRewardQr(data) {
-  const title = data.reward?.reward_label || "Beneficio MarketGames QR";
+  const title = data.reward?.reward_label || "Beneficio Sales Machine QR";
   const text = `${title}. Presenta este QR en el punto fisico para redimir tu beneficio.`;
   const qrImageDataUrl = String(data.qr_image_data_url || "").startsWith("data:image/svg+xml")
     ? await convertSvgDataUrlToPngDataUrl(data.qr_image_data_url)

@@ -143,7 +143,7 @@ async function create(req, res, next) {
     const body = validate(createRewardPassSchema, payload);
     const rewardPass = await createRewardPass(req.user, body);
     res.status(201).json({
-      message: "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo MarketGames.",
+      message: "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo Sales Machine.",
       reward_pass: rewardPass,
     });
   } catch (error) {

@@ -94,7 +94,7 @@ const PLAN_PRICING_NOTES = {
   PRO: {
     recommended_start_package: null,
     portal_access_fee_cop: PREMIUM_PORTAL_COP,
-    pricing_note: "Premium habilita todo el portal MarketGamesQR sin limites de uso ni cantidad en las capacidades operativas.",
+    pricing_note: "Premium habilita todo el portal Sales Machine sin limites de uso ni cantidad en las capacidades operativas.",
   },
 };
 
@@ -183,7 +183,7 @@ const PLAN_CATALOG = {
     billing_period: "temporary",
     portal_value_cop: 0,
     recommended_start_package: "QR200",
-    best_for: "Negocios que compran T200 o mas y activan una campana gamificada disenada por MarketGamesQR.",
+    best_for: "Negocios que compran T200 o mas y activan una campana gamificada disenada por Sales Machine.",
     access_summary: "Prueba Growth durante 3 meses con dashboard completo, embudo, mas historial y mas capacidad operativa. Al vencer vuelve a Portal Base.",
     pricing_note: "Growth temporal no borra datos al vencer; conserva tickets restantes y restringe funciones premium si no hay suscripcion.",
     included: [
@@ -484,7 +484,7 @@ const PLAN_CATALOG = {
       "Directorio de contactos",
       "Productos y obsequios hasta 4 productos diferentes",
       "Sales tracker",
-      "Asistencia de marketing al lanzamiento de MarketGamesQR",
+      "Asistencia de marketing al lanzamiento de Sales Machine",
       "Agenda para programar tareas",
       "10 afiliados",
       "10 tickets de cortesia en primera suscripcion",
@@ -565,7 +565,7 @@ const PLAN_CATALOG = {
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.PRO.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.PRO.recommended_start_package,
-    best_for: "Marcas que quieren usar todo MarketGamesQR sin limites de uso ni cantidad en campanas, sedes, usuarios, contactos, activaciones, agenda, afiliados y analitica.",
+    best_for: "Marcas que quieren usar todo Sales Machine sin limites de uso ni cantidad en campanas, sedes, usuarios, contactos, activaciones, agenda, afiliados y analitica.",
     access_summary: "Plan para marcas que quieren todo el portal habilitado, sin limites de uso ni cantidad en las capacidades operativas.",
     pricing_note: PLAN_PRICING_NOTES.PRO.pricing_note,
     included: [
@@ -587,7 +587,7 @@ const PLAN_CATALOG = {
       "Directorio de contactos",
       "Productos y obsequios con productos ilimitados",
       "Sales tracker",
-      "Asistencia de marketing al lanzamiento de MarketGamesQR 2 veces al mes",
+      "Asistencia de marketing al lanzamiento de Sales Machine 2 veces al mes",
       "Tareas + Customer Journey",
       "Contactos con tickets pendientes por redimir",
       "Afiliados ilimitados + Carnet digital",
@@ -871,7 +871,7 @@ function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     ...plan,
     name: plan.code === PLAN_CODES.PRO ? "Enterprise Operado Interno" : plan.name,
     access_summary: isInternalAccount
-      ? "Cuenta interna MarketGames QR con acceso completo para operar clientes propios sin bloqueos de plan."
+      ? "Cuenta interna Sales Machine QR con acceso completo para operar clientes propios sin bloqueos de plan."
       : "Convenio premium vitalicio con acceso completo sin bloqueos de plan.",
     features: {
       ...Object.keys(PLAN_CATALOG[PLAN_CODES.PRO].features || {}).reduce((acc, feature) => ({ ...acc, [feature]: true }), {}),
@@ -1239,7 +1239,7 @@ function featurePrompts(plan = {}) {
   return {
     portal_locked: {
       title: "Activa tu Portal RMS",
-      message: "Activa un plan mensual para usar MarketGamesQR desde el portal privado de tu negocio.",
+      message: "Activa un plan mensual para usar Sales Machine desde el portal privado de tu negocio.",
       cta: "Ver planes",
       url: "/paquetes/",
     },

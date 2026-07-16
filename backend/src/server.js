@@ -3,7 +3,7 @@ const { env } = require("./config/env");
 const { pool } = require("./config/db");
 
 const server = app.listen(env.port, () => {
-  console.log(`MarketGamesQR Portal RMS running on http://localhost:${env.port}`);
+  console.log(`Sales Machine Portal RMS running on http://localhost:${env.port}`);
 });
 
 async function shutdown() {

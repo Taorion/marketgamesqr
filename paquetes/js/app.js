@@ -70,7 +70,7 @@ const FALLBACK_PLANS = [
       "Directorio de contactos",
       "Inventario de obsequios hasta 4 productos diferentes",
       "Sales tracker",
-      "Asistencia de marketing al lanzamiento de MarketGamesQR",
+      "Asistencia de marketing al lanzamiento de Sales Machine",
       "Agenda para programar tareas",
       "10 afiliados",
       "10 tickets de cortesía en primera suscripción",
@@ -100,7 +100,7 @@ const FALLBACK_PLANS = [
       "Directorio de contactos",
       "Inventario de obsequios con productos ilimitados",
       "Sales tracker",
-      "Asistencia de marketing al lanzamiento de MarketGamesQR 2 veces al mes",
+      "Asistencia de marketing al lanzamiento de Sales Machine 2 veces al mes",
       "Tareas + Customer Journey",
       "Contactos con tickets pendientes por redimir",
       "Afiliados ilimitados + Carnet digital",
@@ -257,7 +257,7 @@ function renderSelection() {
   const title = selectedPlan ? `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}` : "Suscripción primero";
   const copy = selectedPlan
     ? `Vas a activar el plan ${selectedPlan.name}. Al confirmar tu primera suscripción recibes 10 tickets de cortesía.`
-    : "Contrata tu plan mensual y opera MarketGamesQR desde una cuenta privada para tu negocio.";
+    : "Contrata tu plan mensual y opera Sales Machine desde una cuenta privada para tu negocio.";
   [selectedBox, signupPlanSummary].forEach((box) => {
     if (!box) return;
     box.innerHTML = `
@@ -270,7 +270,7 @@ function renderSelection() {
   if (formTitle) formTitle.textContent = selectedPlan ? `Activar ${selectedPlan.name}` : "Registro y suscripción";
   if (formCopy) {
     formCopy.textContent = selectedPlan
-      ? `Hola, quiero suscribirme al plan ${selectedPlan.name} de MarketGamesQR.`
+      ? `Hola, quiero suscribirme al plan ${selectedPlan.name} de Sales Machine.`
       : "Selecciona Started, Medium o Premium para continuar.";
   }
   if (submitButton) {

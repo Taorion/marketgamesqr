@@ -27,7 +27,7 @@ function text(value, fallback = "-") {
 }
 
 function initials(value) {
-  return text(value, "MG")
+  return text(value, "SM")
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
@@ -101,7 +101,7 @@ function renderLedger(rows = []) {
 function renderCard(data) {
   const affiliate = data.affiliate || {};
   const businessSettings = affiliate.business_settings || {};
-  const businessName = text(affiliate.business_name || businessSettings.name, "MarketGamesQR");
+  const businessName = text(affiliate.business_name || businessSettings.name, "Sales Machine");
   const points = Number(affiliate.points_total || affiliate.ledger_points || 0);
   const active = String(affiliate.status || "ACTIVE").toUpperCase() !== "INACTIVE";
 
