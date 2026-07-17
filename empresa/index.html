@@ -738,21 +738,22 @@
           <section class="view-section active" data-view="rms-machine">
             <div class="view-head rms-machine-head">
               <div class="rms-machine-head-copy">
-                <span class="mono-label">Sales Machine Core</span>
-                <h2>Máquina RMS: el centro de Sales Machine</h2>
-                <p>Sales Machine se usa para operar una máquina de ventas: recibe leads, los procesa por estaciones, prescribe seguimiento y revela qué acciones producen revenue real. Campañas, Gaming Center, agenda, productos y analítica existen para alimentar y mejorar esta Máquina RMS.</p>
+                <span class="mono-label">Operación principal</span>
+                <h2>Fábrica de ventas</h2>
+                <p><strong>Máquina de ventas:</strong> comienza a procesar tu materia prima de leads. Entra a las estaciones, selecciona la salida correcta y mueve cada oportunidad hacia cierre, postventa y revenue medible.</p>
                 <div class="rms-flow-chip" aria-label="Flujo operativo RMS">
-                  <span>Recolectar</span>
-                  <span>Curar</span>
-                  <span>Clasificar</span>
+                  <span>Leads recolectados</span>
+                  <span>Embudo</span>
+                  <span>Curados</span>
+                  <span>Clasificados</span>
                   <span>Gamificar</span>
                   <span>Accionar</span>
                   <span>Cerrar</span>
-                  <span>Optimizar</span>
                 </div>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" id="rmsMachineCollectorButton" type="button">Alimentar Máquina RMS</button>
+                <button class="solid-button" type="button" data-portal-shortcut="rms-stations">Operar estaciones</button>
+                <button class="ghost-button" id="rmsMachineCollectorButton" type="button">Ingresar materia prima</button>
                 <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
                 <button class="ghost-button" id="rmsMachineHowButton" type="button">Tutorial paso a paso</button>
                 <button class="ghost-button" id="rmsMachineRefreshButton" type="button">Actualizar cola</button>
@@ -760,44 +761,17 @@
               </div>
             </div>
 
-            <section class="rms-machine-hero">
-              <article class="rms-machine-principle">
-                <span class="mono-label">Concepto operativo</span>
-                <h3>El portal no empieza en reportes: empieza en la operación que fabrica ventas.</h3>
-                <p>La Máquina RMS es el espacio de trabajo principal. Las demás secciones capturan materia prima comercial, activan atención, organizan agenda, clasifican interés o miden el resultado para que la máquina opere mejor.</p>
-              </article>
-              <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
-            </section>
-
-            <section class="surface-card rms-machine-tutorial" id="rmsMachineTutorial">
-              <div class="rms-machine-tutorial-head">
-                <div>
-                  <span class="mono-label">Tutorial guiado RMS</span>
-                  <h3>Cómo se fabrica una venta metiendo leads a la máquina</h3>
-                  <p>Haz clic paso a paso para entender qué entra, qué operación se ejecuta y qué salida debe producir cada estación antes de mover el lead hacia revenue.</p>
-                </div>
-                <div class="rms-machine-tutorial-progress" aria-live="polite">
-                  <span id="rmsTutorialProgressLabel">Paso 1 de 7</span>
-                  <div><i id="rmsTutorialProgressBar"></i></div>
-                </div>
-              </div>
-              <div class="rms-machine-tutorial-shell">
-                <nav class="rms-machine-tutorial-steps" id="rmsTutorialSteps" aria-label="Pasos del tutorial RMS"></nav>
-                <article class="rms-machine-tutorial-panel" id="rmsTutorialPanel" aria-live="polite"></article>
-              </div>
-            </section>
-
             <section class="rms-operator-toolbar surface-card">
               <div>
-                <span class="mono-label">Modo Operario de Revenue</span>
-                <strong>No vendas a ciegas. Alimenta la máquina, revisa estados y ejecuta operaciones.</strong>
+                <span class="mono-label">Operario de fábrica</span>
+                <strong>Busca materia prima, entra a una estación y mueve solo la salida lista.</strong>
               </div>
               <label>
                 <span>Buscar materia prima</span>
                 <input id="rmsMachineSearchInput" type="search" placeholder="Nombre, telefono, campaña o interés">
               </label>
               <label>
-                <span>Fase</span>
+                <span>Estación</span>
                 <select id="rmsMachinePhaseFilter">
                   <option value="">Todas las estaciones</option>
                 </select>
@@ -817,17 +791,17 @@
             <section class="surface-card rms-journey-shell rms-factory-console">
               <div class="card-head">
                 <div>
-                  <span class="mono-label">Mapa Operativo RMS</span>
-                  <h3 class="subhead">Tablero de operación de la fábrica de ventas</h3>
-                  <p class="chart-explainer">Lee la fábrica de izquierda a derecha: no son cajas aisladas. Cada estación procesa clientes con una operación concreta y los pasa a la siguiente hasta acercarlos al cierre.</p>
+                  <span class="mono-label">Fábrica de ventas</span>
+                  <h3 class="subhead">Opera las estaciones de la máquina de ventas</h3>
+                  <p class="chart-explainer">Lee de izquierda a derecha: cada estación almacena un estado comercial, ejecuta una operación y pasa solo la salida seleccionada a la siguiente.</p>
                 </div>
                 <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
               </div>
               <div class="rms-factory-status-strip" aria-label="Estado operativo de la fábrica RMS">
-                <span><em>01</em><strong>Cliente entra</strong><small>Lead, QR, catálogo o referido</small></span>
-                <span><em>02</em><strong>Estación procesa</strong><small>Beneficio, descuento, anuncio o tarea</small></span>
-                <span><em>03</em><strong>Salida avanza</strong><small>Se pasa a la siguiente estación</small></span>
-                <span><em>04</em><strong>Revenue se mide</strong><small>Cierre, postventa o recuperación</small></span>
+                <span><em>01</em><strong>Materia prima entra</strong><small>Lead, QR, catálogo o referido</small></span>
+                <span><em>02</em><strong>Estación almacena</strong><small>Leads recolectados, Embudo o Curados</small></span>
+                <span><em>03</em><strong>Operación procesa</strong><small>Curar, clasificar, gamificar o accionar</small></span>
+                <span><em>04</em><strong>Salida avanza</strong><small>Cierre, postventa o revenue medido</small></span>
               </div>
               <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
                 <div>
@@ -857,6 +831,33 @@
                 </div>
               </div>
               <div class="rms-stage-board" id="rmsStageBoard"></div>
+            </section>
+
+            <section class="rms-machine-hero">
+              <article class="rms-machine-principle">
+                <span class="mono-label">Concepto operativo</span>
+                <h3>El portal no empieza en reportes: empieza en la operación que fabrica ventas.</h3>
+                <p>La Máquina RMS es el espacio de trabajo principal. Las demás secciones capturan materia prima comercial, activan atención, organizan agenda, clasifican interés o miden el resultado para que la máquina opere mejor.</p>
+              </article>
+              <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
+            </section>
+
+            <section class="surface-card rms-machine-tutorial" id="rmsMachineTutorial">
+              <div class="rms-machine-tutorial-head">
+                <div>
+                  <span class="mono-label">Tutorial guiado RMS</span>
+                  <h3>Cómo se fabrica una venta metiendo leads a la máquina</h3>
+                  <p>Haz clic paso a paso para entender qué entra, qué operación se ejecuta y qué salida debe producir cada estación antes de mover el lead hacia revenue.</p>
+                </div>
+                <div class="rms-machine-tutorial-progress" aria-live="polite">
+                  <span id="rmsTutorialProgressLabel">Paso 1 de 7</span>
+                  <div><i id="rmsTutorialProgressBar"></i></div>
+                </div>
+              </div>
+              <div class="rms-machine-tutorial-shell">
+                <nav class="rms-machine-tutorial-steps" id="rmsTutorialSteps" aria-label="Pasos del tutorial RMS"></nav>
+                <article class="rms-machine-tutorial-panel" id="rmsTutorialPanel" aria-live="polite"></article>
+              </div>
             </section>
 
             <aside class="surface-card rms-lead-inspector hidden" id="rmsLeadInspector" aria-live="polite"></aside>
