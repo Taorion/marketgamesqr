@@ -42160,7 +42160,7 @@ body[data-current-view="rms-machine"] .portal-shell .rms-phase-operation {
 }
 
 body[data-current-view="rms-machine"] .portal-shell .rms-phase-operation::before {
-  content: "operar aqui" !important;
+  content: "operación" !important;
   position: absolute !important;
   top: 10px !important;
   right: 10px !important;
@@ -42171,6 +42171,26 @@ body[data-current-view="rms-machine"] .portal-shell .rms-phase-operation::before
   font-size: 0.64rem !important;
   line-height: 1 !important;
   font-weight: 860 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-model-copy {
+  margin: 8px 0 0 !important;
+  max-width: 720px !important;
+  color: #506a60 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.45 !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-operation-strip {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+}
+
+body[data-current-view="rms-machine"] .portal-shell .rms-station-operation-strip article {
+  min-height: 78px !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-model-copy {
+  color: #c8ded6 !important;
 }
 
 :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-board-guide,

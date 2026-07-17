@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=reward-pass-pro-20260716-v1">
+  <link rel="stylesheet" href="css/styles.css?v=rms-station-storage-20260717-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -60,14 +60,14 @@
               <i aria-hidden="true"></i>
               <article>
                 <span class="material-symbols-outlined" aria-hidden="true">database</span>
-                <strong>Recolector</strong>
+                <strong>Leads recolectados</strong>
                 <small>Lead discriminado por canal e interés</small>
               </article>
               <i aria-hidden="true"></i>
               <article class="is-core">
                 <span class="material-symbols-outlined" aria-hidden="true">precision_manufacturing</span>
                 <strong>Máquina RMS</strong>
-                <small>Embudo, curaduría, clasificación y agenda</small>
+                <small>Embudo, Curados, Clasificados y agenda</small>
               </article>
               <i aria-hidden="true"></i>
               <article>
@@ -890,7 +890,7 @@
             <section class="rms-empty-guide hidden" id="rmsEmptyStateGuide">
               <div class="rms-empty-head">
                 <div>
-                  <span class="mono-label">Recolector de oportunidades</span>
+                  <span class="mono-label">Leads recolectados</span>
                   <h3>Empieza alimentando la Máquina RMS</h3>
                   <p>La Máquina RMS convierte clientes, leads y contactos en oportunidades priorizadas. Para operar la cola diaria necesitas primero capturar o seleccionar la materia prima comercial.</p>
                 </div>
@@ -939,8 +939,8 @@
                   <li><span>2</span><strong>Crear una dinámica o campaña de captura</strong><button type="button" data-rms-empty-action="gaming">Crear dinámica</button></li>
                   <li><span>3</span><strong>Capturar datos o seleccionar contactos existentes</strong><button type="button" data-rms-empty-action="contacts">Ver contactos</button></li>
                   <li><span>4</span><strong>Asignar cobertura: ticket, beneficio, reto o recompensa</strong><button type="button" data-rms-empty-action="reward-passes">Crear cobertura</button></li>
-                  <li><span>5</span><strong>Ver leads dentro del Recolector</strong><button type="button" data-rms-open-station="recoleccion">Ver estación</button></li>
-                  <li><span>6</span><strong>Mover leads cuando estén listos</strong><button type="button" data-rms-open-collector>Activar recolector</button></li>
+                  <li><span>5</span><strong>Ver leads recolectados</strong><button type="button" data-rms-open-station="recoleccion">Ver estación</button></li>
+                  <li><span>6</span><strong>Mover leads cuando estén listos</strong><button type="button" data-rms-open-collector>Activar captura</button></li>
                 </ol>
               </div>
             </section>
@@ -989,9 +989,9 @@
               <div class="modal-card rms-collector-card">
                 <div class="modal-head">
                   <div>
-                    <span class="mono-label">Recolector de oportunidades</span>
+                    <span class="mono-label">Leads recolectados</span>
                     <h3 id="rmsCollectorTitle">Alimentar Máquina RMS</h3>
-                    <p>Define la fuente, la captura y la cobertura. Los datos ingresados quedan visibles como leads dentro de la estación Recolector.</p>
+                    <p>Define la fuente, la captura y la cobertura. Los datos ingresados quedan visibles dentro de la estación Leads recolectados.</p>
                   </div>
                   <button class="icon-button" type="button" id="rmsCollectorCloseButton" title="Cerrar">
                     <span class="material-symbols-outlined">close</span>
@@ -1047,8 +1047,8 @@
                   <div class="span-2 rms-collector-lead-entry">
                     <div class="rms-collector-lead-head">
                       <span class="mono-label">Ingresar lead ahora</span>
-                      <strong>Materia prima manual para el recolector</strong>
-                      <small>Opcional: si llenas estos datos, el lead queda creado y entra a la estación Recolector de Oportunidades.</small>
+                      <strong>Materia prima manual para Leads recolectados</strong>
+                      <small>Opcional: si llenas estos datos, el lead queda creado y entra a la estación Leads recolectados.</small>
                     </div>
                     <div class="rms-collector-lead-grid">
                       <label>
@@ -1080,19 +1080,19 @@
                     <div class="rms-collector-lead-submit">
                       <div>
                         <strong>¿Ya tienes los datos del lead?</strong>
-                        <small>Presiona el botón para crearlo y verlo dentro de la estación Recolector.</small>
+                        <small>Presiona el botón para crearlo y verlo dentro de la estación Leads recolectados.</small>
                       </div>
-                      <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Ingresar lead al recolector</button>
+                      <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Ingresar lead a recolectados</button>
                     </div>
                   </div>
                   <label class="span-2">
                     Resultado esperado
-                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas visibles dentro de la estación Recolector.</textarea>
+                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas visibles dentro de la estación Leads recolectados.</textarea>
                   </label>
                   <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
                   <div class="modal-actions span-2">
                     <button class="ghost-button" type="button" id="rmsCollectorCancelButton">Cancelar</button>
-                    <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar recolector</button>
+                    <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar captura</button>
                   </div>
                 </form>
               </div>
@@ -1116,7 +1116,7 @@
                   <article><span>4</span><strong>Sale revenue</strong><p>Venta atribuida, recompra, referido, redención o cliente recuperado.</p></article>
                 </div>
                 <div class="modal-actions">
-                  <button class="solid-button" type="button" id="rmsHowStartButton">Empezar con un recolector</button>
+                  <button class="solid-button" type="button" id="rmsHowStartButton">Empezar con leads recolectados</button>
                 </div>
               </div>
             </div>
@@ -2355,7 +2355,7 @@
                         <div class="activation-product-intent-summary">
                           <span class="material-symbols-outlined">inventory_2</span>
                           <div>
-                            <strong>Conecta activación, recolector y curaduría</strong>
+                            <strong>Conecta activación, Leads recolectados y Curados</strong>
                             <small id="activationProductIntentHelp">La prelanding agregará una pregunta obligatoria con productos del inventario para clasificar el interés del lead.</small>
                           </div>
                         </div>
@@ -2426,7 +2426,7 @@
                         <span>04</span>
                         <div>
                           <strong>Formulario RMS del lead</strong>
-                          <small>Define las preguntas que alimentan Recolector, Embudo, Curaduría y clasificación.</small>
+                          <small>Define las preguntas que alimentan Leads recolectados, Embudo, Curados y Clasificados.</small>
                         </div>
                       </div>
                       <div class="activation-config-head">
@@ -2475,7 +2475,7 @@
                               <option value="category">Categoria / segmento</option>
                               <option value="level">Nivel</option>
                               <option value="rating">Calificacion</option>
-                              <option value="notes">Nota para curaduria</option>
+                              <option value="notes">Nota para clasificacion RMS</option>
                               <option value="custom">Dato adicional</option>
                             </select>
                           </label>
@@ -2511,7 +2511,7 @@
                               <option value="category">Categoria / segmento</option>
                               <option value="level">Nivel</option>
                               <option value="rating">Calificacion</option>
-                              <option value="notes">Nota para curaduria</option>
+                              <option value="notes">Nota para clasificacion RMS</option>
                               <option value="custom">Dato adicional</option>
                             </select>
                           </label>
@@ -2547,7 +2547,7 @@
                               <option value="category" selected>Categoria / segmento</option>
                               <option value="level">Nivel</option>
                               <option value="rating">Calificacion</option>
-                              <option value="notes">Nota para curaduria</option>
+                              <option value="notes">Nota para clasificacion RMS</option>
                               <option value="custom">Dato adicional</option>
                             </select>
                           </label>
@@ -2583,14 +2583,14 @@
                               <option value="category">Categoria / segmento</option>
                               <option value="level">Nivel</option>
                               <option value="rating">Calificacion</option>
-                              <option value="notes">Nota para curaduria</option>
+                              <option value="notes">Nota para clasificacion RMS</option>
                               <option value="custom">Dato adicional</option>
                             </select>
                           </label>
                           <label class="activation-form-required"><input data-activation-form-required type="checkbox"><span>Obligatoria</span></label>
                         </article>
                         <article class="activation-form-field-row" data-activation-form-field="5">
-                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" placeholder="Observacion libre para curaduria"></label>
+                          <label><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" placeholder="Observacion libre para clasificacion RMS"></label>
                           <label><span>Tipo de control</span>
                             <select data-activation-form-type>
                               <option value="TEXT">Texto corto</option>
@@ -2619,14 +2619,14 @@
                               <option value="category">Categoria / segmento</option>
                               <option value="level">Nivel</option>
                               <option value="rating">Calificacion</option>
-                              <option value="notes" selected>Nota para curaduria</option>
+                              <option value="notes" selected>Nota para clasificacion RMS</option>
                               <option value="custom">Dato adicional</option>
                             </select>
                           </label>
                           <label class="activation-form-required"><input data-activation-form-required type="checkbox"><span>Obligatoria</span></label>
                         </article>
                       </div>
-                      <small class="activation-help">Estas respuestas viajan con el lead al Recolector RMS y quedan listas para Embudo, Curaduria y clasificacion comercial.</small>
+                      <small class="activation-help">Estas respuestas viajan con el lead a Leads recolectados y quedan listas para Embudo, Curados y Clasificados.</small>
                     </section>
                     <section class="full activation-builder-section activation-builder-gameplay">
                       <div class="activation-builder-section-head">
@@ -4594,7 +4594,7 @@
                 <label><span>Detalle lote</span><input id="manualLeadCsvSourceDetailInput" type="text" maxlength="220" placeholder="Campana, canal, activacion o evento"></label>
                 <label class="span-2"><span>Interes por defecto</span><input id="manualLeadCsvInterestInput" type="text" maxlength="500" placeholder="Se usa si la fila no trae interes"></label>
                 <p class="form-message span-2" id="manualLeadCsvMessage"></p>
-                <button class="ghost-button" id="manualLeadCsvSubmitButton" type="submit">Importar CSV al Recolector</button>
+                <button class="ghost-button" id="manualLeadCsvSubmitButton" type="submit">Importar CSV a recolectados</button>
               </form>
               <form class="modal-form" id="manualLeadForm">
                 <label><span>Nombre</span><input id="manualLeadNameInput" type="text" maxlength="160" required placeholder="Nombre del prospecto"></label>
@@ -7000,7 +7000,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-performance-20260716-v1" defer></script>
+  <script src="js/app.js?v=rms-station-storage-20260717-v1" defer></script>
 </body>
 </html>
 
