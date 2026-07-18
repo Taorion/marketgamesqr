@@ -29699,10 +29699,15 @@ function openRmsCollectorModal() {
   renderRmsCollectorSummary();
   updateRmsCollectorSubmitButtons();
   rmsCollectorModal?.classList.remove("hidden");
+  document.body.classList.add("has-rms-collector-modal");
+  window.setTimeout(() => {
+    (rmsCollectorLeadNameInput || rmsCollectorSourceInput)?.focus?.({ preventScroll: true });
+  }, 40);
 }
 
 function closeRmsCollectorModal() {
   rmsCollectorModal?.classList.add("hidden");
+  document.body.classList.remove("has-rms-collector-modal");
 }
 
 function openRmsHowModal() {
