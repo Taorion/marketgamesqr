@@ -47180,8 +47180,8 @@ html body .portal-shell #rmsCollectorModal.modal-shell:not(.hidden) {
   inset: 0 !important;
   z-index: 1400 !important;
   display: grid !important;
-  place-items: center !important;
-  padding: clamp(18px, 3vw, 38px) !important;
+  place-items: start center !important;
+  padding: clamp(10px, 2vh, 24px) clamp(16px, 3vw, 34px) !important;
   background:
     radial-gradient(circle at 18% 10%, rgba(196, 239, 219, 0.42), transparent 34%),
     linear-gradient(135deg, rgba(8, 45, 34, 0.18), rgba(21, 92, 126, 0.16)),
@@ -47192,10 +47192,10 @@ html body .portal-shell #rmsCollectorModal.modal-shell:not(.hidden) {
 html body .portal-shell #rmsCollectorModal .rms-collector-card {
   width: min(100%, 980px) !important;
   max-width: calc(100vw - 32px) !important;
-  max-height: min(90vh, 860px) !important;
+  max-height: calc(100dvh - clamp(20px, 4vh, 48px)) !important;
   display: grid !important;
   grid-template-rows: auto minmax(0, 1fr) !important;
-  padding: clamp(20px, 2.5vw, 30px) !important;
+  padding: clamp(16px, 2vw, 24px) !important;
   border: 1px solid rgba(9, 88, 66, 0.18) !important;
   border-radius: 16px !important;
   background:
@@ -47211,13 +47211,13 @@ html body .portal-shell #rmsCollectorModal .modal-head {
   grid-template-columns: minmax(0, 1fr) auto !important;
   gap: 18px !important;
   align-items: start !important;
-  margin: 0 0 18px !important;
-  padding-bottom: 16px !important;
+  margin: 0 0 12px !important;
+  padding-bottom: 12px !important;
   border-bottom: 1px solid rgba(9, 88, 66, 0.12) !important;
 }
 
 html body .portal-shell #rmsCollectorModal .modal-head h3 {
-  margin: 6px 0 6px !important;
+  margin: 4px 0 !important;
   color: #071913 !important;
   font-size: clamp(1.7rem, 3vw, 2.35rem) !important;
   line-height: 1.05 !important;
@@ -47234,15 +47234,51 @@ html body .portal-shell #rmsCollectorModal .rms-collector-form {
   min-height: 0 !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 14px !important;
+  gap: 12px !important;
+  align-content: start !important;
   padding: 2px 4px 4px !important;
   overflow-y: auto !important;
   scrollbar-gutter: stable !important;
 }
 
+html body .portal-shell #rmsCollectorModal .rms-collector-form::before {
+  content: "Contexto de captura";
+  order: 1 !important;
+  grid-column: 1 / -1 !important;
+  display: block !important;
+  margin: 2px 0 -2px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(9, 88, 66, 0.1) !important;
+  color: #0f7b61 !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
 html body .portal-shell #rmsCollectorModal .rms-collector-form > .span-2,
 html body .portal-shell #rmsCollectorModal .rms-collector-form > .modal-actions {
   grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell #rmsCollectorModal .rms-collector-form > label:nth-of-type(-n + 4) {
+  order: 2 !important;
+}
+
+html body .portal-shell #rmsCollectorModal .rms-collector-form > label:nth-of-type(n + 5) {
+  order: 3 !important;
+}
+
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-entry {
+  order: 0 !important;
+}
+
+html body .portal-shell #rmsCollectorModal .rms-collector-summary {
+  order: 4 !important;
+}
+
+html body .portal-shell #rmsCollectorModal .modal-actions {
+  order: 5 !important;
 }
 
 html body .portal-shell #rmsCollectorModal label {
@@ -47269,6 +47305,8 @@ html body .portal-shell #rmsCollectorModal textarea {
 }
 
 html body .portal-shell #rmsCollectorModal .rms-collector-lead-entry {
+  display: grid !important;
+  gap: 12px !important;
   border-radius: 14px !important;
   border: 1px solid rgba(9, 88, 66, 0.16) !important;
   background:
@@ -47276,7 +47314,21 @@ html body .portal-shell #rmsCollectorModal .rms-collector-lead-entry {
     #f7fcf9 !important;
 }
 
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 4px !important;
+}
+
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
 html body .portal-shell #rmsCollectorModal .rms-collector-lead-submit {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
   border-radius: 12px !important;
   border: 1px solid rgba(9, 88, 66, 0.14) !important;
   background: #ffffff !important;
@@ -47339,6 +47391,11 @@ html body .portal-shell #rmsCollectorModal .modal-actions {
   background: linear-gradient(180deg, rgba(12, 31, 25, 0.86), #0b2018 48%) !important;
 }
 
+:root[data-theme="dark"] html body .portal-shell #rmsCollectorModal .rms-collector-form::before {
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  color: #91e8c3 !important;
+}
+
 @media (max-width: 760px) {
   html body .portal-shell #rmsCollectorModal.modal-shell:not(.hidden) {
     place-items: stretch !important;
@@ -47353,6 +47410,7 @@ html body .portal-shell #rmsCollectorModal .modal-actions {
 
   html body .portal-shell #rmsCollectorModal .modal-head,
   html body .portal-shell #rmsCollectorModal .rms-collector-form,
+  html body .portal-shell #rmsCollectorModal .rms-collector-lead-grid,
   html body .portal-shell #rmsCollectorModal .rms-collector-lead-submit,
   html body .portal-shell #rmsCollectorModal .modal-actions {
     grid-template-columns: 1fr !important;

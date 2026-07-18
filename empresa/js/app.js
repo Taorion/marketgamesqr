@@ -29701,6 +29701,7 @@ function openRmsCollectorModal() {
   rmsCollectorModal?.classList.remove("hidden");
   document.body.classList.add("has-rms-collector-modal");
   window.setTimeout(() => {
+    if (rmsCollectorForm) rmsCollectorForm.scrollTop = 0;
     (rmsCollectorLeadNameInput || rmsCollectorSourceInput)?.focus?.({ preventScroll: true });
   }, 40);
 }
