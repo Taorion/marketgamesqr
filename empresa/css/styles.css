@@ -47422,6 +47422,147 @@ html body .portal-shell #rmsCollectorModal .modal-actions {
   }
 }
 
+/* 2026-07 RMS collector viewport repair: modal is mounted on body to avoid station scroll clipping. */
+html body > #rmsCollectorModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2400 !important;
+  display: grid !important;
+  place-items: start center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: clamp(10px, 2vh, 22px) clamp(14px, 3vw, 32px) !important;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(196, 239, 219, 0.42), transparent 34%),
+    linear-gradient(135deg, rgba(8, 45, 34, 0.18), rgba(21, 92, 126, 0.16)),
+    rgba(245, 250, 247, 0.94) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-card {
+  width: min(100%, 980px) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - clamp(20px, 4vh, 44px)) !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  padding: clamp(16px, 2vw, 24px) !important;
+  border: 1px solid rgba(9, 88, 66, 0.18) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 252, 249, 0.98)),
+    #ffffff !important;
+  box-shadow: 0 28px 70px rgba(11, 44, 34, 0.22) !important;
+  overflow: hidden !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 12px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  padding: 2px 4px 4px !important;
+}
+
+html body > #rmsCollectorModal .modal-head {
+  flex: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 18px !important;
+  margin: 0 0 12px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(9, 88, 66, 0.12) !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form::before {
+  content: "Contexto de captura";
+  order: 1 !important;
+  grid-column: 1 / -1 !important;
+  display: block !important;
+  margin: 2px 0 -2px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(9, 88, 66, 0.1) !important;
+  color: #0f7b61 !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form > label:nth-of-type(-n + 4) {
+  order: 2 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form > label:nth-of-type(n + 5) {
+  order: 3 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-entry {
+  order: 0 !important;
+  display: grid !important;
+  gap: 12px !important;
+  grid-column: 1 / -1 !important;
+  border-radius: 14px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-summary {
+  order: 4 !important;
+  grid-column: 1 / -1 !important;
+}
+
+html body > #rmsCollectorModal .modal-actions {
+  order: 5 !important;
+  grid-column: 1 / -1 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+}
+
+html body > #rmsCollectorModal input,
+html body > #rmsCollectorModal select,
+html body > #rmsCollectorModal textarea {
+  max-width: 100% !important;
+}
+
+:root[data-theme="dark"] html body > #rmsCollectorModal.modal-shell:not(.hidden) {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(46, 135, 95, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(3, 17, 13, 0.88), rgba(6, 32, 44, 0.84)) !important;
+}
+
+:root[data-theme="dark"] html body > #rmsCollectorModal .rms-collector-card {
+  border-color: rgba(151, 211, 190, 0.2) !important;
+  background:
+    linear-gradient(180deg, rgba(12, 31, 25, 0.98), rgba(8, 24, 20, 0.98)),
+    #0b2018 !important;
+}
+
+@media (max-width: 760px) {
+  html body > #rmsCollectorModal.modal-shell:not(.hidden) {
+    place-items: stretch !important;
+    padding: 10px !important;
+  }
+
+  html body > #rmsCollectorModal .rms-collector-card {
+    max-width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+  }
+
+  html body > #rmsCollectorModal .modal-head,
+  html body > #rmsCollectorModal .rms-collector-form,
+  html body > #rmsCollectorModal .rms-collector-lead-grid,
+  html body > #rmsCollectorModal .rms-collector-lead-submit,
+  html body > #rmsCollectorModal .modal-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width: 980px) {
   html body .portal-shell :where(
     .surface-card,
