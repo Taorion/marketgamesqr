@@ -1393,6 +1393,7 @@ let state = {
     priority: "",
   },
   rmsCollectorActivation: null,
+  rmsCollectorSubmitting: false,
   missions: null,
   missionsLoaded: false,
   missionsLoading: false,
@@ -29805,6 +29806,11 @@ async function submitRmsCollector(event) {
     showFeedback("Para ingresar un lead a recolectados agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
     return;
   }
+  if (state.rmsCollectorSubmitting) return;
+  state.rmsCollectorSubmitting = true;
+  [rmsCollectorSubmitButton, rmsCollectorLeadSubmitButton].forEach((button) => {
+    if (button) button.disabled = true;
+  });
   try {
     showFeedback(hasLeadDraft ? "Ingresando lead a Leads recolectados..." : "Activando captura...", "loading", { title: "Máquina RMS", timeout: 0 });
     let createdLead = null;
@@ -29827,7 +29833,12 @@ async function submitRmsCollector(event) {
         }),
       });
       createdLead = leadResult?.lead || null;
+      if (!createdLead?.id) {
+        throw new Error("El lead se guardó sin identificador. Actualiza la estación para verificarlo.");
+      }
       if (createdLead?.id) {
+        closeRmsCollectorModal();
+        showFeedback(`${createdLead?.name || leadName} fue ingresado. Actualizando Leads recolectados...`, "loading", { title: "Máquina RMS", timeout: 0 });
         await api("/api/business/rms-machine/lead/phase", {
           method: "PATCH",
           headers: authHeaders(),
@@ -29849,7 +29860,7 @@ async function submitRmsCollector(event) {
               coverage_type: coverage,
             },
           }),
-        });
+        }).catch(() => null);
       }
     }
     state.rmsCollectorActivation = {
@@ -29908,6 +29919,12 @@ async function submitRmsCollector(event) {
     );
   } catch (error) {
     showFeedback(error.message || "No se pudo activar la captura.", "error", { title: "Máquina RMS" });
+  } finally {
+    state.rmsCollectorSubmitting = false;
+    [rmsCollectorSubmitButton, rmsCollectorLeadSubmitButton].forEach((button) => {
+      if (button) button.disabled = false;
+    });
+    updateRmsCollectorSubmitButtons();
   }
 }
 
