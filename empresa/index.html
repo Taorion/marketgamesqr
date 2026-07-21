@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=generic-ticket-guided-20260721-v17">
+  <link rel="stylesheet" href="css/styles.css?v=rms-dynamic-navigation-20260721-v19">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -718,17 +718,17 @@
           </section>
 
           <section class="view-section active" data-view="rms-machine">
-            <div class="view-head rms-machine-head rms-machine-launchbar">
+            <div class="view-head rms-machine-head rms-machine-launchbar rms-machine-commandbar">
               <div class="rms-machine-head-copy">
-                <span class="mono-label">RMS Machine</span>
-                <h2>Estaciones de fabricación</h2>
-                <p>Selecciona una estación para revisar y procesar sus leads.</p>
+                <span class="material-symbols-outlined" aria-hidden="true">precision_manufacturing</span>
+                <div><span class="mono-label">RMS Machine</span><h2>Estaciones</h2></div>
+                <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button rms-primary-action" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span><span><strong>Ingresar lead</strong><small>Agregar a Recolección</small></span></button>
-                <button class="ghost-button rms-secondary-action" id="rmsMachineRefreshButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">refresh</span><span><strong>Actualizar</strong><small>Refrescar estaciones</small></span></button>
+                <button class="solid-button rms-primary-action" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span><span><strong>Nuevo lead</strong></span></button>
+                <button class="ghost-button rms-secondary-action" id="rmsMachineRefreshButton" type="button" aria-label="Actualizar estaciones" title="Actualizar estaciones"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button>
                 <details class="rms-more-actions">
-                  <summary><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span> Ayuda y herramientas</summary>
+                  <summary aria-label="Más herramientas" title="Más herramientas"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary>
                   <div>
                     <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
                     <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver tutorial</button>
@@ -739,14 +739,6 @@
             </div>
 
             <section class="surface-card rms-journey-shell rms-factory-console">
-              <div class="card-head">
-                <div>
-                  <span class="mono-label">Tu línea de producción</span>
-                  <h3 class="subhead">Elige dónde quieres trabajar</h3>
-                  <p class="chart-explainer">Cada tarjeta abre una estación con sus leads y acciones.</p>
-                </div>
-                <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
-              </div>
               <section class="rms-station-workspace" id="rmsStationWorkspace" aria-live="polite"></section>
               <div class="rms-stage-board" id="rmsStageBoard"></div>
               <details class="rms-board-tools">
@@ -6992,7 +6984,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=generic-ticket-guided-20260721-v17" defer></script>
+  <script src="js/app.js?v=rms-dynamic-navigation-20260721-v19" defer></script>
 </body>
 </html>
 

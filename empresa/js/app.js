@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-generic-ticket-guided-v17";
+const APP_VERSION = "empresa-20260721-rms-dynamic-navigation-v19";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1388,6 +1388,7 @@ let state = {
   rmsStationScreenOpen: true,
   rmsStationSearch: "",
   rmsStationViewMode: "all",
+  rmsStationNavigationDirection: "forward",
   rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
@@ -2196,7 +2197,7 @@ function renderPortalLocationPill(activeSection) {
   const head = activeSection?.querySelector(":scope > .view-head");
   if (!head) return;
   let pill = head.querySelector(":scope > .portal-location-pill");
-  if (activeSection?.dataset.view === "campaigns") {
+  if (["campaigns", "rms-machine"].includes(activeSection?.dataset.view)) {
     pill?.remove();
     return;
   }
@@ -28890,22 +28891,99 @@ function ensureRmsStationUxStyles() {
       body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons { grid-template-columns: 1fr !important; min-width: 0 !important; }
     }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card { cursor: pointer !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card:focus-visible { outline: 3px solid rgba(15,115,84,.3) !important; outline-offset: 3px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { position: sticky !important; top: calc(var(--topbar-height, 72px) + 8px) !important; z-index: 18 !important; display: grid !important; gap: 8px !important; padding: 10px !important; border: 1px solid rgba(15,115,84,.2) !important; border-radius: 16px !important; background: rgba(255,255,255,.97) !important; box-shadow: 0 16px 38px rgba(23,65,91,.13) !important; backdrop-filter: blur(16px); }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-primary { display: grid !important; grid-template-columns: auto minmax(220px,1fr) minmax(180px,.55fr) auto !important; align-items: center !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-map-button { min-width: 82px !important; min-height: 48px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context { min-width: 0 !important; display: grid !important; gap: 2px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > span { color: var(--station-accent,#087f5b) !important; font-size: .64rem !important; font-weight: 900 !important; letter-spacing: .06em !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > strong { overflow: hidden !important; color: #17362f !important; font-size: 1rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > small { overflow: hidden !important; color: #61776f !important; font-size: .72rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > i { position: relative !important; height: 4px !important; margin-top: 5px !important; overflow: hidden !important; border-radius: 99px !important; background: rgba(23,65,91,.11) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > i > span { position: absolute !important; inset: 0 auto 0 0 !important; border-radius: inherit !important; background: linear-gradient(90deg,var(--station-accent,#087f5b),#2eb67d) !important; transition: width .35s ease !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump { min-width: 0 !important; display: grid !important; gap: 3px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump > span { color: #6b8179 !important; font-size: .62rem !important; font-weight: 850 !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump select { width: 100% !important; min-height: 40px !important; padding: 7px 30px 7px 9px !important; border-color: rgba(15,115,84,.18) !important; background: #f8fcfa !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows { display: grid !important; grid-template-columns: repeat(2,minmax(116px,1fr)) !important; gap: 7px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows > button { min-height: 48px !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 7px !important; padding: 7px 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows > button > span:not(.material-symbols-outlined) { min-width: 0 !important; display: grid !important; text-align: left !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows small { font-size: .58rem !important; line-height: 1 !important; opacity: .74 !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows strong { max-width: 98px !important; overflow: hidden !important; font-size: .72rem !important; line-height: 1.15 !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub .rms-station-journey-nav { padding: 2px 1px 4px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub .rms-station-journey-stop { min-height: 58px !important; padding: 7px !important; border-radius: 11px !important; transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub .rms-station-journey-stop:hover { border-color: var(--station-accent,#087f5b) !important; transform: translateY(-2px) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub .rms-station-journey-stop.is-active { transform: translateY(-2px) !important; box-shadow: 0 8px 18px rgba(15,115,84,.13), inset 0 -3px 0 var(--station-accent,#087f5b) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-keyboard-hint { display: flex !important; align-items: center !important; justify-content: center !important; gap: 5px !important; color: #70847d !important; font-size: .64rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-keyboard-hint .material-symbols-outlined { font-size: 15px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { position: static !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-enter-forward { animation: rms-station-enter-forward .3s cubic-bezier(.2,.8,.2,1) both; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-enter-backward { animation: rms-station-enter-backward .3s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes rms-station-enter-forward { from { opacity: .35; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes rms-station-enter-backward { from { opacity: .35; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { border-color: rgba(151,211,190,.2) !important; background: rgba(10,28,23,.97) !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > strong { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > small,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-keyboard-hint { color: #b9cec6 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump select { background: #102821 !important; color: #edf9f4 !important; }
+    @media (max-width: 1180px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-primary { grid-template-columns: auto minmax(220px,1fr) auto !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump { grid-column: 2 / 3 !important; grid-row: 2 !important; } }
+    @media (max-width: 820px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { position: relative !important; top: auto !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-primary { grid-template-columns: auto minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows { grid-column: 1 / -1 !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump { grid-column: 1 / -1 !important; grid-row: auto !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-keyboard-hint { display: none !important; } }
+    @media (max-width: 520px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-map-button { min-width: 46px !important; width: 46px !important; padding: 0 !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-map-button > span:last-child { display: none !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > small { white-space: normal !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows strong { max-width: 86px !important; } }
+    @media (prefers-reduced-motion: reduce) { body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-enter-forward,.rms-station-enter-backward) { animation: none !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > i > span { transition: none !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
 
 function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities = []) {
+  const currentStage = stages[currentIndex] || stages[0] || {};
+  const previousStage = stages[currentIndex - 1] || null;
+  const nextStage = stages[currentIndex + 1] || null;
+  const currentCount = opportunities.filter((lead) => lead.stage === currentStage.key).length;
+  const progress = stages.length > 1 ? Math.round((Math.max(0, currentIndex) / (stages.length - 1)) * 100) : 100;
   return `
-    <nav class="rms-station-journey-nav" aria-label="Recorrido de estaciones RMS">
-      <div class="rms-station-journey-track" style="--rms-station-count:${Math.max(1, stages.length)};--rms-station-progress:${stages.length > 1 ? Math.round((Math.max(0, currentIndex) / (stages.length - 1)) * 100) : 100}%">
-        ${stages.map((item, index) => {
-          const count = opportunities.filter((lead) => lead.stage === item.key).length;
-          const active = index === currentIndex;
-          const completed = index < currentIndex;
-          return `<button class="rms-station-journey-stop ${active ? "is-active" : ""} ${completed ? "is-passed" : ""}" type="button" data-rms-open-station="${escapeHtml(item.key)}" ${active ? 'aria-current="step"' : ""}><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.short_label || item.label || "Estación")}</strong><small>${count.toLocaleString("es-CO")}</small></button>`;
-        }).join("")}
+    <section class="rms-station-navigation-hub" aria-label="Navegación dinámica de estaciones">
+      <div class="rms-station-navigation-primary">
+        <button class="ghost-button rms-station-map-button" type="button" data-rms-close-station>
+          <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+          <span>Mapa</span>
+        </button>
+        <div class="rms-station-navigation-context" aria-live="polite">
+          <span>Estación ${String(currentIndex + 1).padStart(2, "0")} de ${String(stages.length).padStart(2, "0")} · ${progress}% del recorrido</span>
+          <strong>${escapeHtml(currentStage.label || "Estación RMS")}</strong>
+          <small>${currentCount.toLocaleString("es-CO")} lead${currentCount === 1 ? "" : "s"} aquí · ${nextStage ? `Sigue ${escapeHtml(nextStage.short_label || nextStage.label)}` : "Fin del ciclo RMS"}</small>
+          <i aria-hidden="true"><span style="width:${progress}%"></span></i>
+        </div>
+        <label class="rms-station-quick-jump">
+          <span>Ir directamente a</span>
+          <select data-rms-station-picker aria-label="Ir directamente a otra estación RMS">
+            ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${index === currentIndex ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.short_label || item.label || "Estación")}</option>`).join("")}
+          </select>
+        </label>
+        <div class="rms-station-navigation-arrows">
+          <button class="ghost-button" type="button" data-rms-open-station="${escapeHtml(previousStage?.key || "")}" data-rms-navigation="previous" aria-keyshortcuts="ArrowLeft" ${previousStage ? "" : "disabled"}>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span><small>Anterior</small><strong>${escapeHtml(previousStage?.short_label || previousStage?.label || "Inicio")}</strong></span>
+          </button>
+          <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(nextStage?.key || "")}" data-rms-navigation="next" aria-keyshortcuts="ArrowRight" ${nextStage ? "" : "disabled"}>
+            <span><small>Siguiente</small><strong>${escapeHtml(nextStage?.short_label || nextStage?.label || "Final")}</strong></span>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </button>
+        </div>
       </div>
-    </nav>
+      <nav class="rms-station-journey-nav" aria-label="Recorrido completo de estaciones RMS">
+        <div class="rms-station-journey-track" style="--rms-station-count:${Math.max(1, stages.length)};--rms-station-progress:${progress}%">
+          ${stages.map((item, index) => {
+            const count = opportunities.filter((lead) => lead.stage === item.key).length;
+            const active = index === currentIndex;
+            const completed = index < currentIndex;
+            return `<button class="rms-station-journey-stop ${active ? "is-active" : ""} ${completed ? "is-passed" : ""}" type="button" data-rms-open-station="${escapeHtml(item.key)}" data-rms-navigation="jump" ${active ? 'aria-current="step"' : ""}><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.short_label || item.label || "Estación")}</strong><small>${count.toLocaleString("es-CO")}</small></button>`;
+          }).join("")}
+        </div>
+      </nav>
+      <small class="rms-station-keyboard-hint"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span>También puedes usar ← y → para cambiar de estación.</small>
+    </section>
   `;
 }
 
@@ -29004,21 +29082,13 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
-    <div class="rms-station-screen-shell">
+    <div class="rms-station-screen-shell rms-station-enter-${state.rmsStationNavigationDirection === "backward" ? "backward" : "forward"}">
       ${rmsStationNavigatorMarkup(stages, stageIndex, opportunities)}
       <div class="rms-station-workspace-head">
         <div class="rms-station-identity">
           <span class="mono-label">Pantalla independiente · Estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
           <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
           <p>${escapeHtml(stationStorageLabel)} · Operación: ${escapeHtml(operationName)} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
-        </div>
-        <div class="rms-station-workspace-actions">
-          <button class="ghost-button rms-station-return-button" type="button" data-rms-close-station>Ver todas las estaciones</button>
-          <button class="ghost-button compact" type="button" data-rms-open-station="${escapeHtml(previousStage?.key || "")}" ${previousStage ? "" : "disabled"}>← Anterior</button>
-          <select data-rms-station-picker aria-label="Cambiar estación RMS">
-            ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
-          </select>
-          <button class="ghost-button compact" type="button" data-rms-open-station="${escapeHtml(followingStage?.key || "")}" ${followingStage ? "" : "disabled"}>Siguiente →</button>
         </div>
       </div>
 
@@ -29097,7 +29167,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     button.addEventListener("click", closeRmsStation);
   });
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => {
-    openRmsStation(event.target.value || "");
+    openRmsStation(event.target.value || "", { source: "picker" });
   });
   rmsStationWorkspace.querySelector("[data-rms-station-clear-selection]")?.addEventListener("click", () => {
     const currentIds = new Set(rows.map((item) => item.id));
@@ -29145,6 +29215,21 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         last_operation: operation.primaryActionKey || operation.primaryAction || `move_to_${nextPhase.key}`,
       });
     });
+  });
+  rmsStationWorkspace.onkeydown = (event) => {
+    const tagName = String(event.target?.tagName || "").toLowerCase();
+    if (["input", "select", "textarea"].includes(tagName) || event.target?.isContentEditable || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === "ArrowLeft" && previousStage) {
+      event.preventDefault();
+      openRmsStation(previousStage.key, { source: "keyboard", direction: "backward" });
+    }
+    if (event.key === "ArrowRight" && followingStage) {
+      event.preventDefault();
+      openRmsStation(followingStage.key, { source: "keyboard", direction: "forward" });
+    }
+  };
+  requestAnimationFrame(() => {
+    rmsStationWorkspace.querySelector(".rms-station-journey-stop.is-active")?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   });
   applyRmsStationDomFilters(rmsStationWorkspace);
 }
@@ -29379,7 +29464,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
     const visual = rmsStationVisualMeta(stage.key);
     return `
-      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}">
+      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
         <div class="rms-station-entry-topline">
           <span class="rms-station-entry-number">${String(index + 1).padStart(2, "0")}</span>
           <span class="rms-station-entry-count">${Number(rowsAll.length).toLocaleString("es-CO")} lead${rowsAll.length === 1 ? "" : "s"}</span>
@@ -29402,6 +29487,17 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     `;
   }).join("");
   bindRmsMachineActions(rmsStageBoard);
+  rmsStageBoard.querySelectorAll("[data-rms-phase]").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      if (event.target.closest?.("button, a, input, select, textarea")) return;
+      openRmsStation(card.dataset.rmsPhase || "", { source: "card" });
+    });
+    card.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      openRmsStation(card.dataset.rmsPhase || "", { source: "keyboard" });
+    });
+  });
 }
 
 function sectionLabelMeta(key = "") {
@@ -29492,7 +29588,13 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => handleRmsEmptyAction(button.dataset.rmsEmptyAction));
   });
   root.querySelectorAll("[data-rms-open-station]").forEach((button) => {
-    button.addEventListener("click", () => openRmsStation(button.dataset.rmsOpenStation || ""));
+    button.addEventListener("click", () => {
+      const navigation = button.dataset.rmsNavigation || "";
+      openRmsStation(button.dataset.rmsOpenStation || "", {
+        source: navigation || "button",
+        direction: navigation === "previous" ? "backward" : navigation === "next" ? "forward" : "",
+      });
+    });
   });
   root.querySelectorAll("[data-rms-tutorial-action]").forEach((button) => {
     button.addEventListener("click", () => handleRmsTutorialAction(button.dataset.rmsTutorialAction || "", button.dataset.rmsTutorialPhase || ""));
@@ -29635,8 +29737,13 @@ function bindRmsMachineActions(root) {
   });
 }
 
-function openRmsStation(phase = "") {
+function openRmsStation(phase = "", options = {}) {
   if (!phase) return;
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const currentIndex = stages.findIndex((item) => item.key === state.rmsStationPhase);
+  const targetIndex = stages.findIndex((item) => item.key === phase);
+  state.rmsStationNavigationDirection = options.direction
+    || (currentIndex >= 0 && targetIndex >= 0 && targetIndex < currentIndex ? "backward" : "forward");
   if (state.rmsStationPhase !== phase) {
     state.rmsStationSearch = "";
     state.rmsStationViewMode = "all";
@@ -29666,6 +29773,21 @@ function closeRmsStation() {
   renderRmsMachineView();
   (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+document.addEventListener("keydown", (event) => {
+  if (event.defaultPrevented || !state.rmsStationScreenOpen || document.body.dataset.currentView !== "rms-machine") return;
+  const tagName = String(event.target?.tagName || "").toLowerCase();
+  if (["input", "select", "textarea"].includes(tagName) || event.target?.isContentEditable || event.target?.closest?.('.modal-backdrop, .modal-overlay, [role="dialog"]') || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const currentIndex = stages.findIndex((item) => item.key === state.rmsStationPhase);
+  if (currentIndex < 0) return;
+  const targetIndex = event.key === "ArrowLeft" ? currentIndex - 1 : currentIndex + 1;
+  const target = stages[targetIndex];
+  if (!target) return;
+  event.preventDefault();
+  openRmsStation(target.key, { source: "keyboard", direction: event.key === "ArrowLeft" ? "backward" : "forward" });
+});
 
 function rmsOpportunityById(id = "") {
   return (state.rmsMachine?.opportunities || []).find((item) => String(item.id) === String(id)) || null;
@@ -30118,6 +30240,8 @@ async function moveSelectedRmsPhase() {
   }
   try {
     showFeedback("Moviendo materia prima comercial...", "loading", { title: "Máquina RMS", timeout: 0 });
+    let movedCount = 0;
+    const fromPhase = state.rmsStationPhase || "";
     for (const id of ids) {
       const item = rmsOpportunityById(id);
       if (!item) continue;
@@ -30159,14 +30283,30 @@ async function moveSelectedRmsPhase() {
           },
         }),
       });
+      movedCount += 1;
       if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[id];
       if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[id];
     }
     state.rmsMachineSelectedIds = [];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
+    if (movedCount > 0 && state.rmsStationScreenOpen) {
+      const stages = rmsFactoryStages(state.rmsMachine || {});
+      const fromIndex = stages.findIndex((item) => item.key === fromPhase);
+      const targetIndex = stages.findIndex((item) => item.key === toPhase);
+      state.rmsStationNavigationDirection = targetIndex >= 0 && fromIndex >= 0 && targetIndex < fromIndex ? "backward" : "forward";
+      state.rmsStationPhase = toPhase;
+      state.rmsMachineFilters.phase = toPhase;
+      state.rmsStationSearch = "";
+      state.rmsStationViewMode = "all";
+      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = toPhase;
+    }
     renderRmsMachineView();
-    showFeedback("Fase RMS actualizada.", "success", { title: "Máquina RMS" });
+    const destination = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === toPhase);
+    const resultMessage = movedCount > 0
+      ? `${movedCount.toLocaleString("es-CO")} lead${movedCount === 1 ? "" : "s"} enviado${movedCount === 1 ? "" : "s"}. Ahora estás en ${destination?.label || "la siguiente estación"}.`
+      : "No se movieron leads; revisa los criterios de salida.";
+    showFeedback(resultMessage, movedCount > 0 ? "success" : "info", { title: "Máquina RMS" });
   } catch (error) {
     showFeedback(error.message || "No se pudo mover la fase RMS.", "error", { title: "Máquina RMS" });
   }
@@ -30236,9 +30376,17 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[item.id];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
+    const stations = rmsFactoryStages(state.rmsMachine || {});
+    const fromIndex = stations.findIndex((station) => station.key === item.stage);
+    const targetIndex = stations.findIndex((station) => station.key === toPhase);
+    state.rmsStationNavigationDirection = targetIndex >= 0 && fromIndex >= 0 && targetIndex < fromIndex ? "backward" : "forward";
     state.rmsStationPhase = toPhase;
+    state.rmsMachineFilters.phase = toPhase;
+    state.rmsStationSearch = "";
+    state.rmsStationViewMode = "all";
     renderRmsMachineView();
-    showFeedback("Lead movido a la siguiente estación.", "success", { title: "Máquina RMS" });
+    const destination = stations.find((station) => station.key === toPhase);
+    showFeedback(`Lead movido. Ahora estás en ${destination?.label || "la estación destino"}.`, "success", { title: "Máquina RMS" });
   } catch (error) {
     showFeedback(error.message || "No se pudo mover el lead.", "error", { title: "Máquina RMS" });
   }
