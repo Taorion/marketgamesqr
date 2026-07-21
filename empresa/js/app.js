@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-rms-collector-form-review-v1";
+const APP_VERSION = "empresa-20260721-rms-all-stations-lead-review-v2";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28320,7 +28320,7 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
 }
 
 function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
-  if (stage.key === "recoleccion") ensureRmsCaptureReviewStyles();
+  ensureRmsCaptureReviewStyles();
   return `
     <div class="rms-station-lead-table-wrap">
       <table class="rms-station-lead-table">
@@ -28362,7 +28362,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(rmsClassifiedProductName(item) ? "Producto clasificado" : "Producto pendiente")}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
-    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" ${stage.key === "recoleccion" ? `data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0"` : ""}>
+    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0">
       <td class="rms-station-check-cell">
         <label class="rms-station-lead-check" title="Marcar lead para operar">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
@@ -28370,9 +28370,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         </label>
       </td>
       <td>
-        ${stage.key === "recoleccion"
-          ? `<button class="rms-station-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></button>`
-          : `<strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>`}
+        <button class="rms-station-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></button>
         <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
         <small>${escapeHtml(material)}</small>
       </td>
@@ -29393,7 +29391,7 @@ function ensureRmsCaptureReviewStyles() {
     .rms-capture-review-head h3 { margin: 8px 0 5px; font-size: clamp(1.35rem, 3vw, 2rem); }
     .rms-capture-review-head p { margin: 0; }
     .rms-capture-review-body { min-height: 260px; padding: 22px 26px 26px; overflow-y: auto; }
-    .rms-capture-origin { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .rms-capture-origin { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
     .rms-capture-origin article { min-width: 0; padding: 13px 14px; border: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-soft, #f3f9ff); }
     .rms-capture-origin span, .rms-capture-response-card span { display: block; margin-bottom: 5px; color: var(--sm-muted, #52697a); font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
     .rms-capture-origin strong { display: block; overflow-wrap: anywhere; }
@@ -29430,15 +29428,15 @@ function ensureRmsCaptureReviewModal() {
     <article class="modal-card rms-capture-review-card">
       <header class="rms-capture-review-head">
         <div>
-          <span class="mono-label">Recolector · revisión de entrada</span>
-          <h3 id="rmsCaptureReviewTitle">Respuestas del formulario</h3>
-          <p id="rmsCaptureReviewSubtitle">Validando la captura del beneficiario.</p>
+          <span class="mono-label" id="rmsCaptureReviewEyebrow">Estación RMS · análisis de lead</span>
+          <h3 id="rmsCaptureReviewTitle">Análisis del lead</h3>
+          <p id="rmsCaptureReviewSubtitle">Consultando la información disponible.</p>
         </div>
         <button class="icon-button" type="button" data-rms-capture-review-close aria-label="Cerrar revisión"><span class="material-symbols-outlined">close</span></button>
       </header>
       <div class="rms-capture-review-body" id="rmsCaptureReviewBody"><div class="empty-state compact">Cargando respuestas...</div></div>
       <footer class="rms-capture-review-actions">
-        <button class="ghost-button" type="button" data-rms-capture-review-close>Volver a Recolector</button>
+        <button class="ghost-button" type="button" data-rms-capture-review-close>Volver a la estación</button>
         <button class="solid-button" type="button" id="rmsCaptureOpenFullLead">Abrir ficha comercial completa</button>
       </footer>
     </article>
@@ -29532,13 +29530,17 @@ function renderRmsCaptureReview(detail = {}, item = {}) {
   const body = document.getElementById("rmsCaptureReviewBody");
   const title = document.getElementById("rmsCaptureReviewTitle");
   const subtitle = document.getElementById("rmsCaptureReviewSubtitle");
+  const eyebrow = document.getElementById("rmsCaptureReviewEyebrow");
   const lead = detail.lead || {};
   const groups = rmsCaptureReviewGroups(detail, item);
+  const stationLabel = item.stage_label || item.stage || "Estación RMS";
+  if (eyebrow) eyebrow.textContent = `${stationLabel} · análisis de lead`;
   if (title) title.textContent = lead.name || item.name || "Respuestas del formulario";
-  if (subtitle) subtitle.textContent = `${groups.length} formulario(s) encontrado(s) · revisa la información antes de enviarla a la siguiente estación.`;
+  if (subtitle) subtitle.textContent = `${groups.length} formulario(s) encontrado(s) · revisa la información disponible para operar este lead.`;
   if (!body) return;
   body.innerHTML = `
     <section class="rms-capture-origin">
+      <article><span>Estación actual</span><strong>${escapeHtml(stationLabel)}</strong></article>
       <article><span>Origen</span><strong>${escapeHtml(item.source_label || lead.channel || "Gaming Center")}</strong></article>
       <article><span>Activación</span><strong>${escapeHtml(item.activation_name || groups[0]?.title || "Activación interactiva")}</strong></article>
       <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || lead.campaign_name || "Sin campaña")}</strong></article>
@@ -29570,8 +29572,10 @@ async function openRmsCaptureReview(item = {}) {
   const body = document.getElementById("rmsCaptureReviewBody");
   const title = document.getElementById("rmsCaptureReviewTitle");
   const subtitle = document.getElementById("rmsCaptureReviewSubtitle");
+  const eyebrow = document.getElementById("rmsCaptureReviewEyebrow");
+  if (eyebrow) eyebrow.textContent = `${item.stage_label || item.stage || "Estación RMS"} · análisis de lead`;
   if (title) title.textContent = item.name || "Respuestas del formulario";
-  if (subtitle) subtitle.textContent = "Consultando la captura realizada desde Gaming Center...";
+  if (subtitle) subtitle.textContent = "Consultando datos, respuestas y contexto comercial...";
   if (body) body.innerHTML = '<div class="empty-state compact">Cargando respuestas del beneficiario...</div>';
   const fullLeadButton = document.getElementById("rmsCaptureOpenFullLead");
   if (fullLeadButton) {
