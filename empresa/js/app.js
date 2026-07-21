@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-rms-touch-slider-v21";
+const APP_VERSION = "empresa-20260721-rms-slider-layout-fix-v22";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28976,27 +28976,33 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 620px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief { padding: 9px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > small { white-space: normal !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics { width: 100% !important; display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary small { display: none !important; } }
   `);
   rules.push(`
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell { width: 100% !important; min-width: 0 !important; display: grid !important; gap: 9px !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell { display: none !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 2px 2px 0 !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head > div:first-child { display: grid !important; gap: 2px !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #17362f !important; font-size: .9rem !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #6c8179 !important; font-size: .68rem !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { display: flex !important; gap: 6px !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button { width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 11px !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button:disabled { opacity: .35 !important; cursor: default !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { width: 100% !important; min-width: 0 !important; display: grid !important; grid-template-columns: none !important; grid-auto-flow: column !important; grid-auto-columns: calc((100% - 20px) / 3) !important; gap: 10px !important; margin: 0 !important; padding: 3px 2px 10px !important; overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important; scroll-padding-inline: 2px !important; scroll-behavior: smooth !important; overscroll-behavior-x: contain !important; touch-action: pan-y pinch-zoom !important; cursor: grab !important; scrollbar-width: none !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::-webkit-scrollbar { display: none !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board.is-dragging { cursor: grabbing !important; scroll-snap-type: none !important; scroll-behavior: auto !important; user-select: none !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board.is-dragging * { pointer-events: none !important; user-select: none !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board .rms-station-entry-card { width: 100% !important; min-width: 0 !important; cursor: grab !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; }
-    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board .rms-station-entry-card button { cursor: pointer !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell { width: 100% !important; min-width: 0 !important; display: grid !important; gap: 9px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell { display: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 2px 2px 0 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head > div:first-child { display: grid !important; gap: 2px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #17362f !important; font-size: .9rem !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #6c8179 !important; font-size: .68rem !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { display: flex !important; gap: 6px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button { width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 11px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button:disabled { opacity: .35 !important; cursor: default !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board { width: 100% !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; max-height: none !important; position: relative !important; display: flex !important; align-items: stretch !important; grid-template-columns: none !important; grid-template-rows: none !important; grid-auto-flow: unset !important; grid-auto-columns: unset !important; gap: 10px !important; margin: 0 !important; padding: 3px 2px 10px !important; overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important; scroll-padding-inline: 2px !important; scroll-behavior: smooth !important; overscroll-behavior-x: contain !important; touch-action: pan-y pinch-zoom !important; cursor: grab !important; scrollbar-width: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::before,
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::after,
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card::before,
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card::after { content: none !important; display: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::-webkit-scrollbar { display: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board.is-dragging { cursor: grabbing !important; scroll-snap-type: none !important; scroll-behavior: auto !important; user-select: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board.is-dragging * { pointer-events: none !important; user-select: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex: 0 0 calc((100% - 20px) / 3) !important; width: calc((100% - 20px) / 3) !important; min-width: 0 !important; height: 208px !important; min-height: 208px !important; max-height: 208px !important; align-self: flex-start !important; position: relative !important; inset: auto !important; margin: 0 !important; transform: none !important; cursor: grab !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover { transform: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > p { display: none !important; min-height: 0 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button { display: inline-flex !important; margin-top: auto !important; cursor: pointer !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress { position: relative !important; height: 4px !important; overflow: hidden !important; border-radius: 99px !important; background: rgba(23,65,91,.1) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress > span { position: absolute !important; inset: 0 auto 0 0 !important; min-width: 12% !important; border-radius: inherit !important; background: linear-gradient(90deg,#0f7354,#34b77f) !important; transition: width .18s ease, margin-left .18s ease !important; }
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #edf9f4 !important; }
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #b9cec6 !important; }
-    @media (max-width: 900px) { body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { grid-auto-columns: calc((100% - 10px) / 2) !important; } }
-    @media (max-width: 580px) { body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { align-items: flex-end !important; } body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { max-width: 220px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { grid-auto-columns: 88% !important; } }
+    @media (max-width: 900px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: calc((100% - 10px) / 2) !important; width: calc((100% - 10px) / 2) !important; } }
+    @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { align-items: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { max-width: 220px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 88% !important; width: 88% !important; height: 202px !important; min-height: 202px !important; max-height: 202px !important; } }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
