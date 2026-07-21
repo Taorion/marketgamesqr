@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260716-egress-guard-v1";
+const APP_VERSION = "empresa-20260721-rms-collector-form-review-v1";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28320,6 +28320,7 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
 }
 
 function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  if (stage.key === "recoleccion") ensureRmsCaptureReviewStyles();
   return `
     <div class="rms-station-lead-table-wrap">
       <table class="rms-station-lead-table">
@@ -28361,7 +28362,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(rmsClassifiedProductName(item) ? "Producto clasificado" : "Producto pendiente")}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
-    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" ${stage.key === "recoleccion" ? `data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0"` : ""}>
       <td class="rms-station-check-cell">
         <label class="rms-station-lead-check" title="Marcar lead para operar">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
@@ -28369,7 +28370,9 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         </label>
       </td>
       <td>
-        <strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>
+        ${stage.key === "recoleccion"
+          ? `<button class="rms-station-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></button>`
+          : `<strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>`}
         <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
         <small>${escapeHtml(material)}</small>
       </td>
@@ -28585,6 +28588,22 @@ function bindRmsMachineActions(root) {
       state.rmsMachineInspectorId = button.dataset.rmsInspect || "";
       renderRmsLeadInspector();
     });
+  });
+  root.querySelectorAll("[data-rms-review-capture]").forEach((control) => {
+    const openReview = (event) => {
+      if (control.tagName === "TR" && event.target.closest("button, input, select, textarea, label, a")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const item = rmsOpportunityById(control.dataset.rmsReviewCapture);
+      if (item) openRmsCaptureReview(item);
+    };
+    control.addEventListener("click", openReview);
+    if (control.tagName === "TR") {
+      control.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        openReview(event);
+      });
+    }
   });
   root.querySelectorAll("[data-rms-lead-quality]").forEach((select) => {
     select.addEventListener("change", () => {
@@ -29356,6 +29375,217 @@ function openRmsOpportunityDetail(item = {}) {
   setContactCenterTab("directory");
   setView("leads");
   openLeadDetail({ id: item.source_id || item.lead_id, source_type: item.source_type || "PLAYER" });
+}
+
+function ensureRmsCaptureReviewStyles() {
+  if (document.getElementById("rmsCaptureReviewStyles")) return;
+  const style = document.createElement("style");
+  style.id = "rmsCaptureReviewStyles";
+  style.textContent = `
+    .rms-station-lead-row[data-rms-review-capture] { cursor: pointer; }
+    .rms-station-lead-row[data-rms-review-capture]:hover { background: color-mix(in srgb, var(--sm-blue-soft, #e9f3ff) 72%, transparent) !important; }
+    .rms-station-lead-row[data-rms-review-capture]:focus-visible { outline: 3px solid rgba(11, 99, 246, .28); outline-offset: -3px; }
+    .rms-station-lead-open { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+    .rms-station-lead-open .material-symbols-outlined { font-size: 17px; color: var(--sm-blue, #0b63f6); }
+    #rmsCaptureReviewModal { z-index: 90; backdrop-filter: blur(8px); }
+    #rmsCaptureReviewModal .rms-capture-review-card { width: min(1040px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 0; overflow: hidden; }
+    .rms-capture-review-head { display: flex; justify-content: space-between; gap: 20px; padding: 24px 26px 20px; border-bottom: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: linear-gradient(135deg, rgba(11,99,246,.10), rgba(25,164,123,.08)); }
+    .rms-capture-review-head h3 { margin: 8px 0 5px; font-size: clamp(1.35rem, 3vw, 2rem); }
+    .rms-capture-review-head p { margin: 0; }
+    .rms-capture-review-body { min-height: 260px; padding: 22px 26px 26px; overflow-y: auto; }
+    .rms-capture-origin { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .rms-capture-origin article { min-width: 0; padding: 13px 14px; border: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-soft, #f3f9ff); }
+    .rms-capture-origin span, .rms-capture-response-card span { display: block; margin-bottom: 5px; color: var(--sm-muted, #52697a); font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .rms-capture-origin strong { display: block; overflow-wrap: anywhere; }
+    .rms-capture-group + .rms-capture-group { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--sm-line, rgba(23,65,91,.14)); }
+    .rms-capture-group-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 12px; }
+    .rms-capture-group-head strong { display: block; font-size: 1.05rem; }
+    .rms-capture-group-head small { display: block; margin-top: 4px; }
+    .rms-capture-response-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .rms-capture-response-card { min-width: 0; padding: 15px; border: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-solid, #fff); }
+    .rms-capture-response-card strong { display: block; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .rms-capture-review-empty { padding: 24px; border: 1px dashed var(--sm-line-strong, rgba(9,95,74,.26)); background: var(--sm-surface-green, #f2fbf7); text-align: center; }
+    .rms-capture-review-actions { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px; border-top: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-solid, #fff); }
+    @media (max-width: 760px) {
+      .rms-capture-review-head, .rms-capture-group-head, .rms-capture-review-actions { flex-direction: column; }
+      .rms-capture-origin, .rms-capture-response-grid { grid-template-columns: 1fr; }
+      .rms-capture-review-head, .rms-capture-review-body, .rms-capture-review-actions { padding-left: 17px; padding-right: 17px; }
+      .rms-capture-review-actions button { width: 100%; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function ensureRmsCaptureReviewModal() {
+  ensureRmsCaptureReviewStyles();
+  let modal = document.getElementById("rmsCaptureReviewModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden";
+  modal.id = "rmsCaptureReviewModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "rmsCaptureReviewTitle");
+  modal.innerHTML = `
+    <article class="modal-card rms-capture-review-card">
+      <header class="rms-capture-review-head">
+        <div>
+          <span class="mono-label">Recolector · revisión de entrada</span>
+          <h3 id="rmsCaptureReviewTitle">Respuestas del formulario</h3>
+          <p id="rmsCaptureReviewSubtitle">Validando la captura del beneficiario.</p>
+        </div>
+        <button class="icon-button" type="button" data-rms-capture-review-close aria-label="Cerrar revisión"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="rms-capture-review-body" id="rmsCaptureReviewBody"><div class="empty-state compact">Cargando respuestas...</div></div>
+      <footer class="rms-capture-review-actions">
+        <button class="ghost-button" type="button" data-rms-capture-review-close>Volver a Recolector</button>
+        <button class="solid-button" type="button" id="rmsCaptureOpenFullLead">Abrir ficha comercial completa</button>
+      </footer>
+    </article>
+  `;
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-rms-capture-review-close]")) closeRmsCaptureReview();
+  });
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function closeRmsCaptureReview() {
+  document.getElementById("rmsCaptureReviewModal")?.classList.add("hidden");
+}
+
+function rmsCaptureResponseText(value) {
+  if (Array.isArray(value)) return value.map(rmsCaptureResponseText).filter(Boolean).join(", ");
+  if (value === true) return "Sí";
+  if (value === false) return "No";
+  if (value === null || value === undefined || value === "") return "Sin respuesta";
+  if (typeof value === "object") {
+    try { return JSON.stringify(value, null, 2); } catch { return String(value); }
+  }
+  return String(value);
+}
+
+function rmsActivationFormRows(form = {}) {
+  const rows = [];
+  const seen = new Set();
+  const push = (key, label, value) => {
+    const normalizedKey = String(key || label || "respuesta");
+    const text = rmsCaptureResponseText(value);
+    if (seen.has(normalizedKey) || text === "Sin respuesta") return;
+    seen.add(normalizedKey);
+    rows.push({ key: normalizedKey, label: label || normalizedKey, value: text });
+  };
+  (Array.isArray(form.summary) ? form.summary : []).forEach((item) => push(item.key, item.label, item.value));
+  const responses = form.responses && typeof form.responses === "object" ? form.responses : {};
+  const fields = Array.isArray(form.fields) ? form.fields : [];
+  fields.forEach((field) => push(field.key, field.label, responses[field.key]));
+  Object.entries(responses).forEach(([key, value]) => push(key, form.labels?.[key] || key, value));
+  return rows;
+}
+
+function rmsCaptureReviewGroups(detail = {}, item = {}) {
+  const groups = [];
+  const activations = (detail.activations || []).filter((activation) => (
+    String(activation.source_type || "").toUpperCase() === "INTERACTIVE"
+    || activation.participant_metadata?.activation_form
+    || (Array.isArray(activation.answers) && activation.answers.length)
+  ));
+  activations.forEach((activation) => {
+    const rows = rmsActivationFormRows(activation.participant_metadata?.activation_form || {});
+    const existingKeys = new Set(rows.map((row) => row.key));
+    (Array.isArray(activation.answers) ? activation.answers : []).forEach((answer) => {
+      const key = String(answer.key || answer.label || "respuesta");
+      if (existingKeys.has(key)) return;
+      const value = rmsCaptureResponseText(answer.value);
+      if (value === "Sin respuesta") return;
+      existingKeys.add(key);
+      rows.push({ key, label: answer.label || key, value });
+    });
+    if (!rows.length) return;
+    groups.push({
+      id: activation.activation_id || activation.id,
+      title: activation.name || activation.game_name || activation.trivia_title || item.activation_name || "Activación Gaming Center",
+      meta: [activation.activation_type, activation.campaign_name, activation.completed_at ? formatDate(activation.completed_at) : null].filter(Boolean).join(" · "),
+      rows,
+    });
+  });
+  if (!groups.length) {
+    const leadRows = rmsActivationFormRows(detail.lead?.metadata?.activation_form || {});
+    const fallbackRows = leadRows.length ? leadRows : (item.capture_summary || []).map((row) => ({
+      key: row.key || row.label,
+      label: row.label || row.key || "Dato capturado",
+      value: rmsCaptureResponseText(row.value),
+    }));
+    if (fallbackRows.length) {
+      groups.push({
+        id: item.rms_intake?.activation_id || "capture",
+        title: item.activation_name || detail.lead?.metadata?.activation_title || "Formulario de la activación",
+        meta: [item.activation_type, item.campaign_name, item.created_at ? formatDate(item.created_at) : null].filter(Boolean).join(" · "),
+        rows: fallbackRows,
+      });
+    }
+  }
+  return groups;
+}
+
+function renderRmsCaptureReview(detail = {}, item = {}) {
+  const body = document.getElementById("rmsCaptureReviewBody");
+  const title = document.getElementById("rmsCaptureReviewTitle");
+  const subtitle = document.getElementById("rmsCaptureReviewSubtitle");
+  const lead = detail.lead || {};
+  const groups = rmsCaptureReviewGroups(detail, item);
+  if (title) title.textContent = lead.name || item.name || "Respuestas del formulario";
+  if (subtitle) subtitle.textContent = `${groups.length} formulario(s) encontrado(s) · revisa la información antes de enviarla a la siguiente estación.`;
+  if (!body) return;
+  body.innerHTML = `
+    <section class="rms-capture-origin">
+      <article><span>Origen</span><strong>${escapeHtml(item.source_label || lead.channel || "Gaming Center")}</strong></article>
+      <article><span>Activación</span><strong>${escapeHtml(item.activation_name || groups[0]?.title || "Activación interactiva")}</strong></article>
+      <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || lead.campaign_name || "Sin campaña")}</strong></article>
+      <article><span>Contacto</span><strong>${escapeHtml(lead.phone || lead.email || item.phone || item.email || "Sin contacto")}</strong></article>
+    </section>
+    ${groups.length ? groups.map((group) => `
+      <section class="rms-capture-group">
+        <div class="rms-capture-group-head">
+          <div><strong>${escapeHtml(group.title)}</strong><small>${escapeHtml(group.meta || "Formulario completado")}</small></div>
+          <span class="status-chip success">${group.rows.length.toLocaleString("es-CO")} respuesta(s)</span>
+        </div>
+        <div class="rms-capture-response-grid">
+          ${group.rows.map((row) => `<article class="rms-capture-response-card"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.value)}</strong></article>`).join("")}
+        </div>
+      </section>
+    `).join("") : `
+      <div class="rms-capture-review-empty">
+        <strong>No hay respuestas personalizadas guardadas para este lead.</strong>
+        <p>La identidad y el origen sí están registrados. Puedes abrir la ficha completa para revisar su historial.</p>
+      </div>
+    `}
+  `;
+}
+
+async function openRmsCaptureReview(item = {}) {
+  if (!item.source_id && !item.lead_id) return;
+  const modal = ensureRmsCaptureReviewModal();
+  modal.classList.remove("hidden");
+  const body = document.getElementById("rmsCaptureReviewBody");
+  const title = document.getElementById("rmsCaptureReviewTitle");
+  const subtitle = document.getElementById("rmsCaptureReviewSubtitle");
+  if (title) title.textContent = item.name || "Respuestas del formulario";
+  if (subtitle) subtitle.textContent = "Consultando la captura realizada desde Gaming Center...";
+  if (body) body.innerHTML = '<div class="empty-state compact">Cargando respuestas del beneficiario...</div>';
+  const fullLeadButton = document.getElementById("rmsCaptureOpenFullLead");
+  if (fullLeadButton) {
+    fullLeadButton.onclick = () => {
+      closeRmsCaptureReview();
+      openRmsOpportunityDetail(item);
+    };
+  }
+  try {
+    const detail = await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() });
+    renderRmsCaptureReview(detail, item);
+  } catch (error) {
+    if (body) body.innerHTML = `<div class="rms-capture-review-empty"><strong>No se pudieron cargar las respuestas.</strong><p>${escapeHtml(error.message || "Intenta nuevamente.")}</p></div>`;
+  }
 }
 
 const CLIENT_MISSION_TEMPLATES = [
@@ -30743,6 +30973,10 @@ document.addEventListener("click", (event) => {
   closePortalMenu();
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !document.getElementById("rmsCaptureReviewModal")?.classList.contains("hidden")) {
+    closeRmsCaptureReview();
+    return;
+  }
   if (event.key === "Escape" && state.chartFocus.open) {
     closeChartFocusMode();
     return;

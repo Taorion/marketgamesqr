@@ -1110,6 +1110,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
               iap.document as document_value,
               iap.phone as phone_value,
               iap.email as email_value,
+              iap.metadata as participant_metadata,
               iap.score,
               iap.result_profile,
               iap.status,
@@ -1122,8 +1123,10 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
               ia.description,
               ia.activation_type,
               ia.category,
+              ia.capture_config,
               ia.campaign_id,
               c.name as campaign_name,
+              coalesce(answer_data.answers, '[]'::jsonb) as answers,
               case when iap.status in ('completed', 'rewarded') then true else false end as passed,
               case
                 when ia.game_config->>'min_score_for_reward' ~ '^[0-9]+$' then (ia.game_config->>'min_score_for_reward')::int
@@ -1132,6 +1135,21 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
        from interactive_activation_participants iap
        join interactive_activations ia on ia.id = iap.activation_id and ia.company_id = iap.company_id
        left join campaigns c on c.id = ia.campaign_id
+       left join lateral (
+         select jsonb_agg(
+           jsonb_build_object(
+             'key', coalesce(iaa.answer->>'key', iaa.question_id::text),
+             'label', coalesce(iaq.question_text, iaa.answer->>'key', 'Respuesta'),
+             'value', iaa.answer->'value',
+             'question_type', iaq.question_type,
+             'score_delta', iaa.score_delta
+           )
+           order by coalesce(iaq.order_index, 2147483647), iaa.created_at
+         ) as answers
+         from interactive_activation_answers iaa
+         left join interactive_activation_questions iaq on iaq.id = iaa.question_id
+         where iaa.participant_id = iap.id
+       ) answer_data on true
        where iap.company_id = $1 and (
          ($2::uuid is not null and iap.player_id = $2)
          or ($3::text is not null and nullif($3::text, '') is not null and iap.document = $3::text)
