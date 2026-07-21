@@ -19587,6 +19587,97 @@ th {
   --card-gap: clamp(12px, 1.2vw, 18px);
 }
 
+/* Portal task-first navigation: four direct outcomes, everything else on demand. */
+.sidebar-nav > .nav-item > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.sidebar-nav > .nav-item > span:last-child strong,
+.sidebar-nav > .nav-item > span:last-child small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-nav > .nav-item > span:last-child small {
+  color: rgba(222, 238, 229, 0.7) !important;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.portal-more-nav {
+  margin-top: 4px;
+  border: 1px solid rgba(233, 204, 139, 0.2);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.portal-more-nav > summary {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 28px 1fr 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  color: #eef8f2;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  list-style: none;
+}
+
+.portal-more-nav > summary::-webkit-details-marker { display: none; }
+.portal-more-nav > summary .material-symbols-outlined { color: #d8b96c; font-size: 20px; }
+.portal-more-nav > summary .material-symbols-outlined:last-child { transition: transform 160ms ease; }
+.portal-more-nav[open] > summary .material-symbols-outlined:last-child { transform: rotate(180deg); }
+
+.portal-more-nav-list {
+  display: grid;
+  gap: 6px;
+  padding: 5px 7px 9px;
+  border-top: 1px solid rgba(233, 204, 139, 0.16);
+}
+
+.portal-more-nav-list .nav-group-label { margin: 8px 4px 2px; }
+.portal-more-nav-list .nav-item { width: 100%; }
+
+.purchase-period-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.purchase-period-actions button {
+  min-height: 48px;
+}
+
+.mission-rank-row.is-purchase-ranking {
+  grid-template-columns: 38px minmax(120px, 1fr) minmax(110px, auto);
+  align-items: center;
+}
+
+.mission-rank-customer,
+.mission-rank-result {
+  display: grid;
+  gap: 2px;
+}
+
+.mission-rank-result {
+  text-align: right;
+}
+
+.mission-rank-result strong {
+  color: var(--accent, #087f5b);
+}
+
+@media (max-width: 760px) {
+  .purchase-period-actions { grid-template-columns: 1fr 1fr; }
+  .mission-rank-row.is-purchase-ranking { grid-template-columns: 34px 1fr; }
+  .mission-rank-result { grid-column: 2; text-align: left; }
+}
+
 .content-shell {
   padding: calc(var(--topbar-height) + var(--page-gutter)) var(--page-gutter) var(--page-gutter);
 }
@@ -28588,6 +28679,36 @@ body[data-current-view="rms-machine"] .rms-factory-console > .card-head::after {
   :root .view-section[data-view="dashboard"] .dashboard-widget-card.table {
     grid-column: span 6;
   }
+}
+
+:root[data-theme="light"] body .portal-shell .sidebar-nav > .nav-item {
+  background: rgba(8, 127, 91, 0.045) !important;
+  border-color: rgba(23, 65, 91, 0.1) !important;
+  color: #173b55 !important;
+}
+
+:root[data-theme="light"] body .portal-shell .sidebar-nav > .nav-item .material-symbols-outlined,
+:root[data-theme="light"] body .portal-shell .sidebar-nav > .nav-item > span:last-child strong {
+  color: #173b55 !important;
+}
+
+:root[data-theme="light"] body .portal-shell .sidebar-nav > .nav-item > span:last-child small {
+  color: #607482 !important;
+}
+
+:root[data-theme="light"] body .portal-shell .sidebar-nav > .nav-item.active {
+  background: linear-gradient(135deg, #e8f7f1, #eaf4ff) !important;
+  border-color: rgba(8, 127, 91, 0.42) !important;
+  box-shadow: inset 4px 0 0 #087f5b !important;
+}
+
+:root[data-theme="light"] body .portal-shell .portal-more-nav {
+  background: rgba(23, 65, 91, 0.035) !important;
+  border-color: rgba(23, 65, 91, 0.12) !important;
+}
+
+:root[data-theme="light"] body .portal-shell .portal-more-nav > summary {
+  color: #173b55 !important;
 }
 
 @media (max-width: 700px) {
@@ -49148,4 +49269,1369 @@ html body .portal-shell .reward-pass-detail-item strong {
   border-color: rgba(167, 220, 199, 0.16) !important;
   background: rgba(7, 20, 16, 0.5) !important;
   color: #d4e9df !important;
+}
+
+/* 2026-07 Sales Machine Enterprise UI foundation
+   Capa visual transversal: tokens, shell, controles y dark mode sin tocar contratos funcionales. */
+:root {
+  --sm-canvas: #f7fbff;
+  --sm-canvas-blue: #eef6ff;
+  --sm-surface: rgba(255, 255, 255, 0.94);
+  --sm-surface-solid: #ffffff;
+  --sm-surface-soft: #f3f9ff;
+  --sm-surface-green: #f2fbf7;
+  --sm-ink: #0b1f2f;
+  --sm-ink-strong: #061b16;
+  --sm-muted: #52697a;
+  --sm-muted-2: #728293;
+  --sm-blue: #0b63f6;
+  --sm-blue-2: #1683ff;
+  --sm-blue-soft: #e9f3ff;
+  --sm-green: #087f5b;
+  --sm-green-2: #19a47b;
+  --sm-green-soft: #e7f8ef;
+  --sm-gold: #e3a11a;
+  --sm-line: rgba(23, 65, 91, 0.14);
+  --sm-line-strong: rgba(9, 95, 74, 0.26);
+  --sm-radius-control: 8px;
+  --sm-radius-panel: 12px;
+  --sm-radius-soft: 10px;
+  --sm-shadow: 0 18px 46px rgba(23, 65, 91, 0.08);
+  --sm-shadow-tight: 0 10px 24px rgba(23, 65, 91, 0.07);
+  --sm-sidebar-width: 270px;
+  --sm-collapsed-sidebar-width: 74px;
+}
+
+:root[data-theme="dark"] {
+  --sm-canvas: #07131e;
+  --sm-canvas-blue: #0b1f31;
+  --sm-surface: rgba(13, 30, 42, 0.96);
+  --sm-surface-solid: #0d1e2a;
+  --sm-surface-soft: #10283a;
+  --sm-surface-green: #0d2a23;
+  --sm-ink: #f4f9ff;
+  --sm-ink-strong: #ffffff;
+  --sm-muted: #c2d1dc;
+  --sm-muted-2: #9eb1c0;
+  --sm-blue-soft: rgba(39, 129, 255, 0.16);
+  --sm-green-soft: rgba(25, 164, 123, 0.16);
+  --sm-line: rgba(188, 219, 242, 0.18);
+  --sm-line-strong: rgba(88, 207, 172, 0.32);
+  --sm-shadow: none;
+  --sm-shadow-tight: none;
+}
+
+html body {
+  background:
+    radial-gradient(circle at 78% -8%, rgba(11, 99, 246, 0.12), transparent 32rem),
+    radial-gradient(circle at 4% 12%, rgba(25, 164, 123, 0.10), transparent 26rem),
+    linear-gradient(135deg, var(--sm-canvas) 0%, #ffffff 46%, var(--sm-canvas-blue) 100%) !important;
+  color: var(--sm-ink) !important;
+  letter-spacing: 0 !important;
+}
+
+html body,
+html body .portal-shell,
+html body .app-shell,
+html body .app-main {
+  min-width: 0 !important;
+}
+
+html body .portal-shell .app-shell {
+  background: transparent !important;
+}
+
+html body .portal-shell .app-main {
+  margin-left: var(--sm-sidebar-width) !important;
+  width: calc(100% - var(--sm-sidebar-width)) !important;
+  padding: calc(var(--topbar-height, 72px) + 22px) clamp(18px, 2.2vw, 34px) 42px !important;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.58)),
+    radial-gradient(circle at 84% 10%, rgba(11, 99, 246, 0.08), transparent 30rem) !important;
+}
+
+html body .portal-shell .content-shell,
+html body .portal-shell .view-section.active {
+  width: 100% !important;
+  max-width: 1480px !important;
+  min-width: 0 !important;
+  margin: 0 auto !important;
+}
+
+html body .portal-shell .view-section {
+  min-width: 0 !important;
+}
+
+html body .portal-shell :where(h1, h2, h3, h4, strong, label, th) {
+  color: var(--sm-ink-strong) !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(p, small, td, .table-secondary, .chart-note, .inline-message, .form-message) {
+  color: var(--sm-muted) !important;
+  letter-spacing: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+html body .portal-shell :where(.mono-label, .badge, .status-chip, .status-pill, .chip, .pill) {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  border-radius: var(--sm-radius-control) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: var(--sm-surface-soft) !important;
+  color: var(--sm-green) !important;
+  box-shadow: none !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: normal !important;
+}
+
+html body .portal-shell .mono-label {
+  display: inline-flex !important;
+  width: fit-content !important;
+  min-height: 28px !important;
+  align-items: center !important;
+  padding: 5px 9px !important;
+  font-family: "Inter", sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+}
+
+html body .portal-shell :where(
+  .solid-button,
+  .ghost-button,
+  .danger-button,
+  .request-button,
+  .link-button,
+  .nav-link-button,
+  .icon-button,
+  .segment-tab,
+  .contact-center-tab-card,
+  .dashboard-profile-tabs button,
+  .ticket-center-menu button,
+  .lead-agenda-view-tabs button,
+  button[class*="button"]
+) {
+  border-radius: var(--sm-radius-control) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell :where(.solid-button, .ghost-button, .danger-button, .request-button, .link-button, .nav-link-button) {
+  min-height: 40px !important;
+  padding: 10px 14px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 780 !important;
+  line-height: 1.12 !important;
+  white-space: normal !important;
+}
+
+html body .portal-shell :where(.solid-button, .request-button) {
+  border: 1px solid rgba(11, 99, 246, 0.08) !important;
+  background: linear-gradient(135deg, var(--sm-blue), #0757d9) !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell :where(.solid-button, .request-button) * {
+  color: #ffffff !important;
+}
+
+html body .portal-shell :where(.solid-button, .request-button):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(11, 99, 246, 0.18) !important;
+}
+
+html body .portal-shell :where(.ghost-button, .link-button, .nav-link-button) {
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell :where(.ghost-button, .link-button, .nav-link-button):hover {
+  border-color: rgba(11, 99, 246, 0.28) !important;
+  background: var(--sm-blue-soft) !important;
+  color: var(--sm-blue) !important;
+}
+
+html body .portal-shell :where(.icon-button) {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell :where(input, select, textarea) {
+  min-height: 40px !important;
+  border-radius: var(--sm-radius-control) !important;
+  border: 1px solid var(--sm-line) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: var(--sm-ink) !important;
+  box-shadow: none !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(input, select, textarea):focus,
+html body .portal-shell :where(button, [tabindex]):focus-visible {
+  outline: 3px solid rgba(11, 99, 246, 0.18) !important;
+  outline-offset: 2px !important;
+  border-color: rgba(11, 99, 246, 0.56) !important;
+}
+
+html body .portal-shell .topbar {
+  left: var(--sm-sidebar-width) !important;
+  width: calc(100% - var(--sm-sidebar-width)) !important;
+  min-height: var(--topbar-height, 72px) !important;
+  padding: 14px clamp(18px, 2.2vw, 34px) !important;
+  border-bottom: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .search-shell {
+  width: min(520px, 42vw) !important;
+  min-width: 260px !important;
+  border-radius: var(--sm-radius-control) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+html body .portal-shell .topbar-actions {
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+html body .portal-shell .sidebar {
+  width: var(--sm-sidebar-width) !important;
+  padding: 22px 16px !important;
+  border-right: 1px solid var(--sm-line) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 255, 0.92)),
+    radial-gradient(circle at top, rgba(11, 99, 246, 0.08), transparent 18rem) !important;
+  box-shadow: 10px 0 36px rgba(23, 65, 91, 0.06) !important;
+}
+
+html body .portal-shell .sidebar-brand {
+  min-height: 58px !important;
+  padding: 8px 6px 14px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar-brand .brand-logo {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .sidebar-nav {
+  gap: 5px !important;
+  overflow-x: hidden !important;
+}
+
+html body .portal-shell .nav-group-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 18px 4px 7px !important;
+  color: #7d681d !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .nav-group-label::after {
+  content: "" !important;
+  flex: 1 1 auto !important;
+  height: 1px !important;
+  background: var(--sm-line) !important;
+}
+
+html body .portal-shell .nav-item {
+  width: 100% !important;
+  min-height: 42px !important;
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 8px 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: transparent !important;
+  color: var(--sm-ink) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .nav-item:hover {
+  border-color: var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+html body .portal-shell .nav-item.active,
+html body[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-machine"] {
+  border-color: rgba(11, 99, 246, 0.26) !important;
+  background: linear-gradient(135deg, rgba(11, 99, 246, 0.12), rgba(25, 164, 123, 0.08)) !important;
+  color: var(--sm-blue) !important;
+}
+
+html body .portal-shell .nav-item > .material-symbols-outlined {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: rgba(8, 127, 91, 0.08) !important;
+  color: var(--sm-green) !important;
+  font-size: 1.14rem !important;
+}
+
+html body .portal-shell .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: inherit !important;
+  font-size: 0.89rem !important;
+  font-weight: 760 !important;
+  line-height: 1.18 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge {
+  max-width: 68px !important;
+  min-height: 22px !important;
+  padding: 3px 6px !important;
+  border-radius: 7px !important;
+  font-size: 0.64rem !important;
+  box-shadow: none !important;
+  justify-self: end !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined {
+  display: none !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge span:last-child {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge.is-premium {
+  background: #fff4cf !important;
+  border-color: rgba(218, 165, 32, 0.36) !important;
+  color: #74570d !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge.is-medium {
+  background: #eaf8f1 !important;
+  border-color: rgba(8, 127, 91, 0.22) !important;
+  color: #126247 !important;
+}
+
+html body .portal-shell .sidebar > button.sidebar-sales-machine-button {
+  min-height: 116px !important;
+  margin: 10px 0 18px !important;
+  padding: 14px !important;
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(11, 99, 246, 0.24) !important;
+  border-radius: var(--sm-radius-panel) !important;
+  background:
+    linear-gradient(135deg, rgba(5, 55, 145, 0.96), rgba(8, 127, 91, 0.92)),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.18), transparent 6rem) !important;
+  box-shadow: 0 14px 32px rgba(11, 99, 246, 0.18) !important;
+}
+
+html body .portal-shell .sidebar > button.sidebar-sales-machine-button::before,
+html body .portal-shell .sidebar > button.sidebar-sales-machine-button::after {
+  display: none !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-logo {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-logo img {
+  width: 44px !important;
+  height: 44px !important;
+  object-fit: contain !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-copy {
+  min-width: 0 !important;
+  gap: 2px !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-copy > span,
+html body .portal-shell .sidebar-sales-machine-copy strong,
+html body .portal-shell .sidebar-sales-machine-copy small {
+  color: #ffffff !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-copy > span {
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  opacity: 0.86 !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-copy strong {
+  font-size: 1.05rem !important;
+  line-height: 1.04 !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-copy small {
+  font-size: 0.74rem !important;
+  opacity: 0.78 !important;
+}
+
+html body .portal-shell .sidebar-sales-machine-ignition {
+  display: none !important;
+}
+
+html body .portal-shell .view-head,
+html body .portal-shell .view-section > .view-head,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head,
+html body .portal-shell .view-section[data-view="affiliates"] > .view-head,
+html body .portal-shell .view-section[data-view="leads"] > .view-head,
+html body .portal-shell .view-section[data-view="reward-passes"] > .view-head {
+  min-height: 0 !important;
+  margin: 0 0 20px !important;
+  padding: clamp(22px, 3vw, 34px) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 20px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--sm-line) !important;
+  border-radius: var(--sm-radius-panel) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 248, 255, 0.88)),
+    radial-gradient(circle at 88% 0%, rgba(11, 99, 246, 0.13), transparent 24rem) !important;
+  box-shadow: var(--sm-shadow-tight) !important;
+}
+
+html body .portal-shell .view-head::before,
+html body .portal-shell .view-head::after,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head::before,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head::after {
+  display: none !important;
+}
+
+html body .portal-shell .view-head > div:first-of-type,
+html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head > div:first-of-type {
+  max-width: 860px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-head h2,
+html body .portal-shell .campaign-head h2 {
+  margin: 8px 0 8px !important;
+  color: var(--sm-ink-strong) !important;
+  font-size: clamp(2rem, 4vw, 4.15rem) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.015em !important;
+  text-wrap: balance !important;
+}
+
+html body .portal-shell .view-head p,
+html body .portal-shell .campaign-head p {
+  max-width: 780px !important;
+  color: var(--sm-muted) !important;
+  font-size: clamp(0.96rem, 1.1vw, 1.08rem) !important;
+  line-height: 1.52 !important;
+}
+
+html body .portal-shell .portal-location-pill {
+  min-width: 0 !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  border-radius: var(--sm-radius-control) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: none !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+html body .portal-shell .view-head-actions,
+html body .portal-shell .campaign-head .head-actions {
+  width: min(360px, 100%) !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-self: center !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 1px solid var(--sm-line) !important;
+  border-radius: var(--sm-radius-panel) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-head-actions > *,
+html body .portal-shell .campaign-head .head-actions > * {
+  width: 100% !important;
+}
+
+html body .portal-shell :where(
+  .surface-card,
+  .data-table-card,
+  .chart-card,
+  .map-card,
+  .insight-card,
+  .stat-card,
+  .kpi-card,
+  .metric-card,
+  .activation-panel,
+  .activation-form-panel,
+  .activation-preview-panel,
+  .activation-share-panel,
+  .lead-directory-card,
+  .lead-detail-card,
+  .lead-agenda-card,
+  .agenda-panel,
+  .table-card,
+  .inventory-card,
+  .sales-panel,
+  .profile-card,
+  .billing-card,
+  .account-panel,
+  .reward-pass-panel,
+  .reward-pass-form-card,
+  .reward-pass-preview-card,
+  .reward-pass-detail-card,
+  .modal-card,
+  .busy-card,
+  .quiet-zone,
+  .contact-center-shell,
+  .contact-center-panel,
+  .dashboard-builder-shell,
+  .dashboard-widget-library,
+  .dashboard-canvas,
+  .dashboard-widget-card,
+  .dashboard-widget-preview,
+  .revenue-workspace,
+  .next-best-action-card,
+  .revenue-objective-card,
+  .revenue-onboarding,
+  .revenue-path-step,
+  .affiliate-panel,
+  .affiliate-command-card,
+  .affiliate-next-action-card,
+  .affiliate-ranking-card,
+  .affiliate-finder-panel,
+  .affiliate-logo-panel,
+  .smart-catalog-panel,
+  .smart-catalog-card
+) {
+  min-width: 0 !important;
+  border: 1px solid var(--sm-line) !important;
+  border-radius: var(--sm-radius-panel) !important;
+  background: var(--sm-surface) !important;
+  box-shadow: var(--sm-shadow-tight) !important;
+}
+
+html body .portal-shell :where(.dashboard-widget-library, .dashboard-builder-shell, .contact-center-shell) {
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.92), rgba(242, 249, 255, 0.82)) !important;
+}
+
+html body .portal-shell .dashboard-widget-library-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .dashboard-widget-preview,
+html body .portal-shell .contact-center-tab-card {
+  min-height: 72px !important;
+  padding: 12px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: var(--sm-line) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .dashboard-widget-preview::before,
+html body .portal-shell .dashboard-widget-preview::after,
+html body .portal-shell .contact-center-tab-card::before,
+html body .portal-shell .contact-center-tab-card::after {
+  display: none !important;
+}
+
+html body .portal-shell .contact-center-tab-rail {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)) !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .contact-center-tab-card {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+html body .portal-shell .contact-center-tab-card :where(strong, span, small) {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .contact-center-tab-card.active {
+  border-color: var(--sm-blue) !important;
+  background: #f3f8ff !important;
+  box-shadow: inset 0 -3px 0 var(--sm-blue) !important;
+}
+
+html body .portal-shell .lead-agenda-view-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)) !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+}
+
+html body .portal-shell .lead-agenda-view-tabs .segment-tab {
+  min-height: 48px !important;
+  justify-content: flex-start !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--sm-ink) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .lead-agenda-view-tabs .segment-tab.active {
+  border-color: var(--sm-blue) !important;
+  background: var(--sm-blue-soft) !important;
+  color: var(--sm-blue) !important;
+  box-shadow: inset 0 -3px 0 var(--sm-blue) !important;
+}
+
+html body .portal-shell .lead-agenda-controls {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 10px !important;
+  align-items: end !important;
+  padding: 12px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+}
+
+html body .portal-shell .lead-agenda-controls > * {
+  width: 100% !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+html body .portal-shell :where(.table-wrap, .data-table-scroll, .table-responsive) {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  border-radius: var(--sm-radius-panel) !important;
+}
+
+html body .portal-shell table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell th {
+  background: var(--sm-surface-soft) !important;
+  color: var(--sm-green) !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell td,
+html body .portal-shell th {
+  padding: 11px 12px !important;
+  border-bottom: 1px solid rgba(23, 65, 91, 0.08) !important;
+  vertical-align: middle !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+html body .portal-shell .affiliate-dashboard-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell .affiliate-stat-card {
+  min-height: 112px !important;
+  padding: 18px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: var(--sm-shadow-tight) !important;
+}
+
+html body .portal-shell .affiliate-command-strip {
+  display: grid !important;
+  grid-template-columns: minmax(240px, 0.95fr) minmax(260px, 1fr) minmax(260px, 1fr) !important;
+  gap: 14px !important;
+}
+
+html body .portal-shell .revenue-onboarding {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 0.82fr) repeat(3, minmax(160px, 1fr)) minmax(160px, 0.72fr) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  padding: 22px !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell .revenue-onboarding article {
+  min-height: 150px !important;
+  padding: 18px !important;
+  border-radius: var(--sm-radius-panel) !important;
+  border: 1px solid var(--sm-line) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .revenue-onboarding .solid-button {
+  align-self: center !important;
+  min-height: 58px !important;
+  border-radius: var(--sm-radius-control) !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #campaignStrategyAssistantButton {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #requestCampaignButton,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #editCampaignButton {
+  background: linear-gradient(135deg, var(--sm-blue), #0757d9) !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #requestCampaignButton *,
+html body .portal-shell .view-section[data-view="campaigns"] .campaign-head .head-actions #editCampaignButton * {
+  color: #ffffff !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed {
+  --collapsed-sidebar-width: var(--sm-collapsed-sidebar-width) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar {
+  width: var(--sm-collapsed-sidebar-width) !important;
+  padding: 16px 10px !important;
+  overflow-x: hidden !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .app-main {
+  margin-left: var(--sm-collapsed-sidebar-width) !important;
+  width: calc(100% - var(--sm-collapsed-sidebar-width)) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .topbar {
+  left: var(--sm-collapsed-sidebar-width) !important;
+  width: calc(100% - var(--sm-collapsed-sidebar-width)) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand {
+  justify-content: center !important;
+  padding: 4px 0 12px !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand > div,
+html body .portal-shell .app-shell.sidebar-collapsed .nav-group-label,
+html body .portal-shell .app-shell.sidebar-collapsed .request-button,
+html body .portal-shell .app-shell.sidebar-collapsed .nav-item > span:not(.material-symbols-outlined),
+html body .portal-shell .app-shell.sidebar-collapsed .nav-item > .feature-tier-badge,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-copy {
+  display: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button {
+  width: 54px !important;
+  min-height: 54px !important;
+  height: 54px !important;
+  margin: 8px auto 14px !important;
+  padding: 6px !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  place-items: center !important;
+  border-radius: var(--sm-radius-control) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-logo {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-logo img {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .nav-item {
+  width: 44px !important;
+  min-height: 44px !important;
+  margin: 0 auto 6px !important;
+  padding: 7px !important;
+  grid-template-columns: 1fr !important;
+  place-items: center !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .nav-item > .material-symbols-outlined {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body .portal-shell .app-main {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(11, 99, 246, 0.20), transparent 32rem),
+    linear-gradient(135deg, #07131e, #0b1f31) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(
+  .topbar,
+  .sidebar,
+  .search-shell,
+  .view-head,
+  .view-section > .view-head,
+  .view-section[data-view="campaigns"] > .campaign-head,
+  .surface-card,
+  .data-table-card,
+  .chart-card,
+  .map-card,
+  .insight-card,
+  .stat-card,
+  .kpi-card,
+  .metric-card,
+  .activation-panel,
+  .lead-directory-card,
+  .lead-detail-card,
+  .lead-agenda-card,
+  .contact-center-shell,
+  .contact-center-panel,
+  .dashboard-builder-shell,
+  .dashboard-widget-library,
+  .dashboard-canvas,
+  .dashboard-widget-card,
+  .dashboard-widget-preview,
+  .revenue-onboarding,
+  .affiliate-panel,
+  .affiliate-stat-card,
+  .modal-card
+) {
+  background: var(--sm-surface) !important;
+  border-color: var(--sm-line) !important;
+  color: var(--sm-ink) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell :where(input, select, textarea, .ghost-button, .link-button, .nav-link-button, .icon-button) {
+  background: rgba(13, 30, 42, 0.96) !important;
+  border-color: var(--sm-line) !important;
+  color: var(--sm-ink) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .nav-item:hover,
+:root[data-theme="dark"] body .portal-shell .nav-item.active,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-machine"],
+:root[data-theme="dark"] body .portal-shell .contact-center-tab-card.active,
+:root[data-theme="dark"] body .portal-shell .lead-agenda-view-tabs .segment-tab.active {
+  background: rgba(11, 99, 246, 0.18) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell th {
+  background: rgba(16, 40, 58, 0.96) !important;
+}
+
+@media (max-width: 1200px) {
+  html body .portal-shell .view-head,
+  html body .portal-shell .view-section > .view-head,
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  html body .portal-shell .view-head-actions,
+  html body .portal-shell .campaign-head .head-actions {
+    width: 100% !important;
+    max-width: 520px !important;
+  }
+
+  html body .portal-shell .affiliate-command-strip,
+  html body .portal-shell .revenue-onboarding {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  html body .portal-shell .app-main,
+  html body .portal-shell .app-shell.sidebar-collapsed .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: calc(var(--topbar-height, 72px) + 16px) 14px 32px !important;
+  }
+
+  html body .portal-shell .topbar,
+  html body .portal-shell .app-shell.sidebar-collapsed .topbar {
+    left: 0 !important;
+    width: 100% !important;
+    padding: 10px 14px !important;
+  }
+
+  html body .portal-shell .search-shell {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  html body .portal-shell .view-head,
+  html body .portal-shell .view-section > .view-head,
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+    padding: 20px !important;
+    border-radius: var(--sm-radius-panel) !important;
+  }
+
+  html body .portal-shell .view-head h2,
+  html body .portal-shell .campaign-head h2 {
+    font-size: clamp(2rem, 10vw, 3rem) !important;
+  }
+
+  html body .portal-shell .view-head-actions,
+  html body .portal-shell .campaign-head .head-actions,
+  html body .portal-shell .affiliate-command-strip,
+  html body .portal-shell .revenue-onboarding,
+  html body .portal-shell .lead-agenda-view-tabs,
+  html body .portal-shell .contact-center-tab-rail {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+html body .portal-shell .login-screen {
+  min-height: 100vh !important;
+  padding: clamp(18px, 2.4vw, 34px) !important;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(11, 99, 246, 0.13), transparent 34rem),
+    radial-gradient(circle at 8% 86%, rgba(25, 164, 123, 0.10), transparent 28rem),
+    linear-gradient(135deg, #ffffff 0%, #f5faff 54%, #edf6ff 100%) !important;
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell .login-experience {
+  width: min(100%, 1440px) !important;
+  min-height: calc(100vh - clamp(36px, 4.8vw, 68px)) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.28fr) minmax(360px, 0.72fr) !important;
+  align-items: stretch !important;
+  gap: clamp(18px, 2.5vw, 34px) !important;
+}
+
+html body .portal-shell .login-vision {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: clamp(30px, 5vw, 68px) !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 24px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(11, 99, 246, 0.14) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 247, 255, 0.88)),
+    radial-gradient(circle at 72% 18%, rgba(11, 99, 246, 0.12), transparent 26rem) !important;
+  box-shadow: 0 24px 70px rgba(23, 65, 91, 0.10) !important;
+}
+
+html body .portal-shell .login-vision::before {
+  opacity: 0.08 !important;
+}
+
+html body .portal-shell .login-vision-copy {
+  max-width: 940px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .login-title-lockup {
+  display: flex !important;
+  align-items: center !important;
+  gap: clamp(16px, 2vw, 24px) !important;
+  margin: 18px 0 12px !important;
+}
+
+html body .portal-shell .login-title-logo {
+  width: clamp(68px, 8vw, 104px) !important;
+  height: clamp(68px, 8vw, 104px) !important;
+  flex: 0 0 auto !important;
+  object-fit: contain !important;
+}
+
+html body .portal-shell .login-title-lockup h1 {
+  color: #061b34 !important;
+  font-size: clamp(3.4rem, 7.2vw, 7.6rem) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.03em !important;
+}
+
+html body .portal-shell .login-vision-copy > p {
+  max-width: 740px !important;
+  color: #2d4b63 !important;
+  font-size: clamp(1rem, 1.3vw, 1.2rem) !important;
+  line-height: 1.5 !important;
+}
+
+html body .portal-shell .login-technology-strip {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+}
+
+html body .portal-shell .login-technology-strip span {
+  min-height: 34px !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(11, 99, 246, 0.18) !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #0b315b !important;
+  font-size: 0.84rem !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .login-machine-visual,
+html body .portal-shell .login-proof-grid article {
+  border: 1px solid rgba(11, 99, 246, 0.14) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .login-rms-command,
+html body .portal-shell .login-machine-flow article,
+html body .portal-shell .login-machine-core > div {
+  border-radius: var(--sm-radius-panel) !important;
+  border-color: rgba(11, 99, 246, 0.14) !important;
+  background: rgba(246, 251, 255, 0.92) !important;
+  color: var(--sm-ink) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .login-rms-command :where(span, strong),
+html body .portal-shell .login-machine-flow article :where(strong, small),
+html body .portal-shell .login-machine-core :where(span, strong),
+html body .portal-shell .login-proof-grid article :where(span, strong) {
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell .login-machine-flow i {
+  background: linear-gradient(90deg, transparent, rgba(11, 99, 246, 0.42), transparent) !important;
+}
+
+html body .portal-shell .login-access-panel {
+  min-width: 0 !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+html body .portal-shell .login-card {
+  width: 100% !important;
+  max-width: 470px !important;
+  margin: 0 auto !important;
+  padding: clamp(26px, 3vw, 38px) !important;
+  border: 1px solid rgba(11, 99, 246, 0.16) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 24px 70px rgba(23, 65, 91, 0.12) !important;
+}
+
+html body .portal-shell .login-brand {
+  padding-bottom: 22px !important;
+  border-bottom: 1px solid rgba(23, 65, 91, 0.10) !important;
+}
+
+html body .portal-shell .login-brand .brand-logo {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: var(--sm-radius-control) !important;
+  background: #f3f8ff !important;
+}
+
+html body .portal-shell .login-copy h2 {
+  color: #061b34 !important;
+  font-size: clamp(2.35rem, 4vw, 4.1rem) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.025em !important;
+}
+
+html body .portal-shell .login-copy p {
+  color: #426078 !important;
+  font-size: 1rem !important;
+  line-height: 1.52 !important;
+}
+
+html body .portal-shell .login-form label {
+  color: var(--sm-ink) !important;
+}
+
+html body .portal-shell .login-form input {
+  min-height: 48px !important;
+  background: #f8fbff !important;
+}
+
+html body .portal-shell .password-field {
+  border-radius: var(--sm-radius-control) !important;
+}
+
+html body .portal-shell .password-reveal-button {
+  border-radius: var(--sm-radius-control) !important;
+  background: #eef6ff !important;
+  color: var(--sm-blue) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-screen,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-screen {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(11, 99, 246, 0.13), transparent 34rem),
+    radial-gradient(circle at 8% 86%, rgba(25, 164, 123, 0.10), transparent 28rem),
+    linear-gradient(135deg, #ffffff 0%, #f5faff 54%, #edf6ff 100%) !important;
+  color: var(--sm-ink) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-vision,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-vision {
+  border-color: rgba(11, 99, 246, 0.14) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 247, 255, 0.88)),
+    radial-gradient(circle at 72% 18%, rgba(11, 99, 246, 0.12), transparent 26rem) !important;
+  color: #061b34 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-card,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-card {
+  border-color: rgba(11, 99, 246, 0.16) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #061b34 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-machine-visual,
+:root[data-theme="dark"] body .portal-shell .login-proof-grid article,
+:root[data-theme="dark"] body .portal-shell .login-rms-command,
+:root[data-theme="dark"] body .portal-shell .login-machine-flow article,
+:root[data-theme="dark"] body .portal-shell .login-machine-core > div,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-machine-visual,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-proof-grid article,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-rms-command,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-machine-flow article,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-machine-core > div {
+  border-color: rgba(11, 99, 246, 0.14) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #061b34 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-screen :where(h1, h2, h3, strong, label, span),
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-screen :where(h1, h2, h3, strong, label, span) {
+  color: #061b34 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-screen :where(p, small),
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-screen :where(p, small) {
+  color: #426078 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-form input,
+:root[data-theme="dark"] body .portal-shell .login-card .password-field input,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-form input,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-card .password-field input {
+  background: #f8fbff !important;
+  border-color: rgba(23, 65, 91, 0.18) !important;
+  color: #061b34 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .login-technology-strip span,
+body:not(#salesMachineEnterpriseLoginA#salesMachineEnterpriseLoginB#salesMachineEnterpriseLoginC) .portal-shell .login-technology-strip span {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(11, 99, 246, 0.20) !important;
+  color: #0b315b !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 980px) {
+  html body .portal-shell .login-experience {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .login-vision {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell .login-screen {
+    padding: 12px !important;
+  }
+
+  html body .portal-shell .login-title-lockup {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  html body .portal-shell .login-title-lockup h1 {
+    font-size: clamp(3rem, 17vw, 4.8rem) !important;
+  }
+
+  html body .portal-shell .login-machine-flow {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .login-machine-flow i {
+    display: none !important;
+  }
+}
+
+/* Final task-first sidebar contract; keep this after legacy density overrides. */
+html body .portal-shell .sidebar-nav > .nav-item {
+  display: grid !important;
+  min-height: 58px !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  align-items: center !important;
+}
+
+html body .portal-shell .sidebar-nav > .nav-item > span:last-child {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 3px !important;
+  line-height: 1.1 !important;
+  padding-left: 6px !important;
+}
+
+html body .portal-shell .sidebar-nav > .nav-item > span:last-child strong,
+html body .portal-shell .sidebar-nav > .nav-item > span:last-child small {
+  display: block !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .sidebar-nav > .nav-item > span:last-child strong {
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+html body .portal-shell .sidebar-nav > .nav-item > span:last-child small {
+  color: rgba(222, 238, 229, 0.72) !important;
+  font-size: 9.5px !important;
+  font-weight: 650 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .mission-template-card {
+  background: linear-gradient(160deg, #123342, #0d2531) !important;
+  border-color: rgba(110, 231, 183, 0.22) !important;
+  color: #f4fbf7 !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .mission-template-card :where(h4, strong) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .mission-template-card :where(p, small) {
+  color: #bdd1ca !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .mission-template-card .mission-type,
+:root[data-theme="dark"] body .portal-shell .mission-template-card .mission-template-meta span {
+  background: #173f3c !important;
+  border-color: rgba(110, 231, 183, 0.2) !important;
+  color: #d9fff0 !important;
+}
+
+/* The sidebar already communicates location; the injected pill created a third grid column. */
+html body .portal-shell .view-head > .portal-location-pill {
+  display: none !important;
+}
+
+html body .portal-shell .view-section[data-view="missions"] > .missions-head {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px) !important;
+  align-items: center !important;
+}
+
+html body .portal-shell .view-section[data-view="missions"] > .missions-head h2 {
+  max-width: 680px !important;
+  font-size: clamp(2.15rem, 3.25vw, 3.25rem) !important;
+  line-height: 1.02 !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+html body .portal-shell .view-section[data-view="missions"] > .missions-head .view-head-actions {
+  width: 100% !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="missions"] > .missions-head {
+  background: linear-gradient(135deg, #123342, #0b2524) !important;
+  border-color: rgba(110, 231, 183, 0.24) !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="missions"] > .missions-head :where(h2, .mono-label) {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="missions"] > .missions-head p {
+  color: #bfd7cf !important;
+}
+
+:root[data-theme="dark"] body .portal-shell .view-section[data-view="missions"] > .missions-head .view-head-actions {
+  background: rgba(5, 29, 31, 0.7) !important;
+  border-color: rgba(110, 231, 183, 0.18) !important;
+}
+
+@media (max-width: 980px) {
+  html body .portal-shell .view-section[data-view="missions"] > .missions-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }

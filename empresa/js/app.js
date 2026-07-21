@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-rms-all-stations-lead-review-v2";
+const APP_VERSION = "empresa-20260721-portal-task-first-ux-v12";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1384,12 +1384,14 @@ let state = {
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
   rmsProductClassificationDraft: {},
-  rmsStationPhase: "",
-  rmsStationScreenOpen: false,
+  rmsStationPhase: "recoleccion",
+  rmsStationScreenOpen: true,
+  rmsStationSearch: "",
+  rmsStationViewMode: "all",
   rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
-    phase: "",
+    phase: "recoleccion",
     priority: "",
   },
   rmsCollectorActivation: null,
@@ -1397,7 +1399,7 @@ let state = {
   missions: null,
   missionsLoaded: false,
   missionsLoading: false,
-  missionWizardTemplateKey: "weekly_trivia",
+  missionWizardTemplateKey: "top_clients_week",
   smartCatalogs: [],
   smartCatalogDashboard: null,
   smartCatalogProducts: [],
@@ -1469,6 +1471,12 @@ let state = {
   strategicQrBatches: [],
   strategicQrHistory: [],
   triviaLaunchers: [],
+  gamingActivationCategory: "recommended",
+  gamingActivationSearch: "",
+  gamingActivationStatusFilter: "all",
+  gamingActivationSearchPublished: "",
+  gamingCenterCreationTool: "single",
+  gamingActivationWizardStep: 0,
   currentLauncherActivationId: null,
   activationShareId: null,
   activationShareLeads: [],
@@ -3813,6 +3821,13 @@ function hasPlanFeature(feature) {
   if (isAdmin()) return true;
   if (feature === "leads_view" && isPrepaidValidatorOnly()) return true;
   const plan = currentPlan();
+  const planCode = normalizePlanTierCode(plan.code || plan.plan_code || "");
+  if (!state.accountWorkspaceLoaded) {
+    return true;
+  }
+  if (!planCode && !Object.keys(plan.features || {}).length && plan.portal_access_allowed === undefined) {
+    return true;
+  }
   if (plan.category === "subscription" && plan.portal_access_allowed === false) {
     return false;
   }
@@ -4532,6 +4547,7 @@ async function loadAccountWorkspaceData(options = {}) {
 
 function setView(view) {
   const requestedView = view;
+  const previousView = state.currentView;
   if (view === "sales") {
     state.contactCenterTab = "sales";
     view = "leads";
@@ -4556,6 +4572,9 @@ function setView(view) {
     stopAffiliateFinderScanner();
   }
   state.currentView = view;
+  if (previousView !== view) {
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+  }
   document.body.dataset.currentView = view;
   navButtons.forEach((button) => {
     const isSalesAlias = button.dataset.view === "sales" && view === "leads" && state.contactCenterTab === "sales";
@@ -4566,6 +4585,9 @@ function setView(view) {
       && (contactTarget ? state.contactCenterTab === contactTarget : true);
     const isRegular = button.dataset.view === view && view !== "leads";
     button.classList.toggle("active", isSalesAlias || isLeadsBase || isRegular);
+  });
+  document.querySelectorAll(".portal-more-nav").forEach((details) => {
+    if (details.querySelector(".nav-item.active")) details.open = true;
   });
   viewSections.forEach((section) => {
     const isActiveView = section.dataset.view === view;
@@ -4607,8 +4629,13 @@ function setView(view) {
     }
   }
   if (view === "rms-machine") {
+    const stationPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || "recoleccion";
+    state.rmsStationPhase = stationPhase;
+    state.rmsMachineFilters.phase = stationPhase;
+    state.rmsStationScreenOpen = true;
+    if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = stationPhase;
     renderRmsMachineView();
-    loadRmsMachineData({ quiet: true }).then(renderRmsMachineView).catch((error) => {
+    loadRmsMachineData({ quiet: true }).then(() => openRmsStation(stationPhase)).catch((error) => {
       showFeedback(error.message || "No se pudo cargar la Maquina RMS.", "error", { title: "Maquina RMS" });
       renderRmsMachineView();
     });
@@ -4808,7 +4835,8 @@ function applyInitialRouteParams() {
     validateValidatorToken(urlToken);
     return;
   }
-  setView("rms-machine");
+  const routeViewIsValid = requestedView && navButtons.some((button) => button.dataset.view === requestedView);
+  setView(routeViewIsValid ? requestedView : (state.currentView || "rms-machine"));
   if (requestedView) {
     urlParams.delete("view");
     const nextSearch = urlParams.toString();
@@ -7354,8 +7382,6 @@ function navigatePortalShortcut(target = "") {
   if (!shortcut) return;
   if (shortcut === "rms-stations") {
     setView("rms-machine");
-    focusRmsMachineStations({ delay: 180 });
-    focusRmsMachineStations({ delay: 760, behavior: "auto" });
     return;
   }
   const contactTabs = {
@@ -10316,15 +10342,671 @@ function strategicBatchStatusClass(status) {
   return ["ACTIVE", "REDEEMED"].includes(String(status || "").toUpperCase()) ? "ok" : "pending";
 }
 
+const GAMING_CENTER_TAB_META = {
+  center: { icon: "rocket_launch", eyebrow: "Crear y emitir", title: "Lanza la experiencia comercial", description: "Crea tickets individuales, QR reutilizables y paquetes para campañas físicas o digitales.", tip: "Empieza por una campaña y decide si necesitas un ticket único, un QR compartido o un paquete masivo." },
+  trivia: { icon: "sports_esports", eyebrow: "Activaciones", title: "Diseña experiencias que capturan y convierten", description: "Elige una dinámica, configura el formulario RMS, define el beneficio y publica el enlace.", tip: "Usa las categorías y el buscador para encontrar la mecánica correcta sin recorrer todo el catálogo." },
+  flow: { icon: "conversion_path", eyebrow: "Flujo físico", title: "Entiende el recorrido completo del ticket", description: "Visualiza llegada, reclamación, validación, redención y salida hacia una nueva oportunidad.", tip: "Revisa dónde cae el volumen y abre el validador cuando el equipo necesite operar en tienda." },
+  loop: { icon: "sync", eyebrow: "Ticket Loop", title: "Convierte una redención en la siguiente visita", description: "Detecta oportunidades de recompra, reactivación y recomendación después de cada beneficio.", tip: "Prioriza los ciclos con actividad reciente y una siguiente acción comercial clara." },
+  revenue: { icon: "monitoring", eyebrow: "Revenue", title: "Mide qué tickets producen dinero real", description: "Compara emisión, redención, ventas atribuidas y revenue por tipo de ticket.", tip: "Una redención sin venta es una señal operativa; registra la venta para cerrar la medición RMS." },
+  channels: { icon: "share_location", eyebrow: "Canales", title: "Compara dónde funciona mejor la activación", description: "Lee resultados por volante, empaque, vitrina, feria, referido, influencer y mostrador.", tip: "Duplica los canales ganadores y cambia beneficio o mensaje en los que no convierten." },
+  branches: { icon: "store", eyebrow: "Sucursales", title: "Encuentra las tiendas que convierten mejor", description: "Compara redenciones, ventas y revenue entre puntos físicos.", tip: "Usa la lectura por sucursal para ajustar inventario, capacitación y distribución de tickets." },
+  sellers: { icon: "badge", eyebrow: "Vendedores", title: "Reconoce quién valida, vende y reactiva", description: "Observa desempeño por operador y conecta cada validación con una venta atribuida.", tip: "La comparación sirve para acompañar al equipo, no solo para crear un ranking." },
+  shield: { icon: "shield_lock", eyebrow: "Shield", title: "Protege la operación y detecta anomalías", description: "Revisa vencimientos, intentos, duplicados y señales que pueden afectar la campaña.", tip: "Atiende primero los riesgos que bloquean redención o consumen tickets sin resultado." },
+  next: { icon: "auto_awesome", eyebrow: "Next Ticket", title: "Decide cuál es la siguiente mejor acción", description: "Recibe recomendaciones para crear, reactivar, validar o medir el siguiente movimiento.", tip: "Usa estas sugerencias como cola de decisiones del Gaming Center." },
+};
+
+const GAMING_ACTIVATION_CATEGORY_TYPES = {
+  recommended: ["TRIVIA", "SCRATCH_DIGITAL", "ROULETTE_SPIN", "SPIN_DISCOVER", "PRODUCT_VOTE", "WAITLIST"],
+  capture: ["OPEN_QUESTION", "SURVEY", "PRODUCT_VOTE", "STYLE_SELECTOR", "GIFT_CURATOR", "NEED_DIAGNOSTIC", "WAITLIST", "REWARD_RESERVATION"],
+  reveal: ["SPIN_DISCOVER", "THERMOMETER", "SEALED_LETTER", "PRIVATE_INVITATION", "SCRATCH_DIGITAL", "TAP_REVEAL", "ROULETTE_SPIN"],
+  games: ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
+};
+
+function ensureGamingCenterUxStyles() {
+  if (document.getElementById("gamingCenterUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "gamingCenterUxStyles";
+  style.textContent = `
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(520px,1.45fr); gap:18px; padding:22px; margin:0 0 16px; border:1px solid rgba(52,211,153,.38); background:linear-gradient(135deg,#082f49 0%,#075985 48%,#047857 100%); color:#fff; box-shadow:0 22px 54px rgba(8,47,73,.22); overflow:hidden; position:relative; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center::after { content:""; position:absolute; width:260px; height:260px; right:-90px; top:-140px; border:45px solid rgba(255,255,255,.08); border-radius:50%; pointer-events:none; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy { position:relative; z-index:1; display:grid; align-content:center; gap:7px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy .mono-label { color:#a7f3d0 !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy h3 { margin:0; font-size:clamp(1.35rem,2.3vw,2rem); line-height:1.05; color:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy p { margin:0; color:rgba(255,255,255,.78); max-width:54ch; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-actions { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action { min-width:0; min-height:138px; display:grid; grid-template-columns:48px minmax(0,1fr); align-content:center; align-items:center; gap:12px; padding:18px; border:1px solid rgba(255,255,255,.26); background:rgba(255,255,255,.11); color:#fff; text-align:left; backdrop-filter:blur(10px); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action:hover { transform:translateY(-2px); background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.52); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action .material-symbols-outlined { display:grid; place-items:center; width:48px; height:48px; color:#063e35; background:#6ee7b7; font-size:27px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong { font-size:1rem; line-height:1.15; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { margin-top:5px; color:rgba(255,255,255,.72); font-size:.72rem; line-height:1.35; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav { margin:16px 0; border:1px solid rgba(23,65,91,.14); background:#f7fbff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav > summary { display:flex; align-items:center; gap:9px; padding:13px 16px; cursor:pointer; color:#173b55; font-weight:850; list-style:none; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav > summary::-webkit-details-marker { display:none; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav > summary .material-symbols-outlined { color:#087f5b; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav .gaming-center-nav-heading { padding:0 16px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-nav-heading { display:flex; justify-content:space-between; align-items:end; gap:18px; margin:20px 0 10px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-nav-heading h3, body[data-current-view="strategic-qr"] .portal-shell .gaming-center-nav-heading p { margin:0; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-nav-heading p { color:var(--muted-text,#667085); max-width:62ch; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-menu { display:grid !important; grid-template-columns:repeat(5,minmax(0,1fr)) !important; gap:8px !important; padding:10px !important; border:1px solid rgba(23,65,91,.12) !important; background:#f4f8fb !important; overflow:visible !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab { min-width:0 !important; min-height:72px !important; display:grid !important; grid-template-columns:30px minmax(0,1fr) !important; grid-template-rows:auto auto !important; align-items:center !important; column-gap:8px !important; padding:10px 11px !important; border:1px solid transparent !important; background:transparent !important; text-align:left !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab > .material-symbols-outlined { grid-row:1 / 3; color:#087f5b !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab > span:not(.material-symbols-outlined) { font-weight:850 !important; color:#173b55 !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab > small { display:block !important; color:#6b7e8c !important; font-size:.66rem !important; line-height:1.1 !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab.active { border-color:#087f5b !important; background:#fff !important; box-shadow:0 10px 24px rgba(23,65,91,.1) !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.42fr); gap:18px; align-items:center; padding:18px 20px; margin:14px 0; border-left:5px solid #087f5b; background:linear-gradient(90deg,#ecfdf5,#f8fbff); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context-main { display:grid; grid-template-columns:46px minmax(0,1fr); gap:13px; align-items:center; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context-main > .material-symbols-outlined { display:grid; place-items:center; width:46px; height:46px; background:#087f5b; color:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context h3, body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context p { margin:0; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-tip { padding:10px 12px; background:#fff; color:#496170; font-size:.76rem; line-height:1.35; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher { display:grid; grid-template-columns:minmax(220px,.75fr) repeat(4,minmax(130px,1fr)); gap:8px; align-items:center; padding:12px; margin:12px 0; border:1px solid rgba(23,65,91,.13); background:#f7fbff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher-copy strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher-copy small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher button { min-height:48px; border:1px solid rgba(23,65,91,.14); background:#fff; color:#365568; font-weight:800; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher button.is-active { border-color:#087f5b; background:#e9f8f1; color:#07503c; box-shadow:inset 0 -3px 0 #087f5b; }
+    body[data-current-view="strategic-qr"] .portal-shell .strategic-ticket-generators > article.is-gaming-tool-hidden { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { position:sticky; top:calc(var(--topbar-height,72px) + 8px); z-index:13; display:grid; grid-template-columns:minmax(220px,.55fr) minmax(420px,1.3fr) auto; gap:12px; align-items:center; padding:12px 14px; margin:14px 0; border:1px solid #087f5b; background:rgba(255,255,255,.97); box-shadow:0 14px 36px rgba(23,65,91,.13); backdrop-filter:blur(12px); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-copy strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-copy small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-track { height:7px; margin-top:7px; background:#dbe8e3; overflow:hidden; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-fill { height:100%; width:0; background:linear-gradient(90deg,#087f5b,#22c55e); transition:width .2s ease; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-section-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-section-nav button { min-height:40px; padding:7px 8px; border:1px solid rgba(23,65,91,.13); background:#f6faf8; color:#294b5e; font-size:.72rem; font-weight:800; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-section-nav button.is-active { border-color:#087f5b; background:#087f5b; color:#fff; box-shadow:0 7px 18px rgba(8,127,91,.18); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes { display:grid; grid-template-columns:minmax(230px,.72fr) repeat(4,minmax(145px,1fr)); gap:8px; align-items:stretch; padding:12px; margin:14px 0; border:1px solid rgba(23,65,91,.13); background:linear-gradient(90deg,#f8fbff,#effcf6); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy { display:grid; align-content:center; gap:3px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipe { display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:7px; padding:10px; border:1px solid rgba(23,65,91,.13); background:#fff; color:#294b5e; text-align:left; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipe .material-symbols-outlined { color:#087f5b; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipe strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipe small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .trivia-launcher-form.is-gaming-activation-wizard { display:block !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .trivia-launcher-form.is-gaming-activation-wizard > .is-gaming-wizard-hidden { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .trivia-launcher-form.is-gaming-activation-wizard > .activation-launch-submit { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(260px,.55fr); gap:18px; padding:18px; border:1px solid rgba(8,127,91,.25); background:linear-gradient(135deg,#f8fbff,#ecfdf5); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review.is-gaming-wizard-hidden { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-head h4, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-head p { margin:0; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:14px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid article { padding:11px; border:1px solid rgba(23,65,91,.12); background:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid span, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid strong { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid span { color:#687d8b; font-size:.68rem; font-weight:800; text-transform:uppercase; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone { width:min(100%,300px); min-height:430px; justify-self:center; padding:10px; border:8px solid #102a3a; border-radius:28px; background:#102a3a; box-shadow:0 22px 48px rgba(16,42,58,.22); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-screen { min-height:410px; display:grid; align-content:center; gap:12px; padding:22px 17px; border-radius:19px; background:linear-gradient(160deg,#f8fffc,#dcfce7); color:#173b55; text-align:center; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-icon { display:grid; place-items:center; width:64px; height:64px; margin:auto; border-radius:20px; background:#087f5b; color:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-screen h4, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-screen p { margin:0; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-cta { padding:11px; background:#087f5b; color:#fff; font-weight:850; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer { position:sticky; bottom:8px; z-index:12; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; margin-top:14px; border:1px solid rgba(23,65,91,.14); background:rgba(255,255,255,.97); box-shadow:0 -12px 30px rgba(23,65,91,.12); backdrop-filter:blur(12px); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer > div { display:flex; gap:8px; }
+    body[data-current-view="strategic-qr"] .portal-shell [data-gaming-wizard-publish].hidden, body[data-current-view="strategic-qr"] .portal-shell [data-gaming-wizard-next].hidden { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-catalog-tools { grid-column:1 / -1; display:grid; grid-template-columns:minmax(250px,1fr) auto; gap:10px; padding:12px; border:1px solid rgba(23,65,91,.13); background:#f7fbff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-search { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; gap:7px; padding:0 10px; border:1px solid rgba(23,65,91,.18); background:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-search input { border:0 !important; background:transparent !important; box-shadow:none !important; min-width:0; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-category-list { display:flex; flex-wrap:wrap; gap:6px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-category-list button { min-height:38px; padding:7px 10px; border:1px solid rgba(23,65,91,.14); background:#fff; color:#52697a; font-weight:800; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-category-list button.is-active { border-color:#087f5b; background:#e9f8f1; color:#07503c; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-catalog-status { grid-column:1 / -1; display:flex; justify-content:space-between; gap:12px; color:#607482; font-size:.75rem; }
+    body[data-current-view="strategic-qr"] .portal-shell .activation-type-option.is-gaming-filtered { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .activation-type-option.is-current-outside-filter { order:-1; border-style:dashed !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-selected-activation { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; border:1px solid rgba(8,127,91,.22); background:#ecfdf5; color:#07503c; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-selected-activation strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-selected-activation small { display:block; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar { display:grid; grid-template-columns:minmax(260px,1fr) auto auto; gap:9px; align-items:center; margin:14px 0 10px; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; gap:6px; padding:0 10px; border:1px solid rgba(23,65,91,.18); background:#fff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar input { border:0 !important; background:transparent !important; box-shadow:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell #triviaLauncherTable tr.is-gaming-filtered { display:none !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-published-empty { padding:22px; text-align:center; border:1px dashed rgba(23,65,91,.22); background:#f8fbff; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-published-empty.hidden { display:none !important; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(.gaming-center-advanced-nav,.ticket-center-menu,.ticket-center-tab.active,.gaming-center-panel-context,.gaming-center-panel-tip,.gaming-center-tool-switcher,.gaming-center-tool-switcher button,.gaming-builder-assistant,.gaming-activation-recipes,.gaming-activation-recipe,.gaming-activation-review,.gaming-activation-review-grid article,.gaming-activation-wizard-footer,.gaming-activation-catalog-tools,.gaming-activation-search,.gaming-activation-category-list button,.gaming-published-toolbar label,.gaming-published-empty) { background:#10231e !important; color:#f4fbf7 !important; border-color:rgba(177,199,190,.24) !important; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(.ticket-center-tab > span:not(.material-symbols-outlined),.gaming-activation-search input,.gaming-published-toolbar input) { color:#f4fbf7 !important; }
+    @media (max-width:1180px) { body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .ticket-center-menu { grid-template-columns:repeat(3,minmax(0,1fr)) !important; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes { grid-template-columns:repeat(2,minmax(0,1fr)); } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher-copy, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy { grid-column:1 / -1; } body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { grid-template-columns:1fr; } }
+    @media (max-width:760px) { body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { padding:16px; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-actions { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action { min-height:112px; } body[data-current-view="strategic-qr"] .portal-shell .ticket-center-menu { display:flex !important; overflow-x:auto !important; scroll-snap-type:x mandatory; } body[data-current-view="strategic-qr"] .portal-shell .ticket-center-tab { min-width:180px !important; scroll-snap-align:start; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-panel-context { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher-copy { grid-column:auto; } body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { position:static; } body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-section-nav { grid-template-columns:repeat(2,minmax(0,1fr)); } body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-catalog-tools, body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar { grid-template-columns:1fr; } }
+    @media (max-width:760px) { body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy { grid-column:auto; } body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-review-grid { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer { position:static; align-items:stretch; flex-direction:column; } body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer > div { display:grid; grid-template-columns:1fr 1fr; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function gamingCenterScrollTo(selector = "") {
+  window.setTimeout(() => {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    const focusTarget = target.matches("input, select, textarea, button") ? target : target.querySelector("input, select, textarea, button");
+    window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 380);
+  }, 80);
+}
+
+function runGamingCenterAction(action = "") {
+  if (action === "create-activation") {
+    setTicketCenterTab("trivia");
+    const builder = document.querySelector(".gaming-activation-builder-card");
+    if (builder) setQuietZoneExpanded(builder, true);
+    gamingCenterScrollTo(".gaming-activation-builder-card");
+    return;
+  }
+  if (action === "published-activations") {
+    setTicketCenterTab("trivia");
+    const published = document.querySelector(".gaming-activation-list-card");
+    if (published) setQuietZoneExpanded(published, true);
+    gamingCenterScrollTo(".gaming-activation-list-card");
+    return;
+  }
+  if (action === "issue-ticket") {
+    state.gamingCenterCreationTool = "single";
+    setTicketCenterTab("center");
+    updateGamingCenterCreationTools();
+    const ticketCard = postSaleQrForm?.closest(".quiet-zone");
+    if (ticketCard) setQuietZoneExpanded(ticketCard, true);
+    gamingCenterScrollTo("#postSaleQrForm");
+    return;
+  }
+  if (action === "create-batch") {
+    state.gamingCenterCreationTool = "batch";
+    setTicketCenterTab("center");
+    updateGamingCenterCreationTools();
+    const batchCard = qrBatchForm?.closest(".quiet-zone");
+    if (batchCard) setQuietZoneExpanded(batchCard, true);
+    gamingCenterScrollTo("#qrBatchForm");
+    return;
+  }
+  if (action === "validate-ticket") {
+    setView("validator");
+    return;
+  }
+  if (action === "launch-activation") {
+    triviaLauncherForm?.requestSubmit();
+  }
+}
+
+function gamingActivationCategoryForType(type = "") {
+  if (GAMING_ACTIVATION_CATEGORY_TYPES.games.includes(type)) return "Minijuego con score";
+  if (GAMING_ACTIVATION_CATEGORY_TYPES.capture.includes(type)) return "Captura y diagnóstico";
+  if (GAMING_ACTIVATION_CATEGORY_TYPES.reveal.includes(type)) return "Premio y revelación";
+  return "Experiencia comercial";
+}
+
+function updateGamingActivationCatalog() {
+  if (!activationTypePicker) return;
+  const query = String(state.gamingActivationSearch || "").trim().toLowerCase();
+  const category = state.gamingActivationCategory || "recommended";
+  let visible = 0;
+  const buttons = Array.from(activationTypePicker.querySelectorAll("[data-activation-type]"));
+  buttons.forEach((button) => {
+    const type = button.dataset.activationType || "";
+    const searchable = `${type} ${button.textContent || ""}`.toLowerCase();
+    const active = type === activationTypeInput?.value;
+    const categoryMatches = category === "all" || (GAMING_ACTIVATION_CATEGORY_TYPES[category] || []).includes(type);
+    const matches = (!query || searchable.includes(query)) && (categoryMatches || active);
+    button.classList.toggle("is-gaming-filtered", !matches);
+    button.classList.toggle("is-current-outside-filter", active && !categoryMatches && !query);
+    if (matches) visible += 1;
+  });
+  document.querySelectorAll("[data-gaming-activation-category]").forEach((button) => {
+    const active = button.dataset.gamingActivationCategory === category;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  const count = document.querySelector("[data-gaming-activation-count]");
+  if (count) count.textContent = `${visible} de ${buttons.length} dinámicas visibles`;
+  document.querySelector("[data-gaming-activation-empty]")?.classList.toggle("hidden", visible > 0);
+  const selected = buttons.find((button) => button.dataset.activationType === activationTypeInput?.value) || buttons[0];
+  const selectedName = selected?.querySelector("strong")?.textContent?.trim() || activationTypeLabel(activationTypeInput?.value || "TRIVIA");
+  const selectedDescription = selected?.querySelector("small")?.textContent?.trim() || "Configuración lista para completar";
+  const selectedLabel = document.querySelector("[data-gaming-selected-activation]");
+  if (selectedLabel) {
+    selectedLabel.innerHTML = `<div><small>Dinámica seleccionada · ${escapeHtml(gamingActivationCategoryForType(activationTypeInput?.value || "TRIVIA"))}</small><strong>${escapeHtml(selectedName)}</strong></div><span>${escapeHtml(selectedDescription)}</span>`;
+  }
+}
+
+function updateGamingBuilderProgress() {
+  if (!triviaLauncherForm) return;
+  const requiredFields = Array.from(triviaLauncherForm.querySelectorAll("input[required], select[required], textarea[required]"))
+    .filter((field) => !field.disabled && field.type !== "hidden" && !field.closest(".hidden"));
+  const completed = requiredFields.filter((field) => {
+    if (["checkbox", "radio"].includes(field.type)) return field.checked;
+    return String(field.value || "").trim().length > 0;
+  }).length;
+  const percentage = requiredFields.length ? Math.round((completed / requiredFields.length) * 100) : 0;
+  const missing = Math.max(0, requiredFields.length - completed);
+  const fill = document.querySelector("[data-gaming-builder-progress-fill]");
+  if (fill) fill.style.width = `${percentage}%`;
+  const value = document.querySelector("[data-gaming-builder-progress-value]");
+  if (value) value.textContent = `${percentage}% completo`;
+  const detail = document.querySelector("[data-gaming-builder-progress-detail]");
+  if (detail) detail.textContent = missing ? `${missing} campo${missing === 1 ? "" : "s"} obligatorio${missing === 1 ? "" : "s"} pendiente${missing === 1 ? "" : "s"}` : "Configuración esencial lista para publicar";
+}
+
+function gamingActivationWizardSections() {
+  if (!triviaLauncherForm) return [];
+  return [
+    [triviaLauncherForm.querySelector(":scope > .activation-builder-design")],
+    [triviaLauncherForm.querySelector(":scope > .activation-builder-reward"), triviaLauncherForm.querySelector(":scope > .activation-builder-rules")],
+    [triviaLauncherForm.querySelector(":scope > .activation-builder-form")],
+    [triviaLauncherForm.querySelector(":scope > .activation-builder-gameplay")],
+    [triviaLauncherForm.querySelector(":scope > .gaming-activation-review")],
+  ].map((items) => items.filter(Boolean));
+}
+
+function gamingActivationRequiredFieldsForStep(step = 0) {
+  const sections = gamingActivationWizardSections()[step] || [];
+  return sections.flatMap((section) => Array.from(section.querySelectorAll("input[required], select[required], textarea[required]")))
+    .filter((field) => !field.disabled && field.type !== "hidden" && !field.closest(".hidden"));
+}
+
+function validateGamingActivationWizardStep(step = 0) {
+  const fields = gamingActivationRequiredFieldsForStep(step);
+  const invalid = fields.find((field) => !field.checkValidity());
+  if (!invalid) return true;
+  invalid.reportValidity();
+  invalid.scrollIntoView({ behavior: "smooth", block: "center" });
+  setInlineMessage(triviaLauncherMessage, `Completa los campos obligatorios del paso ${step + 1} antes de continuar.`, "error");
+  return false;
+}
+
+function validateGamingActivationWizard() {
+  const sections = gamingActivationWizardSections();
+  for (let step = 0; step < sections.length - 1; step += 1) {
+    const invalid = gamingActivationRequiredFieldsForStep(step).find((field) => !field.checkValidity());
+    if (!invalid) continue;
+    state.gamingActivationWizardStep = step;
+    updateGamingActivationWizard();
+    window.setTimeout(() => {
+      invalid.reportValidity();
+      invalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    setInlineMessage(triviaLauncherMessage, `Hay un campo pendiente en el paso ${step + 1}.`, "error");
+    return false;
+  }
+  return true;
+}
+
+function renderGamingActivationReview() {
+  const review = document.querySelector("[data-gaming-activation-review]");
+  if (!review) return;
+  const type = activationTypeInput?.value || "TRIVIA";
+  const selectedTypeButton = activationTypePicker?.querySelector(`[data-activation-type="${type}"]`);
+  const icon = selectedTypeButton?.querySelector(".material-symbols-outlined")?.textContent?.trim() || "sports_esports";
+  const typeName = selectedTypeButton?.querySelector("strong")?.textContent?.trim() || activationTypeLabel(type);
+  const title = triviaTitleInput?.value.trim() || "Tu próxima experiencia";
+  const description = triviaDescriptionInput?.value.trim() || "Participa, deja tus datos y descubre el beneficio que la marca preparó para ti.";
+  const campaign = triviaCampaignInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin campaña asociada";
+  const benefit = triviaBenefitLabelInput?.value.trim() || (type === "SCRATCH_DIGITAL" ? "Beneficio definido por zona" : "Beneficio pendiente");
+  const benefitType = triviaBenefitTypeInput?.selectedOptions?.[0]?.textContent?.trim() || "Beneficio";
+  const fulfillment = triviaBenefitFulfillmentModeInput?.selectedOptions?.[0]?.textContent?.trim() || "QR en tienda";
+  const expiry = triviaExpiresModeInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin expiración";
+  const customFields = collectActivationCustomFields();
+  const maxWinners = triviaMaxWinnersInput?.value ? Number(triviaMaxWinnersInput.value).toLocaleString("es-CO") : "Sin límite";
+  review.innerHTML = `
+    <div>
+      <div class="gaming-activation-review-head"><span class="mono-label">Revisión antes de publicar</span><h4>${escapeHtml(title)}</h4><p>Confirma la promesa, la captura y la entrega. Puedes volver a cualquier paso sin perder la configuración.</p></div>
+      <div class="gaming-activation-review-grid">
+        <article><span>Dinámica</span><strong>${escapeHtml(typeName)}</strong></article>
+        <article><span>Campaña</span><strong>${escapeHtml(campaign)}</strong></article>
+        <article><span>Beneficio</span><strong>${escapeHtml(`${benefitType} · ${benefit}`)}</strong></article>
+        <article><span>Entrega</span><strong>${escapeHtml(fulfillment)}</strong></article>
+        <article><span>Captura RMS</span><strong>${customFields.length.toLocaleString("es-CO")} pregunta(s) personalizada(s)</strong></article>
+        <article><span>Cupo / vigencia</span><strong>${escapeHtml(`${maxWinners} · ${expiry}`)}</strong></article>
+      </div>
+    </div>
+    <div class="gaming-activation-phone" aria-label="Vista previa aproximada de la landing">
+      <div class="gaming-activation-phone-screen"><small>${escapeHtml(activationBusinessName())}</small><span class="material-symbols-outlined gaming-activation-phone-icon" aria-hidden="true">${escapeHtml(icon)}</span><strong>${escapeHtml(typeName)}</strong><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p><span class="gaming-activation-phone-cta">Participar y descubrir beneficio</span><small>${escapeHtml(benefit)}</small></div>
+    </div>
+  `;
+}
+
+function updateGamingActivationWizard() {
+  if (!triviaLauncherForm?.classList.contains("is-gaming-activation-wizard")) return;
+  const sections = gamingActivationWizardSections();
+  const step = Math.min(Math.max(Number(state.gamingActivationWizardStep || 0), 0), Math.max(0, sections.length - 1));
+  state.gamingActivationWizardStep = step;
+  sections.forEach((group, index) => group.forEach((section) => {
+    const active = index === step;
+    section.classList.toggle("is-gaming-wizard-hidden", !active);
+    section.setAttribute("aria-hidden", String(!active));
+  }));
+  document.querySelectorAll("[data-gaming-wizard-step]").forEach((button) => {
+    const buttonStep = Number(button.dataset.gamingWizardStep || 0);
+    const active = buttonStep === step;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-current", active ? "step" : "false");
+    button.setAttribute("aria-pressed", String(active));
+  });
+  const previousButton = document.querySelector("[data-gaming-wizard-previous]");
+  if (previousButton) previousButton.disabled = step === 0;
+  const nextButton = document.querySelector("[data-gaming-wizard-next]");
+  nextButton?.classList.toggle("hidden", step === sections.length - 1);
+  if (nextButton) nextButton.textContent = step === sections.length - 2 ? "Revisar activación →" : "Continuar →";
+  document.querySelector("[data-gaming-wizard-publish]")?.classList.toggle("hidden", step !== sections.length - 1);
+  const stepLabel = document.querySelector("[data-gaming-wizard-current]");
+  if (stepLabel) stepLabel.textContent = `Paso ${step + 1} de ${sections.length}`;
+  if (step === sections.length - 1) renderGamingActivationReview();
+  updateGamingBuilderProgress();
+}
+
+function goToGamingActivationWizardStep(nextStep = 0, options = {}) {
+  const sections = gamingActivationWizardSections();
+  const currentStep = Number(state.gamingActivationWizardStep || 0);
+  const targetStep = Math.min(Math.max(Number(nextStep || 0), 0), Math.max(0, sections.length - 1));
+  if (options.validate !== false && targetStep > currentStep && !validateGamingActivationWizardStep(currentStep)) return false;
+  state.gamingActivationWizardStep = targetStep;
+  updateGamingActivationWizard();
+  gamingCenterScrollTo(".gaming-builder-assistant");
+  return true;
+}
+
+function applyGamingActivationRecipe(recipeKey = "") {
+  const recipes = {
+    leads: { type: "SURVEY", title: "Descubre qué solución es ideal para ti", description: "Responde unas preguntas rápidas y recibe un beneficio por compartir tus preferencias.", benefit: "Beneficio por completar el diagnóstico" },
+    instant: { type: "SCRATCH_DIGITAL", title: "Raspa y descubre tu beneficio", description: "Completa tus datos, elige una zona y revela tu premio para redimirlo.", benefit: "Premio sorpresa" },
+    score: { type: "SPACE_SHOOTER", title: "Juega, supera el reto y gana", description: "Consigue el puntaje mínimo y desbloquea un beneficio QR para usar en tienda.", benefit: "Beneficio por superar el reto" },
+    launch: { type: "WAITLIST", title: "Acceso anticipado al lanzamiento", description: "Regístrate para conocer primero la novedad y recibir un beneficio de lanzamiento.", benefit: "Acceso anticipado" },
+  };
+  const recipe = recipes[recipeKey];
+  if (!recipe) return;
+  if (!isActivationTypeAllowedByPlan(recipe.type)) {
+    setActivationType(recipe.type);
+    return;
+  }
+  setActivationType(recipe.type);
+  setFieldValue(triviaTitleInput, recipe.title);
+  setFieldValue(triviaDescriptionInput, recipe.description);
+  setFieldValue(triviaBenefitLabelInput, recipe.benefit);
+  state.gamingActivationWizardStep = 0;
+  updateGamingActivationWizard();
+  showFeedback("Aplicamos una base editable. Ajusta campaña, textos, beneficio y reglas antes de publicar.", "success", { title: "Receta cargada" });
+}
+
+function updateGamingPublishedFilters() {
+  if (!triviaLauncherTable) return;
+  const query = String(state.gamingActivationSearchPublished || "").trim().toLowerCase();
+  const status = state.gamingActivationStatusFilter || "all";
+  let visible = 0;
+  const rows = Array.from(triviaLauncherTable.querySelectorAll("[data-gaming-published-activation]"));
+  rows.forEach((row) => {
+    const matchesSearch = !query || String(row.dataset.gamingActivationSearch || row.textContent || "").toLowerCase().includes(query);
+    const matchesStatus = status === "all" || row.dataset.gamingActivationStatus === status;
+    const matches = matchesSearch && matchesStatus;
+    row.classList.toggle("is-gaming-filtered", !matches);
+    if (matches) visible += 1;
+  });
+  const count = document.querySelector("[data-gaming-published-count]");
+  if (count) count.textContent = `${visible} de ${rows.length} activaciones`;
+  document.querySelector("[data-gaming-published-empty]")?.classList.toggle("hidden", visible > 0 || rows.length === 0);
+}
+
+function updateGamingCenterCreationTools() {
+  const generators = document.querySelector('.view-section[data-view="strategic-qr"] .strategic-ticket-generators');
+  if (!generators) return;
+  const tool = state.gamingCenterCreationTool || "single";
+  Array.from(generators.children).forEach((card) => {
+    const cardTool = card.querySelector("#postSaleQrForm") ? "single" : card.querySelector("#flyerQrForm") ? "reusable" : card.querySelector("#qrBatchForm") ? "batch" : "other";
+    card.dataset.gamingCreationTool = cardTool;
+    card.classList.toggle("is-gaming-tool-hidden", tool !== "all" && cardTool !== tool);
+  });
+  document.querySelectorAll("[data-gaming-creation-tool]").forEach((button) => {
+    const active = button.dataset.gamingCreationTool === tool;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function updateGamingCenterUx() {
+  const currentTab = state.ticketCenterTab || "center";
+  ticketCenterTabs.forEach((button) => {
+    const active = button.dataset.ticketTab === currentTab;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  ticketCenterPanels.forEach((panel) => {
+    panel.setAttribute("aria-hidden", String(panel.dataset.ticketPanel !== currentTab));
+  });
+  updateGamingActivationCatalog();
+  updateGamingBuilderProgress();
+  updateGamingPublishedFilters();
+  updateGamingCenterCreationTools();
+  updateGamingActivationWizard();
+}
+
+function ensureGamingCenterUx() {
+  const view = document.querySelector('.view-section[data-view="strategic-qr"]');
+  const menu = view?.querySelector(".ticket-center-menu");
+  if (!view || !menu) return;
+  ensureGamingCenterUxStyles();
+  if (!view.querySelector(".gaming-center-command-center")) {
+    const gamingViewHead = view.querySelector(":scope > .view-head");
+    (gamingViewHead || strategicQrKpiGrid)?.insertAdjacentHTML("afterend", `
+      <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
+        <div class="gaming-center-command-copy">
+          <span class="mono-label">Mesa de lanzamiento</span>
+          <h3>Elige una de dos acciones</h3>
+          <p>El Gaming Center sirve para emitir tickets o crear una experiencia gamificada. Elige y abre directamente la herramienta correcta.</p>
+        </div>
+        <div class="gaming-center-quick-actions">
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="issue-ticket"><span class="material-symbols-outlined">confirmation_number</span><span><strong>Emitir tickets</strong><small>Ticket individual, QR reutilizable o paquete masivo.</small></span></button>
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">sports_esports</span><span><strong>Crear gamificaciones</strong><small>Juego, encuesta o dinámica con captura de leads y beneficio.</small></span></button>
+        </div>
+      </section>
+    `);
+  }
+  if (!view.querySelector(".gaming-center-nav-heading")) {
+    menu.insertAdjacentHTML("beforebegin", '<div class="gaming-center-nav-heading"><div><span class="mono-label">Centro de control</span><h3>Opera, mide y optimiza</h3></div><p>Las herramientas están organizadas según la decisión que necesitas tomar.</p></div>');
+  }
+  if (!view.querySelector(".gaming-center-advanced-nav")) {
+    const heading = view.querySelector(".gaming-center-nav-heading");
+    const advanced = document.createElement("details");
+    advanced.className = "gaming-center-advanced-nav";
+    advanced.innerHTML = '<summary><span class="material-symbols-outlined">monitoring</span><span>Métricas y control avanzado</span><span class="material-symbols-outlined">expand_more</span></summary>';
+    heading?.parentElement?.insertBefore(advanced, heading);
+    if (heading) advanced.appendChild(heading);
+    advanced.appendChild(menu);
+  }
+  const tabShortLabels = {
+    center: "Crear y emitir", trivia: "Diseñar y publicar", flow: "Seguir recorrido", loop: "Generar retorno", revenue: "Medir ventas",
+    channels: "Comparar origen", branches: "Comparar tiendas", sellers: "Acompañar equipo", shield: "Controlar riesgo", next: "Elegir acción",
+  };
+  ticketCenterTabs.forEach((button) => {
+    const tab = button.dataset.ticketTab || "center";
+    button.id ||= `gamingCenterTab-${tab}`;
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-controls", `gamingCenterPanel-${tab}`);
+    if (!button.querySelector("small")) button.insertAdjacentHTML("beforeend", `<small>${escapeHtml(tabShortLabels[tab] || "Abrir módulo")}</small>`);
+  });
+  ticketCenterPanels.forEach((panel) => {
+    const tab = panel.dataset.ticketPanel || "center";
+    const meta = GAMING_CENTER_TAB_META[tab] || GAMING_CENTER_TAB_META.center;
+    panel.id ||= `gamingCenterPanel-${tab}`;
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", `gamingCenterTab-${tab}`);
+    if (!panel.querySelector(":scope > .gaming-center-panel-context")) {
+      panel.insertAdjacentHTML("afterbegin", `
+        <section class="gaming-center-panel-context">
+          <div class="gaming-center-panel-context-main"><span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(meta.icon)}</span><div><span class="mono-label">${escapeHtml(meta.eyebrow)}</span><h3>${escapeHtml(meta.title)}</h3><p>${escapeHtml(meta.description)}</p></div></div>
+          <div class="gaming-center-panel-tip"><strong>Recomendación</strong><br>${escapeHtml(meta.tip)}</div>
+        </section>
+      `);
+    }
+  });
+  const generatorGrid = view.querySelector(".strategic-ticket-generators");
+  if (generatorGrid && !view.querySelector(".gaming-center-tool-switcher")) {
+    generatorGrid.insertAdjacentHTML("beforebegin", `
+      <section class="gaming-center-tool-switcher" aria-label="Elegir herramienta de creación">
+        <div class="gaming-center-tool-switcher-copy"><strong>¿Qué necesitas crear?</strong><small>Muestra solo la herramienta que vas a usar y reduce el desplazamiento.</small></div>
+        <button type="button" data-gaming-creation-tool="single">Ticket individual</button>
+        <button type="button" data-gaming-creation-tool="reusable">QR reutilizable</button>
+        <button type="button" data-gaming-creation-tool="batch">Paquete masivo</button>
+        <button type="button" data-gaming-creation-tool="all">Ver las tres</button>
+      </section>
+    `);
+  }
+  const builderCard = view.querySelector(".gaming-activation-builder-card");
+  if (builderCard && !builderCard.querySelector(".gaming-builder-assistant")) {
+    triviaLauncherForm?.classList.add("is-gaming-activation-wizard");
+    triviaLauncherForm?.insertAdjacentHTML("beforebegin", `
+      <section class="gaming-activation-recipes" aria-label="Recetas rápidas de activación">
+        <div class="gaming-activation-recipes-copy"><span class="mono-label">Punto de partida</span><strong>Elige un objetivo o crea desde cero</strong><small>Las recetas cargan textos editables y una dinámica recomendada.</small></div>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="leads"><span class="material-symbols-outlined">person_search</span><span><strong>Perfilar leads</strong><small>Encuesta comercial</small></span></button>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="instant"><span class="material-symbols-outlined">gesture</span><span><strong>Premio inmediato</strong><small>Raspa digital</small></span></button>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="score"><span class="material-symbols-outlined">sports_esports</span><span><strong>Reto con score</strong><small>Minijuego</small></span></button>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="launch"><span class="material-symbols-outlined">rocket_launch</span><span><strong>Lanzamiento</strong><small>Lista de espera</small></span></button>
+      </section>
+      <section class="gaming-builder-assistant" aria-label="Asistente del constructor">
+        <div class="gaming-builder-progress-copy"><strong data-gaming-builder-progress-value>0% completo</strong><small data-gaming-builder-progress-detail>Completa la configuración esencial</small><div class="gaming-builder-progress-track"><div class="gaming-builder-progress-fill" data-gaming-builder-progress-fill></div></div></div>
+        <nav class="gaming-builder-section-nav" aria-label="Secciones del constructor">
+          <button type="button" data-gaming-wizard-step="0">1 · Diseño</button>
+          <button type="button" data-gaming-wizard-step="1">2 · Beneficio</button>
+          <button type="button" data-gaming-wizard-step="2">3 · Captura</button>
+          <button type="button" data-gaming-wizard-step="3">4 · Juego</button>
+          <button type="button" data-gaming-wizard-step="4">5 · Revisión</button>
+        </nav>
+        <strong data-gaming-wizard-current>Paso 1 de 5</strong>
+      </section>
+    `);
+    triviaLauncherForm?.insertAdjacentHTML("beforeend", `
+      <section class="full gaming-activation-review is-gaming-wizard-hidden" data-gaming-activation-review aria-hidden="true"></section>
+      <footer class="full gaming-activation-wizard-footer">
+        <button class="ghost-button" type="button" data-gaming-wizard-previous>← Volver</button>
+        <div><button class="solid-button" type="button" data-gaming-wizard-next>Continuar →</button><button class="solid-button hidden" type="button" data-gaming-wizard-publish>Publicar activación</button></div>
+      </footer>
+    `);
+  }
+  if (activationTypePicker && !view.querySelector(".gaming-activation-catalog-tools")) {
+    activationTypePicker.insertAdjacentHTML("beforebegin", `
+      <section class="full gaming-activation-catalog-tools" aria-label="Explorar catálogo de activaciones">
+        <label class="gaming-activation-search"><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-activation-search placeholder="Buscar trivia, ruleta, encuesta, juego..." aria-label="Buscar dinámica"></label>
+        <div class="gaming-activation-category-list" role="group" aria-label="Categorías de dinámicas">
+          <button type="button" data-gaming-activation-category="recommended">Recomendadas</button>
+          <button type="button" data-gaming-activation-category="capture">Captura</button>
+          <button type="button" data-gaming-activation-category="reveal">Premios</button>
+          <button type="button" data-gaming-activation-category="games">Minijuegos</button>
+          <button type="button" data-gaming-activation-category="all">Todas</button>
+        </div>
+        <div class="gaming-activation-catalog-status"><span data-gaming-activation-count>0 dinámicas visibles</span><span>La seleccionada permanece visible aunque cambies de categoría.</span></div>
+        <div class="gaming-published-empty hidden" data-gaming-activation-empty>No encontramos una dinámica con ese nombre.</div>
+      </section>
+    `);
+    activationTypePicker.insertAdjacentHTML("afterend", '<div class="full gaming-selected-activation" data-gaming-selected-activation aria-live="polite"></div>');
+  }
+  const publishedCard = view.querySelector(".gaming-activation-list-card");
+  if (publishedCard && !publishedCard.querySelector(".gaming-published-toolbar")) {
+    publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("afterend", `
+      <div class="gaming-published-toolbar">
+        <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
+        <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
+        <strong data-gaming-published-count>0 activaciones</strong>
+      </div>
+    `);
+    publishedCard.querySelector(".table-wrap")?.insertAdjacentHTML("afterend", '<div class="gaming-published-empty hidden" data-gaming-published-empty><strong>No hay activaciones con estos filtros.</strong><br><small>Cambia la búsqueda o vuelve a todos los estados.</small></div>');
+  }
+  if (!view.dataset.gamingCenterUxBound) {
+    view.dataset.gamingCenterUxBound = "true";
+    view.addEventListener("click", (event) => {
+      const action = event.target.closest("[data-gaming-center-action]")?.dataset.gamingCenterAction;
+      if (action) {
+        event.preventDefault();
+        runGamingCenterAction(action);
+        return;
+      }
+      const anchor = event.target.closest("[data-gaming-builder-anchor]")?.dataset.gamingBuilderAnchor;
+      if (anchor) {
+        event.preventDefault();
+        gamingCenterScrollTo(anchor);
+        return;
+      }
+      const recipe = event.target.closest("[data-gaming-activation-recipe]")?.dataset.gamingActivationRecipe;
+      if (recipe) {
+        event.preventDefault();
+        applyGamingActivationRecipe(recipe);
+        return;
+      }
+      const wizardStepButton = event.target.closest("[data-gaming-wizard-step]");
+      if (wizardStepButton) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(wizardStepButton.dataset.gamingWizardStep || 0));
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-previous]")) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) - 1, { validate: false });
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-next]")) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-publish]")) {
+        event.preventDefault();
+        if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+        return;
+      }
+      const categoryButton = event.target.closest("[data-gaming-activation-category]");
+      if (categoryButton) {
+        state.gamingActivationCategory = categoryButton.dataset.gamingActivationCategory || "all";
+        updateGamingActivationCatalog();
+        return;
+      }
+      const creationTool = event.target.closest("[data-gaming-creation-tool]")?.dataset.gamingCreationTool;
+      if (creationTool) {
+        state.gamingCenterCreationTool = creationTool;
+        updateGamingCenterCreationTools();
+        if (creationTool !== "all") gamingCenterScrollTo(`.strategic-ticket-generators > [data-gaming-creation-tool="${creationTool}"]`);
+        return;
+      }
+      if (event.target.closest("[data-activation-type]")) window.setTimeout(() => {
+        updateGamingActivationCatalog();
+        updateGamingBuilderProgress();
+      }, 0);
+    });
+    view.addEventListener("input", (event) => {
+      if (event.target.matches("[data-gaming-activation-search]")) {
+        state.gamingActivationSearch = event.target.value || "";
+        updateGamingActivationCatalog();
+        return;
+      }
+      if (event.target.matches("[data-gaming-published-search]")) {
+        state.gamingActivationSearchPublished = event.target.value || "";
+        updateGamingPublishedFilters();
+        return;
+      }
+      if (event.target.closest("#triviaLauncherForm")) {
+        updateGamingBuilderProgress();
+        if (Number(state.gamingActivationWizardStep || 0) === 4) renderGamingActivationReview();
+      }
+    });
+    view.addEventListener("change", (event) => {
+      if (event.target.matches("[data-gaming-published-status]")) {
+        state.gamingActivationStatusFilter = event.target.value || "all";
+        updateGamingPublishedFilters();
+        return;
+      }
+      if (event.target.closest("#triviaLauncherForm")) {
+        updateGamingBuilderProgress();
+        if (Number(state.gamingActivationWizardStep || 0) === 4) renderGamingActivationReview();
+      }
+    });
+    menu.addEventListener("keydown", (event) => {
+      if (!event.target.matches("[data-ticket-tab]")) return;
+      const currentIndex = ticketCenterTabs.indexOf(event.target);
+      let nextIndex = currentIndex;
+      if (["ArrowRight", "ArrowDown"].includes(event.key)) nextIndex = (currentIndex + 1) % ticketCenterTabs.length;
+      else if (["ArrowLeft", "ArrowUp"].includes(event.key)) nextIndex = (currentIndex - 1 + ticketCenterTabs.length) % ticketCenterTabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = ticketCenterTabs.length - 1;
+      else return;
+      event.preventDefault();
+      ticketCenterTabs[nextIndex]?.focus();
+      ticketCenterTabs[nextIndex]?.click();
+    });
+  }
+  updateGamingCenterUx();
+}
+
 function setTicketCenterTab(tab) {
   const nextTab = tab || "center";
   state.ticketCenterTab = nextTab;
+  ensureGamingCenterUx();
   ticketCenterTabs.forEach((button) => {
     button.classList.toggle("active", button.dataset.ticketTab === nextTab);
   });
   ticketCenterPanels.forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.ticketPanel === nextTab);
   });
+  updateGamingCenterUx();
   if (state.currentView === "strategic-qr") {
     renderTicketCenterModules();
     loadTicketCenterForCurrentTab({ quiet: true }).catch((error) => {
@@ -12552,6 +13234,7 @@ function renderTicketStatusBoard(tickets = state.strategicQrHistory || []) {
 }
 
 function renderStrategicQrView() {
+  ensureGamingCenterUx();
   renderCampaignAssociationInputs();
   renderLeadCaptureFields();
   if (!state.digitalAssetsLoaded) {
@@ -14562,6 +15245,11 @@ function setActivationType(type) {
     panel.classList.toggle("active", active);
   });
   renderMinigameSpecificConfig(nextType);
+  updateGamingActivationCatalog();
+  window.setTimeout(() => {
+    updateGamingBuilderProgress();
+    updateGamingActivationWizard();
+  }, 0);
   if (triviaBenefitLabelInput) {
     const zoneBasedBenefit = nextType === "SCRATCH_DIGITAL";
     triviaBenefitLabelInput.required = !zoneBasedBenefit;
@@ -16032,7 +16720,7 @@ function renderTriviaLaunchers() {
       const winnersCount = Number(item.winners_count || 0).toLocaleString("es-CO");
       const maxWinners = item.max_winners ? Number(item.max_winners || 0).toLocaleString("es-CO") : "";
       return `
-      <tr>
+      <tr data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}">
         <td>
           <div class="activation-summary-cell">
             <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
@@ -16113,6 +16801,7 @@ function renderTriviaLaunchers() {
   triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
     button.addEventListener("click", () => deleteInteractiveActivation(button.dataset.deleteActivation));
   });
+  updateGamingPublishedFilters();
 }
 
 async function showInteractiveActivationData(id) {
@@ -28063,8 +28752,152 @@ function rmsStationVisualMeta(phase = "") {
   };
 }
 
+function ensureRmsStationUxStyles() {
+  if (document.getElementById("rmsStationUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "rmsStationUxStyles";
+  const rules = [];
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell { gap: 16px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-nav { overflow-x: auto !important; padding: 4px 2px 10px !important; scrollbar-width: thin; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-track { position: relative !important; display: grid !important; grid-template-columns: repeat(var(--rms-station-count, 12), minmax(116px, 1fr)) !important; gap: 8px !important; min-width: max(100%, calc(var(--rms-station-count, 12) * 123px)) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-track::before { content: ""; position: absolute; left: 18px; right: 18px; top: 20px; height: 3px; background: linear-gradient(90deg, var(--station-accent, #087f5b) var(--rms-station-progress), rgba(23,65,91,.13) var(--rms-station-progress)); }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop { position: relative !important; z-index: 1 !important; min-height: 76px !important; padding: 9px !important; display: grid !important; grid-template-columns: 28px minmax(0,1fr) auto !important; align-items: center !important; gap: 7px !important; border: 1px solid rgba(23,65,91,.13) !important; background: rgba(255,255,255,.94) !important; color: #193245 !important; box-shadow: none !important; text-align: left !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop > span { display: grid !important; place-items: center !important; width: 28px !important; height: 28px !important; border: 2px solid rgba(23,65,91,.2) !important; background: #fff !important; color: #52697a !important; font-size: .7rem !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop strong { min-width: 0 !important; font-size: .72rem !important; line-height: 1.15 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop small { display: grid !important; place-items: center !important; min-width: 25px !important; height: 25px !important; padding: 0 5px !important; background: #eef6ff !important; color: #0b63f6 !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop.is-passed > span { border-color: var(--station-accent,#087f5b) !important; background: var(--station-accent,#087f5b) !important; color: #fff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop.is-active { border-color: var(--station-accent,#087f5b) !important; background: var(--station-accent-soft,#edf9f4) !important; box-shadow: inset 0 -3px 0 var(--station-accent,#087f5b) !important; }
+  `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-head { align-items: center !important; background: linear-gradient(135deg, rgba(255,255,255,.98), var(--station-accent-soft,#edf9f4)) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-actions { display: grid !important; grid-template-columns: auto auto minmax(210px,1fr) auto !important; align-items: center !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { position: sticky !important; top: calc(var(--topbar-height,72px) + 8px) !important; z-index: 12 !important; display: grid !important; grid-template-columns: minmax(220px,.7fr) minmax(420px,1.3fr) !important; align-items: center !important; gap: 14px !important; padding: 12px 14px !important; border: 1px solid var(--station-accent,#087f5b) !important; background: rgba(255,255,255,.97) !important; box-shadow: 0 14px 34px rgba(23,65,91,.12) !important; backdrop-filter: blur(12px); }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status { display: flex !important; align-items: center !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status > .material-symbols-outlined { display: grid !important; place-items: center !important; width: 38px !important; height: 38px !important; background: var(--station-accent-soft,#edf9f4) !important; color: var(--station-accent,#087f5b) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status strong, body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status small { display: block !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions { display: grid !important; grid-template-columns: auto auto minmax(180px,1fr) !important; gap: 8px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide article { display: grid !important; grid-template-columns: 34px minmax(0,1fr) !important; gap: 10px !important; padding: 12px !important; border: 1px solid rgba(23,65,91,.12) !important; background: rgba(255,255,255,.9) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide article > span { display: grid !important; place-items: center !important; width: 34px !important; height: 34px !important; background: var(--station-accent,#087f5b) !important; color: #fff !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide strong, body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide small { display: block !important; }
+  `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar { display: grid !important; grid-template-columns: minmax(240px,1fr) auto auto !important; align-items: center !important; gap: 10px !important; padding: 10px !important; border: 1px solid rgba(23,65,91,.12) !important; background: #f7fbff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-search-field { display: grid !important; grid-template-columns: 24px minmax(0,1fr) !important; align-items: center !important; gap: 7px !important; min-width: 0 !important; padding: 0 10px !important; border: 1px solid rgba(23,65,91,.18) !important; background: #fff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-search-field input { min-width: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button { min-height: 36px !important; padding: 7px 9px !important; border: 1px solid rgba(23,65,91,.14) !important; background: #fff !important; color: #52697a !important; font-weight: 800 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button.is-active { border-color: var(--station-accent,#087f5b) !important; background: var(--station-accent-soft,#edf9f4) !important; color: var(--station-accent-ink,#07503c) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button span { display: inline-grid !important; place-items: center !important; min-width: 22px !important; height: 22px !important; margin-left: 4px !important; background: rgba(11,99,246,.09) !important; color: #0b63f6 !important; font-size: .7rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row { transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row:hover { transform: translateY(-1px) !important; border-color: var(--station-accent,#087f5b) !important; box-shadow: 0 16px 34px rgba(23,65,91,.1) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row.is-filtered-out { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons { grid-template-columns: 1fr 1fr !important; min-width: 210px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons button { gap: 5px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons .material-symbols-outlined { font-size: 17px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-analysis-hint { display: inline-flex !important; align-items: center !important; gap: 6px !important; color: var(--station-accent-ink,#07503c) !important; font-size: .8rem !important; font-weight: 800 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-no-results { display: grid !important; justify-items: center !important; gap: 5px !important; padding: 24px !important; border: 1px dashed rgba(23,65,91,.2) !important; background: #fff !important; text-align: center !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-no-results.hidden { display: none !important; }
+  `);
+  rules.push(`
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-journey-stop,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide article,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-search-field,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-no-results { background: #10231e !important; border-color: rgba(177,199,190,.24) !important; color: #f4fbf7 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-search-field input { color: #f4fbf7 !important; }
+  `);
+  rules.push(`
+    @media (max-width: 1100px) {
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-head, body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { grid-template-columns: 1fr !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-actions { grid-template-columns: auto minmax(180px,1fr) auto !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-actions .rms-station-return-button { grid-column: 1 / -1 !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar { grid-template-columns: 1fr !important; }
+    }
+  `);
+  rules.push(`
+    @media (max-width: 760px) {
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { position: static !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-workspace-actions, body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions, body[data-current-view="rms-machine"] .portal-shell .rms-station-workflow-guide { grid-template-columns: 1fr !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button { width: 100% !important; }
+      body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons { grid-template-columns: 1fr !important; min-width: 0 !important; }
+    }
+  `);
+  style.textContent = rules.join("\n");
+  document.head.appendChild(style);
+}
+
+function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities = []) {
+  return `
+    <nav class="rms-station-journey-nav" aria-label="Recorrido de estaciones RMS">
+      <div class="rms-station-journey-track" style="--rms-station-count:${Math.max(1, stages.length)};--rms-station-progress:${stages.length > 1 ? Math.round((Math.max(0, currentIndex) / (stages.length - 1)) * 100) : 100}%">
+        ${stages.map((item, index) => {
+          const count = opportunities.filter((lead) => lead.stage === item.key).length;
+          const active = index === currentIndex;
+          const completed = index < currentIndex;
+          return `<button class="rms-station-journey-stop ${active ? "is-active" : ""} ${completed ? "is-passed" : ""}" type="button" data-rms-open-station="${escapeHtml(item.key)}" ${active ? 'aria-current="step"' : ""}><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.short_label || item.label || "Estación")}</strong><small>${count.toLocaleString("es-CO")}</small></button>`;
+        }).join("")}
+      </div>
+    </nav>
+  `;
+}
+
+function rmsStationRowMatches(item = {}, phase = "") {
+  const query = String(state.rmsStationSearch || "").trim().toLowerCase();
+  const mode = state.rmsStationViewMode || "all";
+  const searchable = [item.name, item.phone, item.email, item.campaign_name, item.activation_name, item.channel, item.source_label, item.source_detail, item.product_interest, item.classified_product_name, item.priority_label, item.risk_label]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (query && !searchable.includes(query)) return false;
+  if (mode === "selected") return (state.rmsMachineSelectedIds || []).includes(item.id);
+  if (mode === "risk") return Number(item.risk_score || 0) >= 50;
+  if (mode === "ready") return rmsStationOutputEligibleRows(phase, [item]).length > 0;
+  return true;
+}
+
+function applyRmsStationDomFilters(root = rmsStationWorkspace) {
+  if (!root) return;
+  const phase = state.rmsStationPhase || "";
+  let visible = 0;
+  root.querySelectorAll("[data-rms-station-lead]").forEach((row) => {
+    const item = rmsOpportunityById(row.dataset.rmsStationLead);
+    const matches = item ? rmsStationRowMatches(item, phase) : true;
+    row.classList.toggle("is-filtered-out", !matches);
+    if (matches) visible += 1;
+  });
+  root.querySelectorAll("[data-rms-station-visible-count]").forEach((node) => {
+    node.textContent = visible.toLocaleString("es-CO");
+  });
+  root.querySelector("[data-rms-station-no-results]")?.classList.toggle("hidden", visible > 0);
+}
+
+function updateRmsStationCommandDock(root = rmsStationWorkspace) {
+  if (!root || !state.rmsStationPhase) return;
+  const rows = rmsStationRows(state.rmsStationPhase, state.rmsMachine?.opportunities || []);
+  const selectedRows = rmsStationSelectedRows(state.rmsStationPhase, rows);
+  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const currentStage = stages.find((item) => item.key === state.rmsStationPhase) || stages[0];
+  const nextPhase = rmsStationNextPhase(currentStage, stages);
+  root.querySelectorAll("[data-rms-station-selected-count]").forEach((node) => {
+    node.textContent = selectedRows.length.toLocaleString("es-CO");
+  });
+  const clearButton = root.querySelector("[data-rms-station-clear-selection]");
+  if (clearButton) clearButton.disabled = selectedRows.length === 0;
+  const sendButton = root.querySelector(".rms-station-command-dock [data-rms-station-bulk-next]");
+  if (sendButton) sendButton.disabled = selectedRows.length === 0 || !nextPhase;
+  const selectedFilterCount = root.querySelector('[data-rms-station-view="selected"] span');
+  if (selectedFilterCount) selectedFilterCount.textContent = selectedRows.length.toLocaleString("es-CO");
+  applyRmsStationDomFilters(root);
+}
+
 function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStationWorkspace) return;
+  ensureRmsStationUxStyles();
   const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
   consoleShell?.classList.toggle("is-station-mode", Boolean(state.rmsStationScreenOpen));
   if (!stages.length || !state.rmsStationScreenOpen) {
@@ -28074,8 +28907,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     return;
   }
   const selectedPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "";
-  const stageIndex = stages.findIndex((item) => item.key === selectedPhase);
-  const stage = stages[stageIndex] || stages[0];
+  const requestedStageIndex = stages.findIndex((item) => item.key === selectedPhase);
+  const stageIndex = requestedStageIndex >= 0 ? requestedStageIndex : 0;
+  const stage = stages[stageIndex];
   const phase = stage.key;
   state.rmsStationPhase = phase;
   const rows = rmsStationRows(phase, opportunities);
@@ -28084,6 +28918,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const operationName = operation.name || operation.primaryAction || "Operacion";
   const stationStorageLabel = stage.storageLabel || `Almacena ${stage.label || "oportunidades"}`;
   const nextPhase = rmsStationNextPhase(stage, stages);
+  const previousStage = stages[stageIndex - 1] || null;
+  const followingStage = stages[stageIndex + 1] || null;
+  const selectedRows = rmsStationSelectedRows(phase, rows);
   const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
   const visual = rmsStationVisualMeta(phase);
@@ -28105,22 +28942,34 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
     <div class="rms-station-screen-shell">
+      ${rmsStationNavigatorMarkup(stages, stageIndex, opportunities)}
       <div class="rms-station-workspace-head">
         <div class="rms-station-identity">
-          <button class="ghost-button compact rms-station-return-button" type="button" data-rms-close-station>← Todas las estaciones</button>
           <span class="mono-label">Pantalla independiente · Estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
           <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
           <p>${escapeHtml(stationStorageLabel)} · Operación: ${escapeHtml(operationName)} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
         </div>
         <div class="rms-station-workspace-actions">
           <button class="ghost-button rms-station-return-button" type="button" data-rms-close-station>Ver todas las estaciones</button>
+          <button class="ghost-button compact" type="button" data-rms-open-station="${escapeHtml(previousStage?.key || "")}" ${previousStage ? "" : "disabled"}>← Anterior</button>
           <select data-rms-station-picker aria-label="Cambiar estación RMS">
             ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${item.key === phase ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.label)}</option>`).join("")}
           </select>
-          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${outputEligibleRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(phase === "recoleccion" ? "Enviar salida a Curaduría" : "Enviar salida")}</button>
+          <button class="ghost-button compact" type="button" data-rms-open-station="${escapeHtml(followingStage?.key || "")}" ${followingStage ? "" : "disabled"}>Siguiente →</button>
         </div>
       </div>
+
+      <section class="rms-station-command-dock" aria-label="Barra de mando de la estación">
+        <div class="rms-station-command-status">
+          <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+          <div aria-live="polite"><strong><span data-rms-station-selected-count>${selectedRows.length.toLocaleString("es-CO")}</span> seleccionado(s)</strong><small>${outputEligibleRows.length.toLocaleString("es-CO")} de ${rows.length.toLocaleString("es-CO")} cumplen la salida</small></div>
+        </div>
+        <div class="rms-station-command-actions">
+          <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
+        </div>
+      </section>
 
       <div class="rms-station-visual-grid">
         <section class="rms-station-visual-panel">
@@ -28147,6 +28996,12 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </aside>
       </div>
 
+      <section class="rms-station-workflow-guide" aria-label="Cómo trabajar en esta estación">
+        <article><span>1</span><div><strong>Analiza el lead</strong><small>Haz clic en su nombre o en “Analizar” para revisar datos, respuestas y contexto.</small></div></article>
+        <article><span>2</span><div><strong>Completa el criterio</strong><small>${escapeHtml((visual.checklist || []).slice(0, 2).join(" · ") || operation.primaryAction || "Ejecuta la operación")}</small></div></article>
+        <article><span>3</span><div><strong>Selecciona y envía</strong><small>${escapeHtml(nextPhase ? `Los leads listos avanzan a ${nextPhase.label}.` : "Cierra el ciclo y conserva el aprendizaje RMS.")}</small></div></article>
+      </section>
+
       ${rmsStationFocusConsoleMarkup(phase, rows, nextPhase)}
 
       ${rmsStationMaterialInventoryMarkup(rows, stage, operation)}
@@ -28166,7 +29021,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
             <strong>${escapeHtml(`${stage.label || "Estación"}: entrada almacenada y salida seleccionada`)}</strong>
             <small>${escapeHtml(screenHelpText)}</small>
           </div>
-          <button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>
+          ${phase === "recoleccion"
+            ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>'
+            : '<span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>Haz clic en un lead para analizarlo</span>'}
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
       </div>
@@ -28178,6 +29035,26 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   });
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => {
     openRmsStation(event.target.value || "");
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-clear-selection]")?.addEventListener("click", () => {
+    const currentIds = new Set(rows.map((item) => item.id));
+    state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => !currentIds.has(id));
+    renderRmsMachineView();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
+    state.rmsStationSearch = event.target.value || "";
+    applyRmsStationDomFilters(rmsStationWorkspace);
+  });
+  rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsStationViewMode = button.dataset.rmsStationView || "all";
+      rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((item) => {
+        const active = item === button;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
+      applyRmsStationDomFilters(rmsStationWorkspace);
+    });
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
@@ -28206,6 +29083,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       });
     });
   });
+  applyRmsStationDomFilters(rmsStationWorkspace);
 }
 
 function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
@@ -28248,6 +29126,19 @@ function rmsStationOutputEligibleRows(phase = "", rows = []) {
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
 
+function rmsStationOutputItemSummary(phase = "", item = {}) {
+  if (phase === "recoleccion") {
+    const readiness = rmsCollectorReadiness(item);
+    return `${readiness.label} · ${item.phone || item.email || "Sin contacto"}`;
+  }
+  if (phase === "alimentacion") {
+    const quality = rmsLeadQualityOption(rmsLeadQualityValue(item));
+    return `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}`;
+  }
+  if (phase === "curaduria") return `${rmsClassifiedProductName(item) || "Sin producto"} · ${rmsClassificationSourceLabel(item)}`;
+  return `${item.next_action?.title || item.raw_recommended_action || "Listo para avanzar"} · ${item.priority_label || "Prioridad media"}`;
+}
+
 function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
   const selectedRows = rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
@@ -28279,12 +29170,10 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
       </div>
       <div class="rms-station-output-list">
         ${selectedRows.length ? selectedRows.map((item) => {
-          const readiness = rmsCollectorReadiness(item);
-          const quality = rmsLeadQualityOption(rmsLeadQualityValue(item));
           return `
             <article>
               <strong>${escapeHtml(item.name || "Contacto")}</strong>
-              <span>${escapeHtml(phase === "alimentacion" ? `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}` : phase === "curaduria" ? `${rmsClassifiedProductName(item) || "Sin producto"} · ${rmsClassificationSourceLabel(item)}` : `${readiness.label} · ${item.phone || item.email || "Sin contacto"}`)}</span>
+              <span>${escapeHtml(rmsStationOutputItemSummary(phase, item))}</span>
               <small>${escapeHtml(item.product_interest || item.entry_summary || item.source_detail || item.campaign_name || "Sin contexto")}</small>
             </article>
           `;
@@ -28312,7 +29201,21 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
             <small>${escapeHtml(inputHelp)}</small>
           </div>
         </div>
+        <div class="rms-station-lead-toolbar">
+          <label class="rms-station-search-field">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar nombre, contacto, campaña o interés" aria-label="Buscar dentro de la estación">
+          </label>
+          <div class="rms-station-view-filters" role="group" aria-label="Filtrar leads de la estación">
+            <button type="button" data-rms-station-view="all" class="${state.rmsStationViewMode === "all" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "all"}">Todos <span>${rows.length}</span></button>
+            <button type="button" data-rms-station-view="selected" class="${state.rmsStationViewMode === "selected" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "selected"}">Seleccionados <span>${rmsStationSelectedRows(stage.key, rows).length}</span></button>
+            <button type="button" data-rms-station-view="ready" class="${state.rmsStationViewMode === "ready" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "ready"}">Listos <span>${rmsStationOutputEligibleRows(stage.key, rows).length}</span></button>
+            <button type="button" data-rms-station-view="risk" class="${state.rmsStationViewMode === "risk" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "risk"}">Riesgo <span>${rows.filter((item) => Number(item.risk_score || 0) >= 50).length}</span></button>
+          </div>
+          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
+        </div>
         ${rmsStationLeadTableMarkup(rows, stage, nextPhase, operation)}
+        <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
       </section>
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
     </div>
@@ -28332,7 +29235,7 @@ function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, oper
             <th>Origen / campaña</th>
             <th>Interés</th>
             <th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : stage.key === "alimentacion" ? "Calidad del lead" : "Estado en estación")}</th>
-            <th>Ficha</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -28393,7 +29296,8 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
       </td>
       <td>
         <div class="rms-station-lead-buttons">
-          <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Abrir</button>
+          <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Analizar</button>
+          <button class="solid-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span> Operar</button>
         </div>
       </td>
     </tr>
@@ -28698,6 +29602,10 @@ function bindRmsMachineActions(root) {
 
 function openRmsStation(phase = "") {
   if (!phase) return;
+  if (state.rmsStationPhase !== phase) {
+    state.rmsStationSearch = "";
+    state.rmsStationViewMode = "all";
+  }
   state.rmsStationPhase = phase;
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
@@ -28712,6 +29620,8 @@ function openRmsStation(phase = "") {
 function closeRmsStation() {
   state.rmsStationScreenOpen = false;
   state.rmsStationPhase = "";
+  state.rmsStationSearch = "";
+  state.rmsStationViewMode = "all";
   state.rmsMachineFilters.phase = "";
   state.rmsMachineSelectedIds = [];
   state.rmsMachineInspectorId = "";
@@ -28950,6 +29860,7 @@ function toggleRmsSelection(id = "", selected = false) {
   stationRow?.classList.toggle("is-selected", selected);
   stationRow?.querySelector(".rms-station-lead-check .material-symbols-outlined")?.replaceChildren(document.createTextNode(selected ? "check_circle" : "radio_button_unchecked"));
   updateRmsStationOutputPreview();
+  updateRmsStationCommandDock();
 }
 
 function selectRmsPhaseForBulk(phase = "") {
@@ -29615,14 +30526,14 @@ const CLIENT_MISSION_TEMPLATES = [
     key: "top_clients_week",
     name: "Top clientes de la semana",
     type: "CUSTOMER_RANKING",
-    description: "Ranking por compras, redenciones o participacion para premiar clientes destacados.",
+    description: "Ranking por valor comprado en el periodo para reconocer y premiar a los clientes más valiosos.",
     channel: "tienda / WhatsApp / mixto",
     points_rules: [
       { action_type: "PURCHASE", label: "Comprar", points: 100 },
       { action_type: "TICKET_REDEEMED", label: "Redimir ticket", points: 80 },
       { action_type: "SURVEY_ANSWER", label: "Responder encuesta", points: 30 },
     ],
-    ranking: { ranking_type: "POINTS", top_limit: 10 },
+    ranking: { ranking_type: "PURCHASES", top_limit: 10 },
     rewards: [{ position: "top_3", reward_name: "Beneficio especial", reward_type: "CUSTOM" }],
   },
   {
@@ -29666,7 +30577,9 @@ function renderMissionsView() {
   const data = state.missions || {};
   const metrics = data.metrics || {};
   const seasons = data.seasons || [];
-  const activeSeason = seasons.find((season) => season.status === "ACTIVE") || seasons[0] || null;
+  const activeSeason = seasons.find((season) => season.status === "ACTIVE" && String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
+    || seasons.find((season) => String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
+    || null;
   renderMissionsKpis(metrics, seasons);
   renderMissionTemplates();
   renderMissionActiveList(seasons);
@@ -29674,19 +30587,22 @@ function renderMissionsView() {
   if (activeSeason?.id) {
     loadMissionLeaderboard(activeSeason.id).catch(() => renderMissionLeaderboard([]));
   } else {
-    renderMissionLeaderboard([]);
+    renderMissionLeaderboard([], "PURCHASES");
   }
 }
 
 function renderMissionsKpis(metrics = {}, seasons = []) {
   if (!missionsKpiGrid) return;
+  const purchaseSeason = seasons.find((season) => season.status === "ACTIVE" && String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
+    || seasons.find((season) => String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
+    || null;
   const cards = [
-    ["Dinámicas activas", metrics.active_seasons || seasons.filter((item) => item.status === "ACTIVE").length, "Misiones en operación"],
-    ["Clientes participando", metrics.participants || 0, "Participantes con puntos"],
-    ["Puntos entregados", metrics.points_total || 0, "Puntos Sales Machine registrados"],
+    ["Competencias activas", metrics.active_seasons || seasons.filter((item) => item.status === "ACTIVE").length, "Temporadas en operación"],
+    ["Clientes del periodo", purchaseSeason?.purchase_customers_count || 0, "Compradores identificados"],
+    ["Compras del periodo", purchaseSeason?.purchases_count || 0, "Ventas que entran al ranking"],
+    ["Valor comprado", money(purchaseSeason?.purchase_amount || 0), "Revenue del periodo seleccionado"],
     ["Recompensas pendientes", metrics.pending_rewards || 0, "Por validar o entregar"],
     ["Tickets redimidos", metrics.redeemed_tickets || 0, "Redenciones asociables"],
-    ["Ventas asociadas", money(metrics.sales_amount || 0), "Revenue medible"],
   ];
   missionsKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
     <article class="rms-kpi-card mission-kpi-card">
@@ -29716,7 +30632,12 @@ function renderMissionTemplates() {
 
 function renderMissionActiveList(seasons = []) {
   if (!missionActiveList) return;
-  missionActiveList.innerHTML = seasons.map((season) => `
+  missionActiveList.innerHTML = seasons.map((season) => {
+    const isPurchaseCompetition = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES";
+    const participants = isPurchaseCompetition ? season.purchase_customers_count : season.participants_count;
+    const mainMetricLabel = isPurchaseCompetition ? "Ventas del periodo" : "Puntos";
+    const mainMetricValue = isPurchaseCompetition ? money(season.purchase_amount || 0) : Number(season.points_total || 0).toLocaleString("es-CO");
+    return `
     <article class="mission-active-card">
       <div>
         <span class="status-chip ${season.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(season.status || "DRAFT")}</span>
@@ -29724,8 +30645,8 @@ function renderMissionActiveList(seasons = []) {
         <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
       </div>
       <dl>
-        <div><dt>Participantes</dt><dd>${Number(season.participants_count || 0).toLocaleString("es-CO")}</dd></div>
-        <div><dt>Puntos</dt><dd>${Number(season.points_total || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>${isPurchaseCompetition ? "Clientes" : "Participantes"}</dt><dd>${Number(participants || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>${escapeHtml(mainMetricLabel)}</dt><dd>${escapeHtml(mainMetricValue)}</dd></div>
         <div><dt>Finaliza</dt><dd>${season.end_date ? formatDate(season.end_date) : "-"}</dd></div>
       </dl>
       <div class="button-row">
@@ -29733,7 +30654,8 @@ function renderMissionActiveList(seasons = []) {
         <button class="ghost-button" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver ranking</button>
       </div>
     </article>
-  `).join("") || `
+  `;
+  }).join("") || `
     <div class="empty-state">
       Aún no hay dinámicas activas. Crea una trivia semanal, un ranking de clientes o una racha de recompra para empezar.
     </div>
@@ -29752,18 +30674,58 @@ async function loadMissionLeaderboard(seasonId) {
     return;
   }
   const data = await api(`/api/business/gamification/leaderboards/${encodeURIComponent(seasonId)}`, { headers: authHeaders() });
-  renderMissionLeaderboard(data.leaderboard || []);
+  renderMissionLeaderboard(data.leaderboard || [], data.ranking_type || "POINTS");
 }
 
-function renderMissionLeaderboard(rows = []) {
+function renderMissionLeaderboard(rows = [], rankingType = "") {
   if (!missionLeaderboard) return;
-  missionLeaderboard.innerHTML = rows.map((row, index) => `
+  const isPurchaseRanking = String(rankingType || "").toUpperCase() === "PURCHASES"
+    || rows.some((row) => String(row.ranking_type || "").toUpperCase() === "PURCHASES");
+  missionLeaderboard.innerHTML = rows.map((row, index) => isPurchaseRanking ? `
+    <div class="mission-rank-row is-purchase-ranking">
+      <span>#${index + 1}</span>
+      <span class="mission-rank-customer"><strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.phone || row.email || "Cliente identificado por la venta")}</small></span>
+      <span class="mission-rank-result"><strong>${money(row.total_spent || 0)}</strong><small>${Number(row.purchases_count || 0).toLocaleString("es-CO")} compra(s) · ticket ${money(row.average_ticket || 0)}</small></span>
+    </div>
+  ` : `
     <div class="mission-rank-row">
       <span>#${index + 1}</span>
       <strong>${escapeHtml(row.name || "Cliente")}</strong>
       <small>${Number(row.points || 0).toLocaleString("es-CO")} pts</small>
     </div>
-  `).join("") || '<div class="empty-state compact">El ranking se llenará cuando los clientes empiecen a sumar puntos.</div>';
+  `).join("") || `<div class="empty-state compact">${isPurchaseRanking ? "Todavía no hay ventas registradas en el periodo de esta competencia." : "El ranking se llenará cuando los clientes empiecen a sumar puntos."}</div>`;
+}
+
+function openPurchaseCompetition(period = "month") {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start);
+  let label = "Este mes";
+  if (period === "week") {
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    end.setDate(start.getDate() + 6);
+    label = "Esta semana";
+  } else if (period === "30days") {
+    start.setDate(start.getDate() - 29);
+    label = "Últimos 30 días";
+  } else if (period === "custom") {
+    label = "Periodo personalizado";
+  } else {
+    start.setDate(1);
+    end.setMonth(start.getMonth() + 1, 0);
+  }
+  openMissionWizard("top_clients_week");
+  if (period === "custom") {
+    if (missionStartInput) missionStartInput.value = "";
+    if (missionEndInput) missionEndInput.value = "";
+  } else {
+    if (missionStartInput) missionStartInput.value = dateInputValue(start);
+    if (missionEndInput) missionEndInput.value = dateInputValue(end);
+    if (missionNameInput) missionNameInput.value = `Top clientes · ${label}`;
+  }
+  if (missionRankingInput) missionRankingInput.value = "PURCHASES";
+  if (missionDescriptionInput) missionDescriptionInput.value = "Competencia de clientes ordenada por el valor total de sus compras registradas durante el periodo seleccionado.";
+  missionStartInput?.focus?.({ preventScroll: true });
 }
 
 function renderMissionRewards(rewards = []) {
@@ -30558,7 +31520,10 @@ rmsHowStartButton?.addEventListener("click", () => {
   closeRmsHowModal();
   openRmsCollectorModal();
 });
-missionsCreateButton?.addEventListener("click", () => openMissionWizard("weekly_trivia"));
+missionsCreateButton?.addEventListener("click", () => openPurchaseCompetition("month"));
+document.querySelectorAll("[data-purchase-competition-period]").forEach((button) => {
+  button.addEventListener("click", () => openPurchaseCompetition(button.dataset.purchaseCompetitionPeriod || "month"));
+});
 missionsRefreshButton?.addEventListener("click", () => {
   state.missionsLoaded = false;
   loadGamificationDashboard({ force: true }).then(renderMissionsView).catch((error) => {

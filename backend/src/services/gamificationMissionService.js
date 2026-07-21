@@ -26,14 +26,14 @@ const MISSION_TEMPLATES = [
     key: "top_clients_week",
     name: "Top clientes de la semana",
     type: "CUSTOMER_RANKING",
-    description: "Ranking por compras, redenciones o participacion para premiar clientes destacados.",
+    description: "Ranking por valor comprado en el periodo para reconocer y premiar a los clientes más valiosos.",
     channel: "tienda / WhatsApp / mixto",
     points_rules: [
       { action_type: "PURCHASE", label: "Comprar", points: 100 },
       { action_type: "TICKET_REDEEMED", label: "Redimir ticket", points: 80 },
       { action_type: "SURVEY_ANSWER", label: "Responder encuesta", points: 30 },
     ],
-    ranking: { ranking_type: "POINTS", top_limit: 10, privacy_mode: "ALIAS" },
+    ranking: { ranking_type: "PURCHASES", top_limit: 10, privacy_mode: "ALIAS" },
     rewards: [{ position: "top_3", reward_name: "Beneficio especial", reward_type: "CUSTOM" }],
   },
   {
@@ -81,6 +81,9 @@ async function listSeasons(businessId, filters = {}) {
        coalesce(m.missions_count, 0)::int as missions_count,
        coalesce(p.participants_count, 0)::int as participants_count,
        coalesce(p.points_total, 0)::int as points_total,
+       coalesce(bs.purchase_customers_count, 0)::int as purchase_customers_count,
+       coalesce(bs.purchases_count, 0)::int as purchases_count,
+       coalesce(bs.purchase_amount, 0)::numeric as purchase_amount,
        coalesce(r.pending_rewards, 0)::int as pending_rewards
      from gamification_seasons s
      left join campaigns c on c.id = s.campaign_id
@@ -95,6 +98,22 @@ async function listSeasons(businessId, filters = {}) {
        from gamification_points_ledger gpl
        where gpl.business_id = s.business_id and gpl.season_id = s.id
      ) p on true
+     left join lateral (
+       select
+         count(distinct coalesce(
+           nullif(trim(sale.customer_document_id), ''),
+           nullif(lower(trim(sale.customer_email)), ''),
+           nullif(regexp_replace(coalesce(sale.customer_phone, ''), '[^0-9]', '', 'g'), ''),
+           nullif(lower(trim(sale.customer_name)), ''),
+           sale.id::text
+         ))::int as purchase_customers_count,
+         count(*)::int as purchases_count,
+         coalesce(sum(sale.sale_amount), 0)::numeric as purchase_amount
+       from business_sales sale
+       where sale.business_id = s.business_id
+         and (s.start_date is null or (sale.created_at at time zone 'America/Bogota')::date >= s.start_date)
+         and (s.end_date is null or (sale.created_at at time zone 'America/Bogota')::date <= s.end_date)
+     ) bs on true
      left join lateral (
        select count(*)::int as pending_rewards
        from gamification_rewards gr
@@ -326,6 +345,65 @@ async function dashboard(businessId) {
 }
 
 async function leaderboardForSeason(businessId, seasonId) {
+  const configResult = await query(
+    `select
+       s.start_date,
+       s.end_date,
+       coalesce(gl.ranking_type, s.settings_json #>> '{ranking,ranking_type}', 'POINTS') as ranking_type,
+       least(greatest(coalesce(gl.top_limit, 10), 1), 50)::int as top_limit
+     from gamification_seasons s
+     left join gamification_leaderboards gl
+       on gl.business_id = s.business_id and gl.season_id = s.id and gl.status = 'ACTIVE'
+     where s.business_id = $1 and s.id = $2
+     order by gl.created_at desc nulls last
+     limit 1`,
+    [businessId, seasonId]
+  );
+  if (!configResult.rowCount) throw notFound("Dinamica no encontrada.");
+  const config = configResult.rows[0];
+  if (String(config.ranking_type || "").toUpperCase() === "PURCHASES") {
+    const purchases = await query(
+      `with normalized_sales as (
+         select
+           coalesce(
+             nullif(trim(bs.customer_document_id), ''),
+             nullif(lower(trim(bs.customer_email)), ''),
+             nullif(regexp_replace(coalesce(bs.customer_phone, ''), '[^0-9]', '', 'g'), ''),
+             nullif(lower(trim(bs.customer_name)), ''),
+             bs.id::text
+           ) as customer_key,
+           nullif(trim(bs.customer_name), '') as customer_name,
+           nullif(trim(bs.customer_phone), '') as customer_phone,
+           nullif(trim(bs.customer_email), '') as customer_email,
+           bs.sale_amount,
+           bs.created_at
+         from business_sales bs
+         where bs.business_id = $1
+           and ($3::date is null or (bs.created_at at time zone 'America/Bogota')::date >= $3::date)
+           and ($4::date is null or (bs.created_at at time zone 'America/Bogota')::date <= $4::date)
+       )
+       select
+         coalesce(max(customer_name), 'Cliente sin nombre') as name,
+         coalesce(max(customer_phone), '') as phone,
+         coalesce(max(customer_email), '') as email,
+         count(*)::int as purchases_count,
+         coalesce(sum(sale_amount), 0)::numeric as total_spent,
+         coalesce(avg(sale_amount), 0)::numeric as average_ticket,
+         max(created_at) as last_activity_at,
+         'PURCHASES'::text as ranking_type
+       from normalized_sales
+       group by customer_key
+       order by total_spent desc, purchases_count desc, last_activity_at desc
+       limit $2`,
+      [businessId, config.top_limit, config.start_date, config.end_date]
+    );
+    return {
+      leaderboard: purchases.rows,
+      ranking_type: "PURCHASES",
+      start_date: config.start_date,
+      end_date: config.end_date,
+    };
+  }
   const result = await query(
     `select
        coalesce(p.name, ml.name, 'Cliente sin nombre') as name,
@@ -335,17 +413,23 @@ async function leaderboardForSeason(businessId, seasonId) {
        gpl.contact_id,
        sum(gpl.points)::int as points,
        count(*)::int as actions_count,
-       max(gpl.created_at) as last_activity_at
+       max(gpl.created_at) as last_activity_at,
+       'POINTS'::text as ranking_type
      from gamification_points_ledger gpl
      left join players p on p.id = gpl.lead_id and p.business_id = gpl.business_id
      left join business_manual_leads ml on ml.id = gpl.contact_id and ml.business_id = gpl.business_id
      where gpl.business_id = $1 and gpl.season_id = $2
      group by p.name, ml.name, p.phone, ml.phone, p.email, ml.email, gpl.lead_id, gpl.contact_id
      order by points desc, last_activity_at desc
-     limit 50`,
-    [businessId, seasonId]
+     limit $3`,
+    [businessId, seasonId, config.top_limit]
   );
-  return { leaderboard: result.rows };
+  return {
+    leaderboard: result.rows,
+    ranking_type: config.ranking_type || "POINTS",
+    start_date: config.start_date,
+    end_date: config.end_date,
+  };
 }
 
 async function pendingRewards(businessId, filters = {}) {

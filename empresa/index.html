@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-collector-submit-20260718-v4">
+  <link rel="stylesheet" href="css/styles.css?v=portal-task-first-ux-20260721-v12">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -205,92 +205,48 @@
           </span>
         </button>
 
-        <nav class="sidebar-nav">
-          <span class="nav-group-label">Núcleo Sales Machine</span>
+        <nav class="sidebar-nav" aria-label="Navegación principal del portal">
+          <span class="nav-group-label">Ir directo</span>
           <button class="nav-item nav-item-core active" data-view="rms-machine" type="button">
             <span class="material-symbols-outlined">precision_manufacturing</span>
-            <span>Máquina RMS</span>
-          </button>
-          <button class="nav-item" data-view="dashboard" type="button">
-            <span class="material-symbols-outlined">dashboard</span>
-            <span>Centro de Revenue</span>
-          </button>
-          <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
-            <span class="material-symbols-outlined">event_note</span>
-            <span>Agenda comercial</span>
-          </button>
-
-          <span class="nav-group-label">Capturar y activar</span>
-          <button class="nav-item" data-view="campaigns" type="button">
-            <span class="material-symbols-outlined">campaign</span>
-            <span>Campañas y QR</span>
+            <span><strong>Máquina RMS</strong><small>Procesar leads por estación</small></span>
           </button>
           <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
             <span class="material-symbols-outlined">sports_esports</span>
-            <span>Gaming Center</span>
+            <span><strong>Gaming Center</strong><small>Tickets o gamificaciones</small></span>
           </button>
           <button class="nav-item nav-item-core" data-view="missions" type="button">
             <span class="material-symbols-outlined">emoji_events</span>
-            <span>Temporadas y Misiones Sales Machine</span>
+            <span><strong>Temporadas</strong><small>Competencias de clientes</small></span>
           </button>
-          <button class="nav-item" data-view="smart-catalogs" type="button">
-            <span class="material-symbols-outlined">storefront</span>
-            <span>Catálogos Sales Machine</span>
-          </button>
-          <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button">
-            <span class="material-symbols-outlined">group</span>
-            <span>Contactos</span>
-          </button>
-          <button class="nav-item" data-view="reward-passes" type="button">
-            <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
-            <span>Reward Pass</span>
+          <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
+            <span class="material-symbols-outlined">event_note</span>
+            <span><strong>Agenda comercial</strong><small>Seguimientos y próximas acciones</small></span>
           </button>
 
-          <span class="nav-group-label">Convertir y medir</span>
-          <button class="nav-item" data-view="validator" type="button">
-            <span class="material-symbols-outlined">qr_code_scanner</span>
-            <span>Validar QR</span>
-          </button>
-          <button class="nav-item" data-view="redemptions" type="button">
-            <span class="material-symbols-outlined">redeem</span>
-            <span>Redenciones</span>
-          </button>
-          <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button">
-            <span class="material-symbols-outlined">payments</span>
-            <span>Ventas atribuidas</span>
-          </button>
+          <details class="portal-more-nav">
+            <summary><span class="material-symbols-outlined">apps</span><span>Más herramientas</span><span class="material-symbols-outlined">expand_more</span></summary>
+            <div class="portal-more-nav-list">
+              <span class="nav-group-label">Analizar y preparar</span>
+              <button class="nav-item" data-view="dashboard" type="button"><span class="material-symbols-outlined">dashboard</span><span>Centro de Revenue</span></button>
+              <button class="nav-item" data-view="campaigns" type="button"><span class="material-symbols-outlined">campaign</span><span>Campañas y QR</span></button>
+              <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
+              <button class="nav-item" data-view="smart-catalogs" type="button"><span class="material-symbols-outlined">storefront</span><span>Catálogos</span></button>
+              <button class="nav-item" data-view="inventory" type="button"><span class="material-symbols-outlined">inventory_2</span><span>Productos</span></button>
+              <button class="nav-item" data-view="branches" type="button"><span class="material-symbols-outlined">storefront</span><span>Sedes</span></button>
 
-          <span class="nav-group-label">Fidelizar y crecer</span>
-          <button class="nav-item" data-view="affiliates" type="button">
-            <span class="material-symbols-outlined">card_membership</span>
-            <span>Afiliados</span>
-          </button>
-          <button class="nav-item" data-view="inventory" type="button">
-            <span class="material-symbols-outlined">inventory_2</span>
-            <span>Productos</span>
-          </button>
-          <button class="nav-item" data-view="branches" type="button">
-            <span class="material-symbols-outlined">storefront</span>
-            <span>Sedes</span>
-          </button>
-
-          <span class="nav-group-label">Análisis y control</span>
-          <button class="nav-item" data-view="channels" type="button">
-            <span class="material-symbols-outlined">hub</span>
-            <span>Canales ROI</span>
-          </button>
-          <button class="nav-item" data-view="competition" type="button">
-            <span class="material-symbols-outlined">monitoring</span>
-            <span>Radar Competitivo</span>
-          </button>
-          <button class="nav-item" data-view="account" type="button">
-            <span class="material-symbols-outlined">manage_accounts</span>
-            <span>Cuenta y plan</span>
-          </button>
-          <button class="nav-item" data-view="admin" type="button">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <span>Admin</span>
-          </button>
+              <span class="nav-group-label">Operar y medir</span>
+              <button class="nav-item" data-view="validator" type="button"><span class="material-symbols-outlined">qr_code_scanner</span><span>Validar QR</span></button>
+              <button class="nav-item" data-view="redemptions" type="button"><span class="material-symbols-outlined">redeem</span><span>Redenciones</span></button>
+              <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
+              <button class="nav-item" data-view="reward-passes" type="button"><span class="material-symbols-outlined">featured_seasonal_and_gifts</span><span>Reward Pass</span></button>
+              <button class="nav-item" data-view="affiliates" type="button"><span class="material-symbols-outlined">card_membership</span><span>Afiliados</span></button>
+              <button class="nav-item" data-view="channels" type="button"><span class="material-symbols-outlined">hub</span><span>Canales ROI</span></button>
+              <button class="nav-item" data-view="competition" type="button"><span class="material-symbols-outlined">monitoring</span><span>Radar Competitivo</span></button>
+              <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Cuenta y plan</span></button>
+              <button class="nav-item" data-view="admin" type="button"><span class="material-symbols-outlined">admin_panel_settings</span><span>Admin</span></button>
+            </div>
+          </details>
         </nav>
 
       </aside>
@@ -1130,12 +1086,12 @@
           <section class="view-section" data-view="missions">
             <div class="view-head missions-head">
               <div>
-                <span class="mono-label">Gamificación del Journey</span>
-                <h2>Temporadas y Misiones Sales Machine</h2>
-                <p>Crea dinámicas semanales, retos, trivias, rankings, rachas y recompensas para que tus clientes interactúen, acumulen puntos y vuelvan a comprar.</p>
+                <span class="mono-label">Competencias de clientes</span>
+                <h2>Temporadas y leaderboard de compras</h2>
+                <p>Elige un periodo y descubre qué clientes compraron más. Crea una competencia, sigue el ranking y premia a los ganadores.</p>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" id="missionsCreateButton" type="button">Crear nueva dinámica</button>
+                <button class="solid-button" id="missionsCreateButton" type="button">Crear competencia</button>
                 <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
                 <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
               </div>
@@ -1143,13 +1099,14 @@
 
             <section class="missions-hero">
               <article class="missions-onboarding">
-                <span class="mono-label">Motor de Misiones Comerciales</span>
-                <h3>Mantén a tus clientes participando hasta convertirlos</h3>
-                <p>Actividad del cliente → suma puntos → avanza progreso → desbloquea recompensa → genera siguiente acción comercial.</p>
-                <div class="button-row">
-                  <button class="solid-button" type="button" data-open-mission-wizard="weekly_trivia">Crear trivia semanal</button>
-                  <button class="ghost-button" type="button" data-open-mission-wizard="top_clients_week">Top clientes</button>
-                  <button class="ghost-button" type="button" data-open-mission-wizard="rebuy_streak">Racha de recompra</button>
+                <span class="mono-label">Crear en segundos</span>
+                <h3>¿Quién fue el cliente que más compró?</h3>
+                <p>Selecciona el periodo. El leaderboard usa las ventas registradas para ordenar por valor comprado y muestra también número de compras y ticket promedio.</p>
+                <div class="purchase-period-actions" role="group" aria-label="Elegir periodo de la competencia">
+                  <button class="solid-button" type="button" data-purchase-competition-period="week">Esta semana</button>
+                  <button class="ghost-button" type="button" data-purchase-competition-period="month">Este mes</button>
+                  <button class="ghost-button" type="button" data-purchase-competition-period="30days">Últimos 30 días</button>
+                  <button class="ghost-button" type="button" data-purchase-competition-period="custom">Elegir fechas</button>
                 </div>
               </article>
               <div class="missions-kpis" id="missionsKpiGrid"></div>
@@ -1159,8 +1116,8 @@
               <article class="surface-card missions-panel span-2">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Biblioteca de plantillas</span>
-                    <h3 class="subhead">Dinámicas listas para activar</h3>
+                    <span class="mono-label">Más formatos</span>
+                    <h3 class="subhead">Otras competencias y dinámicas</h3>
                   </div>
                 </div>
                 <div class="mission-template-grid" id="missionTemplateGrid"></div>
@@ -1169,8 +1126,8 @@
               <article class="surface-card missions-panel">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Ranking</span>
-                    <h3 class="subhead">Top clientes</h3>
+                    <span class="mono-label">Leaderboard del periodo</span>
+                    <h3 class="subhead">Clientes que más compraron</h3>
                   </div>
                 </div>
                 <div class="mission-leaderboard" id="missionLeaderboard"></div>
@@ -1179,8 +1136,8 @@
               <article class="surface-card missions-panel span-2">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Dinámicas activas</span>
-                    <h3 class="subhead">Misiones en operación</h3>
+                    <span class="mono-label">Temporadas creadas</span>
+                    <h3 class="subhead">Competencias en operación</h3>
                   </div>
                 </div>
                 <div class="mission-active-list" id="missionActiveList"></div>
@@ -7005,7 +6962,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-all-stations-lead-review-20260721-v2" defer></script>
+  <script src="js/app.js?v=portal-task-first-ux-20260721-v12" defer></script>
 </body>
 </html>
 
