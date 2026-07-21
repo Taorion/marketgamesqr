@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-dynamic-navigation-20260721-v19">
+  <link rel="stylesheet" href="css/styles.css?v=rms-touch-slider-20260721-v21">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -740,7 +740,20 @@
 
             <section class="surface-card rms-journey-shell rms-factory-console">
               <section class="rms-station-workspace" id="rmsStationWorkspace" aria-live="polite"></section>
-              <div class="rms-stage-board" id="rmsStageBoard"></div>
+              <section class="rms-stage-slider-shell" aria-label="Carrusel de estaciones RMS">
+                <div class="rms-stage-slider-head">
+                  <div>
+                    <strong>Estaciones de fabricación</strong>
+                    <small>Arrastra para recorrerlas. Se muestran tres a la vez.</small>
+                  </div>
+                  <div class="rms-stage-slider-actions">
+                    <button class="ghost-button compact" id="rmsStageSliderPrev" type="button" aria-label="Ver estaciones anteriores" title="Estaciones anteriores"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></button>
+                    <button class="solid-button compact" id="rmsStageSliderNext" type="button" aria-label="Ver estaciones siguientes" title="Estaciones siguientes"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+                  </div>
+                </div>
+                <div class="rms-stage-board" id="rmsStageBoard" tabindex="0" aria-label="Desliza horizontalmente para recorrer las estaciones"></div>
+                <div class="rms-stage-slider-progress" aria-hidden="true"><span id="rmsStageSliderProgress"></span></div>
+              </section>
               <details class="rms-board-tools">
                 <summary><span class="material-symbols-outlined" aria-hidden="true">tune</span> Buscar, filtrar y operar por lote</summary>
                 <section class="rms-operator-toolbar">
@@ -6984,7 +6997,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-dynamic-navigation-20260721-v19" defer></script>
+  <script src="js/app.js?v=rms-touch-slider-20260721-v21" defer></script>
 </body>
 </html>
 

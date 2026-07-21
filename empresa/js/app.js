@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-rms-dynamic-navigation-v19";
+const APP_VERSION = "empresa-20260721-rms-touch-slider-v21";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -80,6 +80,9 @@ const revenueActionWizardMessage = document.getElementById("revenueActionWizardM
 const rmsMachineKpis = document.getElementById("rmsMachineKpis");
 const rmsDailyQueue = document.getElementById("rmsDailyQueue");
 const rmsStageBoard = document.getElementById("rmsStageBoard");
+const rmsStageSliderPrev = document.getElementById("rmsStageSliderPrev");
+const rmsStageSliderNext = document.getElementById("rmsStageSliderNext");
+const rmsStageSliderProgress = document.getElementById("rmsStageSliderProgress");
 const rmsStationWorkspace = document.getElementById("rmsStationWorkspace");
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
@@ -28932,6 +28935,69 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 520px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-map-button { min-width: 46px !important; width: 46px !important; padding: 0 !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-map-button > span:last-child { display: none !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > small { white-space: normal !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-arrows strong { max-width: 86px !important; } }
     @media (prefers-reduced-motion: reduce) { body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-enter-forward,.rms-station-enter-backward) { animation: none !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-context > i > span { transition: none !important; } }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell { gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub { order: 1 !important; gap: 6px !important; padding: 8px !important; border-radius: 13px !important; box-shadow: 0 8px 22px rgba(23,65,91,.08) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub .rms-station-journey-stop { min-height: 50px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-keyboard-hint { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief { order: 2 !important; display: grid !important; grid-template-columns: 42px minmax(220px,1fr) auto auto !important; align-items: center !important; gap: 10px !important; padding: 10px 12px !important; border: 1px solid rgba(15,115,84,.13) !important; border-radius: 13px !important; background: linear-gradient(135deg,#f8fcfa,#ffffff) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > .material-symbols-outlined { width: 42px !important; height: 42px !important; display: grid !important; place-items: center !important; border-radius: 11px !important; background: var(--station-accent-soft,#e8f6f0) !important; color: var(--station-accent,#087f5b) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) { min-width: 0 !important; display: grid !important; gap: 2px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > strong { color: #17362f !important; font-size: .94rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > small { overflow: hidden !important; color: #62776f !important; font-size: .72rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics { display: flex !important; align-items: center !important; gap: 6px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics > span { min-width: 64px !important; display: grid !important; justify-items: center !important; gap: 1px !important; padding: 6px 8px !important; border-radius: 9px !important; background: #eef6f2 !important; color: #60776f !important; font-size: .62rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics strong { color: #17362f !important; font-size: .9rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { order: 3 !important; grid-template-columns: minmax(180px,.55fr) minmax(420px,1fr) !important; gap: 9px !important; padding: 8px 10px !important; border-color: rgba(15,115,84,.16) !important; border-radius: 12px !important; box-shadow: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status > .material-symbols-outlined { width: 32px !important; height: 32px !important; font-size: 19px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status strong { font-size: .78rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-status small { font-size: .66rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions > button { min-height: 38px !important; padding: 7px 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen { order: 4 !important; margin: 0 !important; border-radius: 14px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head { min-height: 54px !important; padding: 10px 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head strong { font-size: .92rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head small { max-width: 780px !important; font-size: .7rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details { order: 5 !important; overflow: hidden !important; border: 1px solid rgba(23,65,91,.12) !important; border-radius: 12px !important; background: #fafcfb !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary { min-height: 48px !important; display: grid !important; grid-template-columns: 28px minmax(0,1fr) 24px !important; align-items: center !important; gap: 8px !important; padding: 8px 12px !important; color: #526b62 !important; cursor: pointer !important; list-style: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary::-webkit-details-marker { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary > span:nth-child(2) { display: grid !important; gap: 2px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary strong { color: #29463d !important; font-size: .78rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary small { font-size: .66rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details .rms-secondary-chevron { transition: transform .18s ease !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details[open] .rms-secondary-chevron { transform: rotate(180deg) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details:not([open]) > .rms-station-secondary-content { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details[open] > .rms-station-secondary-content { display: grid !important; gap: 10px !important; padding: 0 10px 10px !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-primary-brief,.rms-station-secondary-details) { border-color: rgba(151,211,190,.15) !important; background: #10231e !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > strong,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics strong,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary strong { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics > span { background: #17352c !important; color: #b9cec6 !important; }
+    @media (max-width: 980px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief { grid-template-columns: 42px minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics, body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > button { grid-column: 1 / -1 !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock { grid-template-columns: 1fr !important; } }
+    @media (max-width: 620px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief { padding: 9px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > small { white-space: normal !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics { width: 100% !important; display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary small { display: none !important; } }
+  `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell { width: 100% !important; min-width: 0 !important; display: grid !important; gap: 9px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 2px 2px 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head > div:first-child { display: grid !important; gap: 2px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #17362f !important; font-size: .9rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #6c8179 !important; font-size: .68rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { display: flex !important; gap: 6px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button { width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 11px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button:disabled { opacity: .35 !important; cursor: default !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { width: 100% !important; min-width: 0 !important; display: grid !important; grid-template-columns: none !important; grid-auto-flow: column !important; grid-auto-columns: calc((100% - 20px) / 3) !important; gap: 10px !important; margin: 0 !important; padding: 3px 2px 10px !important; overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important; scroll-padding-inline: 2px !important; scroll-behavior: smooth !important; overscroll-behavior-x: contain !important; touch-action: pan-y pinch-zoom !important; cursor: grab !important; scrollbar-width: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::-webkit-scrollbar { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board.is-dragging { cursor: grabbing !important; scroll-snap-type: none !important; scroll-behavior: auto !important; user-select: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board.is-dragging * { pointer-events: none !important; user-select: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board .rms-station-entry-card { width: 100% !important; min-width: 0 !important; cursor: grab !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-board .rms-station-entry-card button { cursor: pointer !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress { position: relative !important; height: 4px !important; overflow: hidden !important; border-radius: 99px !important; background: rgba(23,65,91,.1) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress > span { position: absolute !important; inset: 0 auto 0 0 !important; min-width: 12% !important; border-radius: inherit !important; background: linear-gradient(90deg,#0f7354,#34b77f) !important; transition: width .18s ease, margin-left .18s ease !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #b9cec6 !important; }
+    @media (max-width: 900px) { body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { grid-auto-columns: calc((100% - 10px) / 2) !important; } }
+    @media (max-width: 580px) { body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { align-items: flex-end !important; } body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { max-width: 220px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-stage-board { grid-auto-columns: 88% !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
@@ -29072,25 +29138,25 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       : phase === "curaduria"
         ? "Seleccionar clasificados"
         : "Seleccionar salida";
-  const screenHelpText = phase === "recoleccion"
-    ? "La entrada muestra todos los leads recolectados. La salida muestra solo los que el usuario selecciona como procesables para Curaduría."
-    : phase === "alimentacion"
-      ? "La estación almacena leads de Curaduría. La salida muestra solo leads con calidad alta, media o baja para pasar a Clasificador."
-      : phase === "curaduria"
-        ? "La estación almacena Clasificador. La salida muestra solo leads con producto o servicio asignado para avanzar a Activación 1."
-        : rows.length ? "La entrada muestra lo que esta estación almacena. La salida muestra lo seleccionado para avanzar al siguiente paso serial." : "Esta estación está esperando leads.";
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
     <div class="rms-station-screen-shell rms-station-enter-${state.rmsStationNavigationDirection === "backward" ? "backward" : "forward"}">
       ${rmsStationNavigatorMarkup(stages, stageIndex, opportunities)}
-      <div class="rms-station-workspace-head">
-        <div class="rms-station-identity">
-          <span class="mono-label">Pantalla independiente · Estación ${String(Math.max(0, stageIndex) + 1).padStart(2, "0")}</span>
-          <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
-          <p>${escapeHtml(stationStorageLabel)} · Operación: ${escapeHtml(operationName)} · Salida: ${escapeHtml(nextPhase?.label || "Permanece en control")}</p>
+      <section class="rms-station-primary-brief" aria-label="Objetivo de la estación">
+        <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
+        <div>
+          <span class="mono-label">Qué hacer aquí</span>
+          <strong>${escapeHtml(operation.primaryAction || operationName)}</strong>
+          <small>${escapeHtml(visual.focus || stationStorageLabel)}</small>
         </div>
-      </div>
+        <div class="rms-station-brief-metrics">
+          <span><strong>${rows.length.toLocaleString("es-CO")}</strong> leads</span>
+          <span><strong>${outputEligibleRows.length.toLocaleString("es-CO")}</strong> listos</span>
+          <span><strong>${riskCount.toLocaleString("es-CO")}</strong> riesgo</span>
+        </div>
+        ${phase === "recoleccion" ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Nuevo lead</button>' : ""}
+      </section>
 
       <section class="rms-station-command-dock" aria-label="Barra de mando de la estación">
         <div class="rms-station-command-status">
@@ -29104,6 +29170,13 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </div>
       </section>
 
+      <details class="rms-station-secondary-details">
+        <summary>
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <span><strong>Guía, criterios y métricas</strong><small>Ábrelo solo cuando necesites contexto adicional.</small></span>
+          <span class="material-symbols-outlined rms-secondary-chevron" aria-hidden="true">expand_more</span>
+        </summary>
+        <div class="rms-station-secondary-content">
       <div class="rms-station-visual-grid">
         <section class="rms-station-visual-panel">
           <div class="rms-station-icon-orbit">
@@ -29147,16 +29220,16 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         <article><span>Con riesgo</span><strong>${riskCount.toLocaleString("es-CO")}</strong></article>
         <article><span>Revenue potencial</span><strong>${escapeHtml(money(revenue))}</strong></article>
       </div>
+        </div>
+      </details>
 
       <div class="rms-station-screen">
         <div class="rms-station-screen-head">
           <div>
-            <strong>${escapeHtml(`${stage.label || "Estación"}: entrada almacenada y salida seleccionada`)}</strong>
-            <small>${escapeHtml(screenHelpText)}</small>
+            <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
+            <small>Analiza, completa el criterio, selecciona y envía. Nada más.</small>
           </div>
-          ${phase === "recoleccion"
-            ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead</button>'
-            : '<span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>Haz clic en un lead para analizarlo</span>'}
+          <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>Haz clic en un lead para analizarlo</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
       </div>
@@ -29452,6 +29525,92 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   `;
 }
 
+let rmsStageSliderDragState = null;
+let rmsStageSliderSuppressClick = false;
+
+function rmsStageSliderStep() {
+  const card = rmsStageBoard?.querySelector(".rms-station-entry-card");
+  if (!card) return Math.max(280, Number(rmsStageBoard?.clientWidth || 0));
+  const styles = window.getComputedStyle(rmsStageBoard);
+  return card.getBoundingClientRect().width + Number.parseFloat(styles.columnGap || styles.gap || "0");
+}
+
+function updateRmsStageSliderUi() {
+  if (!rmsStageBoard) return;
+  const maxScroll = Math.max(0, rmsStageBoard.scrollWidth - rmsStageBoard.clientWidth);
+  const current = Math.max(0, Math.min(maxScroll, rmsStageBoard.scrollLeft));
+  if (rmsStageSliderPrev) rmsStageSliderPrev.disabled = current <= 4;
+  if (rmsStageSliderNext) rmsStageSliderNext.disabled = current >= maxScroll - 4;
+  if (rmsStageSliderProgress) {
+    const thumb = rmsStageBoard.scrollWidth ? Math.max(12, Math.min(100, (rmsStageBoard.clientWidth / rmsStageBoard.scrollWidth) * 100)) : 100;
+    const position = maxScroll ? (current / maxScroll) * (100 - thumb) : 0;
+    rmsStageSliderProgress.style.width = `${thumb}%`;
+    rmsStageSliderProgress.style.marginLeft = `${position}%`;
+  }
+}
+
+function moveRmsStageSlider(direction = 1) {
+  if (!rmsStageBoard) return;
+  rmsStageBoard.scrollBy({ left: rmsStageSliderStep() * direction, behavior: "smooth" });
+}
+
+function bindRmsStageSlider() {
+  if (!rmsStageBoard || rmsStageBoard.dataset.sliderBound === "true") {
+    updateRmsStageSliderUi();
+    return;
+  }
+  rmsStageBoard.dataset.sliderBound = "true";
+  rmsStageSliderPrev?.addEventListener("click", () => moveRmsStageSlider(-1));
+  rmsStageSliderNext?.addEventListener("click", () => moveRmsStageSlider(1));
+  rmsStageBoard.addEventListener("scroll", () => requestAnimationFrame(updateRmsStageSliderUi), { passive: true });
+  rmsStageBoard.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    moveRmsStageSlider(event.key === "ArrowLeft" ? -1 : 1);
+  });
+  rmsStageBoard.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    rmsStageSliderDragState = { pointerId: event.pointerId, startX: event.clientX, startScroll: rmsStageBoard.scrollLeft, moved: false };
+    rmsStageBoard.setPointerCapture?.(event.pointerId);
+  });
+  rmsStageBoard.addEventListener("pointermove", (event) => {
+    if (!rmsStageSliderDragState || rmsStageSliderDragState.pointerId !== event.pointerId) return;
+    const delta = rmsStageSliderDragState.startX - event.clientX;
+    if (!rmsStageSliderDragState.moved && Math.abs(delta) < 7) return;
+    rmsStageSliderDragState.moved = true;
+    rmsStageBoard.classList.add("is-dragging");
+    rmsStageBoard.scrollLeft = rmsStageSliderDragState.startScroll + delta;
+    event.preventDefault();
+  });
+  const finishDrag = (event) => {
+    if (!rmsStageSliderDragState || rmsStageSliderDragState.pointerId !== event.pointerId) return;
+    const moved = rmsStageSliderDragState.moved;
+    rmsStageSliderDragState = null;
+    rmsStageBoard.classList.remove("is-dragging");
+    rmsStageBoard.releasePointerCapture?.(event.pointerId);
+    if (moved) {
+      rmsStageSliderSuppressClick = true;
+      const step = rmsStageSliderStep();
+      rmsStageBoard.scrollTo({ left: Math.round(rmsStageBoard.scrollLeft / step) * step, behavior: "smooth" });
+      window.setTimeout(() => { rmsStageSliderSuppressClick = false; }, 120);
+    }
+  };
+  rmsStageBoard.addEventListener("pointerup", finishDrag);
+  rmsStageBoard.addEventListener("pointercancel", finishDrag);
+  rmsStageBoard.addEventListener("click", (event) => {
+    if (!rmsStageSliderSuppressClick) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+  if (typeof ResizeObserver === "function") {
+    const observer = new ResizeObserver(updateRmsStageSliderUi);
+    observer.observe(rmsStageBoard);
+  } else {
+    window.addEventListener("resize", updateRmsStageSliderUi, { passive: true });
+  }
+  requestAnimationFrame(updateRmsStageSliderUi);
+}
+
 function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
   rmsStageBoard.innerHTML = stages.map((stage, index) => {
@@ -29498,6 +29657,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
       openRmsStation(card.dataset.rmsPhase || "", { source: "keyboard" });
     });
   });
+  bindRmsStageSlider();
 }
 
 function sectionLabelMeta(key = "") {
