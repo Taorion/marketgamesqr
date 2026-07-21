@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-task-first-ux-20260721-v12">
+  <link rel="stylesheet" href="css/styles.css?v=generic-ticket-guided-20260721-v17">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -211,40 +211,66 @@
             <span class="material-symbols-outlined">precision_manufacturing</span>
             <span><strong>Máquina RMS</strong><small>Procesar leads por estación</small></span>
           </button>
+          <button class="nav-item nav-item-core" data-view="campaigns" type="button">
+            <span class="material-symbols-outlined">campaign</span>
+            <span><strong>Campañas</strong><small>Planear, crear y emitir QR</small></span>
+          </button>
           <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
             <span class="material-symbols-outlined">sports_esports</span>
             <span><strong>Gaming Center</strong><small>Tickets o gamificaciones</small></span>
           </button>
-          <button class="nav-item nav-item-core" data-view="missions" type="button">
-            <span class="material-symbols-outlined">emoji_events</span>
-            <span><strong>Temporadas</strong><small>Competencias de clientes</small></span>
-          </button>
-          <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
-            <span class="material-symbols-outlined">event_note</span>
-            <span><strong>Agenda comercial</strong><small>Seguimientos y próximas acciones</small></span>
+          <button class="nav-item nav-item-core" data-view="validator" type="button">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            <span><strong>Validador QR</strong><small>Escanear y redimir tickets</small></span>
           </button>
 
           <details class="portal-more-nav">
             <summary><span class="material-symbols-outlined">apps</span><span>Más herramientas</span><span class="material-symbols-outlined">expand_more</span></summary>
             <div class="portal-more-nav-list">
-              <span class="nav-group-label">Analizar y preparar</span>
-              <button class="nav-item" data-view="dashboard" type="button"><span class="material-symbols-outlined">dashboard</span><span>Centro de Revenue</span></button>
-              <button class="nav-item" data-view="campaigns" type="button"><span class="material-symbols-outlined">campaign</span><span>Campañas y QR</span></button>
-              <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
-              <button class="nav-item" data-view="smart-catalogs" type="button"><span class="material-symbols-outlined">storefront</span><span>Catálogos</span></button>
-              <button class="nav-item" data-view="inventory" type="button"><span class="material-symbols-outlined">inventory_2</span><span>Productos</span></button>
-              <button class="nav-item" data-view="branches" type="button"><span class="material-symbols-outlined">storefront</span><span>Sedes</span></button>
+              <details class="portal-tool-group" data-tool-group="commercial">
+                <summary><span class="material-symbols-outlined">handshake</span><span><strong>Gestión comercial</strong><small>Contactos, agenda y ventas</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <div>
+                  <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
+                  <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button"><span class="material-symbols-outlined">event_note</span><span>Agenda comercial</span></button>
+                  <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
+                </div>
+              </details>
 
-              <span class="nav-group-label">Operar y medir</span>
-              <button class="nav-item" data-view="validator" type="button"><span class="material-symbols-outlined">qr_code_scanner</span><span>Validar QR</span></button>
-              <button class="nav-item" data-view="redemptions" type="button"><span class="material-symbols-outlined">redeem</span><span>Redenciones</span></button>
-              <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
-              <button class="nav-item" data-view="reward-passes" type="button"><span class="material-symbols-outlined">featured_seasonal_and_gifts</span><span>Reward Pass</span></button>
-              <button class="nav-item" data-view="affiliates" type="button"><span class="material-symbols-outlined">card_membership</span><span>Afiliados</span></button>
-              <button class="nav-item" data-view="channels" type="button"><span class="material-symbols-outlined">hub</span><span>Canales ROI</span></button>
-              <button class="nav-item" data-view="competition" type="button"><span class="material-symbols-outlined">monitoring</span><span>Radar Competitivo</span></button>
-              <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Cuenta y plan</span></button>
-              <button class="nav-item" data-view="admin" type="button"><span class="material-symbols-outlined">admin_panel_settings</span><span>Admin</span></button>
+              <details class="portal-tool-group" data-tool-group="operate">
+                <summary><span class="material-symbols-outlined">inventory_2</span><span><strong>Opera y optimiza</strong><small>Oferta, catálogo y productos</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <div>
+                  <button class="nav-item" data-view="smart-catalogs" type="button"><span class="material-symbols-outlined">storefront</span><span>Catálogos</span></button>
+                  <button class="nav-item" data-view="inventory" type="button"><span class="material-symbols-outlined">inventory_2</span><span>Productos</span></button>
+                </div>
+              </details>
+
+              <details class="portal-tool-group" data-tool-group="loyalty">
+                <summary><span class="material-symbols-outlined">favorite</span><span><strong>Fidelización</strong><small>Retención y beneficios</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <div>
+                  <button class="nav-item" data-view="missions" type="button"><span class="material-symbols-outlined">emoji_events</span><span>Temporadas</span></button>
+                  <button class="nav-item" data-view="redemptions" type="button"><span class="material-symbols-outlined">redeem</span><span>Redenciones</span></button>
+                  <button class="nav-item" data-view="reward-passes" type="button"><span class="material-symbols-outlined">featured_seasonal_and_gifts</span><span>Reward Pass</span></button>
+                  <button class="nav-item" data-view="affiliates" type="button"><span class="material-symbols-outlined">card_membership</span><span>Afiliados</span></button>
+                </div>
+              </details>
+
+              <details class="portal-tool-group" data-tool-group="intelligence">
+                <summary><span class="material-symbols-outlined">query_stats</span><span><strong>RMS Intelligence</strong><small>Analítica y decisiones</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <div>
+                  <button class="nav-item" data-view="dashboard" type="button"><span class="material-symbols-outlined">dashboard</span><span>Centro de Revenue</span></button>
+                  <button class="nav-item" data-view="channels" type="button"><span class="material-symbols-outlined">hub</span><span>Canales ROI</span></button>
+                  <button class="nav-item" data-view="competition" type="button"><span class="material-symbols-outlined">monitoring</span><span>Radar Competitivo</span></button>
+                  <button class="nav-item" data-view="branches" type="button"><span class="material-symbols-outlined">storefront</span><span>Sedes</span></button>
+                </div>
+              </details>
+
+              <details class="portal-tool-group" data-tool-group="account">
+                <summary><span class="material-symbols-outlined">settings</span><span><strong>Administración</strong><small>Cuenta, plan y permisos</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <div>
+                  <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Cuenta y plan</span></button>
+                  <button class="nav-item" data-view="admin" type="button"><span class="material-symbols-outlined">admin_panel_settings</span><span>Admin</span></button>
+                </div>
+              </details>
             </div>
           </details>
         </nav>
@@ -258,14 +284,14 @@
           </button>
           <div class="search-shell">
             <span class="material-symbols-outlined">search</span>
-            <input id="searchInput" type="text" placeholder="Buscar cliente, campaña, ticket o módulo...">
+            <input id="searchInput" type="text" placeholder="Buscar en el portal..." aria-label="Buscar clientes, campañas, tickets o módulos">
           </div>
           <div class="topbar-actions">
             <button class="solid-button revenue-global-button" id="globalRevenueActionButton" type="button">
               <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
-              Alimentar Máquina RMS
+              Nuevo lead
             </button>
-            <a class="ghost-button nav-link-button" href="/">Home</a>
+            <a class="ghost-button nav-link-button" href="/" title="Abrir el sitio público">Sitio web</a>
             <button class="icon-button" id="refreshButton" type="button" title="Actualizar">
               <span class="material-symbols-outlined">refresh</span>
             </button>
@@ -692,105 +718,75 @@
           </section>
 
           <section class="view-section active" data-view="rms-machine">
-            <div class="view-head rms-machine-head">
+            <div class="view-head rms-machine-head rms-machine-launchbar">
               <div class="rms-machine-head-copy">
-                <span class="mono-label">Operación principal</span>
-                <h2>Fábrica de ventas</h2>
-                <p><strong>Máquina de ventas:</strong> comienza a procesar tu materia prima de leads. Entra a las estaciones, selecciona la salida correcta y mueve cada oportunidad hacia Ventas atribuidas, Activación 2 e Inteligencia RMS.</p>
-                <div class="rms-flow-chip" aria-label="Flujo operativo RMS">
-                  <span>Leads recolectados</span>
-                  <span>Curaduría</span>
-                  <span>Clasificador</span>
-                  <span>Activación 1</span>
-                  <span>Control calidad 1</span>
-                  <span>Evaluación</span>
-                  <span>Negociación</span>
-                  <span>Ventas atribuidas</span>
-                  <span>Control calidad 2</span>
-                  <span>Activación 2</span>
-                  <span>Inteligencia RMS</span>
-                </div>
+                <span class="mono-label">RMS Machine</span>
+                <h2>Estaciones de fabricación</h2>
+                <p>Selecciona una estación para revisar y procesar sus leads.</p>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" type="button" data-portal-shortcut="rms-stations">Operar estaciones</button>
-                <button class="ghost-button" id="rmsMachineCollectorButton" type="button">Ingresar materia prima</button>
-                <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
-                <button class="ghost-button" id="rmsMachineHowButton" type="button">Tutorial paso a paso</button>
-                <button class="ghost-button" id="rmsMachineRefreshButton" type="button">Actualizar cola</button>
-                <button class="solid-button" id="rmsMachineOpenAgendaButton" type="button">Ver agenda</button>
+                <button class="solid-button rms-primary-action" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span><span><strong>Ingresar lead</strong><small>Agregar a Recolección</small></span></button>
+                <button class="ghost-button rms-secondary-action" id="rmsMachineRefreshButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">refresh</span><span><strong>Actualizar</strong><small>Refrescar estaciones</small></span></button>
+                <details class="rms-more-actions">
+                  <summary><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span> Ayuda y herramientas</summary>
+                  <div>
+                    <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
+                    <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver tutorial</button>
+                    <button class="ghost-button" id="rmsMachineOpenAgendaButton" type="button">Abrir agenda</button>
+                  </div>
+                </details>
               </div>
             </div>
-
-            <section class="rms-operator-toolbar surface-card">
-              <div>
-                <span class="mono-label">Operario de fábrica</span>
-                <strong>Busca materia prima, entra a una estación y mueve solo la salida lista.</strong>
-              </div>
-              <label>
-                <span>Buscar materia prima</span>
-                <input id="rmsMachineSearchInput" type="search" placeholder="Nombre, telefono, campaña o interés">
-              </label>
-              <label>
-                <span>Estación</span>
-                <select id="rmsMachinePhaseFilter">
-                  <option value="">Todas las estaciones</option>
-                </select>
-              </label>
-              <label>
-                <span>Prioridad</span>
-                <select id="rmsMachinePriorityFilter">
-                  <option value="">Todas</option>
-                  <option value="HIGH">Alta</option>
-                  <option value="MEDIUM">Media</option>
-                  <option value="LOW">Baja</option>
-                </select>
-              </label>
-              <button class="solid-button" id="rmsMachineFilterButton" type="button">Actualizar proceso</button>
-            </section>
 
             <section class="surface-card rms-journey-shell rms-factory-console">
               <div class="card-head">
                 <div>
-                  <span class="mono-label">Fábrica de ventas</span>
-                  <h3 class="subhead">Opera las estaciones de la máquina de ventas</h3>
-                  <p class="chart-explainer">Lee de izquierda a derecha: cada estación almacena un estado comercial, ejecuta una operación y pasa solo la salida seleccionada a la siguiente.</p>
+                  <span class="mono-label">Tu línea de producción</span>
+                  <h3 class="subhead">Elige dónde quieres trabajar</h3>
+                  <p class="chart-explainer">Cada tarjeta abre una estación con sus leads y acciones.</p>
                 </div>
                 <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
               </div>
-              <div class="rms-factory-status-strip" aria-label="Estado operativo de la fábrica RMS">
-                <span><em>01</em><strong>Materia prima entra</strong><small>Lead, QR, catálogo o referido</small></span>
-                <span><em>02</em><strong>Estación almacena</strong><small>Curaduría, Clasificador o Activación</small></span>
-                <span><em>03</em><strong>Operación procesa</strong><small>Curar, clasificar, evaluar o negociar</small></span>
-                <span><em>04</em><strong>Salida avanza</strong><small>Venta atribuida, Activación 2 o Inteligencia RMS</small></span>
-              </div>
-              <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
-                <div>
-                  <span class="mono-label">Operación masiva</span>
-                  <strong id="rmsBulkSelectionCount">0 seleccionados</strong>
-                  <small>Marca oportunidades en una estación y aplica una acción por lote.</small>
-                </div>
-                <select id="rmsBulkPhaseInput">
-                  <option value="">Mover a fase...</option>
-                </select>
-                <button class="ghost-button" id="rmsBulkCreateTasksButton" type="button">Crear tareas</button>
-                <button class="solid-button" id="rmsBulkExecuteButton" type="button">Ejecutar operación de fase</button>
-                <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
-              </div>
               <section class="rms-station-workspace" id="rmsStationWorkspace" aria-live="polite"></section>
-              <div class="rms-stage-board-guide" aria-label="Guía del carril de estaciones RMS">
-                <div>
-                  <span class="mono-label">Carril de estaciones RMS</span>
-                  <strong>Trabaja una estación, ejecuta su operación y pasa los clientes listos a la siguiente.</strong>
-                  <small>La máquina no obliga a convencer uno por uno: en volumen aplica señales, beneficios y seguimiento hasta que el interés real aparece.</small>
-                </div>
-                <div class="rms-stage-board-guide-actions">
-                  <span>Entrada</span>
-                  <span>Procesar</span>
-                  <span>Pasar salida</span>
-                  <span>Cerrar</span>
-                </div>
-              </div>
               <div class="rms-stage-board" id="rmsStageBoard"></div>
+              <details class="rms-board-tools">
+                <summary><span class="material-symbols-outlined" aria-hidden="true">tune</span> Buscar, filtrar y operar por lote</summary>
+                <section class="rms-operator-toolbar">
+                  <label>
+                    <span>Buscar lead</span>
+                    <input id="rmsMachineSearchInput" type="search" placeholder="Nombre, teléfono, campaña o interés">
+                  </label>
+                  <label>
+                    <span>Estación</span>
+                    <select id="rmsMachinePhaseFilter">
+                      <option value="">Todas las estaciones</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Prioridad</span>
+                    <select id="rmsMachinePriorityFilter">
+                      <option value="">Todas</option>
+                      <option value="HIGH">Alta</option>
+                      <option value="MEDIUM">Media</option>
+                      <option value="LOW">Baja</option>
+                    </select>
+                  </label>
+                  <button class="solid-button" id="rmsMachineFilterButton" type="button">Aplicar filtros</button>
+                </section>
+                <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
+                  <div>
+                    <span class="mono-label">Operación masiva</span>
+                    <strong id="rmsBulkSelectionCount">0 seleccionados</strong>
+                    <small>Selecciona leads dentro de una estación y aplica una acción por lote.</small>
+                  </div>
+                  <select id="rmsBulkPhaseInput">
+                    <option value="">Mover a fase...</option>
+                  </select>
+                  <button class="ghost-button" id="rmsBulkCreateTasksButton" type="button">Crear tareas</button>
+                  <button class="solid-button" id="rmsBulkExecuteButton" type="button">Ejecutar operación</button>
+                  <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
+                </div>
+              </details>
             </section>
 
             <section class="rms-machine-hero">
@@ -1726,107 +1722,141 @@
             </article>
 
             <section class="charts-grid dashboard-charts strategic-ticket-generators">
-              <article class="surface-card data-table-card">
-                <div class="table-card-head">
-                  <span class="mono-label">Emisor generico</span>
-                  <h3>Ticket producto, invitación o beneficio</h3>
+              <article class="surface-card data-table-card generic-ticket-card" data-quiet-zone-ignore>
+                <div class="table-card-head generic-ticket-head">
+                  <div class="generic-ticket-head-icon"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span></div>
+                  <div>
+                    <span class="mono-label">Ticket individual</span>
+                    <h3>Entrega un producto, invitación o beneficio</h3>
+                    <p>Completa tres pasos y obtén un QR listo para compartir con tu cliente.</p>
+                  </div>
+                  <span class="generic-ticket-cost"><strong>1</strong> ticket</span>
                 </div>
-                <form class="modal-form" id="postSaleQrForm">
-                  <label class="full association-field">
-                    <span>Campaña / activación que medirá este ticket</span>
-                    <select id="postSaleCampaignInput"></select>
-                    <small id="postSaleCampaignHelp">El ticket se sumara al reporte de la campaña seleccionada.</small>
-                  </label>
-                  <label><span>Uso del ticket</span>
-                    <select id="postSaleUseCaseInput">
-                      <option value="gift_product">Producto regalo</option>
-                      <option value="secret_friend">Amigo secreto</option>
-                      <option value="invitation">Invitación</option>
-                      <option value="prospect_benefit">Beneficio para prospecto</option>
-                      <option value="pre_sale">Preventa</option>
-                      <option value="post_sale">Postventa / recompra</option>
-                      <option value="custom">Otro uso</option>
-                    </select>
-                  </label>
-                  <label><span>Ocasión</span><input id="postSaleOccasionInput" type="text" placeholder="Cumpleanos, amigo secreto, lanzamiento, feria"></label>
-                  <label><span>Origen / referido</span><input id="postSaleAttributionSourceInput" type="text" placeholder="WhatsApp, vitrina, referido, evento"></label>
-                  <label><span>Asunto / canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre de la actividad, persona o lote"></label>
-                  <label><span>Valor asociado</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" placeholder="0 si no hubo venta previa"></label>
-                  <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
-                  <label><span>Producto que representa</span><select id="postSaleProductInput" data-product-select data-open-product-input="postSaleProductOpenInput"></select><input id="postSaleProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto, servicio o referencia"></label>
-                  <label><span>Beneficiario</span><input id="postSaleCustomerInput" type="text" placeholder="Persona que reclamara el ticket"></label>
-                  <label><span>Cédula</span><input id="postSaleDocumentInput" type="text" placeholder="Opcional"></label>
-                  <label><span>Teléfono del beneficiario</span><input id="postSalePhoneInput" type="text" placeholder="Celular para enviar el ticket"></label>
-                  <label><span>Correo</span><input id="postSaleEmailInput" type="email"></label>
-                  <label><span>Beneficio o producto a reclamar</span><input id="postSaleBenefitLabelInput" type="text" placeholder="Producto regalo, acceso, descuento o beneficio" required></label>
-                  <label><span>Tipo de beneficio</span>
-                    <select id="postSaleBenefitTypeInput">
-                      <option value="FREE_GIFT">Producto regalo</option>
-                      <option value="PERCENT_DISCOUNT">Descuento porcentual</option>
-                      <option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option>
-                      <option value="FREE_SAMPLE">Muestra gratis</option>
-                      <option value="UPGRADE">Upgrade</option>
-                      <option value="VIP_ACCESS">Acceso VIP</option>
-                      <option value="RAFFLE_ENTRY">Participación en sorteo</option>
-                      <option value="BUY_X_GET_Y">Compra X lleva Y</option>
-                      <option value="CUSTOM">Personalizado</option>
-                    </select>
-                  </label>
-                  <label><span>Producto asociado al beneficio</span>
-                    <select id="postSaleBenefitProductModeInput">
-                      <option value="">Sin producto especifico</option>
-                      <option value="applies_to_product">El beneficio aplica a este producto</option>
-                      <option value="gift_product">El obsequio es este producto</option>
-                    </select>
-                  </label>
-                  <label><span>Producto del beneficio</span><select id="postSaleBenefitProductInput" data-product-select data-open-product-input="postSaleBenefitProductOpenInput"></select><input id="postSaleBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
-                  <label><span>Detalle estructurado</span><input id="postSaleBenefitValueInput" type="text" placeholder="{'product':'Hamburguesa clásica'}"></label>
-                  <section class="full benefit-fulfillment-panel">
-                    <div class="activation-config-head">
-                      <strong>Entrega del beneficio</strong>
-                      <span>Usa QR físico para redimir en tienda o código ecommerce para que el cliente compre en la web.</span>
+                <div class="generic-ticket-steps" aria-label="Pasos para emitir el ticket">
+                  <span><b>1</b><small>Qué recibe</small></span>
+                  <i aria-hidden="true"></i>
+                  <span><b>2</b><small>Quién lo recibe</small></span>
+                  <i aria-hidden="true"></i>
+                  <span><b>3</b><small>Cómo se entrega</small></span>
+                </div>
+                <form class="modal-form generic-ticket-form" id="postSaleQrForm">
+                  <section class="generic-ticket-campaign full">
+                    <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+                    <label>
+                      <span>¿En qué campaña quieres medir este ticket?</span>
+                      <select id="postSaleCampaignInput"></select>
+                      <small id="postSaleCampaignHelp">El ticket se sumará al reporte de la campaña seleccionada.</small>
+                    </label>
+                  </section>
+
+                  <section class="generic-ticket-step full" data-generic-ticket-step="1">
+                    <header><span>1</span><div><strong>¿Qué va a recibir el cliente?</strong><small>Describe el premio o acceso tal como lo verá el beneficiario.</small></div></header>
+                    <div class="generic-ticket-step-grid">
+                      <label><span>Tipo de ticket</span>
+                        <select id="postSaleUseCaseInput">
+                          <option value="gift_product">Regalar un producto</option>
+                          <option value="secret_friend">Regalo de amigo secreto</option>
+                          <option value="invitation">Enviar una invitación</option>
+                          <option value="prospect_benefit">Dar beneficio a un prospecto</option>
+                          <option value="pre_sale">Registrar una preventa</option>
+                          <option value="post_sale">Premiar compra o recompra</option>
+                          <option value="custom">Crear otro tipo de ticket</option>
+                        </select>
+                        <small>Elige la opción más parecida a lo que quieres entregar.</small>
+                      </label>
+                      <label class="generic-ticket-benefit-name"><span>¿Qué podrá reclamar?</span><input id="postSaleBenefitLabelInput" type="text" placeholder="Ej. Hamburguesa clásica, entrada VIP o 15% de descuento" required><small>Escribe un nombre corto y claro.</small></label>
+                      <label><span>Forma del beneficio</span>
+                        <select id="postSaleBenefitTypeInput">
+                          <option value="FREE_GIFT">Producto gratis</option>
+                          <option value="PERCENT_DISCOUNT">Descuento en porcentaje</option>
+                          <option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option>
+                          <option value="FREE_SAMPLE">Muestra gratis</option>
+                          <option value="UPGRADE">Mejora o upgrade</option>
+                          <option value="VIP_ACCESS">Acceso VIP</option>
+                          <option value="RAFFLE_ENTRY">Entrada a sorteo</option>
+                          <option value="BUY_X_GET_Y">Compra X y recibe Y</option>
+                          <option value="CUSTOM">Beneficio personalizado</option>
+                        </select>
+                      </label>
+                      <label><span>¿Está relacionado con un producto?</span>
+                        <select id="postSaleBenefitProductModeInput">
+                          <option value="">No, es un beneficio general</option>
+                          <option value="applies_to_product">Sí, aplica a un producto</option>
+                          <option value="gift_product">Sí, el regalo es un producto</option>
+                        </select>
+                      </label>
+                      <label class="generic-ticket-product"><span>Selecciona el producto</span><select id="postSaleBenefitProductInput" data-product-select data-open-product-input="postSaleBenefitProductOpenInput"></select><input id="postSaleBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Escribe el producto que recibirá"></label>
                     </div>
-                    <div class="survey-builder-grid">
-                      <label class="benefit-mode-field"><span>Modo de entrega</span>
+                  </section>
+
+                  <section class="generic-ticket-step full" data-generic-ticket-step="2">
+                    <header><span>2</span><div><strong>¿Quién recibirá el ticket?</strong><small>El teléfono permite enviarlo por WhatsApp al terminar.</small></div></header>
+                    <div class="generic-ticket-step-grid generic-ticket-recipient-grid">
+                      <label><span>Nombre del beneficiario</span><input id="postSaleCustomerInput" type="text" placeholder="Ej. Laura Gómez"></label>
+                      <label><span>Celular para enviarlo</span><input id="postSalePhoneInput" type="tel" inputmode="tel" placeholder="Ej. 300 123 4567"></label>
+                      <label><span>Motivo u ocasión</span><input id="postSaleOccasionInput" type="text" placeholder="Ej. Cumpleaños, evento o agradecimiento"></label>
+                      <details class="generic-ticket-optional-fields">
+                        <summary><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> Agregar correo o documento</summary>
+                        <div>
+                          <label><span>Correo</span><input id="postSaleEmailInput" type="email" placeholder="cliente@correo.com"></label>
+                          <label><span>Documento</span><input id="postSaleDocumentInput" type="text" placeholder="Opcional"></label>
+                        </div>
+                      </details>
+                    </div>
+                  </section>
+
+                  <section class="generic-ticket-step full benefit-fulfillment-panel" data-generic-ticket-step="3">
+                    <header><span>3</span><div><strong>¿Cómo lo va a reclamar?</strong><small>Selecciona tienda física o comercio electrónico.</small></div></header>
+                    <div class="generic-ticket-step-grid generic-ticket-delivery-grid">
+                      <label class="benefit-mode-field"><span>Forma de entrega</span>
                         <select id="postSaleBenefitFulfillmentModeInput" data-benefit-fulfillment-mode>
-                          <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
-                          <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                          <option value="PHYSICAL_QR">Presentando el QR en tienda</option>
+                          <option value="ECOMMERCE_CODE">Usando un código en la tienda online</option>
                         </select>
-                        <small>Elige si el cliente redime presencialmente o recibe un código para comprar online.</small>
+                        <small>El QR físico se valida desde el Validador QR.</small>
                       </label>
-                      <label class="ecommerce-code-field" data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="postSaleEcommerceCodeInput" type="text" maxlength="80" placeholder="MG15, ENVIOGRATIS..."></label>
-                      <label class="ecommerce-url-field" data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="postSaleEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
-                      <label class="ecommerce-instructions-field" data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="postSaleEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
-                    </div>
-                  </section>
-                  <section class="full ticket-closeout-panel">
-                    <div class="ticket-closeout-head">
-                      <span class="mono-label">Cierre del ticket</span>
-                      <strong>Vigencia, operación interna y emisión</strong>
-                      <p>Define la fecha límite, deja instrucciones para el equipo y emite el ticket desde un cierre limpio.</p>
-                    </div>
-                    <div class="ticket-closeout-grid">
-                      <label class="expiration-mode-card"><span>Expiración</span>
+                      <label class="ecommerce-code-field" data-benefit-fulfillment-field="ecommerce"><span>Código que recibirá</span><input id="postSaleEcommerceCodeInput" type="text" maxlength="80" placeholder="Ej. MG15 o ENVIOGRATIS"></label>
+                      <label class="ecommerce-url-field" data-benefit-fulfillment-field="ecommerce"><span>Enlace de la tienda</span><input id="postSaleEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
+                      <label class="ecommerce-instructions-field" data-benefit-fulfillment-field="ecommerce"><span>Cómo usar el código</span><input id="postSaleEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Ej. Escríbelo antes de pagar"></label>
+                      <label class="expiration-mode-card"><span>¿Hasta cuándo puede usarlo?</span>
                         <select id="postSaleExpiresModeInput">
-                          <option value="NONE">Sin expiración</option>
-                          <option value="7_DAYS">7 días</option>
-                          <option value="15_DAYS">15 días</option>
-                          <option value="30_DAYS">30 días</option>
-                          <option value="CUSTOM_DATE">Fecha personalizada</option>
+                          <option value="NONE">Sin fecha límite</option>
+                          <option value="7_DAYS">Durante 7 días</option>
+                          <option value="15_DAYS">Durante 15 días</option>
+                          <option value="30_DAYS">Durante 30 días</option>
+                          <option value="CUSTOM_DATE">Elegir una fecha exacta</option>
                         </select>
-                        <small id="postSaleExpiryHint">Sin fecha límite: el ticket queda vigente hasta redención o anulación.</small>
+                        <small id="postSaleExpiryHint">El ticket seguirá activo hasta que se redima o se anule.</small>
                       </label>
-                      <label class="expiration-date-card"><span>Fecha personalizada</span><input id="postSaleExpiresAtInput" type="datetime-local"><small id="postSaleExpiryDateHint">Activa fecha personalizada para elegir un cierre exacto.</small></label>
-                      <p class="ticket-closeout-summary" id="postSaleExpirySummary" aria-live="polite">Sin expiración activa. El equipo puede redimir el ticket hasta que sea usado o anulado.</p>
-                      <label class="internal-instructions-field"><span>Instrucciones internas</span><textarea id="postSaleNotesInput" rows="4" placeholder="Ej: reclamar en sede norte, no transferible, válido por un producto especifico"></textarea></label>
-                    </div>
-                    <div class="ticket-closeout-actions">
-                      <p class="error-line" id="postSaleQrMessage"></p>
-                      <button class="solid-button" type="submit">Emitir ticket</button>
+                      <label class="expiration-date-card"><span>Fecha exacta</span><input id="postSaleExpiresAtInput" type="datetime-local"><small id="postSaleExpiryDateHint">Elige “fecha exacta” para activar este campo.</small></label>
+                      <p class="ticket-closeout-summary" id="postSaleExpirySummary" aria-live="polite">Sin expiración activa. El ticket puede usarse hasta que sea redimido o anulado.</p>
+                      <label class="internal-instructions-field"><span>Instrucciones para el equipo <small>(opcional)</small></span><textarea id="postSaleNotesInput" rows="3" placeholder="Ej. Reclamar en sede norte y presentar documento"></textarea></label>
                     </div>
                   </section>
+
+                  <details class="generic-ticket-advanced full">
+                    <summary><span class="material-symbols-outlined" aria-hidden="true">settings</span><span><strong>Configuración avanzada</strong><small>Atribución, valor de venta y datos técnicos</small></span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+                    <div class="generic-ticket-advanced-grid">
+                      <label><span>Origen del ticket</span><input id="postSaleAttributionSourceInput" type="text" placeholder="WhatsApp, vitrina, referido o evento"></label>
+                      <label><span>Actividad o canal</span><input id="postSaleAttributionSubjectInput" type="text" placeholder="Nombre de la actividad, persona o lote"></label>
+                      <label><span>Valor de venta asociado</span><input id="postSaleAmountInput" type="number" min="0" step="0.01" placeholder="0 si no hubo venta previa"></label>
+                      <label><span>Moneda</span><input id="postSaleCurrencyInput" type="text" value="COP"></label>
+                      <label><span>Producto que originó el ticket</span><select id="postSaleProductInput" data-product-select data-open-product-input="postSaleProductOpenInput"></select><input id="postSaleProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto, servicio o referencia"></label>
+                      <label><span>Detalle técnico del beneficio</span><input id="postSaleBenefitValueInput" type="text" placeholder="Opcional: {'percent':15}"><small>Solo para configuraciones especiales.</small></label>
+                    </div>
+                  </details>
+
+                  <aside class="generic-ticket-preview full" aria-live="polite">
+                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                    <div><small>Resumen antes de emitir</small><strong id="genericTicketPreviewTitle">Ticket para entregar un producto gratis</strong><p id="genericTicketPreviewCopy">Se generará un QR para reclamar en tienda. Completa el beneficio y el beneficiario.</p></div>
+                  </aside>
+
+                  <div class="ticket-closeout-actions generic-ticket-actions full">
+                    <p class="error-line" id="postSaleQrMessage"></p>
+                    <button class="solid-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> Emitir ticket y obtener QR</button>
+                  </div>
                 </form>
-                <div class="surface-card hidden" id="postSaleQrResult"></div>
+                <div class="surface-card hidden generic-ticket-result" id="postSaleQrResult"></div>
               </article>
 
               <article class="surface-card data-table-card flyer-qr-card">
@@ -6962,7 +6992,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-task-first-ux-20260721-v12" defer></script>
+  <script src="js/app.js?v=generic-ticket-guided-20260721-v17" defer></script>
 </body>
 </html>
 

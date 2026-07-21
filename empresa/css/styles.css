@@ -50635,3 +50635,1701 @@ html body .portal-shell .view-section[data-view="missions"] > .missions-head .vi
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Task-first UX v13: clearer decisions and usable RMS stations on medium screens. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide {
+  margin-top: 14px !important;
+  border: 1px solid rgba(8, 127, 91, 0.2) !important;
+  background: rgba(240, 250, 246, 0.82) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide > summary {
+  min-height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 10px 13px !important;
+  color: #174b3c !important;
+  cursor: pointer !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide > summary .material-symbols-outlined {
+  color: #087f5b !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide > summary small {
+  margin-left: auto !important;
+  color: #60776e !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide:not([open]) .rms-flow-chip {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide .rms-flow-chip {
+  margin: 0 !important;
+  padding: 4px 12px 13px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-content: start !important;
+  padding: 12px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions > .rms-primary-action,
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions > .rms-secondary-action {
+  min-height: 82px !important;
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 13px !important;
+  text-align: left !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions > :is(.rms-primary-action, .rms-secondary-action) strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions > :is(.rms-primary-action, .rms-secondary-action) small {
+  display: block !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions > :is(.rms-primary-action, .rms-secondary-action) small {
+  margin-top: 4px !important;
+  font-size: 0.66rem !important;
+  line-height: 1.25 !important;
+  opacity: 0.78 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions {
+  grid-column: 1 / -1 !important;
+  border-top: 1px solid rgba(23, 65, 91, 0.11) !important;
+  padding-top: 5px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > summary {
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  color: #47655b !important;
+  cursor: pointer !important;
+  font-size: 0.75rem !important;
+  font-weight: 850 !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  padding-top: 6px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > div > button {
+  min-height: 42px !important;
+  width: 100% !important;
+}
+
+:root[data-theme="dark"] html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide {
+  border-color: rgba(110, 231, 183, 0.2) !important;
+  background: rgba(14, 46, 38, 0.76) !important;
+}
+
+:root[data-theme="dark"] html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-flow-guide > summary,
+:root[data-theme="dark"] html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > summary {
+  color: #dff8ed !important;
+}
+
+html body .portal-shell :is(button, a, summary, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(8, 127, 91, 0.3) !important;
+  outline-offset: 3px !important;
+}
+
+@media (max-width: 1280px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode {
+    padding: 14px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode .rms-station-workspace {
+    padding: 12px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-screen,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lanes,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lane {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: block !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table thead {
+    display: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-row {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 0 12px !important;
+    padding: 13px !important;
+    border: 1px solid #d9e9e1 !important;
+    background: #ffffff !important;
+    box-shadow: 0 9px 22px rgba(23, 65, 91, 0.07) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-row > td {
+    width: auto !important;
+    min-width: 0 !important;
+    display: block !important;
+    grid-column: 2 !important;
+    padding: 10px 0 !important;
+    border-bottom: 1px solid #e7f0eb !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-row > td:not(.rms-station-check-cell)::before {
+    content: attr(data-label) !important;
+    display: block !important;
+    margin-bottom: 5px !important;
+    color: #647a71 !important;
+    font-size: 0.63rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.045em !important;
+    text-transform: uppercase !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-row > .rms-station-check-cell {
+    grid-column: 1 !important;
+    grid-row: 1 / span 6 !important;
+    padding: 6px 0 !important;
+    border: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-row > td:last-child {
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table .rms-station-lead-check input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .view-head-actions,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .rms-more-actions > div {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Task navigation v14: four primary jobs plus grouped tools by business intent. */
+html body .portal-shell .portal-more-nav-list {
+  gap: 8px !important;
+  padding: 9px !important;
+}
+
+html body .portal-shell .portal-tool-group {
+  min-width: 0 !important;
+  border: 1px solid rgba(23, 65, 91, 0.12) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+html body .portal-shell .portal-tool-group > summary {
+  min-height: 54px !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) 20px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 9px 10px !important;
+  color: #173b31 !important;
+  cursor: pointer !important;
+  list-style: none !important;
+}
+
+html body .portal-shell .portal-tool-group > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body .portal-shell .portal-tool-group > summary > span:nth-child(2) {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+html body .portal-shell .portal-tool-group > summary strong,
+html body .portal-shell .portal-tool-group > summary small {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .portal-tool-group > summary strong {
+  color: #173b31 !important;
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+}
+
+html body .portal-shell .portal-tool-group > summary small {
+  color: #687d75 !important;
+  font-size: 0.61rem !important;
+  font-weight: 700 !important;
+}
+
+html body .portal-shell .portal-tool-group > summary > .material-symbols-outlined:first-child {
+  color: #087f5b !important;
+  font-size: 20px !important;
+}
+
+html body .portal-shell .portal-tool-group > summary > .material-symbols-outlined:last-child {
+  color: #789087 !important;
+  font-size: 18px !important;
+  transition: transform 160ms ease !important;
+}
+
+html body .portal-shell .portal-tool-group[open] > summary {
+  background: #edf8f3 !important;
+  color: #07503c !important;
+}
+
+html body .portal-shell .portal-tool-group[open] > summary > .material-symbols-outlined:last-child {
+  transform: rotate(180deg) !important;
+}
+
+html body .portal-shell .portal-tool-group > div {
+  display: grid !important;
+  gap: 4px !important;
+  padding: 5px 6px 7px !important;
+  border-top: 1px solid rgba(23, 65, 91, 0.1) !important;
+}
+
+html body .portal-shell .portal-tool-group .nav-item {
+  width: 100% !important;
+  min-height: 42px !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  padding: 7px 9px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .portal-tool-group .nav-item > span:last-child {
+  color: #294b40 !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  white-space: normal !important;
+}
+
+html body .portal-shell .portal-tool-group .nav-item:hover,
+html body .portal-shell .portal-tool-group .nav-item:focus-visible {
+  background: #f3faf7 !important;
+}
+
+html body .portal-shell .portal-tool-group .nav-item.active {
+  background: #087f5b !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .portal-tool-group .nav-item.active > span,
+html body .portal-shell .portal-tool-group .nav-item.active > .material-symbols-outlined {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group {
+  border-color: rgba(177, 199, 190, 0.18) !important;
+  background: rgba(9, 34, 29, 0.72) !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group > summary,
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group > summary strong {
+  color: #effaf5 !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group > summary small,
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group .nav-item > span:last-child {
+  color: #bfd1ca !important;
+}
+
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group[open] > summary,
+:root[data-theme="dark"] html body .portal-shell .portal-tool-group .nav-item:hover {
+  background: #143d32 !important;
+}
+
+@media (min-width: 961px) {
+  html body .portal-shell .app-shell.sidebar-collapsed .portal-more-nav {
+    display: none !important;
+  }
+}
+
+/* Responsive UX v15: one shell contract after all legacy breakpoints. */
+html,
+body,
+body .portal-shell,
+body .portal-shell .app-shell,
+body .portal-shell .app-main {
+  max-width: 100% !important;
+}
+
+html body {
+  overflow-x: hidden !important;
+}
+
+html body .portal-shell :where(img, video, canvas, svg) {
+  max-width: 100% !important;
+}
+
+html body .portal-shell :where(.view-section, .view-section > *, form, fieldset, .surface-card, .content-shell) {
+  min-width: 0 !important;
+}
+
+html body .portal-shell :where(.table-wrap, .data-table-scroll, .table-responsive, .rms-station-lead-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+@media (max-width: 960px) {
+  html body .portal-shell .app-shell,
+  html body .portal-shell .app-shell.sidebar-collapsed {
+    display: block !important;
+  }
+
+  html body .portal-shell .sidebar,
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 80 !important;
+    width: min(88vw, 340px) !important;
+    max-width: 340px !important;
+    height: 100dvh !important;
+    padding: 16px 14px max(22px, env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transform: translateX(-105%) !important;
+    transition: transform 180ms ease !important;
+    box-shadow: 26px 0 56px rgba(7, 30, 23, 0.24) !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-open .sidebar,
+  html body .portal-shell .app-shell.sidebar-open.sidebar-collapsed .sidebar {
+    transform: translateX(0) !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-open::after {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 70 !important;
+    background: rgba(4, 22, 17, 0.48) !important;
+    backdrop-filter: blur(2px) !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand,
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button,
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav,
+  html body .portal-shell .app-shell.sidebar-collapsed .nav-item {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand {
+    min-height: 58px !important;
+    height: auto !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 8px 6px 14px !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar-brand > div {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .nav-group-label {
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .nav-item > span:not(.material-symbols-outlined) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar-sales-machine-copy {
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .portal-more-nav {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > .feature-tier-badge {
+    display: inline-flex !important;
+    visibility: visible !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar > button.sidebar-sales-machine-button {
+    min-height: 96px !important;
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    place-items: center start !important;
+    padding: 12px !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item,
+  html body .portal-shell .sidebar .nav-item {
+    min-height: 52px !important;
+    height: auto !important;
+    max-height: none !important;
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr) auto !important;
+    place-items: center stretch !important;
+    padding: 9px 10px !important;
+  }
+
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-item > .material-symbols-outlined {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  html body .portal-shell .app-main,
+  html body .portal-shell .app-shell.sidebar-collapsed .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body .portal-shell .topbar,
+  html body .portal-shell .app-shell.sidebar-collapsed .topbar {
+    position: sticky !important;
+    inset: 0 auto auto 0 !important;
+    z-index: 45 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "menu search"
+      "actions actions" !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px !important;
+    border-bottom: 1px solid var(--sm-line) !important;
+  }
+
+  html body .portal-shell .menu-toggle-button {
+    grid-area: menu !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+  }
+
+  html body .portal-shell .search-shell {
+    grid-area: search !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    padding-inline: 10px !important;
+  }
+
+  html body .portal-shell .search-shell input {
+    min-width: 0 !important;
+    height: 42px !important;
+    padding-inline: 4px !important;
+  }
+
+  html body .portal-shell .topbar-actions {
+    grid-area: actions !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    padding: 1px 0 2px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain !important;
+    scrollbar-width: none !important;
+  }
+
+  html body .portal-shell .topbar-actions::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html body .portal-shell .topbar-actions > * {
+    flex: 0 0 auto !important;
+    min-width: 40px !important;
+  }
+
+  html body .portal-shell .topbar-actions .revenue-global-button {
+    min-height: 40px !important;
+    padding: 9px 12px !important;
+  }
+
+  html body .portal-shell .content-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 12px 10px max(30px, env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+  }
+
+  html body .portal-shell .view-section.active {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 12px !important;
+  }
+
+  html body .portal-shell .view-head,
+  html body .portal-shell .view-section > .view-head,
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 17px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  html body .portal-shell .view-head h2,
+  html body .portal-shell .campaign-head h2 {
+    margin: 7px 0 !important;
+    font-size: clamp(1.85rem, 7vw, 2.7rem) !important;
+    line-height: 1.02 !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  html body .portal-shell .view-head p,
+  html body .portal-shell .campaign-head p {
+    font-size: 0.9rem !important;
+    line-height: 1.48 !important;
+  }
+
+  html body .portal-shell .view-head-actions,
+  html body .portal-shell .campaign-head .head-actions {
+    width: 100% !important;
+    max-width: none !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 9px !important;
+  }
+
+  html body .portal-shell :where(.subscription-banner, .ticket-data-mode, .rms-operator-toolbar) {
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  html body .portal-shell .modal-shell {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  html body .portal-shell .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+    border-radius: 16px 16px 10px 10px !important;
+  }
+
+  html body .portal-shell .modal-head {
+    position: sticky !important;
+    top: -16px !important;
+    z-index: 2 !important;
+    margin: -16px -16px 12px !important;
+    padding: 14px 16px !important;
+    background: var(--sm-surface) !important;
+    border-bottom: 1px solid var(--sm-line) !important;
+  }
+
+  html body .portal-shell :where(.modal-form, .inventory-form, .affiliate-form, .customer-sale-form) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell :where(.modal-actions, .modal-button-row) {
+    grid-column: auto !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body .portal-shell .topbar .nav-link-button,
+  html body .portal-shell .topbar .profile-block,
+  html body .portal-shell .theme-switch-label {
+    display: none !important;
+  }
+
+  html body .portal-shell .topbar-actions {
+    gap: 5px !important;
+  }
+
+  html body .portal-shell .topbar-actions .theme-switch {
+    min-width: 62px !important;
+    padding-inline: 5px !important;
+  }
+
+  html body .portal-shell .content-shell {
+    padding-inline: 8px !important;
+  }
+
+  html body .portal-shell .view-head,
+  html body .portal-shell .view-section > .view-head,
+  html body .portal-shell .view-section[data-view="campaigns"] > .campaign-head {
+    padding: 15px !important;
+  }
+
+  html body .portal-shell .view-head-actions,
+  html body .portal-shell .campaign-head .head-actions,
+  html body .portal-shell .modal-actions,
+  html body .portal-shell .modal-button-row,
+  html body .portal-shell .gaming-center-quick-actions,
+  html body .portal-shell .gaming-builder-section-nav,
+  html body .portal-shell .gaming-activation-review-grid,
+  html body .portal-shell .rms-station-lead-buttons {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell :where(
+    .kpi-grid,
+    .business-kpis,
+    .campaign-kpis,
+    .sales-kpis,
+    .ticket-module-kpis,
+    .dashboard-charts,
+    .campaign-charts,
+    .validator-grid,
+    .validator-result-grid,
+    .tables-grid,
+    .strategic-ticket-generators,
+    .reward-pass-grid,
+    .affiliate-dashboard-grid,
+    .account-grid
+  ) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell :where(button, .solid-button, .ghost-button, .danger-button, .request-button, summary) {
+    min-height: 44px !important;
+  }
+
+  html body .portal-shell table:not(.rms-station-lead-table) {
+    min-width: 680px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html body .portal-shell .topbar {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    padding-inline: 7px !important;
+  }
+
+  html body .portal-shell .search-shell input {
+    font-size: 0.84rem !important;
+  }
+
+  html body .portal-shell .topbar-actions .revenue-global-button {
+    padding-inline: 10px !important;
+  }
+
+  html body .portal-shell .view-head h2,
+  html body .portal-shell .campaign-head h2 {
+    font-size: clamp(1.7rem, 9vw, 2.25rem) !important;
+  }
+
+  html body .portal-shell .modal-card {
+    padding: 14px !important;
+  }
+}
+
+/* RMS stations-first v16: the factory board is the landing experience. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 20px !important;
+  margin: 0 !important;
+  padding: 18px 20px !important;
+  border: 1px solid rgba(15, 115, 84, 0.14) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(135deg, #f7fcf9 0%, #eef8f4 100%) !important;
+  color: #17362f !important;
+  box-shadow: 0 12px 30px rgba(18, 72, 58, 0.08) !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar::after {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar :is(.mono-label, h2, p) {
+  position: relative !important;
+  z-index: 1 !important;
+  color: #17362f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar h2 {
+  max-width: none !important;
+  margin: 4px 0 5px !important;
+  font-size: clamp(1.65rem, 3vw, 2.35rem) !important;
+  line-height: 1.05 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar p {
+  margin: 0 !important;
+  font-size: 0.92rem !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .view-head-actions {
+  width: min(100%, 430px) !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(150px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .view-head-actions > :is(.rms-primary-action, .rms-secondary-action) {
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 9px 12px !important;
+  border-radius: 12px !important;
+  text-align: left !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .view-head-actions > :is(.rms-primary-action, .rms-secondary-action) small {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .rms-primary-action {
+  border-color: #0f7354 !important;
+  background: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .rms-secondary-action {
+  border-color: rgba(15, 115, 84, 0.18) !important;
+  background: #ffffff !important;
+  color: #145f49 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .rms-more-actions {
+  grid-column: 1 / -1 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .rms-more-actions > summary {
+  min-height: 34px !important;
+  padding: 3px 8px !important;
+  color: #547068 !important;
+  font-size: 0.74rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+  margin: 0 !important;
+  padding: clamp(16px, 2vw, 22px) !important;
+  border: 1px solid rgba(23, 65, 91, 0.1) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  box-shadow: 0 18px 46px rgba(23, 65, 91, 0.08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head h3 {
+  margin: 4px 0 !important;
+  color: #17362f !important;
+  font-size: clamp(1.2rem, 2vw, 1.55rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head p {
+  margin: 0 !important;
+  color: #62776f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::before,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-board::after,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card::before,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card::after {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card {
+  min-width: 0 !important;
+  min-height: 230px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border: 1px solid #dce9e4 !important;
+  border-radius: 16px !important;
+  background: #fbfefd !important;
+  box-shadow: none !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card:hover {
+  border-color: rgba(15, 115, 84, 0.38) !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 26px rgba(18, 72, 58, 0.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-topline,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-flow {
+  display: flex !important;
+  align-items: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-topline {
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-number {
+  color: #7a9189 !important;
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-count {
+  padding: 5px 9px !important;
+  border-radius: 999px !important;
+  background: #e7f5ef !important;
+  color: #0f7354 !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card.is-empty-stage .rms-station-entry-count {
+  background: #f1f4f3 !important;
+  color: #74867f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main {
+  gap: 11px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main > .material-symbols-outlined {
+  width: 44px !important;
+  height: 44px !important;
+  display: grid !important;
+  flex: 0 0 44px !important;
+  place-items: center !important;
+  border-radius: 13px !important;
+  background: #e8f6f0 !important;
+  color: #0f7354 !important;
+  font-size: 24px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main strong {
+  display: block !important;
+  color: #17362f !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main small {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #60776f !important;
+  font-size: 0.76rem !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card > p {
+  min-height: 38px !important;
+  margin: 0 !important;
+  color: #60776f !important;
+  font-size: 0.8rem !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-flow {
+  gap: 6px !important;
+  color: #6c8179 !important;
+  font-size: 0.7rem !important;
+  font-weight: 750 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-flow span:first-child {
+  color: #a04b40 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-flow .material-symbols-outlined {
+  margin-left: auto !important;
+  color: #8aa098 !important;
+  font-size: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card > button {
+  width: 100% !important;
+  min-height: 42px !important;
+  margin-top: auto !important;
+  border-radius: 11px !important;
+  background: #0f7354 !important;
+  border-color: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools {
+  margin-top: 14px !important;
+  border-top: 1px solid #e4ece9 !important;
+  padding-top: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools > summary {
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  color: #587068 !important;
+  font-size: 0.78rem !important;
+  font-weight: 820 !important;
+  cursor: pointer !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  gap: 10px !important;
+  margin: 6px 0 10px !important;
+  padding: 12px !important;
+  border: 1px solid #e2ece8 !important;
+  background: #f8fbfa !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="rms-machine"] :is(
+  .rms-machine-hero,
+  .rms-alert-grid,
+  .rms-workday-shell,
+  .rms-intake-funnel-shell,
+  .rms-playbook-shell,
+  .rms-event-log-shell
+) {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial {
+  display: none !important;
+}
+
+body[data-current-view="rms-machine"] .rms-machine-tutorial.is-open {
+  display: block !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > :is(.card-head, .rms-stage-board, .rms-board-tools) {
+  display: none !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-machine-launchbar, .rms-factory-console) {
+  border-color: rgba(151, 211, 190, 0.15) !important;
+  background: #0b1e19 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar :is(.mono-label, h2, p),
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head h3,
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main strong {
+  color: #edf9f4 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card {
+  border-color: rgba(151, 211, 190, 0.13) !important;
+  background: #102821 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card :is(p, small, .rms-station-entry-flow) {
+  color: #b9cec6 !important;
+}
+
+@media (max-width: 1050px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 16px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .view-head-actions {
+    width: 100% !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-board,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .card-head {
+    align-items: start !important;
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 460px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-machine-launchbar .view-head-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card {
+    min-height: 215px !important;
+  }
+}
+
+/* Generic ticket issuer v17: guided, human-readable emission flow. */
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-card {
+  width: min(100%, 1180px) !important;
+  margin-inline: auto !important;
+  padding: clamp(16px, 2.4vw, 28px) !important;
+  border: 1px solid rgba(15, 115, 84, 0.14) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 20px 52px rgba(22, 64, 53, 0.09) !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-card > .quiet-zone-toggle,
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-card .generic-ticket-head > .quiet-zone-toggle {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head {
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid #e5eeea !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head-icon {
+  width: 52px !important;
+  height: 52px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 16px !important;
+  background: #e7f6ef !important;
+  color: #0f7354 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head-icon .material-symbols-outlined {
+  font-size: 28px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head h3 {
+  margin: 3px 0 5px !important;
+  color: #17362f !important;
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem) !important;
+  line-height: 1.15 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head p {
+  margin: 0 !important;
+  color: #61766f !important;
+  font-size: 0.87rem !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-cost {
+  min-width: 76px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 1px !important;
+  padding: 8px 12px !important;
+  border: 1px solid #cee4da !important;
+  border-radius: 13px !important;
+  background: #f5fbf8 !important;
+  color: #507068 !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-cost strong {
+  color: #0f7354 !important;
+  font-size: 1.15rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps {
+  display: grid !important;
+  grid-template-columns: auto minmax(28px, 1fr) auto minmax(28px, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  max-width: 720px !important;
+  margin: 18px auto !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps > span {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  color: #4e6c63 !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps b {
+  width: 28px !important;
+  height: 28px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+  background: #0f7354 !important;
+  color: #ffffff !important;
+  font-size: 0.76rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps small {
+  font-size: 0.76rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps > i {
+  height: 1px !important;
+  background: #cfe1da !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-campaign {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid #d7e8e1 !important;
+  border-radius: 15px !important;
+  background: #f6fbf9 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-campaign > .material-symbols-outlined {
+  width: 40px !important;
+  height: 40px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f7354 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-campaign label {
+  gap: 5px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step {
+  display: block !important;
+  padding: clamp(15px, 2vw, 20px) !important;
+  border: 1px solid #e0eae6 !important;
+  border-radius: 18px !important;
+  background: #fbfdfc !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step.is-complete {
+  border-color: rgba(15, 115, 84, 0.28) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 11px !important;
+  margin-bottom: 15px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header > span {
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  flex: 0 0 34px !important;
+  place-items: center !important;
+  border-radius: 11px !important;
+  background: #e4f4ed !important;
+  color: #0f7354 !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step.is-complete > header > span {
+  background: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header strong,
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header small {
+  display: block !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header strong {
+  color: #17362f !important;
+  font-size: 1rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step > header small {
+  margin-top: 2px !important;
+  color: #687d76 !important;
+  font-size: 0.76rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step-grid,
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form label {
+  min-width: 0 !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 6px !important;
+  color: #213d36 !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form label > small {
+  color: #71857e !important;
+  font-size: 0.7rem !important;
+  line-height: 1.35 !important;
+  font-weight: 550 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form :is(input, select, textarea) {
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #ccdcd6 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #17362f !important;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form :is(input, select, textarea):focus {
+  border-color: #0f7354 !important;
+  outline: 3px solid rgba(15, 115, 84, 0.12) !important;
+  outline-offset: 1px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-benefit-name {
+  grid-column: span 2 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-optional-fields {
+  grid-column: 1 / -1 !important;
+  border-top: 1px solid #e2ebe7 !important;
+  padding-top: 8px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-optional-fields > summary {
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  color: #496a60 !important;
+  font-size: 0.76rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-optional-fields > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-optional-fields > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  padding-top: 8px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-delivery-grid .ticket-closeout-summary,
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-delivery-grid .internal-instructions-field {
+  grid-column: span 2 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-delivery-grid .ticket-closeout-summary {
+  align-self: end !important;
+  min-height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  background: #eef8f4 !important;
+  color: #42655a !important;
+  font-size: 0.74rem !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced {
+  border: 1px solid #e0e9e5 !important;
+  border-radius: 15px !important;
+  background: #fafcfb !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced > summary {
+  min-height: 54px !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  color: #45635a !important;
+  cursor: pointer !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced > summary :is(strong, small) {
+  display: block !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced > summary small {
+  margin-top: 2px !important;
+  color: #788a84 !important;
+  font-size: 0.7rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced[open] > summary > .material-symbols-outlined:last-child {
+  transform: rotate(180deg) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced-grid {
+  padding: 0 14px 14px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 11px !important;
+  padding: 13px 14px !important;
+  border: 1px solid #bee0d2 !important;
+  border-radius: 15px !important;
+  background: linear-gradient(135deg, #effaf5, #f8fcfa) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview > .material-symbols-outlined {
+  width: 40px !important;
+  height: 40px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f7354 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview :is(small, strong, p) {
+  display: block !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview small {
+  color: #5c786e !important;
+  font-size: 0.67rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview strong {
+  margin-top: 2px !important;
+  color: #17362f !important;
+  font-size: 0.91rem !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-preview p {
+  margin-top: 3px !important;
+  color: #5e756d !important;
+  font-size: 0.76rem !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions {
+  position: sticky !important;
+  bottom: 10px !important;
+  z-index: 5 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(15, 115, 84, 0.2) !important;
+  border-radius: 15px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 14px 32px rgba(22, 64, 53, 0.14) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions .error-line {
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions button {
+  min-height: 48px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding-inline: 18px !important;
+  border-radius: 12px !important;
+  background: #0f7354 !important;
+  border-color: #0f7354 !important;
+  color: #ffffff !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-result {
+  margin-top: 16px !important;
+  border-color: #b8ddce !important;
+  background: #f3fbf7 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-card,
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step,
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced {
+  border-color: rgba(151, 211, 190, 0.14) !important;
+  background: #0d211b !important;
+}
+
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-form :is(input, select, textarea) {
+  border-color: rgba(151, 211, 190, 0.18) !important;
+  background: #122a23 !important;
+  color: #edf9f4 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(
+  .generic-ticket-head h3,
+  .generic-ticket-step > header strong,
+  .generic-ticket-form label,
+  .generic-ticket-preview strong
+) {
+  color: #edf9f4 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(
+  .generic-ticket-campaign,
+  .generic-ticket-preview,
+  .generic-ticket-actions
+) {
+  border-color: rgba(151, 211, 190, 0.16) !important;
+  background: rgba(17, 44, 36, 0.96) !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step-grid,
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-benefit-name {
+    grid-column: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-card {
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-head {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-cost {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps > i {
+    display: none !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-steps > span {
+    display: grid !important;
+    justify-items: center !important;
+    gap: 4px !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-campaign {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-campaign > .material-symbols-outlined {
+    display: none !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-step-grid,
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-advanced-grid,
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-optional-fields > div {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-delivery-grid :is(.ticket-closeout-summary, .internal-instructions-field) {
+    grid-column: auto !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions {
+    position: static !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions button {
+    width: 100% !important;
+  }
+}

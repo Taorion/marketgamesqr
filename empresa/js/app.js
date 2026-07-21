@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-portal-task-first-ux-v12";
+const APP_VERSION = "empresa-20260721-generic-ticket-guided-v17";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -4587,7 +4587,11 @@ function setView(view) {
     button.classList.toggle("active", isSalesAlias || isLeadsBase || isRegular);
   });
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
-    if (details.querySelector(".nav-item.active")) details.open = true;
+    const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
+    details.open = hasActiveTool;
+    details.querySelectorAll(".portal-tool-group").forEach((group) => {
+      group.open = Boolean(group.querySelector(".nav-item.active"));
+    });
   });
   viewSections.forEach((section) => {
     const isActiveView = section.dataset.view === view;
@@ -4629,13 +4633,15 @@ function setView(view) {
     }
   }
   if (view === "rms-machine") {
-    const stationPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || "recoleccion";
+    const stationPhase = "";
     state.rmsStationPhase = stationPhase;
     state.rmsMachineFilters.phase = stationPhase;
-    state.rmsStationScreenOpen = true;
+    state.rmsStationScreenOpen = false;
+    state.rmsMachineSelectedIds = [];
     if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = stationPhase;
+    document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
     renderRmsMachineView();
-    loadRmsMachineData({ quiet: true }).then(() => openRmsStation(stationPhase)).catch((error) => {
+    loadRmsMachineData({ quiet: true }).then(renderRmsMachineView).catch((error) => {
       showFeedback(error.message || "No se pudo cargar la Maquina RMS.", "error", { title: "Maquina RMS" });
       renderRmsMachineView();
     });
@@ -4773,7 +4779,23 @@ function togglePortalMenu() {
     return;
   }
   workspace.classList.remove("sidebar-open");
+  workspace.dataset.sidebarDesktopChoice = "1";
+  delete workspace.dataset.sidebarAutoCollapsed;
   workspace.classList.toggle("sidebar-collapsed");
+}
+
+function syncPortalResponsiveSidebar() {
+  if (!workspace) return;
+  const compactDesktop = window.matchMedia("(min-width: 961px) and (max-width: 1280px)").matches;
+  if (compactDesktop && !workspace.dataset.sidebarDesktopChoice) {
+    workspace.classList.add("sidebar-collapsed");
+    workspace.dataset.sidebarAutoCollapsed = "1";
+    return;
+  }
+  if (!compactDesktop && workspace.dataset.sidebarAutoCollapsed === "1") {
+    workspace.classList.remove("sidebar-collapsed");
+    delete workspace.dataset.sidebarAutoCollapsed;
+  }
 }
 
 function closePortalMenu() {
@@ -4835,6 +4857,8 @@ function applyInitialRouteParams() {
     validateValidatorToken(urlToken);
     return;
   }
+
+  syncPortalResponsiveSidebar();
   const routeViewIsValid = requestedView && navButtons.some((button) => button.dataset.view === requestedView);
   setView(routeViewIsValid ? requestedView : (state.currentView || "rms-machine"));
   if (requestedView) {
@@ -7421,11 +7445,12 @@ function focusRmsMachineStations(options = {}) {
   state.rmsMachineSelectedIds = [];
   state.rmsMachineInspectorId = "";
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   renderRmsMachineView();
   const delay = Number.isFinite(options.delay) ? options.delay : 120;
   const behavior = options.behavior || "smooth";
   window.setTimeout(() => {
-    const target = rmsStageBoard || document.querySelector(".rms-stage-board-guide") || rmsStationWorkspace;
+    const target = rmsStageBoard || rmsStationWorkspace;
     target?.scrollIntoView({ behavior, block: "start" });
   }, delay);
 }
@@ -10367,19 +10392,20 @@ function ensureGamingCenterUxStyles() {
   const style = document.createElement("style");
   style.id = "gamingCenterUxStyles";
   style.textContent = `
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(520px,1.45fr); gap:18px; padding:22px; margin:0 0 16px; border:1px solid rgba(52,211,153,.38); background:linear-gradient(135deg,#082f49 0%,#075985 48%,#047857 100%); color:#fff; box-shadow:0 22px 54px rgba(8,47,73,.22); overflow:hidden; position:relative; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(520px,1.45fr); gap:18px; padding:22px; margin:0 0 16px; border:1px solid rgba(8,127,91,.24); background:linear-gradient(135deg,#f4fbf8 0%,#eef7ff 50%,#ecfdf5 100%); color:#10251d; box-shadow:0 18px 44px rgba(23,65,91,.12); overflow:hidden; position:relative; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center::after { content:""; position:absolute; width:260px; height:260px; right:-90px; top:-140px; border:45px solid rgba(255,255,255,.08); border-radius:50%; pointer-events:none; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy { position:relative; z-index:1; display:grid; align-content:center; gap:7px; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy .mono-label { color:#a7f3d0 !important; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy h3 { margin:0; font-size:clamp(1.35rem,2.3vw,2rem); line-height:1.05; color:#fff; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy p { margin:0; color:rgba(255,255,255,.78); max-width:54ch; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy .mono-label { color:#087f5b !important; background:#dff6ec !important; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy h3 { margin:0; font-size:clamp(1.35rem,2.3vw,2rem); line-height:1.05; color:#10251d; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy p { margin:0; color:#526b62; max-width:54ch; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-actions { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action { min-width:0; min-height:138px; display:grid; grid-template-columns:48px minmax(0,1fr); align-content:center; align-items:center; gap:12px; padding:18px; border:1px solid rgba(255,255,255,.26); background:rgba(255,255,255,.11); color:#fff; text-align:left; backdrop-filter:blur(10px); }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action:hover { transform:translateY(-2px); background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.52); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action { min-width:0; min-height:124px; display:grid; grid-template-columns:48px minmax(0,1fr); align-content:center; align-items:center; gap:12px; padding:18px; border:1px solid rgba(23,65,91,.16); background:#fff; color:#10251d; text-align:left; box-shadow:0 10px 26px rgba(23,65,91,.08); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action:hover { transform:translateY(-2px); background:#f8fffc; border-color:#087f5b; box-shadow:0 16px 32px rgba(8,127,91,.13); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action:focus-visible { outline:3px solid rgba(8,127,91,.28); outline-offset:3px; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action .material-symbols-outlined { display:grid; place-items:center; width:48px; height:48px; color:#063e35; background:#6ee7b7; font-size:27px; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { display:block; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong { font-size:1rem; line-height:1.15; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { margin-top:5px; color:rgba(255,255,255,.72); font-size:.72rem; line-height:1.35; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong { color:#10251d; font-size:1rem; line-height:1.15; }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { margin-top:5px; color:#60746c; font-size:.72rem; line-height:1.35; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav { margin:16px 0; border:1px solid rgba(23,65,91,.14); background:#f7fbff; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav > summary { display:flex; align-items:center; gap:9px; padding:13px 16px; cursor:pointer; color:#173b55; font-weight:850; list-style:none; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-advanced-nav > summary::-webkit-details-marker { display:none; }
@@ -10452,6 +10478,13 @@ function ensureGamingCenterUxStyles() {
     body[data-current-view="strategic-qr"] .portal-shell #triviaLauncherTable tr.is-gaming-filtered { display:none !important; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-published-empty { padding:22px; text-align:center; border:1px dashed rgba(23,65,91,.22); background:#f8fbff; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-published-empty.hidden { display:none !important; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { background:linear-gradient(135deg,#102b25,#102a38,#12372e); color:#f4fbf7; border-color:rgba(110,231,183,.25); }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy h3 { color:#fff; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-copy p { color:#bdd1ca; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action { background:#17342d; color:#f4fbf7; border-color:rgba(177,199,190,.24); }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action:hover { background:#1b4136; border-color:#6ee7b7; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action strong { color:#fff; }
+    :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell .gaming-center-quick-action small { color:#bdd1ca; }
     :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(.gaming-center-advanced-nav,.ticket-center-menu,.ticket-center-tab.active,.gaming-center-panel-context,.gaming-center-panel-tip,.gaming-center-tool-switcher,.gaming-center-tool-switcher button,.gaming-builder-assistant,.gaming-activation-recipes,.gaming-activation-recipe,.gaming-activation-review,.gaming-activation-review-grid article,.gaming-activation-wizard-footer,.gaming-activation-catalog-tools,.gaming-activation-search,.gaming-activation-category-list button,.gaming-published-toolbar label,.gaming-published-empty) { background:#10231e !important; color:#f4fbf7 !important; border-color:rgba(177,199,190,.24) !important; }
     :root[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is(.ticket-center-tab > span:not(.material-symbols-outlined),.gaming-activation-search input,.gaming-published-toolbar input) { color:#f4fbf7 !important; }
     @media (max-width:1180px) { body[data-current-view="strategic-qr"] .portal-shell .gaming-center-command-center { grid-template-columns:1fr; } body[data-current-view="strategic-qr"] .portal-shell .ticket-center-menu { grid-template-columns:repeat(3,minmax(0,1fr)) !important; } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes { grid-template-columns:repeat(2,minmax(0,1fr)); } body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher-copy, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-recipes-copy { grid-column:1 / -1; } body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { grid-template-columns:1fr; } }
@@ -10772,9 +10805,9 @@ function ensureGamingCenterUx() {
     (gamingViewHead || strategicQrKpiGrid)?.insertAdjacentHTML("afterend", `
       <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
         <div class="gaming-center-command-copy">
-          <span class="mono-label">Mesa de lanzamiento</span>
-          <h3>Elige una de dos acciones</h3>
-          <p>El Gaming Center sirve para emitir tickets o crear una experiencia gamificada. Elige y abre directamente la herramienta correcta.</p>
+          <span class="mono-label">Empezar aquí</span>
+          <h3>¿Qué quieres lograr hoy?</h3>
+          <p>Elige un resultado. Abriremos directamente la herramienta correcta y ocultaremos lo que no necesitas.</p>
         </div>
         <div class="gaming-center-quick-actions">
           <button class="gaming-center-quick-action" type="button" data-gaming-center-action="issue-ticket"><span class="material-symbols-outlined">confirmation_number</span><span><strong>Emitir tickets</strong><small>Ticket individual, QR reutilizable o paquete masivo.</small></span></button>
@@ -17263,6 +17296,34 @@ function genericTicketUseCaseLabel(value) {
   return GENERIC_TICKET_USE_CASE_LABELS[value] || GENERIC_TICKET_USE_CASE_LABELS.custom;
 }
 
+function updateGenericTicketPreview() {
+  if (!postSaleQrForm) return;
+  const benefit = String(postSaleBenefitLabelInput?.value || "").trim();
+  const beneficiary = String(postSaleCustomerInput?.value || "").trim();
+  const phone = String(postSalePhoneInput?.value || "").trim();
+  const useCase = postSaleUseCaseInput?.selectedOptions?.[0]?.textContent?.trim() || "Ticket individual";
+  const delivery = postSaleBenefitFulfillmentModeInput?.value === "ECOMMERCE_CODE"
+    ? "con un código para la tienda online"
+    : "presentando el QR en tienda";
+  const previewTitle = document.getElementById("genericTicketPreviewTitle");
+  const previewCopy = document.getElementById("genericTicketPreviewCopy");
+  if (previewTitle) previewTitle.textContent = benefit ? `Ticket: ${benefit}` : useCase;
+  if (previewCopy) {
+    const recipientCopy = beneficiary ? `Se emitirá para ${beneficiary}` : "Se emitirá para el beneficiario que indiques";
+    const sendCopy = phone ? ` y quedará listo para enviarlo al ${phone}` : "";
+    previewCopy.textContent = `${recipientCopy}, ${delivery}${sendCopy}.`;
+  }
+  postSaleQrForm.querySelector(".generic-ticket-product")?.classList.toggle("hidden", !postSaleBenefitProductModeInput?.value);
+  const stepStatus = {
+    1: Boolean(benefit),
+    2: Boolean(beneficiary || phone),
+    3: Boolean(postSaleBenefitFulfillmentModeInput?.value),
+  };
+  postSaleQrForm.querySelectorAll("[data-generic-ticket-step]").forEach((step) => {
+    step.classList.toggle("is-complete", Boolean(stepStatus[step.dataset.genericTicketStep]));
+  });
+}
+
 function whatsappPhoneFromInput(value) {
   const digits = String(value || "").replace(/[^\d]/g, "");
   if (digits.length === 10 && digits.startsWith("3")) {
@@ -17273,7 +17334,7 @@ function whatsappPhoneFromInput(value) {
 
 async function submitPostSaleQr(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir un ticket generico")) {
+  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir este ticket")) {
     return;
   }
   if (!validateBenefitFulfillment(postSaleBenefitFulfillmentModeInput, postSaleEcommerceCodeInput, postSaleQrMessage, "ticket")) {
@@ -17285,9 +17346,9 @@ async function submitPostSaleQr(event) {
   }
   const submitButton = postSaleQrForm.querySelector("button[type='submit']");
   setButtonLoading(submitButton, true, "Generando...");
-  setInlineMessage(postSaleQrMessage, "Emitiendo ticket generico y descontando 1 ticket...", "info");
+  setInlineMessage(postSaleQrMessage, "Creando el QR y descontando 1 ticket...", "info");
   showFeedback("Creando token único, preparando el ticket y actualizando saldo.", "loading", { title: "Emitiendo ticket", timeout: 0 });
-  showBusyOverlay("Emitiendo ticket generico", "Creando ticket validable, actualizando saldo y preparando envio.");
+  showBusyOverlay("Creando tu ticket", "Generando el QR, actualizando el saldo y preparando el envío.");
   try {
     const ticketUseCase = postSaleUseCaseInput?.value || "gift_product";
     const ticketUseCaseLabel = genericTicketUseCaseLabel(ticketUseCase);
@@ -17420,7 +17481,7 @@ async function submitPostSaleQr(event) {
       await navigator.clipboard?.writeText(publicTicketUrl);
       showFeedback("Link del ticket copiado.", "success", { title: "Ticket listo" });
     });
-    showFeedback("Ticket generico listo. Comparte la imagen QR, descarga el ticket o envia el mensaje al beneficiario.", "success", { title: "Ticket emitido" });
+    showFeedback("Ticket listo. Comparte el QR, descárgalo o envíalo al beneficiario.", "success", { title: "Ticket emitido" });
   } catch (error) {
     setInlineMessage(postSaleQrMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo generar el ticket" });
@@ -28104,7 +28165,9 @@ function focusRmsTutorial() {
   state.rmsMachineFilters.phase = "";
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
   renderRmsMachineView();
-  document.getElementById("rmsMachineTutorial")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const tutorial = document.getElementById("rmsMachineTutorial");
+  tutorial?.classList.add("is-open");
+  tutorial?.scrollIntoView({ behavior: "smooth", block: "start" });
   showFeedback("Sigue el tutorial paso a paso para entender cómo la Máquina RMS fabrica ventas.", "info", { title: "Tutorial RMS" });
 }
 
@@ -29266,35 +29329,35 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
     <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0">
-      <td class="rms-station-check-cell">
+      <td class="rms-station-check-cell" data-label="Seleccionar">
         <label class="rms-station-lead-check" title="Marcar lead para operar">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
           <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
         </label>
       </td>
-      <td>
+      <td data-label="Lead">
         <button class="rms-station-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></button>
         <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
         <small>${escapeHtml(material)}</small>
       </td>
-      <td>
+      <td data-label="Contacto">
         <span>${escapeHtml(item.phone || "Sin WhatsApp")}</span>
         <small>${escapeHtml(item.email || "Sin correo")}</small>
       </td>
-      <td>
+      <td data-label="Origen / campaña">
         <span>${escapeHtml(campaignChannel)}</span>
         <small>${escapeHtml(origin)}</small>
       </td>
-      <td>
+      <td data-label="Interés">
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
         ${stage.key === "recoleccion" ? rmsCaptureDataChips(item) : ""}
         ${stage.key === "curaduria" ? rmsProductClassificationMarkup(item) : ""}
       </td>
-      <td>
+      <td data-label="Estado">
         ${statusMarkup}
       </td>
-      <td>
+      <td data-label="Acciones">
         <div class="rms-station-lead-buttons">
           <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Analizar</button>
           <button class="solid-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span> Operar</button>
@@ -29306,63 +29369,35 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
 
 function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
-  const totalStages = Math.max(stages.length, 1);
   rmsStageBoard.innerHTML = stages.map((stage, index) => {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
-    const rows = rowsAll.slice(0, 8);
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const operationName = operation.name || operation.primaryAction || "Operacion";
     const stationStorageLabel = stage.storageLabel || `Almacena ${stage.label || "oportunidades"}`;
-    const revenue = rowsAll.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
-    const progressPercent = totalStages > 1 ? Math.round((index / (totalStages - 1)) * 100) : 100;
-    const stationRole = stationStorageLabel;
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
+    const visual = rmsStationVisualMeta(stage.key);
     return `
-      <article class="rms-stage-column ${state.rmsStationPhase === stage.key ? "is-active-station" : ""} ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" style="--rms-stage-progress:${progressPercent}%">
-        <div class="rms-stage-head">
+      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}">
+        <div class="rms-station-entry-topline">
+          <span class="rms-station-entry-number">${String(index + 1).padStart(2, "0")}</span>
+          <span class="rms-station-entry-count">${Number(rowsAll.length).toLocaleString("es-CO")} lead${rowsAll.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="rms-station-entry-main">
+          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
           <div>
-            <span class="mono-label">Estación ${String(index + 1).padStart(2, "0")} de ${String(totalStages).padStart(2, "0")}</span>
-            <strong>${escapeHtml(stage.label)}</strong>
-            <small>${escapeHtml(stationRole)}</small>
-          </div>
-          <span title="Materia prima en estación">${Number(rowsAll.length).toLocaleString("es-CO")}</span>
-        </div>
-        <div class="rms-stage-flow-indicator" aria-label="Progreso de esta estación hacia cierre">
-          <span>Inicio</span>
-          <div><i></i></div>
-          <span>Cierre</span>
-        </div>
-        <div class="rms-stage-transfer-note">
-          <span class="rms-stage-transfer-icon" aria-hidden="true"></span>
-          <strong>${escapeHtml(nextPhase ? `Después pasa a ${nextLabel}` : "Última salida: medir revenue")}</strong>
-        </div>
-        <div class="rms-phase-operation">
-          <span class="rms-operation-label">Operación: ${escapeHtml(operationName)}</span>
-          <strong>${escapeHtml(operation.primaryAction || "Operación recomendada")}</strong>
-          <div class="rms-station-material">
-            <span class="rms-stage-material-icon" aria-hidden="true"></span>
-            <small>${escapeHtml(operation.materialLabel || "Material comercial sugerido")}</small>
-          </div>
-          <div class="rms-station-metrics">
-            <span>${riskCount.toLocaleString("es-CO")} riesgo</span>
-            <span>${rowsAll.length.toLocaleString("es-CO")} leads</span>
-            <span>${money(revenue)}</span>
-          </div>
-          <div class="rms-station-button-row">
-            <button class="solid-button compact" type="button" data-rms-open-station="${escapeHtml(stage.key)}">Entrar a estación</button>
-            <button class="ghost-button compact" type="button" data-rms-phase-operation="${escapeHtml(stage.key)}">${escapeHtml(operation.buttonLabel || "Operar lote")}</button>
+            <strong>${escapeHtml(stage.label || `Estación ${index + 1}`)}</strong>
+            <small>${escapeHtml(operation.primaryAction || operationName)}</small>
           </div>
         </div>
-        <div class="rms-stage-material-line">
-          <span>Materia prima</span>
-          <small>${rowsAll.length ? "Selecciona, opera o abre cada cliente." : "Esta estación queda esperando entrada."}</small>
+        <p>${escapeHtml(stationStorageLabel)}</p>
+        <div class="rms-station-entry-flow">
+          <span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : "Sin alertas"}</span>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          <span>${escapeHtml(nextLabel)}</span>
         </div>
-        <div class="rms-stage-items">
-          ${rows.map(rmsStageLeadUnitMarkup).join("") || (isEmpty ? rmsStageEmptyMarkup(stage) : `<span class="rms-stage-empty">Esperando clientes listos para ${escapeHtml(operation.buttonLabel || "operar")}</span>`)}
-          ${rowsAll.length > rows.length ? `<span class="rms-stage-more">+${Number(rowsAll.length - rows.length).toLocaleString("es-CO")} más en esta estación</span>` : ""}
-        </div>
+        <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}">Abrir estación</button>
       </article>
     `;
   }).join("");
@@ -29609,6 +29644,7 @@ function openRmsStation(phase = "") {
   state.rmsStationPhase = phase;
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
+  document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   if (phase === "curaduria" && !state.inventoryLoaded) {
     loadInventoryProducts({ quiet: true }).then(renderRmsMachineView).catch(() => {});
@@ -31740,6 +31776,8 @@ customerAcquisitionAffiliateInput?.addEventListener("change", () => {
 secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
+postSaleQrForm?.addEventListener("input", updateGenericTicketPreview);
+postSaleQrForm?.addEventListener("change", updateGenericTicketPreview);
 postSaleExpiresModeInput?.addEventListener("change", updatePostSaleExpiryMode);
 flyerQrForm?.addEventListener("submit", submitFlyerQr);
 flyerQrAssetInput?.addEventListener("change", syncFlyerQrAssetDefaults);
@@ -31771,6 +31809,7 @@ document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((field) => 
 });
 syncBenefitFulfillmentFields();
 updatePostSaleExpiryMode();
+updateGenericTicketPreview();
 updateQrBatchExpiryMode();
 triviaQuestionBuilder?.addEventListener("input", updateTriviaQuestionVisibility);
 triviaQuestionBuilder?.addEventListener("change", updateTriviaQuestionVisibility);
@@ -31925,6 +31964,7 @@ leadActivationModal?.addEventListener("click", (event) => {
 leadActivationForm?.addEventListener("submit", submitLeadActivation);
 themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
+window.addEventListener("resize", syncPortalResponsiveSidebar, { passive: true });
 document.addEventListener("click", (event) => {
   const clickedElement = event.target instanceof Element ? event.target : event.target?.parentElement;
   const ticketViewButton = clickedElement?.closest("[data-ticket-open-view]");
