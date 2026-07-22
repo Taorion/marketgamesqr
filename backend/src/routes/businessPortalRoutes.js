@@ -119,6 +119,7 @@ const {
   leaderboard: gamificationLeaderboard,
   patch: updateGamificationSeason,
   pause: pauseGamificationSeason,
+  purchaseLeaderboard: gamificationPurchaseLeaderboard,
   rewardsPending: gamificationRewardsPending,
   seasons: gamificationSeasons,
 } = require("../controllers/gamificationMissionController");
@@ -173,6 +174,7 @@ router.post("/gamification/seasons/:id/activate", activateGamificationSeason);
 router.post("/gamification/seasons/:id/pause", pauseGamificationSeason);
 router.post("/gamification/seasons/:id/close", closeGamificationSeason);
 router.post("/gamification/points/award", awardGamificationPoints);
+router.get("/gamification/purchase-leaderboard", shortBusinessCache, gamificationPurchaseLeaderboard);
 router.get("/gamification/leaderboards/:seasonId", shortBusinessCache, gamificationLeaderboard);
 router.get("/gamification/rewards/pending", shortBusinessCache, gamificationRewardsPending);
 router.post("/gamification/rewards/:id/deliver", deliverGamificationReward);

@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=inventory-products-modal-20260722-v70">
+  <link rel="stylesheet" href="css/styles.css?v=season-leaderboard-view-20260722-v71">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -1094,10 +1094,10 @@
               <div>
                 <span class="mono-label">Fidelización y recompra</span>
                 <h2>Temporadas comerciales</h2>
-                <p>Crea temporadas de venta, rankings y recompensas para mover clientes a comprar, volver y participar.</p>
+                <p>Visualiza quién compró más por día, semana, mes o año y premia al contacto directamente desde el ranking.</p>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" id="missionsCreateButton" type="button">Crear temporada</button>
+                <button class="solid-button" id="missionsCreateButton" type="button" hidden>Crear temporada</button>
                 <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
                 <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
               </div>
@@ -1105,14 +1105,14 @@
 
             <section class="missions-hero">
               <article class="missions-onboarding">
-                <span class="mono-label">Crear en segundos</span>
+                <span class="mono-label">Visualización comercial</span>
                 <h3>¿Quién fue el cliente que más compró?</h3>
-                <p>Selecciona el periodo. El leaderboard usa las ventas registradas para ordenar por valor comprado y muestra también número de compras y ticket promedio.</p>
-                <div class="purchase-period-actions" role="group" aria-label="Elegir periodo de la competencia">
-                  <button class="solid-button" type="button" data-purchase-competition-period="week">Esta semana</button>
-                  <button class="ghost-button" type="button" data-purchase-competition-period="month">Este mes</button>
-                  <button class="ghost-button" type="button" data-purchase-competition-period="30days">Últimos 30 días</button>
-                  <button class="ghost-button" type="button" data-purchase-competition-period="custom">Elegir fechas</button>
+                <p>Elige el periodo y revisa el top de compradores. Desde cada fila puedes enviar un ticket al contacto reconocido.</p>
+                <div class="purchase-period-actions" role="group" aria-label="Elegir periodo del leaderboard">
+                  <button class="solid-button" type="button" data-mission-period="day">Hoy</button>
+                  <button class="ghost-button" type="button" data-mission-period="week">Semana</button>
+                  <button class="ghost-button" type="button" data-mission-period="month">Mes</button>
+                  <button class="ghost-button" type="button" data-mission-period="year">Año</button>
                 </div>
               </article>
               <div class="missions-kpis" id="missionsKpiGrid"></div>
@@ -1121,42 +1121,32 @@
             <section class="mission-command-center">
               <article class="surface-card mission-what-card">
                 <span class="mono-label">Qué hacer aquí</span>
-                <h3>Diseñar una temporada que genere acción</h3>
+                <h3>Leer el ranking y premiar compradores</h3>
                 <div class="mission-step-list">
-                  <article><span>1</span><div><strong>Define el objetivo</strong><small>Ventas, recompra, participación, referidos o redenciones.</small></div></article>
-                  <article><span>2</span><div><strong>Elige el periodo</strong><small>Semana, mes, últimos 30 días o fechas especiales.</small></div></article>
-                  <article><span>3</span><div><strong>Premia y agenda</strong><small>Ranking, recompensa y tareas para contactar ganadores.</small></div></article>
+                  <article><span>1</span><div><strong>Filtra el periodo</strong><small>Día, semana, mes o año según el análisis que necesitas.</small></div></article>
+                  <article><span>2</span><div><strong>Revisa el top</strong><small>Total comprado, cantidad de compras, ticket promedio y última compra.</small></div></article>
+                  <article><span>3</span><div><strong>Premia al contacto</strong><small>Haz clic en enviar ticket para reconocer al comprador del leaderboard.</small></div></article>
                 </div>
               </article>
               <article class="surface-card mission-control-card">
                 <div>
-                  <span class="mono-label">Temporadas creadas</span>
-                  <h3>Operación rápida</h3>
-                  <p>Filtra las temporadas, revisa ranking y crea tareas de seguimiento sin perder contexto.</p>
+                  <span class="mono-label">Filtros de compra</span>
+                  <h3>Leaderboard por periodo</h3>
+                  <p>Esta sección no crea temporadas. Solo muestra ventas registradas y permite premiar a los contactos mejor posicionados.</p>
                 </div>
                 <div class="mission-control-row">
-                  <label><span>Ver temporadas</span><select id="missionSeasonFilter"><option value="all">Todas</option><option value="active">Activas</option><option value="purchase">Ranking de compras</option><option value="points">Puntos / participación</option><option value="closed">Cerradas o borrador</option></select></label>
+                  <label><span>Periodo del ranking</span><select id="missionSeasonFilter"><option value="day">Hoy</option><option value="week">Semana actual</option><option value="month">Mes actual</option><option value="year">Año actual</option></select></label>
                   <div class="mission-quick-actions">
-                    <button class="solid-button compact" type="button" data-purchase-competition-period="week">Top clientes semana</button>
-                    <button class="ghost-button compact" type="button" data-purchase-competition-period="month">Top clientes mes</button>
-                    <button class="ghost-button compact" type="button" data-open-mission-wizard="rebuy_streak">Racha recompra</button>
+                    <button class="solid-button compact" type="button" data-mission-period="week">Top semana</button>
+                    <button class="ghost-button compact" type="button" data-mission-period="month">Top mes</button>
+                    <button class="ghost-button compact" type="button" data-mission-period="year">Top año</button>
                   </div>
                 </div>
               </article>
             </section>
 
-            <section class="missions-dashboard-grid">
-              <article class="surface-card missions-panel span-2">
-                <div class="card-head">
-                  <div>
-                    <span class="mono-label">Más formatos</span>
-                    <h3 class="subhead">Otras competencias y dinámicas</h3>
-                  </div>
-                </div>
-                <div class="mission-template-grid" id="missionTemplateGrid"></div>
-              </article>
-
-              <article class="surface-card missions-panel">
+            <section class="missions-dashboard-grid mission-visualization-grid">
+              <article class="surface-card missions-panel span-2 mission-leaderboard-panel">
                 <div class="card-head">
                   <div>
                     <span class="mono-label">Leaderboard del periodo</span>
@@ -1164,26 +1154,6 @@
                   </div>
                 </div>
                 <div class="mission-leaderboard" id="missionLeaderboard"></div>
-              </article>
-
-              <article class="surface-card missions-panel span-2">
-                <div class="card-head">
-                  <div>
-                    <span class="mono-label">Temporadas creadas</span>
-                    <h3 class="subhead">Competencias en operación</h3>
-                  </div>
-                </div>
-                <div class="mission-active-list" id="missionActiveList"></div>
-              </article>
-
-              <article class="surface-card missions-panel">
-                <div class="card-head">
-                  <div>
-                    <span class="mono-label">Recompensas</span>
-                    <h3 class="subhead">Pendientes por entregar</h3>
-                  </div>
-                </div>
-                <div class="mission-reward-list" id="missionRewardsPending"></div>
               </article>
             </section>
 
@@ -7188,7 +7158,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=inventory-products-modal-20260722-v70" defer></script>
+  <script src="js/app.js?v=season-leaderboard-view-20260722-v71" defer></script>
 </body>
 </html>
 

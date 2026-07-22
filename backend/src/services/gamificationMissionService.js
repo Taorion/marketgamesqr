@@ -432,6 +432,136 @@ async function leaderboardForSeason(businessId, seasonId) {
   };
 }
 
+function normalizePurchaseLeaderboardPeriod(period = "week") {
+  const value = String(period || "").trim().toLowerCase();
+  return ["day", "week", "month", "year"].includes(value) ? value : "week";
+}
+
+async function purchaseLeaderboardByPeriod(businessId, filters = {}) {
+  const period = normalizePurchaseLeaderboardPeriod(filters.period);
+  const limit = Math.min(Math.max(Number(filters.limit || 50) || 50, 1), 100);
+  const result = await query(
+    `with bounds as (
+       select
+         case $2
+           when 'day' then date_trunc('day', now() at time zone 'America/Bogota')
+           when 'week' then date_trunc('week', now() at time zone 'America/Bogota')
+           when 'month' then date_trunc('month', now() at time zone 'America/Bogota')
+           when 'year' then date_trunc('year', now() at time zone 'America/Bogota')
+           else date_trunc('week', now() at time zone 'America/Bogota')
+         end as start_at,
+         case $2
+           when 'day' then date_trunc('day', now() at time zone 'America/Bogota') + interval '1 day'
+           when 'week' then date_trunc('week', now() at time zone 'America/Bogota') + interval '1 week'
+           when 'month' then date_trunc('month', now() at time zone 'America/Bogota') + interval '1 month'
+           when 'year' then date_trunc('year', now() at time zone 'America/Bogota') + interval '1 year'
+           else date_trunc('week', now() at time zone 'America/Bogota') + interval '1 week'
+         end as end_at
+     ),
+     normalized_sales as (
+       select
+         coalesce(
+           nullif(trim(bs.customer_document_id), ''),
+           nullif(lower(trim(bs.customer_email)), ''),
+           nullif(regexp_replace(coalesce(bs.customer_phone, ''), '[^0-9]', '', 'g'), ''),
+           nullif(lower(trim(bs.customer_name)), ''),
+           bs.id::text
+         ) as customer_key,
+         nullif(trim(bs.customer_name), '') as customer_name,
+         nullif(trim(bs.customer_phone), '') as customer_phone,
+         nullif(trim(bs.customer_email), '') as customer_email,
+         nullif(trim(bs.customer_document_id), '') as customer_document_id,
+         regexp_replace(coalesce(bs.customer_phone, ''), '[^0-9]', '', 'g') as customer_phone_digits,
+         bs.product_name,
+         bs.sale_amount,
+         bs.created_at
+       from business_sales bs
+       cross join bounds b
+       where bs.business_id = $1
+         and (bs.created_at at time zone 'America/Bogota') >= b.start_at
+         and (bs.created_at at time zone 'America/Bogota') < b.end_at
+     ),
+     grouped as (
+       select
+         customer_key,
+         coalesce(max(customer_name), 'Cliente sin nombre') as name,
+         coalesce(max(customer_phone), '') as phone,
+         coalesce(max(customer_email), '') as email,
+         coalesce(max(customer_document_id), '') as document_id,
+         max(customer_phone_digits) as phone_digits,
+         count(*)::int as purchases_count,
+         coalesce(sum(sale_amount), 0)::numeric as total_spent,
+         coalesce(avg(sale_amount), 0)::numeric as average_ticket,
+         max(created_at) as last_activity_at,
+         array_remove((array_agg(product_name order by created_at desc))[1:3], null) as recent_products
+       from normalized_sales
+       group by customer_key
+     )
+     select
+       row_number() over (order by g.total_spent desc, g.purchases_count desc, g.last_activity_at desc)::int as rank,
+       g.name,
+       g.phone,
+       g.email,
+       g.document_id,
+       g.purchases_count,
+       g.total_spent,
+       g.average_ticket,
+       g.last_activity_at,
+       g.recent_products,
+       coalesce(p.id, ml.id) as source_id,
+       case when p.id is not null then p.id else null end as lead_id,
+       case when p.id is not null then 'PLAYER' when ml.id is not null then 'MANUAL' else null end as source_type,
+       'PURCHASES'::text as ranking_type,
+       (select start_at::date from bounds) as start_date,
+       ((select end_at from bounds) - interval '1 day')::date as end_date
+     from grouped g
+     left join lateral (
+       select p.id
+       from players p
+       where p.business_id = $1
+         and (
+           (g.document_id <> '' and p.document_id = g.document_id)
+           or (g.email <> '' and lower(p.email) = lower(g.email))
+           or (g.phone_digits <> '' and regexp_replace(coalesce(p.phone, ''), '[^0-9]', '', 'g') = g.phone_digits)
+         )
+       order by p.created_at desc
+       limit 1
+     ) p on true
+     left join lateral (
+       select ml.id
+       from business_manual_leads ml
+       where ml.business_id = $1
+         and p.id is null
+         and (
+           (g.email <> '' and lower(ml.email) = lower(g.email))
+           or (g.phone_digits <> '' and regexp_replace(coalesce(ml.phone, ''), '[^0-9]', '', 'g') = g.phone_digits)
+         )
+       order by ml.created_at desc
+       limit 1
+     ) ml on true
+     order by g.total_spent desc, g.purchases_count desc, g.last_activity_at desc
+     limit $3`,
+    [businessId, period, limit]
+  );
+  const rows = result.rows || [];
+  const summary = rows.reduce((acc, row) => {
+    acc.customers_count += 1;
+    acc.purchases_count += Number(row.purchases_count || 0);
+    acc.total_spent += Number(row.total_spent || 0);
+    return acc;
+  }, { customers_count: 0, purchases_count: 0, total_spent: 0 });
+  summary.average_ticket = summary.purchases_count > 0 ? summary.total_spent / summary.purchases_count : 0;
+  summary.top_customer = rows[0]?.name || "";
+  return {
+    leaderboard: rows,
+    period,
+    ranking_type: "PURCHASES",
+    start_date: rows[0]?.start_date || null,
+    end_date: rows[0]?.end_date || null,
+    summary,
+  };
+}
+
 async function pendingRewards(businessId, filters = {}) {
   const params = [businessId];
   const clauses = ["gr.business_id = $1"];
@@ -517,6 +647,7 @@ module.exports = {
   leaderboardForSeason,
   listSeasons,
   pendingRewards,
+  purchaseLeaderboardByPeriod,
   setSeasonStatus,
   updateSeason,
 };

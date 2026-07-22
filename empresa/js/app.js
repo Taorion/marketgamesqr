@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-inventory-products-modal-v70";
+const APP_VERSION = "empresa-20260722-season-leaderboard-view-v71";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1446,7 +1446,11 @@ let state = {
   missionsLoaded: false,
   missionsLoading: false,
   missionWizardTemplateKey: "top_clients_week",
-  missionSeasonFilter: "all",
+  missionSeasonFilter: "week",
+  missionLeaderboardRows: [],
+  missionLeaderboardSummary: null,
+  missionLeaderboardLoadedPeriod: "",
+  missionLeaderboardLoading: false,
   smartCatalogs: [],
   smartCatalogDashboard: null,
   smartCatalogProducts: [],
@@ -2599,7 +2603,11 @@ function resetBusinessScopedState(options = {}) {
   state.missionsLoaded = false;
   state.missionsLoading = false;
   state.missionWizardTemplateKey = "weekly_trivia";
-  state.missionSeasonFilter = "all";
+  state.missionSeasonFilter = "week";
+  state.missionLeaderboardRows = [];
+  state.missionLeaderboardSummary = null;
+  state.missionLeaderboardLoadedPeriod = "";
+  state.missionLeaderboardLoading = false;
   state.selectedLeadDetail = null;
   state.selectedLeadTab = "summary";
   state.selectedLeadRef = null;
@@ -34242,10 +34250,16 @@ async function loadGamificationDashboard(options = {}) {
 }
 
 function ensureMissionsUxStyles() {
-  if (document.getElementById("missionsUxStylesV62")) return;
+  if (document.getElementById("missionsUxStylesV71")) return;
   const style = document.createElement("style");
-  style.id = "missionsUxStylesV62";
+  style.id = "missionsUxStylesV71";
   style.textContent = `
+    .mission-visualization-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .mission-leaderboard-panel {
+      grid-column: 1 / -1;
+    }
     .mission-command-center {
       display: grid;
       grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
@@ -34393,6 +34407,66 @@ function ensureMissionsUxStyles() {
       color: #0f172a;
       font-weight: 800;
     }
+    .mission-leaderboard-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      background: #fff;
+    }
+    .mission-leaderboard-table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+    }
+    .mission-leaderboard-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 0.78rem 0.85rem;
+      text-align: left;
+      color: #475569;
+      background: #f8fafc;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .mission-leaderboard-table td {
+      padding: 0.82rem 0.85rem;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+      color: #0f172a;
+    }
+    .mission-leaderboard-table tbody tr:hover {
+      background: rgba(245, 158, 11, 0.07);
+    }
+    .mission-rank-badge {
+      display: inline-grid;
+      place-items: center;
+      min-width: 42px;
+      min-height: 34px;
+      padding: 0 0.5rem;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.14);
+      color: #92400e;
+      font-weight: 900;
+    }
+    .mission-contact-link {
+      display: grid;
+      gap: 0.18rem;
+      text-align: left;
+      color: inherit;
+      text-decoration: none;
+    }
+    .mission-contact-link strong {
+      font-size: 0.96rem;
+    }
+    .mission-contact-link small {
+      color: #64748b;
+    }
     @media (max-width: 980px) {
       .mission-command-center,
       .mission-control-row {
@@ -34440,51 +34514,63 @@ function missionDateProgress(season = {}) {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
-function filteredMissionSeasons(seasons = []) {
-  const filter = state.missionSeasonFilter || "all";
-  return seasons.filter((season) => {
-    const status = String(season.status || "").toUpperCase();
-    const rankingType = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase();
-    if (filter === "active") return status === "ACTIVE";
-    if (filter === "purchase") return rankingType === "PURCHASES";
-    if (filter === "points") return rankingType !== "PURCHASES";
-    if (filter === "closed") return status !== "ACTIVE";
-    return true;
+const MISSION_PERIOD_LABELS = {
+  day: "Hoy",
+  week: "Semana actual",
+  month: "Mes actual",
+  year: "Año actual",
+};
+
+function normalizeMissionPeriod(period = "week") {
+  const value = String(period || "").trim().toLowerCase();
+  return ["day", "week", "month", "year"].includes(value) ? value : "week";
+}
+
+function missionPeriodLabel(period = "week") {
+  return MISSION_PERIOD_LABELS[normalizeMissionPeriod(period)] || MISSION_PERIOD_LABELS.week;
+}
+
+function syncMissionPeriodControls() {
+  const period = normalizeMissionPeriod(state.missionSeasonFilter || "week");
+  if (missionSeasonFilter) missionSeasonFilter.value = period;
+  document.querySelectorAll("[data-mission-period]").forEach((button) => {
+    const active = normalizeMissionPeriod(button.dataset.missionPeriod) === period;
+    button.classList.toggle("solid-button", active);
+    button.classList.toggle("ghost-button", !active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
   });
 }
 
 function renderMissionsView() {
   ensureMissionsUxStyles();
-  if (missionSeasonFilter) missionSeasonFilter.value = state.missionSeasonFilter || "all";
-  const data = state.missions || {};
-  const metrics = data.metrics || {};
-  const seasons = data.seasons || [];
-  const activeSeason = seasons.find((season) => season.status === "ACTIVE" && String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
-    || seasons.find((season) => String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
-    || null;
-  renderMissionsKpis(metrics, seasons);
-  renderMissionTemplates();
-  renderMissionActiveList(seasons);
-  renderMissionRewards(data.rewards || []);
-  if (activeSeason?.id) {
-    loadMissionLeaderboard(activeSeason.id).catch(() => renderMissionLeaderboard([]));
-  } else {
-    renderMissionLeaderboard([], "PURCHASES");
+  const period = normalizeMissionPeriod(state.missionSeasonFilter || "week");
+  state.missionSeasonFilter = period;
+  syncMissionPeriodControls();
+  renderMissionsKpis();
+  renderMissionLeaderboard(state.missionLeaderboardRows || [], "PURCHASES");
+  if (state.missionLeaderboardLoadedPeriod !== period && !state.missionLeaderboardLoading) {
+    loadMissionPurchaseLeaderboard(period).catch((error) => {
+      renderMissionLeaderboard([], "PURCHASES");
+      showFeedback(error.message || "No se pudo cargar el leaderboard de compras.", "error", { title: "Temporadas" });
+    });
   }
 }
 
-function renderMissionsKpis(metrics = {}, seasons = []) {
+function renderMissionsKpis() {
   if (!missionsKpiGrid) return;
-  const purchaseSeason = seasons.find((season) => season.status === "ACTIVE" && String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
-    || seasons.find((season) => String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES")
-    || null;
+  const summary = state.missionLeaderboardSummary || {};
+  const period = normalizeMissionPeriod(state.missionSeasonFilter || "week");
+  const dateRange = [summary.start_date || state.missionLeaderboardStartDate, summary.end_date || state.missionLeaderboardEndDate]
+    .filter(Boolean)
+    .map((date) => formatDate(date))
+    .join(" a ");
   const cards = [
-    ["Competencias activas", metrics.active_seasons || seasons.filter((item) => item.status === "ACTIVE").length, "Temporadas en operación"],
-    ["Clientes del periodo", purchaseSeason?.purchase_customers_count || 0, "Compradores identificados"],
-    ["Compras del periodo", purchaseSeason?.purchases_count || 0, "Ventas que entran al ranking"],
-    ["Valor comprado", money(purchaseSeason?.purchase_amount || 0), "Revenue del periodo seleccionado"],
-    ["Recompensas pendientes", metrics.pending_rewards || 0, "Por validar o entregar"],
-    ["Tickets redimidos", metrics.redeemed_tickets || 0, "Redenciones asociables"],
+    ["Periodo", missionPeriodLabel(period), dateRange || "Filtro activo"],
+    ["Clientes", Number(summary.customers_count || 0).toLocaleString("es-CO"), "Compradores identificados"],
+    ["Compras", Number(summary.purchases_count || 0).toLocaleString("es-CO"), "Ventas en el periodo"],
+    ["Valor comprado", money(summary.total_spent || 0), "Revenue del leaderboard"],
+    ["Ticket promedio", money(summary.average_ticket || 0), "Promedio por compra"],
+    ["Top #1", summary.top_customer || "Sin ventas aún", "Cliente líder del ranking"],
   ];
   missionsKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
     <article class="rms-kpi-card mission-kpi-card">
@@ -34510,6 +34596,10 @@ function renderMissionTemplates() {
     </article>
   `).join("");
   bindMissionWizardOpeners(missionTemplateGrid);
+}
+
+function filteredMissionSeasons(seasons = []) {
+  return Array.isArray(seasons) ? seasons : [];
 }
 
 function renderMissionActiveList(seasons = []) {
@@ -34575,55 +34665,133 @@ async function loadMissionLeaderboard(seasonId) {
   renderMissionLeaderboard(data.leaderboard || [], data.ranking_type || "POINTS");
 }
 
+async function loadMissionPurchaseLeaderboard(period = "week") {
+  const normalizedPeriod = normalizeMissionPeriod(period);
+  state.missionLeaderboardLoading = true;
+  state.missionSeasonFilter = normalizedPeriod;
+  syncMissionPeriodControls();
+  if (missionLeaderboard) {
+    missionLeaderboard.innerHTML = '<div class="empty-state compact">Cargando leaderboard de compras...</div>';
+  }
+  try {
+    const data = await api(`/api/business/gamification/purchase-leaderboard?period=${encodeURIComponent(normalizedPeriod)}&limit=50`, { headers: authHeaders() });
+    state.missionLeaderboardRows = data.leaderboard || [];
+    state.missionLeaderboardSummary = {
+      ...(data.summary || {}),
+      start_date: data.start_date || null,
+      end_date: data.end_date || null,
+    };
+    state.missionLeaderboardLoadedPeriod = normalizedPeriod;
+    renderMissionsKpis();
+    renderMissionLeaderboard(state.missionLeaderboardRows, "PURCHASES");
+    return data;
+  } finally {
+    state.missionLeaderboardLoading = false;
+  }
+}
+
+function missionLeaderboardLeadRef(row = {}) {
+  const sourceType = String(row.source_type || "").toUpperCase();
+  const sourceId = row.source_id || row.lead_id || row.contact_id || "";
+  if (!sourceId || !["PLAYER", "MANUAL"].includes(sourceType)) return null;
+  return { id: sourceId, source_type: sourceType };
+}
+
+function openMissionLeaderboardContact(index) {
+  const row = state.missionLeaderboardRows?.[Number(index)] || null;
+  const leadRef = missionLeaderboardLeadRef(row || {});
+  if (!leadRef) {
+    showFeedback("Este comprador no está conectado a un contacto del directorio todavía. Regístralo con teléfono o email para poder abrir su ficha.", "info", { title: "Leaderboard" });
+    return;
+  }
+  openLeadDetail(leadRef, { tab: "summary" });
+}
+
+function sendTicketToMissionLeader(index) {
+  const row = state.missionLeaderboardRows?.[Number(index)] || null;
+  const leadRef = missionLeaderboardLeadRef(row || {});
+  if (!leadRef) {
+    showFeedback("Este comprador no tiene contacto conectado. Primero debe existir en el directorio con el mismo teléfono o email de la venta.", "info", { title: "Enviar ticket" });
+    return;
+  }
+  openLeadActivationModal(leadRef, "TICKET");
+  const period = missionPeriodLabel(state.missionSeasonFilter || "week").toLowerCase();
+  if (leadActivationNameInput) leadActivationNameInput.value = `Ticket premio Top ${Number(row.rank || Number(index) + 1).toLocaleString("es-CO")} · ${missionPeriodLabel(state.missionSeasonFilter || "week")}`;
+  if (leadActivationBenefitValueInput) leadActivationBenefitValueInput.value = `Reconocimiento por estar en el Top ${Number(row.rank || Number(index) + 1).toLocaleString("es-CO")} de compradores del periodo ${period}.`;
+  if (leadActivationMessageInput) leadActivationMessageInput.value = `Gracias por comprar con nosotros. Estás en el leaderboard de mejores compradores de ${period}; te enviamos este ticket especial como reconocimiento.`;
+  showFeedback("Completa y envía el ticket desde la ventana de entrega.", "success", { title: "Ticket para comprador top" });
+}
+
 function renderMissionLeaderboard(rows = [], rankingType = "") {
   if (!missionLeaderboard) return;
   const isPurchaseRanking = String(rankingType || "").toUpperCase() === "PURCHASES"
     || rows.some((row) => String(row.ranking_type || "").toUpperCase() === "PURCHASES");
-  missionLeaderboard.innerHTML = rows.map((row, index) => isPurchaseRanking ? `
-    <div class="mission-rank-row is-purchase-ranking">
-      <span>#${index + 1}</span>
-      <span class="mission-rank-customer"><strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.phone || row.email || "Cliente identificado por la venta")}</small></span>
-      <span class="mission-rank-result"><strong>${money(row.total_spent || 0)}</strong><small>${Number(row.purchases_count || 0).toLocaleString("es-CO")} compra(s) · ticket ${money(row.average_ticket || 0)}</small></span>
-    </div>
-  ` : `
+  if (isPurchaseRanking) {
+    missionLeaderboard.innerHTML = rows.length ? `
+      <div class="mission-leaderboard-table-wrap">
+        <table class="mission-leaderboard-table">
+          <thead>
+            <tr>
+              <th>Top</th>
+              <th>Contacto</th>
+              <th>Total comprado</th>
+              <th>Compras</th>
+              <th>Ticket promedio</th>
+              <th>Última compra</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row, index) => {
+              const leadRef = missionLeaderboardLeadRef(row);
+              const contactMeta = row.phone || row.email || row.document_id || "Venta sin contacto conectado";
+              return `
+                <tr>
+                  <td><span class="mission-rank-badge">#${Number(row.rank || index + 1).toLocaleString("es-CO")}</span></td>
+                  <td>
+                    <button class="link-button mission-contact-link" type="button" data-mission-open-contact="${index}">
+                      <strong>${escapeHtml(row.name || "Cliente")}</strong>
+                      <small>${escapeHtml(contactMeta)}</small>
+                    </button>
+                  </td>
+                  <td><strong>${money(row.total_spent || 0)}</strong></td>
+                  <td>${Number(row.purchases_count || 0).toLocaleString("es-CO")}</td>
+                  <td>${money(row.average_ticket || 0)}</td>
+                  <td>${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin fecha"}</td>
+                  <td>
+                    <button class="${leadRef ? "solid-button" : "ghost-button"} compact" type="button" data-mission-send-ticket="${index}">${leadRef ? "Enviar ticket" : "Conectar contacto"}</button>
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    ` : `<div class="empty-state compact">Todavía no hay ventas registradas para ${escapeHtml(missionPeriodLabel(state.missionSeasonFilter || "week").toLowerCase())}.</div>`;
+    missionLeaderboard.querySelectorAll("[data-mission-open-contact]").forEach((button) => {
+      button.addEventListener("click", () => openMissionLeaderboardContact(button.dataset.missionOpenContact));
+    });
+    missionLeaderboard.querySelectorAll("[data-mission-send-ticket]").forEach((button) => {
+      button.addEventListener("click", () => sendTicketToMissionLeader(button.dataset.missionSendTicket));
+    });
+    return;
+  }
+  missionLeaderboard.innerHTML = rows.map((row, index) => `
     <div class="mission-rank-row">
       <span>#${index + 1}</span>
       <strong>${escapeHtml(row.name || "Cliente")}</strong>
       <small>${Number(row.points || 0).toLocaleString("es-CO")} pts</small>
     </div>
-  `).join("") || `<div class="empty-state compact">${isPurchaseRanking ? "Todavía no hay ventas registradas en el periodo de esta competencia." : "El ranking se llenará cuando los clientes empiecen a sumar puntos."}</div>`;
+  `).join("") || `<div class="empty-state compact">El ranking se llenará cuando los clientes empiecen a sumar puntos.</div>`;
 }
 
 function openPurchaseCompetition(period = "month") {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end = new Date(start);
-  let label = "Este mes";
-  if (period === "week") {
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-    end.setDate(start.getDate() + 6);
-    label = "Esta semana";
-  } else if (period === "30days") {
-    start.setDate(start.getDate() - 29);
-    label = "Últimos 30 días";
-  } else if (period === "custom") {
-    label = "Periodo personalizado";
-  } else {
-    start.setDate(1);
-    end.setMonth(start.getMonth() + 1, 0);
-  }
-  openMissionWizard("top_clients_week");
-  if (period === "custom") {
-    if (missionStartInput) missionStartInput.value = "";
-    if (missionEndInput) missionEndInput.value = "";
-  } else {
-    if (missionStartInput) missionStartInput.value = dateInputValue(start);
-    if (missionEndInput) missionEndInput.value = dateInputValue(end);
-    if (missionNameInput) missionNameInput.value = `Top clientes · ${label}`;
-  }
-  if (missionRankingInput) missionRankingInput.value = "PURCHASES";
-  if (missionDescriptionInput) missionDescriptionInput.value = "Competencia de clientes ordenada por el valor total de sus compras registradas durante el periodo seleccionado.";
-  missionStartInput?.focus?.({ preventScroll: true });
+  const normalizedPeriod = normalizeMissionPeriod(period);
+  state.missionSeasonFilter = normalizedPeriod;
+  state.missionLeaderboardLoadedPeriod = "";
+  loadMissionPurchaseLeaderboard(normalizedPeriod).catch((error) => {
+    showFeedback(error.message || "No se pudo cargar el leaderboard de compras.", "error", { title: "Temporadas" });
+  });
 }
 
 function renderMissionRewards(rewards = []) {
@@ -35428,10 +35596,21 @@ missionsCreateButton?.addEventListener("click", () => openPurchaseCompetition("m
 document.querySelectorAll("[data-purchase-competition-period]").forEach((button) => {
   button.addEventListener("click", () => openPurchaseCompetition(button.dataset.purchaseCompetitionPeriod || "month"));
 });
+document.querySelectorAll("[data-mission-period]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.missionSeasonFilter = normalizeMissionPeriod(button.dataset.missionPeriod || "week");
+    state.missionLeaderboardLoadedPeriod = "";
+    renderMissionsView();
+  });
+});
 missionsRefreshButton?.addEventListener("click", () => {
   state.missionsLoaded = false;
-  loadGamificationDashboard({ force: true }).then(renderMissionsView).catch((error) => {
-    showFeedback(error.message || "No se pudo actualizar Misiones Sales Machine.", "error", { title: "Misiones Sales Machine" });
+  state.missionLeaderboardLoadedPeriod = "";
+  Promise.all([
+    loadGamificationDashboard({ force: true }),
+    loadMissionPurchaseLeaderboard(state.missionSeasonFilter || "week"),
+  ]).then(renderMissionsView).catch((error) => {
+    showFeedback(error.message || "No se pudo actualizar Temporadas.", "error", { title: "Temporadas" });
   });
 });
 missionsOpenAgendaButton?.addEventListener("click", () => {
@@ -35439,7 +35618,8 @@ missionsOpenAgendaButton?.addEventListener("click", () => {
   setView("leads");
 });
 missionSeasonFilter?.addEventListener("change", () => {
-  state.missionSeasonFilter = missionSeasonFilter.value || "all";
+  state.missionSeasonFilter = normalizeMissionPeriod(missionSeasonFilter.value || "week");
+  state.missionLeaderboardLoadedPeriod = "";
   renderMissionsView();
 });
 missionWizardCloseButton?.addEventListener("click", closeMissionWizard);

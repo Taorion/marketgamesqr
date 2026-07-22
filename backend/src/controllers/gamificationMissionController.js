@@ -11,6 +11,7 @@ const {
   leaderboardForSeason,
   listSeasons,
   pendingRewards,
+  purchaseLeaderboardByPeriod,
   setSeasonStatus,
   updateSeason,
 } = require("../services/gamificationMissionService");
@@ -144,6 +145,14 @@ async function leaderboard(req, res, next) {
   }
 }
 
+async function purchaseLeaderboard(req, res, next) {
+  try {
+    res.json(await purchaseLeaderboardByPeriod(businessIdFor(req), req.query));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function rewardsPending(req, res, next) {
   try {
     res.json(await pendingRewards(businessIdFor(req), req.query));
@@ -181,6 +190,7 @@ module.exports = {
   leaderboard,
   patch,
   pause,
+  purchaseLeaderboard,
   rewardsPending,
   seasons,
 };
