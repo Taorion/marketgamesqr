@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-click-v43";
+const APP_VERSION = "empresa-20260722-rms-station-hitbox-v44";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29612,6 +29612,28 @@ function moveRmsStageSlider(direction = 1) {
   rmsStageBoard.scrollBy({ left: rmsStageSliderStep() * direction, behavior: "smooth" });
 }
 
+function rmsStationTargetFromPoint(x = 0, y = 0) {
+  if (!rmsStageBoard) return null;
+  const candidates = Array.from(rmsStageBoard.querySelectorAll("[data-rms-open-station], [data-rms-phase]"));
+  return candidates.find((node) => {
+    const rect = node.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  }) || null;
+}
+
+function openRmsStationFromElement(target, options = {}) {
+  const element = target?.closest?.("[data-rms-open-station], [data-rms-phase]") || target;
+  if (!element) return false;
+  const phase = element.dataset?.rmsOpenStation || element.dataset?.rmsPhase || "";
+  if (!phase) return false;
+  const navigation = element.dataset?.rmsNavigation || "";
+  openRmsStation(phase, {
+    source: options.source || navigation || "station-hitbox",
+    direction: navigation === "previous" ? "backward" : navigation === "next" ? "forward" : "",
+  });
+  return true;
+}
+
 function bindRmsStageSlider() {
   if (!rmsStageBoard || rmsStageBoard.dataset.sliderBound === "true") {
     updateRmsStageSliderUi();
@@ -29661,6 +29683,16 @@ function bindRmsStageSlider() {
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
+  rmsStageBoard.addEventListener("pointerup", (event) => {
+    if (rmsStageSliderSuppressClick) return;
+    if (event.target.closest?.("input, select, textarea, a")) return;
+    const directTarget = event.target.closest?.("[data-rms-open-station], [data-rms-phase]");
+    const hitTarget = directTarget || rmsStationTargetFromPoint(event.clientX, event.clientY);
+    if (!hitTarget) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openRmsStationFromElement(hitTarget, { source: directTarget ? "pointer" : "station-hitbox" });
+  });
   if (typeof ResizeObserver === "function") {
     const observer = new ResizeObserver(updateRmsStageSliderUi);
     observer.observe(rmsStageBoard);
@@ -29807,11 +29839,7 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      const navigation = button.dataset.rmsNavigation || "";
-      openRmsStation(button.dataset.rmsOpenStation || "", {
-        source: navigation || "button",
-        direction: navigation === "previous" ? "backward" : navigation === "next" ? "forward" : "",
-      });
+      openRmsStationFromElement(button, { source: "button" });
     });
   });
   root.querySelectorAll("[data-rms-tutorial-action]").forEach((button) => {
