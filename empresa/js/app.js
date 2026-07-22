@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-nav-clean-v50";
+const APP_VERSION = "empresa-20260722-gaming-ticket-focus-v51";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -5031,6 +5031,13 @@ function renderCampaignAssociationInputs() {
   const selectedCampaignId = state.selectedCampaignId || "";
   const campaigns = activeCampaignsForAssociation();
   const selectedCampaign = campaignById(selectedCampaignId) || campaigns[0] || null;
+  const activeElement = document.activeElement;
+  const editingGenericTicketForm = Boolean(
+    postSaleQrForm
+    && activeElement
+    && postSaleQrForm.contains(activeElement)
+    && activeElement !== postSaleCampaignInput
+  );
   [
     [postSaleCampaignInput, true],
     [qrBatchCampaignInput, true],
@@ -5040,6 +5047,10 @@ function renderCampaignAssociationInputs() {
     [affiliatePurchaseCampaignInput, true],
   ].forEach(([input, allowNoCampaign]) => {
     if (!input) return;
+    if (input === postSaleCampaignInput && editingGenericTicketForm) {
+      input.required = false;
+      return;
+    }
     const currentValue = input.value || selectedCampaignId || selectedCampaign?.id || "";
     const optionConfig = input === affiliatePurchaseCampaignInput
       ? { allowNoCampaign: true, forceCampaign: false, noCampaignLabel: "Sin campaña" }
@@ -5050,7 +5061,8 @@ function renderCampaignAssociationInputs() {
     } else if (selectedCampaign?.id && Array.from(input.options).some((option) => option.value === selectedCampaign.id)) {
       input.value = selectedCampaign.id;
     }
-    input.required = input !== triviaCampaignInput
+    input.required = input !== postSaleCampaignInput
+      && input !== triviaCampaignInput
       && input !== affiliatePurchaseCampaignInput
       && allowNoCampaign
       && campaigns.length > 0
@@ -5087,7 +5099,7 @@ function renderAffiliatePurchaseCampaignOptions() {
   affiliatePurchaseCampaignInput.disabled = !state.selectedAffiliateId;
 }
 
-function requireCampaignAssociation(input, messageElement, actionLabel) {
+function requireCampaignAssociation(input, messageElement, actionLabel, options = {}) {
   const campaigns = activeCampaignsForAssociation();
   if (!input || input.value || !campaigns.length || isPrepaidValidatorOnly()) {
     return true;
@@ -5095,7 +5107,7 @@ function requireCampaignAssociation(input, messageElement, actionLabel) {
   const message = `Selecciona la campaña o activación antes de ${actionLabel}. Asi los tickets no quedan sueltos fuera del reporte.`;
   setInlineMessage(messageElement, message, "error");
   showFeedback(message, "error", { title: "Falta asociar campaña" });
-  input.focus();
+  if (options.focus !== false) input.focus();
   return false;
 }
 
@@ -17342,7 +17354,7 @@ function whatsappPhoneFromInput(value) {
 
 async function submitPostSaleQr(event) {
   event.preventDefault();
-  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir este ticket")) {
+  if (!requireCampaignAssociation(postSaleCampaignInput, postSaleQrMessage, "emitir este ticket", { focus: false })) {
     return;
   }
   if (!validateBenefitFulfillment(postSaleBenefitFulfillmentModeInput, postSaleEcommerceCodeInput, postSaleQrMessage, "ticket")) {
