@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-one-hotfix-v46";
+const APP_VERSION = "empresa-20260722-rms-station-one-stable-v47";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29525,7 +29525,6 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
-  if (stage.key === "recoleccion") return rmsCollectorStationMarkup(rows, stage, nextPhase, operation);
   const inputHelp = stage.key === "recoleccion"
     ? "Inventario de leads capturados. La operacion Embudo decide cuales pasan a Curaduría."
     : stage.key === "alimentacion"
