@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-drag-scroll-v80";
+const APP_VERSION = "empresa-20260722-sales-section-visible-v81";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -4800,10 +4800,6 @@ async function loadAccountWorkspaceData(options = {}) {
 function setView(view) {
   const requestedView = view;
   const previousView = state.currentView;
-  if (view === "sales") {
-    state.contactCenterTab = "sales";
-    view = "leads";
-  }
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
     showFeedback("Ese módulo es interno de Sales Machine. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
@@ -4843,14 +4839,12 @@ function setView(view) {
   }
   document.body.dataset.currentView = view;
   navButtons.forEach((button) => {
-    const isSalesAlias = button.dataset.view === "sales" && view === "leads" && state.contactCenterTab === "sales";
     const contactTarget = button.dataset.contactCenterNav || "";
     const isLeadsBase = button.dataset.view === "leads"
       && view === "leads"
-      && state.contactCenterTab !== "sales"
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
     const isRegular = button.dataset.view === view && view !== "leads";
-    const isActive = isSalesAlias || isLeadsBase || isRegular;
+    const isActive = isLeadsBase || isRegular;
     button.classList.toggle("active", isActive);
     if (isActive) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
@@ -4986,18 +4980,29 @@ function setView(view) {
         renderContactCenterSummary(state.leadCrmRows || []);
       });
     }
-    if (state.contactCenterTab === "sales" && !state.inventoryLoaded) {
+    renderLeadsView();
+  }
+  if (view === "sales") {
+    renderSalesView();
+    if (!state.inventoryLoaded) {
       loadInventoryProducts({ quiet: true }).then(() => {
         renderInventoryProductOptions();
         renderCustomerSaleItems();
+        renderSalesView();
       });
     }
-    if (state.contactCenterTab === "sales" && !state.acquisitionChannelsLoaded) {
+    if (!state.acquisitionChannelsLoaded) {
       loadAcquisitionChannels({ quiet: true }).then(() => {
         renderAcquisitionChannelDatalist();
+        renderSalesView();
       });
     }
-    renderLeadsView();
+    if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
+      loadBusinessBranches({ quiet: true }).then(() => {
+        renderCustomerAcquisitionBranchOptions();
+        renderSalesView();
+      });
+    }
   }
   if (view === "affiliates") {
     if (!state.inventoryLoaded) {
@@ -27630,10 +27635,6 @@ function mountContactCenterLayout() {
   appendIfFound(manualPanel, document.getElementById("manualContactsDirectoryCard"));
   appendIfFound(manualPanel, manualLeadForm?.closest("article"));
 
-  appendIfFound(salesPanel, salesKpiGrid);
-  appendIfFound(salesPanel, document.getElementById("customerAcquisitionForm")?.closest("article"));
-  appendIfFound(salesPanel, campaignSalesTable?.closest("article"));
-
   appendIfFound(contactCenterShell, leadDetailModal);
   appendIfFound(contactCenterShell, leadActivationModal);
 
@@ -35322,13 +35323,11 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
       showFeedback("Crea acciones de negociación: recordatorios, llamadas, condiciones o últimos beneficios.", "info", { title });
     },
     cierre: () => {
-      setContactCenterTab("sales");
-      setView("leads");
+      setView("sales");
       showFeedback("Registra la venta atribuida con fuente, valor y evidencia comercial.", "info", { title });
     },
     revenue_generado: () => {
-      setContactCenterTab("sales");
-      setView("leads");
+      setView("sales");
       showFeedback("Valida Control de calidad 2: valor, fuente, producto y siguiente acción de Activación 2.", "info", { title });
     },
     postventa: () => {
@@ -37039,8 +37038,7 @@ function handleRmsEmptyAction(action = "") {
     return;
   }
   if (target === "sales") {
-    setContactCenterTab("sales");
-    setView("leads");
+    setView("sales");
     return;
   }
   if (target === "redemptions") {
