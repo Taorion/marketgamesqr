@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-generic-ticket-focus-v66";
+const APP_VERSION = "empresa-20260722-contact-directory-ux-v67";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1462,6 +1462,7 @@ let state = {
     score_max: "",
     channel: "",
   },
+  leadDirectoryAudience: "customers",
   selectedLeadDetail: null,
   selectedLeadTab: "summary",
   selectedLeadRef: null,
@@ -2580,6 +2581,7 @@ function resetBusinessScopedState(options = {}) {
   state.leadAgendaRange = null;
   state.editingAgendaId = null;
   state.contactCenterTab = "overview";
+  state.leadDirectoryAudience = "customers";
   state.leadCrmRows = [];
   state.leadCrmPagination = { total: 0, limit: 40, offset: 0, has_more: false };
   state.leadCrmLoaded = false;
@@ -2978,12 +2980,14 @@ async function loadLeadAgendaData(options = {}) {
 }
 
 function leadCrmQueryString() {
+  const audiencePurchaseFilter = state.leadDirectoryAudience === "leads" ? "false" : "true";
+  if (leadCrmPurchaseFilter && !leadCrmPurchaseFilter.value) leadCrmPurchaseFilter.value = audiencePurchaseFilter;
   const filters = {
     search: String(leadCrmSearchInput?.value || state.leadCrmFilters.search || "").trim(),
     campaign_id: leadCrmCampaignFilter?.value || state.leadCrmFilters.campaign_id || "",
     status: leadCrmStatusFilter?.value || state.leadCrmFilters.status || "",
     is_affiliate: leadCrmAffiliateFilter?.value || state.leadCrmFilters.is_affiliate || "",
-    has_purchases: leadCrmPurchaseFilter?.value || state.leadCrmFilters.has_purchases || "",
+    has_purchases: leadCrmPurchaseFilter?.value || state.leadCrmFilters.has_purchases || audiencePurchaseFilter,
     ticket_filter: leadCrmTicketFilter?.value || state.leadCrmFilters.ticket_filter || "",
     priority: leadCrmPriorityFilter?.value || state.leadCrmFilters.priority || "",
     score_min: leadCrmScoreMinFilter?.value || state.leadCrmFilters.score_min || "",
@@ -24488,8 +24492,8 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
     <div class="contact-directory-hero">
       <div>
         <span class="mono-label">Directorio comercial</span>
-        <h3>Clientes y leads en una sola lectura</h3>
-        <p>Usa los filtros de arriba para buscar por campaña, canal, compras o prioridad. Haz clic sobre cualquier tarjeta para abrir la ficha completa del contacto.</p>
+        <h3>Clientes y leads separados por intención</h3>
+        <p>Usa las pestañas del listado para trabajar clientes que ya compraron o leads que todavía son prospectos con oportunidad comercial.</p>
       </div>
       <div class="contact-directory-summary" aria-label="Resumen del directorio">
         <span><strong>${customers.length.toLocaleString("es-CO")}</strong><small>clientes</small></span>
@@ -24498,24 +24502,6 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         <span><strong>${affiliates.toLocaleString("es-CO")}</strong><small>afiliados</small></span>
       </div>
     </div>
-    <section class="contact-directory-columns">
-      ${leadDirectorySegmentMarkup({
-        title: "Clientes que ya compraron",
-        subtitle: "Base convertida",
-        icon: "shopping_bag",
-        rows: customers,
-        emptyText: "Cuando un contacto registre compras aparecerá aquí como cliente.",
-        segment: "customer",
-      })}
-      ${leadDirectorySegmentMarkup({
-        title: "Leads por trabajar",
-        subtitle: "Oportunidades",
-        icon: "person_search",
-        rows: leads,
-        emptyText: "Sin leads visibles para los filtros actuales.",
-        segment: "lead",
-      })}
-    </section>
   `;
   board.querySelectorAll("[data-lead-id]").forEach((card) => {
     const open = () => openLeadDetail({
@@ -24530,6 +24516,80 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
       }
     });
   });
+}
+
+function ensureLeadDirectoryTableUxStyles() {
+  if (document.getElementById("leadDirectoryTableUxStylesV67")) return;
+  const style = document.createElement("style");
+  style.id = "leadDirectoryTableUxStylesV67";
+  style.textContent = `
+    body[data-current-view="leads"] .portal-shell .lead-directory-card { overflow: hidden; border-radius: 28px; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-card > .table-card-head { align-items: flex-start; gap: 1rem; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-card .table-card-subtitle { max-width: 760px; margin: .3rem 0 0; color: rgba(71,85,105,.86); font-size: .9rem; line-height: 1.42; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; padding: .85rem 1rem 1rem; border-bottom: 1px solid rgba(15,23,42,.08); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button { min-height: 72px; display: grid; grid-template-columns: 42px minmax(0,1fr); gap: .75rem; align-items: center; padding: .85rem; border: 1px solid rgba(15,23,42,.08); border-radius: 20px; background: rgba(248,250,252,.95); color: rgba(15,23,42,.82); text-align: left; box-shadow: none; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button > .material-symbols-outlined { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 15px; color: rgb(37,99,235); background: rgba(37,99,235,.1); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button strong,
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button small { display: block; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button small { margin-top: .15rem; color: rgba(71,85,105,.82); font-size: .78rem; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs button.active { border-color: rgba(37,99,235,.32); background: linear-gradient(135deg,rgba(239,246,255,.98),rgba(255,255,255,.98)); box-shadow: inset 0 -3px 0 rgba(37,99,235,.68), 0 16px 35px rgba(37,99,235,.1); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-card .table-wrap { max-height: 760px; overflow: auto; padding: .7rem 1rem 1rem; background: rgba(248,250,252,.74); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-table { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0 .75rem; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-table tbody td { padding: 0; border: 0; background: transparent; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-card-row { display: grid; grid-template-columns: minmax(290px,1.25fr) minmax(180px,.7fr) minmax(220px,.9fr) minmax(260px,1fr) auto; gap: .8rem; align-items: stretch; padding: .9rem; border: 1px solid rgba(15,23,42,.08); border-radius: 24px; background: #fff; box-shadow: 0 14px 32px rgba(15,23,42,.07); cursor: pointer; transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-card-row:hover { transform: translateY(-1px); border-color: rgba(37,99,235,.26); box-shadow: 0 22px 44px rgba(15,23,42,.1); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-person { display: grid; grid-template-columns: 46px minmax(0,1fr); gap: .75rem; align-items: center; min-width: 0; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-avatar { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 17px; color: #fff; background: linear-gradient(135deg,#2563eb,#0f766e); font-weight: 900; letter-spacing: -.04em; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-person strong { display: block; overflow: hidden; color: rgba(15,23,42,.95); font-size: .98rem; line-height: 1.12; text-overflow: ellipsis; white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-person small,
+    body[data-current-view="leads"] .portal-shell .lead-directory-block small,
+    body[data-current-view="leads"] .portal-shell .lead-directory-block span { display: block; color: rgba(71,85,105,.86); font-size: .76rem; line-height: 1.32; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-contact-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-block { display: grid; align-content: center; gap: .2rem; min-width: 0; padding: .7rem; border-radius: 18px; background: rgba(248,250,252,.92); border: 1px solid rgba(15,23,42,.06); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-block strong { overflow: hidden; color: rgba(15,23,42,.9); font-size: .92rem; text-overflow: ellipsis; white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-kpis { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .45rem; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-kpis article { min-width: 0; padding: .55rem; border-radius: 15px; background: rgba(241,245,249,.9); border: 1px solid rgba(15,23,42,.05); }
+    body[data-current-view="leads"] .portal-shell .lead-directory-kpis span { display: block; color: rgba(71,85,105,.76); font-size: .66rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-kpis strong { display: block; margin-top: .15rem; overflow: hidden; color: rgba(15,23,42,.94); font-size: .84rem; text-overflow: ellipsis; white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { display: grid; grid-template-columns: 1fr; gap: .42rem; align-content: center; min-width: 156px; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-action-stack button { min-height: 36px; width: 100%; justify-content: center; border-radius: 13px; font-size: .78rem; white-space: nowrap; }
+    body[data-current-view="leads"] .portal-shell .lead-directory-empty { padding: 1rem; border: 1px dashed rgba(15,23,42,.18); border-radius: 22px; background: rgba(255,255,255,.9); color: rgba(71,85,105,.9); text-align: center; }
+    @media (max-width: 1180px) { body[data-current-view="leads"] .portal-shell .lead-directory-card-row { grid-template-columns: minmax(260px,1fr) minmax(210px,.8fr) minmax(230px,1fr); } body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { grid-column: 1 / -1; grid-template-columns: repeat(4,minmax(0,1fr)); } }
+    @media (max-width: 760px) { body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs, body[data-current-view="leads"] .portal-shell .lead-directory-card-row, body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { grid-template-columns: 1fr; } body[data-current-view="leads"] .portal-shell .lead-directory-table { min-width: 760px; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function leadDirectoryAudience() {
+  return state.leadDirectoryAudience === "leads" ? "leads" : "customers";
+}
+
+function leadDirectoryAudienceLabel(audience = leadDirectoryAudience()) {
+  return audience === "leads" ? "Leads" : "Clientes";
+}
+
+function syncLeadDirectoryAudienceTabs(rows = state.leadCrmRows || []) {
+  const audience = leadDirectoryAudience();
+  document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => {
+    const active = button.dataset.leadDirectoryAudience === audience;
+    const visibleCount = button.dataset.leadDirectoryAudience === "customers"
+      ? rows.filter(leadDirectoryIsCustomer).length
+      : rows.filter((item) => !leadDirectoryIsCustomer(item)).length;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+    const small = button.querySelector("small");
+    if (small) small.textContent = active ? `${visibleCount.toLocaleString("es-CO")} visibles` : (button.dataset.leadDirectoryAudience === "customers" ? "Ya compraron" : "Prospectos por convertir");
+  });
+}
+
+function leadDirectoryInitials(name = "") {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return `${parts[0]?.[0] || "C"}${parts[1]?.[0] || ""}`;
+}
+
+function leadDirectoryRowCampaignLine(item = {}) {
+  return [leadDirectoryCampaign(item), leadDirectoryChannel(item)].filter(Boolean).join(" · ");
 }
 
 function leadPriorityChipClass(priority = "") {
@@ -24759,53 +24819,75 @@ async function removeManualContactFromCampaign(manualLeadId, campaignId) {
 
 function renderLeadCrmTable() {
   if (!leadCrmTable) return;
+  ensureLeadDirectoryTableUxStyles();
   const rows = state.leadCrmRows || [];
   const pagination = state.leadCrmPagination || {};
+  const audience = leadDirectoryAudience();
+  const visibleRows = rows.filter((item) => audience === "customers" ? leadDirectoryIsCustomer(item) : !leadDirectoryIsCustomer(item));
+  syncLeadDirectoryAudienceTabs(rows);
   if (leadCrmPaginationLabel) {
-    const from = rows.length ? Number(pagination.offset || 0) + 1 : 0;
-    const to = Number(pagination.offset || 0) + rows.length;
-    leadCrmPaginationLabel.textContent = `${from}-${to} de ${Number(pagination.total || rows.length).toLocaleString("es-CO")}`;
+    const from = visibleRows.length ? Number(pagination.offset || 0) + 1 : 0;
+    const to = Number(pagination.offset || 0) + visibleRows.length;
+    leadCrmPaginationLabel.textContent = `${leadDirectoryAudienceLabel(audience)} · ${from}-${to} de ${Number(pagination.total || visibleRows.length).toLocaleString("es-CO")}`;
   }
   if (leadCrmPrevButton) leadCrmPrevButton.disabled = Number(pagination.offset || 0) <= 0;
   if (leadCrmNextButton) leadCrmNextButton.disabled = !pagination.has_more;
-  leadCrmTable.innerHTML = rows.map((item) => `
+  leadCrmTable.innerHTML = visibleRows.map((item) => {
+    const isCustomer = leadDirectoryIsCustomer(item);
+    const badges = leadBadges(item);
+    const station = leadDirectoryStationInfo(item);
+    const sales = leadDirectorySalesSummary(item);
+    const kindLabel = isCustomer ? "Cliente" : "Lead";
+    const kindClass = isCustomer ? "ok" : leadPriorityChipClass(item.care_priority);
+    return `
     <tr class="lead-directory-row" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
-      <td>
-        <strong>${escapeHtml(item.name || "Sin nombre")}</strong>
-        <br><span class="table-secondary">${escapeHtml(item.document_id || item.email || item.phone || item.id)}</span>
-        ${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}
-        <br><span class="table-secondary">${escapeHtml(item.email || "-")} · ${escapeHtml(item.phone || "-")}</span>
-      </td>
-      <td>
-        <span class="status-chip ${leadPriorityChipClass(item.care_priority)}">${escapeHtml(item.care_priority_label || "Seguimiento")}</span>
-        <br><strong>${Number(item.attention_score || 0).toLocaleString("es-CO")}</strong>
-        <br><span class="table-secondary">${escapeHtml(item.recommended_action || "-")}</span>
-      </td>
-      <td>
-        <span class="status-chip ${commercialChipClass(item.commercial_status)}">${escapeHtml(item.commercial_status_label || item.commercial_status || "Nuevo")}</span>
-        <br><span class="table-secondary">${escapeHtml(item.level || "-")}</span>
-      </td>
-      <td><strong>${Number(item.score_total || 0).toLocaleString("es-CO")}</strong><br><span class="table-secondary">Mejor ${Number(item.best_score || 0)}</span></td>
-      <td><strong>${money(item.total_spent || 0)}</strong><br><span class="table-secondary">${Number(item.purchase_count || 0)} compras</span></td>
-      <td>${formatDate(item.last_interaction_at)}<br><span class="table-secondary">${escapeHtml(leadOriginText(item))}</span></td>
-      <td>${Number(item.activation_count || 0)} activaciones<br><span class="table-secondary">${Number(item.games_played || 0)} juegos</span><br><span class="table-secondary">${escapeHtml(leadTicketInventoryText(item))}</span></td>
-      <td><div class="lead-badge-wrap">${leadBadges(item).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("") || '<span class="table-secondary">Sin badges</span>'}</div></td>
-      <td>
-        <div class="activation-row-actions">
-          <button class="ghost-button" type="button" data-lead-action="detail">Ver</button>
-          ${item.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="edit">Editar</button>` : ""}
-          ${item.source_type !== "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="add-contact">Agregar a contactos</button>` : ""}
-          ${item.active_ticket_qr_id ? `
-            <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
-            <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">Recordar WhatsApp</button>
-          ` : `<button class="ghost-button" type="button" data-lead-action="activation">Activar</button>`}
-          <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
+      <td colspan="9">
+        <div class="lead-directory-card-row" role="button" tabindex="0">
+          <div class="lead-directory-person">
+            <span class="lead-directory-avatar">${escapeHtml(leadDirectoryInitials(item.name || kindLabel).toUpperCase())}</span>
+            <div>
+              <strong>${escapeHtml(item.name || `Sin nombre (${kindLabel})`)}</strong>
+              <small class="lead-directory-contact-line">${escapeHtml(leadDirectoryContactLine(item))}</small>
+              ${item.metadata?.manual_job_title ? `<small>${escapeHtml(item.metadata.manual_job_title)}</small>` : ""}
+              <span class="status-chip ${kindClass}">${escapeHtml(kindLabel)}</span>
+            </div>
+          </div>
+          <div class="lead-directory-block">
+            <small>Atención</small>
+            <strong>${escapeHtml(item.care_priority_label || "Seguimiento")}</strong>
+            <span>${Number(item.attention_score || 0).toLocaleString("es-CO")} pts · ${escapeHtml(item.recommended_action || "Revisar ficha")}</span>
+          </div>
+          <div class="lead-directory-block">
+            <small>Estado y origen</small>
+            <strong>${escapeHtml(item.commercial_status_label || item.commercial_status || "Nuevo")}</strong>
+            <span>${escapeHtml(leadDirectoryRowCampaignLine(item))}</span>
+            <span>${escapeHtml(station.short || "Sin estación")}</span>
+          </div>
+          <div class="lead-directory-kpis">
+            <article><span>Compras</span><strong>${Number(item.purchase_count || 0).toLocaleString("es-CO")} · ${money(item.total_spent || 0)}</strong></article>
+            <article><span>Ventas</span><strong>${escapeHtml(sales.label || "-")}</strong></article>
+            <article><span>Tickets</span><strong>${escapeHtml(leadTicketInventoryText(item))}</strong></article>
+            <article><span>Score</span><strong>${Number(item.score_total || 0).toLocaleString("es-CO")} / mejor ${Number(item.best_score || 0)}</strong></article>
+            <article><span>Activaciones</span><strong>${Number(item.activation_count || 0)} act. · ${Number(item.games_played || 0)} juegos</strong></article>
+            <article><span>Badges</span><strong>${escapeHtml(badges.slice(0, 2).join(", ") || "Sin badges")}</strong></article>
+          </div>
+          <div class="lead-directory-action-stack">
+            <button class="solid-button" type="button" data-lead-action="detail">Ver ficha</button>
+            ${item.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="edit">Editar</button>` : ""}
+            ${item.source_type !== "MANUAL" ? `<button class="ghost-button" type="button" data-lead-action="add-contact">Guardar contacto</button>` : ""}
+            ${item.active_ticket_qr_id ? `
+              <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
+              <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">WhatsApp</button>
+            ` : `<button class="ghost-button" type="button" data-lead-action="activation">Activar</button>`}
+            <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
+          </div>
         </div>
       </td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin leads para los filtros actuales.</td></tr>';
+  `;
+  }).join("") || `<tr><td colspan="9"><div class="lead-directory-empty">Sin ${leadDirectoryAudienceLabel(audience).toLowerCase()} para los filtros actuales.</div></td></tr>`;
   leadCrmTable.querySelectorAll("[data-lead-id]").forEach((row) => {
-    row.addEventListener("click", (event) => {
+    const handleDirectoryRowAction = (event) => {
       const actionButton = event.target.closest("[data-lead-action]");
       const action = actionButton?.dataset.leadAction || "detail";
       const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
@@ -24826,6 +24908,12 @@ function renderLeadCrmTable() {
       } else {
         openLeadDetail(leadRef);
       }
+    };
+    row.addEventListener("click", handleDirectoryRowAction);
+    row.querySelector(".lead-directory-card-row")?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      handleDirectoryRowAction(event);
     });
   });
 }
@@ -35370,10 +35458,27 @@ leadCrmSearchButton?.addEventListener("click", () => refreshLeadCrm({ quiet: tru
 [leadCrmCampaignFilter, leadCrmStatusFilter, leadCrmAffiliateFilter, leadCrmPurchaseFilter, leadCrmTicketFilter, leadCrmPriorityFilter, leadCrmScoreMinFilter, leadCrmScoreMaxFilter, leadCrmChannelFilter].forEach((input) => {
   input?.addEventListener(input.tagName === "INPUT" ? "input" : "change", scheduleLeadCrmRefresh);
 });
+leadCrmPurchaseFilter?.addEventListener("change", () => {
+  if (leadCrmPurchaseFilter.value === "false") state.leadDirectoryAudience = "leads";
+  if (leadCrmPurchaseFilter.value === "true") state.leadDirectoryAudience = "customers";
+  syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
+});
+document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const audience = button.dataset.leadDirectoryAudience === "leads" ? "leads" : "customers";
+    state.leadDirectoryAudience = audience;
+    if (leadCrmPurchaseFilter) leadCrmPurchaseFilter.value = audience === "leads" ? "false" : "true";
+    state.leadCrmPagination.offset = 0;
+    syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
+    refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
+  });
+});
 leadCrmResetButton?.addEventListener("click", () => {
   [leadCrmSearchInput, leadCrmCampaignFilter, leadCrmStatusFilter, leadCrmAffiliateFilter, leadCrmPurchaseFilter, leadCrmTicketFilter, leadCrmPriorityFilter, leadCrmScoreMinFilter, leadCrmScoreMaxFilter, leadCrmChannelFilter].forEach((input) => {
     if (input) input.value = "";
   });
+  state.leadDirectoryAudience = "customers";
+  if (leadCrmPurchaseFilter) leadCrmPurchaseFilter.value = "true";
   refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
 });
 leadCrmPrevButton?.addEventListener("click", () => {

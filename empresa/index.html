@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=generic-ticket-focus-20260722-v66">
+  <link rel="stylesheet" href="css/styles.css?v=contact-directory-ux-20260722-v67">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4568,13 +4568,24 @@
             <article class="surface-card data-table-card lead-directory-card">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">RMS de leads</span>
-                  <h3>Centro de inteligencia comercial</h3>
+                  <span class="mono-label">Directorio comercial</span>
+                  <h3>Clientes y leads</h3>
+                  <p class="table-card-subtitle">Clientes son contactos que ya compraron. Leads son prospectos con oportunidad pendiente de convertir.</p>
                 </div>
                 <span class="pill muted" id="leadCrmPaginationLabel">Sin cargar</span>
               </div>
+              <div class="lead-directory-audience-tabs" id="leadDirectoryAudienceTabs" role="tablist" aria-label="Tipo de contacto">
+                <button class="active" type="button" data-lead-directory-audience="customers" role="tab" aria-selected="true">
+                  <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+                  <span><strong>Clientes</strong><small>Ya compraron</small></span>
+                </button>
+                <button type="button" data-lead-directory-audience="leads" role="tab" aria-selected="false">
+                  <span class="material-symbols-outlined" aria-hidden="true">person_search</span>
+                  <span><strong>Leads</strong><small>Prospectos por convertir</small></span>
+                </button>
+              </div>
               <div class="table-wrap">
-                <table>
+                <table class="lead-directory-table">
                   <thead>
                     <tr>
                       <th>Lead</th>
@@ -7154,7 +7165,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=generic-ticket-focus-20260722-v66" defer></script>
+  <script src="js/app.js?v=contact-directory-ux-20260722-v67" defer></script>
 </body>
 </html>
 
