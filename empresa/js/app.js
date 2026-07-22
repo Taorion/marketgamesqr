@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-open-v42";
+const APP_VERSION = "empresa-20260722-rms-station-click-v43";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29628,6 +29628,7 @@ function bindRmsStageSlider() {
   });
   rmsStageBoard.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.target.closest?.("button, a, input, select, textarea, [role='button']")) return;
     rmsStageSliderDragState = { pointerId: event.pointerId, startX: event.clientX, startScroll: rmsStageBoard.scrollLeft, moved: false };
     rmsStageBoard.setPointerCapture?.(event.pointerId);
   });
@@ -29803,7 +29804,9 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => handleRmsEmptyAction(button.dataset.rmsEmptyAction));
   });
   root.querySelectorAll("[data-rms-open-station]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       const navigation = button.dataset.rmsNavigation || "";
       openRmsStation(button.dataset.rmsOpenStation || "", {
         source: navigation || "button",
