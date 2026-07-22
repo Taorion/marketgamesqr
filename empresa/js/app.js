@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-inventory-ux-v61";
+const APP_VERSION = "empresa-20260722-missions-ux-v62";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -142,6 +142,7 @@ const missionRewardsPending = document.getElementById("missionRewardsPending");
 const missionsCreateButton = document.getElementById("missionsCreateButton");
 const missionsRefreshButton = document.getElementById("missionsRefreshButton");
 const missionsOpenAgendaButton = document.getElementById("missionsOpenAgendaButton");
+const missionSeasonFilter = document.getElementById("missionSeasonFilter");
 const missionWizardModal = document.getElementById("missionWizardModal");
 const missionWizardForm = document.getElementById("missionWizardForm");
 const missionWizardCloseButton = document.getElementById("missionWizardCloseButton");
@@ -1432,6 +1433,7 @@ let state = {
   missionsLoaded: false,
   missionsLoading: false,
   missionWizardTemplateKey: "top_clients_week",
+  missionSeasonFilter: "all",
   smartCatalogs: [],
   smartCatalogDashboard: null,
   smartCatalogProducts: [],
@@ -2581,6 +2583,7 @@ function resetBusinessScopedState(options = {}) {
   state.missionsLoaded = false;
   state.missionsLoading = false;
   state.missionWizardTemplateKey = "weekly_trivia";
+  state.missionSeasonFilter = "all";
   state.selectedLeadDetail = null;
   state.selectedLeadTab = "summary";
   state.selectedLeadRef = null;
@@ -33034,7 +33037,221 @@ async function loadGamificationDashboard(options = {}) {
   }
 }
 
+function ensureMissionsUxStyles() {
+  if (document.getElementById("missionsUxStylesV62")) return;
+  const style = document.createElement("style");
+  style.id = "missionsUxStylesV62";
+  style.textContent = `
+    .mission-command-center {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .mission-what-card,
+    .mission-control-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+    }
+    .mission-what-card h3,
+    .mission-control-card h3 {
+      margin: 0.2rem 0 0.35rem;
+      font-size: clamp(1.25rem, 2.1vw, 1.75rem);
+    }
+    .mission-step-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+    .mission-step-list article {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.72rem;
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .mission-step-list article > span {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 13px;
+      background: rgba(217, 119, 6, 0.12);
+      color: #b45309;
+      font-weight: 900;
+    }
+    .mission-step-list small,
+    .mission-control-card p {
+      color: #64748b;
+    }
+    .mission-control-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.75fr) minmax(260px, 1.25fr);
+      gap: 0.85rem;
+      align-items: end;
+      margin-top: 0.85rem;
+    }
+    .mission-control-row label {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+    .mission-control-row select {
+      min-height: 42px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      padding: 0 0.75rem;
+      background: #fff;
+    }
+    .mission-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .mission-active-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.85rem;
+    }
+    .mission-active-card {
+      display: grid;
+      gap: 0.8rem;
+      min-width: 0;
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    }
+    .mission-active-card.is-active {
+      border-color: rgba(22, 163, 74, 0.26);
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(255, 255, 255, 0.94));
+    }
+    .mission-active-card.is-purchase {
+      border-color: rgba(37, 99, 235, 0.24);
+    }
+    .mission-active-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .mission-active-head h4 {
+      margin: 0.2rem 0;
+      font-size: 1.05rem;
+    }
+    .mission-active-head p {
+      margin: 0;
+      color: #64748b;
+    }
+    .mission-progress-track {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.18);
+    }
+    .mission-progress-track span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #16a34a);
+    }
+    .mission-date-row,
+    .mission-type-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .mission-active-card dl {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin: 0;
+    }
+    .mission-active-card dl div {
+      padding: 0.65rem;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.96);
+    }
+    .mission-active-card dt {
+      color: #64748b;
+      font-size: 0.78rem;
+    }
+    .mission-active-card dd {
+      margin: 0.15rem 0 0;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    @media (max-width: 980px) {
+      .mission-command-center,
+      .mission-control-row {
+        grid-template-columns: 1fr;
+      }
+      .mission-active-card dl {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function missionStatusLabel(status = "") {
+  const labels = {
+    ACTIVE: "Activa",
+    DRAFT: "Borrador",
+    PAUSED: "Pausada",
+    COMPLETED: "Finalizada",
+    ARCHIVED: "Archivada",
+  };
+  return labels[String(status || "ACTIVE").toUpperCase()] || status || "Activa";
+}
+
+function missionStatusClass(status = "") {
+  const normalized = String(status || "ACTIVE").toUpperCase();
+  if (normalized === "ACTIVE") return "ok";
+  if (["DRAFT", "PAUSED"].includes(normalized)) return "pending";
+  return "muted";
+}
+
+function missionRankingLabel(season = {}) {
+  const rankingType = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase();
+  if (rankingType === "PURCHASES") return "Ranking por compras";
+  if (rankingType === "POINTS") return "Ranking por puntos";
+  return rankingType ? `Ranking ${rankingType}` : "Dinámica de temporada";
+}
+
+function missionDateProgress(season = {}) {
+  const start = season.start_date ? new Date(season.start_date) : null;
+  const end = season.end_date ? new Date(season.end_date) : null;
+  if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 0;
+  const now = new Date();
+  const progress = ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
+  return Math.max(0, Math.min(100, Math.round(progress)));
+}
+
+function filteredMissionSeasons(seasons = []) {
+  const filter = state.missionSeasonFilter || "all";
+  return seasons.filter((season) => {
+    const status = String(season.status || "").toUpperCase();
+    const rankingType = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase();
+    if (filter === "active") return status === "ACTIVE";
+    if (filter === "purchase") return rankingType === "PURCHASES";
+    if (filter === "points") return rankingType !== "PURCHASES";
+    if (filter === "closed") return status !== "ACTIVE";
+    return true;
+  });
+}
+
 function renderMissionsView() {
+  ensureMissionsUxStyles();
+  if (missionSeasonFilter) missionSeasonFilter.value = state.missionSeasonFilter || "all";
   const data = state.missions || {};
   const metrics = data.metrics || {};
   const seasons = data.seasons || [];
@@ -33093,22 +33310,38 @@ function renderMissionTemplates() {
 
 function renderMissionActiveList(seasons = []) {
   if (!missionActiveList) return;
-  missionActiveList.innerHTML = seasons.map((season) => {
+  const rows = filteredMissionSeasons(seasons);
+  missionActiveList.innerHTML = rows.map((season) => {
     const isPurchaseCompetition = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES";
     const participants = isPurchaseCompetition ? season.purchase_customers_count : season.participants_count;
     const mainMetricLabel = isPurchaseCompetition ? "Ventas del periodo" : "Puntos";
     const mainMetricValue = isPurchaseCompetition ? money(season.purchase_amount || 0) : Number(season.points_total || 0).toLocaleString("es-CO");
+    const progress = missionDateProgress(season);
+    const active = String(season.status || "").toUpperCase() === "ACTIVE";
     return `
-    <article class="mission-active-card">
-      <div>
-        <span class="status-chip ${season.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(season.status || "DRAFT")}</span>
-        <h4>${escapeHtml(season.name || "Dinámica Sales Machine")}</h4>
-        <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
+    <article class="mission-active-card ${active ? "is-active" : ""} ${isPurchaseCompetition ? "is-purchase" : ""}">
+      <div class="mission-active-head">
+        <div>
+          <span class="mono-label">${escapeHtml(missionRankingLabel(season))}</span>
+          <h4>${escapeHtml(season.name || "Dinámica Sales Machine")}</h4>
+          <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
+        </div>
+        <span class="status-chip ${missionStatusClass(season.status)}">${escapeHtml(missionStatusLabel(season.status))}</span>
+      </div>
+      <div class="mission-date-row">
+        <span class="pill muted">Inicio ${season.start_date ? escapeHtml(formatDate(season.start_date)) : "sin fecha"}</span>
+        <span class="pill muted">Final ${season.end_date ? escapeHtml(formatDate(season.end_date)) : "sin fecha"}</span>
+        <span class="pill muted">${progress}% recorrido</span>
+      </div>
+      <div class="mission-progress-track" aria-label="Progreso de temporada"><span style="width:${progress}%"></span></div>
+      <div class="mission-type-row">
+        <span class="pill muted">${escapeHtml(season.type || "Temporada")}</span>
+        <span class="pill muted">${escapeHtml(season.channel || "Canal mixto")}</span>
       </div>
       <dl>
         <div><dt>${isPurchaseCompetition ? "Clientes" : "Participantes"}</dt><dd>${Number(participants || 0).toLocaleString("es-CO")}</dd></div>
         <div><dt>${escapeHtml(mainMetricLabel)}</dt><dd>${escapeHtml(mainMetricValue)}</dd></div>
-        <div><dt>Finaliza</dt><dd>${season.end_date ? formatDate(season.end_date) : "-"}</dd></div>
+        <div><dt>${isPurchaseCompetition ? "Compras" : "Top"}</dt><dd>${isPurchaseCompetition ? Number(season.purchases_count || 0).toLocaleString("es-CO") : Number(season.settings_json?.ranking?.top_limit || 0).toLocaleString("es-CO")}</dd></div>
       </dl>
       <div class="button-row">
         <button class="ghost-button" type="button" data-mission-agenda="${escapeHtml(season.id)}">Crear tareas</button>
@@ -33118,7 +33351,7 @@ function renderMissionActiveList(seasons = []) {
   `;
   }).join("") || `
     <div class="empty-state">
-      Aún no hay dinámicas activas. Crea una trivia semanal, un ranking de clientes o una racha de recompra para empezar.
+      ${seasons.length ? "No hay temporadas con el filtro seleccionado." : "Aún no hay dinámicas activas. Crea una temporada, un ranking de clientes o una racha de recompra para empezar."}
     </div>
   `;
   missionActiveList.querySelectorAll("[data-mission-agenda]").forEach((button) => {
@@ -33995,6 +34228,10 @@ missionsRefreshButton?.addEventListener("click", () => {
 missionsOpenAgendaButton?.addEventListener("click", () => {
   setContactCenterTab("agenda");
   setView("leads");
+});
+missionSeasonFilter?.addEventListener("change", () => {
+  state.missionSeasonFilter = missionSeasonFilter.value || "all";
+  renderMissionsView();
 });
 missionWizardCloseButton?.addEventListener("click", closeMissionWizard);
 missionWizardCancelButton?.addEventListener("click", closeMissionWizard);

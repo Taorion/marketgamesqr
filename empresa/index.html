@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=inventory-ux-20260722-v61">
+  <link rel="stylesheet" href="css/styles.css?v=missions-ux-20260722-v62">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -1089,12 +1089,12 @@
           <section class="view-section" data-view="missions">
             <div class="view-head missions-head">
               <div>
-                <span class="mono-label">Competencias de clientes</span>
-                <h2>Temporadas y leaderboard de compras</h2>
-                <p>Elige un periodo y descubre qué clientes compraron más. Crea una competencia, sigue el ranking y premia a los ganadores.</p>
+                <span class="mono-label">Fidelización y recompra</span>
+                <h2>Temporadas comerciales</h2>
+                <p>Crea temporadas de venta, rankings y recompensas para mover clientes a comprar, volver y participar.</p>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" id="missionsCreateButton" type="button">Crear competencia</button>
+                <button class="solid-button" id="missionsCreateButton" type="button">Crear temporada</button>
                 <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
                 <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
               </div>
@@ -1113,6 +1113,33 @@
                 </div>
               </article>
               <div class="missions-kpis" id="missionsKpiGrid"></div>
+            </section>
+
+            <section class="mission-command-center">
+              <article class="surface-card mission-what-card">
+                <span class="mono-label">Qué hacer aquí</span>
+                <h3>Diseñar una temporada que genere acción</h3>
+                <div class="mission-step-list">
+                  <article><span>1</span><div><strong>Define el objetivo</strong><small>Ventas, recompra, participación, referidos o redenciones.</small></div></article>
+                  <article><span>2</span><div><strong>Elige el periodo</strong><small>Semana, mes, últimos 30 días o fechas especiales.</small></div></article>
+                  <article><span>3</span><div><strong>Premia y agenda</strong><small>Ranking, recompensa y tareas para contactar ganadores.</small></div></article>
+                </div>
+              </article>
+              <article class="surface-card mission-control-card">
+                <div>
+                  <span class="mono-label">Temporadas creadas</span>
+                  <h3>Operación rápida</h3>
+                  <p>Filtra las temporadas, revisa ranking y crea tareas de seguimiento sin perder contexto.</p>
+                </div>
+                <div class="mission-control-row">
+                  <label><span>Ver temporadas</span><select id="missionSeasonFilter"><option value="all">Todas</option><option value="active">Activas</option><option value="purchase">Ranking de compras</option><option value="points">Puntos / participación</option><option value="closed">Cerradas o borrador</option></select></label>
+                  <div class="mission-quick-actions">
+                    <button class="solid-button compact" type="button" data-purchase-competition-period="week">Top clientes semana</button>
+                    <button class="ghost-button compact" type="button" data-purchase-competition-period="month">Top clientes mes</button>
+                    <button class="ghost-button compact" type="button" data-open-mission-wizard="rebuy_streak">Racha recompra</button>
+                  </div>
+                </div>
+              </article>
             </section>
 
             <section class="missions-dashboard-grid">
@@ -7067,7 +7094,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=inventory-ux-20260722-v61" defer></script>
+  <script src="js/app.js?v=missions-ux-20260722-v62" defer></script>
 </body>
 </html>
 
