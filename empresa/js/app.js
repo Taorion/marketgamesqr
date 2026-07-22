@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-one-header-v49";
+const APP_VERSION = "empresa-20260722-rms-station-nav-clean-v50";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29125,6 +29125,21 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 920px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { grid-template-columns: 62px minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-badge { width: 58px !important; height: 58px !important; border-radius: 16px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics { grid-column: 1 / -1 !important; } }
     @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics { grid-template-columns: repeat(3,minmax(0,1fr)) !important; } }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { position: relative !important; top: auto !important; z-index: 4 !important; padding: 8px 10px !important; border-radius: 14px !important; box-shadow: 0 8px 18px rgba(23,65,91,.07) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-primary { display: grid !important; grid-template-columns: auto minmax(240px,1fr) minmax(190px,.42fr) auto !important; align-items: center !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 72px !important; min-height: 40px !important; padding: 8px 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context { min-width: 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context > strong { max-width: 100% !important; font-size: .92rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context > small { font-size: .68rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-quick-jump { min-width: 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-quick-jump select { min-height: 38px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { display: grid !important; grid-template-columns: repeat(2,minmax(92px,1fr)) !important; gap: 7px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows > button { min-height: 40px !important; padding: 7px 9px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 84px !important; }
+    @media (max-width: 980px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-primary { grid-template-columns: auto minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-quick-jump, body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-column: 1 / -1 !important; } }
+    @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 58px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 68px !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
@@ -29136,46 +29151,34 @@ function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities 
   const currentCount = opportunities.filter((lead) => lead.stage === currentStage.key).length;
   const progress = stages.length > 1 ? Math.round((Math.max(0, currentIndex) / (stages.length - 1)) * 100) : 100;
   return `
-    <section class="rms-station-navigation-hub" aria-label="Navegación dinámica de estaciones">
+    <section class="rms-station-navigation-hub rms-station-navigation-hub-compact" aria-label="Navegación de estaciones">
       <div class="rms-station-navigation-primary">
         <button class="ghost-button rms-station-map-button" type="button" data-rms-close-station>
-          <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
           <span>Mapa</span>
         </button>
         <div class="rms-station-navigation-context" aria-live="polite">
-          <span>Estación ${String(currentIndex + 1).padStart(2, "0")} de ${String(stages.length).padStart(2, "0")} · ${progress}% del recorrido</span>
+          <span>Estación ${String(currentIndex + 1).padStart(2, "0")} de ${String(stages.length).padStart(2, "0")}</span>
           <strong>${escapeHtml(currentStage.label || "Estación RMS")}</strong>
-          <small>${currentCount.toLocaleString("es-CO")} lead${currentCount === 1 ? "" : "s"} aquí · ${nextStage ? `Sigue ${escapeHtml(nextStage.short_label || nextStage.label)}` : "Fin del ciclo RMS"}</small>
+          <small>${currentCount.toLocaleString("es-CO")} lead${currentCount === 1 ? "" : "s"} aquí${nextStage ? ` · sigue ${escapeHtml(nextStage.short_label || nextStage.label)}` : ""}</small>
           <i aria-hidden="true"><span style="width:${progress}%"></span></i>
         </div>
         <label class="rms-station-quick-jump">
-          <span>Ir directamente a</span>
+          <span>Ir a estación</span>
           <select data-rms-station-picker aria-label="Ir directamente a otra estación RMS">
             ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${index === currentIndex ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.short_label || item.label || "Estación")}</option>`).join("")}
           </select>
         </label>
         <div class="rms-station-navigation-arrows">
           <button class="ghost-button" type="button" data-rms-open-station="${escapeHtml(previousStage?.key || "")}" data-rms-navigation="previous" aria-keyshortcuts="ArrowLeft" ${previousStage ? "" : "disabled"}>
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span aria-hidden="true">←</span>
             <span><small>Anterior</small><strong>${escapeHtml(previousStage?.short_label || previousStage?.label || "Inicio")}</strong></span>
           </button>
           <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(nextStage?.key || "")}" data-rms-navigation="next" aria-keyshortcuts="ArrowRight" ${nextStage ? "" : "disabled"}>
             <span><small>Siguiente</small><strong>${escapeHtml(nextStage?.short_label || nextStage?.label || "Final")}</strong></span>
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            <span aria-hidden="true">→</span>
           </button>
         </div>
       </div>
-      <nav class="rms-station-journey-nav" aria-label="Recorrido completo de estaciones RMS">
-        <div class="rms-station-journey-track" style="--rms-station-count:${Math.max(1, stages.length)};--rms-station-progress:${progress}%">
-          ${stages.map((item, index) => {
-            const count = opportunities.filter((lead) => lead.stage === item.key).length;
-            const active = index === currentIndex;
-            const completed = index < currentIndex;
-            return `<button class="rms-station-journey-stop ${active ? "is-active" : ""} ${completed ? "is-passed" : ""}" type="button" data-rms-open-station="${escapeHtml(item.key)}" data-rms-navigation="jump" ${active ? 'aria-current="step"' : ""}><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.short_label || item.label || "Estación")}</strong><small>${count.toLocaleString("es-CO")}</small></button>`;
-          }).join("")}
-        </div>
-      </nav>
-      <small class="rms-station-keyboard-hint"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span>También puedes usar ← y → para cambiar de estación.</small>
     </section>
   `;
 }
