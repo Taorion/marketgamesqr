@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-gaming-ticket-focus-v51";
+const APP_VERSION = "empresa-20260722-rms-station-tables-v52";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29152,6 +29152,41 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 980px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-primary { grid-template-columns: auto minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-quick-jump, body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-column: 1 / -1 !important; } }
     @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 58px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 68px !important; } }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table-wrap { overflow-x: auto !important; padding: 4px 6px 10px !important; border: 1px solid rgba(23,65,91,.1) !important; border-radius: 16px !important; background: #f7fbff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table { min-width: 1040px !important; width: 100% !important; border-collapse: separate !important; border-spacing: 0 9px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table thead th { position: sticky !important; top: 0 !important; z-index: 2 !important; padding: 8px 10px !important; border: 0 !important; background: #f7fbff !important; color: #5d736b !important; font-size: .66rem !important; font-weight: 900 !important; letter-spacing: .06em !important; text-align: left !important; text-transform: uppercase !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody tr { outline: 1px solid rgba(23,65,91,.1) !important; outline-offset: -1px !important; border-radius: 15px !important; background: #fff !important; box-shadow: 0 8px 18px rgba(23,65,91,.045) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody tr:hover { outline-color: var(--station-accent,#087f5b) !important; box-shadow: 0 14px 30px rgba(15,115,84,.1) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td { padding: 12px 10px !important; border-top: 1px solid rgba(23,65,91,.08) !important; border-bottom: 1px solid rgba(23,65,91,.08) !important; background: #fff !important; vertical-align: middle !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td:first-child { border-left: 1px solid rgba(23,65,91,.08) !important; border-radius: 15px 0 0 15px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td:last-child { border-right: 1px solid rgba(23,65,91,.08) !important; border-radius: 0 15px 15px 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > span,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > small { display: block !important; max-width: 260px !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > span { color: #17362f !important; font-size: .82rem !important; font-weight: 850 !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > small { margin-top: 3px !important; color: #657c73 !important; font-size: .69rem !important; line-height: 1.3 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-open { display: inline-flex !important; max-width: 230px !important; align-items: center !important; gap: 6px !important; padding: 0 !important; border: 0 !important; background: transparent !important; color: #12362c !important; text-align: left !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-open strong { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-check-cell { width: 76px !important; text-align: center !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-check { width: 44px !important; height: 44px !important; display: inline-grid !important; place-items: center !important; border-radius: 14px !important; background: #f1f7f4 !important; cursor: pointer !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-check .material-symbols-outlined { color: #0f7354 !important; font-size: 27px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quality-cell { width: 230px !important; min-width: 230px !important; background: linear-gradient(135deg,#f1fbf6,#ffffff) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field { display: grid !important; gap: 6px !important; min-width: 205px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field > span { color: #0f7354 !important; font-size: .64rem !important; font-weight: 900 !important; letter-spacing: .05em !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field select { min-height: 40px !important; border: 1px solid rgba(15,115,84,.2) !important; border-radius: 12px !important; background: #fff !important; color: #14352c !important; font-weight: 850 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quality-cell > small { color: #567168 !important; font-size: .68rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons { display: grid !important; grid-template-columns: 1fr !important; gap: 6px !important; min-width: 130px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-buttons button { min-height: 34px !important; justify-content: center !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table.is-quality-first { min-width: 1120px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table.is-quality-first thead th:first-child { color: #0f7354 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table-wrap,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table thead th { background: #0d211c !important; color: #bdd1ca !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody tr { background: #10231e !important; color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > span,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-open { color: #edf9f4 !important; }
+    @media (max-width: 760px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table { min-width: 920px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-quality-cell { min-width: 210px !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
@@ -29627,17 +29662,19 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
 
 function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
   ensureRmsCaptureReviewStyles();
+  const isQualityStation = stage.key === "alimentacion";
   return `
     <div class="rms-station-lead-table-wrap">
-      <table class="rms-station-lead-table">
+      <table class="rms-station-lead-table ${isQualityStation ? "is-quality-first" : ""}">
         <thead>
           <tr>
-            <th>Check</th>
+            ${isQualityStation ? "<th>Calidad</th>" : ""}
+            <th>${isQualityStation ? "Salida" : "Check"}</th>
             <th>Lead</th>
             <th>Contacto</th>
             <th>Origen / campaña</th>
             <th>Interés</th>
-            <th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : stage.key === "alimentacion" ? "Calidad del lead" : "Estado en estación")}</th>
+            ${isQualityStation ? "" : `<th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : stage.key === "curaduria" ? "Estado en estación" : "Estado")}</th>`}
             <th>Acciones</th>
           </tr>
         </thead>
@@ -29669,6 +29706,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
   return `
     <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0">
+      ${stage.key === "alimentacion" ? `<td class="rms-station-quality-cell" data-label="Calidad">${statusMarkup}</td>` : ""}
       <td class="rms-station-check-cell" data-label="Seleccionar">
         <label class="rms-station-lead-check" title="Marcar lead para operar">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
@@ -29694,9 +29732,9 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         ${stage.key === "recoleccion" ? rmsCaptureDataChips(item) : ""}
         ${stage.key === "curaduria" ? rmsProductClassificationMarkup(item) : ""}
       </td>
-      <td data-label="Estado">
+      ${stage.key === "alimentacion" ? "" : `<td data-label="Estado">
         ${statusMarkup}
-      </td>
+      </td>`}
       <td data-label="Acciones">
         <div class="rms-station-lead-buttons">
           <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Analizar</button>
