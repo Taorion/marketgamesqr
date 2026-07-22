@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-one-light-v48";
+const APP_VERSION = "empresa-20260722-rms-station-one-header-v49";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29103,6 +29103,28 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 1040px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-grid, body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell .rms-station-output-lane { position: static !important; } }
     @media (max-width: 700px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list-head, body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card, body.has-rms-collector-modal #rmsCollectorModal .rms-collector-form, body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-grid { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-meta { grid-template-columns: 1fr !important; } }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { grid-template-columns: 74px minmax(260px,1fr) auto !important; gap: 14px !important; padding: 14px !important; border: 1px solid rgba(15,115,84,.16) !important; border-radius: 18px !important; background: linear-gradient(135deg,#effbf6 0%,#ffffff 62%) !important; box-shadow: 0 12px 28px rgba(15,115,84,.08) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-badge { width: 70px !important; height: 70px !important; display: grid !important; place-items: center !important; align-content: center !important; gap: 0 !important; border-radius: 18px !important; background: #0f7354 !important; color: #fff !important; box-shadow: 0 12px 24px rgba(15,115,84,.2) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-badge strong { color: inherit !important; font-size: 1.55rem !important; line-height: 1 !important; letter-spacing: -.04em !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-badge span { color: rgba(255,255,255,.82) !important; font-size: .62rem !important; font-weight: 900 !important; letter-spacing: .08em !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy { min-width: 0 !important; display: grid !important; gap: 4px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy .mono-label { color: #0f7354 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy strong { color: #14352c !important; font-size: clamp(1.15rem, 2vw, 1.65rem) !important; line-height: 1.05 !important; letter-spacing: -.035em !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy small { max-width: 780px !important; color: #526b62 !important; font-size: .78rem !important; line-height: 1.45 !important; white-space: normal !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics { display: grid !important; grid-template-columns: repeat(3,minmax(72px,1fr)) !important; gap: 8px !important; align-self: stretch !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics > span { min-width: 72px !important; display: grid !important; place-items: center !important; align-content: center !important; gap: 3px !important; padding: 9px 10px !important; border: 1px solid rgba(15,115,84,.12) !important; border-radius: 14px !important; background: rgba(255,255,255,.78) !important; color: #526b62 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics strong { color: #14352c !important; font-size: 1.18rem !important; line-height: 1 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics small { color: #6a7e77 !important; font-size: .64rem !important; font-weight: 900 !important; letter-spacing: .04em !important; text-transform: uppercase !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { border-color: rgba(151,211,190,.18) !important; background: linear-gradient(135deg,#102821,#10231e) !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy strong,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics strong { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-copy small,
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics small { color: #bdd1ca !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics > span { border-color: rgba(151,211,190,.16) !important; background: rgba(255,255,255,.04) !important; }
+    @media (max-width: 920px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { grid-template-columns: 62px minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-badge { width: 58px !important; height: 58px !important; border-radius: 16px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics { grid-column: 1 / -1 !important; } }
+    @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-brief-metrics { grid-template-columns: repeat(3,minmax(0,1fr)) !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
@@ -29207,6 +29229,27 @@ function updateRmsStationCommandDock(root = rmsStationWorkspace) {
   applyRmsStationDomFilters(root);
 }
 
+function rmsCollectorPrimaryBriefMarkup(rows = [], outputEligibleRows = [], riskCount = 0, nextPhase = null) {
+  return `
+    <section class="rms-station-primary-brief rms-collector-primary-brief" aria-label="Resumen de Estación 1">
+      <div class="rms-collector-brief-badge" aria-hidden="true">
+        <strong>01</strong>
+        <span>Estación</span>
+      </div>
+      <div class="rms-collector-brief-copy">
+        <span class="mono-label">Leads recolectados</span>
+        <strong>Captura y filtra materia prima comercial</strong>
+        <small>Marca solo los leads con contacto e interés para pasarlos a ${escapeHtml(nextPhase?.label || "Curaduría")}. Haz clic en cualquier lead para ver datos y respuestas.</small>
+      </div>
+      <div class="rms-collector-brief-metrics" aria-label="Estado de la entrada">
+        <span><strong>${Number(rows.length || 0).toLocaleString("es-CO")}</strong><small>en entrada</small></span>
+        <span><strong>${Number(outputEligibleRows.length || 0).toLocaleString("es-CO")}</strong><small>listos</small></span>
+        <span><strong>${Number(riskCount || 0).toLocaleString("es-CO")}</strong><small>riesgo</small></span>
+      </div>
+    </section>
+  `;
+}
+
 function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStationWorkspace) return;
   ensureRmsStationUxStyles();
@@ -29259,6 +29302,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.innerHTML = `
     <div class="rms-station-screen-shell rms-station-enter-${state.rmsStationNavigationDirection === "backward" ? "backward" : "forward"}">
       ${rmsStationNavigatorMarkup(stages, stageIndex, opportunities)}
+      ${isCollectorStation ? rmsCollectorPrimaryBriefMarkup(rows, outputEligibleRows, riskCount, nextPhase) : `
       <section class="rms-station-primary-brief" aria-label="Objetivo de la estación">
         <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
         <div>
@@ -29273,6 +29317,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </div>
         ${isCollectorStation ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead manual</button>' : ""}
       </section>
+      `}
 
       <section class="rms-station-command-dock" aria-label="Barra de mando de la estación">
         <div class="rms-station-command-status">
