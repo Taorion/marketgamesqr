@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=redemptions-ux-20260722-v63">
+  <link rel="stylesheet" href="css/styles.css?v=affiliates-ux-20260722-v64">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -6413,8 +6413,8 @@
             <div class="view-head">
               <div>
                 <span class="mono-label">Sistema de afiliados</span>
-                <h2>Afiliados y referidos</h2>
-                <p>Opera afiliados como canal de revenue: crea carnet, busca por QR, registra compras por monto, suma puntos, entrega premios y genera tickets de referido.</p>
+                <h2>Afiliados</h2>
+                <p>Gestiona afiliados sin perder el foco: selecciona o crea un afiliado, registra compras, consulta puntos y activa premios o tickets de referido.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
@@ -6473,9 +6473,18 @@
               </article>
             </section>
 
+            <section class="affiliate-quick-nav" aria-label="Accesos rápidos de afiliados">
+              <button class="solid-button compact" type="button" data-affiliate-jump="search">Buscar afiliado</button>
+              <button class="ghost-button compact" type="button" data-affiliate-jump="create">Crear afiliado</button>
+              <button class="ghost-button compact" type="button" data-affiliate-jump="operate">Registrar compra</button>
+              <button class="ghost-button compact" type="button" data-affiliate-jump="rewards">Premios</button>
+              <button class="ghost-button compact" type="button" data-affiliate-jump="referrals">Referidos</button>
+              <button class="ghost-button compact" type="button" data-affiliate-jump="list">Listado</button>
+            </section>
+
             <section class="commerce-operation-feed affiliate-operation-feed" id="affiliateOperationFeed" aria-live="polite"></section>
 
-            <article class="surface-card affiliate-finder-panel">
+            <article class="surface-card affiliate-finder-panel" id="affiliateSearchPanel">
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Buscar afiliado</span>
@@ -6500,7 +6509,7 @@
               <div class="affiliate-finder-results" id="affiliateFinderResults"></div>
             </article>
 
-            <article class="surface-card affiliate-logo-panel">
+            <article class="surface-card affiliate-logo-panel" id="affiliateBrandPanel">
               <div class="table-card-head">
                 <span class="mono-label">Logo del negocio</span>
                 <strong id="businessLogoTitle">Sin logo cargado</strong>
@@ -6522,10 +6531,13 @@
             </article>
 
             <section class="affiliate-layout">
-              <article class="surface-card affiliate-panel">
+              <article class="surface-card affiliate-panel" id="affiliateCreatePanel">
                 <div class="table-card-head">
-                  <span class="mono-label">Nuevo afiliado</span>
-                  <strong>Registrar carnet</strong>
+                  <div>
+                    <span class="mono-label">Nuevo afiliado</span>
+                    <strong>Registrar carnet</strong>
+                  </div>
+                  <span class="status-chip pending">Paso 1</span>
                 </div>
                 <form class="modal-form affiliate-form" id="affiliateCreateForm">
                   <label>
@@ -6558,10 +6570,13 @@
                 </form>
               </article>
 
-              <article class="surface-card affiliate-panel">
+              <article class="surface-card affiliate-panel affiliate-primary-panel" id="affiliateOperatePanel">
                 <div class="table-card-head">
-                  <span class="mono-label">Carnet afiliado</span>
-                  <strong id="affiliateCardTitle">Sin afiliado seleccionado</strong>
+                  <div>
+                    <span class="mono-label">Afiliado seleccionado</span>
+                    <strong id="affiliateCardTitle">Sin afiliado seleccionado</strong>
+                  </div>
+                  <span class="status-chip ok">Operación</span>
                 </div>
                 <div class="affiliate-card-preview-wrap is-empty" id="affiliateCardPreviewWrap">
                   <img id="affiliateCardPreview" alt="Carnet afiliado">
@@ -6618,7 +6633,7 @@
                 </div>
               </article>
 
-              <article class="surface-card affiliate-panel affiliate-reward-panel">
+              <article class="surface-card affiliate-panel affiliate-reward-panel" id="affiliateRewardsPanel">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Premios por puntos</span>
@@ -6671,10 +6686,13 @@
                 <div class="qr-result hidden" id="affiliateRewardTicketResult"></div>
               </article>
 
-              <article class="surface-card affiliate-panel affiliate-referral-panel">
+              <article class="surface-card affiliate-panel affiliate-referral-panel" id="affiliateReferralsPanel">
                 <div class="table-card-head">
-                  <span class="mono-label">Recomendaciones</span>
-                  <strong>Tickets de recomendación</strong>
+                  <div>
+                    <span class="mono-label">Recomendaciones</span>
+                    <strong>Tickets de recomendación</strong>
+                  </div>
+                  <span class="status-chip pending">Crecimiento</span>
                 </div>
                 <div class="affiliate-referral-flow">
                   <div class="affiliate-referral-status" id="affiliateReferralQrSelectedMeta">Selecciona un afiliado del listado para generar sus tickets de recomendación.</div>
@@ -6726,10 +6744,13 @@
                 <div class="qr-result hidden" id="affiliateReferralQrResult"></div>
               </article>
 
-              <article class="surface-card data-table-card">
+              <article class="surface-card data-table-card affiliate-list-panel" id="affiliateListPanel">
                 <div class="table-card-head">
-                  <span class="mono-label">Afiliados del negocio</span>
-                  <strong>Listado y puntos</strong>
+                  <div>
+                    <span class="mono-label">Afiliados del negocio</span>
+                    <strong>Listado y puntos</strong>
+                  </div>
+                  <span class="table-secondary">Haz clic en una fila para operar</span>
                 </div>
                 <div class="table-wrap">
                   <table>
@@ -6752,10 +6773,13 @@
               </article>
             </section>
 
-            <article class="surface-card data-table-card">
+            <article class="surface-card data-table-card" id="affiliateLedgerPanel">
               <div class="table-card-head">
-                <span class="mono-label">Historial de puntos</span>
-                <strong id="affiliateLedgerTitle">Movimientos del afiliado</strong>
+                <div>
+                  <span class="mono-label">Historial de puntos</span>
+                  <strong id="affiliateLedgerTitle">Movimientos del afiliado</strong>
+                </div>
+                <span class="table-secondary">Auditoría de compras, bonos y premios</span>
               </div>
               <div class="table-wrap">
                 <table>
@@ -7127,7 +7151,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=redemptions-ux-20260722-v63" defer></script>
+  <script src="js/app.js?v=affiliates-ux-20260722-v64" defer></script>
 </body>
 </html>
 

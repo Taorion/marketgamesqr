@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-redemptions-ux-v63";
+const APP_VERSION = "empresa-20260722-affiliates-ux-v64";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28076,6 +28076,7 @@ async function startAffiliateFinderScanner() {
 }
 
 async function renderAffiliatesView() {
+  ensureAffiliatesUxStyles();
   setupAffiliatePhotoCaptureUi();
   renderAffiliateDashboard();
   const rows = withFilters(
@@ -28655,6 +28656,160 @@ async function downloadSelectedRewardPassImage() {
   const dataUrl = await buildRewardPassImageDataUrl(pass);
   downloadDataUrl(`${pass.public_code}.png`, dataUrl);
   showFeedback("Reward Pass descargado como imagen PNG.");
+}
+
+function ensureAffiliatesUxStyles() {
+  if (document.getElementById("affiliatesUxStylesV64")) return;
+  const style = document.createElement("style");
+  style.id = "affiliatesUxStylesV64";
+  style.textContent = `
+    .view-section[data-view="affiliates"] .view-head {
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .view-section[data-view="affiliates"] .view-title-block h2 {
+      letter-spacing: -0.04em;
+    }
+    .affiliate-dashboard-grid {
+      gap: .85rem;
+    }
+    .affiliate-stat-card,
+    .affiliate-command-card,
+    .affiliate-next-action-card,
+    .affiliate-ranking-card,
+    .affiliate-finder-panel,
+    .affiliate-logo-panel,
+    .affiliate-panel,
+    #affiliateLedgerPanel {
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.94));
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .08);
+    }
+    .affiliate-stat-card {
+      padding: 1rem;
+    }
+    .affiliate-quick-nav {
+      position: sticky;
+      top: .75rem;
+      z-index: 8;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      align-items: center;
+      margin: 1rem 0;
+      padding: .65rem;
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, .9);
+      box-shadow: 0 14px 35px rgba(15, 23, 42, .08);
+      backdrop-filter: blur(16px);
+    }
+    .affiliate-quick-nav .ghost-button {
+      min-height: 38px;
+      border-radius: 999px;
+      background: rgba(248, 250, 252, .9);
+    }
+    .affiliate-command-strip {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.4fr) minmax(240px, 1fr) minmax(240px, 1fr);
+      gap: .9rem;
+      align-items: stretch;
+    }
+    .affiliate-operation-feed,
+    .affiliate-flow-steps {
+      display: grid;
+      gap: .7rem;
+    }
+    .affiliate-flow-step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: .7rem;
+      align-items: start;
+      padding: .85rem;
+      border-radius: 18px;
+      background: rgba(248, 250, 252, .9);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+    .affiliate-finder-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.2fr) minmax(220px, .8fr);
+      gap: .85rem;
+      align-items: stretch;
+    }
+    .affiliate-layout {
+      display: grid;
+      grid-template-columns: minmax(290px, .85fr) minmax(360px, 1.15fr);
+      gap: .9rem;
+      align-items: start;
+    }
+    .affiliate-primary-panel,
+    .affiliate-reward-panel,
+    .affiliate-referral-panel,
+    .affiliate-list-panel,
+    #affiliateLedgerPanel {
+      grid-column: 1 / -1;
+    }
+    .affiliate-primary-panel .affiliate-card-actions,
+    .affiliate-form-actions,
+    .affiliate-reward-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap: .65rem;
+    }
+    .affiliate-primary-panel .affiliate-card-actions button,
+    .affiliate-form-actions button,
+    .affiliate-reward-actions button {
+      width: 100%;
+      justify-content: center;
+    }
+    .affiliate-purchase-summary {
+      padding: .9rem;
+      border-radius: 18px;
+      background: rgba(239, 246, 255, .86);
+      border: 1px solid rgba(37, 99, 235, .12);
+    }
+    .affiliate-reward-lists {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .8rem;
+    }
+    .affiliate-list-panel .table-wrap,
+    #affiliateLedgerPanel .table-wrap {
+      max-height: 560px;
+      overflow: auto;
+      border-radius: 18px;
+    }
+    .affiliate-list-panel table,
+    #affiliateLedgerPanel table {
+      min-width: 920px;
+    }
+    .affiliate-list-panel tbody tr {
+      cursor: pointer;
+    }
+    .affiliate-list-panel tbody tr:hover {
+      background: rgba(37, 99, 235, .06);
+    }
+    @media (max-width: 980px) {
+      .affiliate-command-strip,
+      .affiliate-finder-grid,
+      .affiliate-layout,
+      .affiliate-reward-lists,
+      .affiliate-primary-panel .affiliate-card-actions,
+      .affiliate-form-actions,
+      .affiliate-reward-actions {
+        grid-template-columns: 1fr;
+      }
+      .affiliate-quick-nav {
+        position: static;
+      }
+      .affiliate-list-panel table,
+      #affiliateLedgerPanel table {
+        min-width: 760px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function ensureRedemptionsUxStyles() {
@@ -35107,6 +35262,22 @@ downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliate
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
+document.querySelector('.view-section[data-view="affiliates"]')?.addEventListener("click", (event) => {
+  const jumpButton = event.target.closest("[data-affiliate-jump]");
+  if (!jumpButton) return;
+  const targetByJump = {
+    search: "affiliateSearchPanel",
+    create: "affiliateCreatePanel",
+    operate: "affiliateOperatePanel",
+    rewards: "affiliateRewardsPanel",
+    referrals: "affiliateReferralsPanel",
+    list: "affiliateListPanel",
+  };
+  const targetId = targetByJump[jumpButton.dataset.affiliateJump];
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 affiliateFinderSearchButton?.addEventListener("click", () => searchAffiliateForPoints());
 affiliateFinderInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
