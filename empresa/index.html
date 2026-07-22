@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=contact-directory-sales-20260722-v58">
+  <link rel="stylesheet" href="css/styles.css?v=sales-analysis-20260722-v59">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4823,8 +4823,8 @@
           <section class="view-section" data-view="sales">
             <div class="view-head">
               <div>
-                <h2>Ventas y tracker comercial</h2>
-                <p>Resultado comercial registrado desde redenciones, ventas observadas y medios de llegada.</p>
+                <h2>Ventas atribuidas</h2>
+                <p>Analiza ventas por cliente, producto, fecha, canal, campaña, sede o medio de llegada.</p>
               </div>
               <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
             </div>
@@ -4933,8 +4933,34 @@
 
             <article class="surface-card data-table-card">
               <div class="table-card-head">
-                <span class="mono-label">Ventas de la campaña</span>
+                <div>
+                  <span class="mono-label">Análisis de ventas atribuidas</span>
+                  <h3>Filtrar, agrupar y entender las ventas</h3>
+                </div>
               </div>
+              <section class="sales-analysis-toolbar" id="salesAnalysisToolbar" aria-label="Filtros de ventas atribuidas">
+                <label><span>Buscar venta</span><input id="salesAnalysisSearchInput" type="search" placeholder="Cliente, documento, producto, canal..."></label>
+                <label><span>Cliente</span><input id="salesAnalysisCustomerInput" type="search" placeholder="Nombre, cédula o teléfono"></label>
+                <label><span>Producto</span><input id="salesAnalysisProductInput" type="search" placeholder="Producto o servicio"></label>
+                <label><span>Desde</span><input id="salesAnalysisDateFromInput" type="date"></label>
+                <label><span>Hasta</span><input id="salesAnalysisDateToInput" type="date"></label>
+                <label><span>Canal</span><select id="salesAnalysisChannelInput"><option value="">Todos</option></select></label>
+                <label><span>Campaña</span><select id="salesAnalysisCampaignInput"><option value="">Todas</option></select></label>
+                <label><span>Sede</span><select id="salesAnalysisBranchInput"><option value="">Todas</option></select></label>
+                <label><span>Analizar por</span>
+                  <select id="salesAnalysisGroupInput">
+                    <option value="customer">Cliente</option>
+                    <option value="product">Producto</option>
+                    <option value="date">Fecha</option>
+                    <option value="channel">Canal</option>
+                    <option value="campaign">Campaña</option>
+                    <option value="branch">Sede</option>
+                    <option value="source">Medio</option>
+                  </select>
+                </label>
+                <button class="ghost-button" id="salesAnalysisResetButton" type="button">Limpiar filtros</button>
+              </section>
+              <section class="sales-analysis-grid" id="salesAnalysisGrid"></section>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -6984,7 +7010,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=contact-directory-sales-20260722-v58" defer></script>
+  <script src="js/app.js?v=sales-analysis-20260722-v59" defer></script>
 </body>
 </html>
 

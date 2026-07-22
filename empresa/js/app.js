@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-contact-directory-sales-v58";
+const APP_VERSION = "empresa-20260722-sales-analysis-v59";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -383,6 +383,18 @@ const campaignChannelRoiTable = document.getElementById("campaignChannelRoiTable
 const campaignLeadsTable = document.getElementById("campaignLeadsTable");
 const campaignRedemptionsTable = document.getElementById("campaignRedemptionsTable");
 const campaignSalesTable = document.getElementById("campaignSalesTable");
+const salesAnalysisToolbar = document.getElementById("salesAnalysisToolbar");
+const salesAnalysisGrid = document.getElementById("salesAnalysisGrid");
+const salesAnalysisSearchInput = document.getElementById("salesAnalysisSearchInput");
+const salesAnalysisCustomerInput = document.getElementById("salesAnalysisCustomerInput");
+const salesAnalysisProductInput = document.getElementById("salesAnalysisProductInput");
+const salesAnalysisDateFromInput = document.getElementById("salesAnalysisDateFromInput");
+const salesAnalysisDateToInput = document.getElementById("salesAnalysisDateToInput");
+const salesAnalysisChannelInput = document.getElementById("salesAnalysisChannelInput");
+const salesAnalysisCampaignInput = document.getElementById("salesAnalysisCampaignInput");
+const salesAnalysisBranchInput = document.getElementById("salesAnalysisBranchInput");
+const salesAnalysisGroupInput = document.getElementById("salesAnalysisGroupInput");
+const salesAnalysisResetButton = document.getElementById("salesAnalysisResetButton");
 const affiliateCreateForm = document.getElementById("affiliateCreateForm");
 const affiliateFullNameInput = document.getElementById("affiliateFullNameInput");
 const affiliateDocumentInput = document.getElementById("affiliateDocumentInput");
@@ -1442,6 +1454,17 @@ let state = {
   lastLeadActivationLink: "",
   selectedRedemptions: [],
   selectedSales: [],
+  salesAnalysisFilters: {
+    search: "",
+    customer: "",
+    product: "",
+    date_from: "",
+    date_to: "",
+    channel: "",
+    campaign: "",
+    branch: "",
+    group_by: "customer",
+  },
   selectedAffiliateId: null,
   selectedAffiliate: null,
   selectedAffiliateLedger: [],
@@ -10161,14 +10184,21 @@ function renderRedemptionsView() {
 }
 
 function renderSalesView() {
+  ensureSalesAnalysisStyles();
   const campaign = state.selectedCampaign || {};
-  const sales = filterRows(state.selectedSales || [], ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel"]);
+  const allSales = state.selectedSales || [];
+  renderSalesAnalysisControls(allSales);
+  const sales = filteredSalesForAnalysis(allSales);
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const avgTicket = sales.length ? totalRevenue / sales.length : 0;
+  const allRevenue = allSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const topGroup = groupedSalesAnalysis(sales, state.salesAnalysisFilters?.group_by || "customer")[0];
   const items = [
-    ["Ventas atribuidas", sales.length, money(totalRevenue)],
+    ["Ventas filtradas", sales.length, money(totalRevenue)],
     ["Ticket promedio", money(avgTicket), "Promedio por venta"],
     ["Meta comercial", money(campaign.expected_sales_goal), `${safeRate(totalRevenue, campaign.expected_sales_goal || 1)}% cumplido`],
+    ["Revenue visible", money(allRevenue), `${safeRate(totalRevenue, allRevenue || 1)}% en filtros`],
+    ["Grupo líder", topGroup?.label || "-", topGroup ? money(topGroup.revenue) : "Sin datos"],
   ];
 
   salesKpiGrid.innerHTML = items.map(([label, value, meta]) => `
@@ -10182,6 +10212,7 @@ function renderSalesView() {
   renderCustomerAcquisitionBranchOptions();
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
+  renderSalesAnalysisGrid(sales, allSales);
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -10196,7 +10227,7 @@ function renderSalesView() {
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="10">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="10">Sin ventas para los filtros actuales.</td></tr>';
 }
 
 function renderBranchesView() {
@@ -12637,6 +12668,331 @@ function saleProductSummary(item = {}) {
   const titleLooksLikeProductsList = products.length > 1 && products.every((product) => normalizeInventoryLookup(title).includes(normalizeInventoryLookup(`${product.name || ""} x${Number(product.quantity || 1)}`)));
   if (!title || duplicatesSingleProduct || titleLooksLikeProductsList) return summary;
   return `<strong>${escapeHtml(title || `${products.length} productos`)}</strong><br>${summary}`;
+}
+
+function saleProductPlainText(item = {}) {
+  const products = saleProductsForDisplay(item);
+  const productNames = products.map((product) => [
+    product.name,
+    product.category,
+    product.sku,
+  ].filter(Boolean).join(" ")).filter(Boolean);
+  return [
+    item.product_or_service,
+    item.product_name,
+    item.top_product,
+    ...productNames,
+  ].map((value) => String(value || "").trim()).filter(Boolean).join(" · ") || "Sin producto";
+}
+
+function saleCustomerText(item = {}) {
+  return [
+    item.player_name,
+    item.customer_name,
+    item.document_id,
+    item.customer_document_id,
+    item.phone,
+    item.customer_phone,
+    item.customer_email,
+  ].map((value) => String(value || "").trim()).filter(Boolean).join(" · ") || "Cliente sin nombre";
+}
+
+function saleCampaignText(item = {}) {
+  return String(item.campaign_name || state.selectedCampaign?.name || "Sin campaña").trim() || "Sin campaña";
+}
+
+function saleBranchText(item = {}) {
+  return String(item.branch_name || "Sin sede").trim() || "Sin sede";
+}
+
+function saleChannelText(item = {}) {
+  return String(item.acquisition_channel || item.channel || "Sin canal").trim() || "Sin canal";
+}
+
+function saleDateKey(item = {}) {
+  return item.created_at ? dateInputValue(item.created_at) : "";
+}
+
+function salesFilterValue(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function syncSalesAnalysisFiltersFromInputs() {
+  state.salesAnalysisFilters = {
+    search: salesAnalysisSearchInput?.value || "",
+    customer: salesAnalysisCustomerInput?.value || "",
+    product: salesAnalysisProductInput?.value || "",
+    date_from: salesAnalysisDateFromInput?.value || "",
+    date_to: salesAnalysisDateToInput?.value || "",
+    channel: salesAnalysisChannelInput?.value || "",
+    campaign: salesAnalysisCampaignInput?.value || "",
+    branch: salesAnalysisBranchInput?.value || "",
+    group_by: salesAnalysisGroupInput?.value || "customer",
+  };
+}
+
+function saleMatchesAnalysisFilters(item = {}, filters = state.salesAnalysisFilters || {}) {
+  const searchBlob = salesFilterValue([
+    saleCustomerText(item),
+    saleProductPlainText(item),
+    saleCampaignText(item),
+    saleChannelText(item),
+    saleBranchText(item),
+    saleSourceLabel(item.sale_source),
+    item.payment_method,
+    item.notes,
+  ].join(" "));
+  const customerBlob = salesFilterValue(saleCustomerText(item));
+  const productBlob = salesFilterValue(saleProductPlainText(item));
+  const dateKey = saleDateKey(item);
+  if (filters.search && !searchBlob.includes(salesFilterValue(filters.search))) return false;
+  if (filters.customer && !customerBlob.includes(salesFilterValue(filters.customer))) return false;
+  if (filters.product && !productBlob.includes(salesFilterValue(filters.product))) return false;
+  if (filters.date_from && (!dateKey || dateKey < filters.date_from)) return false;
+  if (filters.date_to && (!dateKey || dateKey > filters.date_to)) return false;
+  if (filters.channel && saleChannelText(item) !== filters.channel) return false;
+  if (filters.campaign && saleCampaignText(item) !== filters.campaign) return false;
+  if (filters.branch && saleBranchText(item) !== filters.branch) return false;
+  return true;
+}
+
+function filteredSalesForAnalysis(rows = state.selectedSales || []) {
+  const baseRows = filterRows(rows, ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel", "campaign_name"]);
+  return baseRows.filter((item) => saleMatchesAnalysisFilters(item));
+}
+
+function salesOptionMarkup(values = [], selected = "", emptyLabel = "Todos") {
+  const options = Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, "es"));
+  return [
+    `<option value="">${escapeHtml(emptyLabel)}</option>`,
+    ...options.map((value) => `<option value="${escapeHtml(value)}" ${String(selected) === value ? "selected" : ""}>${escapeHtml(value)}</option>`),
+  ].join("");
+}
+
+function renderSalesAnalysisControls(rows = state.selectedSales || []) {
+  const filters = state.salesAnalysisFilters || {};
+  if (salesAnalysisSearchInput && salesAnalysisSearchInput.value !== filters.search) salesAnalysisSearchInput.value = filters.search || "";
+  if (salesAnalysisCustomerInput && salesAnalysisCustomerInput.value !== filters.customer) salesAnalysisCustomerInput.value = filters.customer || "";
+  if (salesAnalysisProductInput && salesAnalysisProductInput.value !== filters.product) salesAnalysisProductInput.value = filters.product || "";
+  if (salesAnalysisDateFromInput && salesAnalysisDateFromInput.value !== filters.date_from) salesAnalysisDateFromInput.value = filters.date_from || "";
+  if (salesAnalysisDateToInput && salesAnalysisDateToInput.value !== filters.date_to) salesAnalysisDateToInput.value = filters.date_to || "";
+  if (salesAnalysisGroupInput) salesAnalysisGroupInput.value = filters.group_by || "customer";
+  if (salesAnalysisChannelInput) salesAnalysisChannelInput.innerHTML = salesOptionMarkup(rows.map(saleChannelText), filters.channel, "Todos");
+  if (salesAnalysisCampaignInput) salesAnalysisCampaignInput.innerHTML = salesOptionMarkup(rows.map(saleCampaignText), filters.campaign, "Todas");
+  if (salesAnalysisBranchInput) salesAnalysisBranchInput.innerHTML = salesOptionMarkup(rows.map(saleBranchText), filters.branch, "Todas");
+}
+
+function salesGroupLabel(item = {}, groupBy = "customer") {
+  const products = saleProductsForDisplay(item);
+  if (groupBy === "product") return products[0]?.name || cleanCustomerValue(item.product_or_service) || "Sin producto";
+  if (groupBy === "date") return saleDateKey(item) ? formatDateShort(item.created_at) : "Sin fecha";
+  if (groupBy === "channel") return saleChannelText(item);
+  if (groupBy === "campaign") return saleCampaignText(item);
+  if (groupBy === "branch") return saleBranchText(item);
+  if (groupBy === "source") return saleSourceLabel(item.sale_source);
+  return item.player_name || item.customer_name || "Cliente sin nombre";
+}
+
+function salesGroupMeta(item = {}, groupBy = "customer") {
+  if (groupBy === "customer") return [item.document_id, item.phone, item.customer_email].filter(Boolean).join(" · ") || "Sin datos básicos";
+  if (groupBy === "product") return [saleCampaignText(item), saleChannelText(item)].filter(Boolean).join(" · ");
+  if (groupBy === "date") return "Revenue por fecha";
+  if (groupBy === "channel") return "Canal de llegada";
+  if (groupBy === "campaign") return "Campaña atribuida";
+  if (groupBy === "branch") return "Sede o consignación";
+  return "Medio de llegada";
+}
+
+function groupedSalesAnalysis(rows = [], groupBy = "customer") {
+  const groups = new Map();
+  rows.forEach((item) => {
+    const label = salesGroupLabel(item, groupBy);
+    const key = salesFilterValue(label);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        label,
+        meta: salesGroupMeta(item, groupBy),
+        sales: 0,
+        revenue: 0,
+        latest: item.created_at || "",
+      });
+    }
+    const group = groups.get(key);
+    group.sales += 1;
+    group.revenue += toNumber(item.sale_amount);
+    if (item.created_at && (!group.latest || new Date(item.created_at) > new Date(group.latest))) group.latest = item.created_at;
+  });
+  return Array.from(groups.values()).sort((a, b) => b.revenue - a.revenue || b.sales - a.sales).slice(0, 8);
+}
+
+function renderSalesAnalysisGrid(rows = [], allRows = state.selectedSales || []) {
+  if (!salesAnalysisGrid) return;
+  const filters = state.salesAnalysisFilters || {};
+  const totalRevenue = rows.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const allRevenue = allRows.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const grouped = groupedSalesAnalysis(rows, filters.group_by || "customer");
+  const coverage = allRevenue ? Math.round((totalRevenue / allRevenue) * 1000) / 10 : 0;
+  salesAnalysisGrid.innerHTML = `
+    <article class="sales-analysis-summary-card">
+      <span class="mono-label">Resultado filtrado</span>
+      <strong>${money(totalRevenue)}</strong>
+      <small>${rows.length.toLocaleString("es-CO")} venta(s) · ${coverage}% del revenue visible</small>
+    </article>
+    <article class="sales-analysis-summary-card">
+      <span class="mono-label">Ticket promedio</span>
+      <strong>${money(rows.length ? totalRevenue / rows.length : 0)}</strong>
+      <small>Promedio del filtro activo</small>
+    </article>
+    <article class="sales-analysis-summary-card">
+      <span class="mono-label">Agrupación</span>
+      <strong>${escapeHtml({
+        customer: "Clientes",
+        product: "Productos",
+        date: "Fechas",
+        channel: "Canales",
+        campaign: "Campañas",
+        branch: "Sedes",
+        source: "Medios",
+      }[filters.group_by || "customer"] || "Clientes")}</strong>
+      <small>${grouped.length.toLocaleString("es-CO")} grupo(s) encontrados</small>
+    </article>
+    <section class="sales-analysis-breakdown">
+      ${grouped.length ? grouped.map((group, index) => `
+        <article class="sales-analysis-breakdown-row">
+          <span>${String(index + 1).padStart(2, "0")}</span>
+          <div>
+            <strong>${escapeHtml(group.label)}</strong>
+            <small>${escapeHtml(group.meta || "Sin detalle")} · última ${escapeHtml(formatDateShort(group.latest))}</small>
+          </div>
+          <em>${group.sales.toLocaleString("es-CO")} venta(s)</em>
+          <b>${escapeHtml(money(group.revenue))}</b>
+        </article>
+      `).join("") : '<div class="empty-state compact">No hay ventas para los filtros actuales.</div>'}
+    </section>
+  `;
+}
+
+function ensureSalesAnalysisStyles() {
+  if (document.getElementById("salesAnalysisUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "salesAnalysisUxStyles";
+  style.textContent = `
+    .sales-analysis-toolbar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(59, 130, 246, 0.07));
+    }
+    .sales-analysis-toolbar label {
+      display: grid;
+      gap: 0.35rem;
+      min-width: 0;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .sales-analysis-toolbar label span {
+      font-size: 0.78rem;
+      color: var(--muted-text);
+    }
+    .sales-analysis-toolbar input,
+    .sales-analysis-toolbar select {
+      min-width: 0;
+      width: 100%;
+    }
+    .sales-analysis-toolbar .ghost-button {
+      align-self: end;
+      min-height: 42px;
+    }
+    .sales-analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .sales-analysis-summary-card,
+    .sales-analysis-breakdown {
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.82);
+    }
+    .sales-analysis-summary-card strong {
+      display: block;
+      margin: 0.25rem 0;
+      font-size: 1.4rem;
+    }
+    .sales-analysis-summary-card small {
+      color: var(--muted-text);
+    }
+    .sales-analysis-breakdown {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 0.55rem;
+    }
+    .sales-analysis-breakdown-row {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.75rem;
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .sales-analysis-breakdown-row > span {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      background: rgba(37, 99, 235, 0.10);
+      color: #1d4ed8;
+      font-weight: 900;
+      font-size: 0.78rem;
+    }
+    .sales-analysis-breakdown-row strong,
+    .sales-analysis-breakdown-row small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sales-analysis-breakdown-row small {
+      color: var(--muted-text);
+    }
+    .sales-analysis-breakdown-row em {
+      font-style: normal;
+      color: var(--muted-text);
+      white-space: nowrap;
+    }
+    .sales-analysis-breakdown-row b {
+      color: #047857;
+      white-space: nowrap;
+    }
+    @media (max-width: 1100px) {
+      .sales-analysis-toolbar,
+      .sales-analysis-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      .sales-analysis-toolbar,
+      .sales-analysis-grid,
+      .sales-analysis-breakdown-row {
+        grid-template-columns: 1fr;
+      }
+      .sales-analysis-breakdown-row strong,
+      .sales-analysis-breakdown-row small {
+        white-space: normal;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function saleAffiliateSummary(item = {}) {
@@ -28498,18 +28854,21 @@ function renderAcquisitionChannelsView() {
 }
 
 function renderSalesView() {
+  ensureSalesAnalysisStyles();
   const campaign = state.selectedCampaign || {};
-  const sales = withFilters(
-    state.selectedSales || [],
-    ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel"],
-    ["created_at"]
-  );
+  const allSales = state.selectedSales || [];
+  renderSalesAnalysisControls(allSales);
+  const sales = filteredSalesForAnalysis(allSales);
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const avgTicket = sales.length ? totalRevenue / sales.length : 0;
+  const allRevenue = allSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const topGroup = groupedSalesAnalysis(sales, state.salesAnalysisFilters?.group_by || "customer")[0];
   const items = [
-    ["Ventas atribuidas", sales.length, money(totalRevenue)],
+    ["Ventas filtradas", sales.length, money(totalRevenue)],
     ["Ticket promedio", money(avgTicket), "Promedio por venta"],
     ["Meta comercial", money(campaign.expected_sales_goal), `${safeRate(totalRevenue, campaign.expected_sales_goal || 1)}% cumplido`],
+    ["Revenue visible", money(allRevenue), `${safeRate(totalRevenue, allRevenue || 1)}% en filtros`],
+    ["Grupo líder", topGroup?.label || "-", topGroup ? money(topGroup.revenue) : "Sin datos"],
   ];
 
   salesKpiGrid.innerHTML = items.map(([label, value, meta]) => `
@@ -28524,6 +28883,7 @@ function renderSalesView() {
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
   renderAcquisitionChannelDatalist();
+  renderSalesAnalysisGrid(sales, allSales);
 
   campaignSalesTable.innerHTML = sales.map((item) => `
     <tr>
@@ -28538,7 +28898,7 @@ function renderSalesView() {
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(formatDate(item.created_at))}</td>
     </tr>
-  `).join("") || '<tr><td colspan="10">Sin ventas para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="10">Sin ventas para los filtros actuales.</td></tr>';
 }
 
 function branchMetadata(branch = {}) {
@@ -33226,6 +33586,32 @@ channelEffortTable?.addEventListener("click", (event) => {
 });
 acquisitionChannelQuickCreate?.querySelectorAll("[data-channel-template]").forEach((button) => {
   button.addEventListener("click", () => applyAcquisitionChannelTemplate(button.dataset.channelTemplate || ""));
+});
+[salesAnalysisSearchInput, salesAnalysisCustomerInput, salesAnalysisProductInput, salesAnalysisDateFromInput, salesAnalysisDateToInput].forEach((input) => {
+  input?.addEventListener("input", () => {
+    syncSalesAnalysisFiltersFromInputs();
+    renderSalesView();
+  });
+});
+[salesAnalysisChannelInput, salesAnalysisCampaignInput, salesAnalysisBranchInput, salesAnalysisGroupInput].forEach((input) => {
+  input?.addEventListener("change", () => {
+    syncSalesAnalysisFiltersFromInputs();
+    renderSalesView();
+  });
+});
+salesAnalysisResetButton?.addEventListener("click", () => {
+  state.salesAnalysisFilters = {
+    search: "",
+    customer: "",
+    product: "",
+    date_from: "",
+    date_to: "",
+    channel: "",
+    campaign: "",
+    branch: "",
+    group_by: "customer",
+  };
+  renderSalesView();
 });
 customerSaleAddItemButton?.addEventListener("click", () => {
   ensureCustomerSaleItems();
