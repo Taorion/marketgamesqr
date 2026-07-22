@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliates-simple-table-modal-20260722-v74">
+  <link rel="stylesheet" href="css/styles.css?v=rms-station-drag-scroll-20260722-v80">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -268,7 +268,7 @@
               <details class="portal-tool-group" data-tool-group="account">
                 <summary><span class="material-symbols-outlined">settings</span><span><strong>Administración</strong><small>Cuenta, plan y permisos</small></span><span class="material-symbols-outlined">expand_more</span></summary>
                 <div>
-                  <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Cuenta y plan</span></button>
+                  <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Administración</span></button>
                   <button class="nav-item" data-view="admin" type="button"><span class="material-symbols-outlined">admin_panel_settings</span><span>Admin</span></button>
                 </div>
               </details>
@@ -344,11 +344,11 @@
             <div class="view-head">
               <div>
                 <h2>Centro de Revenue</h2>
-                <p>Vista inicial limpia para saber qué está entrando, qué falta operar y qué acciones generan ingresos medibles.</p>
+                <p>Dashboard visual para leer números, gráficas y tablas. Agrega bloques, ciérralos cuando no los necesites y exporta CSV para análisis.</p>
               </div>
             </div>
 
-            <button class="gaming-core-entry portal-gaming-entry" id="gamingCenterCoreButton" type="button">
+            <button class="gaming-core-entry portal-gaming-entry hidden" id="gamingCenterCoreButton" type="button" hidden>
               <span class="gaming-entry-mark" aria-hidden="true">SM</span>
               <span>
                 <strong>Crea marketing gamificado</strong>
@@ -361,12 +361,14 @@
               <div class="dashboard-builder-head">
                 <div>
                   <span class="mono-label">Centro simple + bloques</span>
-                  <h3>Empieza con lo necesario y agrega solo lo que uses</h3>
-                  <p>El tablero inicial muestra pocas piezas clave. Puedes quitar bloques, agregar otros y reordenarlos como un dashboard tipo lego.</p>
+                  <h3>Construye tu tablero con números, gráficas y tablas</h3>
+                  <p>Elige un perfil preconfigurado o arma tu vista. Cada bloque se puede cerrar, mover y exportar en CSV.</p>
                 </div>
                 <div class="dashboard-profile-tabs" id="dashboardProfileTabs" aria-label="Perfiles de dashboard">
                   <button type="button" data-dashboard-profile="marketing">Marketing</button>
                   <button type="button" data-dashboard-profile="commercial">Comercial</button>
+                  <button type="button" data-dashboard-profile="tickets">Tickets</button>
+                  <button type="button" data-dashboard-profile="executive">Ejecutivo</button>
                   <button type="button" data-dashboard-profile="custom">Personalizado</button>
                 </div>
               </div>
@@ -375,8 +377,8 @@
                 <aside class="dashboard-widget-library" aria-label="Bloques disponibles para el dashboard">
                   <div>
                     <span class="mono-label">Bloques disponibles</span>
-                    <h4>Agregar o quitar del tablero</h4>
-                    <p>El centro inicial ya trae lo básico. Usa esta biblioteca para sumar análisis cuando realmente lo necesites.</p>
+                    <h4>Agregar datos al tablero</h4>
+                    <p>Números, gráficas y tablas. Añade solo lo que quieras ver en pantalla.</p>
                   </div>
                   <div class="dashboard-widget-library-list" id="dashboardWidgetLibrary"></div>
                 </aside>
@@ -386,7 +388,7 @@
                     <div>
                       <span class="mono-label" id="dashboardProfileLabel">Perfil activo</span>
                       <h3 id="dashboardProfileTitle">Centro de Comando Revenue Marketing</h3>
-                      <p id="dashboardProfileDescription">Siguiente acción, embudo, ROI por canales/campañas y tabla ejecutiva sin exceso de ruido.</p>
+                      <p id="dashboardProfileDescription">Métricas, gráficos y tablas exportables sin acciones operativas encima.</p>
                     </div>
                     <div class="dashboard-canvas-actions">
                       <button class="ghost-button" id="dashboardAdvancedToggleButton" type="button">
@@ -404,7 +406,7 @@
               </div>
             </section>
 
-            <section class="revenue-workspace" id="revenueWorkspace">
+            <section class="revenue-workspace hidden" id="revenueWorkspace" hidden>
               <div class="revenue-workspace-head">
                 <div>
                   <span class="mono-label">Centro operativo</span>
@@ -750,7 +752,7 @@
                 <div class="rms-stage-slider-guide" aria-label="Guía de estados de las estaciones">
                   <span><i class="is-ready" aria-hidden="true"></i>Con leads para trabajar</span>
                   <span><i class="is-clear" aria-hidden="true"></i>Sin pendientes</span>
-                  <span class="rms-stage-slider-hint"><span class="material-symbols-outlined" aria-hidden="true">swipe</span>Desliza o usa las flechas</span>
+                  <span class="rms-stage-slider-hint"><span class="material-symbols-outlined" aria-hidden="true">swipe</span>Mantén presionado y arrastra</span>
                 </div>
                 <div class="rms-stage-board" id="rmsStageBoard" tabindex="0" aria-label="Desliza horizontalmente para recorrer las estaciones"></div>
                 <div class="rms-stage-slider-progress" aria-hidden="true"><span id="rmsStageSliderProgress"></span></div>
@@ -1248,8 +1250,8 @@
           <section class="view-section" data-view="account">
             <div class="view-head">
               <div>
-                <h2>Usuario y configuración</h2>
-                <p>Datos de la empresa, usuario activo, plan contratado y tickets disponibles.</p>
+                <h2>Administración</h2>
+                <p>Cuenta, datos personales, plan, tickets, activos digitales, marca y usuarios con acceso al portal.</p>
               </div>
             </div>
 
@@ -1340,7 +1342,20 @@
               <div class="account-deal-grid" id="accountCommercialDealGrid"></div>
             </article>
 
+            <section class="account-admin-nav" aria-label="Secciones de administración">
+              <a href="#accountSectionData"><span class="material-symbols-outlined" aria-hidden="true">badge</span><strong>Cuenta</strong><small>Empresa, usuario y datos personales</small></a>
+              <a href="#accountSectionBilling"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><strong>Plan y tickets</strong><small>Comprar tickets o elegir otro plan</small></a>
+              <a href="#accountSectionAssets"><span class="material-symbols-outlined" aria-hidden="true">perm_media</span><strong>Activos y marca</strong><small>Activos digitales, logo y marco QR</small></a>
+              <a href="#accountSectionUsers"><span class="material-symbols-outlined" aria-hidden="true">group_add</span><strong>Usuarios</strong><small>Accesos del equipo al portal</small></a>
+            </section>
+
             <section class="account-settings-grid">
+              <div class="account-section-divider account-section-data" id="accountSectionData">
+                <span class="mono-label">01 · Cuenta</span>
+                <h3>Datos personales y de empresa</h3>
+                <p>Revisa y actualiza la información básica del negocio, contacto y seguridad de acceso.</p>
+              </div>
+
               <article class="surface-card account-settings-card account-billing-card account-span-full">
                 <div class="table-card-head">
                   <div>
@@ -1436,6 +1451,12 @@
                 <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
               </article>
 
+              <div class="account-section-divider account-section-billing" id="accountSectionBilling">
+                <span class="mono-label">02 · Plan y tickets</span>
+                <h3>Comprar tickets o elegir otro plan</h3>
+                <p>Compra paquetes de tickets, revisa pagos recientes, renueva mensualidad o cambia de plan.</p>
+              </div>
+
               <article class="surface-card account-settings-card account-company-card account-span-8">
                 <div class="table-card-head">
                   <div>
@@ -1480,9 +1501,20 @@
                   <div>
                     <strong id="accountLogoTitle">Sin logo cargado</strong>
                     <p class="table-secondary">Carga el logo del negocio para usarlo en piezas de marca, tickets y materiales del portal.</p>
+                    <div class="inline-actions">
+                      <button class="ghost-button" id="accountLogoUploadButton" type="button">Subir logo</button>
+                      <button class="ghost-button" id="accountLogoRemoveButton" type="button">Quitar logo</button>
+                    </div>
+                    <p class="error-line" id="accountLogoMessage"></p>
                   </div>
                 </div>
               </article>
+
+              <div class="account-section-divider account-section-assets" id="accountSectionAssets">
+                <span class="mono-label">03 · Activos digitales y marca</span>
+                <h3>Biblioteca, logo y marco de tickets</h3>
+                <p>Carga activos digitales para entregar a leads, logo del negocio y marco visual para tickets QR.</p>
+              </div>
 
               <article class="surface-card account-settings-card digital-asset-library-card account-span-8">
                 <div class="table-card-head">
@@ -1575,6 +1607,12 @@
                   </div>
                 </form>
               </article>
+
+              <div class="account-section-divider account-section-users" id="accountSectionUsers">
+                <span class="mono-label">04 · Usuarios</span>
+                <h3>Usuarios con acceso al portal</h3>
+                <p>Agrega usuarios del equipo y gestiona quién puede entrar al portal operativo.</p>
+              </div>
 
               <article class="surface-card account-settings-card account-users-card account-span-8">
                 <div class="table-card-head">
@@ -5083,6 +5121,14 @@
                 <p>Analiza Instagram, Facebook, Google, WhatsApp, Web y otros canales separados de las campañas. Una venta puede tener campaña atribuida y canal de llegada al mismo tiempo.</p>
               </div>
               <div class="head-actions">
+                <button class="solid-button" id="newAcquisitionChannelButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                  Crear canal
+                </button>
+                <button class="ghost-button" id="newChannelEffortButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+                  Crear atracción
+                </button>
                 <button class="ghost-button" id="refreshAcquisitionChannelsButton" type="button">Actualizar canales</button>
               </div>
             </div>
@@ -5108,13 +5154,13 @@
             </section>
 
             <section class="channel-effort-layout">
-              <article class="surface-card channel-effort-form-card">
+              <article class="surface-card channel-effort-form-card" id="channelEffortFormPanel">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Esfuerzos del canal</span>
-                    <h3 id="channelEffortFormTitle">Registrar publicación, pauta o acción</h3>
+                    <h3 id="channelEffortFormTitle">Crear atracción por canal</h3>
                   </div>
-                  <button class="ghost-button" id="channelEffortCancelButton" type="button">Limpiar</button>
+                  <button class="icon-button" id="channelEffortCancelButton" type="button" aria-label="Cerrar atracción por canal"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
                 <p class="chart-explainer">Registra piezas concretas del canal: publicación de Instagram, pauta de Google, campaña de WhatsApp, landing, historia, reel, evento o esfuerzo orgánico. El portal cruza fechas, canal, campaña opcional, inversión, leads, compras, recompra y referidos.</p>
                 <form class="modal-form channel-effort-form" id="channelEffortForm">
@@ -5154,7 +5200,7 @@
                   <label class="span-2"><span>Descripción / esfuerzo realizado</span><textarea id="channelEffortDescriptionInput" rows="3" maxlength="1200" placeholder="Qué se publicó, qué imagen se usó, qué copy, qué oferta, qué segmento y qué se espera medir."></textarea></label>
                   <label class="span-2"><span>Notas de análisis</span><textarea id="channelEffortNotesInput" rows="2" maxlength="1600" placeholder="Ej: se compartió en historias 3 días, se impulsó con $150.000 y se enlazó a WhatsApp."></textarea></label>
                   <p class="form-message span-2" id="channelEffortMessage"></p>
-                  <button class="solid-button" id="channelEffortSaveButton" type="submit">Guardar esfuerzo del canal</button>
+                  <button class="solid-button" id="channelEffortSaveButton" type="submit">Guardar atracción del canal</button>
                 </form>
               </article>
 
@@ -5192,13 +5238,13 @@
             </section>
 
             <section class="channel-analytics-layout">
-              <article class="surface-card channel-form-card">
+              <article class="surface-card channel-form-card" id="acquisitionChannelFormPanel">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Directorio independiente</span>
                     <h3 id="acquisitionChannelFormTitle">Crear canal</h3>
                   </div>
-                  <button class="ghost-button" id="acquisitionChannelCancelButton" type="button">Limpiar</button>
+                  <button class="icon-button" id="acquisitionChannelCancelButton" type="button" aria-label="Cerrar creación de canal"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
                 <p class="chart-explainer">Crea canales separados de campañas para asignar inversión, controlar origen y medir ROI por Instagram, Facebook, Google, WhatsApp, Web u otros medios.</p>
                 <form class="modal-form channel-form" id="acquisitionChannelForm">
@@ -5229,7 +5275,7 @@
                       <option value="ARCHIVED">Archivado</option>
                     </select>
                   </label>
-                  <label class="span-2"><span>Notas</span><textarea id="acquisitionChannelNotesInput" rows="3" placeholder="Ej: pauta de Meta para recompra, campaña always-on, canal orgánico, alianza o tráfico de vitrina."></textarea></label>
+                  <label class="span-2"><span>Estrategia del canal</span><textarea id="acquisitionChannelNotesInput" rows="3" placeholder="Ej: Instagram para leads de pantalón, WhatsApp para temporada, vitrina para darse a conocer sin producto específico."></textarea></label>
                   <p class="form-message span-2" id="acquisitionChannelMessage"></p>
                   <button class="solid-button" id="acquisitionChannelSaveButton" type="submit">Guardar canal</button>
                 </form>
@@ -5248,15 +5294,14 @@
                     <thead>
                       <tr>
                         <th>Canal</th>
-                        <th>Tipo</th>
-                        <th>Inversión</th>
+                        <th>Estrategia</th>
+                        <th>Tickets / activaciones</th>
+                        <th>Costo</th>
                         <th>Leads</th>
+                        <th>Redenciones</th>
                         <th>Ventas</th>
                         <th>Revenue</th>
-                        <th>Ganancia neta</th>
-                        <th>CAC</th>
                         <th>ROI</th>
-                        <th>Mejor campaña</th>
                         <th>Estado</th>
                         <th>Acción</th>
                       </tr>
@@ -5407,9 +5452,19 @@
             <div class="view-head">
               <div>
                 <h2>Radar Competitivo</h2>
-                <p>Competitor Intelligence Hub para organizar competidores, precios, promociones, eventos, amenazas y oportunidades.</p>
+                <p>Tabla simple para leer competidores, productos, precios, campañas, eventos, hallazgos y respuesta competitiva.</p>
               </div>
-              <button class="ghost-button" id="refreshCompetitionButton" type="button">Actualizar</button>
+              <div class="head-actions">
+                <button class="solid-button" id="newCompetitorButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">add_business</span>
+                  Crear competidor
+                </button>
+                <button class="ghost-button" id="newCompetitionProductButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">sell</span>
+                  Crear producto competidor
+                </button>
+                <button class="ghost-button" id="refreshCompetitionButton" type="button">Actualizar</button>
+              </div>
             </div>
 
             <section class="kpi-grid sales-kpis" id="competitionKpiGrid"></section>
@@ -5453,13 +5508,13 @@
 
             <section class="competition-panel" data-competition-panel="competitors">
               <section class="inventory-layout">
-                <article class="surface-card inventory-form-card">
+                <article class="surface-card inventory-form-card" id="competitorFormPanel">
                   <div class="table-card-head">
                     <div>
                       <span class="mono-label">Competidor</span>
                       <strong id="competitorFormTitle">Nuevo competidor</strong>
                     </div>
-                    <button class="ghost-button" id="competitorResetButton" type="button">Limpiar</button>
+                    <button class="icon-button" id="competitorResetButton" type="button" aria-label="Cerrar formulario de competidor"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                   </div>
                   <form class="modal-form inventory-form" id="competitorForm">
                     <input id="competitorIdInput" type="hidden">
@@ -5503,18 +5558,22 @@
                       <span class="mono-label">Directorio</span>
                       <strong>Competidores registrados</strong>
                     </div>
-                    <input id="competitorSearchInput" type="search" placeholder="Buscar competidor, ciudad, zona o categoría">
+                    <div class="competition-table-filters">
+                      <input id="competitorSearchInput" type="search" placeholder="Filtrar por competidor, ciudad, zona o categoría">
+                      <input id="competitorProductFilterInput" type="search" placeholder="Filtrar por producto competidor">
+                    </div>
                   </div>
                   <div class="table-wrap">
                     <table>
                       <thead>
                         <tr>
                           <th>Competidor</th>
-                          <th>Categoría</th>
+                          <th>Producto / oferta</th>
                           <th>Ciudad / zona</th>
-                          <th>Amenaza</th>
-                          <th>Productos</th>
+                          <th>Precio</th>
+                          <th>Campañas / eventos</th>
                           <th>Hallazgos</th>
+                          <th>Amenaza</th>
                           <th>Acción</th>
                         </tr>
                       </thead>
@@ -5527,13 +5586,13 @@
 
             <section class="competition-panel hidden" data-competition-panel="products">
             <section class="inventory-layout">
-              <article class="surface-card inventory-form-card">
+              <article class="surface-card inventory-form-card" id="competitionProductFormPanel">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Observación</span>
                     <strong id="competitionFormTitle">Nuevo producto competidor</strong>
                   </div>
-                  <button class="ghost-button" id="competitionResetButton" type="button">Limpiar</button>
+                  <button class="icon-button" id="competitionResetButton" type="button" aria-label="Cerrar producto competidor"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
                 <form class="modal-form inventory-form" id="competitionProductForm">
                   <input id="competitionProductIdInput" type="hidden">
@@ -5798,6 +5857,23 @@
                 </article>
               </section>
             </section>
+
+            <div class="competition-detail-modal hidden" id="competitorDetailModal" aria-hidden="true">
+              <article class="surface-card competition-detail-card" role="dialog" aria-modal="true" aria-labelledby="competitorDetailTitle">
+                <div class="competition-detail-head">
+                  <div>
+                    <span class="mono-label">Detalle competitivo</span>
+                    <h3 id="competitorDetailTitle">Competidor</h3>
+                    <p id="competitorDetailSummary">Precios, productos, campañas, eventos, hallazgos, DOFA y análisis comparativo.</p>
+                  </div>
+                  <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                  </button>
+                </div>
+                <div class="competition-detail-tabs" id="competitorDetailTabs" aria-label="Secciones del detalle competitivo"></div>
+                <div class="competition-detail-body" id="competitorDetailBody"></div>
+              </article>
+            </div>
           </section>
 
           <section class="view-section" data-view="validator">
@@ -5997,17 +6073,26 @@
           <section class="view-section" data-view="branches">
             <div class="view-head">
               <div>
-                <h2>Branches</h2>
-                <p>Sedes, puntos de venta y responsables de producto en consignación.</p>
+                <h2>Sedes</h2>
+                <p>Tabla simple para leer sedes, responsables, redenciones, ventas y revenue generado por cada punto.</p>
+              </div>
+              <div class="head-actions">
+                <button class="solid-button" id="newBranchButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">add_business</span>
+                  Crear sede
+                </button>
               </div>
             </div>
             <section class="kpi-grid sales-kpis" id="branchKpiGrid"></section>
-            <article class="surface-card data-table-card">
+            <article class="surface-card data-table-card" id="branchFormPanel">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">Nuevo branch</span>
+                  <span class="mono-label">Nueva sede</span>
                   <strong>Sede o consignación</strong>
                 </div>
+                <button class="icon-button" id="branchFormCloseButton" type="button" aria-label="Cerrar formulario de sede">
+                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
               </div>
               <form class="lead-agenda-create-form" id="branchCreateForm">
                 <label>
@@ -6037,25 +6122,26 @@
                   <span>Notas</span>
                   <textarea id="branchNotesInput" rows="2" maxlength="1000" placeholder="Condiciones de consignación, horario, inventario entregado o reglas operativas"></textarea>
                 </label>
-                <button class="solid-button" id="branchSubmitButton" type="submit">Agregar branch</button>
+                <button class="solid-button" id="branchSubmitButton" type="submit">Agregar sede</button>
                 <button class="ghost-button hidden" id="branchCancelEditButton" type="button">Cancelar edición</button>
                 <p class="form-message" id="branchCreateMessage"></p>
               </form>
             </article>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
-                <span class="mono-label">Branches registrados y rendimiento</span>
+                <span class="mono-label">Sedes registradas y rendimiento</span>
               </div>
               <div class="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Branch</th>
+                      <th>Sede</th>
                       <th>Tipo</th>
                       <th>Responsable</th>
+                      <th>Ubicación</th>
                       <th>Redenciones</th>
                       <th>Ventas</th>
-                      <th>Ingresos</th>
+                      <th>Revenue generado</th>
                       <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
@@ -6064,6 +6150,21 @@
                 </table>
               </div>
             </article>
+            <div class="branch-detail-modal hidden" id="branchDetailModal" aria-hidden="true">
+              <article class="surface-card branch-detail-card" role="dialog" aria-modal="true" aria-labelledby="branchDetailTitle">
+                <div class="branch-detail-head">
+                  <div>
+                    <span class="mono-label">Detalle de sede</span>
+                    <h3 id="branchDetailTitle">Sede</h3>
+                    <p id="branchDetailSummary">Resultados comerciales, redenciones, ventas y datos básicos.</p>
+                  </div>
+                  <button class="icon-button" id="branchDetailCloseButton" type="button" aria-label="Cerrar detalle de sede">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                  </button>
+                </div>
+                <div class="branch-detail-body" id="branchDetailBody"></div>
+              </article>
+            </div>
           </section>
 
           <section class="view-section" data-view="admin">
@@ -7182,7 +7283,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliates-simple-table-modal-20260722-v74" defer></script>
+  <script src="js/app.js?v=rms-station-drag-scroll-20260722-v80" defer></script>
 </body>
 </html>
 

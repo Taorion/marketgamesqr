@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-affiliates-simple-table-modal-v74";
+const APP_VERSION = "empresa-20260722-rms-station-drag-scroll-v80";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45,6 +45,14 @@ const businessKpiGrid = document.getElementById("businessKpiGrid");
 const campaignKpiGrid = document.getElementById("campaignKpiGrid");
 const salesKpiGrid = document.getElementById("salesKpiGrid");
 const branchKpiGrid = document.getElementById("branchKpiGrid");
+const newBranchButton = document.getElementById("newBranchButton");
+const branchFormPanel = document.getElementById("branchFormPanel");
+const branchFormCloseButton = document.getElementById("branchFormCloseButton");
+const branchDetailModal = document.getElementById("branchDetailModal");
+const branchDetailCloseButton = document.getElementById("branchDetailCloseButton");
+const branchDetailTitle = document.getElementById("branchDetailTitle");
+const branchDetailSummary = document.getElementById("branchDetailSummary");
+const branchDetailBody = document.getElementById("branchDetailBody");
 const competitionKpiGrid = document.getElementById("competitionKpiGrid");
 const adminKpiGrid = document.getElementById("adminKpiGrid");
 const recentRedemptionsTable = document.getElementById("recentRedemptionsTable");
@@ -461,6 +469,9 @@ const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
 const accountLogoTitle = document.getElementById("accountLogoTitle");
+const accountLogoUploadButton = document.getElementById("accountLogoUploadButton");
+const accountLogoRemoveButton = document.getElementById("accountLogoRemoveButton");
+const accountLogoMessage = document.getElementById("accountLogoMessage");
 const accountTicketFramePreview = document.getElementById("accountTicketFramePreview");
 const accountTicketFrameTitle = document.getElementById("accountTicketFrameTitle");
 const accountTicketFrameInput = document.getElementById("accountTicketFrameInput");
@@ -879,6 +890,8 @@ const acquisitionChannelKpiGrid = document.getElementById("acquisitionChannelKpi
 const acquisitionChannelDetailPanel = document.getElementById("acquisitionChannelDetailPanel");
 const acquisitionChannelQuickCreate = document.getElementById("acquisitionChannelQuickCreate");
 const acquisitionChannelForm = document.getElementById("acquisitionChannelForm");
+const acquisitionChannelFormPanel = document.getElementById("acquisitionChannelFormPanel");
+const newAcquisitionChannelButton = document.getElementById("newAcquisitionChannelButton");
 const acquisitionChannelFormTitle = document.getElementById("acquisitionChannelFormTitle");
 const acquisitionChannelIdInput = document.getElementById("acquisitionChannelIdInput");
 const acquisitionChannelNameInput = document.getElementById("acquisitionChannelNameInput");
@@ -896,6 +909,8 @@ const acquisitionChannelMatrixTable = document.getElementById("acquisitionChanne
 const refreshAcquisitionChannelsButton = document.getElementById("refreshAcquisitionChannelsButton");
 const acquisitionChannelDatalist = document.getElementById("acquisitionChannelDatalist");
 const channelEffortForm = document.getElementById("channelEffortForm");
+const channelEffortFormPanel = document.getElementById("channelEffortFormPanel");
+const newChannelEffortButton = document.getElementById("newChannelEffortButton");
 const channelEffortFormTitle = document.getElementById("channelEffortFormTitle");
 const channelEffortIdInput = document.getElementById("channelEffortIdInput");
 const channelEffortChannelInput = document.getElementById("channelEffortChannelInput");
@@ -951,7 +966,10 @@ const competitionProductIdInput = document.getElementById("competitionProductIdI
 const competitionTabs = Array.from(document.querySelectorAll("[data-competition-tab]"));
 const competitionPanels = Array.from(document.querySelectorAll("[data-competition-panel]"));
 const competitionLatestFindingsTable = document.getElementById("competitionLatestFindingsTable");
+const newCompetitorButton = document.getElementById("newCompetitorButton");
+const newCompetitionProductButton = document.getElementById("newCompetitionProductButton");
 const competitorForm = document.getElementById("competitorForm");
+const competitorFormPanel = document.getElementById("competitorFormPanel");
 const competitorIdInput = document.getElementById("competitorIdInput");
 const competitorNameInput = document.getElementById("competitorNameInput");
 const competitorCategoryInput = document.getElementById("competitorCategoryInput");
@@ -985,6 +1003,7 @@ const competitorSaveButton = document.getElementById("competitorSaveButton");
 const competitorResetButton = document.getElementById("competitorResetButton");
 const competitorFormTitle = document.getElementById("competitorFormTitle");
 const competitorSearchInput = document.getElementById("competitorSearchInput");
+const competitorProductFilterInput = document.getElementById("competitorProductFilterInput");
 const competitorTable = document.getElementById("competitorTable");
 const competitionCompetitorSelect = document.getElementById("competitionCompetitorSelect");
 const competitionProductNameInput = document.getElementById("competitionProductNameInput");
@@ -1005,6 +1024,7 @@ const competitionNotesInput = document.getElementById("competitionNotesInput");
 const competitionMessage = document.getElementById("competitionMessage");
 const competitionSaveButton = document.getElementById("competitionSaveButton");
 const competitionResetButton = document.getElementById("competitionResetButton");
+const competitionProductFormPanel = document.getElementById("competitionProductFormPanel");
 const refreshCompetitionButton = document.getElementById("refreshCompetitionButton");
 const competitionFormTitle = document.getElementById("competitionFormTitle");
 const competitionSearchInput = document.getElementById("competitionSearchInput");
@@ -1104,6 +1124,12 @@ const competitionBasicComparisonTable = document.getElementById("competitionBasi
 const competitionPriceComparisonTable = document.getElementById("competitionPriceComparisonTable");
 const competitionCampaignComparisonTable = document.getElementById("competitionCampaignComparisonTable");
 const competitionStrategicComparisonTable = document.getElementById("competitionStrategicComparisonTable");
+const competitorDetailModal = document.getElementById("competitorDetailModal");
+const competitorDetailCloseButton = document.getElementById("competitorDetailCloseButton");
+const competitorDetailTitle = document.getElementById("competitorDetailTitle");
+const competitorDetailSummary = document.getElementById("competitorDetailSummary");
+const competitorDetailTabs = document.getElementById("competitorDetailTabs");
+const competitorDetailBody = document.getElementById("competitorDetailBody");
 const qrBatchForm = document.getElementById("qrBatchForm");
 const qrBatchCampaignInput = document.getElementById("qrBatchCampaignInput");
 const qrBatchCampaignHelp = document.getElementById("qrBatchCampaignHelp");
@@ -4450,7 +4476,157 @@ function renderBusinessUsers() {
   }).join("") || '<tr><td colspan="6">No hay usuarios cargados para este negocio.</td></tr>';
 }
 
+function ensureAccountAdminUxStyles() {
+  if (document.getElementById("accountAdminUxStylesV79")) return;
+  const style = document.createElement("style");
+  style.id = "accountAdminUxStylesV79";
+  style.textContent = `
+    body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head {
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+    body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head p {
+      max-width: 760px;
+      margin-top: .45rem;
+      color: #64748b;
+    }
+    body[data-current-view="account"] .portal-shell .account-summary-grid {
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav {
+      display: grid;
+      grid-template-columns: repeat(4,minmax(0,1fr));
+      gap: .75rem;
+      margin: 0 0 1rem;
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav a {
+      display: grid;
+      grid-template-columns: 36px minmax(0,1fr);
+      gap: .25rem .65rem;
+      align-items: center;
+      min-height: 86px;
+      padding: .85rem;
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 18px;
+      background: #fff;
+      color: #0f172a;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav a:hover {
+      border-color: rgba(15, 115, 84, .24);
+      background: #f4fbf8;
+      transform: translateY(-1px);
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav .material-symbols-outlined {
+      grid-row: span 2;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 13px;
+      background: #e8f7f0;
+      color: #0f7354;
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav strong {
+      font-size: .95rem;
+      line-height: 1.1;
+    }
+    body[data-current-view="account"] .portal-shell .account-admin-nav small {
+      color: #64748b;
+      font-size: .72rem;
+      line-height: 1.25;
+    }
+    body[data-current-view="account"] .portal-shell .account-settings-grid {
+      display: grid;
+      grid-template-columns: repeat(12,minmax(0,1fr));
+      gap: .9rem;
+      align-items: start;
+    }
+    body[data-current-view="account"] .portal-shell .account-section-divider {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: .2rem;
+      padding: .95rem 1rem;
+      border: 1px solid rgba(15, 115, 84, .14);
+      border-radius: 18px;
+      background: linear-gradient(135deg,#effbf6,#ffffff);
+      scroll-margin-top: 110px;
+    }
+    body[data-current-view="account"] .portal-shell .account-section-divider h3 {
+      margin: 0;
+      color: #14352c;
+      font-size: clamp(1.08rem, 2vw, 1.45rem);
+      letter-spacing: -.035em;
+    }
+    body[data-current-view="account"] .portal-shell .account-section-divider p {
+      margin: 0;
+      color: #60756e;
+      font-size: .82rem;
+      line-height: 1.4;
+    }
+    body[data-current-view="account"] .portal-shell .account-section-data { order: 1; }
+    body[data-current-view="account"] .portal-shell .account-company-card { order: 2; }
+    body[data-current-view="account"] .portal-shell .account-security-card { order: 3; }
+    body[data-current-view="account"] .portal-shell .account-section-billing { order: 10; }
+    body[data-current-view="account"] .portal-shell .account-billing-card { order: 11; }
+    body[data-current-view="account"] .portal-shell #accountQrCreditShopCard { order: 12; }
+    body[data-current-view="account"] .portal-shell #accountPortalPlansCard { order: 13; }
+    body[data-current-view="account"] .portal-shell .account-section-assets { order: 20; }
+    body[data-current-view="account"] .portal-shell .digital-asset-library-card { order: 21; }
+    body[data-current-view="account"] .portal-shell .account-logo-card { order: 22; }
+    body[data-current-view="account"] .portal-shell .account-ticket-frame-card { order: 23; }
+    body[data-current-view="account"] .portal-shell .account-section-users { order: 30; }
+    body[data-current-view="account"] .portal-shell .account-users-card { order: 31; }
+    body[data-current-view="account"] .portal-shell .account-billing-card .account-billing-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: .8rem;
+    }
+    body[data-current-view="account"] .portal-shell .account-settings-card,
+    body[data-current-view="account"] .portal-shell .portal-pricing-card,
+    body[data-current-view="account"] .portal-shell .qr-credit-shop-card {
+      border-radius: 20px;
+      box-shadow: 0 10px 24px rgba(15,23,42,.05);
+    }
+    body[data-current-view="account"] .portal-shell .account-logo-card .inline-actions,
+    body[data-current-view="account"] .portal-shell .account-ticket-frame-card .inline-actions {
+      margin-top: .55rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+    }
+    @media (max-width: 1100px) {
+      body[data-current-view="account"] .portal-shell .account-admin-nav {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+      body[data-current-view="account"] .portal-shell .account-billing-card .account-billing-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="account"] .portal-shell .account-admin-nav {
+        grid-template-columns: 1fr;
+      }
+      body[data-current-view="account"] .portal-shell .account-settings-grid {
+        grid-template-columns: 1fr;
+      }
+      body[data-current-view="account"] .portal-shell .account-settings-grid > * {
+        grid-column: 1 / -1 !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderAccountView() {
+  ensureAccountAdminUxStyles();
   const business = state.businessProfile || {};
   const user = business.current_user || session?.user || {};
   const subscription = state.subscription || {};
@@ -4504,6 +4680,9 @@ function renderAccountView() {
   }
   if (accountLogoTitle) {
     accountLogoTitle.textContent = logo ? "Logo cargado" : "Sin logo cargado";
+  }
+  if (accountLogoRemoveButton) {
+    accountLogoRemoveButton.disabled = !logo;
   }
 
   const ticketFrame = business.ticket_frame_data_url || business.settings?.ticket_frame_data_url || "";
@@ -4644,6 +4823,19 @@ function setView(view) {
   if (state.currentView === "affiliates" && view !== "affiliates") {
     stopAffiliateFinderScanner();
     closeAffiliateOperationModal();
+  }
+  if (state.currentView === "channels" && view !== "channels") {
+    closeAcquisitionChannelModal();
+    closeChannelEffortModal();
+  }
+  if (state.currentView === "competition" && view !== "competition") {
+    closeCompetitorFormModal();
+    closeCompetitionProductModal();
+    closeCompetitorDetailModal();
+  }
+  if (state.currentView === "branches" && view !== "branches") {
+    closeBranchFormModal();
+    closeBranchDetailModal();
   }
   state.currentView = view;
   if (previousView !== view) {
@@ -7336,10 +7528,15 @@ function revenueActionConfig(objective = "capture") {
 }
 
 function ensureRevenueCenterUxStyles() {
-  if (document.getElementById("revenueCenterUxStylesV65")) return;
+  if (document.getElementById("revenueCenterUxStylesV75")) return;
   const style = document.createElement("style");
-  style.id = "revenueCenterUxStylesV65";
+  style.id = "revenueCenterUxStylesV75";
   style.textContent = `
+    body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry,
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace,
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace {
+      display: none !important;
+    }
     body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
       margin-bottom: 1rem;
       padding: 1rem 1.15rem;
@@ -7584,6 +7781,29 @@ function ensureRevenueCenterUxStyles() {
       border-radius: 18px;
       background: rgba(248,250,252,.9);
       border: 1px solid rgba(15, 23, 42, .06);
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card {
+      cursor: grab;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions {
+      align-items: center;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions .ghost-button {
+      flex: 1 1 auto;
+      min-height: 36px;
+      gap: .35rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions .ghost-button .material-symbols-outlined {
+      font-size: 1.05rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-data-table-wrap {
+      max-height: 250px;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-data-table {
+      min-width: 620px;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table .dashboard-widget-body {
+      min-height: 0;
     }
     @media (max-width: 1180px) {
       body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip,
@@ -8753,38 +8973,54 @@ const DASHBOARD_BUILDER_EXPANDED_KEY = "marketgames_dashboard_advanced_v1";
 
 const DASHBOARD_BUILDER_PROFILES = {
   marketing: {
-    label: "Centro inicial",
-    title: "Centro de Comando Revenue Marketing",
-    description: "Siguiente acción, embudo, ROI por canales/campañas y tabla ejecutiva sin exceso de ruido.",
-    widgets: ["next_action", "revenue_funnel", "channel_roi", "campaign_roi", "roi_table"],
+    label: "Marketing",
+    title: "Dashboard de Marketing Revenue",
+    description: "Embudo, canales, campañas y fuentes de llegada con tablas exportables.",
+    widgets: ["revenue", "revenue_funnel", "channel_roi", "campaign_roi", "source_mix", "roi_table"],
   },
   commercial: {
-    label: "Perfil comercial",
+    label: "Comercial",
     title: "Dashboard Comercial",
-    description: "Revenue, ventas, agenda y oportunidades para operar seguimiento y cierre.",
-    widgets: ["next_action", "revenue_funnel", "revenue", "agenda", "opportunities", "roi_table"],
+    description: "Revenue, ventas, ticket promedio, clientes y sucursales para analizar cierres.",
+    widgets: ["revenue", "sales", "avg_ticket", "leads", "sales_table", "branch_table"],
+  },
+  tickets: {
+    label: "Tickets",
+    title: "Dashboard de Tickets y Redenciones",
+    description: "Tickets emitidos, redenciones, fuentes y tablas de validación para medir activación.",
+    widgets: ["tickets", "redemptions", "redemption_rate", "redemptions_table", "source_mix", "leads_table"],
+  },
+  executive: {
+    label: "Ejecutivo",
+    title: "Dashboard Ejecutivo",
+    description: "Vista corta para gerencia: revenue, ROI, embudo, campañas y ranking de datos.",
+    widgets: ["revenue", "avg_ticket", "channel_roi", "campaign_roi", "revenue_funnel", "roi_table"],
   },
   custom: {
-    label: "Perfil personalizado",
+    label: "Personalizado",
     title: "Dashboard Personalizado",
-    description: "Arrastra, agrega y quita bloques para construir tu propia vista de control.",
-    widgets: ["next_action", "revenue", "channel_roi", "agenda"],
+    description: "Arrastra, agrega, cierra y exporta bloques para construir tu propia vista de análisis.",
+    widgets: ["revenue", "channel_roi", "roi_table"],
   },
 };
 
 const DASHBOARD_WIDGET_CATALOG = [
-  { id: "next_action", title: "Siguiente mejor acción", category: "Operacion", icon: "bolt", route: "rms-machine", description: "Indica qué debe hacer el negocio ahora para mover revenue." },
-  { id: "revenue", title: "Revenue real", category: "Comercial", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
-  { id: "revenue_funnel", title: "Embudo RMS simple", category: "Revenue", icon: "conversion_path", route: "rms-machine", description: "Lectura compacta de leads, tickets, redenciones y ventas." },
-  { id: "sales", title: "Ventas registradas", category: "Comercial", icon: "point_of_sale", route: "sales", description: "Entrada directa para registrar compras y alimentar el ROI." },
-  { id: "channel_roi", title: "ROI por canales", category: "Marketing", icon: "hub", route: "channels", description: "Compara Instagram, Facebook, Google, web, WhatsApp y otros canales." },
-  { id: "campaign_roi", title: "ROI campañas", category: "Marketing", icon: "campaign", route: "campaigns", description: "Mide inversión vs revenue atribuido por campaña." },
-  { id: "leads", title: "Leads capturados", category: "Marketing", icon: "person_add", route: "leads", description: "Personas identificadas desde campañas, QR, juegos o formularios." },
-  { id: "tickets", title: "Tickets activos", category: "Activacion", icon: "confirmation_number", route: "strategic-qr", description: "Beneficios emitidos que sostienen la atención del cliente." },
-  { id: "redemptions", title: "Redenciones", category: "Conversion", icon: "qr_code_scanner", route: "redemptions", description: "Clientes que usaron el beneficio y ya requieren cierre comercial." },
-  { id: "agenda", title: "Agenda comercial", category: "Operacion", icon: "event_available", route: "agenda", description: "Tareas de seguimiento para WhatsApp, llamadas, redenciones y cierre." },
-  { id: "opportunities", title: "Máquina RMS", category: "Operacion", icon: "precision_manufacturing", route: "rms-machine", description: "Cola diaria de oportunidades priorizadas para vendedores." },
-  { id: "roi_table", title: "Tabla ejecutiva ROI", category: "Analisis", icon: "table_chart", route: "channels", description: "Ranking corto de canales y campañas por inversión, revenue y ROI." },
+  { id: "revenue", title: "Revenue real", category: "Número", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
+  { id: "sales", title: "Ventas registradas", category: "Número", icon: "point_of_sale", route: "sales", description: "Cantidad de ventas observadas en el periodo." },
+  { id: "avg_ticket", title: "Ticket promedio", category: "Número", icon: "receipt_long", route: "sales", description: "Promedio de ingreso por venta registrada." },
+  { id: "leads", title: "Leads capturados", category: "Número", icon: "person_add", route: "leads", description: "Personas identificadas desde campañas, QR, juegos o formularios." },
+  { id: "tickets", title: "Tickets emitidos", category: "Número", icon: "confirmation_number", route: "strategic-qr", description: "Beneficios emitidos para activar o reactivar clientes." },
+  { id: "redemptions", title: "Redenciones", category: "Número", icon: "qr_code_scanner", route: "redemptions", description: "Clientes que usaron un beneficio o ticket." },
+  { id: "redemption_rate", title: "Tasa de redención", category: "Número", icon: "percent", route: "redemptions", description: "Porcentaje de tickets emitidos que terminaron redimidos." },
+  { id: "revenue_funnel", title: "Embudo visual RMS", category: "Gráfico", icon: "conversion_path", route: "rms-machine", description: "Lectura compacta de leads, tickets, redenciones y ventas." },
+  { id: "channel_roi", title: "Gráfico ROI por canales", category: "Gráfico", icon: "hub", route: "channels", description: "Compara Instagram, Facebook, Google, web, WhatsApp y otros canales." },
+  { id: "campaign_roi", title: "Gráfico ROI campañas", category: "Gráfico", icon: "campaign", route: "campaigns", description: "Mide inversión vs revenue atribuido por campaña." },
+  { id: "source_mix", title: "Gráfico fuente de ventas", category: "Gráfico", icon: "donut_large", route: "channels", description: "Muestra qué fuente o canal trae más revenue." },
+  { id: "roi_table", title: "Tabla ejecutiva ROI", category: "Tabla", icon: "table_chart", route: "channels", description: "Ranking de canales y campañas por inversión, revenue y ROI." },
+  { id: "sales_table", title: "Tabla de ventas", category: "Tabla", icon: "view_list", route: "sales", description: "Listado exportable de ventas registradas." },
+  { id: "leads_table", title: "Tabla de leads", category: "Tabla", icon: "groups", route: "leads", description: "Listado exportable de leads/contactos recientes." },
+  { id: "redemptions_table", title: "Tabla de redenciones", category: "Tabla", icon: "fact_check", route: "redemptions", description: "Listado exportable de redenciones recientes." },
+  { id: "branch_table", title: "Tabla por sucursal", category: "Tabla", icon: "store", route: "branches", description: "Ventas, redenciones y revenue por punto físico." },
 ];
 
 function readDashboardBuilderStorage() {
@@ -8892,6 +9128,18 @@ function getDashboardBuilderNextAction(stats) {
 function getDashboardBuilderStats() {
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
+  const acquisitionSources = Array.isArray(dashboard.acquisition_sources) ? dashboard.acquisition_sources : [];
+  const branchPerformance = Array.isArray(dashboard.branch_performance) ? dashboard.branch_performance : [];
+  const recentLeads = Array.isArray(dashboard.recent_players) ? dashboard.recent_players.slice(0, 8) : [];
+  const recentRedemptions = Array.isArray(dashboard.recent_redemptions) ? dashboard.recent_redemptions.slice(0, 8) : [];
+  const recentSalesSource = Array.isArray(state.selectedSales) && state.selectedSales.length
+    ? state.selectedSales
+    : Array.isArray(dashboard.recent_acquisition_sales)
+      ? dashboard.recent_acquisition_sales
+      : Array.isArray(dashboard.recent_sales)
+        ? dashboard.recent_sales
+        : [];
+  const recentSales = recentSalesSource.slice(0, 8);
   const topCampaigns = dashboardBuilderTopCampaigns();
   const topChannels = dashboardBuilderTopChannels();
   const campaignInvestment = topCampaigns.reduce((sum, row) => sum + toNumber(row.investment), 0)
@@ -8923,6 +9171,8 @@ function getDashboardBuilderStats() {
   return {
     activeQr,
     avgTicket: observedSalesCount ? observedRevenue / observedSalesCount : 0,
+    acquisitionSources,
+    branchPerformance,
     campaignInvestment,
     campaignRevenue,
     campaignRoi: campaignInvestment ? (campaignRevenue - campaignInvestment) / campaignInvestment : null,
@@ -8933,12 +9183,21 @@ function getDashboardBuilderStats() {
     observedRevenue,
     openAgenda,
     redemptionRate: toNumber(summary.redemption_rate),
+    recentLeads,
+    recentRedemptions,
+    recentSales,
     referralPoints: toNumber(summary.referral_points_awarded),
     referralSales: toNumber(summary.referral_sales_count),
     rmsOpportunities,
     salesCount: observedSalesCount,
     topCampaigns,
     topChannels,
+    sourceRows: acquisitionSources.map((row) => ({
+      label: `${acquisitionSourceLabel(row.acquisition_source)}${row.acquisition_channel ? ` / ${row.acquisition_channel}` : ""}`,
+      revenue: toNumber(row.revenue),
+      investment: toNumber(row.investment || row.cost || row.budget_total),
+      meta: `${toNumber(row.count)} ventas`,
+    })).filter((row) => row.revenue || row.investment).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
     totalLeads,
     totalQrGenerated: toNumber(summary.total_qr_generated),
     totalQrRedeemed,
@@ -9032,19 +9291,164 @@ function dashboardBuilderRoiTable(stats) {
   `;
 }
 
+function dashboardBuilderSimpleTable(columns = [], rows = [], emptyMessage = "Sin datos para mostrar.") {
+  if (!rows.length) return `<div class="dashboard-mini-empty">${escapeHtml(emptyMessage)}</div>`;
+  return `
+    <div class="dashboard-roi-table-wrap dashboard-data-table-wrap">
+      <table class="dashboard-roi-table dashboard-data-table">
+        <thead>
+          <tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr>
+              ${columns.map((column) => `<td>${escapeHtml(typeof column.value === "function" ? column.value(row) : row[column.key])}</td>`).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function dashboardBuilderSalesTable(stats) {
+  const rows = stats.recentSales || [];
+  return dashboardBuilderSimpleTable([
+    { label: "Cliente", value: (row) => saleCustomerText(row) || row.customer_name || "-" },
+    { label: "Producto", value: (row) => row.product_name || row.product || "-" },
+    { label: "Revenue", value: (row) => money(row.sale_amount || row.amount || row.revenue || 0) },
+    { label: "Fecha", value: (row) => formatDateShort(row.sale_date || row.created_at || row.updated_at) },
+  ], rows, "Cuando registres ventas, aparecerán aquí para análisis y exportación.");
+}
+
+function dashboardBuilderLeadsTable(stats) {
+  return dashboardBuilderSimpleTable([
+    { label: "Lead", value: (row) => row.name || row.player_name || row.full_name || "-" },
+    { label: "Email", value: (row) => row.email || "-" },
+    { label: "Teléfono", value: (row) => row.phone || "-" },
+    { label: "Fecha", value: (row) => formatDateShort(row.created_at || row.updated_at) },
+  ], stats.recentLeads || [], "Sin leads recientes para mostrar.");
+}
+
+function dashboardBuilderRedemptionsTable(stats) {
+  return dashboardBuilderSimpleTable([
+    { label: "Cliente", value: (row) => row.player_name || row.customer_name || "-" },
+    { label: "Beneficio", value: (row) => row.reward_name || row.benefit_label || "-" },
+    { label: "Validador", value: (row) => row.validator || "-" },
+    { label: "Fecha", value: (row) => formatDateShort(row.redeemed_at || row.created_at) },
+  ], stats.recentRedemptions || [], "Sin redenciones recientes para mostrar.");
+}
+
+function dashboardBuilderBranchTable(stats) {
+  return dashboardBuilderSimpleTable([
+    { label: "Sucursal", value: (row) => row.branch_name || "Sin sucursal" },
+    { label: "Redenciones", value: (row) => toNumber(row.redemptions).toLocaleString("es-CO") },
+    { label: "Ventas", value: (row) => toNumber(row.sales).toLocaleString("es-CO") },
+    { label: "Revenue", value: (row) => money(row.revenue || 0) },
+  ], (stats.branchPerformance || []).slice(0, 8), "Sin actividad por sucursal.");
+}
+
+function dashboardWidgetCsvRows(widgetId, stats) {
+  const metricRows = {
+    revenue: [["Métrica", "Valor", "Detalle"], ["Revenue real", stats.observedRevenue, `${stats.salesCount} ventas registradas`]],
+    sales: [["Métrica", "Valor", "Detalle"], ["Ventas registradas", stats.salesCount, money(stats.observedRevenue)]],
+    avg_ticket: [["Métrica", "Valor", "Detalle"], ["Ticket promedio", stats.avgTicket, `${stats.salesCount} ventas registradas`]],
+    leads: [["Métrica", "Valor", "Detalle"], ["Leads capturados", stats.totalLeads, `${stats.redemptionRate}% redime`]],
+    tickets: [["Métrica", "Valor", "Detalle"], ["Tickets emitidos", stats.totalQrGenerated, `${stats.activeQr} activos`]],
+    redemptions: [["Métrica", "Valor", "Detalle"], ["Redenciones", stats.totalQrRedeemed, `${stats.redemptionRate}% tasa de redención`]],
+    redemption_rate: [["Métrica", "Valor", "Detalle"], ["Tasa de redención", `${stats.redemptionRate}%`, `${stats.totalQrRedeemed} redenciones / ${stats.totalQrGenerated} tickets`]],
+  };
+  if (metricRows[widgetId]) return metricRows[widgetId];
+  if (widgetId === "revenue_funnel") {
+    return [
+      ["Etapa", "Cantidad", "Detalle"],
+      ["Leads", stats.totalLeads, "captados"],
+      ["Tickets", stats.totalQrGenerated, "emitidos"],
+      ["Redenciones", stats.totalQrRedeemed, "validadas"],
+      ["Ventas", stats.salesCount, "registradas"],
+    ];
+  }
+  if (["channel_roi", "campaign_roi", "source_mix"].includes(widgetId)) {
+    const rows = widgetId === "campaign_roi" ? stats.topCampaigns : widgetId === "source_mix" ? stats.sourceRows : stats.topChannels;
+    return [["Fuente", "Revenue", "Inversión", "ROI", "Detalle"], ...rows.map((row) => [
+      row.label,
+      toNumber(row.revenue),
+      toNumber(row.investment),
+      toNumber(row.investment) ? ratioLabel((toNumber(row.revenue) - toNumber(row.investment)) / toNumber(row.investment)) : "-",
+      row.meta || "",
+    ])];
+  }
+  if (widgetId === "roi_table") {
+    return [["Fuente", "Tipo", "Inversión", "Revenue", "ROI"], ...[
+      ...stats.topChannels.map((row) => ({ ...row, type: "Canal" })),
+      ...stats.topCampaigns.map((row) => ({ ...row, type: "Campaña" })),
+    ].map((row) => [
+      row.label,
+      row.type,
+      toNumber(row.investment),
+      toNumber(row.revenue),
+      toNumber(row.investment) ? ratioLabel((toNumber(row.revenue) - toNumber(row.investment)) / toNumber(row.investment)) : "-",
+    ])];
+  }
+  if (widgetId === "sales_table") {
+    return [["Cliente", "Producto", "Revenue", "Fecha"], ...(stats.recentSales || []).map((row) => [
+      saleCustomerText(row) || row.customer_name || "-",
+      row.product_name || row.product || "-",
+      toNumber(row.sale_amount || row.amount || row.revenue),
+      formatDateShort(row.sale_date || row.created_at || row.updated_at),
+    ])];
+  }
+  if (widgetId === "leads_table") {
+    return [["Lead", "Email", "Teléfono", "Fecha"], ...(stats.recentLeads || []).map((row) => [
+      row.name || row.player_name || row.full_name || "-",
+      row.email || "-",
+      row.phone || "-",
+      formatDateShort(row.created_at || row.updated_at),
+    ])];
+  }
+  if (widgetId === "redemptions_table") {
+    return [["Cliente", "Beneficio", "Validador", "Fecha"], ...(stats.recentRedemptions || []).map((row) => [
+      row.player_name || row.customer_name || "-",
+      row.reward_name || row.benefit_label || "-",
+      row.validator || "-",
+      formatDateShort(row.redeemed_at || row.created_at),
+    ])];
+  }
+  if (widgetId === "branch_table") {
+    return [["Sucursal", "Redenciones", "Ventas", "Revenue"], ...(stats.branchPerformance || []).map((row) => [
+      row.branch_name || "Sin sucursal",
+      toNumber(row.redemptions),
+      toNumber(row.sales),
+      toNumber(row.revenue),
+    ])];
+  }
+  return [["Métrica", "Valor"], ["Sin datos", ""]];
+}
+
+function exportDashboardWidget(widgetId) {
+  const widget = DASHBOARD_WIDGET_CATALOG.find((item) => item.id === widgetId);
+  const rows = dashboardWidgetCsvRows(widgetId, getDashboardBuilderStats());
+  downloadCsv(`dashboard-revenue-${widgetId || "bloque"}`, rows);
+  showFeedback(`${widget?.title || "Bloque"} exportado en CSV.`, "success", { title: "Centro de Revenue" });
+}
+
 function renderDashboardWidget(widget, stats) {
-  if (widget.id === "next_action") return { value: stats.nextAction.title, meta: stats.nextAction.meta, body: stats.nextAction.body, cta: stats.nextAction.cta, route: stats.nextAction.route, tone: "action" };
   if (widget.id === "revenue") return { value: money(stats.observedRevenue), meta: `${stats.salesCount} ventas registradas`, body: `Ticket promedio: ${money(stats.avgTicket)}.`, tone: "money" };
+  if (widget.id === "avg_ticket") return { value: money(stats.avgTicket), meta: `${stats.salesCount} ventas registradas`, body: "Úsalo para comparar CAC, inversión y revenue por canal.", tone: "money" };
   if (widget.id === "revenue_funnel") return { value: `${stats.totalLeads} leads`, meta: "Captura a venta registrada", body: dashboardBuilderFunnel(stats), tone: "chart" };
-  if (widget.id === "sales") return { value: stats.salesCount, meta: "ventas observadas", body: "Registra ventas con canal y campaña para medir ROI real.", tone: "neutral" };
+  if (widget.id === "sales") return { value: stats.salesCount, meta: "ventas observadas", body: `${money(stats.observedRevenue)} revenue medido.`, tone: "neutral" };
   if (widget.id === "channel_roi") return { value: ratioLabel(stats.channelRoi), meta: `${money(stats.channelInvestment)} invertido`, body: dashboardBuilderBars(stats.topChannels, "revenue"), tone: "chart" };
   if (widget.id === "campaign_roi") return { value: ratioLabel(stats.campaignRoi), meta: `${money(stats.campaignInvestment)} invertido`, body: dashboardBuilderBars(stats.topCampaigns, "revenue"), tone: "chart" };
-  if (widget.id === "leads") return { value: stats.totalLeads, meta: `${stats.redemptionRate}% redime`, body: "Convierte leads sin tarea en seguimiento dentro de agenda.", tone: "neutral" };
-  if (widget.id === "tickets") return { value: stats.activeQr, meta: `${stats.totalQrGenerated} generados`, body: "Los tickets próximos a vencer deben convertirse en tareas.", tone: "neutral" };
-  if (widget.id === "redemptions") return { value: stats.totalQrRedeemed, meta: `${stats.redemptionRate}% tasa de redencion`, body: "Cada redención debe conectarse con venta, recompra o referido.", tone: "neutral" };
-  if (widget.id === "agenda") return { value: stats.openAgenda, meta: "tareas abiertas", body: "La agenda convierte oportunidades en trabajo ejecutable.", tone: stats.openAgenda ? "action" : "neutral" };
-  if (widget.id === "opportunities") return { value: stats.rmsOpportunities, meta: "oportunidades en proceso", body: "Si está en cero, alimenta la máquina con contactos, campañas, QR o tickets.", tone: stats.rmsOpportunities ? "action" : "neutral" };
+  if (widget.id === "source_mix") return { value: "Top fuentes", meta: "Revenue por origen", body: dashboardBuilderBars(stats.sourceRows, "revenue"), tone: "chart" };
+  if (widget.id === "leads") return { value: stats.totalLeads, meta: `${stats.redemptionRate}% redime`, body: "Volumen de materia prima comercial capturada.", tone: "neutral" };
+  if (widget.id === "tickets") return { value: stats.totalQrGenerated, meta: `${stats.activeQr} activos`, body: "Tickets emitidos para activación, postventa o beneficio.", tone: "neutral" };
+  if (widget.id === "redemptions") return { value: stats.totalQrRedeemed, meta: `${stats.redemptionRate}% tasa de redención`, body: "Uso real de beneficios y tickets.", tone: "neutral" };
+  if (widget.id === "redemption_rate") return { value: `${stats.redemptionRate}%`, meta: `${stats.totalQrRedeemed} de ${stats.totalQrGenerated} tickets`, body: "Indicador rápido de activación real.", tone: "neutral" };
   if (widget.id === "roi_table") return { value: "Top 5", meta: "Canales y campañas por revenue", body: dashboardBuilderRoiTable(stats), tone: "table" };
+  if (widget.id === "sales_table") return { value: `${stats.recentSales.length} filas`, meta: "Ventas recientes", body: dashboardBuilderSalesTable(stats), tone: "table" };
+  if (widget.id === "leads_table") return { value: `${stats.recentLeads.length} filas`, meta: "Leads recientes", body: dashboardBuilderLeadsTable(stats), tone: "table" };
+  if (widget.id === "redemptions_table") return { value: `${stats.recentRedemptions.length} filas`, meta: "Redenciones recientes", body: dashboardBuilderRedemptionsTable(stats), tone: "table" };
+  if (widget.id === "branch_table") return { value: `${stats.branchPerformance.length} puntos`, meta: "Sucursales", body: dashboardBuilderBranchTable(stats), tone: "table" };
   return { value: "-", meta: widget.description, body: "", tone: "neutral" };
 }
 
@@ -9069,6 +9473,11 @@ function openDashboardBuilderRoute(route = "dashboard") {
 
 function renderDashboardBuilder() {
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
+  ensureRevenueCenterUxStyles();
+  if (revenueWorkspace) {
+    revenueWorkspace.hidden = true;
+    revenueWorkspace.classList.add("hidden");
+  }
   state.dashboardBuilderProfile = getDashboardProfile();
   try {
     state.dashboardBuilderExpanded = window.localStorage.getItem(DASHBOARD_BUILDER_EXPANDED_KEY) === "1";
@@ -9119,7 +9528,10 @@ function renderDashboardBuilder() {
         <span class="dashboard-widget-meta">${escapeHtml(rendered.meta || widget.description)}</span>
         <div class="dashboard-widget-body">${rendered.body || ""}</div>
         <div class="dashboard-widget-actions">
-          <button class="ghost-button" type="button" data-dashboard-open-route="${escapeHtml(rendered.route || widget.route || "dashboard")}">${escapeHtml(rendered.cta || "Abrir módulo")}</button>
+          <button class="ghost-button" type="button" data-dashboard-export-widget="${escapeHtml(widget.id)}">
+            <span class="material-symbols-outlined" aria-hidden="true">download</span>
+            CSV
+          </button>
           <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} title="Mover a la izquierda"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
           <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === layout.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
         </div>
@@ -9190,7 +9602,10 @@ function toggleDashboardAdvancedView() {
 
 function renderDashboard() {
   renderDashboardBuilder();
-  renderRevenueWorkspace();
+  if (revenueWorkspace) {
+    revenueWorkspace.hidden = true;
+    revenueWorkspace.classList.add("hidden");
+  }
   if (!state.dashboardBuilderExpanded) return;
   renderCommandCenter();
   const summary = state.summary || {};
@@ -16004,9 +16419,22 @@ function requireSelectedCompetitor(selectElement, messageElement, context = "gua
 
 function filteredCompetitors() {
   const needle = String(state.competitorSearch || "").trim().toLowerCase();
+  const productNeedle = String(state.competitorProductFilter || "").trim().toLowerCase();
   const competitors = (state.competitionCompetitors || []).filter((item) => item.is_active !== false);
-  if (!needle) return competitors;
-  return competitors.filter((item) => [item.name, item.category, item.city, item.operation_zone, item.target_segment, item.notes].some((value) => String(value || "").toLowerCase().includes(needle)));
+  const productMatches = productNeedle
+    ? new Set((state.competitionProducts || []).filter((product) => (
+      product.is_active !== false
+      && [product.product_name, product.category, product.own_product_name, product.promotion_label, product.notes, product.channel].some((value) => String(value || "").toLowerCase().includes(productNeedle))
+    )).flatMap((product) => [
+      String(product.competitor_id || ""),
+      String(product.linked_competitor_name || product.competitor_name || "").trim().toLowerCase(),
+    ]).filter(Boolean))
+    : null;
+  return competitors.filter((item) => {
+    const matchesCompetitor = !needle || [item.name, item.category, item.city, item.operation_zone, item.target_segment, item.notes].some((value) => String(value || "").toLowerCase().includes(needle));
+    const matchesProduct = !productMatches || productMatches.has(String(item.id || "")) || productMatches.has(String(item.name || "").trim().toLowerCase());
+    return matchesCompetitor && matchesProduct;
+  });
 }
 
 function filteredCompetitionProducts() {
@@ -16108,8 +16536,475 @@ function recommendedActionForFinding(finding = {}) {
   return finding.suggested_action || "Observar y actualizar la bitácora competitiva.";
 }
 
+function ensureCompetitiveRadarUxStyles() {
+  if (document.getElementById("competitiveRadarUxStylesV77")) return;
+  const style = document.createElement("style");
+  style.id = "competitiveRadarUxStylesV77";
+  style.textContent = `
+    body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head {
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+    body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head p {
+      max-width: 760px;
+      margin-top: .45rem;
+      color: #64748b;
+    }
+    body[data-current-view="competition"] .portal-shell #competitionKpiGrid,
+    body[data-current-view="competition"] .portal-shell .contact-center-tabs {
+      display: none !important;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel]:not([data-competition-panel="competitors"]) {
+      display: block !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel]:not([data-competition-panel="competitors"]) > * {
+      display: none !important;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel="products"] > .inventory-layout {
+      display: block !important;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel="products"] .inventory-table-card {
+      display: none !important;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .inventory-layout {
+      display: block !important;
+    }
+    body[data-current-view="competition"] .portal-shell #competitorFormPanel,
+    body[data-current-view="competition"] .portal-shell #competitionProductFormPanel {
+      display: none !important;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-table-filters {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(220px,1fr));
+      gap: .6rem;
+      min-width: min(560px, 100%);
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .inventory-table-card {
+      width: 100%;
+    }
+    body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .table-wrap {
+      max-height: calc(100vh - 275px);
+      overflow: auto;
+      border-radius: 18px;
+    }
+    body[data-current-view="competition"] .portal-shell #competitorTable tr[data-competitor-row] {
+      cursor: pointer;
+    }
+    body[data-current-view="competition"] .portal-shell #competitorTable tr[data-competitor-row]:hover {
+      background: rgba(14, 165, 233, .06);
+    }
+    body[data-current-view="competition"] .portal-shell .competition-radar-product-cell {
+      display: grid;
+      gap: .2rem;
+      min-width: 210px;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-radar-counts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-radar-counts span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: .22rem .5rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .06);
+      color: #475569;
+      font-size: .74rem;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"].competition-modal-open::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1080;
+      background: rgba(15, 23, 42, .48);
+      backdrop-filter: blur(5px);
+    }
+    body[data-current-view="competition"] .portal-shell #competitorFormPanel.is-competition-modal-open,
+    body[data-current-view="competition"] .portal-shell #competitionProductFormPanel.is-competition-modal-open {
+      display: block !important;
+      position: fixed;
+      left: 50%;
+      top: 4vh;
+      transform: translateX(-50%);
+      width: min(980px, calc(100vw - 2rem));
+      max-height: 90vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      z-index: 1100;
+      padding: 1rem;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, .28);
+    }
+    body[data-current-view="competition"] .portal-shell #competitorFormPanel .table-card-head,
+    body[data-current-view="competition"] .portal-shell #competitionProductFormPanel .table-card-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding-bottom: .75rem;
+      background: inherit;
+    }
+    body[data-current-view="competition"] .portal-shell #competitorDetailModal {
+      position: fixed;
+      inset: 0;
+      z-index: 1120;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      background: rgba(15, 23, 42, .52);
+      backdrop-filter: blur(6px);
+    }
+    body[data-current-view="competition"] .portal-shell #competitorDetailModal.hidden {
+      display: none !important;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-card {
+      width: min(1120px, 100%);
+      max-height: 92vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto minmax(0,1fr);
+      padding: 0;
+      box-shadow: 0 30px 90px rgba(15, 23, 42, .32);
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.1rem .85rem;
+      border-bottom: 1px solid rgba(15, 23, 42, .08);
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-head h3 {
+      margin: .2rem 0;
+      font-size: clamp(1.25rem, 2.5vw, 2rem);
+      letter-spacing: -.04em;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-head p {
+      margin: 0;
+      color: #64748b;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-tabs {
+      display: flex;
+      gap: .45rem;
+      overflow-x: auto;
+      padding: .75rem 1.1rem;
+      border-bottom: 1px solid rgba(15, 23, 42, .08);
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-tabs button {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: .45rem .75rem;
+      border: 1px solid rgba(15, 23, 42, .1);
+      border-radius: 999px;
+      background: #fff;
+      color: #475569;
+      font-weight: 850;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-tabs button.active {
+      border-color: #0f7354;
+      background: #e8f7f0;
+      color: #0f7354;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-body {
+      overflow-y: auto;
+      padding: 1rem 1.1rem 1.2rem;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+      gap: .75rem;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-metric,
+    body[data-current-view="competition"] .portal-shell .competition-detail-note {
+      display: grid;
+      gap: .25rem;
+      padding: .85rem;
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 16px;
+      background: rgba(248,250,252,.86);
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-note.span-2 {
+      grid-column: 1 / -1;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-metric span,
+    body[data-current-view="competition"] .portal-shell .competition-detail-note span {
+      color: #64748b;
+      font-size: .72rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-metric strong,
+    body[data-current-view="competition"] .portal-shell .competition-detail-note strong {
+      color: #0f172a;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(15,23,42,.08);
+      border-radius: 16px;
+    }
+    body[data-current-view="competition"] .portal-shell .competition-detail-table-wrap table {
+      min-width: 820px;
+      margin: 0;
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head,
+      body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions button,
+      body[data-current-view="competition"] .portal-shell .competition-table-filters {
+        width: 100%;
+      }
+      body[data-current-view="competition"] .portal-shell .competition-table-filters {
+        grid-template-columns: 1fr;
+      }
+      body[data-current-view="competition"] .portal-shell #competitorFormPanel.is-competition-modal-open,
+      body[data-current-view="competition"] .portal-shell #competitionProductFormPanel.is-competition-modal-open {
+        top: 1rem;
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 2rem);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function competitionViewSection() {
+  return document.querySelector('.view-section[data-view="competition"]');
+}
+
+function openCompetitorFormModal() {
+  competitionViewSection()?.classList.add("competition-modal-open");
+  competitorFormPanel?.classList.add("is-competition-modal-open");
+}
+
+function closeCompetitorFormModal() {
+  competitorFormPanel?.classList.remove("is-competition-modal-open");
+  if (!competitionProductFormPanel?.classList.contains("is-competition-modal-open")) {
+    competitionViewSection()?.classList.remove("competition-modal-open");
+  }
+}
+
+function openCompetitionProductModal() {
+  competitionViewSection()?.classList.add("competition-modal-open");
+  competitionProductFormPanel?.classList.add("is-competition-modal-open");
+}
+
+function closeCompetitionProductModal() {
+  competitionProductFormPanel?.classList.remove("is-competition-modal-open");
+  if (!competitorFormPanel?.classList.contains("is-competition-modal-open")) {
+    competitionViewSection()?.classList.remove("competition-modal-open");
+  }
+}
+
+function competitorProductsFor(competitor = {}) {
+  const key = String(competitor.id || "");
+  const name = String(competitor.name || "").trim().toLowerCase();
+  return (state.competitionProducts || []).filter((product) => (
+    product.is_active !== false
+    && (String(product.competitor_id || "") === key
+      || String(product.linked_competitor_name || product.competitor_name || "").trim().toLowerCase() === name)
+  ));
+}
+
+function competitorCampaignsFor(competitor = {}) {
+  const key = String(competitor.id || "");
+  const name = String(competitor.name || "").trim().toLowerCase();
+  return (state.competitionCampaigns || []).filter((campaign) => (
+    campaign.status !== "ARCHIVED"
+    && (String(campaign.competitor_id || "") === key
+      || String(campaign.competitor_name || "").trim().toLowerCase() === name)
+  ));
+}
+
+function competitorEventsFor(competitor = {}) {
+  const key = String(competitor.id || "");
+  const name = String(competitor.name || "").trim().toLowerCase();
+  return (state.competitionEvents || []).filter((eventItem) => (
+    eventItem.status !== "ARCHIVED"
+    && (String(eventItem.competitor_id || "") === key
+      || String(eventItem.competitor_name || "").trim().toLowerCase() === name)
+  ));
+}
+
+function competitorFindingsFor(competitor = {}) {
+  const key = String(competitor.id || "");
+  const name = String(competitor.name || "").trim().toLowerCase();
+  return (state.competitionFindings || []).filter((finding) => (
+    finding.status !== "ARCHIVED"
+    && (String(finding.competitor_id || "") === key
+      || String(finding.competitor_name || "").trim().toLowerCase() === name)
+  ));
+}
+
+function competitorPrimaryProduct(competitor = {}) {
+  return competitorProductsFor(competitor)
+    .slice()
+    .sort((a, b) => new Date(b.observed_at || b.created_at || 0) - new Date(a.observed_at || a.created_at || 0))[0] || null;
+}
+
+function openCompetitorDetailModal(competitorId = "", tab = "prices") {
+  const competitor = competitorById(competitorId);
+  if (!competitor || !competitorDetailModal) return;
+  state.competitorDetailId = competitor.id;
+  state.competitorDetailTab = tab || state.competitorDetailTab || "prices";
+  renderCompetitorDetailModal();
+  competitorDetailModal.classList.remove("hidden");
+  competitorDetailModal.removeAttribute("aria-hidden");
+}
+
+function closeCompetitorDetailModal() {
+  if (!competitorDetailModal) return;
+  competitorDetailModal.classList.add("hidden");
+  competitorDetailModal.setAttribute("aria-hidden", "true");
+}
+
+function competitorDetailEmpty(message = "Sin datos registrados.") {
+  return `<div class="competition-detail-note"><strong>${escapeHtml(message)}</strong><span>Agrega datos desde el formulario correspondiente.</span></div>`;
+}
+
+function competitorDetailTable(headers = [], rows = [], empty = "Sin datos registrados.") {
+  if (!rows.length) return competitorDetailEmpty(empty);
+  return `
+    <div class="competition-detail-table-wrap">
+      <table>
+        <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderCompetitorDetailModal() {
+  const competitor = competitorById(state.competitorDetailId || "");
+  if (!competitor || !competitorDetailBody) return;
+  const products = competitorProductsFor(competitor);
+  const campaigns = competitorCampaignsFor(competitor);
+  const events = competitorEventsFor(competitor);
+  const findings = competitorFindingsFor(competitor);
+  const tabs = [
+    ["prices", "Precios"],
+    ["products", "Productos"],
+    ["campaigns", "Campañas"],
+    ["events", "Eventos"],
+    ["findings", "Hallazgos"],
+    ["swot", "DOFA"],
+    ["comparison", "Comparativo"],
+  ];
+  const activeTab = state.competitorDetailTab || "prices";
+  if (competitorDetailTitle) competitorDetailTitle.textContent = competitor.name || "Competidor";
+  if (competitorDetailSummary) {
+    competitorDetailSummary.textContent = `${competitor.category || competitor.business_type || "Competidor"} · ${[competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "Sin zona"} · amenaza ${threatLabel(competitor.threat_level)}`;
+  }
+  if (competitorDetailTabs) {
+    competitorDetailTabs.innerHTML = tabs.map(([key, label]) => `
+      <button class="${key === activeTab ? "active" : ""}" type="button" data-competitor-detail-tab="${escapeHtml(key)}">${escapeHtml(label)}</button>
+    `).join("");
+  }
+  if (activeTab === "prices") {
+    competitorDetailBody.innerHTML = competitorDetailTable(
+      ["Producto", "Precio competidor", "Precio propio", "Diferencia", "Fuente", "Fecha"],
+      products.map((product) => `
+        <tr>
+          <td><strong>${escapeHtml(product.product_name || "-")}</strong><span class="table-secondary">${escapeHtml(product.promotion_label || product.category || "-")}</span></td>
+          <td>${escapeHtml(money(product.competitor_price || 0))}</td>
+          <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
+          <td><strong>${escapeHtml(competitionGapLabel(product))}</strong><span class="table-secondary">${escapeHtml(competitionGapPercentLabel(product))}</span></td>
+          <td>${product.source_url ? `<a href="${escapeHtml(product.source_url)}" target="_blank" rel="noopener">Abrir fuente</a>` : escapeHtml(product.channel || "-")}</td>
+          <td>${escapeHtml(formatDate(product.observed_at || product.created_at))}</td>
+        </tr>
+      `),
+      "Sin precios cargados para este competidor."
+    );
+    return;
+  }
+  if (activeTab === "products") {
+    competitorDetailBody.innerHTML = `
+      <div class="competition-detail-grid">
+        <div class="competition-detail-note span-2"><span>Productos principales</span><strong>${escapeHtml(competitor.main_products || "Sin productos principales cargados")}</strong></div>
+        <div class="competition-detail-note"><span>Servicios</span><strong>${escapeHtml(competitor.main_services || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Rango de precios</span><strong>${escapeHtml(competitor.price_range || "-")}</strong></div>
+      </div>
+      ${competitorDetailTable(["Producto observado", "Categoría", "Disponibilidad", "Promoción", "Canal"], products.map((product) => `
+        <tr><td><strong>${escapeHtml(product.product_name || "-")}</strong></td><td>${escapeHtml(product.category || "-")}</td><td>${escapeHtml(product.availability || "-")}</td><td>${escapeHtml(product.promotion_label || "-")}</td><td>${escapeHtml(product.channel || "-")}</td></tr>
+      `), "Sin productos observados para este competidor.")}
+    `;
+    return;
+  }
+  if (activeTab === "campaigns") {
+    competitorDetailBody.innerHTML = competitorDetailTable(
+      ["Campaña", "Tipo", "Canal", "Oferta", "Agresividad", "Impacto", "Acción"],
+      campaigns.map((campaign) => `
+        <tr><td><strong>${escapeHtml(campaign.name || "-")}</strong><span class="table-secondary">${escapeHtml(formatDate(campaign.starts_at || campaign.created_at))}</span></td><td>${escapeHtml(campaignTypeLabel(campaign.campaign_type))}</td><td>${escapeHtml(campaign.channel || "-")}</td><td>${escapeHtml(campaign.offer || campaign.benefit || "-")}</td><td>${escapeHtml(threatLabel(campaign.aggressiveness_level))}</td><td>${escapeHtml(threatLabel(campaign.estimated_impact))}</td><td>${escapeHtml(campaign.suggested_action || recommendedActionForCampaign(campaign))}</td></tr>
+      `),
+      "Sin campañas o promociones cargadas para este competidor."
+    );
+    return;
+  }
+  if (activeTab === "events") {
+    competitorDetailBody.innerHTML = competitorDetailTable(
+      ["Evento", "Tipo", "Fecha", "Lugar", "Oferta", "Oportunidad", "Acción"],
+      events.map((eventItem) => `
+        <tr><td><strong>${escapeHtml(eventItem.name || "-")}</strong></td><td>${escapeHtml(eventTypeLabel(eventItem.event_type))}</td><td>${escapeHtml(formatDate(eventItem.event_date || eventItem.created_at))}</td><td>${escapeHtml([eventItem.place, eventItem.city].filter(Boolean).join(" / ") || "-")}</td><td>${escapeHtml(eventItem.presented_offer || "-")}</td><td>${escapeHtml(eventItem.detected_opportunity || "-")}</td><td>${escapeHtml(eventItem.recommended_action || "-")}</td></tr>
+      `),
+      "Sin eventos o activaciones cargadas para este competidor."
+    );
+    return;
+  }
+  if (activeTab === "findings") {
+    competitorDetailBody.innerHTML = competitorDetailTable(
+      ["Fecha", "Tipo", "Hallazgo", "Impacto", "Área", "Estado", "Acción"],
+      findings.map((finding) => `
+        <tr><td>${escapeHtml(formatDate(finding.detected_at || finding.created_at))}</td><td>${escapeHtml(findingTypeLabel(finding.finding_type))}</td><td><strong>${escapeHtml(finding.title || "-")}</strong><span class="table-secondary">${escapeHtml(finding.description || "-")}</span></td><td>${escapeHtml(threatLabel(finding.impact_level))}</td><td>${escapeHtml(areaAffectedLabel(finding.area_affected))}</td><td>${escapeHtml(radarStatusLabel(finding.status))}</td><td>${escapeHtml(finding.suggested_action || recommendedActionForFinding(finding))}</td></tr>
+      `),
+      "Sin hallazgos cargados para este competidor."
+    );
+    return;
+  }
+  if (activeTab === "swot") {
+    competitorDetailBody.innerHTML = `
+      <div class="competition-detail-grid">
+        <div class="competition-detail-note"><span>Fortalezas</span><strong>${escapeHtml(competitor.strengths || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Debilidades</span><strong>${escapeHtml(competitor.weaknesses || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Oportunidades para nosotros</span><strong>${escapeHtml(competitor.swot_opportunities || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Amenazas</span><strong>${escapeHtml(competitor.swot_threats || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Qué hace mejor</span><strong>${escapeHtml(competitor.better_than_us || "-")}</strong></div>
+        <div class="competition-detail-note"><span>Qué hacemos mejor</span><strong>${escapeHtml(competitor.we_do_better || "-")}</strong></div>
+        <div class="competition-detail-note span-2"><span>Respuesta recomendada</span><strong>${escapeHtml(competitor.response_plan || recommendedActionForCompetitor(competitor))}</strong></div>
+      </div>
+    `;
+    return;
+  }
+  competitorDetailBody.innerHTML = `
+    <div class="competition-detail-grid">
+      <div class="competition-detail-metric"><span>Productos observados</span><strong>${escapeHtml(String(products.length))}</strong></div>
+      <div class="competition-detail-metric"><span>Campañas</span><strong>${escapeHtml(String(campaigns.length))}</strong></div>
+      <div class="competition-detail-metric"><span>Eventos</span><strong>${escapeHtml(String(events.length))}</strong></div>
+      <div class="competition-detail-metric"><span>Hallazgos</span><strong>${escapeHtml(String(findings.length))}</strong></div>
+      <div class="competition-detail-note"><span>Diferencial percibido</span><strong>${escapeHtml(competitor.perceived_differential || "-")}</strong></div>
+      <div class="competition-detail-note"><span>Segmento objetivo</span><strong>${escapeHtml(competitor.target_segment || "-")}</strong></div>
+      <div class="competition-detail-note span-2"><span>Análisis comparativo</span><strong>${escapeHtml(competitor.response_plan || recommendedActionForCompetitor(competitor))}</strong></div>
+    </div>
+  `;
+}
+
 function renderCompetitionView() {
-  setCompetitionTab(state.competitionTab || "competitors");
+  ensureCompetitiveRadarUxStyles();
+  setCompetitionTab("competitors");
   renderCompetitionSelectOptions();
   if (competitionKpiGrid) {
     competitionKpiGrid.innerHTML = competitionKpis().map((item) => `
@@ -16152,21 +17047,39 @@ function renderCompetitionDashboard() {
 function renderCompetitorDirectory() {
   if (!competitorTable) return;
   if (!state.competitionLoaded) {
-    competitorTable.innerHTML = '<tr><td colspan="7">Cargando competidores...</td></tr>';
+    competitorTable.innerHTML = '<tr><td colspan="8">Cargando competidores...</td></tr>';
     return;
   }
   const rows = filteredCompetitors();
-  competitorTable.innerHTML = rows.map((competitor) => `
-    <tr>
-      <td><strong>${escapeHtml(competitor.name)}</strong><span class="table-secondary">${escapeHtml(competitor.website || competitor.instagram || competitor.phone || "-")}</span></td>
-      <td>${escapeHtml(competitor.category || competitor.business_type || "-")}</td>
-      <td>${escapeHtml([competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "-")}</td>
-      <td>${escapeHtml(threatLabel(competitor.threat_level))}</td>
-      <td>${escapeHtml(String(competitor.product_count || 0))}</td>
-      <td>${escapeHtml(String(competitor.finding_count || 0))}</td>
-      <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-edit="${escapeHtml(competitor.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competitor-delete="${escapeHtml(competitor.id)}">Eliminar</button></div></td>
-    </tr>
-  `).join("") || '<tr><td colspan="7">Sin competidores registrados.</td></tr>';
+  competitorTable.innerHTML = rows.map((competitor) => {
+    const products = competitorProductsFor(competitor);
+    const primaryProduct = competitorPrimaryProduct(competitor);
+    const campaigns = competitorCampaignsFor(competitor);
+    const events = competitorEventsFor(competitor);
+    const findings = competitorFindingsFor(competitor);
+    return `
+      <tr data-competitor-row="${escapeHtml(competitor.id)}">
+        <td><strong>${escapeHtml(competitor.name)}</strong><span class="table-secondary">${escapeHtml(competitor.category || competitor.business_type || competitor.website || competitor.instagram || competitor.phone || "-")}</span></td>
+        <td>
+          <span class="competition-radar-product-cell">
+            <strong>${escapeHtml(primaryProduct?.product_name || competitor.main_products || "Sin producto cargado")}</strong>
+            <small class="table-secondary">${escapeHtml(primaryProduct?.promotion_label || primaryProduct?.category || competitor.perceived_differential || "-")}</small>
+          </span>
+        </td>
+        <td>${escapeHtml([competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "-")}</td>
+        <td><strong>${escapeHtml(primaryProduct ? money(primaryProduct.competitor_price || 0) : (competitor.price_range || "-"))}</strong><span class="table-secondary">${escapeHtml(primaryProduct ? competitionGapLabel(primaryProduct) : "Rango general")}</span></td>
+        <td><span class="competition-radar-counts"><span>${escapeHtml(String(campaigns.length))} campañas</span><span>${escapeHtml(String(events.length))} eventos</span></span></td>
+        <td><span class="competition-radar-counts"><span>${escapeHtml(String(findings.length || competitor.finding_count || 0))} hallazgos</span><span>${escapeHtml(String(products.length || competitor.product_count || 0))} productos</span></span></td>
+        <td><span class="status-chip ${["HIGH", "CRITICAL"].includes(String(competitor.threat_level || "").toUpperCase()) ? "warning" : "ok"}">${escapeHtml(threatLabel(competitor.threat_level))}</span></td>
+        <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-detail-open="${escapeHtml(competitor.id)}">Detalle</button><button class="ghost-button" type="button" data-competitor-edit="${escapeHtml(competitor.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competitor-delete="${escapeHtml(competitor.id)}">Eliminar</button></div></td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="8">Sin competidores registrados.</td></tr>';
+  competitorTable.querySelectorAll("[data-competitor-row]").forEach((row) => row.addEventListener("click", (event) => {
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    openCompetitorDetailModal(row.dataset.competitorRow || "", "prices");
+  }));
+  competitorTable.querySelectorAll("[data-competitor-detail-open]").forEach((button) => button.addEventListener("click", () => openCompetitorDetailModal(button.dataset.competitorDetailOpen, "prices")));
   competitorTable.querySelectorAll("[data-competitor-edit]").forEach((button) => button.addEventListener("click", () => editCompetitor(button.dataset.competitorEdit)));
   competitorTable.querySelectorAll("[data-competitor-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitor(button.dataset.competitorDelete)));
 }
@@ -16356,6 +17269,7 @@ function editCompetitionProduct(productId = "") {
   if (competitionNotesInput) competitionNotesInput.value = product.notes || "";
   if (competitionFormTitle) competitionFormTitle.textContent = "Editar producto competidor";
   setInlineMessage(competitionMessage, "Editando dato de competidor existente.", "info");
+  openCompetitionProductModal();
   competitionProductNameInput?.focus();
 }
 
@@ -16407,6 +17321,7 @@ async function submitCompetitionProduct(event) {
     }
     resetCompetitionForm();
     renderCompetitionView();
+    closeCompetitionProductModal();
     setInlineMessage(competitionMessage, productId ? "Dato actualizado correctamente." : "Dato agregado al radar competitivo.", "success");
     showFeedback(productId ? "Dato de competidor actualizado." : "Dato de competidor guardado.", "success", { title: "Radar competitivo" });
   } catch (error) {
@@ -16508,6 +17423,7 @@ function editCompetitor(competitorId = "") {
   if (competitorNotesInput) competitorNotesInput.value = competitor.notes || "";
   if (competitorFormTitle) competitorFormTitle.textContent = "Editar competidor";
   setInlineMessage(competitorMessage, "Editando ficha de competidor.", "info");
+  openCompetitorFormModal();
   competitorNameInput?.focus();
 }
 
@@ -16532,6 +17448,7 @@ async function submitCompetitor(event) {
     state.competitionLoaded = true;
     resetCompetitorForm();
     renderCompetitionView();
+    closeCompetitorFormModal();
     setInlineMessage(competitorMessage, competitorId ? "Competidor actualizado." : "Competidor agregado al radar.", "success");
     showFeedback(competitorId ? "Competidor actualizado." : "Competidor agregado.", "success", { title: "Radar competitivo" });
   } catch (error) {
@@ -19980,7 +20897,7 @@ function renderNoCampaignState() {
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
   campaignSalesTable.innerHTML = '<tr><td colspan="11">Sin ventas.</td></tr>';
-  branchTable.innerHTML = '<tr><td colspan="8">Sin branches registrados ni actividad por sucursal.</td></tr>';
+  branchTable.innerHTML = '<tr><td colspan="9">Sin sedes registradas ni actividad por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
   dashboardInsightTitle.textContent = "Esperando datos del negocio.";
@@ -22522,6 +23439,7 @@ function renderBusinessLogoPanel() {
 async function updateBusinessLogo(logoDataUrl) {
   if (!session?.user?.business_id) return;
   if (businessLogoMessage) businessLogoMessage.textContent = logoDataUrl ? "Guardando logo..." : "Quitando logo...";
+  if (accountLogoMessage) accountLogoMessage.textContent = logoDataUrl ? "Guardando logo..." : "Quitando logo...";
   const data = await api("/api/business/profile", {
     method: "PATCH",
     headers: authHeaders(),
@@ -22541,6 +23459,7 @@ async function updateBusinessLogo(logoDataUrl) {
     await renderAffiliateCardPreview(state.selectedAffiliate);
   }
   if (businessLogoMessage) businessLogoMessage.textContent = logoDataUrl ? "Logo guardado." : "Logo eliminado.";
+  if (accountLogoMessage) accountLogoMessage.textContent = logoDataUrl ? "Logo guardado." : "Logo eliminado.";
 }
 
 async function updateTicketFrame(frameDataUrl) {
@@ -22708,6 +23627,7 @@ async function handleBusinessLogoFile(file) {
   if (!file) return;
   try {
     if (businessLogoMessage) businessLogoMessage.textContent = "Procesando logo...";
+    if (accountLogoMessage) accountLogoMessage.textContent = "Procesando logo...";
     const logoDataUrl = await normalizeAffiliatePhotoDataUrl(file, {
       maxWidth: 560,
       maxHeight: 360,
@@ -22718,6 +23638,7 @@ async function handleBusinessLogoFile(file) {
     await updateBusinessLogo(logoDataUrl);
   } catch (error) {
     if (businessLogoMessage) businessLogoMessage.textContent = error.message || "No se pudo guardar el logo.";
+    if (accountLogoMessage) accountLogoMessage.textContent = error.message || "No se pudo guardar el logo.";
   } finally {
     if (businessLogoInput) businessLogoInput.value = "";
   }
@@ -30296,6 +31217,171 @@ function renderRedemptionsView() {
     : "Sin datos suficientes";
 }
 
+function ensureAcquisitionChannelsUxStyles() {
+  if (document.getElementById("acquisitionChannelsUxStylesV75")) return;
+  const style = document.createElement("style");
+  style.id = "acquisitionChannelsUxStylesV75";
+  style.textContent = `
+    body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head {
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+    body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head p {
+      max-width: 780px;
+      margin-top: .45rem;
+      color: #64748b;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-command-strip,
+    body[data-current-view="channels"] .portal-shell .channel-detail-card,
+    body[data-current-view="channels"] .portal-shell .channel-effort-results-card,
+    body[data-current-view="channels"] .portal-shell .channel-matrix-card,
+    body[data-current-view="channels"] .portal-shell #acquisitionChannelKpiGrid {
+      display: none !important;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-effort-layout,
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout {
+      display: block !important;
+      margin-top: 0 !important;
+    }
+    body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel,
+    body[data-current-view="channels"] .portal-shell #channelEffortFormPanel {
+      display: none !important;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card {
+      width: 100%;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card .table-wrap {
+      max-height: calc(100vh - 280px);
+      overflow: auto;
+      border-radius: 18px;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card table {
+      min-width: 1180px;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card tbody tr:hover {
+      background: rgba(14, 165, 233, .06);
+    }
+    body[data-current-view="channels"] .portal-shell .channel-related-chipline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-related-chipline span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: .22rem .48rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .06);
+      color: #475569;
+      font-size: .76rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-strategy-cell {
+      display: grid;
+      gap: .22rem;
+      max-width: 280px;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-strategy-cell small {
+      color: #64748b;
+      line-height: 1.35;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      min-width: 230px;
+    }
+    body[data-current-view="channels"] .portal-shell .channel-row-actions button {
+      min-height: 34px;
+      padding: .35rem .62rem;
+    }
+    body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"].channel-modal-open::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1080;
+      background: rgba(15, 23, 42, .48);
+      backdrop-filter: blur(5px);
+    }
+    body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel.is-channel-modal-open,
+    body[data-current-view="channels"] .portal-shell #channelEffortFormPanel.is-channel-modal-open {
+      display: block !important;
+      position: fixed;
+      left: 50%;
+      top: 4vh;
+      transform: translateX(-50%);
+      width: min(920px, calc(100vw - 2rem));
+      max-height: 90vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      z-index: 1100;
+      padding: 1rem;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, .28);
+    }
+    body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel .table-card-head,
+    body[data-current-view="channels"] .portal-shell #channelEffortFormPanel .table-card-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding-bottom: .75rem;
+      background: inherit;
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head .head-actions,
+      body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"] > .view-head .head-actions button {
+        width: 100%;
+      }
+      body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel.is-channel-modal-open,
+      body[data-current-view="channels"] .portal-shell #channelEffortFormPanel.is-channel-modal-open {
+        top: 1rem;
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 2rem);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function acquisitionChannelsViewSection() {
+  return document.querySelector('.view-section[data-view="channels"]');
+}
+
+function openAcquisitionChannelModal() {
+  acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
+  acquisitionChannelFormPanel?.classList.add("is-channel-modal-open");
+}
+
+function closeAcquisitionChannelModal() {
+  acquisitionChannelFormPanel?.classList.remove("is-channel-modal-open");
+  if (!channelEffortFormPanel?.classList.contains("is-channel-modal-open")) {
+    acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
+  }
+}
+
+function openChannelEffortModal() {
+  acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
+  channelEffortFormPanel?.classList.add("is-channel-modal-open");
+}
+
+function closeChannelEffortModal() {
+  channelEffortFormPanel?.classList.remove("is-channel-modal-open");
+  if (!acquisitionChannelFormPanel?.classList.contains("is-channel-modal-open")) {
+    acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
+  }
+}
+
 function acquisitionChannelTypeLabel(value = "") {
   return {
     DIGITAL: "Digital",
@@ -30415,10 +31501,29 @@ function channelEffortById(effortId = "") {
   return (state.acquisitionChannelEfforts || []).find((effort) => String(effort.id || "") === String(effortId || "")) || null;
 }
 
+function channelEffortsForChannel(channel = {}) {
+  const keys = new Set([
+    channel.id,
+    channel.slug,
+    channel.name,
+    channel.platform,
+  ].filter(Boolean).map((value) => String(value).trim().toLowerCase()));
+  if (!keys.size) return [];
+  return (state.acquisitionChannelEfforts || []).filter((effort) => {
+    const candidates = [
+      effort.channel_id,
+      effort.channel_slug,
+      effort.channel_name,
+      effort.channel_platform,
+    ].filter(Boolean).map((value) => String(value).trim().toLowerCase());
+    return candidates.some((value) => keys.has(value));
+  });
+}
+
 function resetChannelEffortForm(effort = null) {
   state.channelEffortEditingId = effort?.id || null;
   renderChannelEffortOptions();
-  if (channelEffortFormTitle) channelEffortFormTitle.textContent = effort?.id ? "Editar esfuerzo del canal" : "Registrar publicación, pauta o acción";
+  if (channelEffortFormTitle) channelEffortFormTitle.textContent = effort?.id ? "Editar atracción del canal" : "Crear atracción por canal";
   if (channelEffortIdInput) channelEffortIdInput.value = effort?.id || "";
   if (channelEffortChannelInput) channelEffortChannelInput.value = effort?.channel_id || channelEffortChannelInput.value || "";
   if (channelEffortCampaignInput) channelEffortCampaignInput.value = effort?.campaign_id || "";
@@ -30434,7 +31539,7 @@ function resetChannelEffortForm(effort = null) {
   if (channelEffortStatusInput) channelEffortStatusInput.value = effort?.status || "ACTIVE";
   if (channelEffortDescriptionInput) channelEffortDescriptionInput.value = effort?.description || "";
   if (channelEffortNotesInput) channelEffortNotesInput.value = effort?.notes || "";
-  if (channelEffortSaveButton) channelEffortSaveButton.textContent = effort?.id ? "Guardar cambios" : "Guardar esfuerzo del canal";
+  if (channelEffortSaveButton) channelEffortSaveButton.textContent = effort?.id ? "Guardar cambios" : "Guardar atracción del canal";
   setInlineMessage(channelEffortMessage, "", "info");
 }
 
@@ -30742,6 +31847,7 @@ async function submitChannelEffort(event) {
       loadChannelEfforts({ force: true, quiet: true }),
     ]);
     renderAcquisitionChannelsView();
+    closeChannelEffortModal();
     showFeedback("Esfuerzo del canal guardado con análisis de ROI por fechas.", "success", { title: "Canales ROI" });
   } catch (error) {
     setInlineMessage(channelEffortMessage, error.message, "error");
@@ -30843,6 +31949,7 @@ async function submitAcquisitionChannel(event) {
     await loadAcquisitionChannels({ force: true, quiet: true });
     renderAcquisitionChannelsView();
     renderAcquisitionChannelDatalist();
+    closeAcquisitionChannelModal();
     showFeedback("Canal guardado para análisis independiente de ROI.", "success", { title: "Canales ROI" });
   } catch (error) {
     setInlineMessage(acquisitionChannelMessage, error.message, "error");
@@ -30880,6 +31987,7 @@ function createDetectedAcquisitionChannel(name = "") {
     currency: "COP",
     notes: "Canal detectado automáticamente desde ventas, leads o tickets. Ajusta inversión para medir ROI real.",
   });
+  openAcquisitionChannelModal();
   acquisitionChannelNameInput?.focus();
   setInlineMessage(acquisitionChannelMessage, "Completa la inversión del canal detectado y guarda para controlarlo.", "info");
 }
@@ -30896,6 +32004,7 @@ function applyAcquisitionChannelTemplate(rawTemplate = "") {
     cost_model: costModel || null,
     notes: `Canal ${name || "nuevo"} creado para controlar inversión, clientes recibidos, ventas y ROI independiente de campañas.`,
   });
+  openAcquisitionChannelModal();
   acquisitionChannelBudgetInput?.focus();
   setInlineMessage(acquisitionChannelMessage, "Carga la inversión del periodo y guarda el canal. Luego registra ventas con este canal para medir ROI.", "info");
 }
@@ -30961,6 +32070,7 @@ function renderAcquisitionChannelDetail() {
 }
 
 function renderAcquisitionChannelsView() {
+  ensureAcquisitionChannelsUxStyles();
   const channels = withFilters(
     state.acquisitionChannels || [],
     ["name", "platform", "channel_type", "status", "notes"],
@@ -30995,7 +32105,7 @@ function renderAcquisitionChannelsView() {
   renderChannelEffortsView();
   if (!acquisitionChannelTable) return;
   if (state.acquisitionChannelsLoading && !channels.length) {
-    acquisitionChannelTable.innerHTML = '<tr><td colspan="12">Cargando canales de adquisición...</td></tr>';
+    acquisitionChannelTable.innerHTML = '<tr><td colspan="11">Cargando canales de adquisición...</td></tr>';
     return;
   }
   acquisitionChannelTable.innerHTML = channels.map((channel) => {
@@ -31004,40 +32114,49 @@ function renderAcquisitionChannelsView() {
     const topCampaign = topChannelCampaign(channel);
     const investment = Number(metrics.investment || channel.period_budget || 0);
     const revenue = Number(metrics.revenue || 0);
-    const net = revenue - investment;
+    const effortRows = channelEffortsForChannel(channel);
+    const strategyText = channel.notes || topCampaign?.campaign_name || effortRows[0]?.objective || "Sin estrategia cargada";
     return `
       <tr>
         <td>
           <strong>${escapeHtml(channel.name || "Sin canal")}</strong>
           <br><span class="table-secondary">${escapeHtml(channel.platform || channel.slug || "Canal comercial")}</span>
         </td>
-        <td>${escapeHtml(acquisitionChannelTypeLabel(channel.channel_type))}</td>
-        <td>${escapeHtml(money(metrics.investment || channel.period_budget || 0))}</td>
+        <td>
+          <span class="channel-strategy-cell">
+            <strong>${escapeHtml(acquisitionChannelTypeLabel(channel.channel_type))}</strong>
+            <small>${escapeHtml(strategyText)}</small>
+          </span>
+        </td>
+        <td>
+          <span class="channel-related-chipline">
+            <span>${escapeHtml(Number(metrics.qr_generated || 0).toLocaleString("es-CO"))} tickets</span>
+            <span>${escapeHtml(Number(metrics.redemptions || 0).toLocaleString("es-CO"))} redimidos</span>
+            <span>${escapeHtml(effortRows.length.toLocaleString("es-CO"))} atracciones</span>
+          </span>
+        </td>
+        <td>${escapeHtml(money(investment))}</td>
         <td>${escapeHtml(metrics.leads || 0)}</td>
+        <td>${escapeHtml(metrics.redemptions || 0)}</td>
         <td>${escapeHtml(metrics.sales || 0)}</td>
         <td>${escapeHtml(money(revenue))}</td>
-        <td><strong>${escapeHtml(money(net))}</strong></td>
-        <td>${escapeHtml(metrics.cac === null || metrics.cac === undefined ? "-" : money(metrics.cac))}</td>
         <td>
           <strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong>
           <br><span class="table-secondary">${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</span>
         </td>
-        <td>
-          <strong>${escapeHtml(topCampaign?.campaign_name || "-")}</strong>
-          <br><span class="table-secondary">${topCampaign ? `${money(topCampaign.revenue)} · ${topCampaign.sales || 0} ventas` : "Sin ventas cruzadas"}</span>
-        </td>
         <td><span class="status-chip ${isDetected ? "warning" : channel.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(acquisitionChannelStatusLabel(channel.status))}</span></td>
         <td>
-          <button class="ghost-button" type="button" data-channel-detail="${escapeHtml(acquisitionChannelKey(channel))}">Ver detalle</button>
-          ${isDetected
-            ? `<button class="ghost-button" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear</button>`
-            : `<button class="ghost-button" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar</button>
-               <button class="ghost-button" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Esfuerzo</button>
-               <button class="link-button danger-link" type="button" data-channel-archive="${escapeHtml(channel.id)}">Archivar</button>`}
+          <span class="channel-row-actions">
+            ${isDetected
+              ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear canal</button>`
+              : `<button class="ghost-button" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar</button>
+                 <button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Crear atracción</button>
+                 <button class="link-button danger-link" type="button" data-channel-archive="${escapeHtml(channel.id)}">Archivar</button>`}
+          </span>
         </td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="12">Crea tu primer canal o registra ventas con canal específico para detectarlos automáticamente.</td></tr>';
+  }).join("") || '<tr><td colspan="11">Crea tu primer canal o registra ventas con canal específico para detectarlos automáticamente.</td></tr>';
 
   if (acquisitionChannelMatrixTable) {
     const matrix = (state.acquisitionChannelMatrix || []).slice()
@@ -31117,6 +32236,284 @@ function branchTypeLabel(value = "") {
   }[String(value || "BRANCH").toUpperCase()] || "Sede / punto de venta";
 }
 
+function ensureBranchesUxStyles() {
+  if (document.getElementById("branchesUxStylesV78")) return;
+  const style = document.createElement("style");
+  style.id = "branchesUxStylesV78";
+  style.textContent = `
+    body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head {
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+    body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head p {
+      max-width: 760px;
+      margin-top: .45rem;
+      color: #64748b;
+    }
+    body[data-current-view="branches"] .portal-shell #branchKpiGrid {
+      display: none !important;
+    }
+    body[data-current-view="branches"] .portal-shell #branchFormPanel {
+      display: none !important;
+    }
+    body[data-current-view="branches"] .portal-shell #branchFormPanel.is-branch-modal-open {
+      display: block !important;
+      position: fixed;
+      left: 50%;
+      top: 4vh;
+      transform: translateX(-50%);
+      width: min(860px, calc(100vw - 2rem));
+      max-height: 90vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      z-index: 1100;
+      padding: 1rem;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, .28);
+    }
+    body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"].branch-modal-open::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1080;
+      background: rgba(15, 23, 42, .48);
+      backdrop-filter: blur(5px);
+    }
+    body[data-current-view="branches"] .portal-shell #branchFormPanel .table-card-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding-bottom: .75rem;
+      background: inherit;
+    }
+    body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .data-table-card:last-of-type .table-wrap {
+      max-height: calc(100vh - 255px);
+      overflow: auto;
+      border-radius: 18px;
+    }
+    body[data-current-view="branches"] .portal-shell #branchTable tr[data-branch-detail-row] {
+      cursor: pointer;
+    }
+    body[data-current-view="branches"] .portal-shell #branchTable tr[data-branch-detail-row]:hover {
+      background: rgba(14, 165, 233, .06);
+    }
+    body[data-current-view="branches"] .portal-shell .branch-simple-cell {
+      display: grid;
+      gap: .18rem;
+      min-width: 180px;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-simple-cell small,
+    body[data-current-view="branches"] .portal-shell .branch-secondary {
+      color: #64748b;
+      font-size: .74rem;
+      line-height: 1.3;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      min-width: 170px;
+    }
+    body[data-current-view="branches"] .portal-shell #branchDetailModal {
+      position: fixed;
+      inset: 0;
+      z-index: 1120;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      background: rgba(15, 23, 42, .52);
+      backdrop-filter: blur(6px);
+    }
+    body[data-current-view="branches"] .portal-shell #branchDetailModal.hidden {
+      display: none !important;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-card {
+      width: min(1040px, 100%);
+      max-height: 92vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0,1fr);
+      padding: 0;
+      box-shadow: 0 30px 90px rgba(15, 23, 42, .32);
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.1rem .85rem;
+      border-bottom: 1px solid rgba(15, 23, 42, .08);
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-head h3 {
+      margin: .2rem 0;
+      font-size: clamp(1.25rem, 2.5vw, 2rem);
+      letter-spacing: -.04em;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-head p {
+      margin: 0;
+      color: #64748b;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-body {
+      overflow-y: auto;
+      padding: 1rem 1.1rem 1.2rem;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(210px,1fr));
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-box {
+      display: grid;
+      gap: .25rem;
+      padding: .85rem;
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 16px;
+      background: rgba(248,250,252,.86);
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-box span {
+      color: #64748b;
+      font-size: .72rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-box strong {
+      color: #0f172a;
+      font-size: 1rem;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(15,23,42,.08);
+      border-radius: 16px;
+      margin-top: .75rem;
+    }
+    body[data-current-view="branches"] .portal-shell .branch-detail-table-wrap table {
+      min-width: 820px;
+      margin: 0;
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head,
+      body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head .head-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      body[data-current-view="branches"] .portal-shell .view-section[data-view="branches"] > .view-head .head-actions button {
+        width: 100%;
+      }
+      body[data-current-view="branches"] .portal-shell #branchFormPanel.is-branch-modal-open {
+        top: 1rem;
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 2rem);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function branchesViewSection() {
+  return document.querySelector('.view-section[data-view="branches"]');
+}
+
+function openBranchFormModal() {
+  ensureBranchesUxStyles();
+  branchesViewSection()?.classList.add("branch-modal-open");
+  branchFormPanel?.classList.add("is-branch-modal-open");
+}
+
+function closeBranchFormModal() {
+  branchFormPanel?.classList.remove("is-branch-modal-open");
+  branchesViewSection()?.classList.remove("branch-modal-open");
+}
+
+function branchRowKey(row = {}) {
+  return row.id ? `id:${row.id}` : `name:${row.branch || "Sin sucursal"}`;
+}
+
+function branchRowByKey(key = "") {
+  return branchActivityRows().find((row) => branchRowKey(row) === key) || null;
+}
+
+function branchSalesForRow(row = {}) {
+  const branchName = String(row.branch || "").trim();
+  return (state.selectedSales || []).filter((item) => String(item.branch_name || "Sin sucursal").trim() === branchName);
+}
+
+function branchRedemptionsForRow(row = {}) {
+  const branchName = String(row.branch || "").trim();
+  return (state.selectedRedemptions || []).filter((item) => String(item.branch_name || "Sin sucursal").trim() === branchName);
+}
+
+function branchDetailTable(headers = [], rows = [], empty = "Sin datos para esta sede.") {
+  if (!rows.length) return `<div class="branch-detail-box"><strong>${escapeHtml(empty)}</strong><span>Cuando registres ventas o redenciones con esta sede aparecerán aquí.</span></div>`;
+  return `
+    <div class="branch-detail-table-wrap">
+      <table>
+        <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openBranchDetailModal(key = "") {
+  const row = branchRowByKey(key);
+  if (!row || !branchDetailModal) return;
+  const sales = branchSalesForRow(row);
+  const redemptions = branchRedemptionsForRow(row);
+  const avgTicket = row.sales ? row.revenue / row.sales : 0;
+  if (branchDetailTitle) branchDetailTitle.textContent = row.branch || "Sede";
+  if (branchDetailSummary) {
+    branchDetailSummary.textContent = `${branchTypeLabel(row.branch_type)} · ${row.address || "Sin ubicación"} · ${row.is_active === false ? "Inactiva" : "Activa"}`;
+  }
+  if (branchDetailBody) {
+    branchDetailBody.innerHTML = `
+      <div class="branch-detail-grid">
+        <div class="branch-detail-box"><span>Revenue generado</span><strong>${escapeHtml(money(row.revenue || 0))}</strong></div>
+        <div class="branch-detail-box"><span>Ventas registradas</span><strong>${escapeHtml(String(row.sales || 0))}</strong></div>
+        <div class="branch-detail-box"><span>Redenciones</span><strong>${escapeHtml(String(row.redemptions || 0))}</strong></div>
+        <div class="branch-detail-box"><span>Ticket promedio</span><strong>${escapeHtml(row.sales ? money(avgTicket) : "-")}</strong></div>
+        <div class="branch-detail-box"><span>Responsable</span><strong>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</strong></div>
+        <div class="branch-detail-box"><span>Notas</span><strong>${escapeHtml(row.notes || "-")}</strong></div>
+      </div>
+      <h4>Ventas atribuidas a esta sede</h4>
+      ${branchDetailTable(["Cliente", "Valor", "Producto", "Pago", "Canal", "Fecha"], sales.slice(0, 80).map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
+          <td>${escapeHtml(money(item.sale_amount || 0))}</td>
+          <td>${escapeHtml(item.product_or_service || saleProductSummary(item).replace(/<[^>]*>/g, "") || "-")}</td>
+          <td>${escapeHtml(item.payment_method || "-")}</td>
+          <td>${escapeHtml(item.acquisition_channel || item.sale_source || "-")}</td>
+          <td>${escapeHtml(formatDate(item.created_at))}</td>
+        </tr>
+      `), "Sin ventas registradas en esta sede.")}
+      <h4>Redenciones asociadas</h4>
+      ${branchDetailTable(["Cliente", "Beneficio", "Validador", "Estado", "Fecha"], redemptions.slice(0, 80).map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
+          <td>${escapeHtml(item.reward_name || item.benefit_label || "-")}</td>
+          <td>${escapeHtml(item.validator_name || "-")}</td>
+          <td>${escapeHtml(item.status || item.qr_status || "-")}</td>
+          <td>${escapeHtml(formatDate(item.redeemed_at || item.created_at))}</td>
+        </tr>
+      `), "Sin redenciones registradas en esta sede.")}
+    `;
+  }
+  branchDetailModal.classList.remove("hidden");
+  branchDetailModal.removeAttribute("aria-hidden");
+}
+
+function closeBranchDetailModal() {
+  if (!branchDetailModal) return;
+  branchDetailModal.classList.add("hidden");
+  branchDetailModal.setAttribute("aria-hidden", "true");
+}
+
 function renderCustomerAcquisitionBranchOptions() {
   if (!customerAcquisitionBranchInput) return;
   if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
@@ -31144,7 +32541,7 @@ function branchById(branchId = "") {
 function resetBranchForm() {
   state.branchEditingId = null;
   branchCreateForm?.reset();
-  if (branchSubmitButton) branchSubmitButton.textContent = "Agregar branch";
+  if (branchSubmitButton) branchSubmitButton.textContent = "Agregar sede";
   branchCancelEditButton?.classList.add("hidden");
   setInlineMessage(branchCreateMessage, "", "info");
 }
@@ -31160,9 +32557,10 @@ function editBranch(branchId = "") {
   if (branchContactInput) branchContactInput.value = metadata.contact_name || "";
   if (branchPhoneInput) branchPhoneInput.value = metadata.contact_phone || "";
   if (branchNotesInput) branchNotesInput.value = metadata.notes || "";
-  if (branchSubmitButton) branchSubmitButton.textContent = "Guardar branch";
+  if (branchSubmitButton) branchSubmitButton.textContent = "Guardar sede";
   branchCancelEditButton?.classList.remove("hidden");
-  setInlineMessage(branchCreateMessage, "Editando branch existente.", "info");
+  setInlineMessage(branchCreateMessage, "Editando sede existente.", "info");
+  openBranchFormModal();
   branchNameInput?.focus();
 }
 
@@ -31232,6 +32630,7 @@ function branchActivityRows() {
 }
 
 function renderBranchesView() {
+  ensureBranchesUxStyles();
   if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
     loadBusinessBranches().then(renderBranchesView).catch((error) => showFeedback(error.message, "error"));
   }
@@ -31241,7 +32640,7 @@ function renderBranchesView() {
   const activeBranches = (state.businessBranches || []).filter((branch) => branch.is_active !== false).length;
   const consignmentCount = (state.businessBranches || []).filter((branch) => String(branchMetadata(branch).branch_type || "").toUpperCase() === "CONSIGNMENT").length;
   branchKpiGrid.innerHTML = [
-    ["Branches activos", activeBranches || rows.length, `${consignmentCount} consignación`],
+    ["Sedes activas", activeBranches || rows.length, `${consignmentCount} consignación`],
     ["Redenciones", rows.reduce((sum, row) => sum + row.redemptions, 0), `${rows.length ? Math.round(rows.reduce((sum, row) => sum + row.redemptions, 0) / rows.length) : 0} promedio/sucursal`],
     ["Ingresos", money(totalRevenue), `${rows.reduce((sum, row) => sum + row.sales, 0)} ventas · líder ${topBranch}`],
   ].map(([label, value, meta]) => `
@@ -31253,25 +32652,40 @@ function renderBranchesView() {
   `).join("");
 
   branchTable.innerHTML = rows.map((row) => `
-    <tr>
+    <tr data-branch-detail-row="${escapeHtml(branchRowKey(row))}">
       <td>
-        <strong>${escapeHtml(row.branch)}</strong>
-        <small>${escapeHtml(row.address || row.notes || "-")}</small>
+        <span class="branch-simple-cell">
+          <strong>${escapeHtml(row.branch)}</strong>
+          <small>${escapeHtml(row.notes || "Haz clic para ver resultados")}</small>
+        </span>
       </td>
       <td>${escapeHtml(branchTypeLabel(row.branch_type))}</td>
       <td>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</td>
+      <td><span class="branch-secondary">${escapeHtml(row.address || "-")}</span></td>
       <td>${escapeHtml(row.redemptions)}</td>
       <td>${escapeHtml(row.sales)}</td>
-      <td>${escapeHtml(money(row.revenue))}</td>
-      <td>${row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin branch registrado"}</td>
+      <td><strong>${escapeHtml(money(row.revenue))}</strong></td>
+      <td><span class="status-chip ${row.id && row.is_active !== false ? "ok" : "pending"}">${escapeHtml(row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin sede")}</span></td>
       <td>
-        ${row.id ? `
-          <button class="ghost-button" type="button" data-branch-edit="${escapeHtml(row.id)}">Editar</button>
-          <button class="ghost-button danger" type="button" data-branch-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Eliminar" : "Reactivar"}</button>
-        ` : "-"}
+        <span class="branch-row-actions">
+          <button class="ghost-button" type="button" data-branch-detail="${escapeHtml(branchRowKey(row))}">Detalle</button>
+          ${row.id ? `
+            <button class="ghost-button" type="button" data-branch-edit="${escapeHtml(row.id)}">Editar</button>
+            <button class="ghost-button danger" type="button" data-branch-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Eliminar" : "Reactivar"}</button>
+          ` : ""}
+        </span>
       </td>
     </tr>
-  `).join("") || `<tr><td colspan="8">${state.businessBranchesLoading ? "Cargando branches..." : "Sin branches registrados ni actividad por sucursal."}</td></tr>`;
+  `).join("") || `<tr><td colspan="9">${state.businessBranchesLoading ? "Cargando sedes..." : "Sin sedes registradas ni actividad por sucursal."}</td></tr>`;
+  branchTable.querySelectorAll("[data-branch-detail-row]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      openBranchDetailModal(row.dataset.branchDetailRow || "");
+    });
+  });
+  branchTable.querySelectorAll("[data-branch-detail]").forEach((button) => {
+    button.addEventListener("click", () => openBranchDetailModal(button.dataset.branchDetail || ""));
+  });
   branchTable.querySelectorAll("[data-branch-edit]").forEach((button) => {
     button.addEventListener("click", () => editBranch(button.dataset.branchEdit));
   });
@@ -31284,7 +32698,7 @@ async function submitBranchCreate(event) {
   event.preventDefault();
   const name = String(branchNameInput?.value || "").trim();
   if (!name) {
-    setInlineMessage(branchCreateMessage, "Escribe el nombre del branch.", "error");
+    setInlineMessage(branchCreateMessage, "Escribe el nombre de la sede.", "error");
     return;
   }
   const editingId = state.branchEditingId;
@@ -31299,7 +32713,7 @@ async function submitBranchCreate(event) {
     is_active: editingBranch ? editingBranch.is_active !== false : true,
   };
   try {
-    setInlineMessage(branchCreateMessage, editingId ? "Guardando branch..." : "Creando branch...", "info");
+    setInlineMessage(branchCreateMessage, editingId ? "Guardando sede..." : "Creando sede...", "info");
     const data = await api(editingId ? `/api/business/branches/${encodeURIComponent(editingId)}` : "/api/business/branches", {
       method: editingId ? "PATCH" : "POST",
       headers: authHeaders(),
@@ -31315,13 +32729,14 @@ async function submitBranchCreate(event) {
       await loadBusinessBranches({ force: true });
     }
     resetBranchForm();
-    setInlineMessage(branchCreateMessage, editingId ? "Branch actualizado." : "Branch agregado. Ya puedes usarlo para medir sedes, ventas o consignación.", "success");
-    showFeedback(editingId ? "Branch actualizado correctamente." : "Branch agregado correctamente.", "success", { title: "Branches" });
+    closeBranchFormModal();
+    setInlineMessage(branchCreateMessage, editingId ? "Sede actualizada." : "Sede agregada. Ya puedes usarla para medir ventas, redenciones o consignación.", "success");
+    showFeedback(editingId ? "Sede actualizada correctamente." : "Sede agregada correctamente.", "success", { title: "Sedes" });
     renderBranchesView();
     renderCustomerAcquisitionBranchOptions();
   } catch (error) {
-    setInlineMessage(branchCreateMessage, error.message || "No se pudo guardar el branch.", "error");
-    showFeedback(error.message || "No se pudo guardar el branch.", "error", { title: "Branches" });
+    setInlineMessage(branchCreateMessage, error.message || "No se pudo guardar la sede.", "error");
+    showFeedback(error.message || "No se pudo guardar la sede.", "error", { title: "Sedes" });
   }
 }
 
@@ -31343,11 +32758,11 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
       await loadBusinessBranches({ force: true });
     }
     if (String(state.branchEditingId || "") === String(branchId) && !nextActive) resetBranchForm();
-    showFeedback(nextActive ? "Branch reactivado." : "Branch eliminado de la operación activa.", "success", { title: "Branches" });
+    showFeedback(nextActive ? "Sede reactivada." : "Sede eliminada de la operación activa.", "success", { title: "Sedes" });
     renderBranchesView();
     renderCustomerAcquisitionBranchOptions();
   } catch (error) {
-    showFeedback(error.message || "No se pudo actualizar el branch.", "error", { title: "Branches" });
+    showFeedback(error.message || "No se pudo actualizar la sede.", "error", { title: "Sedes" });
   }
 }
 
@@ -33212,7 +34627,7 @@ function bindRmsStageSlider() {
   });
   rmsStageBoard.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    if (event.target.closest?.("button, a, input, select, textarea, [role='button']")) return;
+    if (event.target.closest?.("input, select, textarea, a")) return;
     rmsStageSliderDragState = { pointerId: event.pointerId, startX: event.clientX, startScroll: rmsStageBoard.scrollLeft, moved: false };
     rmsStageBoard.setPointerCapture?.(event.pointerId);
   });
@@ -33247,7 +34662,7 @@ function bindRmsStageSlider() {
   }, true);
   rmsStageBoard.addEventListener("pointerup", (event) => {
     if (rmsStageSliderSuppressClick) return;
-    if (event.target.closest?.("input, select, textarea, a")) return;
+    if (event.target.closest?.("button, input, select, textarea, a")) return;
     const directTarget = event.target.closest?.("[data-rms-open-station], [data-rms-phase]");
     const hitTarget = directTarget || rmsStationTargetFromPoint(event.clientX, event.clientY);
     if (!hitTarget) return;
@@ -35743,7 +37158,6 @@ logoutButton.addEventListener("click", () => {
 });
 refreshButton.addEventListener("click", loadWorkspace);
 globalRevenueActionButton?.addEventListener("click", openRmsCollectorModal);
-dashboardRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
 dashboardProfileTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-profile]");
   if (!button) return;
@@ -35764,6 +37178,11 @@ dashboardWidgetGrid?.addEventListener("click", (event) => {
   const moveButton = event.target.closest("[data-dashboard-move-widget]");
   if (moveButton) {
     moveDashboardWidget(moveButton.dataset.dashboardMoveWidget, moveButton.dataset.direction);
+    return;
+  }
+  const exportButton = event.target.closest("[data-dashboard-export-widget]");
+  if (exportButton) {
+    exportDashboardWidget(exportButton.dataset.dashboardExportWidget);
     return;
   }
   const routeButton = event.target.closest("[data-dashboard-open-route]");
@@ -35793,10 +37212,6 @@ dashboardWidgetGrid?.addEventListener("drop", (event) => {
 });
 dashboardAdvancedToggleButton?.addEventListener("click", toggleDashboardAdvancedView);
 dashboardResetProfileButton?.addEventListener("click", resetDashboardBuilderLayout);
-revenueOnboarding?.querySelector("[data-revenue-open-wizard]")?.addEventListener("click", () => openRevenueActionWizard("capture"));
-revenueQuickActions?.querySelectorAll("[data-revenue-objective]").forEach((button) => {
-  button.addEventListener("click", () => openRevenueActionWizard(button.dataset.revenueObjective || "capture"));
-});
 revenueActionWizardCloseButton?.addEventListener("click", closeRevenueActionWizard);
 revenueActionWizardCancelButton?.addEventListener("click", closeRevenueActionWizard);
 revenueActionWizardForm?.addEventListener("submit", submitRevenueActionWizard);
@@ -36127,9 +37542,26 @@ saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);
 customerAcquisitionForm?.addEventListener("submit", submitCustomerAcquisitionSale);
 acquisitionChannelForm?.addEventListener("submit", submitAcquisitionChannel);
-acquisitionChannelCancelButton?.addEventListener("click", () => resetAcquisitionChannelForm());
+newAcquisitionChannelButton?.addEventListener("click", () => {
+  resetAcquisitionChannelForm();
+  openAcquisitionChannelModal();
+  acquisitionChannelNameInput?.focus();
+});
+acquisitionChannelCancelButton?.addEventListener("click", () => {
+  resetAcquisitionChannelForm();
+  closeAcquisitionChannelModal();
+});
 channelEffortForm?.addEventListener("submit", submitChannelEffort);
-channelEffortCancelButton?.addEventListener("click", () => resetChannelEffortForm());
+newChannelEffortButton?.addEventListener("click", () => {
+  const selected = selectedAcquisitionChannel();
+  resetChannelEffortForm(selected?.id ? { channel_id: selected.id } : null);
+  openChannelEffortModal();
+  channelEffortTitleInput?.focus();
+});
+channelEffortCancelButton?.addEventListener("click", () => {
+  resetChannelEffortForm();
+  closeChannelEffortModal();
+});
 refreshAcquisitionChannelsButton?.addEventListener("click", () => {
   state.acquisitionChannelsLoaded = false;
   state.acquisitionChannelEffortsLoaded = false;
@@ -36148,6 +37580,7 @@ acquisitionChannelTable?.addEventListener("click", (event) => {
   const effortButton = event.target.closest("[data-channel-add-effort]");
   if (editButton) {
     resetAcquisitionChannelForm(acquisitionChannelById(editButton.dataset.channelEdit));
+    openAcquisitionChannelModal();
     acquisitionChannelNameInput?.focus();
   }
   if (archiveButton) {
@@ -36162,6 +37595,7 @@ acquisitionChannelTable?.addEventListener("click", (event) => {
   }
   if (effortButton) {
     resetChannelEffortForm({ channel_id: effortButton.dataset.channelAddEffort || "" });
+    openChannelEffortModal();
     channelEffortTitleInput?.focus();
   }
 });
@@ -36173,6 +37607,7 @@ acquisitionChannelDetailPanel?.addEventListener("click", (event) => {
   const effortButton = event.target.closest("[data-channel-add-effort]");
   if (editButton) {
     resetAcquisitionChannelForm(acquisitionChannelById(editButton.dataset.channelEdit));
+    openAcquisitionChannelModal();
     acquisitionChannelNameInput?.focus();
   }
   if (createButton) {
@@ -36196,6 +37631,7 @@ acquisitionChannelDetailPanel?.addEventListener("click", (event) => {
   }
   if (effortButton) {
     resetChannelEffortForm({ channel_id: effortButton.dataset.channelAddEffort || "" });
+    openChannelEffortModal();
     channelEffortTitleInput?.focus();
   }
 });
@@ -36204,6 +37640,7 @@ channelEffortTable?.addEventListener("click", (event) => {
   const archiveButton = event.target.closest("[data-channel-effort-archive]");
   if (editButton) {
     resetChannelEffortForm(channelEffortById(editButton.dataset.channelEffortEdit));
+    openChannelEffortModal();
     channelEffortTitleInput?.focus();
   }
   if (archiveButton) {
@@ -36589,9 +38026,25 @@ inventoryCategoryFilter?.addEventListener("change", () => {
   renderInventoryView();
 });
 competitionProductForm?.addEventListener("submit", submitCompetitionProduct);
-competitionResetButton?.addEventListener("click", resetCompetitionForm);
+newCompetitionProductButton?.addEventListener("click", () => {
+  resetCompetitionForm();
+  openCompetitionProductModal();
+  competitionProductNameInput?.focus();
+});
+competitionResetButton?.addEventListener("click", () => {
+  resetCompetitionForm();
+  closeCompetitionProductModal();
+});
 competitorForm?.addEventListener("submit", submitCompetitor);
-competitorResetButton?.addEventListener("click", resetCompetitorForm);
+newCompetitorButton?.addEventListener("click", () => {
+  resetCompetitorForm();
+  openCompetitorFormModal();
+  competitorNameInput?.focus();
+});
+competitorResetButton?.addEventListener("click", () => {
+  resetCompetitorForm();
+  closeCompetitorFormModal();
+});
 competitorCampaignForm?.addEventListener("submit", submitCompetitorCampaign);
 competitorCampaignResetButton?.addEventListener("click", resetCompetitorCampaignForm);
 competitorEventForm?.addEventListener("submit", submitCompetitorEvent);
@@ -36613,6 +38066,10 @@ competitorSearchInput?.addEventListener("input", () => {
   state.competitorSearch = competitorSearchInput.value;
   renderCompetitorDirectory();
 });
+competitorProductFilterInput?.addEventListener("input", () => {
+  state.competitorProductFilter = competitorProductFilterInput.value;
+  renderCompetitorDirectory();
+});
 competitionSearchInput?.addEventListener("input", () => {
   state.competitionSearch = competitionSearchInput.value;
   renderCompetitionProductsTable();
@@ -36628,6 +38085,16 @@ competitorCampaignSearchInput?.addEventListener("input", () => {
 competitorEventSearchInput?.addEventListener("input", () => {
   state.competitorEventSearch = competitorEventSearchInput.value;
   renderCompetitorEventsTable();
+});
+competitorDetailCloseButton?.addEventListener("click", closeCompetitorDetailModal);
+competitorDetailModal?.addEventListener("click", (event) => {
+  if (event.target === competitorDetailModal) closeCompetitorDetailModal();
+});
+competitorDetailTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-competitor-detail-tab]");
+  if (!button) return;
+  state.competitorDetailTab = button.dataset.competitorDetailTab || "prices";
+  renderCompetitorDetailModal();
 });
 customerAcquisitionProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);
@@ -36745,7 +38212,23 @@ rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardP
 rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("pdf").catch((error) => showFeedback(error.message, "error")));
 rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
 branchCreateForm?.addEventListener("submit", submitBranchCreate);
-branchCancelEditButton?.addEventListener("click", resetBranchForm);
+newBranchButton?.addEventListener("click", () => {
+  resetBranchForm();
+  openBranchFormModal();
+  branchNameInput?.focus();
+});
+branchFormCloseButton?.addEventListener("click", () => {
+  resetBranchForm();
+  closeBranchFormModal();
+});
+branchCancelEditButton?.addEventListener("click", () => {
+  resetBranchForm();
+  closeBranchFormModal();
+});
+branchDetailCloseButton?.addEventListener("click", closeBranchDetailModal);
+branchDetailModal?.addEventListener("click", (event) => {
+  if (event.target === branchDetailModal) closeBranchDetailModal();
+});
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);
@@ -36756,8 +38239,10 @@ accountUsersTable?.addEventListener("click", (event) => {
   toggleBusinessUser(button.dataset.accountUserToggle, button.dataset.active === "1");
 });
 businessLogoUploadButton?.addEventListener("click", () => businessLogoInput?.click());
+accountLogoUploadButton?.addEventListener("click", () => businessLogoInput?.click());
 businessLogoInput?.addEventListener("change", () => handleBusinessLogoFile(businessLogoInput.files?.[0]));
 businessLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo(""));
+accountLogoRemoveButton?.addEventListener("click", () => updateBusinessLogo(""));
 accountTicketFrameUploadButton?.addEventListener("click", () => accountTicketFrameInput?.click());
 accountTicketFrameInput?.addEventListener("change", () => handleTicketFrameFile(accountTicketFrameInput.files?.[0]));
 accountTicketFrameRemoveButton?.addEventListener("click", () => updateTicketFrame(""));

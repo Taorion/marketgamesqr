@@ -25980,6 +25980,7 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
   }
 }
 
+
 /* Portal UX v33: protect outcome cards from legacy global pill controls. */
 body:not(#portalUxCardForceA#portalUxCardForceB#portalUxCardForceC#portalUxCardForceD)[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
   border-radius: 16px !important;
