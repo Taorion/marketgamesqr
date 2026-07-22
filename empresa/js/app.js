@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-agenda-create-modal-v68";
+const APP_VERSION = "empresa-20260722-smart-catalog-ux-v69";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -8000,23 +8000,89 @@ function prepareSmartCatalogProductPayload(payload = {}) {
 }
 
 function ensureSmartCatalogUxStyles() {
-  if (document.getElementById("smartCatalogUxStylesV60")) return;
+  if (document.getElementById("smartCatalogUxStylesV69")) return;
   const style = document.createElement("style");
-  style.id = "smartCatalogUxStylesV60";
+  style.id = "smartCatalogUxStylesV69";
   style.textContent = `
+    .view-section[data-view="smart-catalogs"] {
+      --catalog-accent: #0f766e;
+      --catalog-accent-2: #2563eb;
+      --catalog-warning: #f59e0b;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-hero {
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      align-items: stretch;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-hero h3 {
+      max-width: 920px;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-hero p {
+      max-width: 780px;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-kpis {
+      margin-top: 0.75rem;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 4;
+      margin-top: 0.75rem;
+      backdrop-filter: blur(12px);
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs [data-smart-catalog-tab="settings"] {
+      display: none !important;
+    }
+    .smart-catalog-workbench-hero {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid rgba(15, 118, 110, 0.22);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 34%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.90));
+      box-shadow: 0 20px 54px rgba(15, 23, 42, 0.08);
+    }
+    .smart-catalog-workbench-hero h3 {
+      margin: 0.1rem 0 0.25rem;
+      font-size: clamp(1.45rem, 2.8vw, 2.35rem);
+      letter-spacing: -0.04em;
+    }
+    .smart-catalog-workbench-hero p {
+      margin: 0;
+      color: var(--muted-text);
+      max-width: 850px;
+    }
+    .smart-catalog-workbench-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.55rem;
+    }
+    .smart-catalog-workbench-actions .solid-button,
+    .smart-catalog-workbench-actions .ghost-button {
+      min-height: 42px;
+    }
     .smart-catalog-workbench {
       display: grid;
-      grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.25fr) minmax(280px, 0.8fr);
+      grid-template-columns: minmax(280px, 0.9fr) minmax(420px, 1.35fr) minmax(280px, 0.82fr);
       gap: 1rem;
-      margin: 1rem 0;
+      margin: 1rem 0 0.75rem;
     }
     .smart-catalog-workbench-card {
       min-width: 0;
       padding: 1rem;
       border: 1px solid rgba(148, 163, 184, 0.22);
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.84);
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.90);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07);
+    }
+    .smart-catalog-workbench-card.is-primary {
+      border-color: rgba(15, 118, 110, 0.26);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 250, 0.78));
     }
     .smart-catalog-workbench-head {
       display: flex;
@@ -8027,6 +8093,7 @@ function ensureSmartCatalogUxStyles() {
     }
     .smart-catalog-workbench-head h3 {
       margin: 0.1rem 0;
+      letter-spacing: -0.02em;
     }
     .smart-catalog-card-list,
     .smart-catalog-product-list,
@@ -8043,11 +8110,17 @@ function ensureSmartCatalogUxStyles() {
       padding: 0.85rem;
       border: 1px solid rgba(148, 163, 184, 0.18);
       border-radius: 18px;
-      background: rgba(248, 250, 252, 0.94);
+      background: rgba(248, 250, 252, 0.96);
       text-align: left;
     }
     .smart-catalog-card-button {
       cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .smart-catalog-card-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, 0.26);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     }
     .smart-catalog-card-button.is-active {
       border-color: rgba(37, 99, 235, 0.45);
@@ -8060,6 +8133,13 @@ function ensureSmartCatalogUxStyles() {
       justify-content: space-between;
       gap: 0.75rem;
       align-items: start;
+    }
+    .smart-catalog-card-top small,
+    .smart-catalog-product-top small,
+    .smart-catalog-benefit-card small {
+      display: block;
+      margin-top: 0.18rem;
+      color: var(--muted-text);
     }
     .smart-catalog-card-top strong,
     .smart-catalog-product-top strong,
@@ -8079,8 +8159,10 @@ function ensureSmartCatalogUxStyles() {
       display: grid;
       gap: 0.85rem;
       padding: 1rem;
-      border-radius: 20px;
-      background: linear-gradient(135deg, rgba(15, 118, 110, 0.10), rgba(37, 99, 235, 0.08));
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 36%),
+        linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(37, 99, 235, 0.08));
       border: 1px solid rgba(15, 118, 110, 0.18);
     }
     .smart-catalog-active-panel h3 {
@@ -8091,6 +8173,26 @@ function ensureSmartCatalogUxStyles() {
       display: flex;
       flex-wrap: wrap;
       gap: 0.55rem;
+    }
+    .smart-catalog-active-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .smart-catalog-active-metrics span {
+      display: grid;
+      gap: 0.2rem;
+      padding: 0.7rem;
+      border: 1px solid rgba(15, 118, 110, 0.14);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.64);
+    }
+    .smart-catalog-active-metrics strong {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .smart-catalog-active-metrics small {
+      color: var(--muted-text);
     }
     .smart-catalog-benefit-card {
       border-color: rgba(245, 158, 11, 0.28);
@@ -8124,8 +8226,38 @@ function ensureSmartCatalogUxStyles() {
     .smart-catalog-form .span-2 {
       grid-column: 1 / -1;
     }
+    .smart-catalog-panel[data-smart-catalog-panel="dashboard"] .smart-catalog-dashboard-grid {
+      display: none;
+    }
+    .smart-catalog-panel[data-smart-catalog-panel="settings"] {
+      display: none !important;
+    }
+    .smart-catalog-table-card .table-wrap {
+      border-radius: 18px;
+      overflow: auto;
+    }
+    .smart-catalog-table-card tbody tr {
+      vertical-align: top;
+    }
     @media (max-width: 1180px) {
       .smart-catalog-workbench {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 760px) {
+      .view-section[data-view="smart-catalogs"] .smart-catalog-hero,
+      .smart-catalog-workbench-hero {
+        grid-template-columns: 1fr;
+      }
+      .smart-catalog-workbench-actions {
+        justify-content: stretch;
+      }
+      .smart-catalog-workbench-actions .solid-button,
+      .smart-catalog-workbench-actions .ghost-button {
+        width: 100%;
+        justify-content: center;
+      }
+      .smart-catalog-active-metrics {
         grid-template-columns: 1fr;
       }
     }
@@ -8271,8 +8403,10 @@ function renderSmartCatalogWorkbench() {
     workbench = document.createElement("section");
     workbench.id = "smartCatalogWorkbench";
     workbench.className = "smart-catalog-workbench";
+    const kpis = root.querySelector(".smart-catalog-kpis");
     const tabs = root.querySelector(".smart-catalog-tabs");
-    if (tabs) root.insertBefore(workbench, tabs);
+    if (kpis) root.insertBefore(workbench, kpis);
+    else if (tabs) root.insertBefore(workbench, tabs);
     else root.appendChild(workbench);
   }
   const catalogs = state.smartCatalogs || [];
@@ -8283,6 +8417,18 @@ function renderSmartCatalogWorkbench() {
     .flatMap((product) => smartCatalogProductBenefits(product).map((benefit) => ({ benefit, product })))
     .slice(0, 8);
   workbench.innerHTML = `
+    <article class="smart-catalog-workbench-hero">
+      <div>
+        <span class="mono-label">Panel de trabajo</span>
+        <h3>Catálogo claro, productos visibles y beneficios que venden</h3>
+        <p>Primero selecciona o crea una vitrina. Después agrega productos con precio, WhatsApp y beneficio de temporada. Las intenciones quedan listas para seguimiento comercial.</p>
+      </div>
+      <div class="smart-catalog-workbench-actions">
+        <button class="solid-button compact" type="button" data-smart-catalog-jump="catalogs">Crear catálogo</button>
+        <button class="ghost-button compact" type="button" data-smart-catalog-jump="products" ${activeCatalog ? "" : "disabled"}>Agregar producto</button>
+        <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents">Ver intenciones</button>
+      </div>
+    </article>
     <article class="smart-catalog-workbench-card">
       <div class="smart-catalog-workbench-head">
         <div>
@@ -8311,7 +8457,7 @@ function renderSmartCatalogWorkbench() {
         }).join("") : '<div class="empty-state compact">Crea tu primer catálogo para poder agregar productos y beneficios.</div>'}
       </div>
     </article>
-    <article class="smart-catalog-workbench-card">
+    <article class="smart-catalog-workbench-card is-primary">
       <div class="smart-catalog-workbench-head">
         <div>
           <span class="mono-label">Catálogo seleccionado</span>
@@ -8323,6 +8469,11 @@ function renderSmartCatalogWorkbench() {
       <div class="smart-catalog-active-panel">
         <h3>${activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) en esta vitrina` : "Flujo recomendado"}</h3>
         <p>${activeCatalog ? `WhatsApp receptor: ${escapeHtml(activeCatalog.whatsapp_number || "-")}. Link público: ${escapeHtml(smartCatalogPublicUrl(activeCatalog))}` : "1. Crea catálogo. 2. Selecciona productos. 3. Agrega beneficio de temporada. 4. Publica el link."}</p>
+        <div class="smart-catalog-active-metrics">
+          <span><strong>${Number(activeCatalog?.product_count || products.length || 0).toLocaleString("es-CO")}</strong><small>Productos</small></span>
+          <span><strong>${Number(activeCatalog?.view_count || 0).toLocaleString("es-CO")}</strong><small>Vistas</small></span>
+          <span><strong>${Number(activeCatalog?.intent_count || 0).toLocaleString("es-CO")}</strong><small>Intenciones</small></span>
+        </div>
         <div class="smart-catalog-active-actions">
           <button class="solid-button compact" type="button" data-smart-catalog-jump="products" ${activeCatalog ? "" : "disabled"}>Agregar productos</button>
           <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar link</button>
