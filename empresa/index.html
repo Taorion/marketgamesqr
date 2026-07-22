@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-hitbox-20260722-v44">
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-hitbox-20260722-v44">
+  <link rel="stylesheet" href="css/styles.css?v=rms-station-one-ux-20260722-v45">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-one-ux-20260722-v45">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -966,52 +966,60 @@
                   </button>
                 </div>
                 <form class="modal-form rms-collector-form" id="rmsCollectorForm">
-                  <label>
-                    Fuente de clientes
-                    <select id="rmsCollectorSourceInput">
-                      <option value="store_visitors">Transeuntes / visitantes fisicos</option>
-                      <option value="existing_contacts">Contactos existentes</option>
-                      <option value="tickets">Clientes con tickets</option>
-                      <option value="previous_buyers">Compradores anteriores</option>
-                      <option value="referrals">Referidos</option>
-                      <option value="digital_campaign">Campaña digital</option>
-                    </select>
-                  </label>
-                  <label>
-                    Captura o activación
-                    <select id="rmsCollectorCaptureInput">
-                      <option value="qr_ticket_capture">QR + ticket relampago</option>
-                      <option value="gamified_activation">Ruleta / trivia / juego</option>
-                      <option value="catalog_download">Descarga de catalogo</option>
-                      <option value="reward_pass">Reward Pass</option>
-                      <option value="survey_reward">Encuesta con recompensa</option>
-                      <option value="import_contacts">Importar contactos</option>
-                    </select>
-                  </label>
-                  <label>
-                    Cobertura del journey
-                    <select id="rmsCollectorCoverageInput">
-                      <option value="ticket_expiring">Ticket con vencimiento</option>
-                      <option value="benefit">Beneficio</option>
-                      <option value="points">Puntos Sales Machine</option>
-                      <option value="streak">Racha</option>
-                      <option value="ranking">Ranking</option>
-                      <option value="reward_pass">Reward Pass</option>
-                      <option value="agenda_reminder">Recordatorio por agenda</option>
-                    </select>
-                  </label>
-                  <label>
-                    Intención inicial del lead
-                    <select id="rmsCollectorAgendaInput">
-                      <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
-                      <option value="Llamar cliente caliente">Llamar</option>
-                      <option value="Agendar visita">Agendar visita</option>
-                      <option value="Recordar ticket">Recordar ticket</option>
-                      <option value="Enviar catalogo">Enviar catalogo</option>
-                      <option value="Activar recompra">Activar recompra</option>
-                      <option value="Recuperar cliente dormido">Recuperar cliente dormido</option>
-                    </select>
-                  </label>
+                  <details class="span-2 rms-collector-context-details">
+                    <summary>
+                      <span>Contexto opcional de captura</span>
+                      <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+                    </summary>
+                    <div class="rms-collector-context-grid">
+                      <label>
+                        Fuente de clientes
+                        <select id="rmsCollectorSourceInput">
+                          <option value="store_visitors">Transeuntes / visitantes fisicos</option>
+                          <option value="existing_contacts">Contactos existentes</option>
+                          <option value="tickets">Clientes con tickets</option>
+                          <option value="previous_buyers">Compradores anteriores</option>
+                          <option value="referrals">Referidos</option>
+                          <option value="digital_campaign">Campaña digital</option>
+                        </select>
+                      </label>
+                      <label>
+                        Captura o activación
+                        <select id="rmsCollectorCaptureInput">
+                          <option value="qr_ticket_capture">QR + ticket relampago</option>
+                          <option value="gamified_activation">Ruleta / trivia / juego</option>
+                          <option value="catalog_download">Descarga de catalogo</option>
+                          <option value="reward_pass">Reward Pass</option>
+                          <option value="survey_reward">Encuesta con recompensa</option>
+                          <option value="import_contacts">Importar contactos</option>
+                        </select>
+                      </label>
+                      <label>
+                        Cobertura del journey
+                        <select id="rmsCollectorCoverageInput">
+                          <option value="ticket_expiring">Ticket con vencimiento</option>
+                          <option value="benefit">Beneficio</option>
+                          <option value="points">Puntos Sales Machine</option>
+                          <option value="streak">Racha</option>
+                          <option value="ranking">Ranking</option>
+                          <option value="reward_pass">Reward Pass</option>
+                          <option value="agenda_reminder">Recordatorio por agenda</option>
+                        </select>
+                      </label>
+                      <label>
+                        Intención inicial del lead
+                        <select id="rmsCollectorAgendaInput">
+                          <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
+                          <option value="Llamar cliente caliente">Llamar</option>
+                          <option value="Agendar visita">Agendar visita</option>
+                          <option value="Recordar ticket">Recordar ticket</option>
+                          <option value="Enviar catalogo">Enviar catalogo</option>
+                          <option value="Activar recompra">Activar recompra</option>
+                          <option value="Recuperar cliente dormido">Recuperar cliente dormido</option>
+                        </select>
+                      </label>
+                    </div>
+                  </details>
                   <div class="span-2 rms-collector-lead-entry">
                     <div class="rms-collector-lead-head">
                       <span class="mono-label">Ingresar lead ahora</span>
@@ -7003,7 +7011,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-hitbox-20260722-v44" defer></script>
+  <script src="js/app.js?v=rms-station-one-ux-20260722-v45" defer></script>
 </body>
 </html>
 

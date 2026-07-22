@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-hitbox-v44";
+const APP_VERSION = "empresa-20260722-rms-station-one-ux-v45";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29048,6 +29048,61 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 700px) { html body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head.rms-machine-commandbar { min-height: 0 !important; height: auto !important; max-height: none !important; align-items: stretch !important; flex-direction: column !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .view-head-actions { width: 100% !important; height: 40px !important; flex-wrap: nowrap !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-primary-action { min-width: 0 !important; flex: 1 1 auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-secondary-action, html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-more-actions { width: 40px !important; min-width: 40px !important; max-width: 40px !important; flex: 0 0 40px !important; } }
     @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 0 !important; align-items: stretch !important; flex-direction: column !important; padding: 12px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 40px !important; height: 40px !important; flex-basis: 40px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { width: 100% !important; justify-content: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range { margin-right: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide { gap: 10px !important; overflow-x: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint { display: none !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 88% !important; width: 88% !important; height: 220px !important; min-height: 220px !important; max-height: 220px !important; } }
   `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions { grid-template-columns: minmax(180px,.8fr) minmax(220px,1fr) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions > button { min-height: 42px !important; justify-content: center !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell { display: grid !important; gap: 14px !important; padding: 14px !important; background: linear-gradient(180deg,#f7fbff,#ffffff) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint article { display: grid !important; grid-template-columns: 34px minmax(0,1fr) !important; align-items: center !important; gap: 10px !important; padding: 12px !important; border: 1px solid rgba(15,115,84,.12) !important; border-radius: 14px !important; background: #fff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint article > span { display: grid !important; place-items: center !important; width: 34px !important; height: 34px !important; border-radius: 11px !important; background: #0f7354 !important; color: #fff !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint strong,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint small { display: block !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint strong { color: #17362f !important; font-size: .84rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint small { color: #647a72 !important; font-size: .7rem !important; line-height: 1.35 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-grid { display: grid !important; grid-template-columns: minmax(0,1.35fr) minmax(290px,.65fr) !important; gap: 14px !important; align-items: start !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list { display: grid !important; gap: 12px !important; min-width: 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list-head { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(230px,.42fr) !important; align-items: end !important; gap: 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list-head strong { display: block !important; color: #17362f !important; font-size: 1rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list-head small { display: block !important; color: #647a72 !important; font-size: .72rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-card-list { display: grid !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card { display: grid !important; grid-template-columns: minmax(180px,.35fr) minmax(0,1fr) !important; gap: 10px !important; padding: 12px !important; border: 1px solid rgba(23,65,91,.12) !important; border-radius: 16px !important; background: #fff !important; box-shadow: 0 10px 24px rgba(23,65,91,.06) !important; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card:hover { border-color: #0f7354 !important; box-shadow: 0 16px 32px rgba(15,115,84,.1) !important; transform: translateY(-1px) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card.is-selected { border-color: #0f7354 !important; background: linear-gradient(135deg,#effbf6,#ffffff) !important; box-shadow: 0 16px 34px rgba(15,115,84,.14) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card.is-filtered-out { display: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control { min-height: 100% !important; display: grid !important; grid-template-columns: 32px minmax(0,1fr) !important; align-content: center !important; align-items: center !important; gap: 10px !important; padding: 12px !important; border: 1px solid rgba(15,115,84,.14) !important; border-radius: 14px !important; background: #f5fbf8 !important; cursor: pointer !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control input { position: absolute !important; opacity: 0 !important; pointer-events: none !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control .material-symbols-outlined { color: #0f7354 !important; font-size: 29px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control strong,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control small { display: block !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control strong { color: #17362f !important; font-size: .8rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control small { color: #667c74 !important; font-size: .66rem !important; line-height: 1.25 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card-main { min-width: 0 !important; width: 100% !important; display: grid !important; grid-template-columns: minmax(0,1fr) auto !important; align-items: center !important; gap: 12px !important; padding: 4px !important; border: 0 !important; background: transparent !important; color: inherit !important; text-align: left !important; cursor: pointer !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card-main:focus-visible { outline: 3px solid rgba(15,115,84,.25) !important; outline-offset: 4px !important; border-radius: 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-title { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 7px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-title strong { color: #17362f !important; font-size: .98rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-meta { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 7px 12px !important; margin-top: 8px !important; color: #536b63 !important; font-size: .72rem !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-meta span { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-open-hint { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #0f7354 !important; font-size: .72rem !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-readiness-chip { display: inline-flex !important; align-items: center !important; gap: 5px !important; padding: 5px 8px !important; border-radius: 999px !important; background: #ecf8f2 !important; color: #0f7354 !important; font-size: .68rem !important; font-weight: 900 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-readiness-chip.is-missing { background: #fff4e6 !important; color: #9a5b00 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell .rms-station-output-lane { position: sticky !important; top: calc(var(--topbar-height,72px) + 12px) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell .rms-station-output-lane .rms-station-lane-head { grid-template-columns: 1fr !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-card { max-width: min(760px, calc(100vw - 28px)) !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-form { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-lead-entry { order: -2 !important; padding: 14px !important; border: 1px solid rgba(15,115,84,.14) !important; border-radius: 16px !important; background: linear-gradient(135deg,#f3fbf7,#ffffff) !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-lead-grid { gap: 10px !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-details { order: -1 !important; overflow: hidden !important; border: 1px solid rgba(23,65,91,.12) !important; border-radius: 14px !important; background: #f8fbfa !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-details > summary { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; padding: 11px 13px !important; cursor: pointer !important; list-style: none !important; color: #29463d !important; font-weight: 900 !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-details > summary::-webkit-details-marker { display: none !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-grid { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px !important; padding: 0 13px 13px !important; }
+    body.has-rms-collector-modal #rmsCollectorModal.has-lead-draft #rmsCollectorSubmitButton { display: none !important; }
+    body.has-rms-collector-modal #rmsCollectorModal .rms-collector-lead-submit { align-items: center !important; border-radius: 14px !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-collector-station-shell,.rms-collector-work-hint article,.rms-collector-lead-card,.rms-collector-select-control,.rms-collector-station-shell .rms-station-output-lane) { border-color: rgba(151,211,190,.18) !important; background: #10231e !important; color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-collector-work-hint strong,.rms-collector-lead-list-head strong,.rms-collector-select-control strong,.rms-collector-lead-title strong) { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-collector-work-hint small,.rms-collector-lead-list-head small,.rms-collector-select-control small,.rms-collector-lead-meta) { color: #bdd1ca !important; }
+    @media (max-width: 1040px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-grid, body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell .rms-station-output-lane { position: static !important; } }
+    @media (max-width: 700px) { body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-list-head, body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card, body.has-rms-collector-modal #rmsCollectorModal .rms-collector-form, body.has-rms-collector-modal #rmsCollectorModal .rms-collector-context-grid { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-meta { grid-template-columns: 1fr !important; } }
+  `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
 }
@@ -29105,7 +29160,7 @@ function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities 
 
 function rmsStationRowMatches(item = {}, phase = "") {
   const query = String(state.rmsStationSearch || "").trim().toLowerCase();
-  const mode = state.rmsStationViewMode || "all";
+  const mode = phase === "recoleccion" ? "all" : (state.rmsStationViewMode || "all");
   const searchable = [item.name, item.phone, item.email, item.campaign_name, item.activation_name, item.channel, item.source_label, item.source_detail, item.product_interest, item.classified_product_name, item.priority_label, item.risk_label]
     .filter(Boolean)
     .join(" ")
@@ -29181,6 +29236,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
   const visual = rmsStationVisualMeta(phase);
+  const isCollectorStation = phase === "recoleccion";
   const selectAllLabel = phase === "recoleccion"
     ? "Seleccionar procesables"
     : phase === "alimentacion"
@@ -29188,6 +29244,16 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       : phase === "curaduria"
         ? "Seleccionar clasificados"
         : "Seleccionar salida";
+  const commandActionsMarkup = isCollectorStation
+    ? `
+          <button class="ghost-button" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Ingresar lead manual</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar seleccionados a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
+        `
+    : `
+          <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
+        `;
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
@@ -29205,7 +29271,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           <span><strong>${outputEligibleRows.length.toLocaleString("es-CO")}</strong> listos</span>
           <span><strong>${riskCount.toLocaleString("es-CO")}</strong> riesgo</span>
         </div>
-        ${phase === "recoleccion" ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Nuevo lead</button>' : ""}
+        ${isCollectorStation ? '<button class="ghost-button compact" type="button" data-rms-open-collector>Ingresar lead manual</button>' : ""}
       </section>
 
       <section class="rms-station-command-dock" aria-label="Barra de mando de la estación">
@@ -29213,10 +29279,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
           <div aria-live="polite"><strong><span data-rms-station-selected-count>${selectedRows.length.toLocaleString("es-CO")}</span> seleccionado(s)</strong><small>${outputEligibleRows.length.toLocaleString("es-CO")} de ${rows.length.toLocaleString("es-CO")} cumplen la salida</small></div>
         </div>
-        <div class="rms-station-command-actions">
-          <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
-          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
+        <div class="rms-station-command-actions ${isCollectorStation ? "is-collector-actions" : ""}">
+          ${commandActionsMarkup}
         </div>
       </section>
 
@@ -29277,9 +29341,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         <div class="rms-station-screen-head">
           <div>
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
-            <small>Analiza, completa el criterio, selecciona y envía. Nada más.</small>
+            <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
-          <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>Haz clic en un lead para analizarlo</span>
+          <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
       </div>
@@ -29427,6 +29491,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
       : phase === "recoleccion"
         ? "Selecciona en la entrada los leads que sí cumplen el mínimo para pasar a Curaduría."
         : "Selecciona los leads que deben avanzar a la siguiente estación.";
+  const showInlineSend = phase !== "recoleccion";
   return `
     <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
       <div class="rms-station-lane-head">
@@ -29435,9 +29500,9 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
           <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} ${escapeHtml(outputVerb)}</strong>
           <small>${escapeHtml(nextPhase ? `Listos para enviar a ${nextPhase.label}. Disponibles para salida: ${eligibleRows.length} de ${rows.length}.` : "Esta estación no tiene salida configurada.")}</small>
         </div>
-        <button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
+        ${showInlineSend ? `<button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
           ${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
-        </button>
+        </button>` : ""}
       </div>
       <div class="rms-station-output-list">
         ${selectedRows.length ? selectedRows.map((item) => {
@@ -29455,6 +29520,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  if (stage.key === "recoleccion") return rmsCollectorStationMarkup(rows, stage, nextPhase, operation);
   const inputHelp = stage.key === "recoleccion"
     ? "Inventario de leads capturados. La operacion Embudo decide cuales pasan a Curaduría."
     : stage.key === "alimentacion"
@@ -29883,7 +29949,7 @@ function bindRmsMachineActions(root) {
       if (item) openRmsCaptureReview(item);
     };
     control.addEventListener("click", openReview);
-    if (control.tagName === "TR") {
+    if (control.tagName === "TR" || control.getAttribute("role") === "button") {
       control.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         openReview(event);
@@ -30265,6 +30331,15 @@ function toggleRmsSelection(id = "", selected = false) {
   stationRow?.querySelector(".rms-station-lead-check .material-symbols-outlined")?.replaceChildren(document.createTextNode(selected ? "check_circle" : "radio_button_unchecked"));
   updateRmsStationOutputPreview();
   updateRmsStationCommandDock();
+  if (state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion") {
+    showFeedback(
+      selected
+        ? `${item.name || "Lead"} quedó seleccionado para pasar a Curaduría.`
+        : `${item.name || "Lead"} salió de la selección de Curaduría.`,
+      selected ? "success" : "info",
+      { title: "Estación 1 · Leads recolectados", timeout: 2600 }
+    );
+  }
 }
 
 function selectRmsPhaseForBulk(phase = "") {
@@ -30906,6 +30981,82 @@ function renderRmsCaptureReview(detail = {}, item = {}) {
   `;
 }
 
+function rmsCollectorStationMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  const selectedRows = rmsStationSelectedRows(stage.key, rows);
+  const eligibleRows = rmsStationOutputEligibleRows(stage.key, rows);
+  return `
+    <div class="rms-collector-station-shell">
+      <section class="rms-collector-work-hint" aria-label="Cómo trabajar la Estación 1">
+        <article><span>1</span><div><strong>Ingresar</strong><small>Carga un lead manual cuando llegue por WhatsApp, llamada, mostrador o referido.</small></div></article>
+        <article><span>2</span><div><strong>Revisar</strong><small>Haz clic sobre la tarjeta para abrir datos, respuestas del formulario y contexto.</small></div></article>
+        <article><span>3</span><div><strong>Pasar</strong><small>Marca solo los leads hábiles y envíalos a ${escapeHtml(nextPhase?.label || "la siguiente estación")}.</small></div></article>
+      </section>
+      <div class="rms-collector-station-grid">
+        <section class="rms-collector-lead-list rms-station-input-lane">
+          <div class="rms-collector-lead-list-head">
+            <div>
+              <span class="mono-label">Entrada · Estación 1</span>
+              <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s) recolectados</strong>
+              <small>${eligibleRows.length.toLocaleString("es-CO")} cumplen mínimo para Curaduría · ${selectedRows.length.toLocaleString("es-CO")} seleccionados para salida.</small>
+            </div>
+            <label class="rms-station-search-field">
+              <span class="material-symbols-outlined" aria-hidden="true">search</span>
+              <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar lead" aria-label="Buscar lead recolectado">
+            </label>
+          </div>
+          <div class="rms-collector-card-list">
+            ${rows.map((item) => rmsCollectorLeadCardMarkup(item, stage, nextPhase, operation)).join("")}
+          </div>
+          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
+          <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>
+        </section>
+        ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
+      </div>
+    </div>
+  `;
+}
+
+function rmsCollectorLeadCardMarkup(item = {}, stage = {}, nextPhase = null, operation = {}) {
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
+  const readiness = rmsCollectorReadiness(item);
+  const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "Interés pendiente";
+  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+  const campaignChannel = [item.campaign_name || item.activation_name, item.channel].filter(Boolean).join(" / ") || origin;
+  const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
+  const material = rmsStationMaterialLabel(item);
+  const destination = nextPhase?.short_label || nextPhase?.label || "siguiente estación";
+  return `
+    <article class="rms-collector-lead-card ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+      <label class="rms-station-lead-check rms-collector-select-control" title="Seleccionar para pasar a ${escapeHtml(destination)}">
+        <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+        <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
+        <span>
+          <strong>Pasar a ${escapeHtml(destination)}</strong>
+          <small>${escapeHtml(readiness.ready ? "Listo para salida" : readiness.detail)}</small>
+        </span>
+      </label>
+      <div class="rms-collector-lead-card-main" role="button" tabindex="0" data-rms-review-capture="${escapeHtml(item.id)}">
+        <span>
+          <span class="rms-collector-lead-title">
+            <strong>${escapeHtml(item.name || "Contacto")}</strong>
+            <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
+            <span class="rms-collector-readiness-chip ${readiness.ready ? "" : "is-missing"}"><span class="material-symbols-outlined" aria-hidden="true">${readiness.ready ? "verified" : "error"}</span>${escapeHtml(readiness.label)}</span>
+          </span>
+          <span class="rms-collector-lead-meta">
+            <span><strong>Contacto:</strong> ${escapeHtml(contact)}</span>
+            <span><strong>Interés:</strong> ${escapeHtml(interest)}</span>
+            <span><strong>Origen:</strong> ${escapeHtml(campaignChannel)}</span>
+            <span><strong>Entrada:</strong> ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · ${escapeHtml(material)}</span>
+          </span>
+          ${rmsCaptureDataChips(item)}
+        </span>
+        <span class="rms-collector-lead-open-hint"><span class="material-symbols-outlined" aria-hidden="true">visibility</span> Ver respuestas</span>
+      </div>
+    </article>
+  `;
+}
+
 async function openRmsCaptureReview(item = {}) {
   if (!item.source_id && !item.lead_id) return;
   const modal = ensureRmsCaptureReviewModal();
@@ -31361,9 +31512,9 @@ function rmsCollectorHasLeadDraft() {
 
 function updateRmsCollectorSubmitButtons() {
   const hasLeadDraft = rmsCollectorHasLeadDraft();
-  const label = hasLeadDraft ? "Ingresar lead a recolectados" : "Activar captura";
-  if (rmsCollectorSubmitButton) rmsCollectorSubmitButton.textContent = label;
-  if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.textContent = hasLeadDraft ? "Ingresar lead a recolectados" : "Escribe datos del lead";
+  rmsCollectorModal?.classList.toggle("has-lead-draft", hasLeadDraft);
+  if (rmsCollectorSubmitButton) rmsCollectorSubmitButton.textContent = hasLeadDraft ? "Guardar y actualizar estación" : "Activar captura sin lead";
+  if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.textContent = hasLeadDraft ? "Guardar lead en Estación 1" : "Escribe datos del lead";
   if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.classList.toggle("is-waiting-lead", !hasLeadDraft);
 }
 
