@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-one-stable-v47";
+const APP_VERSION = "empresa-20260722-rms-station-one-light-v48";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29284,6 +29284,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         </div>
       </section>
 
+      ${isCollectorStation ? "" : `
       <details class="rms-station-secondary-details">
         <summary>
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
@@ -29336,6 +29337,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       </div>
         </div>
       </details>
+      `}
 
       <div class="rms-station-screen">
         <div class="rms-station-screen-head">
