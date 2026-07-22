@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=missions-ux-20260722-v62">
+  <link rel="stylesheet" href="css/styles.css?v=redemptions-ux-20260722-v63">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4820,14 +4820,47 @@
           <section class="view-section" data-view="redemptions">
             <div class="view-head">
               <div>
-                <h2>Atribución y Éxito</h2>
-                <p>Seguimiento detallado de redenciones y ventas atribuidas a campañas.</p>
+                <span class="mono-label">Validaciones y uso real</span>
+                <h2>Redenciones</h2>
+                <p>Entiende qué clientes usaron un beneficio, dónde lo redimieron y cuáles faltan por conectar con una venta.</p>
               </div>
               <div class="head-actions">
+                <button class="solid-button" id="redemptionOpenValidatorButton" type="button">Validar QR</button>
+                <button class="ghost-button" id="redemptionRegisterSaleButton" type="button">Registrar venta</button>
                 <button class="ghost-button" id="exportRedemptionsButton" type="button">Exportar Datos</button>
                 <button class="solid-button" id="rangeButton" type="button">Últimos 30 días</button>
               </div>
             </div>
+
+            <section class="redemption-command-center">
+              <article class="surface-card redemption-explain-card">
+                <span class="mono-label">Qué significa una redención</span>
+                <h3>El cliente ya usó o reclamó un beneficio</h3>
+                <p>Esta vista sirve para controlar la operación después del QR: quién llegó, qué beneficio usó, quién lo validó y si esa visita ya terminó en venta atribuida.</p>
+                <div class="redemption-step-list">
+                  <article><span>1</span><div><strong>Validar QR</strong><small>El equipo confirma que el beneficio fue usado.</small></div></article>
+                  <article><span>2</span><div><strong>Revisar pendiente</strong><small>Si no hay venta, queda como oportunidad de cierre.</small></div></article>
+                  <article><span>3</span><div><strong>Registrar venta</strong><small>Conecta la redención con revenue real.</small></div></article>
+                </div>
+              </article>
+              <article class="surface-card redemption-control-card">
+                <div>
+                  <span class="mono-label">Control operativo</span>
+                  <h3>Redenciones de la campaña</h3>
+                  <p>Filtra por estado y revisa rápidamente qué beneficio, sede o vendedor está moviendo más visitas.</p>
+                </div>
+                <div class="redemption-control-row">
+                  <label><span>Ver</span><select id="redemptionStatusFilter"><option value="all">Todas</option><option value="pending_sale">Pendientes de venta</option><option value="with_sale">Con venta atribuida</option><option value="today">Redimidas hoy</option><option value="without_branch">Sin sede</option></select></label>
+                  <div class="redemption-action-row">
+                    <button class="solid-button compact" type="button" id="redemptionOpenValidatorInlineButton">Validar nuevo QR</button>
+                    <button class="ghost-button compact" type="button" id="redemptionRegisterSaleInlineButton">Conectar venta</button>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <section class="kpi-grid sales-kpis" id="redemptionKpiGrid"></section>
+            <section class="redemption-card-grid" id="redemptionCardGrid" aria-label="Redenciones recientes"></section>
 
             <div class="segment-tabs" id="redemptionSalesTabs">
               <button class="segment-tab active" data-redemption-sales-tab="redemptions" type="button">Redenciones</button>
@@ -7094,7 +7127,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=missions-ux-20260722-v62" defer></script>
+  <script src="js/app.js?v=redemptions-ux-20260722-v63" defer></script>
 </body>
 </html>
 

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-missions-ux-v62";
+const APP_VERSION = "empresa-20260722-redemptions-ux-v63";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -639,6 +639,13 @@ const branchSubmitButton = document.getElementById("branchSubmitButton");
 const branchCancelEditButton = document.getElementById("branchCancelEditButton");
 const branchCreateMessage = document.getElementById("branchCreateMessage");
 const redemptionInsightTitle = document.getElementById("redemptionInsightTitle");
+const redemptionKpiGrid = document.getElementById("redemptionKpiGrid");
+const redemptionCardGrid = document.getElementById("redemptionCardGrid");
+const redemptionStatusFilter = document.getElementById("redemptionStatusFilter");
+const redemptionOpenValidatorButton = document.getElementById("redemptionOpenValidatorButton");
+const redemptionRegisterSaleButton = document.getElementById("redemptionRegisterSaleButton");
+const redemptionOpenValidatorInlineButton = document.getElementById("redemptionOpenValidatorInlineButton");
+const redemptionRegisterSaleInlineButton = document.getElementById("redemptionRegisterSaleInlineButton");
 const adminPanelMessage = document.getElementById("adminPanelMessage");
 const adminCampaignTable = document.getElementById("adminCampaignTable");
 const refreshAdminWorkspaceButton = document.getElementById("refreshAdminWorkspaceButton");
@@ -1459,6 +1466,7 @@ let state = {
   selectedLeadRef: null,
   lastLeadActivationLink: "",
   selectedRedemptions: [],
+  redemptionStatusFilter: "all",
   selectedSales: [],
   salesAnalysisFilters: {
     search: "",
@@ -2589,6 +2597,7 @@ function resetBusinessScopedState(options = {}) {
   state.selectedLeadRef = null;
   state.lastLeadActivationLink = "";
   state.selectedRedemptions = [];
+  state.redemptionStatusFilter = "all";
   state.selectedSales = [];
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
@@ -4521,6 +4530,7 @@ function setSelectedCampaignFromList(campaignId) {
   state.selectedReport = null;
   state.selectedLeads = [];
   state.selectedRedemptions = [];
+  state.redemptionStatusFilter = "all";
   state.selectedSales = [];
 }
 
@@ -5236,6 +5246,7 @@ async function loadWorkspace() {
         state.contactFeedRetention = null;
         state.contactFeedGate = null;
         state.selectedRedemptions = [];
+        state.redemptionStatusFilter = "all";
         state.selectedSales = [];
         state.loadedBusinessId = null;
         renderNoCampaignState();
@@ -28646,32 +28657,269 @@ async function downloadSelectedRewardPassImage() {
   showFeedback("Reward Pass descargado como imagen PNG.");
 }
 
+function ensureRedemptionsUxStyles() {
+  if (document.getElementById("redemptionsUxStylesV63")) return;
+  const style = document.createElement("style");
+  style.id = "redemptionsUxStylesV63";
+  style.textContent = `
+    .redemption-command-center {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.05fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .redemption-explain-card,
+    .redemption-control-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+    }
+    .redemption-explain-card h3,
+    .redemption-control-card h3 {
+      margin: 0.2rem 0 0.35rem;
+      font-size: clamp(1.22rem, 2vw, 1.65rem);
+    }
+    .redemption-explain-card p,
+    .redemption-control-card p {
+      color: #64748b;
+    }
+    .redemption-step-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+    .redemption-step-list article {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.72rem;
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .redemption-step-list article > span {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 13px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #047857;
+      font-weight: 900;
+    }
+    .redemption-step-list small {
+      color: #64748b;
+    }
+    .redemption-control-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.75fr) minmax(240px, 1.25fr);
+      gap: 0.85rem;
+      align-items: end;
+      margin-top: 0.85rem;
+    }
+    .redemption-control-row label {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+    .redemption-control-row select {
+      min-height: 42px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      padding: 0 0.75rem;
+      background: #fff;
+    }
+    .redemption-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .redemption-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .redemption-card {
+      display: grid;
+      gap: 0.75rem;
+      min-width: 0;
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    }
+    .redemption-card.is-pending {
+      border-color: rgba(245, 158, 11, 0.34);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.94));
+    }
+    .redemption-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .redemption-card-head strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .redemption-card-head small {
+      color: #64748b;
+    }
+    .redemption-card-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .redemption-card-metrics span {
+      padding: 0.65rem;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.96);
+      color: #64748b;
+    }
+    .redemption-card-metrics strong {
+      display: block;
+      color: #0f172a;
+    }
+    .redemption-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    @media (max-width: 980px) {
+      .redemption-command-center,
+      .redemption-control-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function redemptionStatusText(item = {}) {
+  return item.sale_amount ? "Con venta" : "Pendiente de venta";
+}
+
+function redemptionStatusClass(item = {}) {
+  return item.sale_amount ? "ok" : "pending";
+}
+
+function isTodayRedemption(item = {}) {
+  const raw = item.redeemed_at || item.created_at;
+  if (!raw) return false;
+  const date = new Date(raw);
+  const today = new Date();
+  return !Number.isNaN(date.getTime())
+    && date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate();
+}
+
+function filteredRedemptionsForUx(rows = []) {
+  const filter = state.redemptionStatusFilter || "all";
+  return rows.filter((item) => {
+    if (filter === "pending_sale") return !item.sale_amount;
+    if (filter === "with_sale") return Boolean(item.sale_amount);
+    if (filter === "today") return isTodayRedemption(item);
+    if (filter === "without_branch") return !item.branch_name;
+    return true;
+  });
+}
+
+function topRedemptionEntry(rows = [], key) {
+  const counts = rows.reduce((acc, item) => {
+    const label = item[key] || "Sin dato";
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0] || null;
+}
+
+function renderRedemptionKpis(rows = [], allRows = []) {
+  if (!redemptionKpiGrid) return;
+  const completed = rows.filter((item) => item.sale_amount).length;
+  const pending = rows.length - completed;
+  const revenue = rows.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const topReward = topRedemptionEntry(rows, "reward_name");
+  const items = [
+    ["Redenciones visibles", rows.length.toLocaleString("es-CO"), `${allRows.length.toLocaleString("es-CO")} total campaña`],
+    ["Con venta atribuida", completed.toLocaleString("es-CO"), `${safeRate(completed, rows.length || 1)}% conectadas`],
+    ["Pendientes de cierre", pending.toLocaleString("es-CO"), "Requieren venta o seguimiento"],
+    ["Revenue conectado", money(revenue), "Ventas asociadas a redención"],
+    ["Beneficio líder", topReward?.[0] || "-", topReward ? `${topReward[1]} redenciones` : "Sin datos"],
+  ];
+  redemptionKpiGrid.innerHTML = items.map(([label, value, meta]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <div class="kpi-meta">${escapeHtml(meta)}</div>
+    </article>
+  `).join("");
+}
+
+function renderRedemptionCards(rows = []) {
+  if (!redemptionCardGrid) return;
+  if (!rows.length) {
+    redemptionCardGrid.innerHTML = '<article class="surface-card empty-state compact">No hay redenciones con los filtros actuales. Valida un QR o limpia el filtro.</article>';
+    return;
+  }
+  redemptionCardGrid.innerHTML = rows.slice(0, 18).map((item) => `
+    <article class="redemption-card ${item.sale_amount ? "" : "is-pending"}">
+      <div class="redemption-card-head">
+        <span>
+          <strong>${escapeHtml(item.player_name || "Cliente sin nombre")}</strong>
+          <small>${escapeHtml(item.phone || item.document_id || "Sin contacto visible")}</small>
+        </span>
+        <span class="status-chip ${redemptionStatusClass(item)}">${escapeHtml(redemptionStatusText(item))}</span>
+      </div>
+      <div class="redemption-card-metrics">
+        <span><small>Beneficio</small><strong>${escapeHtml(item.reward_name || "-")}</strong></span>
+        <span><small>Venta</small><strong>${item.sale_amount ? escapeHtml(money(item.sale_amount)) : "Sin venta"}</strong></span>
+      </div>
+      <div class="redemption-card-meta">
+        <span class="pill muted">${escapeHtml(formatDate(item.redeemed_at || item.created_at))}</span>
+        <span class="pill muted">${escapeHtml(item.branch_name || "Sin sede")}</span>
+        <span class="pill muted">${escapeHtml(item.validator_name || "Sin validador")}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
 function renderRedemptionsView() {
-  const rows = withFilters(
+  ensureRedemptionsUxStyles();
+  if (redemptionStatusFilter) redemptionStatusFilter.value = state.redemptionStatusFilter || "all";
+  const allRows = withFilters(
     state.selectedRedemptions || [],
     ["player_name", "reward_name", "branch_name", "validator_name", "document_id", "phone"],
     ["redeemed_at", "created_at"]
   );
+  const rows = filteredRedemptionsForUx(allRows);
+  renderRedemptionKpis(rows, allRows);
+  renderRedemptionCards(rows);
 
   campaignRedemptionsTable.innerHTML = rows.map((item) => `
     <tr>
-      <td>${escapeHtml(item.player_name || "-")}</td>
+      <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
       <td>${escapeHtml(item.reward_name || "-")}</td>
-      <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
+      <td>${escapeHtml(formatDate(item.redeemed_at || item.created_at))}</td>
       <td>${escapeHtml(item.branch_name || "-")}</td>
       <td>${escapeHtml(item.validator_name || "-")}</td>
-      <td><span class="status-chip ${item.sale_amount ? "ok" : "pending"}">${item.sale_amount ? "Completado" : "Pendiente"}</span></td>
+      <td><span class="status-chip ${redemptionStatusClass(item)}">${escapeHtml(redemptionStatusText(item))}</span></td>
     </tr>
-  `).join("") || '<tr><td colspan="6">Sin redenciones para esta campaña.</td></tr>';
+  `).join("") || '<tr><td colspan="6">Sin redenciones para los filtros actuales.</td></tr>';
 
-  const rewardCounts = rows.reduce((acc, item) => {
-    const key = item.reward_name || "Beneficio";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
-  const topReward = Object.entries(rewardCounts).sort((a, b) => b[1] - a[1])[0];
+  const topReward = topRedemptionEntry(rows, "reward_name");
+  const topBranch = topRedemptionEntry(rows, "branch_name");
+  const pending = rows.filter((item) => !item.sale_amount).length;
   redemptionInsightTitle.textContent = topReward
-    ? `${topReward[0]} lidera con ${topReward[1]} redenciones registradas.`
+    ? `${topReward[0]} lidera con ${topReward[1]} redenciones${topBranch ? ` · ${topBranch[0]} es la sede principal` : ""}${pending ? ` · ${pending} pendientes de venta` : ""}.`
     : "Sin datos suficientes";
 }
 
@@ -34251,6 +34499,16 @@ manualLeadCsvImportForm?.addEventListener("submit", importManualLeadsCsv);
 exportLeadsButton.addEventListener("click", exportLeads);
 exportRedemptionsButton.addEventListener("click", exportRedemptions);
 exportSalesButton.addEventListener("click", exportSales);
+redemptionStatusFilter?.addEventListener("change", () => {
+  state.redemptionStatusFilter = redemptionStatusFilter.value || "all";
+  renderRedemptionsView();
+});
+[redemptionOpenValidatorButton, redemptionOpenValidatorInlineButton].forEach((button) => {
+  button?.addEventListener("click", () => setView("validator"));
+});
+[redemptionRegisterSaleButton, redemptionRegisterSaleInlineButton].forEach((button) => {
+  button?.addEventListener("click", () => setView("sales"));
+});
 launchSetupForm.addEventListener("submit", saveClientLaunchSetup);
 confirmLaunchButton.addEventListener("click", confirmCampaignLaunch);
 [campaignCostNameInput, campaignCostTypeInput, campaignCostChannelInput, campaignCostBranchInput, campaignCostOwnerInput, campaignCostGoalInput, campaignCostDynamicInput, campaignCostObjectiveInput].forEach((input) => {
