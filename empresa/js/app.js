@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-table-detail-v82";
+const APP_VERSION = "empresa-20260722-sales-visual-repair-v83";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2483,7 +2483,7 @@ function clearBusinessWorkspaceUi() {
     [branchPerformanceTable, 5, "Cargando actividad por sucursal..."],
     [campaignLeadsTable, 9, "Cargando leads..."],
     [campaignRedemptionsTable, 6, "Cargando redenciones..."],
-    [campaignSalesTable, 11, "Cargando ventas..."],
+    [campaignSalesTable, 7, "Cargando ventas..."],
     [branchTable, 4, "Cargando sucursales..."],
     [qrBatchTable, 5, "Abre Gaming Center para cargar paquetes recientes."],
     [strategicQrHistoryTable, 5, "Abre Gaming Center para cargar historial reciente."],
@@ -11512,22 +11512,22 @@ function renderSalesView() {
   renderCustomerAcquisitionBranchOptions();
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
+  renderAcquisitionChannelDatalist();
   renderSalesAnalysisGrid(sales, allSales);
+  state.salesDetailRows = sales;
 
-  campaignSalesTable.innerHTML = sales.map((item) => `
-    <tr>
-      <td>${escapeHtml(item.player_name || "-")}</td>
-      <td>${escapeHtml(item.document_id || "-")}</td>
-      <td>${escapeHtml(item.phone || "-")}</td>
-      <td>${escapeHtml(money(item.sale_amount))}</td>
-      <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td>${escapeHtml(item.acquisition_channel || "-")}</td>
+  campaignSalesTable.innerHTML = sales.map((item, index) => `
+    <tr class="sales-simple-row" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
+      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml([item.document_id || item.customer_document_id, item.phone || item.customer_phone, item.customer_email || item.email].filter(Boolean).join(" · ") || "Sin datos de contacto")}</small></td>
+      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml([item.currency || "COP", item.payment_method || ""].filter(Boolean).join(" · "))}</small></td>
       <td>${saleProductSummary(item)}</td>
-      <td>${escapeHtml(item.branch_name || "-")}</td>
-      <td>${escapeHtml(formatDate(item.created_at))}</td>
+      <td><strong>${escapeHtml(saleCampaignText(item))}</strong><small>${escapeHtml(saleChannelText(item))}</small></td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
+      <td>${escapeHtml(saleBranchText(item))}</td>
+      <td><strong>${escapeHtml(formatDateShort(item.created_at))}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></td>
     </tr>
-  `).join("") || '<tr><td colspan="10">Sin ventas para los filtros actuales.</td></tr>';
+  `).join("") || '<tr><td colspan="7">Sin ventas para los filtros actuales.</td></tr>';
+  bindSalesTableRows(sales);
 }
 
 function renderBranchesView() {
@@ -14367,25 +14367,88 @@ function ensureSalesAnalysisStyles() {
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"].active {
       display: grid !important;
       gap: 1rem;
+      max-width: 1480px;
+      margin-inline: auto;
     }
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .view-head { order: 1; }
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .sales-kpis { order: 2; }
     body[data-current-view="sales"] .portal-shell .sales-table-panel {
       order: 3;
       overflow: hidden;
-      border-color: rgba(15, 115, 84, 0.18);
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(15, 115, 84, 0.16);
+      border-radius: 28px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfefc 100%);
+      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.09);
     }
     body[data-current-view="sales"] .portal-shell .sales-create-panel {
       order: 4;
-      border-style: dashed;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 24px;
       background: rgba(248, 252, 250, 0.82);
     }
     body[data-current-view="sales"] .portal-shell .sales-create-panel .table-card-head h3::after {
-      content: " · secundario";
+      content: "";
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel > .table-card-head,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel > .chart-explainer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel > form {
+      padding-inline: clamp(1rem, 2vw, 1.35rem);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel > .table-card-head {
+      padding-top: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel > form {
+      padding-bottom: 1.25rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 34px;
+      gap: .85rem;
+      align-items: center;
+      padding: 1rem 1.15rem;
+      cursor: pointer;
+      list-style: none;
+      background: linear-gradient(135deg, rgba(15, 115, 84, .08), rgba(59, 130, 246, .05));
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary::-webkit-details-marker {
+      display: none;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary > .material-symbols-outlined:first-child {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      background: #0f7354;
+      color: #fff;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary strong,
+    body[data-current-view="sales"] .portal-shell .sales-create-summary small {
+      display: block;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary strong {
+      color: #0f172a;
+      font-size: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-summary small {
+      margin-top: .15rem;
       color: #64748b;
       font-size: .78rem;
-      font-weight: 700;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-summary-chevron {
+      justify-self: end;
+      color: #64748b;
+      transition: transform .18s ease;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-summary-chevron {
+      transform: rotate(180deg);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel .table-card-head {
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: .35rem;
     }
     body[data-current-view="sales"] .portal-shell .sales-table-panel .table-card-head small {
       display: block;
@@ -14402,7 +14465,7 @@ function ensureSalesAnalysisStyles() {
     }
     body[data-current-view="sales"] .portal-shell .sales-table-panel table {
       width: 100%;
-      min-width: 1080px;
+      min-width: 920px;
       border-collapse: separate;
       border-spacing: 0;
     }
@@ -14416,6 +14479,12 @@ function ensureSalesAnalysisStyles() {
       letter-spacing: .05em;
       text-transform: uppercase;
       white-space: nowrap;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel tbody td:first-child {
+      min-width: 210px;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel tbody td:nth-child(2) {
+      min-width: 120px;
     }
     body[data-current-view="sales"] .portal-shell .sales-simple-row {
       cursor: pointer;
@@ -14443,13 +14512,13 @@ function ensureSalesAnalysisStyles() {
     }
     .sales-analysis-toolbar {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.75rem;
-      margin: 1rem 0;
-      padding: 1rem;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 0.65rem;
+      margin: .85rem 0 1rem;
+      padding: .9rem;
       border: 1px solid rgba(148, 163, 184, 0.22);
       border-radius: 22px;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(59, 130, 246, 0.07));
+      background: #f8fafc;
     }
     .sales-analysis-toolbar label {
       display: grid;
@@ -14466,6 +14535,8 @@ function ensureSalesAnalysisStyles() {
     .sales-analysis-toolbar select {
       min-width: 0;
       width: 100%;
+      min-height: 40px;
+      border-radius: 13px;
     }
     .sales-analysis-toolbar .ghost-button {
       align-self: end;
@@ -21292,7 +21363,7 @@ function renderNoCampaignState() {
   recentLeadsTable.innerHTML = '<tr><td colspan="4">Sin leads.</td></tr>';
   campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
-  campaignSalesTable.innerHTML = '<tr><td colspan="11">Sin ventas.</td></tr>';
+  campaignSalesTable.innerHTML = '<tr><td colspan="7">Sin ventas.</td></tr>';
   branchTable.innerHTML = '<tr><td colspan="9">Sin sedes registradas ni actividad por sucursal.</td></tr>';
   branchPerformanceTable.innerHTML = '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
   geoBranchBoard.innerHTML = '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
@@ -32604,18 +32675,15 @@ function renderSalesView() {
 
   campaignSalesTable.innerHTML = sales.map((item, index) => `
     <tr class="sales-simple-row" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
-      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml(item.customer_email || item.email || "Sin correo")}</small></td>
-      <td>${escapeHtml(item.document_id || item.customer_document_id || "-")}</td>
-      <td>${escapeHtml(item.phone || item.customer_phone || "-")}</td>
-      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml(item.currency || "COP")}</small></td>
-      <td>${escapeHtml(item.payment_method || "-")}</td>
-      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td><strong>${escapeHtml(saleChannelText(item))}</strong><small>${escapeHtml(saleCampaignText(item))}</small></td>
+      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml([item.document_id || item.customer_document_id, item.phone || item.customer_phone, item.customer_email || item.email].filter(Boolean).join(" · ") || "Sin datos de contacto")}</small></td>
+      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml([item.currency || "COP", item.payment_method || ""].filter(Boolean).join(" · "))}</small></td>
       <td>${saleProductSummary(item)}</td>
+      <td><strong>${escapeHtml(saleCampaignText(item))}</strong><small>${escapeHtml(saleChannelText(item))}</small></td>
+      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
       <td>${escapeHtml(saleBranchText(item))}</td>
       <td><strong>${escapeHtml(formatDateShort(item.created_at))}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></td>
     </tr>
-  `).join("") || '<tr><td colspan="10">Sin ventas para los filtros actuales.</td></tr>';
+  `).join("") || '<tr><td colspan="7">Sin ventas para los filtros actuales.</td></tr>';
   bindSalesTableRows(sales);
 }
 

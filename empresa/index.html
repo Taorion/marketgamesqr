@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-table-detail-20260722-v82">
+  <link rel="stylesheet" href="css/styles.css?v=sales-visual-repair-20260722-v83">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4962,7 +4962,15 @@
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
 
-            <article class="surface-card data-table-card">
+            <details class="surface-card data-table-card sales-create-panel">
+              <summary class="sales-create-summary">
+                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                <span>
+                  <strong>Registrar nueva venta</strong>
+                  <small>Abre este panel solo cuando necesites cargar una venta manual.</small>
+                </span>
+                <span class="material-symbols-outlined sales-summary-chevron" aria-hidden="true">expand_more</span>
+              </summary>
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Medición comercial</span>
@@ -5060,15 +5068,16 @@
                 </div>
                 <datalist id="acquisitionChannelDatalist"></datalist>
               </form>
-            </article>
+            </details>
 
             <article class="surface-card data-table-card sales-table-panel">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">Análisis de ventas atribuidas</span>
-                  <h3>Tabla simple de ventas cerradas</h3>
-                  <small>Haz click en cualquier venta para ver el detalle completo.</small>
+                  <span class="mono-label">Vista principal</span>
+                  <h3>Ventas cerradas</h3>
+                  <small>Tabla simple para leer, filtrar y abrir el detalle completo de cada venta.</small>
                 </div>
+                <span class="status-chip ok">Click en fila para detalle</span>
               </div>
               <section class="sales-analysis-toolbar" id="salesAnalysisToolbar" aria-label="Filtros de ventas atribuidas">
                 <label><span>Buscar venta</span><input id="salesAnalysisSearchInput" type="search" placeholder="Cliente, documento, producto, canal..."></label>
@@ -5098,14 +5107,11 @@
                   <thead>
                     <tr>
                       <th>Cliente</th>
-                      <th>Cédula</th>
-                      <th>Teléfono</th>
                       <th>Valor</th>
-                      <th>Pago</th>
+                      <th>Producto</th>
+                      <th>Campaña / canal</th>
                       <th>Origen</th>
-                      <th>Canal</th>
-                      <th>Producto o servicio</th>
-                      <th>Sucursal</th>
+                      <th>Sede</th>
                       <th>Fecha</th>
                     </tr>
                   </thead>
@@ -7284,7 +7290,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-table-detail-20260722-v82" defer></script>
+  <script src="js/app.js?v=sales-visual-repair-20260722-v83" defer></script>
 </body>
 </html>
 
