@@ -725,6 +725,8 @@ async function getQrHistory(businessId, options = {}) {
        q.expires_at,
        q.claimed_at,
        q.redeemed_at,
+       q.player_id,
+       q.campaign_id,
        q.benefit_type,
        q.benefit_value,
        q.metadata,

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-season-leaderboard-view-v71";
+const APP_VERSION = "empresa-20260722-redemptions-simple-table-v72";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -4828,7 +4828,12 @@ function setView(view) {
     loadCompetitionProducts({ quiet: true }).then(renderCompetitionView);
     renderCompetitionView();
   }
-  if (view === "redemptions") renderRedemptionsView();
+  if (view === "redemptions") {
+    renderRedemptionsView();
+    loadStrategicQrData({ groups: ["history"], quiet: true }).then(renderRedemptionsView).catch((error) => {
+      showFeedback(error.message || "No se pudo cargar el historial de tickets.", "error", { title: "Redenciones" });
+    });
+  }
   if (view === "strategic-qr") {
     if (!state.inventoryLoaded) loadInventoryProducts({ quiet: true }).then(renderInventoryProductOptions);
     if (!state.digitalAssetsLoaded) {
@@ -29757,6 +29762,31 @@ function ensureRedemptionsUxStyles() {
       flex-wrap: wrap;
       gap: 0.35rem;
     }
+    .redemption-simple-row td {
+      vertical-align: top;
+    }
+    .redemption-lead-link {
+      display: grid;
+      gap: 0.18rem;
+      text-align: left;
+      color: inherit;
+      text-decoration: none;
+    }
+    .redemption-lead-link strong {
+      color: #0f172a;
+    }
+    .redemption-lead-link:hover strong {
+      color: #2563eb;
+    }
+    .lead-detail-modal-card,
+    .lead-detail-drawer,
+    #leadDetailContent {
+      max-height: min(86vh, 920px);
+    }
+    #leadDetailContent {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     @media (max-width: 980px) {
       .redemption-command-center,
       .redemption-control-row {
@@ -29768,11 +29798,15 @@ function ensureRedemptionsUxStyles() {
 }
 
 function redemptionStatusText(item = {}) {
-  return item.sale_amount ? "Con venta" : "Pendiente de venta";
+  if (item.sale_amount) return "Con venta";
+  if (item.is_redeemed) return "Redimido sin venta";
+  return "No redimido";
 }
 
 function redemptionStatusClass(item = {}) {
-  return item.sale_amount ? "ok" : "pending";
+  if (item.sale_amount) return "ok";
+  if (item.is_redeemed) return "pending";
+  return "muted";
 }
 
 function isTodayRedemption(item = {}) {
@@ -29789,12 +29823,96 @@ function isTodayRedemption(item = {}) {
 function filteredRedemptionsForUx(rows = []) {
   const filter = state.redemptionStatusFilter || "all";
   return rows.filter((item) => {
-    if (filter === "pending_sale") return !item.sale_amount;
+    if (filter === "redeemed") return Boolean(item.is_redeemed);
+    if (filter === "not_redeemed") return !item.is_redeemed;
+    if (filter === "pending_sale") return item.is_redeemed && !item.sale_amount;
     if (filter === "with_sale") return Boolean(item.sale_amount);
-    if (filter === "today") return isTodayRedemption(item);
-    if (filter === "without_branch") return !item.branch_name;
     return true;
   });
+}
+
+function redemptionTicketRowFromHistory(item = {}) {
+  const benefitValue = item.benefit_value || {};
+  return {
+    key: `ticket:${item.id}`,
+    qr_code_id: item.id,
+    player_id: item.player_id || "",
+    player_name: item.player_name || "",
+    phone: item.player_phone || "",
+    email: item.player_email || "",
+    document_id: item.player_document_id || "",
+    reward_name: benefitValue.label || benefitValue.value || item.benefit_type || item.origin_type || "Ticket",
+    status: item.status || "",
+    is_redeemed: isRedeemedTicket(item),
+    created_at: item.created_at,
+    redeemed_at: item.redeemed_at,
+    sale_amount: item.sale_amount || 0,
+    product_name: item.product_name || "",
+    branch_name: item.branch_name || "",
+    validator_name: item.validator_name || "",
+    origin_label: item.batch_name || item.campaign_name || item.origin_type || "Ticket",
+    raw_ticket: item,
+  };
+}
+
+function redemptionTicketRowFromRedemption(item = {}) {
+  return {
+    key: `redemption:${item.qr_code_id || item.id}`,
+    redemption_id: item.id,
+    qr_code_id: item.qr_code_id || "",
+    player_id: item.player_id || "",
+    player_name: item.player_name || "",
+    phone: item.phone || "",
+    email: item.email || "",
+    document_id: item.document_id || "",
+    reward_name: item.reward_name || "Ticket redimido",
+    status: "REDEEMED",
+    is_redeemed: true,
+    created_at: item.created_at || item.redeemed_at,
+    redeemed_at: item.redeemed_at || item.created_at,
+    sale_amount: item.sale_amount || 0,
+    product_name: item.product_or_service || item.product_name || "",
+    branch_name: item.branch_name || "",
+    validator_name: item.validator_name || "",
+    origin_label: item.campaign_name || item.branch_name || "Redención",
+    raw_redemption: item,
+  };
+}
+
+function redemptionTicketRows() {
+  const rowsByQr = new Map();
+  (state.strategicQrHistory || []).forEach((item) => {
+    const row = redemptionTicketRowFromHistory(item);
+    rowsByQr.set(String(row.qr_code_id || row.key), row);
+  });
+  (state.selectedRedemptions || []).forEach((item) => {
+    const row = redemptionTicketRowFromRedemption(item);
+    const key = String(row.qr_code_id || row.key);
+    const existing = rowsByQr.get(key) || {};
+    rowsByQr.set(key, {
+      ...existing,
+      ...row,
+      phone: row.phone || existing.phone || "",
+      email: row.email || existing.email || "",
+      document_id: row.document_id || existing.document_id || "",
+      created_at: existing.created_at || row.created_at,
+      raw_ticket: existing.raw_ticket || null,
+    });
+  });
+  return Array.from(rowsByQr.values()).sort((a, b) => {
+    const aTime = new Date(a.redeemed_at || a.created_at || 0).getTime();
+    const bTime = new Date(b.redeemed_at || b.created_at || 0).getTime();
+    return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+  });
+}
+
+function openRedemptionLeadDetail(rowKey = "") {
+  const row = redemptionTicketRows().find((item) => String(item.key) === String(rowKey));
+  if (!row?.player_id) {
+    showFeedback("Este ticket no tiene un lead/contacto conectado. Cuando el ticket tenga player_id podrás abrir la ficha completa.", "info", { title: "Detalle de lead" });
+    return;
+  }
+  openLeadDetail({ id: row.player_id, source_type: "PLAYER" }, { tab: "summary" });
 }
 
 function topRedemptionEntry(rows = [], key) {
@@ -29860,28 +29978,43 @@ function renderRedemptionsView() {
   ensureRedemptionsUxStyles();
   if (redemptionStatusFilter) redemptionStatusFilter.value = state.redemptionStatusFilter || "all";
   const allRows = withFilters(
-    state.selectedRedemptions || [],
-    ["player_name", "reward_name", "branch_name", "validator_name", "document_id", "phone"],
+    redemptionTicketRows(),
+    ["player_name", "reward_name", "branch_name", "validator_name", "document_id", "phone", "email", "origin_label", "status"],
     ["redeemed_at", "created_at"]
   );
   const rows = filteredRedemptionsForUx(allRows);
   renderRedemptionKpis(rows, allRows);
-  renderRedemptionCards(rows);
+  if (redemptionCardGrid && !redemptionCardGrid.hidden) renderRedemptionCards(rows);
 
-  campaignRedemptionsTable.innerHTML = rows.map((item) => `
-    <tr>
-      <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
-      <td>${escapeHtml(item.reward_name || "-")}</td>
-      <td>${escapeHtml(formatDate(item.redeemed_at || item.created_at))}</td>
-      <td>${escapeHtml(item.branch_name || "-")}</td>
-      <td>${escapeHtml(item.validator_name || "-")}</td>
-      <td><span class="status-chip ${redemptionStatusClass(item)}">${escapeHtml(redemptionStatusText(item))}</span></td>
-    </tr>
-  `).join("") || '<tr><td colspan="6">Sin redenciones para los filtros actuales.</td></tr>';
+  campaignRedemptionsTable.innerHTML = rows.map((item) => {
+    const contactMeta = [item.phone, item.email, item.document_id].filter(Boolean).join(" · ") || "Sin datos de contacto";
+    const saleLabel = item.sale_amount ? money(item.sale_amount) : "Sin venta";
+    const saleMeta = item.product_name ? `<span class="table-secondary">${escapeHtml(item.product_name)}</span>` : "";
+    return `
+      <tr class="redemption-simple-row">
+        <td>
+          <button class="link-button redemption-lead-link" type="button" data-open-redemption-lead="${escapeHtml(item.key)}">
+            <strong>${escapeHtml(item.player_name || "Lead sin nombre")}</strong>
+            <span class="table-secondary">${escapeHtml(contactMeta)}</span>
+          </button>
+        </td>
+        <td><strong>${escapeHtml(item.reward_name || "Ticket")}</strong><span class="table-secondary">${escapeHtml(item.qr_code_id || "")}</span></td>
+        <td><span class="status-chip ${redemptionStatusClass(item)}">${escapeHtml(redemptionStatusText(item))}</span></td>
+        <td>${escapeHtml(item.created_at ? formatDate(item.created_at) : "-")}</td>
+        <td>${item.redeemed_at ? escapeHtml(formatDate(item.redeemed_at)) : "No redimido"}</td>
+        <td><strong>${escapeHtml(saleLabel)}</strong>${saleMeta}</td>
+        <td>${escapeHtml(item.origin_label || item.branch_name || "-")}<span class="table-secondary">${escapeHtml(item.validator_name || item.branch_name || "")}</span></td>
+        <td>${item.player_id ? "Click en lead" : "Sin contacto"}</td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="8">Sin tickets o redenciones para los filtros actuales.</td></tr>';
+  campaignRedemptionsTable.querySelectorAll("[data-open-redemption-lead]").forEach((button) => {
+    button.addEventListener("click", () => openRedemptionLeadDetail(button.dataset.openRedemptionLead));
+  });
 
   const topReward = topRedemptionEntry(rows, "reward_name");
   const topBranch = topRedemptionEntry(rows, "branch_name");
-  const pending = rows.filter((item) => !item.sale_amount).length;
+  const pending = rows.filter((item) => item.is_redeemed && !item.sale_amount).length;
   redemptionInsightTitle.textContent = topReward
     ? `${topReward[0]} lidera con ${topReward[1]} redenciones${topBranch ? ` · ${topBranch[0]} es la sede principal` : ""}${pending ? ` · ${pending} pendientes de venta` : ""}.`
     : "Sin datos suficientes";
