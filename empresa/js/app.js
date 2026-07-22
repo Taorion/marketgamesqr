@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-portal-ux-system-v34";
+const APP_VERSION = "empresa-20260721-portal-ux-system-v38";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1130,6 +1130,15 @@ const featureUpgradePrimaryLink = document.getElementById("featureUpgradePrimary
 const featureUpgradeCloseButton = document.getElementById("featureUpgradeCloseButton");
 const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSecondaryButton");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
+navButtons.forEach((button) => {
+  const copy = button.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
+  const label = String(copy?.querySelector("strong")?.textContent || copy?.textContent || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!label) return;
+  if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", label);
+  if (!button.getAttribute("title")) button.setAttribute("title", label);
+});
 const portalShortcutButtons = Array.from(document.querySelectorAll("[data-portal-shortcut]"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll("[data-redemption-sales-tab]"));
@@ -4587,9 +4596,12 @@ function setView(view) {
     const isLeadsBase = button.dataset.view === "leads"
       && view === "leads"
       && state.contactCenterTab !== "sales"
-      && (contactTarget ? state.contactCenterTab === contactTarget : true);
+      && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
     const isRegular = button.dataset.view === view && view !== "leads";
-    button.classList.toggle("active", isSalesAlias || isLeadsBase || isRegular);
+    const isActive = isSalesAlias || isLeadsBase || isRegular;
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
   });
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
     const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
@@ -24302,8 +24314,14 @@ function setContactCenterTab(tab = "overview") {
   if (state.currentView === "leads") {
     navButtons.forEach((button) => {
       const isSalesAlias = button.dataset.view === "sales" && nextTab === "sales";
-      const isLeadsBase = button.dataset.view === "leads" && nextTab !== "sales";
-      button.classList.toggle("active", isSalesAlias || isLeadsBase);
+      const contactTarget = button.dataset.contactCenterNav || "";
+      const isLeadsBase = button.dataset.view === "leads"
+        && nextTab !== "sales"
+        && (contactTarget === "agenda" ? nextTab === "agenda" : nextTab !== "agenda");
+      const isActive = isSalesAlias || isLeadsBase;
+      button.classList.toggle("active", isActive);
+      if (isActive) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
     });
   }
   contactCenterTabs.forEach((button) => {

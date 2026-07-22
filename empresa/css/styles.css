@@ -53317,6 +53317,160 @@ html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-se
   }
 }
 
+/* Portal UX v35: restore native visibility contracts and mobile workspace clarity. */
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .view-section[hidden],
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .view-section:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell details:not([open]) > :not(summary) {
+  display: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .quiet-zone.is-collapsed > :not(.quiet-zone-control-head) {
+  display: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .rms-machine-commandbar .rms-more-actions > div {
+  width: min(260px, 80vw) !important;
+  min-width: 220px !important;
+  max-width: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .rms-machine-commandbar .rms-more-actions > div > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell :is(.contact-center-stage-rail, .contact-center-tabs, .lead-agenda-view-tabs) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell :is(.contact-center-stage-rail, .contact-center-tabs, .lead-agenda-view-tabs)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .content-shell > .view-section.active > .view-head:has(> .portal-location-pill) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "location"
+    "copy" !important;
+  align-items: center !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .content-shell > .view-section.active > .view-head:has(> .portal-location-pill):has(> :is(.view-head-actions, .head-actions, .lead-export-actions)) {
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 440px) !important;
+  grid-template-areas:
+    "location actions"
+    "copy actions" !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .content-shell > .view-section.active > .view-head > .portal-location-pill {
+  grid-area: location !important;
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 30px !important;
+  display: inline-flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-self: start !important;
+  gap: 7px !important;
+  padding: 6px 10px !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .content-shell > .view-section.active > .view-head > .portal-location-pill + div {
+  grid-area: copy !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+body:not(#portalUxStableA#portalUxStableB#portalUxStableC#portalUxStableD) .portal-shell .content-shell > .view-section.active > .view-head > :is(.view-head-actions, .head-actions, .lead-export-actions) {
+  grid-area: actions !important;
+}
+
+@media (max-width: 760px) {
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD) .portal-shell .content-shell > .view-section.active > .view-head:has(> .portal-location-pill):has(> :is(.view-head-actions, .head-actions, .lead-export-actions)) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "location"
+      "copy"
+      "actions" !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell #contactPanelAgenda {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell #leadAgendaCard {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell #leadAgendaCard > .quiet-zone-control-head {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    gap: 10px !important;
+    padding: 0 !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell #leadAgendaCard > .quiet-zone-control-head > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    justify-self: stretch !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell .lead-agenda-head-copy,
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell .lead-agenda-head-copy :is(h3, p) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    font-family: Inter, sans-serif !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell .lead-agenda-head-copy h3 {
+    font-size: 1.3rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell .lead-agenda-head-copy p {
+    font-size: 0.82rem !important;
+    line-height: 1.45 !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell :is(.lead-agenda-toolbar, .lead-agenda-controls, .lead-agenda-view-tabs) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+
+  body:not(#portalUxMobileA#portalUxMobileB#portalUxMobileC#portalUxMobileD)[data-current-view="leads"] .portal-shell .lead-agenda-toolbar {
+    padding: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 /* RMS v18 final authority: keep stations above the fold after legacy portal rules. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar {
   min-height: 58px !important;
