@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=smart-catalog-ux-20260722-v60">
+  <link rel="stylesheet" href="css/styles.css?v=inventory-ux-20260722-v61">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -5237,12 +5237,40 @@
             <div class="view-head">
               <div>
                 <h2>Productos</h2>
-                <p>Catálogo operativo con código de barras, SKU, precios, stock y búsqueda para registrar ventas.</p>
+                <p>Agrega, encuentra y edita productos de venta con precio, stock, SKU y categoría en una sola vista.</p>
               </div>
-              <button class="ghost-button" id="refreshInventoryButton" type="button">Actualizar</button>
+              <div class="button-row">
+                <button class="ghost-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
+                <button class="ghost-button" id="refreshInventoryButton" type="button">Actualizar</button>
+              </div>
             </div>
 
             <section class="kpi-grid sales-kpis" id="inventoryKpiGrid"></section>
+
+            <section class="inventory-command-panel" id="inventoryCommandPanel">
+              <article class="surface-card inventory-guide-card">
+                <span class="mono-label">Cómo cargar productos</span>
+                <h3>Producto listo para vender en 3 datos</h3>
+                <ol class="inventory-guide-list">
+                  <li><span>1</span><div><strong>Nombre y categoría</strong><small>Qué vendes y cómo lo agrupas.</small></div></li>
+                  <li><span>2</span><div><strong>Precio y costo</strong><small>Para venta, margen y análisis.</small></div></li>
+                  <li><span>3</span><div><strong>Stock y código</strong><small>SKU o barras si quieres control operativo.</small></div></li>
+                </ol>
+              </article>
+              <article class="surface-card inventory-filter-card">
+                <div>
+                  <span class="mono-label">Visualización</span>
+                  <h3>Productos incluidos</h3>
+                  <p>Filtra rápido y selecciona cualquier producto para editarlo.</p>
+                </div>
+                <div class="inventory-filter-row">
+                  <label><span>Ver</span><select id="inventoryQuickFilter"><option value="all">Todos</option><option value="active">Activos</option><option value="low_stock">Stock bajo</option><option value="without_code">Sin código/SKU</option><option value="archived">Archivados</option></select></label>
+                  <label><span>Categoría</span><select id="inventoryCategoryFilter"><option value="">Todas</option></select></label>
+                </div>
+              </article>
+            </section>
+
+            <section class="inventory-product-grid" id="inventoryProductGrid" aria-label="Productos incluidos"></section>
 
             <section class="inventory-layout">
               <article class="surface-card inventory-form-card">
@@ -7039,7 +7067,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=smart-catalog-ux-20260722-v60" defer></script>
+  <script src="js/app.js?v=inventory-ux-20260722-v61" defer></script>
 </body>
 </html>
 

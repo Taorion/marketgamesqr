@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-smart-catalog-ux-v60";
+const APP_VERSION = "empresa-20260722-inventory-ux-v61";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -917,10 +917,14 @@ const inventoryDescriptionInput = document.getElementById("inventoryDescriptionI
 const inventoryMessage = document.getElementById("inventoryMessage");
 const inventorySaveButton = document.getElementById("inventorySaveButton");
 const inventoryResetButton = document.getElementById("inventoryResetButton");
+const inventoryNewProductButton = document.getElementById("inventoryNewProductButton");
 const refreshInventoryButton = document.getElementById("refreshInventoryButton");
 const inventoryFormTitle = document.getElementById("inventoryFormTitle");
 const inventoryKpiGrid = document.getElementById("inventoryKpiGrid");
 const inventorySearchInput = document.getElementById("inventorySearchInput");
+const inventoryQuickFilter = document.getElementById("inventoryQuickFilter");
+const inventoryCategoryFilter = document.getElementById("inventoryCategoryFilter");
+const inventoryProductGrid = document.getElementById("inventoryProductGrid");
 const inventoryTable = document.getElementById("inventoryTable");
 const competitionProductForm = document.getElementById("competitionProductForm");
 const competitionProductIdInput = document.getElementById("competitionProductIdInput");
@@ -1542,6 +1546,8 @@ let state = {
   inventoryProducts: [],
   inventoryLoaded: false,
   inventorySearch: "",
+  inventoryQuickFilter: "all",
+  inventoryCategoryFilter: "",
   competitionProducts: [],
   competitionCompetitors: [],
   competitionFindings: [],
@@ -2460,6 +2466,10 @@ function clearBusinessWorkspaceUi() {
   if (validatorSaleForm) validatorSaleForm.reset();
   if (validatorHistoryTable) validatorHistoryTable.innerHTML = '<tr><td colspan="5">Cargando historial de la empresa activa...</td></tr>';
   if (inventorySearchInput) inventorySearchInput.value = "";
+  if (inventoryQuickFilter) inventoryQuickFilter.value = "all";
+  if (inventoryCategoryFilter) inventoryCategoryFilter.value = "";
+  state.inventoryQuickFilter = "all";
+  state.inventoryCategoryFilter = "";
   resetInventoryForm();
   if (competitionSearchInput) competitionSearchInput.value = "";
   if (competitorSearchInput) competitorSearchInput.value = "";
@@ -2624,6 +2634,8 @@ function resetBusinessScopedState(options = {}) {
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventorySearch = "";
+  state.inventoryQuickFilter = "all";
+  state.inventoryCategoryFilter = "";
   state.competitionProducts = [];
   state.competitionCompetitors = [];
   state.competitionFindings = [];
@@ -14790,9 +14802,22 @@ async function loadInventoryProducts(options = {}) {
 function filteredInventoryProducts() {
   const needle = normalizeInventoryLookup(state.inventorySearch);
   const products = state.inventoryProducts || [];
-  if (!needle) return products;
-  return products.filter((product) => [product.name, product.sku, product.barcode, product.category, product.brand]
-    .some((value) => normalizeInventoryLookup(value).includes(needle)));
+  const mode = state.inventoryQuickFilter || "all";
+  const category = normalizeInventoryLookup(state.inventoryCategoryFilter);
+  return products.filter((product) => {
+    const stock = Number(product.stock_quantity || 0);
+    const minStock = Number(product.min_stock_quantity || 0);
+    const status = product.status || "ACTIVE";
+    const matchesNeedle = !needle || [product.name, product.sku, product.barcode, product.category, product.brand]
+      .some((value) => normalizeInventoryLookup(value).includes(needle));
+    const matchesCategory = !category || normalizeInventoryLookup(product.category) === category;
+    const matchesMode = mode === "all"
+      || (mode === "active" && status === "ACTIVE")
+      || (mode === "low_stock" && status === "ACTIVE" && stock <= minStock)
+      || (mode === "without_code" && !product.sku && !product.barcode)
+      || (mode === "archived" && status === "ARCHIVED");
+    return matchesNeedle && matchesCategory && matchesMode;
+  });
 }
 
 function inventoryKpis(products = state.inventoryProducts || []) {
@@ -14808,7 +14833,232 @@ function inventoryKpis(products = state.inventoryProducts || []) {
   ];
 }
 
+function ensureInventoryUxStyles() {
+  if (document.getElementById("inventoryUxStylesV61")) return;
+  const style = document.createElement("style");
+  style.id = "inventoryUxStylesV61";
+  style.textContent = `
+    .inventory-command-panel {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .inventory-guide-card,
+    .inventory-filter-card {
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+    }
+    .inventory-guide-card h3,
+    .inventory-filter-card h3 {
+      margin: 0.2rem 0 0.35rem;
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+    }
+    .inventory-guide-list {
+      display: grid;
+      gap: 0.65rem;
+      padding: 0;
+      margin: 0.85rem 0 0;
+      list-style: none;
+    }
+    .inventory-guide-list li {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.7rem;
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .inventory-guide-list li > span {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 13px;
+      background: rgba(37, 99, 235, 0.11);
+      color: #1d4ed8;
+      font-weight: 900;
+    }
+    .inventory-guide-list small,
+    .inventory-filter-card p {
+      color: #64748b;
+    }
+    .inventory-filter-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+    .inventory-filter-row label {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+    .inventory-filter-row select {
+      min-height: 42px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      padding: 0 0.75rem;
+      background: #fff;
+    }
+    .inventory-product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .inventory-product-card {
+      display: grid;
+      gap: 0.65rem;
+      min-width: 0;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      text-align: left;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    }
+    .inventory-product-card.is-low {
+      border-color: rgba(245, 158, 11, 0.34);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.10), rgba(255, 255, 255, 0.92));
+    }
+    .inventory-product-card.is-archived {
+      opacity: 0.72;
+    }
+    .inventory-product-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .inventory-product-head strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .inventory-product-head small {
+      color: #64748b;
+    }
+    .inventory-product-price {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .inventory-product-price span {
+      padding: 0.65rem;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.95);
+      color: #475569;
+    }
+    .inventory-product-price strong {
+      display: block;
+      color: #0f172a;
+    }
+    .inventory-product-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    @media (max-width: 980px) {
+      .inventory-command-panel,
+      .inventory-filter-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function inventoryStatusLabel(status = "ACTIVE") {
+  const labels = {
+    ACTIVE: "Activo",
+    INACTIVE: "Inactivo",
+    ARCHIVED: "Archivado",
+  };
+  return labels[status] || status || "Activo";
+}
+
+function inventoryStatusClass(product = {}) {
+  const status = product.status || "ACTIVE";
+  if (status === "ACTIVE") return "success";
+  if (status === "ARCHIVED") return "muted";
+  return "pending";
+}
+
+function renderInventoryCategoryFilter() {
+  if (!inventoryCategoryFilter) return;
+  const selected = state.inventoryCategoryFilter || "";
+  const categories = Array.from(new Set((state.inventoryProducts || [])
+    .map((product) => String(product.category || "").trim())
+    .filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, "es"));
+  inventoryCategoryFilter.innerHTML = [
+    `<option value="" ${selected ? "" : "selected"}>Todas</option>`,
+    ...categories.map((category) => `<option value="${escapeHtml(category)}" ${selected === category ? "selected" : ""}>${escapeHtml(category)}</option>`),
+  ].join("");
+}
+
+function renderInventoryProductGrid(rows = []) {
+  if (!inventoryProductGrid) return;
+  if (!state.inventoryLoaded) {
+    inventoryProductGrid.innerHTML = '<article class="surface-card empty-state compact">Cargando productos guardados...</article>';
+    return;
+  }
+  if (!rows.length) {
+    inventoryProductGrid.innerHTML = '<article class="surface-card empty-state compact">No hay productos con estos filtros. Limpia la búsqueda o crea un producto nuevo.</article>';
+    return;
+  }
+  inventoryProductGrid.innerHTML = rows.slice(0, 24).map((product) => {
+    const stock = Number(product.stock_quantity || 0);
+    const minStock = Number(product.min_stock_quantity || 0);
+    const isLow = product.status === "ACTIVE" && stock <= minStock;
+    const margin = Number(product.unit_price || 0) - Number(product.cost_price || 0);
+    const hasCode = Boolean(product.sku || product.barcode);
+    return `
+      <article class="inventory-product-card ${isLow ? "is-low" : ""} ${product.status === "ARCHIVED" ? "is-archived" : ""}">
+        <div class="inventory-product-head">
+          <span>
+            <strong>${escapeHtml(product.name || "Producto")}</strong>
+            <small>${escapeHtml(product.brand || product.category || "Producto guardado")}</small>
+          </span>
+          <span class="status-pill ${inventoryStatusClass(product)}">${escapeHtml(inventoryStatusLabel(product.status))}</span>
+        </div>
+        <div class="inventory-product-price">
+          <span><small>Precio venta</small><strong>${escapeHtml(money(product.unit_price || 0))}</strong></span>
+          <span><small>Stock</small><strong class="${isLow ? "stock-low" : ""}">${escapeHtml(stock.toLocaleString("es-CO"))} ${escapeHtml(product.unit_label || "unidad")}</strong></span>
+        </div>
+        <div class="inventory-product-meta">
+          <span class="pill muted">${escapeHtml(product.category || "Sin categoría")}</span>
+          <span class="pill muted">${hasCode ? escapeHtml(product.sku || product.barcode) : "Sin código"}</span>
+          ${product.cost_price !== null && product.cost_price !== undefined ? `<span class="pill muted">Margen ${escapeHtml(money(margin))}</span>` : ""}
+          ${isLow ? '<span class="pill muted">Reponer stock</span>' : ""}
+        </div>
+        <div class="table-actions">
+          <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
+          <button class="ghost-button danger-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+  inventoryProductGrid.querySelectorAll("[data-inventory-edit]").forEach((button) => {
+    button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
+  });
+  inventoryProductGrid.querySelectorAll("[data-inventory-archive]").forEach((button) => {
+    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
+  });
+}
+
 function renderInventoryView() {
+  ensureInventoryUxStyles();
+  if (inventoryQuickFilter) inventoryQuickFilter.value = state.inventoryQuickFilter || "all";
+  renderInventoryCategoryFilter();
   if (inventoryKpiGrid) {
     inventoryKpiGrid.innerHTML = inventoryKpis().map((item) => `
       <article class="surface-card kpi-card">
@@ -14821,9 +15071,11 @@ function renderInventoryView() {
   if (!inventoryTable) return;
   if (!state.inventoryLoaded) {
     inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
+    renderInventoryProductGrid([]);
     return;
   }
   const rows = filteredInventoryProducts();
+  renderInventoryProductGrid(rows);
   if (!rows.length) {
     inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales y quedarán guardados aquí.</td></tr>';
     return;
@@ -14848,7 +15100,7 @@ function renderInventoryView() {
           <strong class="${isLow ? "stock-low" : ""}">${escapeHtml(stock.toLocaleString("es-CO"))} ${escapeHtml(product.unit_label || "unidad")}</strong>
           <span class="table-secondary">Min. ${escapeHtml(String(minStock))}</span>
         </td>
-        <td><span class="status-pill ${product.status === "ACTIVE" ? "success" : "muted"}">${escapeHtml(product.status || "ACTIVE")}</span></td>
+        <td><span class="status-pill ${inventoryStatusClass(product)}">${escapeHtml(inventoryStatusLabel(product.status))}</span></td>
         <td>
           <div class="table-actions">
             <button class="ghost-button" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
@@ -14875,7 +15127,7 @@ function resetInventoryForm() {
   if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = "unidad";
   if (inventoryStatusInput) inventoryStatusInput.value = "ACTIVE";
   if (inventoryFormTitle) inventoryFormTitle.textContent = "Nuevo producto";
-  setInlineMessage(inventoryMessage, "", "info");
+  setInlineMessage(inventoryMessage, "Completa nombre y precio. Código, SKU y stock son opcionales pero ayudan a operar mejor.", "info");
 }
 
 function editInventoryProduct(productId) {
@@ -14897,6 +15149,7 @@ function editInventoryProduct(productId) {
   if (inventoryDescriptionInput) inventoryDescriptionInput.value = product.description || "";
   if (inventoryFormTitle) inventoryFormTitle.textContent = "Editar producto";
   setInlineMessage(inventoryMessage, "Editando producto existente.", "info");
+  inventoryProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function inventoryFormPayload() {
@@ -34239,12 +34492,25 @@ resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
 affiliateRewardRuleForm?.addEventListener("submit", submitAffiliateRewardRule);
 inventoryProductForm?.addEventListener("submit", submitInventoryProduct);
 inventoryResetButton?.addEventListener("click", resetInventoryForm);
+inventoryNewProductButton?.addEventListener("click", () => {
+  resetInventoryForm();
+  inventoryProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  inventoryNameInput?.focus();
+});
 refreshInventoryButton?.addEventListener("click", async () => {
   await loadInventoryProducts({ force: true });
   renderInventoryView();
 });
 inventorySearchInput?.addEventListener("input", () => {
   state.inventorySearch = inventorySearchInput.value;
+  renderInventoryView();
+});
+inventoryQuickFilter?.addEventListener("change", () => {
+  state.inventoryQuickFilter = inventoryQuickFilter.value || "all";
+  renderInventoryView();
+});
+inventoryCategoryFilter?.addEventListener("change", () => {
+  state.inventoryCategoryFilter = inventoryCategoryFilter.value || "";
   renderInventoryView();
 });
 competitionProductForm?.addEventListener("submit", submitCompetitionProduct);
