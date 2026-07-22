@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-smart-catalog-ux-v69";
+const APP_VERSION = "empresa-20260722-inventory-products-modal-v70";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -930,6 +930,8 @@ const inventoryMessage = document.getElementById("inventoryMessage");
 const inventorySaveButton = document.getElementById("inventorySaveButton");
 const inventoryResetButton = document.getElementById("inventoryResetButton");
 const inventoryNewProductButton = document.getElementById("inventoryNewProductButton");
+const inventoryProductModal = document.getElementById("inventoryProductModal");
+const inventoryProductModalCloseButton = document.getElementById("inventoryProductModalCloseButton");
 const refreshInventoryButton = document.getElementById("refreshInventoryButton");
 const inventoryFormTitle = document.getElementById("inventoryFormTitle");
 const inventoryKpiGrid = document.getElementById("inventoryKpiGrid");
@@ -15366,17 +15368,25 @@ function inventoryKpis(products = state.inventoryProducts || []) {
 }
 
 function ensureInventoryUxStyles() {
-  if (document.getElementById("inventoryUxStylesV61")) return;
+  if (document.getElementById("inventoryUxStylesV70")) return;
   const style = document.createElement("style");
-  style.id = "inventoryUxStylesV61";
+  style.id = "inventoryUxStylesV70";
   style.textContent = `
+    .view-section[data-view="inventory"] .view-head {
+      align-items: end;
+    }
+    .view-section[data-view="inventory"] .button-row {
+      align-items: center;
+    }
     .inventory-command-panel {
       display: grid;
-      grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);
+      grid-template-columns: 1fr;
       gap: 1rem;
-      margin: 1rem 0;
+      margin: 0.85rem 0;
     }
-    .inventory-guide-card,
+    .inventory-guide-card {
+      display: none !important;
+    }
     .inventory-filter-card {
       padding: 1rem;
       border-radius: 22px;
@@ -15422,7 +15432,7 @@ function ensureInventoryUxStyles() {
     }
     .inventory-filter-row {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(180px, 0.5fr) minmax(180px, 0.5fr);
       gap: 0.75rem;
       margin-top: 0.85rem;
     }
@@ -15440,10 +15450,88 @@ function ensureInventoryUxStyles() {
       background: #fff;
     }
     .inventory-product-grid {
-      display: grid;
+      display: none !important;
       grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
       gap: 0.85rem;
       margin: 1rem 0;
+    }
+    .view-section[data-view="inventory"] .inventory-layout {
+      display: block;
+      margin-top: 0.85rem;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card {
+      width: 100%;
+      border-radius: 24px;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card .table-card-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+      gap: 1rem;
+      align-items: end;
+    }
+    .view-section[data-view="inventory"] #inventorySearchInput {
+      min-height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      padding: 0 0.85rem;
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .view-section[data-view="inventory"] .inventory-table-card .table-wrap {
+      border-radius: 18px;
+      overflow: auto;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card table {
+      min-width: 900px;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card tbody tr {
+      vertical-align: top;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card tbody td {
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card td strong {
+      display: block;
+      margin-bottom: 0.16rem;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card .table-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    #inventoryProductModal .inventory-product-modal-card {
+      width: min(980px, calc(100vw - 32px));
+      max-height: calc(100vh - 42px);
+      overflow: auto;
+    }
+    #inventoryProductModal .modal-head {
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+    #inventoryProductModal .modal-head h3 {
+      margin: 0.15rem 0 0.2rem;
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+    }
+    #inventoryProductModal .modal-head p {
+      margin: 0;
+      color: var(--muted-text);
+      max-width: 700px;
+    }
+    #inventoryProductModal .inventory-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    #inventoryProductModal .inventory-form .span-2,
+    #inventoryProductModal .inventory-form .modal-actions {
+      grid-column: 1 / -1;
+    }
+    #inventoryProductModal .modal-button-row {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 0.55rem;
     }
     .inventory-product-card {
       display: grid;
@@ -15500,7 +15588,9 @@ function ensureInventoryUxStyles() {
     }
     @media (max-width: 980px) {
       .inventory-command-panel,
-      .inventory-filter-row {
+      .inventory-filter-row,
+      .view-section[data-view="inventory"] .inventory-table-card .table-card-head,
+      #inventoryProductModal .inventory-form {
         grid-template-columns: 1fr;
       }
     }
@@ -15650,6 +15740,24 @@ function renderInventoryView() {
   });
 }
 
+function openInventoryProductModal(options = {}) {
+  if (!inventoryProductModal) return;
+  ensureInventoryUxStyles();
+  inventoryProductModal.classList.remove("hidden");
+  inventoryProductModal.removeAttribute("aria-hidden");
+  const focusTarget = options.focusTarget || inventoryNameInput;
+  window.setTimeout(() => {
+    focusTarget?.focus?.({ preventScroll: true });
+  }, 80);
+}
+
+function closeInventoryProductModal() {
+  if (!inventoryProductModal) return;
+  inventoryProductModal.classList.add("hidden");
+  inventoryProductModal.setAttribute("aria-hidden", "true");
+  inventoryNewProductButton?.focus?.({ preventScroll: true });
+}
+
 function resetInventoryForm() {
   inventoryProductForm?.reset();
   if (inventoryProductIdInput) inventoryProductIdInput.value = "";
@@ -15681,7 +15789,7 @@ function editInventoryProduct(productId) {
   if (inventoryDescriptionInput) inventoryDescriptionInput.value = product.description || "";
   if (inventoryFormTitle) inventoryFormTitle.textContent = "Editar producto";
   setInlineMessage(inventoryMessage, "Editando producto existente.", "info");
-  inventoryProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  openInventoryProductModal({ focusTarget: inventoryNameInput });
 }
 
 function inventoryFormPayload() {
@@ -15728,6 +15836,7 @@ async function submitInventoryProduct(event) {
     renderInventoryProductOptions();
     renderInventoryView();
     setInlineMessage(inventoryMessage, "Producto guardado correctamente.", "success");
+    closeInventoryProductModal();
     showFeedback("Producto guardado.", "success", { title: "Productos" });
   } catch (error) {
     setInlineMessage(inventoryMessage, error.message, "error");
@@ -35831,6 +35940,10 @@ document.addEventListener("keydown", (event) => {
     closeLeadAgendaCreateModal();
     return;
   }
+  if (event.key === "Escape" && !inventoryProductModal?.classList.contains("hidden")) {
+    closeInventoryProductModal();
+    return;
+  }
   if (event.key === "Escape") closePortalMenu();
 });
 rangeButton.addEventListener("click", handleRangeToggle);
@@ -35862,10 +35975,13 @@ resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
 affiliateRewardRuleForm?.addEventListener("submit", submitAffiliateRewardRule);
 inventoryProductForm?.addEventListener("submit", submitInventoryProduct);
 inventoryResetButton?.addEventListener("click", resetInventoryForm);
+inventoryProductModalCloseButton?.addEventListener("click", closeInventoryProductModal);
+inventoryProductModal?.addEventListener("click", (event) => {
+  if (event.target === inventoryProductModal) closeInventoryProductModal();
+});
 inventoryNewProductButton?.addEventListener("click", () => {
   resetInventoryForm();
-  inventoryProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-  inventoryNameInput?.focus();
+  openInventoryProductModal({ focusTarget: inventoryNameInput });
 });
 refreshInventoryButton?.addEventListener("click", async () => {
   await loadInventoryProducts({ force: true });

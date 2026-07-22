@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=smart-catalog-ux-20260722-v69">
+  <link rel="stylesheet" href="css/styles.css?v=inventory-products-modal-20260722-v70">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -5362,40 +5362,48 @@
             <section class="inventory-product-grid" id="inventoryProductGrid" aria-label="Productos incluidos"></section>
 
             <section class="inventory-layout">
-              <article class="surface-card inventory-form-card">
-                <div class="table-card-head">
-                  <div>
-                    <span class="mono-label">Producto</span>
-                    <strong id="inventoryFormTitle">Nuevo producto</strong>
+              <div class="modal-shell hidden" id="inventoryProductModal" role="dialog" aria-modal="true" aria-labelledby="inventoryFormTitle" aria-hidden="true">
+                <article class="surface-card inventory-form-card modal-card inventory-product-modal-card">
+                  <div class="modal-head">
+                    <div>
+                      <span class="mono-label">Producto de inventario</span>
+                      <h3 id="inventoryFormTitle">Nuevo producto</h3>
+                      <p>Completa los datos necesarios. Al guardar, la ventana se cierra y vuelves a la tabla.</p>
+                    </div>
+                    <button class="icon-button" id="inventoryProductModalCloseButton" type="button" aria-label="Cerrar producto">
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
                   </div>
-                  <button class="ghost-button" id="inventoryResetButton" type="button">Limpiar</button>
-                </div>
-                <form class="modal-form inventory-form" id="inventoryProductForm">
-                  <input id="inventoryProductIdInput" type="hidden">
-                  <label><span>Nombre producto</span><input id="inventoryNameInput" type="text" maxlength="180" required></label>
-                  <label><span>Código de barras</span><input id="inventoryBarcodeInput" type="text" maxlength="120" placeholder="Escanea o escribe"></label>
-                  <label><span>SKU interno</span><input id="inventorySkuInput" type="text" maxlength="80" placeholder="Referencia interna"></label>
-                  <label><span>Categoría</span><input id="inventoryCategoryInput" type="text" maxlength="120"></label>
-                  <label><span>Marca</span><input id="inventoryBrandInput" type="text" maxlength="120"></label>
-                  <label><span>Precio venta</span><input id="inventoryUnitPriceInput" type="number" min="0" step="100" required></label>
-                  <label><span>Costo</span><input id="inventoryCostPriceInput" type="number" min="0" step="100"></label>
-                  <label><span>Moneda</span><input id="inventoryCurrencyInput" type="text" maxlength="12" value="COP"></label>
-                  <label><span>Stock</span><input id="inventoryStockInput" type="number" min="0" step="1" value="0"></label>
-                  <label><span>Stock mínimo</span><input id="inventoryMinStockInput" type="number" min="0" step="1" value="0"></label>
-                  <label><span>Unidad</span><input id="inventoryUnitLabelInput" type="text" maxlength="40" value="unidad"></label>
-                  <label><span>Estado</span><select id="inventoryStatusInput"><option value="ACTIVE">Activo</option><option value="INACTIVE">Inactivo</option><option value="ARCHIVED">Archivado</option></select></label>
-                  <label class="span-2"><span>Descripción</span><textarea id="inventoryDescriptionInput" rows="3" maxlength="1200"></textarea></label>
-                  <div class="modal-actions span-2">
-                    <p class="form-message" id="inventoryMessage"></p>
-                    <button class="solid-button" id="inventorySaveButton" type="submit">Guardar producto</button>
-                  </div>
-                </form>
-              </article>
+                  <form class="modal-form inventory-form" id="inventoryProductForm">
+                    <input id="inventoryProductIdInput" type="hidden">
+                    <label><span>Nombre producto</span><input id="inventoryNameInput" type="text" maxlength="180" required></label>
+                    <label><span>Código de barras</span><input id="inventoryBarcodeInput" type="text" maxlength="120" placeholder="Escanea o escribe"></label>
+                    <label><span>SKU interno</span><input id="inventorySkuInput" type="text" maxlength="80" placeholder="Referencia interna"></label>
+                    <label><span>Categoría</span><input id="inventoryCategoryInput" type="text" maxlength="120"></label>
+                    <label><span>Marca</span><input id="inventoryBrandInput" type="text" maxlength="120"></label>
+                    <label><span>Precio venta</span><input id="inventoryUnitPriceInput" type="number" min="0" step="100" required></label>
+                    <label><span>Costo</span><input id="inventoryCostPriceInput" type="number" min="0" step="100"></label>
+                    <label><span>Moneda</span><input id="inventoryCurrencyInput" type="text" maxlength="12" value="COP"></label>
+                    <label><span>Stock</span><input id="inventoryStockInput" type="number" min="0" step="1" value="0"></label>
+                    <label><span>Stock mínimo</span><input id="inventoryMinStockInput" type="number" min="0" step="1" value="0"></label>
+                    <label><span>Unidad</span><input id="inventoryUnitLabelInput" type="text" maxlength="40" value="unidad"></label>
+                    <label><span>Estado</span><select id="inventoryStatusInput"><option value="ACTIVE">Activo</option><option value="INACTIVE">Inactivo</option><option value="ARCHIVED">Archivado</option></select></label>
+                    <label class="span-2"><span>Descripción</span><textarea id="inventoryDescriptionInput" rows="3" maxlength="1200"></textarea></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="inventoryMessage"></p>
+                      <div class="modal-button-row">
+                        <button class="ghost-button" id="inventoryResetButton" type="button">Limpiar</button>
+                        <button class="solid-button" id="inventorySaveButton" type="submit">Guardar producto</button>
+                      </div>
+                    </div>
+                  </form>
+                </article>
+              </div>
 
               <article class="surface-card data-table-card inventory-table-card">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Catálogo</span>
+                    <span class="mono-label">Inventario</span>
                     <strong>Productos registrados</strong>
                   </div>
                   <input id="inventorySearchInput" type="search" placeholder="Buscar por nombre, código, SKU, marca o categoría">
@@ -7180,7 +7188,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=smart-catalog-ux-20260722-v69" defer></script>
+  <script src="js/app.js?v=inventory-products-modal-20260722-v70" defer></script>
 </body>
 </html>
 
