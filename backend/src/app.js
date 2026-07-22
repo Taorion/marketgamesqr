@@ -47,9 +47,17 @@ const longCacheStaticExtensions = new Set([
   ".jpeg",
   ".webp",
   ".svg",
+  ".pdf",
   ".woff",
   ".woff2",
 ]);
+const retiredPublicAssetPaths = new Set([
+  "/marketgameshop.mp4",
+  "/videosmg",
+]);
+const retiredPublicAssetPrefixes = [
+  "/videosmg/",
+];
 
 function setUtf8StaticHeaders(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -64,6 +72,18 @@ function setUtf8StaticHeaders(res, filePath) {
   } else if (longCacheStaticExtensions.has(ext)) {
     res.setHeader("Cache-Control", "public, max-age=2592000, stale-while-revalidate=604800");
   }
+}
+
+function blockRetiredPublicAssets(req, res, next) {
+  const requestPath = req.path.toLowerCase();
+  if (
+    retiredPublicAssetPaths.has(requestPath) ||
+    retiredPublicAssetPrefixes.some((prefix) => requestPath.startsWith(prefix))
+  ) {
+    res.set("Cache-Control", "public, max-age=86400");
+    return res.status(410).type("text/plain").send("Recurso multimedia retirado.");
+  }
+  return next();
 }
 
 function addOriginVariant(origins, value) {
@@ -208,6 +228,7 @@ app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
+app.use(blockRetiredPublicAssets);
 app.use(express.static(marketGamesWebRoot, staticOptions));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
