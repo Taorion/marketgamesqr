@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-analysis-v59";
+const APP_VERSION = "empresa-20260722-smart-catalog-ux-v60";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -4686,6 +4686,14 @@ function setView(view) {
   }
   if (view === "smart-catalogs") {
     renderSmartCatalogView();
+    if (!state.inventoryLoaded) {
+      loadInventoryProducts({ quiet: true }).then(() => {
+        renderInventoryProductOptions();
+        renderSmartCatalogView();
+      }).catch(() => {});
+    } else {
+      renderInventoryProductOptions();
+    }
     loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
       showFeedback(error.message || "No se pudo cargar Catálogos Sales Machine.", "error", { title: "Catálogos Sales Machine" });
       renderSmartCatalogView();
@@ -7548,6 +7556,203 @@ function smartCatalogFormPayload(form) {
   return payload;
 }
 
+function splitSmartCatalogList(value = "") {
+  return String(value || "")
+    .split(/[\n,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function smartCatalogProductBenefits(product = {}) {
+  return Array.isArray(product.benefits) ? product.benefits.filter(Boolean) : [];
+}
+
+function smartCatalogProductFormField(name) {
+  return smartCatalogProductForm?.querySelector(`[name="${name}"]`) || null;
+}
+
+function applySmartCatalogInventoryProductToForm(options = {}) {
+  const select = document.getElementById("smartCatalogInventoryProductSelect");
+  const product = findInventoryProduct(select?.value || "");
+  if (!product || !smartCatalogProductForm) return;
+  const setField = (name, value) => {
+    const field = smartCatalogProductFormField(name);
+    if (!field || value === undefined || value === null || value === "") return;
+    if (options.overwrite || !String(field.value || "").trim()) field.value = value;
+  };
+  setField("name", product.name);
+  setField("short_description", product.description || product.short_description || product.notes);
+  setField("category", product.category);
+  setField("price", product.unit_price || product.price || product.sale_price);
+  setField("image_url", product.image_url || product.image);
+}
+
+function prepareSmartCatalogProductPayload(payload = {}) {
+  const selectedInventoryProduct = findInventoryProduct(payload.inventory_product_id || "");
+  if (selectedInventoryProduct) {
+    payload.inventory_product_id = selectedInventoryProduct.id;
+    payload.name = payload.name || selectedInventoryProduct.name;
+    payload.short_description = payload.short_description || selectedInventoryProduct.description || selectedInventoryProduct.short_description || selectedInventoryProduct.notes || "";
+    payload.category = payload.category || selectedInventoryProduct.category || "";
+    payload.price = payload.price || selectedInventoryProduct.unit_price || selectedInventoryProduct.price || selectedInventoryProduct.sale_price || "";
+    payload.image_url = payload.image_url || selectedInventoryProduct.image_url || selectedInventoryProduct.image || "";
+  } else if (!payload.inventory_product_id || payload.inventory_product_id === OPEN_PRODUCT_VALUE) {
+    delete payload.inventory_product_id;
+  } else if (String(payload.inventory_product_id || "").startsWith("inventory:")) {
+    payload.inventory_product_id = String(payload.inventory_product_id).slice("inventory:".length);
+  }
+  const benefits = splitSmartCatalogList(payload.benefits_text);
+  if (payload.seasonal_benefit) benefits.unshift(String(payload.seasonal_benefit).trim());
+  payload.benefits = Array.from(new Set(benefits));
+  payload.tags = splitSmartCatalogList(payload.tags_text);
+  payload.metadata = {
+    ...(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
+    season_name: payload.season_name || null,
+    seasonal_benefit: payload.seasonal_benefit || null,
+    created_from: "smart_catalog_product_form",
+  };
+  delete payload.benefits_text;
+  delete payload.tags_text;
+  delete payload.season_name;
+  delete payload.seasonal_benefit;
+  return payload;
+}
+
+function ensureSmartCatalogUxStyles() {
+  if (document.getElementById("smartCatalogUxStylesV60")) return;
+  const style = document.createElement("style");
+  style.id = "smartCatalogUxStylesV60";
+  style.textContent = `
+    .smart-catalog-workbench {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.25fr) minmax(280px, 0.8fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .smart-catalog-workbench-card {
+      min-width: 0;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+    }
+    .smart-catalog-workbench-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .smart-catalog-workbench-head h3 {
+      margin: 0.1rem 0;
+    }
+    .smart-catalog-card-list,
+    .smart-catalog-product-list,
+    .smart-catalog-benefit-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .smart-catalog-card-button,
+    .smart-catalog-product-card,
+    .smart-catalog-benefit-card {
+      display: grid;
+      gap: 0.55rem;
+      width: 100%;
+      padding: 0.85rem;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      background: rgba(248, 250, 252, 0.94);
+      text-align: left;
+    }
+    .smart-catalog-card-button {
+      cursor: pointer;
+    }
+    .smart-catalog-card-button.is-active {
+      border-color: rgba(37, 99, 235, 0.45);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.10), rgba(255, 255, 255, 0.92));
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.14);
+    }
+    .smart-catalog-card-top,
+    .smart-catalog-product-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .smart-catalog-card-top strong,
+    .smart-catalog-product-top strong,
+    .smart-catalog-benefit-card strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .smart-catalog-card-metrics,
+    .smart-catalog-product-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .smart-catalog-active-panel {
+      display: grid;
+      gap: 0.85rem;
+      padding: 1rem;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.10), rgba(37, 99, 235, 0.08));
+      border: 1px solid rgba(15, 118, 110, 0.18);
+    }
+    .smart-catalog-active-panel h3 {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+    }
+    .smart-catalog-active-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+    .smart-catalog-benefit-card {
+      border-color: rgba(245, 158, 11, 0.28);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.10), rgba(255, 255, 255, 0.92));
+    }
+    .smart-catalog-guide-list {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+    }
+    .smart-catalog-guide-list article {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.65rem;
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .smart-catalog-guide-list span:first-child {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      background: rgba(37, 99, 235, 0.10);
+      color: #1d4ed8;
+      font-weight: 900;
+    }
+    .smart-catalog-form .span-2 {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 1180px) {
+      .smart-catalog-workbench {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderSmartCatalogCampaignOptions() {
   if (!smartCatalogCampaignSelect) return;
   const selected = smartCatalogCampaignSelect.value;
@@ -7624,7 +7829,11 @@ function renderSmartCatalogTables() {
     const products = state.smartCatalogProducts || [];
     smartCatalogProductTable.innerHTML = products.length ? products.map((product) => `
       <tr>
-        <td><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.short_description || product.description || "")}</small></td>
+        <td>
+          <strong>${escapeHtml(product.name)}</strong>
+          <small>${escapeHtml(product.short_description || product.description || "")}</small>
+          ${smartCatalogProductBenefits(product).length ? `<br>${smartCatalogProductBenefits(product).slice(0, 3).map((benefit) => `<span class="pill muted">${escapeHtml(benefit)}</span>`).join(" ")}` : ""}
+        </td>
         <td>${escapeHtml(product.category || "-")}</td>
         <td>${product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
         <td><span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span></td>
@@ -7674,7 +7883,124 @@ function renderSmartCatalogTopProducts() {
   panel.appendChild(article);
 }
 
+function renderSmartCatalogWorkbench() {
+  const root = document.querySelector('.view-section[data-view="smart-catalogs"]');
+  if (!root) return;
+  let workbench = document.getElementById("smartCatalogWorkbench");
+  if (!workbench) {
+    workbench = document.createElement("section");
+    workbench.id = "smartCatalogWorkbench";
+    workbench.className = "smart-catalog-workbench";
+    const tabs = root.querySelector(".smart-catalog-tabs");
+    if (tabs) root.insertBefore(workbench, tabs);
+    else root.appendChild(workbench);
+  }
+  const catalogs = state.smartCatalogs || [];
+  const activeCatalog = smartCatalogSelectedCatalog();
+  const products = state.smartCatalogProducts || [];
+  const featuredProducts = products.filter((product) => product.is_featured || smartCatalogProductBenefits(product).length);
+  const benefits = products
+    .flatMap((product) => smartCatalogProductBenefits(product).map((benefit) => ({ benefit, product })))
+    .slice(0, 8);
+  workbench.innerHTML = `
+    <article class="smart-catalog-workbench-card">
+      <div class="smart-catalog-workbench-head">
+        <div>
+          <span class="mono-label">Catálogos creados</span>
+          <h3>Selecciona una vitrina</h3>
+          <p class="table-secondary">${catalogs.length.toLocaleString("es-CO")} catálogo(s) disponibles.</p>
+        </div>
+        <button class="ghost-button compact" type="button" data-smart-catalog-jump="catalogs">Crear</button>
+      </div>
+      <div class="smart-catalog-card-list">
+        ${catalogs.length ? catalogs.map((catalog) => {
+          const active = activeCatalog?.id === catalog.id;
+          return `
+            <button class="smart-catalog-card-button ${active ? "is-active" : ""}" type="button" data-smart-catalog-workbench-select="${escapeHtml(catalog.id)}">
+              <span class="smart-catalog-card-top">
+                <span><strong>${escapeHtml(catalog.title || "Catálogo")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
+                <span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span>
+              </span>
+              <span class="smart-catalog-card-metrics">
+                <span class="pill muted">${Number(catalog.product_count || 0).toLocaleString("es-CO")} productos</span>
+                <span class="pill muted">${Number(catalog.view_count || 0).toLocaleString("es-CO")} vistas</span>
+                <span class="pill muted">${Number(catalog.intent_count || 0).toLocaleString("es-CO")} intenciones</span>
+              </span>
+            </button>
+          `;
+        }).join("") : '<div class="empty-state compact">Crea tu primer catálogo para poder agregar productos y beneficios.</div>'}
+      </div>
+    </article>
+    <article class="smart-catalog-workbench-card">
+      <div class="smart-catalog-workbench-head">
+        <div>
+          <span class="mono-label">Catálogo seleccionado</span>
+          <h3>${escapeHtml(activeCatalog?.title || "Sin catálogo activo")}</h3>
+          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Landing pública conectada a WhatsApp.") : "Crea o selecciona un catálogo para continuar."}</p>
+        </div>
+        ${activeCatalog ? `<span class="status-chip ${smartCatalogStatusClass(activeCatalog.status)}">${escapeHtml(smartCatalogStatusLabel(activeCatalog.status))}</span>` : ""}
+      </div>
+      <div class="smart-catalog-active-panel">
+        <h3>${activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) en esta vitrina` : "Flujo recomendado"}</h3>
+        <p>${activeCatalog ? `WhatsApp receptor: ${escapeHtml(activeCatalog.whatsapp_number || "-")}. Link público: ${escapeHtml(smartCatalogPublicUrl(activeCatalog))}` : "1. Crea catálogo. 2. Selecciona productos. 3. Agrega beneficio de temporada. 4. Publica el link."}</p>
+        <div class="smart-catalog-active-actions">
+          <button class="solid-button compact" type="button" data-smart-catalog-jump="products" ${activeCatalog ? "" : "disabled"}>Agregar productos</button>
+          <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar link</button>
+          <button class="ghost-button compact" type="button" data-smart-catalog-workbench-open ${activeCatalog ? "" : "disabled"}>Abrir landing</button>
+        </div>
+      </div>
+      <div class="smart-catalog-product-list">
+        ${products.length ? products.slice(0, 5).map((product) => {
+          const productBenefits = smartCatalogProductBenefits(product);
+          return `
+            <article class="smart-catalog-product-card">
+              <div class="smart-catalog-product-top">
+                <span><strong>${escapeHtml(product.name || "Producto")}</strong><small>${escapeHtml(product.category || product.product_type || "Producto")}</small></span>
+                <span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span>
+              </div>
+              <div class="smart-catalog-card-metrics">
+                <span class="pill muted">${product.price === null || product.price === undefined ? "Sin precio" : money(product.price)}</span>
+                ${product.compare_at_price ? `<span class="pill muted">Antes ${escapeHtml(money(product.compare_at_price))}</span>` : ""}
+                ${product.is_featured ? '<span class="pill muted">Destacado</span>' : ""}
+              </div>
+              ${productBenefits.length ? `<div class="smart-catalog-product-tags">${productBenefits.slice(0, 3).map((benefit) => `<span class="pill muted">${escapeHtml(benefit)}</span>`).join("")}</div>` : ""}
+            </article>
+          `;
+        }).join("") : '<div class="empty-state compact">Este catálogo aún no tiene productos. Usa “Agregar productos” y añade beneficios de temporada.</div>'}
+      </div>
+    </article>
+    <article class="smart-catalog-workbench-card">
+      <div class="smart-catalog-workbench-head">
+        <div>
+          <span class="mono-label">Beneficios de temporada</span>
+          <h3>Oferta que se entiende</h3>
+          <p class="table-secondary">Destaca descuentos, regalos, bonos o combos para que el usuario sepa por qué comprar ahora.</p>
+        </div>
+      </div>
+      <div class="smart-catalog-benefit-list">
+        ${benefits.length ? benefits.map(({ benefit, product }) => `
+          <article class="smart-catalog-benefit-card">
+            <strong>${escapeHtml(benefit)}</strong>
+            <small>${escapeHtml(product.name || "Producto")} · ${product.price === null || product.price === undefined ? "Sin precio" : escapeHtml(money(product.price))}</small>
+          </article>
+        `).join("") : `
+          <article class="smart-catalog-benefit-card">
+            <strong>Ejemplo: Combo temporada + bono postventa</strong>
+            <small>Agrega el beneficio en el formulario de producto para mostrarlo en la landing.</small>
+          </article>
+        `}
+      </div>
+      <div class="smart-catalog-guide-list">
+        <article><span>1</span><div><strong>Crea catálogo</strong><small>Nombre, WhatsApp, marca y campaña.</small></div></article>
+        <article><span>2</span><div><strong>Selecciona productos</strong><small>Usa el catálogo activo y agrega la oferta.</small></div></article>
+        <article><span>3</span><div><strong>Beneficio temporada</strong><small>Descuento, regalo, combo o bono visible.</small></div></article>
+      </div>
+    </article>
+  `;
+}
+
 function renderSmartCatalogView() {
+  ensureSmartCatalogUxStyles();
   renderSmartCatalogCampaignOptions();
   renderSmartCatalogCatalogOptions();
   smartCatalogTabButtons.forEach((button) => {
@@ -7689,6 +8015,7 @@ function renderSmartCatalogView() {
   renderSmartCatalogPublishPanel();
   renderSmartCatalogTables();
   renderSmartCatalogTopProducts();
+  renderSmartCatalogWorkbench();
 }
 
 async function loadSmartCatalogData(options = {}) {
@@ -7767,6 +8094,7 @@ async function submitSmartCatalogProduct(event) {
   event.preventDefault();
   if (!smartCatalogProductForm) return;
   const payload = smartCatalogFormPayload(smartCatalogProductForm);
+  prepareSmartCatalogProductPayload(payload);
   const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
   if (!catalogId) {
     setInlineMessage(smartCatalogProductMessage, "Primero crea o selecciona un catálogo.", "error");
@@ -34135,6 +34463,10 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
 });
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);
 smartCatalogProductForm?.addEventListener("submit", submitSmartCatalogProduct);
+document.getElementById("smartCatalogInventoryProductSelect")?.addEventListener("change", (event) => {
+  syncProductOpenInput(event.currentTarget);
+  applySmartCatalogInventoryProductToForm({ overwrite: true });
+});
 smartCatalogProductCatalogSelect?.addEventListener("change", async () => {
   const catalogId = smartCatalogProductCatalogSelect.value;
   await loadSmartCatalogDetail(catalogId, { quiet: true });
@@ -34144,6 +34476,32 @@ smartCatalogCopyLinkButton?.addEventListener("click", () => copySmartCatalogLink
 smartCatalogOpenPublicButton?.addEventListener("click", () => {
   const url = smartCatalogPublicUrl(smartCatalogSelectedCatalog());
   if (url) window.open(url, "_blank", "noopener,noreferrer");
+});
+document.getElementById("workspace")?.addEventListener("click", async (event) => {
+  const selectCatalog = event.target.closest("[data-smart-catalog-workbench-select]");
+  const jump = event.target.closest("[data-smart-catalog-jump]");
+  const copy = event.target.closest("[data-smart-catalog-workbench-copy]");
+  const open = event.target.closest("[data-smart-catalog-workbench-open]");
+  if (selectCatalog) {
+    await loadSmartCatalogDetail(selectCatalog.dataset.smartCatalogWorkbenchSelect, { quiet: true });
+    renderSmartCatalogView();
+    return;
+  }
+  if (jump) {
+    setSmartCatalogTab(jump.dataset.smartCatalogJump || "catalogs");
+    if (jump.dataset.smartCatalogJump === "products") {
+      smartCatalogProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return;
+  }
+  if (copy) {
+    copySmartCatalogLink();
+    return;
+  }
+  if (open) {
+    const url = smartCatalogPublicUrl(smartCatalogSelectedCatalog());
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }
 });
 smartCatalogTable?.addEventListener("click", async (event) => {
   const selectButton = event.target.closest("[data-smart-catalog-select]");

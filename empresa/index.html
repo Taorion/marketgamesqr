@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-analysis-20260722-v59">
+  <link rel="stylesheet" href="css/styles.css?v=smart-catalog-ux-20260722-v60">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -3420,6 +3420,11 @@
                       <span>Catálogo</span>
                       <select name="catalog_id" id="smartCatalogProductCatalogSelect" required></select>
                     </label>
+                    <label class="span-2">
+                      <span>Producto registrado</span>
+                      <select name="inventory_product_id" id="smartCatalogInventoryProductSelect" data-product-select data-placeholder="Seleccionar producto de Productos" data-open-label="Crear producto manual en este catálogo"></select>
+                      <small>Selecciona un producto ya creado para autocompletar nombre, precio y categoría, o deja el formulario manual.</small>
+                    </label>
                     <label>
                       <span>Nombre</span>
                       <input name="name" type="text" placeholder="Combo energía saludable" required>
@@ -3449,6 +3454,26 @@
                       <input name="price" type="number" min="0" step="1000" placeholder="45000">
                     </label>
                     <label>
+                      <span>Precio antes / referencia</span>
+                      <input name="compare_at_price" type="number" min="0" step="1000" placeholder="60000">
+                    </label>
+                    <label>
+                      <span>Temporada o campaña</span>
+                      <input name="season_name" type="text" maxlength="120" placeholder="Temporada vacaciones, Amor y Amistad...">
+                    </label>
+                    <label>
+                      <span>Beneficio de temporada</span>
+                      <input name="seasonal_benefit" type="text" maxlength="180" placeholder="10% descuento, regalo, combo especial...">
+                    </label>
+                    <label class="span-2">
+                      <span>Beneficios visibles</span>
+                      <textarea name="benefits_text" rows="3" placeholder="Uno por línea: envío gratis, asesoría incluida, bono postventa"></textarea>
+                    </label>
+                    <label class="span-2">
+                      <span>Etiquetas para filtrar</span>
+                      <input name="tags_text" type="text" placeholder="temporada, regalo, premium, fitness">
+                    </label>
+                    <label>
                       <span>Imagen URL</span>
                       <input name="image_url" type="url" placeholder="https://...">
                     </label>
@@ -3469,6 +3494,10 @@
                         <option value="OUT_OF_STOCK">Agotado</option>
                         <option value="HIDDEN">Oculto</option>
                       </select>
+                    </label>
+                    <label class="span-2">
+                      <span>Mensaje sugerido de WhatsApp</span>
+                      <textarea name="whatsapp_message_template" rows="2" maxlength="600" placeholder="Hola, quiero el {product_name} del catálogo y el beneficio de temporada."></textarea>
                     </label>
                     <label class="smart-catalog-check">
                       <input name="is_featured" type="checkbox">
@@ -7010,7 +7039,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-analysis-20260722-v59" defer></script>
+  <script src="js/app.js?v=smart-catalog-ux-20260722-v60" defer></script>
 </body>
 </html>
 
