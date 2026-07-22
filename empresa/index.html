@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-tables-20260722-v52">
+  <link rel="stylesheet" href="css/styles.css?v=campaign-library-20260722-v53">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -3573,6 +3573,18 @@
               </div>
             </div>
 
+            <section class="surface-card campaign-library-shell">
+              <div class="campaign-library-head">
+                <div>
+                  <span class="mono-label">Mis campañas creadas</span>
+                  <h3>Selecciona una campaña para verla o editarla</h3>
+                  <p>Esta lista muestra tus campañas disponibles arriba, antes de las métricas, para que no tengas que buscarlas en la página.</p>
+                </div>
+                <button class="solid-button compact" type="button" data-campaign-library-create>Nueva campaña</button>
+              </div>
+              <div class="campaign-quick-list" id="campaignQuickList" aria-live="polite"></div>
+            </section>
+
             <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
 
             <section class="surface-card campaign-roi-summary-card" data-campaign-tab-panel="analysis">
@@ -6999,7 +7011,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-tables-20260722-v52" defer></script>
+  <script src="js/app.js?v=campaign-library-20260722-v53" defer></script>
 </body>
 </html>
 

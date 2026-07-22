@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-tables-v52";
+const APP_VERSION = "empresa-20260722-campaign-library-v53";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -295,6 +295,7 @@ const manualLeadCsvInterestInput = document.getElementById("manualLeadCsvInteres
 const manualLeadCsvMessage = document.getElementById("manualLeadCsvMessage");
 const manualLeadCsvSubmitButton = document.getElementById("manualLeadCsvSubmitButton");
 const campaignList = document.getElementById("campaignList");
+const campaignQuickList = document.getElementById("campaignQuickList");
 const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
 const campaignHeroTitle = document.getElementById("campaignHeroTitle");
@@ -8495,32 +8496,125 @@ function renderDashboard() {
     : "Aún no hay suficiente actividad para construir un insight horario.";
 }
 
+function ensureCampaignLibraryUxStyles() {
+  if (document.getElementById("campaignLibraryUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "campaignLibraryUxStyles";
+  style.textContent = `
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-shell { display: grid !important; gap: 14px !important; padding: 16px !important; border: 1px solid rgba(15,115,84,.14) !important; border-radius: 18px !important; background: linear-gradient(135deg,#f4fbf8,#ffffff) !important; box-shadow: 0 12px 28px rgba(23,65,91,.07) !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 14px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head h3 { margin: 0 !important; color: #14352c !important; font-size: clamp(1.1rem, 2vw, 1.55rem) !important; letter-spacing: -.035em !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head p { max-width: 760px !important; margin: 4px 0 0 !important; color: #60756e !important; font-size: .82rem !important; line-height: 1.45 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-quick-list { display: grid !important; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)) !important; gap: 10px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-list { display: grid !important; gap: 10px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item { display: grid !important; gap: 10px !important; padding: 13px !important; border: 1px solid rgba(23,65,91,.12) !important; border-radius: 16px !important; background: #fff !important; color: #17362f !important; cursor: pointer !important; box-shadow: 0 8px 18px rgba(23,65,91,.045) !important; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item:hover { border-color: #0f7354 !important; box-shadow: 0 14px 30px rgba(15,115,84,.1) !important; transform: translateY(-1px) !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item.active { border-color: #0f7354 !important; background: linear-gradient(135deg,#effbf6,#ffffff) !important; box-shadow: 0 16px 32px rgba(15,115,84,.12) !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-main { display: grid !important; gap: 5px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title { display: flex !important; align-items: flex-start !important; justify-content: space-between !important; gap: 10px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title h3 { margin: 0 !important; color: #14352c !important; font-size: .98rem !important; line-height: 1.15 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title .status-chip { flex: 0 0 auto !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item p { margin: 0 !important; color: #62776f !important; font-size: .75rem !important; line-height: 1.35 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 7px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics span { display: grid !important; gap: 2px !important; padding: 8px !important; border-radius: 12px !important; background: #f4f8f6 !important; color: #62776f !important; font-size: .64rem !important; font-weight: 800 !important; text-transform: uppercase !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics strong { color: #14352c !important; font-size: .82rem !important; text-transform: none !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-actions { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-actions button { min-height: 36px !important; justify-content: center !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-empty-list { display: grid !important; justify-items: start !important; gap: 8px !important; padding: 16px !important; border: 1px dashed rgba(15,115,84,.2) !important; border-radius: 16px !important; background: #fff !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-rail .rail-head::after { content: "Haz clic para seleccionar o usa Editar."; display: block; margin-top: 3px; color: #647a72; font-size: .72rem; }
+    :root[data-theme="dark"] body[data-current-view="campaigns"] .portal-shell :is(.campaign-library-shell,.campaign-item,.campaign-empty-list) { border-color: rgba(151,211,190,.18) !important; background: #10231e !important; color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="campaigns"] .portal-shell :is(.campaign-library-head h3,.campaign-item-title h3,.campaign-item-metrics strong) { color: #edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="campaigns"] .portal-shell :is(.campaign-library-head p,.campaign-item p) { color: #bdd1ca !important; }
+    :root[data-theme="dark"] body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics span { background: rgba(255,255,255,.05) !important; color: #bdd1ca !important; }
+    @media (max-width: 760px) { body[data-current-view="campaigns"] .portal-shell .campaign-library-head { align-items: stretch !important; flex-direction: column !important; } body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function campaignListCardMarkup(campaign = {}) {
+  const active = campaign.id === state.selectedCampaignId;
+  return `
+    <article class="campaign-item ${active ? "active" : ""}" data-campaign-id="${escapeHtml(campaign.id)}">
+      <div class="campaign-item-main">
+        <div class="campaign-item-title">
+          <h3>${escapeHtml(campaign.name || "Campaña sin nombre")}</h3>
+          <span class="status-chip ${campaign.status === "ACTIVE" ? "ok" : "muted"}">${escapeHtml(statusLabel(campaign.status))}</span>
+        </div>
+        <p>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
+      </div>
+      <div class="campaign-item-metrics" aria-label="Resumen de campaña">
+        <span>Leads<strong>${toNumber(campaign.total_leads)}</strong></span>
+        <span>Redenciones<strong>${toNumber(campaign.total_qr_redeemed)}</strong></span>
+        <span>Revenue<strong>${escapeHtml(money(campaign.attributed_revenue || 0))}</strong></span>
+        <span>ROI<strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></span>
+        <span>Tipo<strong>${escapeHtml(campaign.type || "-")}</strong></span>
+        <span>QR captura<strong>${campaignPublicLeadQrPath(campaign) ? "Listo" : "Pendiente"}</strong></span>
+      </div>
+      <div class="campaign-item-actions">
+        <button class="solid-button compact" type="button" data-campaign-select="${escapeHtml(campaign.id)}">Seleccionar</button>
+        <button class="ghost-button compact" type="button" data-campaign-edit="${escapeHtml(campaign.id)}" ${canManageCampaigns() ? "" : "disabled"}>Editar</button>
+      </div>
+    </article>
+  `;
+}
+
+function bindCampaignListActions(container) {
+  if (!container) return;
+  container.querySelectorAll("[data-campaign-id]").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      selectCampaign(item.dataset.campaignId);
+    });
+  });
+  container.querySelectorAll("[data-campaign-select]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectCampaign(button.dataset.campaignSelect);
+    });
+  });
+  container.querySelectorAll("[data-campaign-edit]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const campaignId = button.dataset.campaignEdit;
+      if (!campaignId || !canManageCampaigns()) return;
+      if (state.selectedCampaignId !== campaignId || !state.selectedCampaign) {
+        await selectCampaign(campaignId);
+      }
+      openCampaignModal("edit");
+    });
+  });
+  container.querySelectorAll("[data-campaign-empty-create]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openCampaignModal("create");
+    });
+  });
+}
+
 function renderCampaignList() {
+  ensureCampaignLibraryUxStyles();
   const campaigns = currentCampaignRows();
+  const emptyMarkup = `
+    <article class="campaign-empty-list">
+      <strong>Sin campañas para este filtro.</strong>
+      <p>Cambia el estado a “Todas” o crea una campaña nueva para empezar a medir tickets, leads y ventas.</p>
+      <button class="solid-button compact" type="button" data-campaign-empty-create>Nueva campaña</button>
+    </article>
+  `;
   if (!campaigns.length) {
-    campaignList.innerHTML = '<article class="campaign-item"><p>Sin campañas para este filtro.</p></article>';
+    if (campaignList) campaignList.innerHTML = emptyMarkup;
+    if (campaignQuickList) campaignQuickList.innerHTML = emptyMarkup;
+    bindCampaignListActions(campaignList);
+    bindCampaignListActions(campaignQuickList);
     return;
   }
 
-  campaignList.innerHTML = campaigns.map((campaign) => `
-    <article class="campaign-item ${campaign.id === state.selectedCampaignId ? "active" : ""}" data-campaign-id="${escapeHtml(campaign.id)}">
-      <h3>${escapeHtml(campaign.name)}</h3>
-      <p>${escapeHtml(campaign.objective || "Sin objetivo cargado.")}</p>
-      <div class="campaign-item-row"><span>Captura de tickets</span><strong>${campaignPublicLeadQrPath(campaign) ? "Disponible" : "Pendiente"}</strong></div>
-      <div class="campaign-item-row"><span>Estado</span><strong>${escapeHtml(statusLabel(campaign.status))}</strong></div>
-      <div class="campaign-item-row"><span>Tipo</span><strong>${escapeHtml(campaign.type || "-")}</strong></div>
-      <div class="campaign-item-row"><span>Canales</span><strong>${escapeHtml(Array.isArray(campaign.launch_channels) ? campaign.launch_channels.length : 0)}</strong></div>
-      <div class="campaign-item-row"><span>Leads</span><strong>${toNumber(campaign.total_leads)}</strong></div>
-      <div class="campaign-item-row"><span>Redenciones</span><strong>${toNumber(campaign.total_qr_redeemed)}</strong></div>
-      <div class="campaign-item-row"><span>Inversión</span><strong>${escapeHtml(money(campaign.budget_total || 0))}</strong></div>
-      <div class="campaign-item-row"><span>Revenue</span><strong>${escapeHtml(money(campaign.attributed_revenue || 0))}</strong></div>
-      <div class="campaign-item-row"><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div>
-    </article>
-  `).join("");
+  const markup = campaigns.map(campaignListCardMarkup).join("");
+  if (campaignList) campaignList.innerHTML = markup;
+  if (campaignQuickList) campaignQuickList.innerHTML = markup;
 
-  campaignList.querySelectorAll("[data-campaign-id]").forEach((item) => {
-    item.addEventListener("click", () => selectCampaign(item.dataset.campaignId));
-  });
+  bindCampaignListActions(campaignList);
+  bindCampaignListActions(campaignQuickList);
 }
 
 function renderCampaignStateGrid() {
@@ -32511,6 +32605,9 @@ requestCampaignButton.addEventListener("click", () => {
     return;
   }
   openCampaignModal("create");
+});
+document.querySelectorAll("[data-campaign-library-create]").forEach((button) => {
+  button.addEventListener("click", () => openCampaignModal("create"));
 });
 editCampaignButton.addEventListener("click", () => openCampaignModal("edit"));
 gamingCenterCoreButton?.addEventListener("click", openGamingCenterEntry);
