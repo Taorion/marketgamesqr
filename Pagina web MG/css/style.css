@@ -4618,6 +4618,10 @@ body::before {
   align-items: stretch;
 }
 
+.rms-media-grid-light {
+  grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(240px, 0.7fr));
+}
+
 .rms-media-card {
   min-height: auto;
   display: flex;
@@ -4631,29 +4635,25 @@ body::before {
   box-shadow: var(--shadow);
 }
 
-.rms-media-player,
-.rms-game-preview iframe {
+.rms-media-visual {
   width: 100%;
   aspect-ratio: 16 / 9;
   display: block;
   border: 0;
   background: rgba(2, 7, 16, 0.92);
-}
-
-.rms-game-preview iframe {
-  min-height: 320px;
+  object-fit: contain;
+  padding: 12px;
 }
 
 .rms-game-featured {
-  grid-row: span 2;
   border-color: rgba(111, 226, 255, 0.42);
   background:
     linear-gradient(180deg, rgba(111, 226, 255, 0.12), rgba(255, 255, 255, 0.02)),
     rgba(5, 13, 27, 0.9);
 }
 
-.rms-game-featured iframe {
-  min-height: clamp(380px, 44vw, 620px);
+.rms-game-featured .rms-media-visual {
+  min-height: clamp(280px, 30vw, 430px);
 }
 
 .rms-media-card div {
@@ -4732,10 +4732,6 @@ body::before {
   .rms-game-featured {
     grid-row: auto;
   }
-
-  .rms-game-featured iframe {
-    min-height: 420px;
-  }
 }
 
 @media (max-width: 720px) {
@@ -4746,8 +4742,8 @@ body::before {
     grid-template-columns: 1fr;
   }
 
-  .rms-game-featured iframe {
-    min-height: 300px;
+  .rms-game-featured .rms-media-visual {
+    min-height: 260px;
   }
 
   .rms-game-examples {

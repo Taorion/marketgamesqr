@@ -233,47 +233,6 @@ function initScratchDemo() {
   });
 }
 
-function initIframeFullscreen() {
-  const buttons = document.querySelectorAll("[data-fullscreen-target]");
-
-  if (!buttons.length) {
-    return;
-  }
-
-  buttons.forEach((button) => {
-    button.addEventListener("click", async () => {
-      const targetId = button.getAttribute("data-fullscreen-target");
-      const target = targetId ? document.getElementById(targetId) : null;
-
-      if (!target) {
-        return;
-      }
-
-      try {
-        if (document.fullscreenElement === target) {
-          await document.exitFullscreen();
-          button.textContent = "Pantalla completa";
-          return;
-        }
-
-        await target.requestFullscreen();
-        button.textContent = "Salir de pantalla completa";
-      } catch (error) {
-        console.error("No se pudo abrir pantalla completa", error);
-      }
-    });
-  });
-
-  document.addEventListener("fullscreenchange", () => {
-    buttons.forEach((button) => {
-      const targetId = button.getAttribute("data-fullscreen-target");
-      const target = targetId ? document.getElementById(targetId) : null;
-      const activa = !!target && document.fullscreenElement === target;
-      button.textContent = activa ? "Salir de pantalla completa" : "Pantalla completa";
-    });
-  });
-}
-
 function initContactForm() {
   const form = document.getElementById("contact-form");
 
@@ -450,7 +409,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initActiveNav();
   initPortfolioSlider();
   initScratchDemo();
-  initIframeFullscreen();
   initContactForm();
   initAccessFeedback();
   initImageLightbox();
