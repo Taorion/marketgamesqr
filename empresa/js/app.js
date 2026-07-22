@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-contact-directory-v56";
+const APP_VERSION = "empresa-20260722-contact-directory-stations-v57";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -23003,6 +23003,51 @@ function leadDirectoryActivationCount(item = {}) {
   return Number(item.activation_count || item.activations_count || 0);
 }
 
+const LEAD_DIRECTORY_RMS_STATIONS = {
+  recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
+  alimentacion: { label: "Estación 02 · Alimentar", short: "02 Alimentar" },
+  curaduria: { label: "Estación 03 · Curados", short: "03 Curados" },
+  clasificacion: { label: "Estación 04 · Clasificar", short: "04 Clasificar" },
+  preprocesamiento: { label: "Estación 05 · Gamificar", short: "05 Gamificar" },
+  procesamiento: { label: "Estación 06 · Procesar", short: "06 Procesar" },
+  control_anti_fuga: { label: "Estación 07 · Controlar", short: "07 Controlar" },
+  accion_correctiva: { label: "Estación 08 · Corregir", short: "08 Corregir" },
+  cierre: { label: "Estación 09 · Cerrar", short: "09 Cerrar" },
+  revenue_generado: { label: "Estación 10 · Revenue", short: "10 Revenue" },
+  postventa: { label: "Estación 11 · Postventa", short: "11 Postventa" },
+  inteligencia: { label: "Estación 12 · Optimizar", short: "12 Optimizar" },
+};
+
+function leadDirectoryStationInfo(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  const rawPhase = String(
+    item.rms_phase
+      || item.stage
+      || item.rms_stage
+      || metadata.rms_phase
+      || metadata.stage
+      || ""
+  ).trim();
+  const key = rawPhase.toLowerCase();
+  const station = LEAD_DIRECTORY_RMS_STATIONS[key];
+  if (station) {
+    return {
+      key,
+      label: station.label,
+      short: station.short,
+      updated_at: item.rms_phase_updated_at || metadata.rms_phase_updated_at || item.updated_at || item.last_interaction_at || null,
+      assigned: true,
+    };
+  }
+  return {
+    key: "",
+    label: "Sin estación asignada",
+    short: "Sin estación",
+    updated_at: null,
+    assigned: false,
+  };
+}
+
 function leadDirectoryAffiliateLabel(item = {}) {
   const metadata = leadDirectoryMetadata(item);
   const affiliateValue = item.is_affiliate
@@ -23026,6 +23071,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const isCustomer = segment === "customer" || leadDirectoryIsCustomer(item);
   const badges = leadBadges(item).slice(0, 4);
   const activationCount = leadDirectoryActivationCount(item);
+  const station = leadDirectoryStationInfo(item);
   return `
     <article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
       <div class="contact-directory-card-top">
@@ -23036,6 +23082,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
         <span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${isCustomer ? "Cliente" : escapeHtml(item.care_priority_label || "Lead")}</span>
       </div>
       <div class="contact-directory-meta-grid">
+        <span class="contact-directory-meta contact-directory-station"><small>Estación actual</small><strong>${escapeHtml(station.label)}</strong></span>
         <span class="contact-directory-meta"><small>Canal de llegada</small><strong>${escapeHtml(leadDirectoryChannel(item))}</strong></span>
         <span class="contact-directory-meta"><small>Campaña asociada</small><strong>${escapeHtml(leadDirectoryCampaign(item))}</strong></span>
         <span class="contact-directory-meta"><small>Activaciones</small><strong>${activationCount.toLocaleString("es-CO")} activación(es)</strong></span>
@@ -24749,6 +24796,20 @@ function ensureContactDirectoryUxStyles() {
       background: rgba(255, 255, 255, 0.78);
       border: 1px solid rgba(148, 163, 184, 0.16);
     }
+    .contact-directory-station {
+      grid-column: 1 / -1;
+      border-color: rgba(37, 99, 235, 0.24);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.86));
+    }
+    .lead-pending-agenda-snapshot {
+      display: grid;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(255, 255, 255, 0.92));
+    }
     .contact-directory-badges {
       display: flex;
       gap: 0.38rem;
@@ -25783,6 +25844,8 @@ function renderLeadDetailHeader(detail) {
   const groupedTickets = ticketGroups(tickets);
   const activationTotal = Number(summary.activations_count || 0) || (detail.activations || []).length || (detail.games || []).length || 0;
   const affiliateLabel = detail.affiliate ? "Afiliado" : "No afiliado";
+  const station = leadDirectoryStationInfo(lead);
+  const pendingAgendaRows = leadDetailAgendaRows(detail).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
   if (leadDetailTitle) leadDetailTitle.textContent = lead.name || "Lead sin nombre";
   if (leadDetailSubtitle) {
     leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"}`;
@@ -25799,6 +25862,8 @@ function renderLeadDetailHeader(detail) {
       <div class="lead-status-row">
         <span class="status-chip ${commercialChipClass(lead.commercial_status)}">${escapeHtml(lead.commercial_status_label || lead.commercial_status || "Nuevo")}</span>
         <span class="pill muted">${escapeHtml(analysis.stage)}</span>
+        <span class="pill muted">${escapeHtml(station.short)}</span>
+        <span class="pill muted">${pendingAgendaRows.length.toLocaleString("es-CO")} agenda pendiente</span>
         <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
         <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
         ${lead.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-edit-manual-lead>Editar datos</button>` : ""}
@@ -25813,6 +25878,7 @@ function renderLeadDetailHeader(detail) {
         <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
         <span><strong>Canal</strong>${escapeHtml(lead.channel || "-")}</span>
         <span><strong>Campaña</strong>${escapeHtml(lead.campaign_name || "-")}</span>
+        <span><strong>Estación actual</strong>${escapeHtml(station.label)}</span>
         <span><strong>Activaciones</strong>${activationTotal.toLocaleString("es-CO")}</span>
         <span><strong>Afiliación</strong>${escapeHtml(affiliateLabel)}</span>
       </div>
@@ -26035,6 +26101,27 @@ function renderLeadDetailAgenda(detail = {}) {
   `;
 }
 
+function renderLeadDetailPendingAgendaSnapshot(detail = {}) {
+  const pendingRows = leadDetailAgendaRows(detail)
+    .filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
+  const visibleRows = pendingRows.slice(0, 4);
+  return `
+    <section class="lead-pending-agenda-snapshot">
+      <div class="lead-client-agenda-head">
+        <div>
+          <span class="mono-label">Agenda pendiente</span>
+          <strong>${pendingRows.length.toLocaleString("es-CO")} tarea(s) por hacer</strong>
+          <small>Seguimientos abiertos para este contacto.</small>
+        </div>
+        <button class="ghost-button" type="button" data-open-lead-tasks>Ver agenda completa</button>
+      </div>
+      <div class="lead-agenda-list">
+        ${visibleRows.length ? visibleRows.map((item) => agendaCardMarkup(item)).join("") : '<div class="empty-state compact">Este contacto no tiene tareas pendientes de agenda.</div>'}
+      </div>
+    </section>
+  `;
+}
+
 function renderLeadTab(detail) {
   if (!leadDetailContent) return;
   const lead = detail.lead || {};
@@ -26052,6 +26139,7 @@ function renderLeadTab(detail) {
 
   const renderers = {
     summary: () => `
+      ${renderLeadDetailPendingAgendaSnapshot(detail)}
       ${metricCards([
         ["Score total", Number(summary.score_total || 0).toLocaleString("es-CO"), `Promedio ${Number(summary.score_average || 0).toFixed(1)}`],
         ["Compras", summary.purchase_count || 0, money(summary.total_spent || 0)],
@@ -26107,6 +26195,7 @@ function renderLeadTab(detail) {
         `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
         `<strong>Detalle de origen</strong><span>${escapeHtml(lead.source_detail || lead.metadata?.attribution_subject || "-")}</span>`,
         `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
+        `<strong>Estación actual</strong><span>${escapeHtml(leadDirectoryStationInfo(lead).label)}</span>`,
         `<strong>Activaciones</strong><span>${Number(summary.activations_count || 0).toLocaleString("es-CO")}</span>`,
         `<strong>Afiliación</strong><span>${detail.affiliate ? "Afiliado" : "No afiliado"}</span>`,
         `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,

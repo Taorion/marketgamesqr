@@ -704,6 +704,22 @@ async function listLeadCrmRows(businessId, filters = {}) {
        union all
        select * from affiliate_rows
      ),
+     rms_rows as (
+       select ar.*,
+              rms.rms_phase,
+              rms.updated_at as rms_phase_updated_at,
+              rms.last_operation as rms_last_operation
+       from all_rows ar
+       left join lateral (
+         select rls.rms_phase, rls.updated_at, rls.last_operation
+         from rms_lead_state rls
+         where rls.business_id = $1
+           and rls.source_type = ar.source_type
+           and rls.source_id = ar.id
+         order by rls.updated_at desc
+         limit 1
+       ) rms on true
+     ),
      shaped as (
        select *,
          case
@@ -727,7 +743,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
            coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(affiliate_code, '')),
            '[^a-z0-9@.]+', '', 'g'
          ) as search_blob
-       from all_rows
+       from rms_rows
      ),
      scored as (
        select *,
@@ -813,7 +829,8 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               fa.notes, fa.card_metadata as metadata, fa.created_at, fa.updated_at,
               ca.campaign_id, ca.campaign_name,
               fa.id as affiliate_id, fa.qr_token as affiliate_code, fa.status as affiliate_status,
-              fa.points_total as affiliate_points_total
+              fa.points_total as affiliate_points_total,
+              rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
        from affiliates fa
        left join lateral (
          select c.id as campaign_id, c.name as campaign_name
@@ -825,6 +842,15 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
          order by caf.updated_at desc, caf.created_at desc
          limit 1
        ) ca on true
+       left join lateral (
+         select rls.rms_phase, rls.updated_at as rms_phase_updated_at, rls.last_operation as rms_last_operation
+         from rms_lead_state rls
+         where rls.business_id = fa.business_id
+           and rls.source_type = 'AFFILIATE'
+           and rls.source_id = fa.id
+         order by rls.updated_at desc
+         limit 1
+       ) rms on true
        where fa.id = $1 and fa.business_id = $2 and fa.status <> 'DELETED'`,
       [leadId, businessId]
     );
@@ -849,7 +875,8 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
                    ) as metadata,
               ca.campaign_id,
               ca.campaign_name,
-              ml.created_at, ml.updated_at
+              ml.created_at, ml.updated_at,
+              rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
        from business_manual_leads ml
        left join lateral (
          select
@@ -864,6 +891,15 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
            and cmc.manual_lead_id = ml.id
            and cmc.status = 'ACTIVE'
        ) ca on true
+       left join lateral (
+         select rls.rms_phase, rls.updated_at as rms_phase_updated_at, rls.last_operation as rms_last_operation
+         from rms_lead_state rls
+         where rls.business_id = ml.business_id
+           and rls.source_type = 'MANUAL'
+           and rls.source_id = ml.id
+         order by rls.updated_at desc
+         limit 1
+       ) rms on true
        where ml.id = $1 and ml.business_id = $2`,
       [leadId, businessId]
     );
@@ -909,7 +945,8 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               'campaign_name', latest_capture.campaign_name
             ) else '{}'::jsonb end as metadata,
             p.created_at, p.created_at as updated_at,
-            coalesce(p.metadata->>'commercial_status', '') as stored_status
+            coalesce(p.metadata->>'commercial_status', '') as stored_status,
+            rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
      from players p
      left join campaigns c on c.id = p.campaign_id
      left join lateral (
@@ -929,6 +966,15 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
        order by s.created_at desc
        limit 1
      ) latest_capture on true
+     left join lateral (
+       select rls.rms_phase, rls.updated_at as rms_phase_updated_at, rls.last_operation as rms_last_operation
+       from rms_lead_state rls
+       where rls.business_id = p.business_id
+         and rls.source_type = 'PLAYER'
+         and rls.source_id = p.id
+       order by rls.updated_at desc
+       limit 1
+     ) rms on true
      where p.id = $1 and p.business_id = $2`,
     [leadId, businessId]
   );
