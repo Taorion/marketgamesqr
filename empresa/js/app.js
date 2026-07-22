@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-redemptions-simple-table-v72";
+const APP_VERSION = "empresa-20260722-reward-pass-analytics-modal-v73";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -552,7 +552,12 @@ const affiliateTable = document.getElementById("affiliateTable");
 const affiliateLedgerTable = document.getElementById("affiliateLedgerTable");
 const affiliateLedgerTitle = document.getElementById("affiliateLedgerTitle");
 const refreshRewardPassesButton = document.getElementById("refreshRewardPassesButton");
+const rewardPassOpenCreateButton = document.getElementById("rewardPassOpenCreateButton");
+const rewardPassCreateModal = document.getElementById("rewardPassCreateModal");
+const rewardPassCreateCloseButton = document.getElementById("rewardPassCreateCloseButton");
+const rewardPassCreateCancelButton = document.getElementById("rewardPassCreateCancelButton");
 const rewardPassKpiGrid = document.getElementById("rewardPassKpiGrid");
+const rewardPassChartGrid = document.getElementById("rewardPassChartGrid");
 const rewardPassTicketContext = document.getElementById("rewardPassTicketContext");
 const rewardPassCreateForm = document.getElementById("rewardPassCreateForm");
 const rewardPassValueInput = document.getElementById("rewardPassValueInput");
@@ -29054,6 +29059,111 @@ function rewardPassStatusClass(status) {
   return "danger";
 }
 
+const REWARD_PASS_BACKEND_STATUS_FILTERS = new Set(["active", "pending_claim", "partially_redeemed", "fully_redeemed", "expired", "cancelled", "extended"]);
+
+function ensureRewardPassUxStyles() {
+  if (document.getElementById("rewardPassUxStylesV73")) return;
+  const style = document.createElement("style");
+  style.id = "rewardPassUxStylesV73";
+  style.textContent = `
+    .reward-pass-chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.9rem;
+      margin: 1rem 0;
+    }
+    .reward-pass-chart-card {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+    }
+    .reward-pass-chart-card h3 {
+      margin: 0.15rem 0 0;
+      font-size: 1.05rem;
+    }
+    .reward-pass-bar-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+    .reward-pass-bar-row {
+      display: grid;
+      gap: 0.24rem;
+    }
+    .reward-pass-bar-row > span {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: #475569;
+      font-size: 0.82rem;
+    }
+    .reward-pass-bar-track {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(226, 232, 240, 0.95);
+    }
+    .reward-pass-bar-track i {
+      display: block;
+      width: var(--bar-width, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #10b981);
+    }
+    .reward-pass-create-modal-card {
+      width: min(1100px, calc(100vw - 2rem));
+      max-height: min(90vh, 940px);
+      overflow-y: auto;
+    }
+    .reward-pass-create-modal-card .reward-pass-layout {
+      grid-template-columns: minmax(320px, 1.1fr) minmax(280px, 0.9fr);
+      margin: 0;
+    }
+    .reward-pass-table-main {
+      display: grid;
+      gap: 0.16rem;
+      text-align: left;
+      color: inherit;
+      text-decoration: none;
+    }
+    .reward-pass-table-main strong {
+      color: #0f172a;
+    }
+    .reward-pass-table-main small,
+    .reward-pass-table-contact {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+    .reward-pass-table-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    @media (max-width: 980px) {
+      .reward-pass-create-modal-card .reward-pass-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function openRewardPassCreateModal() {
+  if (!rewardPassCreateModal) return;
+  setRewardPassDefaults();
+  renderRewardPassContext();
+  renderRewardPassPreview(null);
+  rewardPassCreateModal.classList.remove("hidden");
+  rewardPassValueInput?.focus?.({ preventScroll: true });
+}
+
+function closeRewardPassCreateModal() {
+  rewardPassCreateModal?.classList.add("hidden");
+}
+
 function rewardPassDefaultExpiry() {
   const date = new Date();
   date.setMonth(date.getMonth() + 12);
@@ -29092,7 +29202,8 @@ function renderRewardPassContext() {
 async function loadRewardPasses() {
   const scopeKey = businessScopeKey();
   const queryParams = new URLSearchParams();
-  if (rewardPassStatusFilter?.value) queryParams.set("status", rewardPassStatusFilter.value);
+  const statusFilter = rewardPassStatusFilter?.value || "";
+  if (REWARD_PASS_BACKEND_STATUS_FILTERS.has(statusFilter)) queryParams.set("status", statusFilter);
   if (state.filter) queryParams.set("search", state.filter);
   const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, { headers: authHeaders() });
   if (!isCurrentBusinessScope(scopeKey)) return false;
@@ -29155,52 +29266,113 @@ function renderRewardPassPreview(pass = state.selectedRewardPass) {
   });
 }
 
+function rewardPassUsedValue(pass = {}) {
+  return Math.max(toNumber(pass.initial_value_cop || 0) - toNumber(pass.current_balance_cop || 0), 0);
+}
+
+function rewardPassBuyerContact(pass = {}) {
+  return [pass.buyer_phone, pass.buyer_email, pass.buyer_document].filter(Boolean).join(" · ") || "Sin contacto";
+}
+
+function filteredRewardPassRows() {
+  const filter = rewardPassStatusFilter?.value || "";
+  return filterRows(state.rewardPasses || [], [
+    "public_code",
+    "buyer_name",
+    "buyer_phone",
+    "buyer_email",
+    "buyer_document",
+    "beneficiary_name",
+    "beneficiary_document",
+    "beneficiary_phone",
+    "beneficiary_email",
+    "status",
+  ]).filter((pass) => {
+    if (filter === "used") return rewardPassUsedValue(pass) > 0;
+    if (filter === "with_balance") return toNumber(pass.current_balance_cop || 0) > 0 && !["cancelled", "expired", "fully_redeemed"].includes(pass.status);
+    if (REWARD_PASS_BACKEND_STATUS_FILTERS.has(filter)) return String(pass.status || "") === filter;
+    return true;
+  });
+}
+
+function rewardPassStatusBreakdown(rows = []) {
+  return rows.reduce((acc, pass) => {
+    const label = rewardPassStatusLabel(pass.status);
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function renderRewardPassCharts(rows = filteredRewardPassRows()) {
+  if (!rewardPassChartGrid) return;
+  const totalIssued = rows.reduce((sum, pass) => sum + toNumber(pass.initial_value_cop || 0), 0);
+  const totalUsed = rows.reduce((sum, pass) => sum + rewardPassUsedValue(pass), 0);
+  const totalBalance = rows.reduce((sum, pass) => sum + toNumber(pass.current_balance_cop || 0), 0);
+  const financialRows = [
+    ["Comprado", totalIssued],
+    ["Usado", totalUsed],
+    ["Saldo", totalBalance],
+  ];
+  const maxMoneyValue = Math.max(1, ...financialRows.map((row) => row[1]));
+  const statusRows = Object.entries(rewardPassStatusBreakdown(rows)).sort((a, b) => b[1] - a[1]);
+  const maxStatusValue = Math.max(1, ...statusRows.map((row) => row[1]));
+  const barRows = (items, max, formatter = (value) => value) => items.map(([label, value]) => `
+    <div class="reward-pass-bar-row">
+      <span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(formatter(value))}</em></span>
+      <div class="reward-pass-bar-track"><i style="--bar-width:${Math.max(4, Math.min(100, (Number(value || 0) / max) * 100))}%"></i></div>
+    </div>
+  `).join("");
+  rewardPassChartGrid.innerHTML = `
+    <article class="reward-pass-chart-card">
+      <div>
+        <span class="mono-label">Valores</span>
+        <h3>Comprado, usado y saldo</h3>
+      </div>
+      <div class="reward-pass-bar-list">${barRows(financialRows, maxMoneyValue, money)}</div>
+    </article>
+    <article class="reward-pass-chart-card">
+      <div>
+        <span class="mono-label">Estado de giftcards</span>
+        <h3>Uso y vigencia</h3>
+      </div>
+      <div class="reward-pass-bar-list">${statusRows.length ? barRows(statusRows, maxStatusValue, (value) => Number(value || 0).toLocaleString("es-CO")) : '<div class="empty-state compact">Sin giftcards para graficar.</div>'}</div>
+    </article>
+  `;
+}
+
 function renderRewardPassTable() {
   if (!rewardPassTable) return;
-  const rows = filterRows(state.rewardPasses || [], ["public_code", "beneficiary_name", "beneficiary_document", "buyer_name", "status"]);
-  rewardPassTable.innerHTML = rows.map((item) => `
+  const rows = filteredRewardPassRows();
+  renderRewardPassCharts(rows);
+  rewardPassTable.innerHTML = rows.map((item) => {
+    const usedValue = rewardPassUsedValue(item);
+    return `
     <tr class="${item.id === state.selectedRewardPassId ? "active" : ""}">
-      <td><strong>${escapeHtml(item.public_code)}</strong></td>
-      <td>${escapeHtml(item.beneficiary_name || "-")}</td>
-      <td>${escapeHtml(item.beneficiary_document || "-")}</td>
+      <td>
+        <button class="link-button reward-pass-table-main" type="button" data-rp-view="${escapeHtml(item.id)}">
+          <strong>${escapeHtml(item.public_code)}</strong>
+          <small>${escapeHtml(item.public_url ? "Ver detalle" : "Sin link público")}</small>
+        </button>
+      </td>
+      <td><strong>${escapeHtml(item.buyer_name || "-")}</strong><div class="reward-pass-table-contact">${escapeHtml(rewardPassBuyerContact(item))}</div></td>
+      <td><strong>${escapeHtml(item.beneficiary_name || "-")}</strong><div class="reward-pass-table-contact">${escapeHtml([item.beneficiary_phone, item.beneficiary_email, item.beneficiary_document].filter(Boolean).join(" · ") || "Puede activarlo después")}</div></td>
       <td>${escapeHtml(money(item.initial_value_cop || 0))}</td>
+      <td>${escapeHtml(usedValue ? money(usedValue) : "$0")}</td>
       <td>${escapeHtml(money(item.current_balance_cop || 0))}</td>
       <td><span class="status-chip ${rewardPassStatusClass(item.status)}">${escapeHtml(rewardPassStatusLabel(item.status))}</span></td>
       <td>${escapeHtml(formatDateShort(item.issued_at))}</td>
       <td>${escapeHtml(formatDateShort(item.expires_at))}</td>
       <td>
         <div class="reward-pass-table-actions">
-          <button class="ghost-button" type="button" data-rp-view="${escapeHtml(item.id)}">Ver</button>
-          <button class="ghost-button" type="button" data-rp-pdf="${escapeHtml(item.id)}">Descargar</button>
-          <button class="ghost-button" type="button" data-rp-copy="${escapeHtml(item.public_url || "")}">Copiar link</button>
-          <button class="ghost-button" type="button" data-rp-wa="${escapeHtml(item.id)}">WhatsApp</button>
-          ${item.current_balance_cop >= item.initial_value_cop && item.status !== "cancelled" ? `<button class="ghost-button danger-button" type="button" data-rp-cancel="${escapeHtml(item.id)}">Anular</button>` : ""}
+          <button class="ghost-button compact" type="button" data-rp-view="${escapeHtml(item.id)}">Detalle</button>
         </div>
       </td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Todavia no hay Reward Pass emitidos.</td></tr>';
+  `;
+  }).join("") || '<tr><td colspan="10">Todavia no hay Reward Pass emitidos.</td></tr>';
 
   rewardPassTable.querySelectorAll("[data-rp-view]").forEach((button) => {
     button.addEventListener("click", () => selectRewardPass(button.dataset.rpView));
-  });
-  rewardPassTable.querySelectorAll("[data-rp-copy]").forEach((button) => {
-    button.addEventListener("click", () => copyRewardPassLink(button.dataset.rpCopy));
-  });
-  rewardPassTable.querySelectorAll("[data-rp-pdf]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      try {
-        await selectRewardPass(button.dataset.rpPdf);
-        await downloadSelectedRewardPassPdf("pdf");
-      } catch (error) {
-        showFeedback(error.message, "error");
-      }
-    });
-  });
-  rewardPassTable.querySelectorAll("[data-rp-wa]").forEach((button) => {
-    button.addEventListener("click", () => openRewardPassWhatsapp(button.dataset.rpWa));
-  });
-  rewardPassTable.querySelectorAll("[data-rp-cancel]").forEach((button) => {
-    button.addEventListener("click", () => cancelSelectedRewardPass(button.dataset.rpCancel));
   });
 }
 
@@ -29289,6 +29461,7 @@ async function selectRewardPass(id) {
 
 async function renderRewardPassesView() {
   const scopeKey = businessScopeKey();
+  ensureRewardPassUxStyles();
   renderRewardPassContext();
   setRewardPassDefaults();
   try {
@@ -29310,7 +29483,7 @@ async function renderRewardPassesView() {
     }
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey)) return;
-    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="9">${escapeHtml(error.message)}</td></tr>`;
+    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="10">${escapeHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -29359,6 +29532,7 @@ async function submitRewardPass(event) {
     setRewardPassDefaults();
     await loadRewardPassContext();
     await renderRewardPassesView();
+    closeRewardPassCreateModal();
     setInlineMessage(rewardPassCreateMessage, data.message || "Reward Pass emitido correctamente.", "success");
     showFeedback(data.message || "Reward Pass emitido correctamente.", "success", { title: "Reward Pass emitido" });
   } catch (error) {
@@ -36436,6 +36610,9 @@ affiliateFinderInput?.addEventListener("keydown", (event) => {
 affiliateFinderScanButton?.addEventListener("click", startAffiliateFinderScanner);
 affiliateFinderStopScanButton?.addEventListener("click", stopAffiliateFinderScanner);
 refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
+rewardPassOpenCreateButton?.addEventListener("click", openRewardPassCreateModal);
+rewardPassCreateCloseButton?.addEventListener("click", closeRewardPassCreateModal);
+rewardPassCreateCancelButton?.addEventListener("click", closeRewardPassCreateModal);
 refreshLeadCaptureButton?.addEventListener("click", async () => {
   await loadLeadCaptureActivations({ force: true });
   renderLeadCaptureTable();
