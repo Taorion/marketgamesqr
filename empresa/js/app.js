@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-rms-station-one-ux-v45";
+const APP_VERSION = "empresa-20260722-rms-station-one-hotfix-v46";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29362,8 +29362,13 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     renderRmsMachineView();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
-    state.rmsStationSearch = event.target.value || "";
-    applyRmsStationDomFilters(rmsStationWorkspace);
+      state.rmsStationSearch = event.target.value || "";
+      if (phase === "recoleccion") {
+        window.clearTimeout(state.rmsStationSearchRenderTimer);
+        state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsMachineView(), 120);
+        return;
+      }
+      applyRmsStationDomFilters(rmsStationWorkspace);
   });
   rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -30984,6 +30989,15 @@ function renderRmsCaptureReview(detail = {}, item = {}) {
 function rmsCollectorStationMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
   const selectedRows = rmsStationSelectedRows(stage.key, rows);
   const eligibleRows = rmsStationOutputEligibleRows(stage.key, rows);
+  const query = String(state.rmsStationSearch || "").trim();
+  const matchingRows = query ? rows.filter((item) => rmsStationRowMatches(item, stage.key)) : rows;
+  const renderLimit = 80;
+  const selectedIds = new Set(state.rmsMachineSelectedIds || []);
+  const renderedRows = matchingRows
+    .slice()
+    .sort((a, b) => Number(selectedIds.has(b.id)) - Number(selectedIds.has(a.id)))
+    .slice(0, renderLimit);
+  const hiddenCount = Math.max(0, matchingRows.length - renderedRows.length);
   return `
     <div class="rms-collector-station-shell">
       <section class="rms-collector-work-hint" aria-label="Cómo trabajar la Estación 1">
@@ -31005,10 +31019,10 @@ function rmsCollectorStationMarkup(rows = [], stage = {}, nextPhase = null, oper
             </label>
           </div>
           <div class="rms-collector-card-list">
-            ${rows.map((item) => rmsCollectorLeadCardMarkup(item, stage, nextPhase, operation)).join("")}
+            ${renderedRows.map((item) => rmsCollectorLeadCardMarkup(item, stage, nextPhase, operation)).join("")}
           </div>
-          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
-          <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>
+          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${matchingRows.length}${hiddenCount ? ` · ${hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener la estación rápida` : ""}</small>
+          ${!renderedRows.length ? '<div class="rms-station-no-results" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>' : '<div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>'}
         </section>
         ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
       </div>
@@ -31037,20 +31051,19 @@ function rmsCollectorLeadCardMarkup(item = {}, stage = {}, nextPhase = null, ope
         </span>
       </label>
       <div class="rms-collector-lead-card-main" role="button" tabindex="0" data-rms-review-capture="${escapeHtml(item.id)}">
-        <span>
-          <span class="rms-collector-lead-title">
+        <div>
+          <div class="rms-collector-lead-title">
             <strong>${escapeHtml(item.name || "Contacto")}</strong>
             <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
             <span class="rms-collector-readiness-chip ${readiness.ready ? "" : "is-missing"}"><span class="material-symbols-outlined" aria-hidden="true">${readiness.ready ? "verified" : "error"}</span>${escapeHtml(readiness.label)}</span>
-          </span>
-          <span class="rms-collector-lead-meta">
+          </div>
+          <div class="rms-collector-lead-meta">
             <span><strong>Contacto:</strong> ${escapeHtml(contact)}</span>
             <span><strong>Interés:</strong> ${escapeHtml(interest)}</span>
             <span><strong>Origen:</strong> ${escapeHtml(campaignChannel)}</span>
             <span><strong>Entrada:</strong> ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · ${escapeHtml(material)}</span>
-          </span>
-          ${rmsCaptureDataChips(item)}
-        </span>
+          </div>
+        </div>
         <span class="rms-collector-lead-open-hint"><span class="material-symbols-outlined" aria-hidden="true">visibility</span> Ver respuestas</span>
       </div>
     </article>
