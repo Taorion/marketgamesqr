@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-entry-ux-v84";
+const APP_VERSION = "empresa-20260722-sales-entry-clean-v85";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -13769,48 +13769,20 @@ function renderCustomerSaleOperationFeed() {
   const openCount = saleOpenProductCount(products);
   const hasCustomer = hasCustomerIdentityForSale();
   const hasAttribution = Boolean(customerAcquisitionSourceInput?.value || customerAcquisitionChannelInput?.value?.trim() || customerAcquisitionCampaignInput?.value);
-  const steps = [
-    commerceFeedStep(
-      hasCustomer ? "done" : "active",
-      "1. Identifica el cliente",
-      hasCustomer ? "La venta quedará asociada al cliente escrito o seleccionado." : "Busca un contacto existente o escribe nombre, teléfono, correo o cédula.",
-      hasCustomer ? "" : "Ir al cliente",
-      hasCustomer ? "" : "sales-focus-customer"
-    ),
-    commerceFeedStep(
-      products.length ? "done" : hasCustomer ? "active" : "pending",
-      "2. Agrega productos",
-      products.length
-        ? `${products.length} línea${products.length === 1 ? "" : "s"} por ${money(total)}. ${openCount ? `${openCount} producto${openCount === 1 ? "" : "s"} nuevo${openCount === 1 ? "" : "s"} se creará${openCount === 1 ? "" : "n"} en Productos al guardar.` : "Todos los productos ya están en Productos."}`
-        : "Selecciona un producto existente o escribe uno nuevo con precio. No tienes que abrir Productos primero.",
-      "Agregar producto nuevo",
-      "sales-add-product"
-    ),
-    commerceFeedStep(
-      hasAttribution ? "done" : products.length ? "active" : "pending",
-      "3. Define origen",
-      hasAttribution ? "La venta tendrá campaña, canal o fuente para medir ROI." : "Indica de dónde llegó el cliente: Instagram, Facebook, Google, WhatsApp, web u otro canal.",
-      "",
-      ""
-    ),
-    commerceFeedStep(
-      products.length && total > 0 && hasCustomer ? "active" : "pending",
-      "4. Guarda y verifica",
-      products.length && total > 0 && hasCustomer
-        ? "Al registrar, la venta entra a Sales, suma ROI y cualquier producto nuevo queda en Productos."
-        : "Cuando completes cliente y productos, podrás registrar la venta.",
-      products.length && total > 0 && hasCustomer ? "Registrar venta" : "",
-      products.length && total > 0 && hasCustomer ? "sales-save" : ""
-    ),
-  ];
+  const ready = hasCustomer && products.length && total > 0;
   customerSaleOperationFeed.innerHTML = `
-    <div class="commerce-feed-head">
-      <span class="mono-label">Feed operativo</span>
-      <strong>Qué pasará con esta venta</strong>
+    <div class="commerce-feed-head compact">
+      <span class="mono-label">Estado</span>
+      <strong>${ready ? "Venta lista para registrar" : "Completa cliente y productos"}</strong>
+      <small>${products.length ? `${products.length} producto${products.length === 1 ? "" : "s"} · ${money(total)}` : "Sin productos con precio"}</small>
     </div>
-    ${steps.join("")}
+    <div class="sales-entry-checks">
+      <span class="${hasCustomer ? "is-ok" : ""}">Cliente</span>
+      <span class="${products.length ? "is-ok" : ""}">Productos</span>
+      <span class="${hasAttribution ? "is-ok" : ""}">Atribución</span>
+      ${openCount ? `<span class="is-warning">${openCount} nuevo${openCount === 1 ? "" : "s"}</span>` : ""}
+    </div>
   `;
-  bindCommerceFeedActions(customerSaleOperationFeed);
 }
 
 function syncCustomerSaleTotal() {
@@ -14399,7 +14371,7 @@ function ensureSalesAnalysisStyles() {
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .view-head { order: 1; }
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .sales-kpis { order: 2; }
     body[data-current-view="sales"] .portal-shell .sales-table-panel {
-      order: 3;
+      order: 4;
       overflow: hidden;
       border: 1px solid rgba(15, 115, 84, 0.16);
       border-radius: 28px;
@@ -14407,7 +14379,7 @@ function ensureSalesAnalysisStyles() {
       box-shadow: 0 22px 60px rgba(15, 23, 42, 0.09);
     }
     body[data-current-view="sales"] .portal-shell .sales-create-panel {
-      order: 4;
+      order: 3;
       padding: 0;
       overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.22);
@@ -14643,6 +14615,151 @@ function ensureSalesAnalysisStyles() {
     body[data-current-view="sales"] .portal-shell .sale-form-actions .error-line {
       justify-self: start;
       font-weight: 800;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] {
+      position: fixed;
+      inset: 0;
+      z-index: 10090;
+      display: block;
+      width: auto;
+      max-width: none;
+      margin: 0;
+      padding: clamp(.85rem, 2.6vw, 2rem);
+      overflow: auto;
+      border: 0;
+      border-radius: 0;
+      background: rgba(15, 23, 42, .64);
+      box-shadow: none;
+      backdrop-filter: blur(8px);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .sales-create-summary,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .chart-explainer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > form {
+      width: min(1020px, 100%);
+      margin-inline: auto;
+      background: #fff;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .sales-create-summary {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      grid-template-columns: 44px minmax(0, 1fr) auto 38px;
+      padding: 1rem 1.15rem;
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-bottom: 0;
+      border-radius: 26px 26px 0 0;
+      background: #ffffff;
+      box-shadow: 0 18px 46px rgba(15, 23, 42, .18);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .table-card-head {
+      display: none;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .chart-explainer {
+      max-width: min(1020px, 100%);
+      margin-top: 0;
+      padding: 0 1.15rem 1rem;
+      border-left: 1px solid rgba(148, 163, 184, .2);
+      border-right: 1px solid rgba(148, 163, 184, .2);
+      color: #64748b;
+      font-size: .88rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > form {
+      grid-template-columns: minmax(0, 1fr) minmax(340px, .82fr);
+      gap: .9rem;
+      margin-top: 0;
+      padding: 0 1.15rem 1.15rem;
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-top: 0;
+      border-radius: 0 0 26px 26px;
+      box-shadow: 0 28px 80px rgba(15, 23, 42, .24);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-builder {
+      padding: 1rem;
+      border-radius: 18px;
+      box-shadow: none;
+      background: #f8fafc;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-summary,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions {
+      grid-column: 1 / -1;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-customer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-attribution {
+      grid-column: 1;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-builder {
+      grid-column: 2;
+      grid-row: 2 / span 2;
+      position: static;
+      align-self: start;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-head {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-head > .material-symbols-outlined {
+      width: 36px;
+      height: 36px;
+      flex-basis: 36px;
+      border-radius: 12px;
+      background: #e7f8f1;
+      color: #0f7354;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-builder-head small,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-customer-status small {
+      font-size: .74rem;
+      line-height: 1.3;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-row {
+      grid-template-columns: 1fr 72px 112px 96px 34px;
+      padding: .65rem;
+      gap: .5rem;
+      background: #fff;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-total {
+      min-height: auto;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-entry-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-entry-checks span {
+      padding: .32rem .52rem;
+      border: 1px solid rgba(148, 163, 184, .26);
+      border-radius: 999px;
+      background: #fff;
+      color: #64748b;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-entry-checks span.is-ok {
+      border-color: rgba(4, 120, 87, .24);
+      background: #dcfce7;
+      color: #047857;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-entry-checks span.is-warning {
+      border-color: rgba(245, 158, 11, .28);
+      background: #fef3c7;
+      color: #92400e;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .commerce-feed-head.compact {
+      display: grid;
+      gap: .12rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .commerce-feed-head.compact small {
+      color: #64748b;
+      font-size: .75rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions {
+      bottom: 0;
+      margin-top: .2rem;
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, .14);
+    }
+    body.has-sales-entry-modal {
+      overflow: hidden;
     }
     body[data-current-view="sales"] .portal-shell .sales-table-panel .table-card-head {
       align-items: center;
@@ -38356,9 +38473,20 @@ salesAnalysisResetButton?.addEventListener("click", () => {
   renderSalesView();
 });
 salesCreatePanel?.addEventListener("toggle", () => {
+  document.body.classList.toggle("has-sales-entry-modal", Boolean(salesCreatePanel.open));
   if (salesCreatePanel.open) {
     syncCustomerSaleTotal();
     window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
+  }
+});
+salesCreatePanel?.addEventListener("click", (event) => {
+  if (event.target === salesCreatePanel) {
+    closeSalesCreatePanel();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && salesCreatePanel?.open) {
+    closeSalesCreatePanel();
   }
 });
 salesCreateCloseButton?.addEventListener("click", () => {
