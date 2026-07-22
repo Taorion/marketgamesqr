@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-revenue-center-ux-v65";
+const APP_VERSION = "empresa-20260722-generic-ticket-focus-v66";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -5090,11 +5090,17 @@ function renderCampaignAssociationInputs() {
   const campaigns = activeCampaignsForAssociation();
   const selectedCampaign = campaignById(selectedCampaignId) || campaigns[0] || null;
   const activeElement = document.activeElement;
+  const recentGenericTicketInteraction = Number(postSaleQrForm?.dataset.userEditingUntil || 0) > Date.now();
   const editingGenericTicketForm = Boolean(
     postSaleQrForm
-    && activeElement
-    && postSaleQrForm.contains(activeElement)
-    && activeElement !== postSaleCampaignInput
+    && (
+      recentGenericTicketInteraction
+      || (
+        activeElement
+        && postSaleQrForm.contains(activeElement)
+        && activeElement !== postSaleCampaignInput
+      )
+    )
   );
   [
     [postSaleCampaignInput, true],
@@ -11516,13 +11522,25 @@ function ensureGamingCenterUxStyles() {
   document.head.appendChild(style);
 }
 
-function gamingCenterScrollTo(selector = "") {
+function gamingCenterScrollTo(selector = "", options = {}) {
+  const interactionStartedAt = Date.now();
   window.setTimeout(() => {
     const target = document.querySelector(selector);
     if (!target) return;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
-    const focusTarget = target.matches("input, select, textarea, button") ? target : target.querySelector("input, select, textarea, button");
-    window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 380);
+    if (options.focus === false) return;
+    const focusTarget = options.focusSelector
+      ? document.querySelector(options.focusSelector)
+      : (target.matches("input, select, textarea, button") ? target : target.querySelector("input, select, textarea, button"));
+    window.setTimeout(() => {
+      const activeElement = document.activeElement;
+      const userAlreadyEditing = activeElement
+        && activeElement !== document.body
+        && target.contains(activeElement)
+        && Date.now() - interactionStartedAt > 180;
+      if (userAlreadyEditing) return;
+      focusTarget?.focus({ preventScroll: true });
+    }, 380);
   }, 80);
 }
 
@@ -11547,7 +11565,7 @@ function runGamingCenterAction(action = "") {
     updateGamingCenterCreationTools();
     const ticketCard = postSaleQrForm?.closest(".quiet-zone");
     if (ticketCard) setQuietZoneExpanded(ticketCard, true);
-    gamingCenterScrollTo("#postSaleQrForm");
+    gamingCenterScrollTo("#postSaleQrForm", { focusSelector: "#postSaleUseCaseInput" });
     return;
   }
   if (action === "create-batch") {
@@ -18884,8 +18902,14 @@ function genericTicketUseCaseLabel(value) {
   return GENERIC_TICKET_USE_CASE_LABELS[value] || GENERIC_TICKET_USE_CASE_LABELS.custom;
 }
 
+function markGenericTicketFormInteraction() {
+  if (!postSaleQrForm) return;
+  postSaleQrForm.dataset.userEditingUntil = String(Date.now() + 2500);
+}
+
 function updateGenericTicketPreview() {
   if (!postSaleQrForm) return;
+  markGenericTicketFormInteraction();
   const benefit = String(postSaleBenefitLabelInput?.value || "").trim();
   const beneficiary = String(postSaleCustomerInput?.value || "").trim();
   const phone = String(postSalePhoneInput?.value || "").trim();
@@ -35220,6 +35244,8 @@ customerAcquisitionAffiliateInput?.addEventListener("change", () => {
 secretFriendTicketButton?.addEventListener("click", configureSecretFriendGiftTicket);
 secretFriendActivationButton?.addEventListener("click", configureSecretFriendProspectActivation);
 postSaleQrForm?.addEventListener("submit", submitPostSaleQr);
+postSaleQrForm?.addEventListener("pointerdown", markGenericTicketFormInteraction, true);
+postSaleQrForm?.addEventListener("focusin", markGenericTicketFormInteraction, true);
 postSaleQrForm?.addEventListener("input", updateGenericTicketPreview);
 postSaleQrForm?.addEventListener("change", updateGenericTicketPreview);
 postSaleExpiresModeInput?.addEventListener("change", updatePostSaleExpiryMode);
