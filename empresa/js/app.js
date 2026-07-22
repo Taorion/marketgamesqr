@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-affiliates-ux-v64";
+const APP_VERSION = "empresa-20260722-revenue-center-ux-v65";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -53,6 +53,7 @@ const branchPerformanceTable = document.getElementById("branchPerformanceTable")
 const commandCenterRoot = document.getElementById("commandCenterRoot");
 const revenuePathGuide = document.getElementById("revenuePathGuide");
 const nextBestActionCard = document.getElementById("nextBestActionCard");
+const revenuePulseStrip = document.getElementById("revenuePulseStrip");
 const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
@@ -7299,7 +7300,333 @@ function revenueActionConfig(objective = "capture") {
   return REVENUE_ACTION_OPTIONS[objective] || REVENUE_ACTION_OPTIONS.capture;
 }
 
+function ensureRevenueCenterUxStyles() {
+  if (document.getElementById("revenueCenterUxStylesV65")) return;
+  const style = document.createElement("style");
+  style.id = "revenueCenterUxStylesV65";
+  style.textContent = `
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+      margin-bottom: 1rem;
+      padding: 1rem 1.15rem;
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(59, 130, 246, .14), transparent 28%),
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(248,250,252,.93));
+      box-shadow: 0 20px 45px rgba(15, 23, 42, .07);
+    }
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head h2 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head p {
+      max-width: 760px;
+      margin-top: .45rem;
+      font-size: 1rem;
+      color: rgba(71, 85, 105, .92);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 30px;
+      background:
+        linear-gradient(180deg, rgba(248,250,252,.98), rgba(241,245,249,.92)),
+        radial-gradient(circle at 100% 0%, rgba(14, 165, 233, .12), transparent 34%);
+      border: 1px solid rgba(15, 23, 42, .08);
+      box-shadow: 0 22px 55px rgba(15, 23, 42, .08);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .9rem;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .86);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head h3 {
+      margin: .15rem 0 .25rem;
+      font-size: clamp(1.35rem, 2.5vw, 2.15rem);
+      letter-spacing: -.04em;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head p {
+      max-width: 720px;
+      margin: 0;
+      color: rgba(71, 85, 105, .9);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .8rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 126px;
+      padding: .95rem;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.94));
+      border: 1px solid rgba(15, 23, 42, .07);
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -30px -44px auto;
+      width: 112px;
+      height: 112px;
+      border-radius: 999px;
+      background: var(--pulse, rgba(59, 130, 246, .13));
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card span.material-symbols-outlined {
+      width: 36px;
+      height: 36px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 14px;
+      color: rgb(37, 99, 235);
+      background: rgba(37, 99, 235, .1);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card strong {
+      display: block;
+      margin-top: .65rem;
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+      line-height: 1;
+      letter-spacing: -.045em;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card small {
+      display: block;
+      margin-top: .35rem;
+      color: rgba(71, 85, 105, .86);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, .92fr) minmax(420px, 1.08fr);
+      gap: .9rem;
+      align-items: stretch;
+    }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card,
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step,
+    body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 26px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+    }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card {
+      display: grid;
+      gap: .8rem;
+      align-content: start;
+      min-height: 100%;
+      padding: 1.1rem;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(34, 197, 94, .16), transparent 34%),
+        linear-gradient(160deg, rgba(255,255,255,.98), rgba(240,253,244,.92));
+    }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card .revenue-action-head {
+      display: flex;
+      gap: .8rem;
+      align-items: flex-start;
+    }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card .revenue-action-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 18px;
+      color: rgb(21, 128, 61);
+      background: rgba(34, 197, 94, .14);
+    }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card h3,
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card h3 {
+      margin: .2rem 0 .25rem;
+      font-size: clamp(1.25rem, 2vw, 1.65rem);
+      letter-spacing: -.035em;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-action-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-action-chips span {
+      padding: .38rem .58rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .06);
+      color: rgba(15, 23, 42, .76);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card {
+      padding: 1.05rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card > p {
+      margin: 0 0 .8rem;
+      color: rgba(71, 85, 105, .86);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .55rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button {
+      min-height: 58px;
+      padding: .78rem .85rem;
+      border-radius: 18px;
+      text-align: left;
+      justify-content: flex-start;
+      background: rgba(248,250,252,.98);
+      border: 1px solid rgba(15, 23, 42, .07);
+      color: rgba(15, 23, 42, .88);
+      font-weight: 800;
+      box-shadow: none;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, .24);
+      background: rgba(239, 246, 255, .95);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-guide {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      gap: .75rem;
+      overflow-x: auto;
+      padding: .15rem .05rem .45rem;
+      scroll-snap-type: x proximity;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step {
+      min-width: 150px;
+      display: grid;
+      gap: .42rem;
+      padding: .9rem;
+      scroll-snap-align: start;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step span {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, .08);
+      color: rgba(15, 23, 42, .7);
+      font-weight: 900;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step.is-active span {
+      color: rgb(29, 78, 216);
+      background: rgba(37, 99, 235, .12);
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step strong {
+      font-size: .98rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step p {
+      min-height: 38px;
+      margin: 0;
+      color: rgba(71, 85, 105, .82);
+      font-size: .88rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-path-step button {
+      width: 100%;
+      min-height: 36px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, .06);
+      color: rgba(15, 23, 42, .82);
+      font-weight: 800;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+      display: grid;
+      grid-template-columns: minmax(240px, 1.2fr) repeat(3, minmax(160px, 1fr)) auto;
+      gap: .75rem;
+      align-items: stretch;
+      padding: .9rem;
+    }
+    body[data-current-view="dashboard"] .portal-shell .revenue-onboarding article {
+      padding: .8rem;
+      border-radius: 18px;
+      background: rgba(248,250,252,.9);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+    @media (max-width: 1180px) {
+      body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip,
+      body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace,
+      body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+        border-radius: 22px;
+        padding: .85rem;
+      }
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head,
+      body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip,
+      body[data-current-view="dashboard"] .portal-shell .revenue-main-grid,
+      body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid,
+      body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+        grid-template-columns: 1fr;
+      }
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head .solid-button,
+      body[data-current-view="dashboard"] .portal-shell .next-best-action-card .solid-button {
+        width: 100%;
+      }
+    }
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-workspace,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-objective-card,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-path-step,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+      background: rgba(15, 23, 42, .94);
+      border-color: rgba(148, 163, 184, .16);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, .3);
+    }
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-path-step button,
+    :root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .revenue-onboarding article {
+      background: rgba(30, 41, 59, .72);
+      border-color: rgba(148, 163, 184, .16);
+      color: rgba(226, 232, 240, .92);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function renderRevenuePulseStrip(summary = {}, dashboard = {}, path = []) {
+  if (!revenuePulseStrip) return;
+  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const activeQr = toNumber(dashboard.summary?.active_qr);
+  const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
+  const totalLeads = toNumber(summary.total_leads || 0);
+  const totalRedeemed = toNumber(summary.total_qr_redeemed || 0);
+  const avgTicket = observedSalesCount ? observedRevenue / observedSalesCount : 0;
+  const cards = [
+    { icon: "paid", label: "Revenue medido", value: money(observedRevenue), meta: `${observedSalesCount.toLocaleString("es-CO")} ventas · ticket ${money(avgTicket)}`, tone: "rgba(34, 197, 94, .14)" },
+    { icon: "group_add", label: "Materia prima", value: totalLeads.toLocaleString("es-CO"), meta: "leads y contactos capturados", tone: "rgba(59, 130, 246, .14)" },
+    { icon: "confirmation_number", label: "Tickets activos", value: activeQr.toLocaleString("es-CO"), meta: `${totalRedeemed.toLocaleString("es-CO")} redenciones registradas`, tone: "rgba(168, 85, 247, .14)" },
+    { icon: "event_available", label: "Trabajo pendiente", value: openAgenda.toLocaleString("es-CO"), meta: `${path.filter((step) => Number(step.count || 0) > 0).length} etapas con actividad`, tone: "rgba(245, 158, 11, .16)" },
+  ];
+  revenuePulseStrip.innerHTML = cards.map((card) => `
+    <article class="revenue-pulse-card" style="--pulse:${escapeHtml(card.tone)}">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(card.icon)}</span>
+      <small>${escapeHtml(card.label)}</small>
+      <strong>${escapeHtml(card.value)}</strong>
+      <small>${escapeHtml(card.meta)}</small>
+    </article>
+  `).join("");
+}
+
 function renderRevenueWorkspace() {
+  ensureRevenueCenterUxStyles();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
   const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
@@ -7316,6 +7643,7 @@ function renderRevenueWorkspace() {
     { key: "sell", label: "Vender", count: observedSalesCount, meta: money(observedRevenue), action: "Registrar venta", target: "sales" },
     { key: "loyalty", label: "Fidelizar", count: summary.referral_sales_count || state.rewardPasses?.length || 0, meta: "recompra / referido", action: "Activar recompra", target: "reward-passes" },
   ];
+  renderRevenuePulseStrip(summary, dashboard, path);
   if (revenuePathGuide) {
     revenuePathGuide.innerHTML = path.map((step, index) => `
       <article class="revenue-path-step ${Number(step.count || 0) > 0 ? "is-active" : ""}">
@@ -7353,10 +7681,23 @@ function nextBestRevenueAction(path = []) {
 function renderNextBestAction(path = []) {
   if (!nextBestActionCard) return;
   const action = nextBestRevenueAction(path);
+  const activeSteps = path.filter((step) => Number(step.count || 0) > 0);
+  const primaryActive = activeSteps[0]?.label || "Inicio";
+  const lastActive = activeSteps[activeSteps.length - 1]?.label || "Sin actividad";
   nextBestActionCard.innerHTML = `
-    <span class="mono-label">Siguiente acción recomendada</span>
-    <h3>${escapeHtml(action.title)}</h3>
+    <div class="revenue-action-head">
+      <span class="material-symbols-outlined revenue-action-icon" aria-hidden="true">bolt</span>
+      <div>
+        <span class="mono-label">Siguiente acción recomendada</span>
+        <h3>${escapeHtml(action.title)}</h3>
+      </div>
+    </div>
     <p>${escapeHtml(action.description)}</p>
+    <div class="revenue-action-chips" aria-label="Contexto de revenue">
+      <span>Entrada: ${escapeHtml(primaryActive)}</span>
+      <span>Última etapa: ${escapeHtml(lastActive)}</span>
+      <span>${activeSteps.length || 0} etapas activas</span>
+    </div>
     <button class="solid-button" type="button" data-next-revenue-action="${escapeHtml(action.route)}" data-revenue-objective="${escapeHtml(action.objective)}">${escapeHtml(action.cta)}</button>
   `;
   nextBestActionCard.querySelector("[data-next-revenue-action]")?.addEventListener("click", (event) => {
@@ -8663,6 +9004,7 @@ function toggleDashboardAdvancedView() {
 
 function renderDashboard() {
   renderDashboardBuilder();
+  renderRevenueWorkspace();
   if (!state.dashboardBuilderExpanded) return;
   renderCommandCenter();
   const summary = state.summary || {};

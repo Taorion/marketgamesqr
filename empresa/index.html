@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliates-ux-20260722-v64">
+  <link rel="stylesheet" href="css/styles.css?v=revenue-center-ux-20260722-v65">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -343,8 +343,8 @@
           <section class="view-section dashboard-builder-mode" data-view="dashboard" hidden>
             <div class="view-head">
               <div>
-                <h2>Centro de Comando Revenue Marketing</h2>
-                <p>Vista inicial para entender captación, inversión, conversión y revenue. Desde aquí se activa Gaming Center, campañas y bloques del tablero sin saturar la pantalla.</p>
+                <h2>Centro de Revenue</h2>
+                <p>Vista inicial limpia para saber qué está entrando, qué falta operar y qué acciones generan ingresos medibles.</p>
               </div>
             </div>
 
@@ -407,19 +407,22 @@
             <section class="revenue-workspace" id="revenueWorkspace">
               <div class="revenue-workspace-head">
                 <div>
-                  <span class="mono-label">Centro de Revenue</span>
-                  <h3>Hoy en Sales Machine</h3>
-                  <p>Usa campañas, QR, gamificación, tickets, agenda y métricas para convertir clientes y medir ingresos reales.</p>
+                  <span class="mono-label">Centro operativo</span>
+                  <h3>Qué hacer hoy para generar ingresos</h3>
+                  <p>Resumen simple de captación, activación, seguimiento y ventas para decidir el próximo movimiento sin revisar todo el portal.</p>
                 </div>
                 <button class="solid-button" id="dashboardRevenueActionButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
                   Crear acción de revenue
                 </button>
               </div>
+              <section class="revenue-pulse-strip" id="revenuePulseStrip" aria-label="Resumen de revenue"></section>
               <div class="revenue-main-grid">
                 <article class="next-best-action-card" id="nextBestActionCard"></article>
                 <article class="revenue-objective-card">
-                  <span class="mono-label">Elige qué quieres lograr hoy</span>
+                  <span class="mono-label">Acciones rápidas por objetivo</span>
+                  <h3>Elige el trabajo comercial</h3>
+                  <p>Abre una acción guiada según el resultado que necesitas conseguir ahora.</p>
                   <div class="revenue-objective-grid" id="revenueQuickActions">
                     <button type="button" data-revenue-objective="capture">Capturar nuevos clientes</button>
                     <button type="button" data-revenue-objective="store_activation">Activar campaña en tienda</button>
@@ -435,8 +438,8 @@
               <section class="revenue-path-guide" id="revenuePathGuide" aria-label="Ruta de revenue"></section>
               <section class="revenue-onboarding" id="revenueOnboarding">
                 <div>
-                  <span class="mono-label">Empieza en 3 pasos</span>
-                  <h3>Todo empieza con una oportunidad</h3>
+                  <span class="mono-label">Si aún no hay datos</span>
+                  <h3>Empieza en 3 pasos</h3>
                 </div>
                 <article><strong>Crea una entrada de clientes</strong><p>QR, campaña, contacto o dinámica.</p></article>
                 <article><strong>Agrega cobertura gamificada</strong><p>Ticket, recompensa, puntos, ranking o racha.</p></article>
@@ -7151,7 +7154,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliates-ux-20260722-v64" defer></script>
+  <script src="js/app.js?v=revenue-center-ux-20260722-v65" defer></script>
 </body>
 </html>
 
