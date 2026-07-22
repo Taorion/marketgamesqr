@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-visual-repair-v83";
+const APP_VERSION = "empresa-20260722-sales-entry-ux-v84";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -864,6 +864,7 @@ const activationShareMessage = document.getElementById("activationShareMessage")
 const activationShareOpenWhatsAppButton = document.getElementById("activationShareOpenWhatsAppButton");
 const activationShareCopyMessageButton = document.getElementById("activationShareCopyMessageButton");
 const productVoteImages = {};
+const salesCreatePanel = document.getElementById("salesCreatePanel");
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
@@ -885,6 +886,8 @@ const customerAcquisitionMessage = document.getElementById("customerAcquisitionM
 const customerSaleItemsContainer = document.getElementById("customerSaleItemsContainer");
 const customerSaleAddItemButton = document.getElementById("customerSaleAddItemButton");
 const customerSaleTotalPreview = document.getElementById("customerSaleTotalPreview");
+const salesCreateTotalPill = document.getElementById("salesCreateTotalPill");
+const salesCreateCloseButton = document.getElementById("salesCreateCloseButton");
 const customerSaleOperationFeed = document.getElementById("customerSaleOperationFeed");
 const acquisitionChannelKpiGrid = document.getElementById("acquisitionChannelKpiGrid");
 const acquisitionChannelDetailPanel = document.getElementById("acquisitionChannelDetailPanel");
@@ -13814,8 +13817,31 @@ function syncCustomerSaleTotal() {
   const total = customerSaleTotal();
   if (customerAcquisitionAmountInput) customerAcquisitionAmountInput.value = total ? String(total) : "";
   if (customerSaleTotalPreview) customerSaleTotalPreview.textContent = money(total);
+  if (salesCreateTotalPill) {
+    salesCreateTotalPill.textContent = total ? money(total) : "Sin total";
+    salesCreateTotalPill.classList.toggle("has-total", total > 0);
+  }
   renderCustomerSaleOperationFeed();
   return total;
+}
+
+function openSalesCreatePanel(options = {}) {
+  if (!salesCreatePanel) return;
+  salesCreatePanel.open = true;
+  if (options.scroll !== false) {
+    salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  if (options.focus !== false) {
+    window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
+  }
+}
+
+function closeSalesCreatePanel(options = {}) {
+  if (!salesCreatePanel) return;
+  salesCreatePanel.open = false;
+  if (options.scroll) {
+    salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 function customerSaleProductsPayload() {
@@ -14404,7 +14430,7 @@ function ensureSalesAnalysisStyles() {
     }
     body[data-current-view="sales"] .portal-shell .sales-create-summary {
       display: grid;
-      grid-template-columns: 42px minmax(0, 1fr) 34px;
+      grid-template-columns: 42px minmax(0, 1fr) auto 34px;
       gap: .85rem;
       align-items: center;
       padding: 1rem 1.15rem;
@@ -14444,6 +14470,179 @@ function ensureSalesAnalysisStyles() {
     }
     body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-summary-chevron {
       transform: rotate(180deg);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-total-pill {
+      justify-self: end;
+      padding: .45rem .7rem;
+      border: 1px solid rgba(15, 115, 84, .16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .82);
+      color: #64748b;
+      font-size: .78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-total-pill.has-total {
+      background: #dcfce7;
+      color: #047857;
+      border-color: rgba(4, 120, 87, .24);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] {
+      background: #ffffff;
+      box-shadow: 0 20px 55px rgba(15, 23, 42, .10);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-create-summary {
+      border-bottom: 1px solid rgba(148, 163, 184, .18);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel .chart-explainer {
+      max-width: 920px;
+      margin: .35rem 0 0;
+      color: #64748b;
+      line-height: 1.55;
+    }
+    body[data-current-view="sales"] .portal-shell .customer-sale-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+      gap: 1rem;
+      align-items: start;
+      margin-top: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps,
+    body[data-current-view="sales"] .portal-shell .sale-form-block-summary,
+    body[data-current-view="sales"] .portal-shell .sale-form-actions {
+      grid-column: 1 / -1;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .7rem;
+      padding: .8rem;
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-radius: 20px;
+      background: #f8fafc;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps article {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      column-gap: .65rem;
+      row-gap: .05rem;
+      align-items: center;
+      min-width: 0;
+      padding: .7rem;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, .16);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps article span {
+      grid-row: span 2;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 13px;
+      background: #0f7354;
+      color: #fff;
+      font-weight: 900;
+      font-size: .8rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps article strong,
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps article small {
+      display: block;
+      min-width: 0;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-entry-steps article small {
+      color: #64748b;
+      font-size: .72rem;
+      line-height: 1.25;
+    }
+    body[data-current-view="sales"] .portal-shell .sale-form-block,
+    body[data-current-view="sales"] .portal-shell .sales-item-builder {
+      border-radius: 20px;
+      border-color: rgba(148, 163, 184, .22);
+      background: #ffffff;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, .055);
+    }
+    body[data-current-view="sales"] .portal-shell .sale-form-block-head {
+      padding-bottom: .65rem;
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+    }
+    body[data-current-view="sales"] .portal-shell .sale-form-grid {
+      gap: .8rem;
+    }
+    body[data-current-view="sales"] .portal-shell .customer-sale-form .sale-field span,
+    body[data-current-view="sales"] .portal-shell .sales-item-row label span {
+      color: #475569;
+      font-size: .76rem;
+      font-weight: 900;
+    }
+    body[data-current-view="sales"] .portal-shell .customer-sale-form input,
+    body[data-current-view="sales"] .portal-shell .customer-sale-form select,
+    body[data-current-view="sales"] .portal-shell .customer-sale-form textarea {
+      min-height: 44px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border-color: rgba(148, 163, 184, .28);
+    }
+    body[data-current-view="sales"] .portal-shell .customer-sale-form input:focus,
+    body[data-current-view="sales"] .portal-shell .customer-sale-form select:focus,
+    body[data-current-view="sales"] .portal-shell .customer-sale-form textarea:focus {
+      background: #fff;
+      border-color: rgba(15, 115, 84, .55);
+      box-shadow: 0 0 0 4px rgba(15, 115, 84, .10);
+      outline: none;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-item-builder {
+      position: sticky;
+      top: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-item-builder-head {
+      align-items: flex-start;
+      padding-bottom: .65rem;
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-item-row {
+      grid-template-columns: minmax(190px, 1fr) 82px minmax(120px, .7fr) minmax(118px, .6fr) 38px;
+      gap: .65rem;
+      padding: .85rem;
+      border-radius: 16px;
+      background: #f8fafc;
+      border-color: rgba(148, 163, 184, .20);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-total-row {
+      padding: .8rem 1rem;
+      border-radius: 16px;
+      background: #ecfdf5;
+      border: 1px solid rgba(4, 120, 87, .18);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-total-row strong {
+      color: #047857;
+      font-size: 1.2rem;
+    }
+    body[data-current-view="sales"] .portal-shell .commerce-operation-feed {
+      display: grid;
+      gap: .55rem;
+    }
+    body[data-current-view="sales"] .portal-shell .commerce-feed-step {
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      padding: .7rem;
+      border-radius: 15px;
+      background: #f8fafc;
+    }
+    body[data-current-view="sales"] .portal-shell .sale-form-actions {
+      position: sticky;
+      bottom: .75rem;
+      z-index: 5;
+      grid-template-columns: minmax(180px, 230px) minmax(150px, 190px) minmax(0, 1fr);
+      padding: .85rem;
+      border: 1px solid rgba(148, 163, 184, .24);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .13);
+      backdrop-filter: blur(10px);
+    }
+    body[data-current-view="sales"] .portal-shell .sale-form-actions .error-line {
+      justify-self: start;
+      font-weight: 800;
     }
     body[data-current-view="sales"] .portal-shell .sales-table-panel .table-card-head {
       align-items: center;
@@ -14750,11 +14949,31 @@ function ensureSalesAnalysisStyles() {
       .sales-analysis-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      body[data-current-view="sales"] .portal-shell .customer-sale-form,
+      body[data-current-view="sales"] .portal-shell .sales-entry-steps {
+        grid-template-columns: 1fr 1fr;
+      }
+      body[data-current-view="sales"] .portal-shell .sales-item-builder {
+        position: static;
+      }
     }
     @media (max-width: 720px) {
       .sales-analysis-toolbar,
       .sales-analysis-grid,
       .sales-analysis-breakdown-row {
+        grid-template-columns: 1fr;
+      }
+      body[data-current-view="sales"] .portal-shell .sales-create-summary {
+        grid-template-columns: 42px minmax(0, 1fr) 32px;
+      }
+      body[data-current-view="sales"] .portal-shell .sales-create-total-pill {
+        grid-column: 2 / -1;
+        justify-self: start;
+      }
+      body[data-current-view="sales"] .portal-shell .customer-sale-form,
+      body[data-current-view="sales"] .portal-shell .sales-entry-steps,
+      body[data-current-view="sales"] .portal-shell .sales-item-row,
+      body[data-current-view="sales"] .portal-shell .sale-form-actions {
         grid-template-columns: 1fr;
       }
       .sales-analysis-breakdown-row strong,
@@ -16076,6 +16295,7 @@ async function submitCustomerAcquisitionSale(event) {
     await refreshLiveBusinessData();
     if (state.currentView === "branches") renderBranchesView();
     setView("sales");
+    closeSalesCreatePanel({ scroll: true });
     showFeedback(message, "success", { title: "Venta registrada" });
   } catch (error) {
     setSalesCustomerStatus("No se pudo registrar", error.message, "error", "error");
@@ -38075,7 +38295,7 @@ acquisitionChannelDetailPanel?.addEventListener("click", (event) => {
   if (salesButton) {
     setView("sales");
     if (customerAcquisitionChannelInput) customerAcquisitionChannelInput.value = salesButton.dataset.channelOpenSales || "";
-    customerAcquisitionCustomerLookupInput?.focus();
+    openSalesCreatePanel();
     renderCustomerSaleOperationFeed();
   }
   if (campaignButton?.dataset.channelCampaignOpen) {
@@ -38134,6 +38354,15 @@ salesAnalysisResetButton?.addEventListener("click", () => {
     group_by: "customer",
   };
   renderSalesView();
+});
+salesCreatePanel?.addEventListener("toggle", () => {
+  if (salesCreatePanel.open) {
+    syncCustomerSaleTotal();
+    window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
+  }
+});
+salesCreateCloseButton?.addEventListener("click", () => {
+  closeSalesCreatePanel({ scroll: true });
 });
 customerSaleAddItemButton?.addEventListener("click", () => {
   ensureCustomerSaleItems();

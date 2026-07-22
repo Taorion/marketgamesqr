@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-visual-repair-20260722-v83">
+  <link rel="stylesheet" href="css/styles.css?v=sales-entry-ux-20260722-v84">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4962,13 +4962,14 @@
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
 
-            <details class="surface-card data-table-card sales-create-panel">
+            <details class="surface-card data-table-card sales-create-panel" id="salesCreatePanel">
               <summary class="sales-create-summary">
                 <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
                 <span>
                   <strong>Registrar nueva venta</strong>
-                  <small>Abre este panel solo cuando necesites cargar una venta manual.</small>
+                  <small>Cliente, productos, atribución y guardado en un flujo corto.</small>
                 </span>
+                <span class="sales-create-total-pill" id="salesCreateTotalPill">$0</span>
                 <span class="material-symbols-outlined sales-summary-chevron" aria-hidden="true">expand_more</span>
               </summary>
               <div class="table-card-head">
@@ -4980,6 +4981,28 @@
               </div>
               <p class="chart-explainer">Registra el cliente, los productos comprados, el medio de llegada y la atribucion comercial. Si el producto existe en Productos se descuenta automaticamente; si no existe se crea automaticamente como producto abierto.</p>
               <form class="modal-form customer-sale-form" id="customerAcquisitionForm">
+                <section class="sales-entry-steps" aria-label="Pasos para registrar una venta">
+                  <article>
+                    <span>1</span>
+                    <strong>Cliente</strong>
+                    <small>Busca o escribe los datos básicos.</small>
+                  </article>
+                  <article>
+                    <span>2</span>
+                    <strong>Compra</strong>
+                    <small>Agrega productos y precios.</small>
+                  </article>
+                  <article>
+                    <span>3</span>
+                    <strong>Atribución</strong>
+                    <small>Define campaña, canal y sede.</small>
+                  </article>
+                  <article>
+                    <span>4</span>
+                    <strong>Guardar</strong>
+                    <small>Se actualizan ventas, ROI e inventario.</small>
+                  </article>
+                </section>
                 <section class="sale-form-block sale-form-block-summary">
                   <div class="sale-form-block-head">
                     <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
@@ -5064,6 +5087,7 @@
                 </section>
                 <div class="sale-form-actions">
                   <button class="solid-button" type="submit">Registrar venta</button>
+                  <button class="ghost-button" id="salesCreateCloseButton" type="button">Cerrar formulario</button>
                   <p class="error-line" id="customerAcquisitionMessage"></p>
                 </div>
                 <datalist id="acquisitionChannelDatalist"></datalist>
@@ -7290,7 +7314,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-visual-repair-20260722-v83" defer></script>
+  <script src="js/app.js?v=sales-entry-ux-20260722-v84" defer></script>
 </body>
 </html>
 
