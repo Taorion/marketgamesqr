@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-validator-ui-v55";
+const APP_VERSION = "empresa-20260722-contact-directory-v56";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -22956,6 +22956,189 @@ function leadTicketInventoryText(item = {}) {
   return leadTicketInventoryParts(item).join(" | ") || "Sin tickets";
 }
 
+function leadDirectoryMetadata(item = {}) {
+  return item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+}
+
+function leadDirectoryIsCustomer(item = {}) {
+  const status = String(item.commercial_status || item.status || "").toUpperCase();
+  return Number(item.purchase_count || 0) > 0
+    || Number(item.total_spent || 0) > 0
+    || ["BUYER", "RECURRENT", "VIP", "CONVERTED"].includes(status);
+}
+
+function leadDirectoryChannel(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  return String(
+    item.channel
+      || item.attribution_source
+      || item.source
+      || metadata.manual_source
+      || metadata.attribution_source
+      || item.source_type
+      || "Sin canal"
+  ).trim() || "Sin canal";
+}
+
+function leadDirectoryCampaign(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  return String(
+    item.campaign_name
+      || item.attribution_subject
+      || metadata.campaign_name
+      || metadata.source_campaign
+      || metadata.attribution_subject
+      || "Sin campaña"
+  ).trim() || "Sin campaña";
+}
+
+function leadDirectoryContactLine(item = {}) {
+  return [item.phone, item.email, item.document_id]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" · ") || "Sin contacto básico";
+}
+
+function leadDirectoryActivationCount(item = {}) {
+  return Number(item.activation_count || item.activations_count || 0);
+}
+
+function leadDirectoryAffiliateLabel(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  const affiliateValue = item.is_affiliate
+    || item.affiliate_id
+    || item.affiliate_status
+    || item.affiliate_code
+    || metadata.is_affiliate
+    || metadata.affiliate_id
+    || metadata.affiliate_status
+    || metadata.affiliate_code;
+  return affiliateValue ? "Afiliado" : "No afiliado";
+}
+
+function leadDirectorySort(a = {}, b = {}) {
+  return Number(b.purchase_count || 0) - Number(a.purchase_count || 0)
+    || Number(b.attention_score || 0) - Number(a.attention_score || 0)
+    || new Date(b.last_interaction_at || b.updated_at || b.created_at || 0) - new Date(a.last_interaction_at || a.updated_at || a.created_at || 0);
+}
+
+function leadDirectoryCardMarkup(item = {}, segment = "lead") {
+  const isCustomer = segment === "customer" || leadDirectoryIsCustomer(item);
+  const badges = leadBadges(item).slice(0, 4);
+  const activationCount = leadDirectoryActivationCount(item);
+  return `
+    <article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+      <div class="contact-directory-card-top">
+        <div class="contact-directory-name">
+          <strong>${escapeHtml(item.name || "Contacto sin nombre")}</strong>
+          <small>${escapeHtml(leadDirectoryContactLine(item))}</small>
+        </div>
+        <span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${isCustomer ? "Cliente" : escapeHtml(item.care_priority_label || "Lead")}</span>
+      </div>
+      <div class="contact-directory-meta-grid">
+        <span class="contact-directory-meta"><small>Canal de llegada</small><strong>${escapeHtml(leadDirectoryChannel(item))}</strong></span>
+        <span class="contact-directory-meta"><small>Campaña asociada</small><strong>${escapeHtml(leadDirectoryCampaign(item))}</strong></span>
+        <span class="contact-directory-meta"><small>Activaciones</small><strong>${activationCount.toLocaleString("es-CO")} activación(es)</strong></span>
+        <span class="contact-directory-meta"><small>Afiliación</small><strong>${escapeHtml(leadDirectoryAffiliateLabel(item))}</strong></span>
+      </div>
+      <div class="contact-directory-card-bottom">
+        <div class="contact-directory-main">
+          <strong>${isCustomer ? `${Number(item.purchase_count || 0).toLocaleString("es-CO")} compra(s) · ${money(item.total_spent || 0)}` : escapeHtml(item.recommended_action || item.commercial_status_label || "Revisar oportunidad")}</strong>
+          <small>${escapeHtml(leadOriginText(item))}</small>
+        </div>
+        <span class="contact-directory-open">Ver ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
+      </div>
+      ${badges.length ? `<div class="contact-directory-badges">${badges.map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("")}</div>` : ""}
+    </article>
+  `;
+}
+
+function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, segment }) {
+  const sortedRows = rows.slice().sort(leadDirectorySort);
+  return `
+    <article class="contact-directory-segment">
+      <div class="contact-directory-segment-head">
+        <div class="contact-directory-segment-title">
+          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
+          <div>
+            <span class="mono-label">${escapeHtml(subtitle)}</span>
+            <strong>${escapeHtml(title)}</strong>
+          </div>
+        </div>
+        <span class="pill muted">${sortedRows.length.toLocaleString("es-CO")}</span>
+      </div>
+      <div class="contact-directory-list">
+        ${sortedRows.length ? sortedRows.map((item) => leadDirectoryCardMarkup(item, segment)).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
+  const directoryCard = document.querySelector(".lead-directory-card");
+  if (!directoryCard) return;
+  let board = document.getElementById("contactDirectoryVisualBoard");
+  if (!board) {
+    board = document.createElement("section");
+    board.id = "contactDirectoryVisualBoard";
+    board.className = "contact-directory-visual-board";
+    const head = directoryCard.querySelector(".table-card-head");
+    if (head?.nextSibling) directoryCard.insertBefore(board, head.nextSibling);
+    else directoryCard.prepend(board);
+  }
+  const allRows = Array.isArray(rows) ? rows : [];
+  const customers = allRows.filter(leadDirectoryIsCustomer);
+  const leads = allRows.filter((item) => !leadDirectoryIsCustomer(item));
+  const affiliates = allRows.filter((item) => leadDirectoryAffiliateLabel(item) === "Afiliado").length;
+  const activations = allRows.reduce((sum, item) => sum + leadDirectoryActivationCount(item), 0);
+  board.innerHTML = `
+    <div class="contact-directory-hero">
+      <div>
+        <span class="mono-label">Directorio comercial</span>
+        <h3>Clientes y leads en una sola lectura</h3>
+        <p>Usa los filtros de arriba para buscar por campaña, canal, compras o prioridad. Haz clic sobre cualquier tarjeta para abrir la ficha completa del contacto.</p>
+      </div>
+      <div class="contact-directory-summary" aria-label="Resumen del directorio">
+        <span><strong>${customers.length.toLocaleString("es-CO")}</strong><small>clientes</small></span>
+        <span><strong>${leads.length.toLocaleString("es-CO")}</strong><small>leads</small></span>
+        <span><strong>${activations.toLocaleString("es-CO")}</strong><small>activaciones</small></span>
+        <span><strong>${affiliates.toLocaleString("es-CO")}</strong><small>afiliados</small></span>
+      </div>
+    </div>
+    <section class="contact-directory-columns">
+      ${leadDirectorySegmentMarkup({
+        title: "Clientes que ya compraron",
+        subtitle: "Base convertida",
+        icon: "shopping_bag",
+        rows: customers,
+        emptyText: "Cuando un contacto registre compras aparecerá aquí como cliente.",
+        segment: "customer",
+      })}
+      ${leadDirectorySegmentMarkup({
+        title: "Leads por trabajar",
+        subtitle: "Oportunidades",
+        icon: "person_search",
+        rows: leads,
+        emptyText: "Sin leads visibles para los filtros actuales.",
+        segment: "lead",
+      })}
+    </section>
+  `;
+  board.querySelectorAll("[data-lead-id]").forEach((card) => {
+    const open = () => openLeadDetail({
+      id: card.dataset.leadId,
+      source_type: card.dataset.sourceType || "PLAYER",
+    });
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
+}
+
 function leadPriorityChipClass(priority = "") {
   const value = String(priority || "").toUpperCase();
   if (value === "HIGH") return "danger";
@@ -24408,10 +24591,213 @@ function appendIfFound(parent, node) {
 }
 
 const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "agenda", "captures", "manual", "sales"];
+const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory", "agenda"];
+
+function normalizeContactCenterTab(tab = "directory") {
+  const requested = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "directory";
+  return CONTACT_CENTER_VISIBLE_TAB_KEYS.includes(requested) ? requested : "directory";
+}
+
+function ensureContactDirectoryUxStyles() {
+  if (document.getElementById("contactDirectoryUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "contactDirectoryUxStyles";
+  style.textContent = `
+    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-summary,
+    #contactCenterShell[data-contact-directory-ux="simple"] #contactActionFeed,
+    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-card:not([data-contact-center-tab="directory"]):not([data-contact-center-tab="agenda"]),
+    #contactCenterShell[data-contact-directory-ux="simple"] [data-contact-rail]:not([data-contact-rail="directory"]):not([data-contact-rail="agenda"]) {
+      display: none !important;
+    }
+    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
+    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail {
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+    #contactCenterShell[data-contact-directory-ux="simple"] .lead-directory-card .table-wrap {
+      display: none;
+    }
+    .contact-directory-visual-board {
+      display: grid;
+      gap: 1rem;
+    }
+    .contact-directory-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: start;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.06), rgba(59, 130, 246, 0.08));
+    }
+    .contact-directory-hero h3 {
+      margin: 0.1rem 0;
+      font-size: clamp(1.35rem, 2.6vw, 2rem);
+    }
+    .contact-directory-hero p {
+      margin: 0;
+      color: var(--muted-text);
+      max-width: 820px;
+    }
+    .contact-directory-summary {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .contact-directory-summary span {
+      display: grid;
+      min-width: 90px;
+      padding: 0.65rem 0.8rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .contact-directory-summary strong {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .contact-directory-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .contact-directory-segment {
+      min-width: 0;
+      padding: 1rem;
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+    }
+    .contact-directory-segment-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.8rem;
+    }
+    .contact-directory-segment-title {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      min-width: 0;
+    }
+    .contact-directory-segment-title .material-symbols-outlined {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(37, 99, 235, 0.11);
+      color: #1d4ed8;
+    }
+    .contact-directory-list {
+      display: grid;
+      gap: 0.72rem;
+    }
+    .contact-directory-card-row {
+      display: grid;
+      gap: 0.8rem;
+      padding: 0.95rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(248, 250, 252, 0.94);
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .contact-directory-card-row:hover,
+    .contact-directory-card-row:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, 0.45);
+      box-shadow: 0 18px 34px rgba(37, 99, 235, 0.12);
+      outline: none;
+    }
+    .contact-directory-card-top,
+    .contact-directory-card-bottom {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .contact-directory-name,
+    .contact-directory-main,
+    .contact-directory-meta {
+      min-width: 0;
+    }
+    .contact-directory-name strong,
+    .contact-directory-main strong,
+    .contact-directory-meta strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .contact-directory-name small,
+    .contact-directory-main small,
+    .contact-directory-meta small {
+      color: var(--muted-text);
+    }
+    .contact-directory-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .contact-directory-meta {
+      padding: 0.62rem 0.7rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .contact-directory-badges {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+    }
+    .contact-directory-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: #1d4ed8;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .lead-directory-pagination {
+      margin-top: 1rem;
+    }
+    .lead-detail-workspace:not(.hidden) {
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    }
+    @media (max-width: 980px) {
+      #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
+      #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail,
+      .contact-directory-columns,
+      .contact-directory-hero {
+        grid-template-columns: 1fr;
+      }
+      .contact-directory-summary {
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 680px) {
+      .contact-directory-meta-grid {
+        grid-template-columns: 1fr;
+      }
+      .contact-directory-card-top,
+      .contact-directory-card-bottom {
+        display: grid;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function mountContactCenterLayout() {
   if (state.contactCenterMounted) return;
   const contactCenterShell = document.getElementById("contactCenterShell");
+  ensureContactDirectoryUxStyles();
+  if (contactCenterShell) contactCenterShell.dataset.contactDirectoryUx = "simple";
   const overviewPanel = document.querySelector('[data-contact-center-panel="overview"]');
   const directoryPanel = document.querySelector('[data-contact-center-panel="directory"]');
   const ticketsPanel = document.querySelector('[data-contact-center-panel="tickets"]');
@@ -24450,7 +24836,8 @@ function mountContactCenterLayout() {
   state.contactCenterMounted = true;
 }
 
-function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
+function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
+  const currentTab = normalizeContactCenterTab(tab);
   const configs = {
     overview: {
       meta: "Vista 1 de 7 · Resumen",
@@ -24462,11 +24849,11 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "export-all",
     },
     directory: {
-      meta: "Vista 2 de 7 · Directorio",
-      title: "Directorio de contactos y fichas comerciales",
-      copy: "Busca, filtra y abre la ficha de cada contacto sin mezclar formularios, ventas ni capturas.",
-      primaryLabel: "Agregar prospecto",
-      primaryAction: "manual-lead",
+      meta: "Directorio 1 de 2 · Contactos",
+      title: "Directorio de contactos",
+      copy: "Clientes y leads separados en una vista simple. Cada tarjeta muestra canal, campaña, contacto, activaciones y afiliación; haz clic para abrir la ficha completa.",
+      primaryLabel: "Ver agenda",
+      primaryAction: "go-agenda",
       secondaryLabel: "Exportar contactos",
       secondaryAction: "export-all",
     },
@@ -24480,9 +24867,9 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "go-directory",
     },
     agenda: {
-      meta: "Vista 4 de 7 · Agenda",
-      title: "Agenda de manejo de clientes",
-      copy: "Organiza llamadas, seguimientos y tareas por día, semana, mes, año o lista operativa.",
+      meta: "Directorio 2 de 2 · Agenda",
+      title: "Agenda de contactos",
+      copy: "Organiza llamadas, seguimientos y tareas asociadas a clientes, leads o campañas.",
       primaryLabel: "Nueva tarea",
       primaryAction: "create-agenda",
       secondaryLabel: "Ver directorio",
@@ -24516,10 +24903,10 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "overview") {
       secondaryAction: "export-all",
     },
   };
-  return configs[tab] || configs.overview;
+  return configs[currentTab] || configs.directory;
 }
 
-function updateContactCenterStage(tab = state.contactCenterTab || "overview") {
+function updateContactCenterStage(tab = state.contactCenterTab || "directory") {
   const config = contactCenterStageConfig(tab);
   if (contactCenterStageMeta) contactCenterStageMeta.textContent = config.meta;
   if (contactCenterStageTitle) contactCenterStageTitle.textContent = config.title;
@@ -24536,15 +24923,13 @@ function updateContactCenterStage(tab = state.contactCenterTab || "overview") {
 
 function handleContactCenterStageAction(action = "") {
   if (action === "manual-lead") {
-    setContactCenterTab("manual");
-    manualLeadForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-    manualLeadNameInput?.focus();
+    setContactCenterTab("directory");
+    document.querySelector(".lead-directory-command")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    leadCrmSearchInput?.focus();
     return;
   }
   if (action === "create-capture") {
-    setContactCenterTab("captures");
-    leadCaptureForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-    leadCaptureNameInput?.focus();
+    setContactCenterTab("directory");
     return;
   }
   if (action === "create-agenda") {
@@ -24555,17 +24940,15 @@ function handleContactCenterStageAction(action = "") {
     return;
   }
   if (action === "create-sale") {
-    setContactCenterTab("sales");
-    document.getElementById("customerAcquisitionForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    customerAcquisitionNameInput?.focus();
+    setContactCenterTab("directory");
     return;
   }
   if (action === "go-overview" || action === "go-directory") {
-    setContactCenterTab(action === "go-directory" ? "directory" : "overview");
+    setContactCenterTab("directory");
     return;
   }
   if (action === "go-tickets") {
-    setContactCenterTab("tickets");
+    setContactCenterTab("directory");
     return;
   }
   if (action === "go-agenda") {
@@ -24583,15 +24966,15 @@ function handleContactCenterStageAction(action = "") {
   }
 }
 
-function setContactCenterTab(tab = "overview") {
-  const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
+function setContactCenterTab(tab = "directory") {
+  const nextTab = normalizeContactCenterTab(tab);
   const contactCenterShell = document.getElementById("contactCenterShell");
   state.contactCenterTab = nextTab;
   if (contactCenterShell) contactCenterShell.dataset.contactStage = nextTab;
   updateContactCenterStage(nextTab);
   if (state.currentView === "leads") {
     navButtons.forEach((button) => {
-      const isSalesAlias = button.dataset.view === "sales" && nextTab === "sales";
+      const isSalesAlias = false;
       const contactTarget = button.dataset.contactCenterNav || "";
       const isLeadsBase = button.dataset.view === "leads"
         && nextTab !== "sales"
@@ -24614,16 +24997,11 @@ function setContactCenterTab(tab = "overview") {
     panel.classList.toggle("hidden", !active);
     panel.hidden = !active;
   });
-  if (nextTab === "captures") {
-    renderLeadCaptureTable();
-    renderLeadCaptureAssetOptions();
-  }
   if (nextTab === "agenda") renderLeadAgenda();
-  if (nextTab === "sales") renderSalesView();
 }
 
-function openContactCenterSection(tab = "overview", options = {}) {
-  const nextTab = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "overview";
+function openContactCenterSection(tab = "directory", options = {}) {
+  const nextTab = normalizeContactCenterTab(tab);
   state.contactCenterTab = nextTab;
   if (nextTab === "agenda") {
     state.leadAgendaLoaded = false;
@@ -25158,6 +25536,7 @@ function renderLeadsView() {
     leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
   }
   renderLeadCrmTable();
+  renderContactDirectoryCards(crmRows);
   renderManualContactsDirectory();
   renderLeadAgenda();
   renderLeadCaptureTable();
@@ -25402,6 +25781,8 @@ function renderLeadDetailHeader(detail) {
   const analysis = leadAnalysisModel(detail);
   const tickets = detail.benefits || [];
   const groupedTickets = ticketGroups(tickets);
+  const activationTotal = Number(summary.activations_count || 0) || (detail.activations || []).length || (detail.games || []).length || 0;
+  const affiliateLabel = detail.affiliate ? "Afiliado" : "No afiliado";
   if (leadDetailTitle) leadDetailTitle.textContent = lead.name || "Lead sin nombre";
   if (leadDetailSubtitle) {
     leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"}`;
@@ -25430,7 +25811,10 @@ function renderLeadDetailHeader(detail) {
         <span><strong>Documento</strong>${escapeHtml(lead.document_id || "-")}</span>
         <span><strong>Email</strong>${escapeHtml(lead.email || "-")}</span>
         <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
-        <span><strong>Origen</strong>${escapeHtml(lead.channel || lead.campaign_name || "-")}</span>
+        <span><strong>Canal</strong>${escapeHtml(lead.channel || "-")}</span>
+        <span><strong>Campaña</strong>${escapeHtml(lead.campaign_name || "-")}</span>
+        <span><strong>Activaciones</strong>${activationTotal.toLocaleString("es-CO")}</span>
+        <span><strong>Afiliación</strong>${escapeHtml(affiliateLabel)}</span>
       </div>
       <div class="lead-funnel-strip">
         ${analysis.funnel.map(([label, done]) => `<span class="${done ? "is-done" : ""}">${escapeHtml(label)}</span>`).join("")}
@@ -25723,6 +26107,8 @@ function renderLeadTab(detail) {
         `<strong>Canal de origen</strong><span>${escapeHtml(lead.channel || "-")}</span>`,
         `<strong>Detalle de origen</strong><span>${escapeHtml(lead.source_detail || lead.metadata?.attribution_subject || "-")}</span>`,
         `<strong>Campaña</strong><span>${escapeHtml(lead.campaign_name || "-")}</span>`,
+        `<strong>Activaciones</strong><span>${Number(summary.activations_count || 0).toLocaleString("es-CO")}</span>`,
+        `<strong>Afiliación</strong><span>${detail.affiliate ? "Afiliado" : "No afiliado"}</span>`,
         `<strong>Fecha de creacion</strong><span>${formatDate(lead.created_at)}</span>`,
         `<strong>Estado comercial</strong><span>${escapeHtml(lead.commercial_status_label || "-")}</span>`,
       ])}
@@ -32351,7 +32737,7 @@ adminCampaignSlugInput?.addEventListener("input", () => {
 });
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (button.dataset.contactCenterNav) {
+    if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
       openContactCenterSection(button.dataset.contactCenterNav);
       return;
     }
@@ -32366,16 +32752,17 @@ contactCenterTabs.forEach((button) => {
     setContactCenterTab(button.dataset.contactCenterTab);
   });
   button.addEventListener("keydown", (event) => {
-    const currentIndex = contactCenterTabs.indexOf(button);
+    const visibleTabs = contactCenterTabs.filter((tab) => CONTACT_CENTER_VISIBLE_TAB_KEYS.includes(tab.dataset.contactCenterTab));
+    const currentIndex = visibleTabs.indexOf(button);
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || currentIndex < 0) return;
     event.preventDefault();
-    const lastIndex = contactCenterTabs.length - 1;
+    const lastIndex = visibleTabs.length - 1;
     let nextIndex = currentIndex;
     if (event.key === "ArrowLeft") nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
     if (event.key === "ArrowRight") nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
     if (event.key === "Home") nextIndex = 0;
     if (event.key === "End") nextIndex = lastIndex;
-    const nextButton = contactCenterTabs[nextIndex];
+    const nextButton = visibleTabs[nextIndex];
     if (!nextButton) return;
     setContactCenterTab(nextButton.dataset.contactCenterTab);
     nextButton.focus();

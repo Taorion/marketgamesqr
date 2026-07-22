@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=validator-ui-20260722-v55">
+  <link rel="stylesheet" href="css/styles.css?v=contact-directory-20260722-v56">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -231,7 +231,7 @@
               <details class="portal-tool-group" data-tool-group="commercial">
                 <summary><span class="material-symbols-outlined">handshake</span><span><strong>Gestión comercial</strong><small>Contactos, agenda y ventas</small></span><span class="material-symbols-outlined">expand_more</span></summary>
                 <div>
-                  <button class="nav-item" data-view="leads" data-contact-center-nav="overview" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
+                  <button class="nav-item" data-view="leads" data-contact-center-nav="directory" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
                   <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button"><span class="material-symbols-outlined">event_note</span><span>Agenda comercial</span></button>
                   <button class="nav-item" data-view="sales" data-contact-center-nav="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
                 </div>
@@ -4268,17 +4268,17 @@
                 </article>
               </section>
               <div class="contact-center-tabs contact-center-tab-rail" id="contactCenterTabs" role="tablist" aria-label="Secciones del centro de contactos">
-                <button class="contact-center-tab-card active" id="contactTabOverview" data-contact-center-tab="overview" type="button" role="tab" aria-selected="true" aria-controls="contactPanelOverview">
+                <button class="contact-center-tab-card" id="contactTabOverview" data-contact-center-tab="overview" type="button" role="tab" aria-selected="false" aria-controls="contactPanelOverview" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">dashboard</span>
                   <span class="contact-tab-copy"><strong>Resumen</strong><small>Prioridades</small></span>
                   <em id="contactTabOverviewCount">0</em>
                 </button>
-                <button class="contact-center-tab-card" id="contactTabDirectory" data-contact-center-tab="directory" type="button" role="tab" aria-selected="false" aria-controls="contactPanelDirectory" tabindex="-1">
+                <button class="contact-center-tab-card active" id="contactTabDirectory" data-contact-center-tab="directory" type="button" role="tab" aria-selected="true" aria-controls="contactPanelDirectory">
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">contacts</span>
                   <span class="contact-tab-copy"><strong>Directorio</strong><small>Contactos y ficha</small></span>
                   <em id="contactTabDirectoryCount">0</em>
                 </button>
-                <button class="contact-center-tab-card" id="contactTabTickets" data-contact-center-tab="tickets" type="button" role="tab" aria-selected="false" aria-controls="contactPanelTickets" tabindex="-1">
+                <button class="contact-center-tab-card" id="contactTabTickets" data-contact-center-tab="tickets" type="button" role="tab" aria-selected="false" aria-controls="contactPanelTickets" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">confirmation_number</span>
                   <span class="contact-tab-copy"><strong>Tickets</strong><small>Estado y vencimiento</small></span>
                   <em id="contactTabTicketsCount">0</em>
@@ -4288,17 +4288,17 @@
                   <span class="contact-tab-copy"><strong>Agenda</strong><small>Llamadas y tareas</small></span>
                   <em id="contactTabAgendaCount">0</em>
                 </button>
-                <button class="contact-center-tab-card" id="contactTabCaptures" data-contact-center-tab="captures" type="button" role="tab" aria-selected="false" aria-controls="contactPanelCaptures" tabindex="-1">
+                <button class="contact-center-tab-card" id="contactTabCaptures" data-contact-center-tab="captures" type="button" role="tab" aria-selected="false" aria-controls="contactPanelCaptures" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">how_to_reg</span>
                   <span class="contact-tab-copy"><strong>Capturas</strong><small>Formularios</small></span>
                   <em id="contactTabCapturesCount">0</em>
                 </button>
-                <button class="contact-center-tab-card" id="contactTabManual" data-contact-center-tab="manual" type="button" role="tab" aria-selected="false" aria-controls="contactPanelManual" tabindex="-1">
+                <button class="contact-center-tab-card" id="contactTabManual" data-contact-center-tab="manual" type="button" role="tab" aria-selected="false" aria-controls="contactPanelManual" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">person_add</span>
                   <span class="contact-tab-copy"><strong>Prospectos</strong><small>Manual y referidos</small></span>
                   <em id="contactTabManualCount">0</em>
                 </button>
-                <button class="contact-center-tab-card" id="contactTabSales" data-contact-center-tab="sales" type="button" role="tab" aria-selected="false" aria-controls="contactPanelSales" tabindex="-1">
+                <button class="contact-center-tab-card" id="contactTabSales" data-contact-center-tab="sales" type="button" role="tab" aria-selected="false" aria-controls="contactPanelSales" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">payments</span>
                   <span class="contact-tab-copy"><strong>Ventas</strong><small>Cierres</small></span>
                   <em id="contactTabSalesCount">0</em>
@@ -4306,8 +4306,8 @@
               </div>
               <section class="contact-center-summary kpi-grid compact" id="contactCenterSummaryGrid"></section>
               <section class="contact-action-feed" id="contactActionFeed"></section>
-              <div class="contact-center-panel active" id="contactPanelOverview" data-contact-center-panel="overview" role="tabpanel" aria-labelledby="contactTabOverview"></div>
-              <div class="contact-center-panel hidden" id="contactPanelDirectory" data-contact-center-panel="directory" role="tabpanel" aria-labelledby="contactTabDirectory" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelOverview" data-contact-center-panel="overview" role="tabpanel" aria-labelledby="contactTabOverview" hidden></div>
+              <div class="contact-center-panel active" id="contactPanelDirectory" data-contact-center-panel="directory" role="tabpanel" aria-labelledby="contactTabDirectory"></div>
               <div class="contact-center-panel hidden" id="contactPanelTickets" data-contact-center-panel="tickets" role="tabpanel" aria-labelledby="contactTabTickets" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelAgenda" data-contact-center-panel="agenda" role="tabpanel" aria-labelledby="contactTabAgenda" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelCaptures" data-contact-center-panel="captures" role="tabpanel" aria-labelledby="contactTabCaptures" hidden></div>
@@ -7011,7 +7011,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=validator-ui-20260722-v55" defer></script>
+  <script src="js/app.js?v=contact-directory-20260722-v56" defer></script>
 </body>
 </html>
 
