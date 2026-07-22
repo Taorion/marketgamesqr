@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-contact-directory-ux-v67";
+const APP_VERSION = "empresa-20260722-agenda-create-modal-v68";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -211,6 +211,9 @@ const leadAgendaPrevButton = document.getElementById("leadAgendaPrevButton");
 const leadAgendaNextButton = document.getElementById("leadAgendaNextButton");
 const leadAgendaStatusFilter = document.getElementById("leadAgendaStatusFilter");
 const leadAgendaViewButtons = Array.from(document.querySelectorAll("[data-agenda-view]"));
+const leadAgendaOpenCreateButton = document.getElementById("leadAgendaOpenCreateButton");
+const leadAgendaCreateModal = document.getElementById("leadAgendaCreateModal");
+const leadAgendaCreateModalCloseButton = document.getElementById("leadAgendaCreateModalCloseButton");
 const leadAgendaCreateForm = document.getElementById("leadAgendaCreateForm");
 const leadAgendaScopeInput = document.getElementById("leadAgendaScopeInput");
 const leadAgendaLeadInput = document.getElementById("leadAgendaLeadInput");
@@ -25983,6 +25986,90 @@ async function deleteAgendaItem(noteId) {
   }
 }
 
+function ensureLeadAgendaCreateModalStyles() {
+  if (document.getElementById("leadAgendaCreateModalStyles")) return;
+  const style = document.createElement("style");
+  style.id = "leadAgendaCreateModalStyles";
+  style.textContent = `
+    #leadAgendaCreateModal .lead-agenda-create-modal-card {
+      width: min(960px, calc(100vw - 32px));
+      max-height: calc(100vh - 42px);
+      overflow: auto;
+    }
+    #leadAgendaCreateModal .modal-head {
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    #leadAgendaCreateModal .modal-head h3 {
+      margin: 0.15rem 0 0.2rem;
+      font-size: clamp(1.35rem, 2.3vw, 2rem);
+    }
+    #leadAgendaCreateModal .modal-head p {
+      margin: 0;
+      color: var(--muted-text);
+      max-width: 650px;
+    }
+    #leadAgendaCreateModal .lead-agenda-form-head {
+      margin-bottom: 0.85rem;
+      padding: 0.85rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.04);
+    }
+    #leadAgendaCreateModal .lead-agenda-create-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    #leadAgendaCreateModal .lead-agenda-create-form label {
+      min-width: 0;
+    }
+    #leadAgendaCreateModal .lead-agenda-create-form .span-2,
+    #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+      grid-column: 1 / -1;
+    }
+    #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+      min-height: 48px;
+      justify-content: center;
+    }
+    @media (max-width: 760px) {
+      #leadAgendaCreateModal .lead-agenda-create-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function setDefaultLeadAgendaReminderIfEmpty() {
+  if (!leadAgendaReminderInput || leadAgendaReminderInput.value) return;
+  const nextHour = new Date();
+  nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+  leadAgendaReminderInput.value = datetimeLocalValue(nextHour);
+}
+
+function openLeadAgendaCreateModal(options = {}) {
+  if (!leadAgendaCreateModal) return;
+  ensureLeadAgendaCreateModalStyles();
+  renderLeadAgendaLeadOptions();
+  renderLeadAgendaCampaignOptions();
+  setDefaultLeadAgendaReminderIfEmpty();
+  leadAgendaCreateModal.classList.remove("hidden");
+  leadAgendaCreateModal.removeAttribute("aria-hidden");
+  const focusTarget = options.focusTarget || leadAgendaActionInput || leadAgendaScopeInput;
+  window.setTimeout(() => {
+    focusTarget?.focus?.({ preventScroll: true });
+  }, 80);
+}
+
+function closeLeadAgendaCreateModal() {
+  if (!leadAgendaCreateModal) return;
+  leadAgendaCreateModal.classList.add("hidden");
+  leadAgendaCreateModal.setAttribute("aria-hidden", "true");
+  leadAgendaOpenCreateButton?.focus?.({ preventScroll: true });
+}
+
 async function createAgendaItemFromForm(event) {
   event.preventDefault();
   const leadRef = parseAgendaLeadValue(leadAgendaLeadInput?.value || "");
@@ -26049,6 +26136,7 @@ async function createAgendaItemFromForm(event) {
     nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
     leadAgendaReminderInput.value = datetimeLocalValue(nextHour);
     await refreshLeadAgendaAfterMutation({ anchorDate: result?.item?.reminder_at || reminderValue, status: "OPEN", preserveItem: result?.item || null });
+    closeLeadAgendaCreateModal();
     showFeedback("Tarea creada en la agenda.", "success");
   } catch (error) {
     showFeedback(error.message || "No se pudo crear la tarea.", "error");
@@ -26446,9 +26534,8 @@ function handleContactCenterStageAction(action = "") {
   }
   if (action === "create-agenda") {
     setContactCenterTab("agenda");
-    renderLeadAgendaLeadOptions();
     leadAgendaCard?.scrollIntoView({ behavior: "smooth", block: "start" });
-    leadAgendaActionInput?.focus();
+    openLeadAgendaCreateModal();
     return;
   }
   if (action === "create-sale") {
@@ -34968,10 +35055,15 @@ contactCenterTabs.forEach((button) => {
 contactCenterPrimaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterPrimaryAction.dataset.contactCenterAction));
 contactCenterSecondaryAction?.addEventListener("click", () => handleContactCenterStageAction(contactCenterSecondaryAction.dataset.contactCenterAction));
 leadAgendaCreateForm?.addEventListener("submit", createAgendaItemFromForm);
+leadAgendaOpenCreateButton?.addEventListener("click", () => openLeadAgendaCreateModal());
+leadAgendaCreateModalCloseButton?.addEventListener("click", closeLeadAgendaCreateModal);
+leadAgendaCreateModal?.addEventListener("click", (event) => {
+  if (event.target === leadAgendaCreateModal) closeLeadAgendaCreateModal();
+});
 leadAgendaTemplateButtons.forEach((button) => {
   button.addEventListener("click", () => {
     applyAgendaTemplate(button.dataset.agendaTemplate);
-    leadAgendaActionInput?.focus();
+    openLeadAgendaCreateModal();
   });
 });
 leadAgendaViewButtons.forEach((button) => {
@@ -35582,6 +35674,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !leadDetailModal?.classList.contains("hidden")) {
     closeLeadDetail();
+    return;
+  }
+  if (event.key === "Escape" && !leadAgendaCreateModal?.classList.contains("hidden")) {
+    closeLeadAgendaCreateModal();
     return;
   }
   if (event.key === "Escape") closePortalMenu();

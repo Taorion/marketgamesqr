@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=contact-directory-ux-20260722-v67">
+  <link rel="stylesheet" href="css/styles.css?v=agenda-create-modal-20260722-v68">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4383,6 +4383,7 @@
                   </button>
                 </div>
                 <div class="lead-agenda-controls">
+                  <button class="solid-button" id="leadAgendaOpenCreateButton" type="button">Nueva tarea</button>
                   <button class="ghost-button" id="leadAgendaPrevButton" type="button">Anterior</button>
                   <input id="leadAgendaDateInput" type="date">
                   <button class="ghost-button" id="leadAgendaNextButton" type="button">Siguiente</button>
@@ -4406,101 +4407,115 @@
                 <button class="ghost-button" type="button" data-agenda-template="BULK_ACTIVATION">Masiva</button>
                 <button class="ghost-button" type="button" data-agenda-template="MARKETING">Marketing</button>
               </div>
-              <div class="lead-agenda-form-head">
-                <div>
-                  <span class="mono-label">Nueva orden de trabajo</span>
-                  <strong>Crear tarea de seguimiento</strong>
+              <div class="modal-shell hidden" id="leadAgendaCreateModal" role="dialog" aria-modal="true" aria-labelledby="leadAgendaCreateModalTitle" aria-hidden="true">
+                <div class="modal-card lead-agenda-create-modal-card">
+                  <div class="modal-head">
+                    <div>
+                      <span class="mono-label">Agenda comercial</span>
+                      <h3 id="leadAgendaCreateModalTitle">Crear tarea de seguimiento</h3>
+                      <p>Completa los campos y vuelve a la agenda cuando la tarea quede creada.</p>
+                    </div>
+                    <button class="icon-button" id="leadAgendaCreateModalCloseButton" type="button" aria-label="Cerrar creación de tarea">
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                  <div class="lead-agenda-form-head">
+                    <div>
+                      <span class="mono-label">Nueva orden de trabajo</span>
+                      <strong>Datos de la tarea</strong>
+                    </div>
+                    <small>Elige alcance, contacto o campaña, define la acción y programa cuándo debe ejecutarse.</small>
+                  </div>
+                  <form class="lead-agenda-create-form" id="leadAgendaCreateForm">
+                    <label>
+                      <span>Alcance</span>
+                      <select id="leadAgendaScopeInput">
+                        <option value="">Elegir alcance</option>
+                        <option value="CONTACT">Contacto</option>
+                        <option value="GENERAL">Sin alcance / tarea interna</option>
+                        <option value="CAMPAIGN">Campaña</option>
+                        <option value="MARKETING">Marketing</option>
+                        <option value="ACTIVATION_STRATEGY">Estrategia de activación</option>
+                        <option value="BULK_ACTIVATION">Activación en masa</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Contacto</span>
+                      <select id="leadAgendaLeadInput"></select>
+                    </label>
+                    <label>
+                      <span>Campaña relacionada</span>
+                      <select id="leadAgendaCampaignInput">
+                        <option value="">Sin campaña</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Qué hay que hacer</span>
+                      <input id="leadAgendaActionInput" type="text" maxlength="500" placeholder="Ej: llamar, enviar propuesta, confirmar activación" required>
+                    </label>
+                    <label>
+                      <span>Fecha y hora</span>
+                      <input id="leadAgendaReminderInput" type="datetime-local" required>
+                    </label>
+                    <label>
+                      <span>Prioridad</span>
+                      <select id="leadAgendaPriorityInput">
+                        <option value="MEDIUM">Media</option>
+                        <option value="HIGH">Alta</option>
+                        <option value="URGENT">Urgente</option>
+                        <option value="LOW">Baja</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Tipo</span>
+                      <select id="leadAgendaActivityTypeInput">
+                        <option value="TASK">Tarea</option>
+                        <option value="MEETING">Reunión</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Medio</span>
+                      <select id="leadAgendaMeetingModeInput">
+                        <option value="">Sin medio</option>
+                        <option value="VIRTUAL">Virtual</option>
+                        <option value="IN_PERSON">Presencial</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Plataforma</span>
+                      <select id="leadAgendaMeetingPlatformInput">
+                        <option value="">No aplica</option>
+                        <option value="ZOOM">Zoom</option>
+                        <option value="MEET">Google Meet</option>
+                        <option value="TEAMS">Microsoft Teams</option>
+                        <option value="WHATSAPP">WhatsApp</option>
+                        <option value="OTHER">Otra</option>
+                      </select>
+                    </label>
+                    <label class="span-2">
+                      <span>Enlace virtual</span>
+                      <input id="leadAgendaMeetingUrlInput" type="url" maxlength="1000" placeholder="https://meet.google.com/...">
+                    </label>
+                    <label class="span-2">
+                      <span>Dirección presencial</span>
+                      <input id="leadAgendaMeetingAddressInput" type="text" maxlength="1000" placeholder="Dirección, sede, local o punto de encuentro">
+                    </label>
+                    <label>
+                      <span>% completado</span>
+                      <input id="leadAgendaProgressInput" type="number" min="0" max="100" step="5" value="0">
+                    </label>
+                    <label class="span-2">
+                      <span>Detalle</span>
+                      <textarea id="leadAgendaNoteInput" rows="2" maxlength="3000" placeholder="Contexto de la tarea, paquete, emisión, seguimiento o acción de marketing"></textarea>
+                    </label>
+                    <label class="span-2">
+                      <span>Checklist</span>
+                      <textarea id="leadAgendaChecklistInput" rows="2" maxlength="1200" placeholder="Separar por coma o por línea: llamar, enviar link, confirmar pago"></textarea>
+                    </label>
+                    <button class="solid-button" type="submit">Crear tarea</button>
+                  </form>
                 </div>
-                <small>Elige alcance, contacto o campaña, define la acción y programa cuándo debe ejecutarse.</small>
               </div>
-              <form class="lead-agenda-create-form" id="leadAgendaCreateForm">
-                <label>
-                  <span>Alcance</span>
-                  <select id="leadAgendaScopeInput">
-                    <option value="">Elegir alcance</option>
-                    <option value="CONTACT">Contacto</option>
-                    <option value="GENERAL">Sin alcance / tarea interna</option>
-                    <option value="CAMPAIGN">Campaña</option>
-                    <option value="MARKETING">Marketing</option>
-                    <option value="ACTIVATION_STRATEGY">Estrategia de activación</option>
-                    <option value="BULK_ACTIVATION">Activación en masa</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Contacto</span>
-                  <select id="leadAgendaLeadInput"></select>
-                </label>
-                <label>
-                  <span>Campaña relacionada</span>
-                  <select id="leadAgendaCampaignInput">
-                    <option value="">Sin campaña</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Qué hay que hacer</span>
-                  <input id="leadAgendaActionInput" type="text" maxlength="500" placeholder="Ej: llamar, enviar propuesta, confirmar activación" required>
-                </label>
-                <label>
-                  <span>Fecha y hora</span>
-                  <input id="leadAgendaReminderInput" type="datetime-local" required>
-                </label>
-                <label>
-                  <span>Prioridad</span>
-                  <select id="leadAgendaPriorityInput">
-                    <option value="MEDIUM">Media</option>
-                    <option value="HIGH">Alta</option>
-                    <option value="URGENT">Urgente</option>
-                    <option value="LOW">Baja</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Tipo</span>
-                  <select id="leadAgendaActivityTypeInput">
-                    <option value="TASK">Tarea</option>
-                    <option value="MEETING">Reunión</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Medio</span>
-                  <select id="leadAgendaMeetingModeInput">
-                    <option value="">Sin medio</option>
-                    <option value="VIRTUAL">Virtual</option>
-                    <option value="IN_PERSON">Presencial</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Plataforma</span>
-                  <select id="leadAgendaMeetingPlatformInput">
-                    <option value="">No aplica</option>
-                    <option value="ZOOM">Zoom</option>
-                    <option value="MEET">Google Meet</option>
-                    <option value="TEAMS">Microsoft Teams</option>
-                    <option value="WHATSAPP">WhatsApp</option>
-                    <option value="OTHER">Otra</option>
-                  </select>
-                </label>
-                <label class="span-2">
-                  <span>Enlace virtual</span>
-                  <input id="leadAgendaMeetingUrlInput" type="url" maxlength="1000" placeholder="https://meet.google.com/...">
-                </label>
-                <label class="span-2">
-                  <span>Dirección presencial</span>
-                  <input id="leadAgendaMeetingAddressInput" type="text" maxlength="1000" placeholder="Dirección, sede, local o punto de encuentro">
-                </label>
-                <label>
-                  <span>% completado</span>
-                  <input id="leadAgendaProgressInput" type="number" min="0" max="100" step="5" value="0">
-                </label>
-                <label class="span-2">
-                  <span>Detalle</span>
-                  <textarea id="leadAgendaNoteInput" rows="2" maxlength="3000" placeholder="Contexto de la tarea, paquete, emisión, seguimiento o acción de marketing"></textarea>
-                </label>
-                <label class="span-2">
-                  <span>Checklist</span>
-                  <textarea id="leadAgendaChecklistInput" rows="2" maxlength="1200" placeholder="Separar por coma o por línea: llamar, enviar link, confirmar pago"></textarea>
-                </label>
-                <button class="solid-button" type="submit">Crear tarea</button>
-              </form>
               <section class="lead-agenda-kpis" id="leadAgendaKpis"></section>
               <section class="lead-agenda-board" id="leadAgendaBoard"></section>
             </article>
@@ -7165,7 +7180,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=contact-directory-ux-20260722-v67" defer></script>
+  <script src="js/app.js?v=agenda-create-modal-20260722-v68" defer></script>
 </body>
 </html>
 
