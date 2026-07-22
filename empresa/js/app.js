@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-gaming-builder-v54";
+const APP_VERSION = "empresa-20260722-validator-ui-v55";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -10423,6 +10423,136 @@ function renderValidatorHistory(redemptions) {
   `).join("") || '<tr><td colspan="5">No hay redenciones para este rango.</td></tr>';
 }
 
+function ensureValidatorQrUxStyles() {
+  if (document.getElementById("validatorQrUxStyles")) return;
+  const style = document.createElement("style");
+  style.id = "validatorQrUxStyles";
+  style.textContent = `
+    body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] { max-width:1240px; margin-inline:auto; }
+    body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:center !important; gap:18px !important; padding:18px 20px !important; border:1px solid rgba(15,115,84,.14) !important; border-radius:24px !important; background:linear-gradient(135deg,#f5fbf8,#f8fbff) !important; box-shadow:0 12px 30px rgba(23,65,91,.07) !important; }
+    body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head h2 { margin:0 !important; color:#14352c !important; font-size:clamp(1.45rem,2.5vw,2.2rem) !important; letter-spacing:-.045em !important; }
+    body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head p { max-width:760px !important; margin:6px 0 0 !important; color:#60756e !important; line-height:1.45 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-hero { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(480px,1.35fr); gap:16px; align-items:stretch; margin:16px 0; padding:18px; border:1px solid rgba(15,115,84,.18); border-radius:24px; background:linear-gradient(135deg,#0f7354,#123b5a); color:#fff; box-shadow:0 18px 42px rgba(23,65,91,.14); overflow:hidden; position:relative; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-hero::after { content:""; position:absolute; width:240px; height:240px; right:-90px; top:-110px; border:42px solid rgba(255,255,255,.08); border-radius:50%; pointer-events:none; }
+    body[data-current-view="validator"] .portal-shell .validator-hero-copy { position:relative; z-index:1; display:grid; align-content:center; gap:7px; }
+    body[data-current-view="validator"] .portal-shell .validator-hero-copy .mono-label { width:max-content; background:rgba(255,255,255,.15) !important; color:#dffcf0 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-hero-copy h3 { margin:0; color:#fff; font-size:clamp(1.2rem,2.2vw,1.8rem); line-height:1.06; letter-spacing:-.04em; }
+    body[data-current-view="validator"] .portal-shell .validator-hero-copy p { margin:0; color:#dffcf0; line-height:1.45; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-flow { position:relative; z-index:1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-step { display:grid; gap:5px; padding:12px; border:1px solid rgba(255,255,255,.18); border-radius:18px; background:rgba(255,255,255,.12); backdrop-filter:blur(10px); }
+    body[data-current-view="validator"] .portal-shell .validator-operator-step span { display:grid; place-items:center; width:34px; height:34px; border-radius:13px; background:#fff; color:#0f7354; font-weight:900; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-step strong { color:#fff; font-size:.85rem; }
+    body[data-current-view="validator"] .portal-shell .validator-operator-step small { color:#dffcf0; font-size:.68rem; line-height:1.28; }
+    body[data-current-view="validator"] .portal-shell .validator-quick-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:-6px 0 16px; }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action { min-height:56px; display:grid; grid-template-columns:30px minmax(0,1fr); gap:8px; align-items:center; padding:10px 12px; border:1px solid rgba(23,65,91,.12); border-radius:16px; background:#fff; color:#17362f; text-align:left; box-shadow:0 8px 18px rgba(23,65,91,.045); }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action:hover { border-color:#0f7354; background:#f4fbf8; transform:translateY(-1px); box-shadow:0 14px 28px rgba(15,115,84,.1); }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action .material-symbols-outlined { display:grid; place-items:center; width:30px; height:30px; border-radius:11px; background:#e4f7ee; color:#0f7354; font-size:19px; }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action strong, body[data-current-view="validator"] .portal-shell .validator-quick-action small { display:block; }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action strong { font-size:.78rem; line-height:1.15; }
+    body[data-current-view="validator"] .portal-shell .validator-quick-action small { color:#64776f; font-size:.66rem; line-height:1.2; }
+    body[data-current-view="validator"] .portal-shell .validator-grid { display:grid !important; grid-template-columns:minmax(360px,.9fr) minmax(360px,1.1fr) !important; gap:14px !important; align-items:stretch !important; }
+    body[data-current-view="validator"] .portal-shell .validator-result-grid { display:grid !important; grid-template-columns:minmax(440px,1.05fr) minmax(420px,.95fr) !important; gap:14px !important; align-items:start !important; margin-top:14px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-panel { min-width:0 !important; padding:16px !important; border:1px solid rgba(23,65,91,.11) !important; border-radius:22px !important; background:#fff !important; box-shadow:0 12px 28px rgba(23,65,91,.06) !important; }
+    body[data-current-view="validator"] .portal-shell .validator-panel .card-head { display:flex !important; align-items:start !important; justify-content:space-between !important; gap:12px !important; padding-bottom:12px !important; margin-bottom:12px !important; border-bottom:1px solid rgba(23,65,91,.08) !important; }
+    body[data-current-view="validator"] .portal-shell .validator-panel .subhead { margin:3px 0 0 !important; color:#14352c !important; font-size:1.08rem !important; letter-spacing:-.02em !important; }
+    body[data-current-view="validator"] .portal-shell .validator-scanner-shell { min-height:330px !important; border-radius:22px !important; background:radial-gradient(circle at center,#163e36 0%,#0b171f 70%) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 14px 30px rgba(11,23,31,.18) !important; }
+    body[data-current-view="validator"] .portal-shell .validator-scanner-shell video { border-radius:22px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-scanner-overlay { background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.22)) !important; }
+    body[data-current-view="validator"] .portal-shell .validator-scan-frame { width:min(72%,270px) !important; aspect-ratio:1 !important; border:3px solid #6ee7b7 !important; border-radius:26px !important; box-shadow:0 0 0 999px rgba(6,17,24,.28),0 0 32px rgba(110,231,183,.28) !important; position:relative !important; }
+    body[data-current-view="validator"] .portal-shell .validator-scan-frame::after { content:"Mantén el QR dentro del marco"; position:absolute; left:50%; bottom:-38px; transform:translateX(-50%); width:max-content; max-width:220px; padding:7px 10px; border-radius:999px; background:rgba(255,255,255,.92); color:#0f513d; font-size:.68rem; font-weight:850; }
+    body[data-current-view="validator"] .portal-shell .validator-hint, body[data-current-view="validator"] .portal-shell .validator-inline-message, body[data-current-view="validator"] .portal-shell .validator-result-copy { margin:10px 0 0 !important; color:#60756e !important; line-height:1.42 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-panel .head-actions { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-top:12px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-panel .head-actions button { min-height:42px !important; justify-content:center !important; }
+    body[data-current-view="validator"] .portal-shell .validator-manual-grid { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:8px !important; padding:11px !important; border:1px solid rgba(15,115,84,.13) !important; border-radius:18px !important; background:#f4fbf8 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-manual-grid input { min-height:46px !important; border:1px solid rgba(23,65,91,.13) !important; border-radius:13px !important; background:#fff !important; box-shadow:none !important; }
+    body[data-current-view="validator"] .portal-shell .validator-manual-grid input:focus, body[data-current-view="validator"] .portal-shell .validator-sale-form :is(input,select,textarea):focus { border-color:#0f7354 !important; box-shadow:0 0 0 3px rgba(15,115,84,.14) !important; outline:0 !important; }
+    body[data-current-view="validator"] .portal-shell .result-chip { border-radius:999px !important; padding:8px 11px !important; font-weight:850 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-result-grid-inner { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; margin-top:14px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-result-item { min-width:0 !important; padding:12px !important; border:1px solid rgba(23,65,91,.1) !important; border-radius:16px !important; background:#f8fbff !important; }
+    body[data-current-view="validator"] .portal-shell .validator-result-item strong { display:block !important; margin-top:4px !important; color:#14352c !important; font-size:.9rem !important; line-height:1.25 !important; overflow-wrap:anywhere !important; }
+    body[data-current-view="validator"] .portal-shell .validator-sale-form { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-sale-form label { min-width:0 !important; display:grid !important; gap:6px !important; padding:10px !important; border:1px solid rgba(23,65,91,.1) !important; border-radius:15px !important; background:#fdfefe !important; }
+    body[data-current-view="validator"] .portal-shell .validator-sale-form label > span { color:#29433b !important; font-size:.74rem !important; font-weight:850 !important; }
+    body[data-current-view="validator"] .portal-shell .validator-sale-form :is(input,select,textarea) { min-height:42px !important; border:1px solid rgba(23,65,91,.13) !important; border-radius:12px !important; background:#fff !important; box-shadow:none !important; }
+    body[data-current-view="validator"] .portal-shell .validator-checkline { display:flex !important; align-items:center !important; gap:9px !important; min-height:64px !important; }
+    body[data-current-view="validator"] .portal-shell .validator-checkline input { width:20px !important; min-height:auto !important; height:20px !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:8px !important; padding:12px !important; border:1px solid rgba(15,115,84,.14) !important; border-radius:18px !important; background:linear-gradient(135deg,#f4fbf8,#f8fbff) !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel div { padding:9px !important; border-radius:14px !important; background:#fff !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel span, body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel strong { display:block !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel span { color:#64776f !important; font-size:.66rem !important; font-weight:850 !important; text-transform:uppercase !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel strong { color:#14352c !important; font-size:.95rem !important; }
+    body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel p { grid-column:1 / -1 !important; margin:0 !important; color:#60756e !important; font-size:.76rem !important; }
+    body[data-current-view="validator"] .portal-shell .validator-sale-panel .modal-actions { display:grid !important; gap:8px !important; padding:11px !important; border:1px solid rgba(23,65,91,.1) !important; border-radius:16px !important; background:#f8fbff !important; }
+    body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .data-table-card { margin-top:14px !important; border-radius:22px !important; box-shadow:0 12px 28px rgba(23,65,91,.06) !important; }
+    :root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.view-head,.validator-panel,.validator-quick-action,.validator-manual-grid,.validator-result-item,.validator-sale-form label,.reward-pass-balance-panel,.reward-pass-balance-panel div,.validator-sale-panel .modal-actions,.view-section[data-view="validator"] > .data-table-card) { background:#10231e !important; color:#edf9f4 !important; border-color:rgba(177,199,190,.22) !important; }
+    :root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.view-head h2,.validator-panel .subhead,.validator-result-item strong,.validator-sale-form label > span,.reward-pass-balance-panel strong) { color:#edf9f4 !important; }
+    :root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.view-head p,.validator-hint,.validator-inline-message,.validator-result-copy,.validator-quick-action small,.reward-pass-balance-panel p) { color:#bdd1ca !important; }
+    @media (max-width:1050px) { body[data-current-view="validator"] .portal-shell .validator-operator-hero, body[data-current-view="validator"] .portal-shell .validator-grid, body[data-current-view="validator"] .portal-shell .validator-result-grid { grid-template-columns:1fr !important; } body[data-current-view="validator"] .portal-shell .validator-operator-flow, body[data-current-view="validator"] .portal-shell .validator-quick-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+    @media (max-width:700px) { body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head { grid-template-columns:1fr !important; } body[data-current-view="validator"] .portal-shell .validator-operator-flow, body[data-current-view="validator"] .portal-shell .validator-quick-actions, body[data-current-view="validator"] .portal-shell .validator-result-grid-inner, body[data-current-view="validator"] .portal-shell .validator-sale-form, body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel { grid-template-columns:1fr !important; } body[data-current-view="validator"] .portal-shell .validator-manual-grid { grid-template-columns:1fr !important; } body[data-current-view="validator"] .portal-shell .validator-scanner-shell { min-height:260px !important; } }
+  `;
+  document.head.appendChild(style);
+}
+
+function validatorScrollTo(selector = "") {
+  const target = document.querySelector(selector);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  const focusTarget = target.matches("input, select, textarea, button") ? target : target.querySelector("input, select, textarea, button");
+  window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 260);
+}
+
+function ensureValidatorQrUx() {
+  const view = document.querySelector('.view-section[data-view="validator"]');
+  if (!view) return;
+  ensureValidatorQrUxStyles();
+  if (!view.querySelector(".validator-operator-hero")) {
+    view.querySelector(":scope > .view-head")?.insertAdjacentHTML("afterend", `
+      <section class="validator-operator-hero" aria-label="Flujo operativo del Validador QR">
+        <div class="validator-hero-copy">
+          <span class="mono-label">Operación en caja</span>
+          <h3>Valida el ticket, redime el beneficio y registra la venta sin perder el hilo.</h3>
+          <p>Esta pantalla está organizada para atención física: primero captura el QR, luego confirma el estado, redime y cierra la venta atribuida.</p>
+        </div>
+        <div class="validator-operator-flow">
+          <article class="validator-operator-step"><span>1</span><strong>Escanear</strong><small>Cámara o token manual.</small></article>
+          <article class="validator-operator-step"><span>2</span><strong>Confirmar</strong><small>Cliente, beneficio y vigencia.</small></article>
+          <article class="validator-operator-step"><span>3</span><strong>Redimir</strong><small>Bloquea doble uso del ticket.</small></article>
+          <article class="validator-operator-step"><span>4</span><strong>Vender</strong><small>Factura y revenue atribuido.</small></article>
+        </div>
+      </section>
+      <section class="validator-quick-actions" aria-label="Acciones rápidas del validador">
+        <button class="validator-quick-action" type="button" data-validator-quick="camera"><span class="material-symbols-outlined">qr_code_scanner</span><span><strong>Escanear con cámara</strong><small>Abre el lector visual.</small></span></button>
+        <button class="validator-quick-action" type="button" data-validator-quick="manual"><span class="material-symbols-outlined">keyboard</span><span><strong>Pegar token</strong><small>Validación manual rápida.</small></span></button>
+        <button class="validator-quick-action" type="button" data-validator-quick="result"><span class="material-symbols-outlined">fact_check</span><span><strong>Ver resultado</strong><small>Datos del ticket y cliente.</small></span></button>
+        <button class="validator-quick-action" type="button" data-validator-quick="sale"><span class="material-symbols-outlined">point_of_sale</span><span><strong>Registrar venta</strong><small>Cierra revenue atribuido.</small></span></button>
+      </section>
+    `);
+  }
+  if (!view.dataset.validatorQrUxBound) {
+    view.dataset.validatorQrUxBound = "true";
+    view.addEventListener("click", (event) => {
+      const action = event.target.closest("[data-validator-quick]")?.dataset.validatorQuick;
+      if (!action) return;
+      event.preventDefault();
+      if (action === "camera") {
+        validatorScrollTo(".validator-scanner-shell");
+        return;
+      }
+      if (action === "manual") {
+        validatorScrollTo("#validatorQrTokenInput");
+        return;
+      }
+      if (action === "result") {
+        validatorScrollTo("#validatorResultTitle");
+        return;
+      }
+      if (action === "sale") {
+        validatorScrollTo("#validatorSaleForm");
+      }
+    });
+  }
+}
+
 async function loadValidatorHistory() {
   if (!session?.token) return;
 
@@ -10447,6 +10577,7 @@ async function loadValidatorHistory() {
 }
 
 async function renderValidatorView() {
+  ensureValidatorQrUx();
   if (!window.isSecureContext) {
     validatorCameraStatus.textContent = "Origen inseguro";
     validatorScannerHint.textContent = `La camara solo funciona en HTTPS o localhost. ${await validatorCameraDiagnostic()}. Usa el ingreso manual.`;
