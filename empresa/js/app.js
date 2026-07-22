@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-section-visible-v81";
+const APP_VERSION = "empresa-20260722-sales-table-detail-v82";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -7983,8 +7983,7 @@ function navigateRevenueRoute(route = "") {
     return;
   }
   if (target === "sales") {
-    setContactCenterTab("sales");
-    setView("leads");
+    setView("sales");
     return;
   }
   if (target === "validator") {
@@ -9464,8 +9463,7 @@ function openDashboardBuilderRoute(route = "dashboard") {
     return;
   }
   if (route === "sales") {
-    setContactCenterTab("sales");
-    setView("leads");
+    setView("sales");
     return;
   }
   if (route === "leads") {
@@ -14023,6 +14021,180 @@ function saleChannelText(item = {}) {
   return String(item.acquisition_channel || item.channel || "Sin canal").trim() || "Sin canal";
 }
 
+function saleDetailKey(item = {}, index = 0) {
+  return String(
+    item.id
+    || item.sale_id
+    || item.customer_acquisition_sale_id
+    || item.redemption_id
+    || `${item.created_at || ""}::${item.player_name || item.customer_name || ""}::${item.sale_amount || 0}::${index}`,
+  );
+}
+
+function saleByDetailKey(key = "", rows = state.salesDetailRows || state.selectedSales || []) {
+  return (rows || []).find((item, index) => saleDetailKey(item, index) === key) || null;
+}
+
+function saleDetailValue(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (Array.isArray(value)) return value.length ? value.map((item) => saleDetailValue(item)).join(" · ") : "-";
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function saleDetailField(label = "", value = "") {
+  return `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(saleDetailValue(value))}</strong></article>`;
+}
+
+function saleDetailProductsMarkup(item = {}) {
+  const products = saleProductsForDisplay(item);
+  if (!products.length) {
+    return `<article class="sales-detail-product-row"><strong>${escapeHtml(item.product_or_service || "Sin producto")}</strong><small>Producto registrado en la venta</small><b>${escapeHtml(money(item.sale_amount || 0))}</b></article>`;
+  }
+  return products.map((product) => {
+    const quantity = Number(product.quantity || 1);
+    const unitPrice = Number(product.unit_price || 0);
+    const lineTotal = Number(product.line_total || (unitPrice * quantity));
+    return `
+      <article class="sales-detail-product-row">
+        <strong>${escapeHtml(product.name || "Producto")}</strong>
+        <small>${escapeHtml([product.category, product.sku].filter(Boolean).join(" · ") || `Cantidad ${quantity} · Unitario ${money(unitPrice)}`)}</small>
+        <b>${escapeHtml(money(lineTotal))}</b>
+      </article>
+    `;
+  }).join("");
+}
+
+function saleDetailAllDataRows(item = {}) {
+  const metadata = saleMetadata(item);
+  const ignored = new Set(["metadata"]);
+  const rows = Object.entries(item || {})
+    .filter(([key]) => !ignored.has(key))
+    .map(([key, value]) => `<tr><th>${escapeHtml(key)}</th><td><pre>${escapeHtml(saleDetailValue(value))}</pre></td></tr>`);
+  Object.entries(metadata || {}).forEach(([key, value]) => {
+    rows.push(`<tr><th>${escapeHtml(`metadata.${key}`)}</th><td><pre>${escapeHtml(saleDetailValue(value))}</pre></td></tr>`);
+  });
+  return rows.join("") || '<tr><td colspan="2">Sin datos adicionales.</td></tr>';
+}
+
+function ensureSalesDetailModal() {
+  let modal = document.getElementById("salesDetailModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.id = "salesDetailModal";
+  modal.className = "sales-detail-modal hidden";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "salesDetailTitle");
+  modal.innerHTML = `
+    <div class="sales-detail-backdrop" data-sales-detail-close></div>
+    <section class="sales-detail-card" role="document">
+      <button class="icon-button sales-detail-close" type="button" data-sales-detail-close aria-label="Cerrar detalle de venta">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+      <div id="salesDetailContent"></div>
+    </section>
+  `;
+  modal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-sales-detail-close]")) closeSalesDetailModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.classList.contains("hidden")) closeSalesDetailModal();
+  });
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function closeSalesDetailModal() {
+  const modal = document.getElementById("salesDetailModal");
+  modal?.classList.add("hidden");
+  document.body.classList.remove("has-sales-detail-modal");
+}
+
+function openSalesDetailModal(key = "") {
+  const item = saleByDetailKey(key);
+  if (!item) return;
+  const modal = ensureSalesDetailModal();
+  const content = modal.querySelector("#salesDetailContent");
+  const amount = money(item.sale_amount || 0);
+  const products = saleProductsForDisplay(item);
+  content.innerHTML = `
+    <header class="sales-detail-head">
+      <span class="mono-label">Detalle de venta</span>
+      <h3 id="salesDetailTitle">${escapeHtml(item.player_name || item.customer_name || "Venta atribuida")}</h3>
+      <p>${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(amount)} · ${escapeHtml(saleCampaignText(item))}</p>
+    </header>
+    <section class="sales-detail-hero">
+      ${saleDetailField("Valor", amount)}
+      ${saleDetailField("Fecha", formatDate(item.created_at))}
+      ${saleDetailField("Campaña", saleCampaignText(item))}
+      ${saleDetailField("Canal", saleChannelText(item))}
+      ${saleDetailField("Medio", saleSourceLabel(item.sale_source))}
+      ${saleDetailField("Sede", saleBranchText(item))}
+    </section>
+    <section class="sales-detail-section">
+      <h4>Cliente</h4>
+      <div class="sales-detail-grid">
+        ${saleDetailField("Nombre", item.player_name || item.customer_name)}
+        ${saleDetailField("Documento", item.document_id || item.customer_document_id)}
+        ${saleDetailField("Teléfono", item.phone || item.customer_phone)}
+        ${saleDetailField("Correo", item.customer_email || item.email)}
+      </div>
+    </section>
+    <section class="sales-detail-section">
+      <h4>Productos comprados</h4>
+      <div class="sales-detail-products">
+        ${saleDetailProductsMarkup(item)}
+      </div>
+      <small>${products.length ? `${products.length.toLocaleString("es-CO")} producto(s) en la venta.` : "Sin desglose de productos en metadata."}</small>
+    </section>
+    <section class="sales-detail-section">
+      <h4>Atribución y operación</h4>
+      <div class="sales-detail-grid">
+        ${saleDetailField("Pago", item.payment_method)}
+        ${saleDetailField("Moneda", item.currency)}
+        ${saleDetailField("Ticket / QR", item.qr_code_id || item.qr_code)}
+        ${saleDetailField("Redención", item.redemption_id)}
+        ${saleDetailField("Afiliado", item.affiliate_name || item.affiliate_id)}
+        ${saleDetailField("Notas", item.notes || saleMetadata(item).notes)}
+      </div>
+    </section>
+    <details class="sales-detail-raw">
+      <summary>Ver todos los datos técnicos de la venta</summary>
+      <div class="table-wrap">
+        <table>
+          <tbody>${saleDetailAllDataRows(item)}</tbody>
+        </table>
+      </div>
+    </details>
+  `;
+  modal.classList.remove("hidden");
+  document.body.classList.add("has-sales-detail-modal");
+  modal.querySelector(".sales-detail-close")?.focus();
+}
+
+function bindSalesTableRows(rows = []) {
+  if (!campaignSalesTable) return;
+  campaignSalesTable.querySelectorAll("[data-sales-detail]").forEach((row) => {
+    const open = () => openSalesDetailModal(row.dataset.salesDetail || "");
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      open();
+    });
+    row.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      open();
+    });
+  });
+}
+
 function saleDateKey(item = {}) {
   return item.created_at ? dateInputValue(item.created_at) : "";
 }
@@ -14192,6 +14364,83 @@ function ensureSalesAnalysisStyles() {
   const style = document.createElement("style");
   style.id = "salesAnalysisUxStyles";
   style.textContent = `
+    body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"].active {
+      display: grid !important;
+      gap: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .view-head { order: 1; }
+    body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .sales-kpis { order: 2; }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel {
+      order: 3;
+      overflow: hidden;
+      border-color: rgba(15, 115, 84, 0.18);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel {
+      order: 4;
+      border-style: dashed;
+      background: rgba(248, 252, 250, 0.82);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel .table-card-head h3::after {
+      content: " · secundario";
+      color: #64748b;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel .table-card-head small {
+      display: block;
+      margin-top: .25rem;
+      color: #64748b;
+      font-size: .78rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel .table-wrap {
+      max-height: min(62vh, 720px);
+      overflow: auto;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      background: #fff;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel table {
+      width: 100%;
+      min-width: 1080px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-table-panel thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f8fafc;
+      color: #475569;
+      font-size: .68rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-simple-row {
+      cursor: pointer;
+      transition: background .16s ease, box-shadow .16s ease;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-simple-row:hover,
+    body[data-current-view="sales"] .portal-shell .sales-simple-row:focus-visible {
+      background: #f0fdf4;
+      box-shadow: inset 3px 0 0 #0f7354;
+      outline: none;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-simple-row td {
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-simple-row td strong,
+    body[data-current-view="sales"] .portal-shell .sales-simple-row td small {
+      display: block;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-simple-row td small {
+      margin-top: .16rem;
+      color: #64748b;
+      font-size: .7rem;
+      line-height: 1.25;
+    }
     .sales-analysis-toolbar {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -14288,6 +14537,143 @@ function ensureSalesAnalysisStyles() {
       color: #047857;
       white-space: nowrap;
     }
+    .sales-detail-modal.hidden {
+      display: none !important;
+    }
+    .sales-detail-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10080;
+      display: grid;
+      place-items: center;
+      padding: clamp(12px, 3vw, 30px);
+    }
+    .sales-detail-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, .62);
+      backdrop-filter: blur(10px);
+    }
+    .sales-detail-card {
+      position: relative;
+      z-index: 1;
+      width: min(980px, 100%);
+      max-height: min(86vh, 860px);
+      overflow: auto;
+      display: grid;
+      gap: 1rem;
+      padding: clamp(16px, 2.4vw, 26px);
+      border: 1px solid rgba(148, 163, 184, .26);
+      border-radius: 26px;
+      background: #fff;
+      box-shadow: 0 30px 90px rgba(15, 23, 42, .28);
+    }
+    .sales-detail-close {
+      position: sticky;
+      top: 0;
+      justify-self: end;
+      z-index: 2;
+      background: #fff;
+    }
+    .sales-detail-head h3 {
+      margin: .15rem 0;
+      color: #0f172a;
+      font-size: clamp(1.35rem, 3vw, 2.1rem);
+      letter-spacing: -.04em;
+    }
+    .sales-detail-head p {
+      margin: 0;
+      color: #64748b;
+    }
+    .sales-detail-hero,
+    .sales-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .75rem;
+    }
+    .sales-detail-hero article,
+    .sales-detail-grid article,
+    .sales-detail-product-row {
+      display: grid;
+      gap: .2rem;
+      min-width: 0;
+      padding: .9rem;
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-radius: 16px;
+      background: #f8fafc;
+    }
+    .sales-detail-hero article span,
+    .sales-detail-grid article span {
+      color: #64748b;
+      font-size: .68rem;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .sales-detail-hero article strong,
+    .sales-detail-grid article strong {
+      overflow-wrap: anywhere;
+      color: #0f172a;
+      font-size: .9rem;
+      white-space: pre-wrap;
+    }
+    .sales-detail-section {
+      display: grid;
+      gap: .65rem;
+    }
+    .sales-detail-section h4 {
+      margin: 0;
+      color: #17362f;
+      font-size: .95rem;
+    }
+    .sales-detail-products {
+      display: grid;
+      gap: .55rem;
+    }
+    .sales-detail-product-row {
+      grid-template-columns: minmax(0, 1fr) minmax(180px, .7fr) auto;
+      align-items: center;
+    }
+    .sales-detail-product-row small {
+      color: #64748b;
+    }
+    .sales-detail-product-row b {
+      color: #0f7354;
+      white-space: nowrap;
+    }
+    .sales-detail-raw summary {
+      cursor: pointer;
+      color: #0f7354;
+      font-weight: 900;
+    }
+    .sales-detail-raw pre {
+      max-width: 100%;
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: inherit;
+      font-size: .76rem;
+    }
+    body.has-sales-detail-modal {
+      overflow: hidden;
+    }
+    :root[data-theme="dark"] .sales-detail-card,
+    :root[data-theme="dark"] .sales-detail-close {
+      background: #10231e;
+      color: #edf9f4;
+    }
+    :root[data-theme="dark"] .sales-detail-head h3,
+    :root[data-theme="dark"] .sales-detail-section h4,
+    :root[data-theme="dark"] .sales-detail-hero article strong,
+    :root[data-theme="dark"] .sales-detail-grid article strong {
+      color: #edf9f4;
+    }
+    :root[data-theme="dark"] .sales-detail-hero article,
+    :root[data-theme="dark"] .sales-detail-grid article,
+    :root[data-theme="dark"] .sales-detail-product-row {
+      border-color: rgba(151, 211, 190, .18);
+      background: rgba(255, 255, 255, .05);
+    }
     @media (max-width: 1100px) {
       .sales-analysis-toolbar,
       .sales-analysis-grid {
@@ -14303,6 +14689,11 @@ function ensureSalesAnalysisStyles() {
       .sales-analysis-breakdown-row strong,
       .sales-analysis-breakdown-row small {
         white-space: normal;
+      }
+      .sales-detail-hero,
+      .sales-detail-grid,
+      .sales-detail-product-row {
+        grid-template-columns: 1fr;
       }
     }
   `;
@@ -32209,21 +32600,23 @@ function renderSalesView() {
   renderCustomerSaleItems();
   renderAcquisitionChannelDatalist();
   renderSalesAnalysisGrid(sales, allSales);
+  state.salesDetailRows = sales;
 
-  campaignSalesTable.innerHTML = sales.map((item) => `
-    <tr>
-      <td>${escapeHtml(item.player_name || "-")}</td>
-      <td>${escapeHtml(item.document_id || "-")}</td>
-      <td>${escapeHtml(item.phone || "-")}</td>
-      <td>${escapeHtml(money(item.sale_amount))}</td>
+  campaignSalesTable.innerHTML = sales.map((item, index) => `
+    <tr class="sales-simple-row" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
+      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml(item.customer_email || item.email || "Sin correo")}</small></td>
+      <td>${escapeHtml(item.document_id || item.customer_document_id || "-")}</td>
+      <td>${escapeHtml(item.phone || item.customer_phone || "-")}</td>
+      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml(item.currency || "COP")}</small></td>
       <td>${escapeHtml(item.payment_method || "-")}</td>
       <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td>${escapeHtml(item.acquisition_channel || "-")}</td>
+      <td><strong>${escapeHtml(saleChannelText(item))}</strong><small>${escapeHtml(saleCampaignText(item))}</small></td>
       <td>${saleProductSummary(item)}</td>
-      <td>${escapeHtml(item.branch_name || "-")}</td>
-      <td>${escapeHtml(formatDate(item.created_at))}</td>
+      <td>${escapeHtml(saleBranchText(item))}</td>
+      <td><strong>${escapeHtml(formatDateShort(item.created_at))}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></td>
     </tr>
   `).join("") || '<tr><td colspan="10">Sin ventas para los filtros actuales.</td></tr>';
+  bindSalesTableRows(sales);
 }
 
 function branchMetadata(branch = {}) {

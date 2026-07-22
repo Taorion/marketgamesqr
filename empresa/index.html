@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-section-visible-20260722-v81">
+  <link rel="stylesheet" href="css/styles.css?v=sales-table-detail-20260722-v82">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -216,10 +216,6 @@
             <span class="material-symbols-outlined">campaign</span>
             <span><strong>Campañas</strong><small>Planear, crear y emitir QR</small></span>
           </button>
-          <button class="nav-item nav-item-core" data-view="sales" type="button">
-            <span class="material-symbols-outlined">payments</span>
-            <span><strong>Ventas atribuidas</strong><small>Ventas cerradas y análisis</small></span>
-          </button>
           <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
             <span class="material-symbols-outlined">sports_esports</span>
             <span><strong>Gaming Center</strong><small>Tickets o gamificaciones</small></span>
@@ -233,10 +229,11 @@
             <summary><span class="material-symbols-outlined">apps</span><span>Más herramientas</span><span class="material-symbols-outlined">expand_more</span></summary>
             <div class="portal-more-nav-list">
               <details class="portal-tool-group" data-tool-group="commercial">
-                <summary><span class="material-symbols-outlined">handshake</span><span><strong>Gestión comercial</strong><small>Contactos y agenda</small></span><span class="material-symbols-outlined">expand_more</span></summary>
+                <summary><span class="material-symbols-outlined">handshake</span><span><strong>Gestión comercial</strong><small>Contactos, agenda y ventas</small></span><span class="material-symbols-outlined">expand_more</span></summary>
                 <div>
                   <button class="nav-item" data-view="leads" data-contact-center-nav="directory" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
                   <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button"><span class="material-symbols-outlined">event_note</span><span>Agenda comercial</span></button>
+                  <button class="nav-item" data-view="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
                 </div>
               </details>
 
@@ -4907,7 +4904,7 @@
               <button class="segment-tab" data-redemption-sales-tab="sales" type="button">Ventas atribuidas</button>
             </div>
 
-            <article class="surface-card data-table-card">
+            <article class="surface-card data-table-card sales-create-panel">
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Tabla de tickets y leads</span>
@@ -5065,11 +5062,12 @@
               </form>
             </article>
 
-            <article class="surface-card data-table-card">
+            <article class="surface-card data-table-card sales-table-panel">
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Análisis de ventas atribuidas</span>
-                  <h3>Filtrar, agrupar y entender las ventas</h3>
+                  <h3>Tabla simple de ventas cerradas</h3>
+                  <small>Haz click en cualquier venta para ver el detalle completo.</small>
                 </div>
               </div>
               <section class="sales-analysis-toolbar" id="salesAnalysisToolbar" aria-label="Filtros de ventas atribuidas">
@@ -7286,7 +7284,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-section-visible-20260722-v81" defer></script>
+  <script src="js/app.js?v=sales-table-detail-20260722-v82" defer></script>
 </body>
 </html>
 
