@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-contact-directory-stations-v57";
+const APP_VERSION = "empresa-20260722-contact-directory-sales-v58";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -23003,6 +23003,33 @@ function leadDirectoryActivationCount(item = {}) {
   return Number(item.activation_count || item.activations_count || 0);
 }
 
+function leadDirectorySalesSummary(item = {}) {
+  const purchaseCount = Number(item.purchase_count || 0);
+  const totalSpent = Number(item.total_spent || 0);
+  const avgTicket = Number(item.avg_ticket || 0);
+  const topProduct = String(item.top_product || item.product_name || item.favorite_product || "").trim();
+  const topCategory = String(item.top_category || item.product_category || "").trim();
+  const lastPurchase = item.last_purchase_at || null;
+  if (!purchaseCount && !totalSpent) {
+    return {
+      hasSales: false,
+      label: "Sin ventas relacionadas",
+      detail: "Aún no hay venta asociada a este contacto.",
+      meta: "",
+    };
+  }
+  return {
+    hasSales: true,
+    label: `${purchaseCount.toLocaleString("es-CO")} venta(s) · ${money(totalSpent)}`,
+    detail: [
+      topProduct ? `Producto: ${topProduct}` : "",
+      topCategory ? `Categoría: ${topCategory}` : "",
+      avgTicket ? `Ticket prom.: ${money(avgTicket)}` : "",
+    ].filter(Boolean).join(" · ") || "Ventas registradas en el CRM.",
+    meta: lastPurchase ? `Última venta ${formatDateShort(lastPurchase)}` : "Sin fecha de última venta",
+  };
+}
+
 const LEAD_DIRECTORY_RMS_STATIONS = {
   recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
   alimentacion: { label: "Estación 02 · Alimentar", short: "02 Alimentar" },
@@ -23072,6 +23099,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const badges = leadBadges(item).slice(0, 4);
   const activationCount = leadDirectoryActivationCount(item);
   const station = leadDirectoryStationInfo(item);
+  const sales = leadDirectorySalesSummary(item);
   return `
     <article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
       <div class="contact-directory-card-top">
@@ -23083,6 +23111,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
       </div>
       <div class="contact-directory-meta-grid">
         <span class="contact-directory-meta contact-directory-station"><small>Estación actual</small><strong>${escapeHtml(station.label)}</strong></span>
+        <span class="contact-directory-meta contact-directory-sales"><small>Ventas relacionadas</small><strong>${escapeHtml(sales.label)}</strong>${sales.meta ? `<small>${escapeHtml(sales.meta)}</small>` : ""}</span>
         <span class="contact-directory-meta"><small>Canal de llegada</small><strong>${escapeHtml(leadDirectoryChannel(item))}</strong></span>
         <span class="contact-directory-meta"><small>Campaña asociada</small><strong>${escapeHtml(leadDirectoryCampaign(item))}</strong></span>
         <span class="contact-directory-meta"><small>Activaciones</small><strong>${activationCount.toLocaleString("es-CO")} activación(es)</strong></span>
@@ -23091,7 +23120,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
       <div class="contact-directory-card-bottom">
         <div class="contact-directory-main">
           <strong>${isCustomer ? `${Number(item.purchase_count || 0).toLocaleString("es-CO")} compra(s) · ${money(item.total_spent || 0)}` : escapeHtml(item.recommended_action || item.commercial_status_label || "Revisar oportunidad")}</strong>
-          <small>${escapeHtml(leadOriginText(item))}</small>
+          <small>${escapeHtml(isCustomer ? sales.detail : leadOriginText(item))}</small>
         </div>
         <span class="contact-directory-open">Ver ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
       </div>
@@ -24801,6 +24830,23 @@ function ensureContactDirectoryUxStyles() {
       border-color: rgba(37, 99, 235, 0.24);
       background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.86));
     }
+    .contact-directory-sales {
+      grid-column: 1 / -1;
+      border-color: rgba(16, 185, 129, 0.28);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(255, 255, 255, 0.88));
+    }
+    .contact-directory-sales strong {
+      color: #047857;
+    }
+    .lead-related-sales-snapshot {
+      display: grid;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(255, 255, 255, 0.92));
+    }
     .lead-pending-agenda-snapshot {
       display: grid;
       gap: 0.75rem;
@@ -26122,6 +26168,33 @@ function renderLeadDetailPendingAgendaSnapshot(detail = {}) {
   `;
 }
 
+function renderLeadDetailRelatedSalesSnapshot(detail = {}) {
+  const purchases = Array.isArray(detail.purchases) ? detail.purchases : [];
+  const visiblePurchases = purchases.slice(0, 4);
+  const totalSpent = purchases.reduce((sum, item) => sum + Number(item.sale_amount || 0), 0);
+  return `
+    <section class="lead-related-sales-snapshot">
+      <div class="lead-client-agenda-head">
+        <div>
+          <span class="mono-label">Ventas relacionadas</span>
+          <strong>${purchases.length.toLocaleString("es-CO")} venta(s) · ${money(totalSpent)}</strong>
+          <small>Compras asociadas a este cliente por documento, teléfono, correo, QR o vínculo CRM.</small>
+        </div>
+        <button class="ghost-button" type="button" data-lead-tab-shortcut="purchases">Ver ventas completas</button>
+      </div>
+      <div class="lead-agenda-list">
+        ${visiblePurchases.length ? visiblePurchases.map((item) => `
+          <article class="lead-detail-item">
+            <strong>${escapeHtml(item.product_name || "Venta registrada")}</strong>
+            <span>${money(item.sale_amount || 0)} · ${formatDate(item.created_at)}</span>
+            <small>${escapeHtml(item.campaign_name || item.acquisition_source || "Sin campaña")} · ${escapeHtml(item.branch_name || "Sin sucursal")} ${item.notes ? `· ${escapeHtml(item.notes)}` : ""}</small>
+          </article>
+        `).join("") : '<div class="empty-state compact">Este contacto aún no tiene ventas relacionadas.</div>'}
+      </div>
+    </section>
+  `;
+}
+
 function renderLeadTab(detail) {
   if (!leadDetailContent) return;
   const lead = detail.lead || {};
@@ -26139,6 +26212,7 @@ function renderLeadTab(detail) {
 
   const renderers = {
     summary: () => `
+      ${renderLeadDetailRelatedSalesSnapshot(detail)}
       ${renderLeadDetailPendingAgendaSnapshot(detail)}
       ${metricCards([
         ["Score total", Number(summary.score_total || 0).toLocaleString("es-CO"), `Promedio ${Number(summary.score_average || 0).toFixed(1)}`],
@@ -26375,6 +26449,9 @@ function bindLeadDetailPanelActions() {
     });
   });
   leadDetailContent?.querySelector("[data-open-lead-tasks]")?.addEventListener("click", () => setLeadDetailTab("tasks", { scrollTab: true }));
+  leadDetailContent?.querySelectorAll("[data-lead-tab-shortcut]").forEach((button) => {
+    button.addEventListener("click", () => setLeadDetailTab(button.dataset.leadTabShortcut || "summary", { scrollTab: true }));
+  });
   leadDetailContent?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       state.editingAgendaId = button.dataset.agendaEdit;
