@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-rms-slider-layout-fix-v22";
+const APP_VERSION = "empresa-20260721-portal-ux-system-v34";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -83,6 +83,7 @@ const rmsStageBoard = document.getElementById("rmsStageBoard");
 const rmsStageSliderPrev = document.getElementById("rmsStageSliderPrev");
 const rmsStageSliderNext = document.getElementById("rmsStageSliderNext");
 const rmsStageSliderProgress = document.getElementById("rmsStageSliderProgress");
+const rmsStageSliderRange = document.getElementById("rmsStageSliderRange");
 const rmsStationWorkspace = document.getElementById("rmsStationWorkspace");
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
@@ -28976,15 +28977,33 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 620px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief { padding: 9px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief > div:nth-child(2) > small { white-space: normal !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics { width: 100% !important; display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-secondary-details > summary small { display: none !important; } }
   `);
   rules.push(`
+    html body[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] { align-content: start !important; gap: 12px !important; padding: 10px 12px 16px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console { gap: 12px !important; margin: 0 !important; padding: 0 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head.rms-machine-commandbar { width: 100% !important; min-height: 64px !important; height: 64px !important; max-height: 64px !important; display: flex !important; grid-template-columns: none !important; grid-template-rows: none !important; align-content: center !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 8px 10px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy { min-width: 0 !important; display: flex !important; align-items: center !important; gap: 10px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy > div { min-width: 0 !important; display: grid !important; gap: 2px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .view-head-actions { flex: 0 0 auto !important; align-items: center !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-more-actions { width: 40px !important; min-width: 40px !important; max-width: 40px !important; flex: 0 0 40px !important; position: relative !important; inset: auto !important; order: 3 !important; margin: 0 !important; transform: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell { width: 100% !important; min-width: 0 !important; display: grid !important; gap: 9px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell { display: none !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 2px 2px 0 !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head > div:first-child { display: grid !important; gap: 2px !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #17362f !important; font-size: .9rem !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #6c8179 !important; font-size: .68rem !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { display: flex !important; gap: 6px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 76px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 16px !important; padding: 13px 14px !important; border: 1px solid rgba(15,115,84,.17) !important; border-radius: 16px !important; background: linear-gradient(105deg,#f2fbf7 0%,#ffffff 64%) !important; box-shadow: 0 12px 28px rgba(18,72,58,.08) !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title { min-width: 0 !important; display: flex !important; align-items: center !important; gap: 12px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 46px !important; height: 46px !important; flex: 0 0 46px !important; display: grid !important; place-items: center !important; border-radius: 14px !important; background: #0f7354 !important; color: #fff !important; font-size: 25px !important; box-shadow: 0 9px 20px rgba(15,115,84,.2) !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > div { min-width: 0 !important; display: grid !important; gap: 2px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title .mono-label { color: #0f7354 !important; font-size: .61rem !important; font-weight: 900 !important; letter-spacing: .07em !important; text-transform: uppercase !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #17362f !important; font-size: 1.08rem !important; line-height: 1.15 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #5f776f !important; font-size: .73rem !important; line-height: 1.35 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { flex: 0 0 auto !important; display: flex !important; align-items: center !important; gap: 7px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range { min-width: 76px !important; min-height: 36px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 7px 10px !important; border: 1px solid rgba(15,115,84,.14) !important; border-radius: 999px !important; background: #fff !important; color: #42655a !important; font-size: .68rem !important; font-weight: 850 !important; white-space: nowrap !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button { width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 11px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions > button:disabled { opacity: .35 !important; cursor: default !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide { min-height: 34px !important; display: flex !important; align-items: center !important; gap: 16px !important; padding: 5px 10px !important; color: #60776f !important; font-size: .67rem !important; font-weight: 720 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide > span { display: inline-flex !important; align-items: center !important; gap: 6px !important; white-space: nowrap !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide i { width: 9px !important; height: 9px !important; display: inline-block !important; border-radius: 50% !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide i.is-ready { background: #19a974 !important; box-shadow: 0 0 0 4px rgba(25,169,116,.12) !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide i.is-clear { background: #a9b8b2 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint { margin-left: auto !important; color: #0f7354 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint .material-symbols-outlined { font-size: 17px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board { width: 100% !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; max-height: none !important; position: relative !important; display: flex !important; align-items: stretch !important; grid-template-columns: none !important; grid-template-rows: none !important; grid-auto-flow: unset !important; grid-auto-columns: unset !important; gap: 10px !important; margin: 0 !important; padding: 3px 2px 10px !important; overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important; scroll-padding-inline: 2px !important; scroll-behavior: smooth !important; overscroll-behavior-x: contain !important; touch-action: pan-y pinch-zoom !important; cursor: grab !important; scrollbar-width: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::before,
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::after,
@@ -28993,16 +29012,32 @@ function ensureRmsStationUxStyles() {
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board::-webkit-scrollbar { display: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board.is-dragging { cursor: grabbing !important; scroll-snap-type: none !important; scroll-behavior: auto !important; user-select: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board.is-dragging * { pointer-events: none !important; user-select: none !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex: 0 0 calc((100% - 20px) / 3) !important; width: calc((100% - 20px) / 3) !important; min-width: 0 !important; height: 208px !important; min-height: 208px !important; max-height: 208px !important; align-self: flex-start !important; position: relative !important; inset: auto !important; margin: 0 !important; transform: none !important; cursor: grab !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover { transform: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex: 0 0 calc((100% - 20px) / 3) !important; width: calc((100% - 20px) / 3) !important; min-width: 0 !important; height: 226px !important; min-height: 226px !important; max-height: 226px !important; align-self: flex-start !important; position: relative !important; inset: auto !important; margin: 0 !important; transform: none !important; cursor: grab !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; border: 1px solid #d9e7e2 !important; border-top: 4px solid #aebdb8 !important; padding: 14px !important; background: #fff !important; box-shadow: 0 9px 22px rgba(23,65,91,.07) !important; transition: border-color .18s ease, box-shadow .18s ease, background .18s ease !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card.has-stage-material { border-color: rgba(15,115,84,.34) !important; border-top-color: #0f7354 !important; background: linear-gradient(180deg,#f7fdfa 0%,#fff 48%) !important; box-shadow: 0 12px 28px rgba(15,115,84,.12) !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card.has-risk { border-top-color: #cf5e4f !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover { border-color: #0f7354 !important; background: #fff !important; box-shadow: 0 16px 34px rgba(15,115,84,.16) !important; transform: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-number { padding: 5px 8px !important; border-radius: 999px !important; background: #eff5f2 !important; color: #567168 !important; letter-spacing: .05em !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .has-stage-material .rms-station-entry-number { background: #e5f5ee !important; color: #0f7354 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main strong { font-size: 1.04rem !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main small { font-size: .76rem !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > p { display: none !important; min-height: 0 !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button { display: inline-flex !important; margin-top: auto !important; cursor: pointer !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-flow { min-height: 34px !important; justify-content: space-between !important; gap: 8px !important; padding: 7px 9px !important; border-radius: 10px !important; background: #f4f7f6 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-alert { color: #60776f !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-alert.is-ready { color: #0f7354 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-alert.is-risk { color: #a94a3f !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-alert .material-symbols-outlined { margin: 0 3px 0 0 !important; font-size: 15px !important; color: currentColor !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-next { min-width: 0 !important; display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #536c63 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-next .material-symbols-outlined { margin: 0 !important; font-size: 15px !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button { min-height: 40px !important; display: inline-flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; margin-top: auto !important; padding-inline: 13px !important; background: linear-gradient(100deg,#0f7354,#057d91) !important; border-color: transparent !important; color: #fff !important; cursor: pointer !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button :is(span,.material-symbols-outlined) { color: #fff !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button .material-symbols-outlined { font-size: 18px !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress { position: relative !important; height: 4px !important; overflow: hidden !important; border-radius: 99px !important; background: rgba(23,65,91,.1) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-progress > span { position: absolute !important; inset: 0 auto 0 0 !important; min-width: 12% !important; border-radius: inherit !important; background: linear-gradient(90deg,#0f7354,#34b77f) !important; transition: width .18s ease, margin-left .18s ease !important; }
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head strong { color: #edf9f4 !important; }
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { color: #b9cec6 !important; }
     @media (max-width: 900px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: calc((100% - 10px) / 2) !important; width: calc((100% - 10px) / 2) !important; } }
-    @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { align-items: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head small { max-width: 220px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 88% !important; width: 88% !important; height: 202px !important; min-height: 202px !important; max-height: 202px !important; } }
+    @media (max-width: 700px) { html body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head.rms-machine-commandbar { min-height: 0 !important; height: auto !important; max-height: none !important; align-items: stretch !important; flex-direction: column !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .view-head-actions { width: 100% !important; height: 40px !important; flex-wrap: nowrap !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-primary-action { min-width: 0 !important; flex: 1 1 auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-secondary-action, html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-more-actions { width: 40px !important; min-width: 40px !important; max-width: 40px !important; flex: 0 0 40px !important; } }
+    @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 0 !important; align-items: stretch !important; flex-direction: column !important; padding: 12px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 40px !important; height: 40px !important; flex-basis: 40px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { width: 100% !important; justify-content: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range { margin-right: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide { gap: 10px !important; overflow-x: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint { display: none !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 88% !important; width: 88% !important; height: 220px !important; min-height: 220px !important; max-height: 220px !important; } }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
@@ -29553,6 +29588,14 @@ function updateRmsStageSliderUi() {
     rmsStageSliderProgress.style.width = `${thumb}%`;
     rmsStageSliderProgress.style.marginLeft = `${position}%`;
   }
+  if (rmsStageSliderRange) {
+    const cardCount = rmsStageBoard.querySelectorAll(".rms-station-entry-card").length;
+    const step = rmsStageSliderStep();
+    const first = cardCount ? Math.min(cardCount - 1, Math.max(0, Math.round(current / step))) : 0;
+    const visible = cardCount ? Math.max(1, Math.min(cardCount, Math.round(rmsStageBoard.clientWidth / step))) : 0;
+    const last = Math.min(cardCount, first + visible);
+    rmsStageSliderRange.textContent = cardCount ? `${first + 1}–${last} de ${cardCount}` : "Sin estaciones";
+  }
 }
 
 function moveRmsStageSlider(direction = 1) {
@@ -29623,15 +29666,14 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const operationName = operation.name || operation.primaryAction || "Operacion";
-    const stationStorageLabel = stage.storageLabel || `Almacena ${stage.label || "oportunidades"}`;
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
     const visual = rmsStationVisualMeta(stage.key);
     return `
-      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
+      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${riskCount ? "has-risk" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" data-station-tone="${escapeHtml(visual.tone || "default")}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
         <div class="rms-station-entry-topline">
-          <span class="rms-station-entry-number">${String(index + 1).padStart(2, "0")}</span>
+          <span class="rms-station-entry-number">Estación ${String(index + 1).padStart(2, "0")}</span>
           <span class="rms-station-entry-count">${Number(rowsAll.length).toLocaleString("es-CO")} lead${rowsAll.length === 1 ? "" : "s"}</span>
         </div>
         <div class="rms-station-entry-main">
@@ -29641,13 +29683,11 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
             <small>${escapeHtml(operation.primaryAction || operationName)}</small>
           </div>
         </div>
-        <p>${escapeHtml(stationStorageLabel)}</p>
         <div class="rms-station-entry-flow">
-          <span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : "Sin alertas"}</span>
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-          <span>${escapeHtml(nextLabel)}</span>
+          <span class="rms-station-entry-alert ${riskCount ? "is-risk" : rowsAll.length ? "is-ready" : "is-clear"}"><span class="material-symbols-outlined" aria-hidden="true">${riskCount ? "warning" : rowsAll.length ? "play_circle" : "check_circle"}</span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : rowsAll.length ? "Lista para operar" : "Sin pendientes"}</span>
+          <span class="rms-station-entry-next"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>${escapeHtml(nextLabel)}</span>
         </div>
-        <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}">Abrir estación</button>
+        <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}"><span>Entrar y trabajar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
       </article>
     `;
   }).join("");

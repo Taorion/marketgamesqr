@@ -25980,6 +25980,541 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
   }
 }
 
+/* Portal UX v33: protect outcome cards from legacy global pill controls. */
+body:not(#portalUxCardForceA#portalUxCardForceB#portalUxCardForceC#portalUxCardForceD)[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+  border-radius: 16px !important;
+}
+
+body:not(#portalUxCardForceA#portalUxCardForceB#portalUxCardForceC#portalUxCardForceD)[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action > .material-symbols-outlined {
+  border-radius: 12px !important;
+}
+
+@media (max-width: 760px) {
+  body:not(#portalUxCardForceA#portalUxCardForceB#portalUxCardForceC#portalUxCardForceD)[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+    border-radius: 14px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body:not(#portalUxRmsForceA#portalUxRmsForceB#portalUxRmsForceC#portalUxRmsForceD)[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] .rms-machine-commandbar .rms-machine-head-copy {
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    grid-template-rows: auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+}
+
+/* Portal UX v29 final authority: neutralize legacy view-specific geometry. */
+html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  align-content: start !important;
+  gap: 16px !important;
+  padding: 18px 20px 30px !important;
+  overflow-x: clip !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 440px) !important;
+  grid-template-rows: none !important;
+  align-content: center !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) > div:first-child,
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) > div:first-of-type {
+  min-width: 0 !important;
+  max-width: 780px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #10251d !important;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) p {
+  max-width: 72ch !important;
+  margin: 0 !important;
+  color: #5d736b !important;
+  font-size: 0.86rem !important;
+  line-height: 1.42 !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 440px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(button, .solid-button, .ghost-button, select) {
+  min-width: 0 !important;
+  min-height: 40px !important;
+}
+
+html body .portal-shell :is(.mono-label, .pill, .chip, .status-pill, .feature-tier-badge) {
+  width: fit-content !important;
+  max-width: 100% !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+html body .portal-shell .mono-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: normal !important;
+  line-height: 1.15 !important;
+}
+
+html body .portal-shell :is(.surface-card, .table-card, .data-table-card, .validator-panel, .contact-center-shell, .inventory-layout, .account-settings-grid) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body .portal-shell :is(.table-wrap, .table-responsive, .lead-table-scroll, .agenda-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 112px !important;
+  height: auto !important;
+  max-height: none !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  align-content: center !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border-radius: 16px !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action > .material-symbols-outlined {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+}
+
+@media (min-width: 981px) {
+  html body .portal-shell .topbar {
+    min-height: 72px !important;
+    height: 72px !important;
+    max-height: 72px !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    overflow: visible !important;
+  }
+
+  html body .portal-shell .topbar .search-shell {
+    width: auto !important;
+    min-width: 180px !important;
+    max-width: 380px !important;
+    height: 44px !important;
+    flex: 1 1 280px !important;
+    grid-area: auto !important;
+  }
+
+  html body .portal-shell .topbar .topbar-actions {
+    width: auto !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    flex: 0 1 auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    grid-area: auto !important;
+  }
+
+  html body .portal-shell .topbar :is(.theme-switch-label, .profile-block > span:not(.profile-avatar)) {
+    display: none !important;
+  }
+
+  html body .portal-shell .topbar .profile-block {
+    width: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  html body .portal-shell .app-shell:not(.sidebar-collapsed) .topbar .nav-link-button {
+    display: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+    gap: 12px !important;
+    padding: 12px 10px 24px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    border-radius: 15px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+    min-height: 88px !important;
+    padding: 13px !important;
+    border-radius: 14px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Portal UX v29: compact navigation, predictable headers and safe responsive composition. */
+html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  align-content: start !important;
+  gap: 16px !important;
+  padding: 18px 20px 30px !important;
+  overflow-x: clip !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > .view-head,
+html body .portal-shell .content-shell > .view-section.active > .campaign-head {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: none !important;
+  align-content: center !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) > div:first-child {
+  min-width: 0 !important;
+  max-width: 780px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 4px !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #10251d !important;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) p {
+  max-width: 72ch !important;
+  margin: 0 !important;
+  color: #5d736b !important;
+  font-size: 0.86rem !important;
+  line-height: 1.42 !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+  width: min(100%, 440px) !important;
+  min-width: 0 !important;
+  max-width: 440px !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr)) !important;
+  align-items: end !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(button, .solid-button, .ghost-button, select) {
+  min-height: 40px !important;
+}
+
+html body .portal-shell :is(.mono-label, .pill, .chip, .status-pill, .feature-tier-badge) {
+  width: fit-content !important;
+  max-width: 100% !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+html body .portal-shell .mono-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: normal !important;
+  line-height: 1.15 !important;
+}
+
+html body .portal-shell :is(.surface-card, .table-card, .data-table-card, .validator-panel, .contact-center-shell, .inventory-layout, .account-settings-grid) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body .portal-shell :is(.table-wrap, .table-responsive, .lead-table-scroll, .agenda-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body .portal-shell :is(form, .modal-form, .inventory-form, .account-profile-form, .affiliate-form) > *,
+html body .portal-shell :is(.grid-2, .grid-3, .kpi-grid, .tables-grid, .validator-grid, .inventory-layout) > * {
+  min-width: 0 !important;
+}
+
+html body .portal-shell :is(input, select, textarea) {
+  max-width: 100% !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 112px !important;
+  height: auto !important;
+  max-height: none !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  align-content: center !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border-radius: 16px !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action > .material-symbols-outlined {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+}
+
+html body .portal-shell .modal-shell {
+  padding: clamp(10px, 2vw, 24px) !important;
+}
+
+html body .portal-shell .modal-card {
+  width: min(760px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+html body .portal-shell .modal-card :is(.modal-actions, .modal-button-row) {
+  position: sticky !important;
+  bottom: -1px !important;
+  z-index: 3 !important;
+  padding-top: 10px !important;
+  background: inherit !important;
+}
+
+@media (min-width: 981px) {
+  html body .portal-shell .topbar {
+    min-height: 72px !important;
+    height: 72px !important;
+    max-height: 72px !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    overflow: visible !important;
+  }
+
+  html body .portal-shell .topbar .menu-toggle-button {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+  }
+
+  html body .portal-shell .topbar .search-shell {
+    width: auto !important;
+    min-width: 180px !important;
+    max-width: 380px !important;
+    height: 44px !important;
+    flex: 1 1 280px !important;
+    grid-area: auto !important;
+  }
+
+  html body .portal-shell .topbar .topbar-actions {
+    width: auto !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    flex: 0 1 auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    grid-area: auto !important;
+  }
+
+  html body .portal-shell .topbar .topbar-actions > * {
+    flex: 0 0 auto !important;
+  }
+
+  html body .portal-shell .topbar :is(.theme-switch-label, .profile-block > span:not(.profile-avatar)) {
+    display: none !important;
+  }
+
+  html body .portal-shell .topbar .profile-block {
+    width: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  html body .portal-shell .app-shell:not(.sidebar-collapsed) .topbar .nav-link-button {
+    display: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+    gap: 12px !important;
+    padding: 12px 10px 24px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > .view-head,
+  html body .portal-shell .content-shell > .view-section.active > .campaign-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    border-radius: 15px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+    min-height: 88px !important;
+    padding: 13px !important;
+    border-radius: 14px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell .modal-card {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 16px 16px 10px 10px !important;
+  }
+}
+
 /* RMS Machine interactive factory */
 .view-section[data-view="rms-machine"] .rms-machine-head {
   position: relative !important;
@@ -52573,6 +53108,212 @@ html[data-theme="dark"] body[data-current-view="strategic-qr"] .portal-shell :is
 
   html body[data-current-view="strategic-qr"] .portal-shell .generic-ticket-actions button {
     width: 100% !important;
+  }
+}
+
+/* Portal UX v29 cascade lock: this sits after legacy module overrides. */
+html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  align-content: start !important;
+  gap: 16px !important;
+  padding: 18px 20px 30px !important;
+  overflow-x: clip !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 440px) !important;
+  grid-template-rows: none !important;
+  align-content: center !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) > div:first-child,
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) > div:first-of-type {
+  min-width: 0 !important;
+  max-width: 780px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #10251d !important;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) p {
+  max-width: 72ch !important;
+  margin: 0 !important;
+  color: #5d736b !important;
+  font-size: 0.86rem !important;
+  line-height: 1.42 !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 440px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(button, .solid-button, .ghost-button, select) {
+  min-width: 0 !important;
+  min-height: 40px !important;
+}
+
+html body .portal-shell :is(.mono-label, .pill, .chip, .status-pill, .feature-tier-badge) {
+  width: fit-content !important;
+  max-width: 100% !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+html body .portal-shell .mono-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: normal !important;
+  line-height: 1.15 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 112px !important;
+  height: auto !important;
+  max-height: none !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  align-content: center !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border-radius: 16px !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action > .material-symbols-outlined {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 980px) {
+  html body .portal-shell .content-shell > .view-section.active:not([data-view="rms-machine"]) {
+    gap: 12px !important;
+    padding: 12px 10px 24px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    border-radius: 15px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) h2 {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .content-shell > .view-section.active[data-view="strategic-qr"] .gaming-center-quick-action {
+    min-height: 88px !important;
+    padding: 13px !important;
+    border-radius: 14px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  html body .portal-shell .content-shell > .view-section.active > :is(.view-head, .campaign-head) :is(.head-actions, .view-head-actions, .lead-export-actions) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Explicit module selectors outrank the oversized legacy heading theme. */
+html body[data-current-view] .portal-shell .content-shell > .view-section.active > .view-head h2,
+html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head h2 {
+  max-width: none !important;
+  margin: 0 !important;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head #campaignHeroTitle {
+  max-width: none !important;
+  margin: 0 !important;
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view] .portal-shell .content-shell > .view-section.active > .view-head p,
+html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head p {
+  max-width: 72ch !important;
+  margin: 0 !important;
+  font-size: 0.86rem !important;
+  line-height: 1.42 !important;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view] .portal-shell .content-shell > .view-section.active > .view-head h2,
+  html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head h2 {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head #campaignHeroTitle {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+    line-height: 1.08 !important;
   }
 }
 

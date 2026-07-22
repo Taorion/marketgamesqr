@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-slider-layout-fix-20260721-v22">
+  <link rel="stylesheet" href="css/styles.css?v=portal-ux-system-20260721-v34">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -742,14 +742,24 @@
               <section class="rms-station-workspace" id="rmsStationWorkspace" aria-live="polite"></section>
               <section class="rms-stage-slider-shell" aria-label="Carrusel de estaciones RMS">
                 <div class="rms-stage-slider-head">
-                  <div>
-                    <strong>Estaciones de fabricación</strong>
-                    <small>Arrastra para recorrerlas. Se muestran tres a la vez.</small>
+                  <div class="rms-stage-slider-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">factory</span>
+                    <div>
+                      <span class="mono-label">Línea de producción comercial</span>
+                      <strong>Elige una estación para trabajar</strong>
+                      <small>Las estaciones con leads resaltan para que sepas dónde actuar primero.</small>
+                    </div>
                   </div>
                   <div class="rms-stage-slider-actions">
+                    <span class="rms-stage-slider-range" id="rmsStageSliderRange" aria-live="polite">1–3 de 12</span>
                     <button class="ghost-button compact" id="rmsStageSliderPrev" type="button" aria-label="Ver estaciones anteriores" title="Estaciones anteriores"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></button>
                     <button class="solid-button compact" id="rmsStageSliderNext" type="button" aria-label="Ver estaciones siguientes" title="Estaciones siguientes"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
                   </div>
+                </div>
+                <div class="rms-stage-slider-guide" aria-label="Guía de estados de las estaciones">
+                  <span><i class="is-ready" aria-hidden="true"></i>Con leads para trabajar</span>
+                  <span><i class="is-clear" aria-hidden="true"></i>Sin pendientes</span>
+                  <span class="rms-stage-slider-hint"><span class="material-symbols-outlined" aria-hidden="true">swipe</span>Desliza o usa las flechas</span>
                 </div>
                 <div class="rms-stage-board" id="rmsStageBoard" tabindex="0" aria-label="Desliza horizontalmente para recorrer las estaciones"></div>
                 <div class="rms-stage-slider-progress" aria-hidden="true"><span id="rmsStageSliderProgress"></span></div>
@@ -6997,7 +7007,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-slider-layout-fix-20260721-v22" defer></script>
+  <script src="js/app.js?v=portal-ux-system-20260721-v34" defer></script>
 </body>
 </html>
 
