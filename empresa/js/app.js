@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260721-portal-ux-system-v38";
+const APP_VERSION = "empresa-20260722-portal-clean-system-v40";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2207,24 +2207,9 @@ function activePortalLocationLabel(activeSection) {
 }
 
 function renderPortalLocationPill(activeSection) {
-  const head = activeSection?.querySelector(":scope > .view-head");
-  if (!head) return;
-  let pill = head.querySelector(":scope > .portal-location-pill");
-  if (["campaigns", "rms-machine"].includes(activeSection?.dataset.view)) {
-    pill?.remove();
-    return;
-  }
-  if (!pill) {
-    pill = document.createElement("div");
-    pill.className = "portal-location-pill";
-    pill.setAttribute("aria-label", "Ubicación actual en el portal");
-    head.prepend(pill);
-  }
-  pill.innerHTML = `
-    <span class="portal-location-icon" aria-hidden="true"></span>
-    <strong>Estás en</strong>
-    <span>${escapeHtml(activePortalLocationLabel(activeSection))}</span>
-  `;
+  // The active navigation item already communicates location. Repeating it in
+  // every page header added visual noise and pushed the real task below the fold.
+  activeSection?.querySelector(":scope > .view-head > .portal-location-pill")?.remove();
 }
 
 function quietZoneKey(zone, index, view) {

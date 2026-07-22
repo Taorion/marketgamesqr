@@ -16,7 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-ux-system-20260721-v38">
+  <link rel="stylesheet" href="css/styles.css?v=portal-clean-system-20260722-v40">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-clean-system-20260722-v40">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -718,25 +719,12 @@
           </section>
 
           <section class="view-section active" data-view="rms-machine">
-            <div class="view-head rms-machine-head rms-machine-launchbar rms-machine-commandbar">
+            <header class="view-head rms-machine-head rms-machine-launchbar rms-machine-commandbar" aria-labelledby="rmsStationsTitle">
               <div class="rms-machine-head-copy">
-                <span class="material-symbols-outlined" aria-hidden="true">precision_manufacturing</span>
-                <div><span class="mono-label">RMS Machine</span><h2>Estaciones</h2></div>
-                <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
+                <span class="material-symbols-outlined" aria-hidden="true">factory</span>
+                <h2 id="rmsStationsTitle">Estaciones</h2>
               </div>
-              <div class="view-head-actions">
-                <button class="solid-button rms-primary-action" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span><span><strong>Nuevo lead</strong></span></button>
-                <button class="ghost-button rms-secondary-action" id="rmsMachineRefreshButton" type="button" aria-label="Actualizar estaciones" title="Actualizar estaciones"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button>
-                <details class="rms-more-actions">
-                  <summary aria-label="Más herramientas" title="Más herramientas"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary>
-                  <div>
-                    <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
-                    <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver tutorial</button>
-                    <button class="ghost-button" id="rmsMachineOpenAgendaButton" type="button">Abrir agenda</button>
-                  </div>
-                </details>
-              </div>
-            </div>
+            </header>
 
             <section class="surface-card rms-journey-shell rms-factory-console">
               <section class="rms-station-workspace" id="rmsStationWorkspace" aria-live="polite"></section>
@@ -766,6 +754,14 @@
               </section>
               <details class="rms-board-tools">
                 <summary><span class="material-symbols-outlined" aria-hidden="true">tune</span> Buscar, filtrar y operar por lote</summary>
+                <div class="rms-board-quick-actions" aria-label="Acciones de las estaciones">
+                  <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
+                  <button class="solid-button" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>
+                  <button class="ghost-button" id="rmsMachineRefreshButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">refresh</span> Actualizar</button>
+                  <button class="ghost-button" id="rmsMachineHookButton" type="button">Crear gancho gamificado</button>
+                  <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver tutorial</button>
+                  <button class="ghost-button" id="rmsMachineOpenAgendaButton" type="button">Abrir agenda</button>
+                </div>
                 <section class="rms-operator-toolbar">
                   <label>
                     <span>Buscar lead</span>
@@ -7007,7 +7003,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=portal-ux-system-20260721-v38" defer></script>
+  <script src="js/app.js?v=portal-clean-system-20260722-v40" defer></script>
 </body>
 </html>
 
