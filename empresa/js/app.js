@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-portal-clean-system-v40";
+const APP_VERSION = "empresa-20260722-rms-station-open-v42";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1221,6 +1221,7 @@ const snapshotOrdersInput = document.getElementById("snapshotOrdersInput");
 const snapshotNotesInput = document.getElementById("snapshotNotesInput");
 const snapshotModalMessage = document.getElementById("snapshotModalMessage");
 const routeParams = new URLSearchParams(window.location.search);
+const PORTAL_DEFAULT_VIEW = "rms-machine";
 const LIGHT_MODE_KEY = "marketgames_portal_light_mode";
 const QUIET_ZONE_STORAGE_KEY = "marketgames_portal_quiet_zones_v1";
 const QUIET_ZONE_SELECTOR = [
@@ -1291,7 +1292,7 @@ const lightTestMode = routeLightMode || (() => {
 
 let session = loadSession();
 let state = {
-  currentView: "rms-machine",
+  currentView: PORTAL_DEFAULT_VIEW,
   dashboardBuilderProfile: "marketing",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
@@ -1398,7 +1399,7 @@ let state = {
   rmsLeadQualityDraft: {},
   rmsProductClassificationDraft: {},
   rmsStationPhase: "recoleccion",
-  rmsStationScreenOpen: true,
+  rmsStationScreenOpen: false,
   rmsStationSearch: "",
   rmsStationViewMode: "all",
   rmsStationNavigationDirection: "forward",
@@ -4635,12 +4636,17 @@ function setView(view) {
     }
   }
   if (view === "rms-machine") {
-    const stationPhase = "";
-    state.rmsStationPhase = stationPhase;
-    state.rmsMachineFilters.phase = stationPhase;
-    state.rmsStationScreenOpen = false;
-    state.rmsMachineSelectedIds = [];
-    if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = stationPhase;
+    const keepOpenStation = previousView === "rms-machine" && state.rmsStationScreenOpen && state.rmsStationPhase;
+    if (!keepOpenStation) {
+      const stationPhase = "";
+      state.rmsStationPhase = stationPhase;
+      state.rmsMachineFilters.phase = stationPhase;
+      state.rmsStationScreenOpen = false;
+      state.rmsMachineSelectedIds = [];
+      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = stationPhase;
+    } else if (rmsMachinePhaseFilter) {
+      rmsMachinePhaseFilter.value = state.rmsStationPhase;
+    }
     document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
     renderRmsMachineView();
     loadRmsMachineData({ quiet: true }).then(renderRmsMachineView).catch((error) => {
@@ -5313,10 +5319,10 @@ async function loadWorkspace() {
     if (lightTestMode) {
       await loadStrategicQrData({ groups: ["core", "activations"], force: true });
       renderStrategicQrView();
-      setView("strategic-qr");
+      setView(PORTAL_DEFAULT_VIEW);
     }
     showFeedback(
-      lightTestMode ? "Modo ligero listo. Prueba activaciones sin cargar dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
+      lightTestMode ? "Modo ligero listo. Maquina de ventas cargada sin abrir dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
       "success",
       { title: lightTestMode ? "Prueba ligera" : "Portal actualizado" }
     );
@@ -5497,8 +5503,8 @@ async function loadPrepaidValidatorWorkspace() {
     renderCampaignAssociationInputs();
     renderStrategicQrView();
     renderValidatorHistory([]);
-    setView("strategic-qr");
-    showFeedback("Crea tickets individuales o paquetes con tu saldo operativo. Portal Base muestra el historial permitido y Growth/Premium desbloquea más profundidad.", "success", { title: "Herramientas listas" });
+    setView(PORTAL_DEFAULT_VIEW);
+    showFeedback("Maquina de ventas lista. Gaming Center sigue disponible desde el menu para crear tickets o activaciones.", "success", { title: "Herramientas listas" });
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
@@ -32666,7 +32672,7 @@ smartCatalogIntentTable?.addEventListener("click", (event) => {
 
 rangeButton.textContent = `Últimos ${state.rangeDays} días`;
 applyPortalTheme(readPreferredTheme());
-setView("rms-machine");
+setView(PORTAL_DEFAULT_VIEW);
 renderDashboardBuilder();
 initPasswordResetFromUrl();
 setupPasswordRevealButtons();
