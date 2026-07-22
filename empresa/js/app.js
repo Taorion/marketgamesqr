@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-reward-pass-analytics-modal-v73";
+const APP_VERSION = "empresa-20260722-affiliates-simple-table-modal-v74";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -510,6 +510,7 @@ const affiliatePurchasePointsText = document.getElementById("affiliatePurchasePo
 const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
 const affiliateOperationFeed = document.getElementById("affiliateOperationFeed");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
+const affiliateOperationCloseButton = document.getElementById("affiliateOperationCloseButton");
 const affiliateManualPointsInput = document.getElementById("affiliateManualPointsInput");
 const affiliateManualPointsReasonInput = document.getElementById("affiliateManualPointsReasonInput");
 const affiliateManualPointsButton = document.getElementById("affiliateManualPointsButton");
@@ -4642,6 +4643,7 @@ function setView(view) {
   }
   if (state.currentView === "affiliates" && view !== "affiliates") {
     stopAffiliateFinderScanner();
+    closeAffiliateOperationModal();
   }
   state.currentView = view;
   if (previousView !== view) {
@@ -23544,6 +23546,7 @@ async function awardSelectedAffiliatePoints() {
         : `La compra de ${money(amount)} no genero puntos con la regla actual.`;
       setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
       showFeedback(message, awarded ? "success" : "info", { title: "Puntos por compra" });
+      closeAffiliateOperationModal();
       return;
     }
 
@@ -23609,6 +23612,7 @@ async function awardSelectedAffiliatePoints() {
       : `Compra por ${money(amount)} registrada en Sales. La regla actual no genero puntos para este total.${productSyncMessage}`;
     setInlineMessage(affiliatePurchaseMessage, message, awarded ? "success" : "info");
     showFeedback(message, awarded ? "success" : "info", { title: "Compra atribuida" });
+    closeAffiliateOperationModal();
   } catch (error) {
     setInlineMessage(affiliatePurchaseMessage, error.message, "error");
     showFeedback(error.message, "error");
@@ -23654,6 +23658,7 @@ async function awardManualAffiliatePoints() {
     const message = `${name} recibio ${awarded.toLocaleString("es-CO")} puntos manuales.`;
     setInlineMessage(affiliateManualPointsMessage, message, "success");
     showFeedback(message, "success", { title: "Puntos sumados" });
+    closeAffiliateOperationModal();
   } catch (error) {
     setInlineMessage(affiliateManualPointsMessage, error.message, "error");
     showFeedback(error.message, "error");
@@ -28685,8 +28690,22 @@ async function openAffiliateForPoints(affiliateId) {
   const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
   renderAffiliateFinderResults([]);
   setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
+  openAffiliateOperationModal();
   affiliatePurchaseAmountInput?.focus();
-  affiliatePurchaseAmountInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function affiliateViewSection() {
+  return document.querySelector('.view-section[data-view="affiliates"]');
+}
+
+function openAffiliateOperationModal() {
+  affiliateViewSection()?.classList.add("affiliate-modal-open");
+  document.getElementById("affiliateOperatePanel")?.classList.add("is-modal-open");
+}
+
+function closeAffiliateOperationModal() {
+  affiliateViewSection()?.classList.remove("affiliate-modal-open");
+  document.getElementById("affiliateOperatePanel")?.classList.remove("is-modal-open");
 }
 
 function renderAffiliateLedgerTable() {
@@ -28904,7 +28923,7 @@ async function renderAffiliatesView() {
     ["created_at", "updated_at"]
   );
 
-  const selectedRow = rows.find((item) => item.id === state.selectedAffiliateId) || rows[0] || null;
+  const selectedRow = rows.find((item) => item.id === state.selectedAffiliateId) || null;
   const selected = selectedRow && state.selectedAffiliate?.id === selectedRow.id
     ? {
         ...selectedRow,
@@ -28921,25 +28940,29 @@ async function renderAffiliatesView() {
   renderAffiliateRewardRules();
   resetAffiliateRewardResult();
 
-  affiliateTable.innerHTML = rows.map((item) => `
-    <tr data-affiliate-id="${escapeHtml(item.id)}" data-affiliate-row-select="${escapeHtml(item.id)}" tabindex="0" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
-      <td>${escapeHtml(item.full_name || "-")}</td>
-      <td>${escapeHtml(item.document_id || "-")}</td>
-      <td>${escapeHtml(toNumber(item.points_total || item.ledger_points || 0))}</td>
-      <td>
-        <strong>${escapeHtml(money(item.purchase_total || 0))}</strong>
-        <br><span class="table-secondary">${escapeHtml(toNumber(item.point_events || 0))} movimientos</span>
-      </td>
-      <td>${escapeHtml(item.last_purchase_at ? formatDateShort(item.last_purchase_at) : "-")}</td>
-      <td><span class="table-secondary">${escapeHtml(item.notes || "-")}</span></td>
-      <td><span class="table-secondary">${escapeHtml(String(item.qr_token || "").slice(0, 12))}...</span></td>
-      <td>${escapeHtml(formatDate(item.created_at))}</td>
-      <td>
-        <button class="ghost-button" type="button" data-affiliate-select="${escapeHtml(item.id)}">Ver carnet</button>
-        <button class="ghost-button danger-button" type="button" data-affiliate-delete="${escapeHtml(item.id)}" data-affiliate-name="${escapeHtml(item.full_name || "afiliado")}">Eliminar</button>
-      </td>
-    </tr>
-  `).join("") || '<tr><td colspan="9">Todavia no hay afiliados creados.</td></tr>';
+  affiliateTable.innerHTML = rows.map((item) => {
+    const points = toNumber(item.points_total || item.ledger_points || 0);
+    const purchases = toNumber(item.point_events || 0);
+    const purchaseTotal = toNumber(item.purchase_total || 0);
+    const contact = [item.document_id, item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+    const status = String(item.status || "ACTIVE").toUpperCase();
+    return `
+      <tr data-affiliate-id="${escapeHtml(item.id)}" data-affiliate-row-select="${escapeHtml(item.id)}" tabindex="0" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
+        <td>
+          <button class="link-button affiliate-table-main" type="button" data-affiliate-select="${escapeHtml(item.id)}">
+            <strong>${escapeHtml(item.full_name || "Afiliado")}</strong>
+            <small>${escapeHtml(item.notes || "Click para atribuir compra")}</small>
+          </button>
+        </td>
+        <td><span class="affiliate-table-contact">${escapeHtml(contact)}</span></td>
+        <td><strong>${escapeHtml(points.toLocaleString("es-CO"))}</strong></td>
+        <td><strong>${escapeHtml(money(purchaseTotal))}</strong><span class="table-secondary">${escapeHtml(purchases.toLocaleString("es-CO"))} movimientos</span></td>
+        <td>${escapeHtml(item.last_purchase_at ? formatDateShort(item.last_purchase_at) : "-")}</td>
+        <td><span class="status-chip ${status === "INACTIVE" ? "muted" : "ok"}">${escapeHtml(status === "INACTIVE" ? "Inactivo" : "Activo")}</span></td>
+        <td><button class="solid-button compact" type="button" data-affiliate-select="${escapeHtml(item.id)}">Asignar compra</button></td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="7">Todavia no hay afiliados creados.</td></tr>';
 
   affiliateTable.querySelectorAll("[data-affiliate-row-select]").forEach((row) => {
     const selectRow = () => {
@@ -28961,13 +28984,6 @@ async function renderAffiliatesView() {
       openAffiliateForPoints(button.dataset.affiliateSelect);
     });
   });
-  affiliateTable.querySelectorAll("[data-affiliate-delete]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      deleteSelectedAffiliate(button.dataset.affiliateDelete, button.dataset.affiliateName);
-    });
-  });
-
   if (!selected) {
     affiliateCardTitle.textContent = "Sin afiliado seleccionado";
     affiliateCardMeta.textContent = "Crea o selecciona un afiliado para abrir su carnet digital.";
@@ -29647,9 +29663,9 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV64")) return;
+  if (document.getElementById("affiliatesUxStylesV74")) return;
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV64";
+  style.id = "affiliatesUxStylesV74";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -29778,6 +29794,87 @@ function ensureAffiliatesUxStyles() {
     .affiliate-list-panel tbody tr:hover {
       background: rgba(37, 99, 235, .06);
     }
+    .view-section[data-view="affiliates"] .affiliate-command-strip,
+    .view-section[data-view="affiliates"] .affiliate-dashboard-grid,
+    .view-section[data-view="affiliates"] .affiliate-quick-nav,
+    .view-section[data-view="affiliates"] .affiliate-operation-feed,
+    .view-section[data-view="affiliates"] #affiliateSearchPanel,
+    .view-section[data-view="affiliates"] #affiliateBrandPanel,
+    .view-section[data-view="affiliates"] #affiliateCreatePanel,
+    .view-section[data-view="affiliates"] #affiliateRewardsPanel,
+    .view-section[data-view="affiliates"] #affiliateReferralsPanel,
+    .view-section[data-view="affiliates"] #affiliateLedgerPanel {
+      display: none !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-layout {
+      display: block;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel {
+      margin-top: 1rem;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel table {
+      min-width: 820px;
+    }
+    .affiliate-table-main {
+      display: grid;
+      gap: .15rem;
+      min-width: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: inherit;
+      text-align: left;
+      box-shadow: none;
+    }
+    .affiliate-table-main small,
+    .affiliate-table-contact {
+      color: #64748b;
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel {
+      display: none !important;
+    }
+    .view-section[data-view="affiliates"].affiliate-modal-open::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .48);
+      backdrop-filter: blur(5px);
+      z-index: 1080;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open {
+      display: block !important;
+      position: fixed;
+      left: 50%;
+      top: 4vh;
+      transform: translateX(-50%);
+      width: min(960px, calc(100vw - 2rem));
+      max-height: 90vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      z-index: 1100;
+      padding: 1rem;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-preview-wrap,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateCardMeta,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-builder,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #downloadAffiliateCardButton,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #copyAffiliateCardLinkButton,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel label:has(#affiliateManualPointsInput),
+    .view-section[data-view="affiliates"] #affiliateOperatePanel label:has(#affiliateManualPointsReasonInput),
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateManualPointsButton,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateManualPointsMessage {
+      display: none !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateAddPointsButton,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliatePurchaseMessage {
+      grid-column: 1 / -1;
+    }
     @media (max-width: 980px) {
       .affiliate-command-strip,
       .affiliate-finder-grid,
@@ -29794,6 +29891,11 @@ function ensureAffiliatesUxStyles() {
       .affiliate-list-panel table,
       #affiliateLedgerPanel table {
         min-width: 760px;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open {
+        top: 1rem;
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 2rem);
       }
     }
   `;
@@ -36580,6 +36682,7 @@ affiliatePurchaseAddItemButton?.addEventListener("click", () => {
 });
 affiliatePurchaseAmountInput?.addEventListener("input", updateAffiliatePurchaseTotals);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
+affiliateOperationCloseButton?.addEventListener("click", closeAffiliateOperationModal);
 affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);

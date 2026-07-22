@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=reward-pass-analytics-modal-20260722-v73">
+  <link rel="stylesheet" href="css/styles.css?v=affiliates-simple-table-modal-20260722-v74">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -6447,7 +6447,7 @@
               <div>
                 <span class="mono-label">Sistema de afiliados</span>
                 <h2>Afiliados</h2>
-                <p>Gestiona afiliados sin perder el foco: selecciona o crea un afiliado, registra compras, consulta puntos y activa premios o tickets de referido.</p>
+                <p>Tabla simple de afiliados. Haz clic sobre un afiliado para atribuir una compra, asignar puntos y cerrar la operación.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
@@ -6609,7 +6609,7 @@
                     <span class="mono-label">Afiliado seleccionado</span>
                     <strong id="affiliateCardTitle">Sin afiliado seleccionado</strong>
                   </div>
-                  <span class="status-chip ok">Operación</span>
+                  <button class="icon-button" id="affiliateOperationCloseButton" type="button" aria-label="Cerrar asignación de puntos"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="affiliate-card-preview-wrap is-empty" id="affiliateCardPreviewWrap">
                   <img id="affiliateCardPreview" alt="Carnet afiliado">
@@ -6790,14 +6790,12 @@
                     <thead>
                       <tr>
                         <th>Nombre</th>
-                        <th>Documento</th>
+                        <th>Contacto</th>
                         <th>Puntos</th>
                         <th>Compras</th>
                         <th>Última compra</th>
-                        <th>Intereses</th>
-                        <th>Ticket</th>
-                        <th>Creado</th>
-                        <th>Acciones</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
                       </tr>
                     </thead>
                     <tbody id="affiliateTable"></tbody>
@@ -7184,7 +7182,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=reward-pass-analytics-modal-20260722-v73" defer></script>
+  <script src="js/app.js?v=affiliates-simple-table-modal-20260722-v74" defer></script>
 </body>
 </html>
 
