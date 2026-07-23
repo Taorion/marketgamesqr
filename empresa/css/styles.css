@@ -55629,3 +55629,94 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-result-not
     width: 100% !important;
   }
 }
+
+/* Qori v112: portal brand colors and icon polish without layout changes. */
+:root {
+  --bg: #f3f7fb;
+  --surface: #ffffff;
+  --surface-soft: #f6fbff;
+  --surface-muted: #eaf4ff;
+  --surface-border: #d8e6f2;
+  --text: #071832;
+  --text-primary: #071832;
+  --text-muted: #53677f;
+  --text-soft: #6e7f92;
+  --primary: #052a6b;
+  --secondary: #0759d6;
+  --secondary-soft: #00bfe5;
+  --secondary-pale: #e5fbff;
+  --green-panel: #063a9f;
+  --shadow: 0 8px 24px rgba(5, 42, 107, 0.07);
+}
+
+body .portal-shell .login-screen {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0, 191, 229, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 8%, rgba(7, 89, 214, 0.12), transparent 32%),
+    linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%) !important;
+}
+
+body .portal-shell .login-card,
+body .portal-shell .login-machine-flow article,
+body .portal-shell .login-machine-core div,
+body .portal-shell .login-rms-command,
+body .portal-shell .login-proof-grid article {
+  border-color: rgba(5, 42, 107, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+body .portal-shell .login-title-logo,
+body .portal-shell .login-brand .brand-logo,
+body .portal-shell .sidebar-brand .brand-logo,
+body .portal-shell .sidebar-sales-machine-logo img {
+  object-fit: contain !important;
+  background: transparent !important;
+  filter: drop-shadow(0 7px 16px rgba(5, 42, 107, 0.14)) !important;
+}
+
+body .portal-shell .login-brand .brand-logo,
+body .portal-shell .sidebar-brand .brand-logo {
+  border-color: rgba(0, 191, 229, 0.18) !important;
+}
+
+body .portal-shell .login-vision-copy h1,
+body .portal-shell .login-brand h1,
+body .portal-shell .login-copy h2 {
+  color: #052a6b !important;
+}
+
+body .portal-shell .login-vision-copy p,
+body .portal-shell .login-brand p,
+body .portal-shell .login-copy p,
+body .portal-shell .login-form label,
+body .portal-shell .login-machine-flow small,
+body .portal-shell .login-machine-core span {
+  color: #53677f !important;
+}
+
+body .portal-shell .login-technology-strip span,
+body .portal-shell .login-rms-signal span {
+  border-color: rgba(0, 191, 229, 0.18) !important;
+  background: #e5fbff !important;
+  color: #006e91 !important;
+}
+
+body .portal-shell .login-machine-flow .material-symbols-outlined {
+  background: linear-gradient(135deg, #eaf4ff, #e5fbff) !important;
+  color: #0759d6 !important;
+}
+
+body .portal-shell .login-machine-flow article.is-core .material-symbols-outlined {
+  background: linear-gradient(135deg, #0759d6, #00bfe5) !important;
+  color: #ffffff !important;
+}
+
+body .portal-shell .solid-button {
+  background: linear-gradient(135deg, #0759d6, #052a6b) !important;
+  color: #ffffff !important;
+}
+
+body .portal-shell .ghost-button {
+  border-color: rgba(5, 42, 107, 0.16) !important;
+  color: #052a6b !important;
+}

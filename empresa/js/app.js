@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-buscador-filtros-v111";
+const APP_VERSION = "empresa-20260723-qori-brand-sello-v112";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -24176,7 +24176,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const photoSource = affiliatePhotoSource(affiliate);
   const qrSource = affiliateQrSource(affiliate);
   const photo = await loadImageDataUrl(photoSource);
-  const platformLogo = await loadImageDataUrl("/img/SaleMachineLogo.png");
+  const platformLogo = await loadImageDataUrl("/img/Logotipo%20Qori%20VF.png");
   const qrImg = await loadImageDataUrl(qrSource);
 
   {
@@ -24264,7 +24264,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   ctx.textAlign = "right";
   ctx.fillStyle = palette.accent;
   ctx.font = "900 16px Inter, Arial, sans-serif";
-  ctx.fillText("SALES MACHINE", width - 92, 104);
+  ctx.fillText("QORI", width - 92, 104);
   ctx.fillStyle = palette.ink;
   ctx.font = "900 48px Inter, Arial, sans-serif";
   ctx.fillText(String(points), width - 92, 164);
@@ -24643,7 +24643,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   } else {
     ctx.fillStyle = "#7cfbff";
     ctx.font = "900 13px Inter, Arial, sans-serif";
-    ctx.fillText("SALES MACHINE", width - 156, 706);
+    ctx.fillText("QORI", width - 156, 706);
   }
   ctx.textAlign = "left";
 
