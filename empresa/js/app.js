@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contact-directory-split-v94";
+const APP_VERSION = "empresa-20260723-contact-directory-real-segments-v95";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -3030,14 +3030,12 @@ async function loadLeadAgendaData(options = {}) {
 }
 
 function leadCrmQueryString() {
-  const audiencePurchaseFilter = state.leadDirectoryAudience === "leads" ? "false" : "true";
-  if (leadCrmPurchaseFilter && !leadCrmPurchaseFilter.value) leadCrmPurchaseFilter.value = audiencePurchaseFilter;
   const filters = {
     search: String(leadCrmSearchInput?.value || state.leadCrmFilters.search || "").trim(),
     campaign_id: leadCrmCampaignFilter?.value || state.leadCrmFilters.campaign_id || "",
     status: leadCrmStatusFilter?.value || state.leadCrmFilters.status || "",
     is_affiliate: leadCrmAffiliateFilter?.value || state.leadCrmFilters.is_affiliate || "",
-    has_purchases: leadCrmPurchaseFilter?.value || state.leadCrmFilters.has_purchases || audiencePurchaseFilter,
+    has_purchases: leadCrmPurchaseFilter?.value || state.leadCrmFilters.has_purchases || "",
     ticket_filter: leadCrmTicketFilter?.value || state.leadCrmFilters.ticket_filter || "",
     priority: leadCrmPriorityFilter?.value || state.leadCrmFilters.priority || "",
     score_min: leadCrmScoreMinFilter?.value || state.leadCrmFilters.score_min || "",
@@ -3057,7 +3055,7 @@ function leadCrmQueryString() {
     }
     params.set(key, value);
   });
-  params.set("limit", String(state.leadCrmPagination.limit || 40));
+  params.set("limit", String(Math.max(Number(state.leadCrmPagination.limit || 40), 120)));
   params.set("offset", String(state.leadCrmPagination.offset || 0));
   return params.toString();
 }
@@ -26786,6 +26784,24 @@ function leadDirectoryIsCustomer(item = {}) {
     || Boolean(item.last_purchase_at || item.last_sale_at);
 }
 
+function leadDirectoryHasCommercialPotential(item = {}) {
+  if (leadDirectoryIsCustomer(item)) return false;
+  const metadata = leadDirectoryMetadata(item);
+  const status = String(item.commercial_status || item.status || metadata.commercial_status || "").toUpperCase();
+  if (["LOST", "DELETED"].includes(status)) return false;
+  return Number(item.active_tickets || 0) > 0
+    || Number(item.redeemed_tickets || 0) > 0
+    || Number(item.activation_count || item.activations_count || 0) > 0
+    || Number(item.games_played || item.score_total || item.attention_score || 0) > 0
+    || ["HIGH", "MEDIUM"].includes(String(item.care_priority || "").toUpperCase())
+    || ["INTERESTED", "FOLLOW_UP", "CONTACTED", "NEW"].includes(status)
+    || String(item.source_type || "").toUpperCase() === "MANUAL"
+    || Boolean(item.phone || item.email || item.document_id)
+    || Boolean(item.campaign_id || item.campaign_name || leadDirectoryCampaign(item) !== "Sin campaña")
+    || Boolean(item.channel || item.source || item.attribution_source || metadata.manual_source)
+    || Boolean(item.interest || item.top_interest || item.favorite_product || item.purchase_intent || metadata.manual_importance_reason);
+}
+
 function leadDirectoryChannel(item = {}) {
   const metadata = leadDirectoryMetadata(item);
   return String(
@@ -26984,7 +27000,7 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   }
   const allRows = Array.isArray(rows) ? rows : [];
   const customers = allRows.filter(leadDirectoryIsCustomer);
-  const leads = allRows.filter((item) => !leadDirectoryIsCustomer(item));
+  const leads = allRows.filter(leadDirectoryHasCommercialPotential);
   const affiliates = allRows.filter((item) => leadDirectoryAffiliateLabel(item) === "Afiliado").length;
   const activations = allRows.reduce((sum, item) => sum + leadDirectoryActivationCount(item), 0);
   board.innerHTML = `
@@ -27071,7 +27087,7 @@ function leadDirectoryAudienceLabel(audience = leadDirectoryAudience()) {
 function syncLeadDirectoryAudienceTabs(rows = state.leadCrmRows || []) {
   const audience = leadDirectoryAudience();
   const customerCount = rows.filter(leadDirectoryIsCustomer).length;
-  const leadCount = rows.filter((item) => !leadDirectoryIsCustomer(item)).length;
+  const leadCount = rows.filter(leadDirectoryHasCommercialPotential).length;
   document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => {
     const active = button.dataset.leadDirectoryAudience === audience;
     const visibleCount = button.dataset.leadDirectoryAudience === "customers" ? customerCount : leadCount;
@@ -27322,7 +27338,7 @@ function renderLeadCrmTable() {
   const rows = state.leadCrmRows || [];
   const pagination = state.leadCrmPagination || {};
   const audience = leadDirectoryAudience();
-  const visibleRows = rows.filter((item) => audience === "customers" ? leadDirectoryIsCustomer(item) : !leadDirectoryIsCustomer(item));
+  const visibleRows = rows.filter((item) => audience === "customers" ? leadDirectoryIsCustomer(item) : leadDirectoryHasCommercialPotential(item));
   syncLeadDirectoryAudienceTabs(rows);
   if (leadCrmPaginationLabel) {
     const from = visibleRows.length ? Number(pagination.offset || 0) + 1 : 0;
@@ -29527,19 +29543,19 @@ function renderLeadsView() {
       key: "HIGH",
       title: "Probabilidad alta",
       meta: "Leads sin compra con ticket activo, activaciones o alta interacción",
-      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "HIGH"),
+      rows: crmRows.filter((item) => leadDirectoryHasCommercialPotential(item) && String(item.care_priority || "").toUpperCase() === "HIGH"),
     },
     {
       key: "MEDIUM",
       title: "Probabilidad media",
       meta: "Leads no convertidos con señales parciales",
-      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "MEDIUM"),
+      rows: crmRows.filter((item) => leadDirectoryHasCommercialPotential(item) && String(item.care_priority || "").toUpperCase() === "MEDIUM"),
     },
     {
       key: "LOW",
       title: "Probabilidad baja",
       meta: "Leads con poca información o baja actividad",
-      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "LOW"),
+      rows: crmRows.filter((item) => leadDirectoryHasCommercialPotential(item) && String(item.care_priority || "").toUpperCase() === "LOW"),
     },
   ];
 
@@ -39154,9 +39170,12 @@ document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => 
   button.addEventListener("click", () => {
     const audience = button.dataset.leadDirectoryAudience === "leads" ? "leads" : "customers";
     state.leadDirectoryAudience = audience;
-    if (leadCrmPurchaseFilter) leadCrmPurchaseFilter.value = audience === "leads" ? "false" : "true";
+    state.leadCrmFilters.has_purchases = "";
+    if (leadCrmPurchaseFilter) leadCrmPurchaseFilter.value = "";
     state.leadCrmPagination.offset = 0;
     syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
+    renderLeadCrmTable();
+    renderContactDirectoryCards(state.leadCrmRows || []);
     refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
   });
 });
@@ -39165,7 +39184,6 @@ leadCrmResetButton?.addEventListener("click", () => {
     if (input) input.value = "";
   });
   state.leadDirectoryAudience = "customers";
-  if (leadCrmPurchaseFilter) leadCrmPurchaseFilter.value = "true";
   refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
 });
 leadCrmPrevButton?.addEventListener("click", () => {
