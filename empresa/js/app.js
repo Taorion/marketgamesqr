@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contact-directory-real-segments-v95";
+const APP_VERSION = "empresa-20260723-contact-directory-feed-switch-v96";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -27084,6 +27084,13 @@ function leadDirectoryAudienceLabel(audience = leadDirectoryAudience()) {
   return audience === "leads" ? "Leads" : "Clientes";
 }
 
+function leadDirectorySegmentRows(rows = state.leadCrmRows || [], audience = leadDirectoryAudience()) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  return sourceRows.filter((item) => audience === "customers"
+    ? leadDirectoryIsCustomer(item)
+    : leadDirectoryHasCommercialPotential(item));
+}
+
 function syncLeadDirectoryAudienceTabs(rows = state.leadCrmRows || []) {
   const audience = leadDirectoryAudience();
   const customerCount = rows.filter(leadDirectoryIsCustomer).length;
@@ -27338,7 +27345,7 @@ function renderLeadCrmTable() {
   const rows = state.leadCrmRows || [];
   const pagination = state.leadCrmPagination || {};
   const audience = leadDirectoryAudience();
-  const visibleRows = rows.filter((item) => audience === "customers" ? leadDirectoryIsCustomer(item) : leadDirectoryHasCommercialPotential(item));
+  const visibleRows = leadDirectorySegmentRows(rows, audience);
   syncLeadDirectoryAudienceTabs(rows);
   if (leadCrmPaginationLabel) {
     const from = visibleRows.length ? Number(pagination.offset || 0) + 1 : 0;
@@ -29469,18 +29476,32 @@ function renderLeadTicketInventoryBoard(crmRows = []) {
   });
 }
 
-function renderLegacyLeadTables(feedRows) {
+function renderLegacyLeadTables(feedRows, crmRows = state.leadCrmRows || []) {
   if (leadFeedTable) {
-    leadFeedTable.innerHTML = feedRows.slice(0, 40).map((item) => `
+    const audience = leadDirectoryAudience();
+    const segmentedRows = leadDirectorySegmentRows(crmRows, audience)
+      .slice()
+      .sort(leadDirectorySort)
+      .slice(0, 40);
+    leadFeedTable.innerHTML = segmentedRows.map((item) => {
+      const isCustomer = leadDirectoryIsCustomer(item);
+      const sales = leadDirectorySalesSummary(item);
+      const origin = leadDirectoryChannel(item);
+      const campaign = leadDirectoryCampaign(item);
+      const suggested = isCustomer
+        ? (sales.detail || "Cliente con venta atribuida. Revisar recompra, postventa o fidelización.")
+        : (item.recommended_action || "Prospecto sin compra: revisar ticket, campaña, interés o siguiente contacto.");
+      return `
       <tr>
-        <td><strong>${escapeHtml(item.name || "Sin nombre")}</strong><br><span class="table-secondary">${escapeHtml(item.phone || item.email || item.document_id || "Sin contacto")}</span>${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}</td>
-        <td>${escapeHtml(prettyLeadValue(item.attribution_source || "-"))}</td>
-        <td>${escapeHtml(item.campaign_name || "Sin campaña")}<br><span class="table-secondary">${escapeHtml(item.attribution_subject || "-")}</span>${item.metadata?.manual_importance_reason ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_importance_reason)}</span>` : ""}</td>
-        <td><span class="status-chip ${item.lead_temperature === "buyer" ? "ok" : item.lead_temperature === "hot" ? "warning" : "pending"}">${escapeHtml(item.lead_temperature || "-")}</span><br><span class="table-secondary">${escapeHtml(item.qr_status || item.stage || "-")}</span></td>
-        <td>${item.sale_amount ? money(item.sale_amount) : "-"}</td>
-        <td>${escapeHtml(item.recommended_action || "-")}</td>
+        <td><strong>${escapeHtml(item.name || "Sin nombre")}</strong><br><span class="table-secondary">${escapeHtml(leadDirectoryContactLine(item))}</span>${item.metadata?.manual_job_title ? `<br><span class="table-secondary">${escapeHtml(item.metadata.manual_job_title)}</span>` : ""}</td>
+        <td>${escapeHtml(origin)}</td>
+        <td>${escapeHtml(campaign)}<br><span class="table-secondary">${escapeHtml(leadOriginText(item))}</span></td>
+        <td><span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${escapeHtml(isCustomer ? "Cliente" : "Lead")}</span><br><span class="table-secondary">${escapeHtml(isCustomer ? "Venta atribuida" : leadTicketInventoryText(item))}</span></td>
+        <td>${isCustomer ? escapeHtml(sales.label) : "-"}</td>
+        <td>${escapeHtml(suggested)}</td>
       </tr>
-    `).join("") || '<tr><td colspan="6">Sin contactos dentro de la retención de tu plan.</td></tr>';
+    `;
+    }).join("") || `<tr><td colspan="6">Sin ${leadDirectoryAudienceLabel(audience).toLowerCase()} en este feed.</td></tr>`;
   }
   const sourceRows = state.selectedCampaignId ? (state.selectedLeads || []) : feedRows.map((item) => ({
     ...item,
@@ -29586,7 +29607,8 @@ function renderLeadsView() {
     bindCollapsibleKpiState(leadFeedKpiGrid, "leadFeedMetricsOpen");
   }
   renderContactCenterSummary(crmRows);
-  renderContactActionFeed(crmRows, feedRows);
+  const activeDirectoryRows = leadDirectorySegmentRows(crmRows);
+  renderContactActionFeed(activeDirectoryRows, []);
   renderLeadTicketInventoryBoard(crmRows);
   if (leadAttentionBoard) {
     const customerPanel = `
@@ -29648,7 +29670,7 @@ function renderLeadsView() {
   renderLeadAgenda();
   renderLeadCaptureTable();
   if (state.contactCenterTab === "sales") renderSalesView();
-  renderLegacyLeadTables(feedRows);
+  renderLegacyLeadTables(feedRows, crmRows);
   setContactCenterTab(state.contactCenterTab);
 }
 
@@ -39176,6 +39198,8 @@ document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => 
     syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
     renderLeadCrmTable();
     renderContactDirectoryCards(state.leadCrmRows || []);
+    renderContactActionFeed(leadDirectorySegmentRows(state.leadCrmRows || []), []);
+    renderLegacyLeadTables(state.contactFeed || [], state.leadCrmRows || []);
     refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
   });
 });
