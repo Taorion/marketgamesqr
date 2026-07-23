@@ -1656,3 +1656,231 @@ body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .port
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* Qori v119: typography system from the brand study - modern, geometric, clean SaaS. */
+:root {
+  --qori-font-body: "Manrope", "Avenir Next", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --qori-font-display: "Plus Jakarta Sans", "Satoshi", "Manrope", "Avenir Next", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --qori-font-ui: "Plus Jakarta Sans", "Manrope", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --qori-font-mono: "Plus Jakarta Sans", "Manrope", "Inter", system-ui, sans-serif;
+}
+
+html body,
+html body .portal-shell,
+html body .portal-shell :where(p, small, li, td, textarea, input, select, option),
+html body :where(.modal-shell, .modal-content, .lead-detail-workspace, .toast-container) {
+  font-family: var(--qori-font-body) !important;
+  letter-spacing: 0 !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+html body .portal-shell :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  strong,
+  th,
+  summary,
+  button,
+  label,
+  .mono-label,
+  .nav-group-label,
+  .nav-item,
+  .sidebar-brand,
+  .sidebar-sales-machine-copy,
+  .topbar,
+  .view-head,
+  .table-card-head,
+  .kpi-value,
+  .pill,
+  .status-chip,
+  .feature-tier-badge,
+  .breadcrumb,
+  .tab-button,
+  .lead-directory-audience-tabs,
+  .rms-stage-slider-title,
+  .rms-station-title,
+  .login-copy,
+  .login-brand,
+  .login-technology-strip,
+  .login-machine-visual
+) {
+  font-family: var(--qori-font-display) !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(
+  button,
+  input,
+  select,
+  textarea,
+  .solid-button,
+  .ghost-button,
+  .icon-button,
+  .request-button,
+  .link-button,
+  .nav-link-button
+) {
+  font-family: var(--qori-font-ui) !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(
+  h1,
+  h2,
+  .view-head h2,
+  .campaign-head h2,
+  .login-copy h2,
+  .table-card-head h3,
+  .rms-machine-head-copy h2
+) {
+  font-weight: 800 !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+  text-wrap: balance !important;
+}
+
+html body .portal-shell :where(h3, h4, h5, h6, summary, th, .nav-item strong, .sidebar-sales-machine-copy strong) {
+  font-weight: 760 !important;
+  line-height: 1.18 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(p, small, li, td, .table-card-subtitle, .view-head p, .login-copy p, .placeholder-card p) {
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0 !important;
+  color: #53677f;
+  overflow-wrap: anywhere !important;
+}
+
+html body .portal-shell :where(.mono-label, .nav-group-label, .breadcrumb, .pill, .status-chip, .feature-tier-badge, th) {
+  font-family: var(--qori-font-ui) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+html body .portal-shell :where(.mono-label, .nav-group-label) {
+  color: #0759d6 !important;
+}
+
+html body .portal-shell :where(code, pre, kbd, samp) {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell .material-symbols-outlined,
+html body .portal-shell .material-symbols-outlined::before,
+html body .portal-shell .material-symbols-outlined::after {
+  font-family: "Material Symbols Outlined" !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+html body .portal-shell :where(.login-machine-flow .material-symbols-outlined::before, .password-reveal-button .material-symbols-outlined::before, .password-reveal-button .material-symbols-outlined::after) {
+  font-family: var(--qori-font-ui) !important;
+}
+
+html body .portal-shell .login-machine-flow .material-symbols-outlined::before,
+html body .portal-shell .password-reveal-button .material-symbols-outlined::before,
+html body .portal-shell .password-reveal-button .material-symbols-outlined::after {
+  font-family: var(--qori-font-ui) !important;
+}
+
+html body .portal-shell :where(input, select, textarea) {
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+
+html body .portal-shell :where(button, .solid-button, .ghost-button, .request-button, .nav-item) {
+  font-weight: 760 !important;
+  line-height: 1.2 !important;
+}
+
+html body .portal-shell :where(.data-table, table) {
+  font-variant-numeric: tabular-nums;
+}
+
+html body .portal-shell :where(.data-table td, .data-table th, table td, table th) {
+  line-height: 1.35 !important;
+  vertical-align: middle !important;
+}
+
+@media (max-width: 720px) {
+  html body .portal-shell :where(h1, h2, .view-head h2, .campaign-head h2, .login-copy h2) {
+    line-height: 1.12 !important;
+  }
+
+  html body .portal-shell :where(p, small, li, td, input, select, textarea, button) {
+    line-height: 1.45 !important;
+  }
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell :where(p, small, li, td, textarea, input, select, option) {
+  font-family: var(--qori-font-body) !important;
+  letter-spacing: 0 !important;
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  strong,
+  th,
+  summary,
+  button,
+  label,
+  .mono-label,
+  .nav-group-label,
+  .nav-item,
+  .sidebar-brand,
+  .sidebar-sales-machine-copy,
+  .topbar,
+  .view-head,
+  .table-card-head,
+  .pill,
+  .status-chip,
+  .feature-tier-badge,
+  .breadcrumb,
+  .tab-button,
+  .lead-directory-audience-tabs,
+  .login-copy,
+  .login-brand,
+  .login-technology-strip,
+  .login-machine-visual
+) {
+  font-family: var(--qori-font-display) !important;
+  letter-spacing: 0 !important;
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell :where(.mono-label, .nav-group-label, .breadcrumb, .pill, .status-chip, .feature-tier-badge, th) {
+  font-family: var(--qori-font-ui) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell :where(h1, h2, .view-head h2, .campaign-head h2, .login-copy h2, .table-card-head h3, .rms-machine-head-copy h2) {
+  font-family: var(--qori-font-display) !important;
+  font-weight: 800 !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell .material-symbols-outlined {
+  font-family: "Material Symbols Outlined" !important;
+}
+
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell .login-machine-flow .material-symbols-outlined::before,
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell .password-reveal-button .material-symbols-outlined::before,
+body:not(#qoriTypeA#qoriTypeB#qoriTypeC#qoriTypeD) .portal-shell .password-reveal-button .material-symbols-outlined::after {
+  font-family: var(--qori-font-ui) !important;
+}
