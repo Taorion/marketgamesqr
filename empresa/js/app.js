@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-operativos-v97";
+const APP_VERSION = "empresa-20260723-contactos-simple-v98";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26936,31 +26936,35 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const activationCount = leadDirectoryActivationCount(item);
   const station = leadDirectoryStationInfo(item);
   const sales = leadDirectorySalesSummary(item);
+  const primarySignal = isCustomer
+    ? sales.label
+    : (item.recommended_action || item.commercial_status_label || "Revisar oportunidad");
+  const secondarySignal = isCustomer
+    ? sales.detail
+    : leadOriginText(item);
   return `
     <article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
-      <div class="contact-directory-card-top">
-        <div class="contact-directory-name">
+      <span class="lead-directory-avatar" aria-hidden="true">${escapeHtml(leadDirectoryInitials(item.name || (isCustomer ? "Cliente" : "Lead")).toUpperCase())}</span>
+      <div class="contact-directory-name">
+        <span>
           <strong>${escapeHtml(item.name || "Contacto sin nombre")}</strong>
           <small>${escapeHtml(leadDirectoryContactLine(item))}</small>
-        </div>
-        <span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${isCustomer ? "Cliente" : escapeHtml(item.care_priority_label || "Lead")}</span>
+        </span>
+        <span class="contact-directory-badges">
+          <span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${isCustomer ? "Cliente" : escapeHtml(item.care_priority_label || "Lead")}</span>
+          ${badges.slice(0, 2).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("")}
+        </span>
       </div>
-      <div class="contact-directory-meta-grid">
-        <span class="contact-directory-meta contact-directory-station"><small>Estación actual</small><strong>${escapeHtml(station.label)}</strong></span>
-        <span class="contact-directory-meta contact-directory-sales"><small>Ventas relacionadas</small><strong>${escapeHtml(sales.label)}</strong>${sales.meta ? `<small>${escapeHtml(sales.meta)}</small>` : ""}</span>
-        <span class="contact-directory-meta"><small>Canal de llegada</small><strong>${escapeHtml(leadDirectoryChannel(item))}</strong></span>
-        <span class="contact-directory-meta"><small>Campaña asociada</small><strong>${escapeHtml(leadDirectoryCampaign(item))}</strong></span>
-        <span class="contact-directory-meta"><small>Activaciones</small><strong>${activationCount.toLocaleString("es-CO")} activación(es)</strong></span>
-        <span class="contact-directory-meta"><small>Afiliación</small><strong>${escapeHtml(leadDirectoryAffiliateLabel(item))}</strong></span>
+      <div class="contact-directory-main">
+        <strong>${escapeHtml(primarySignal)}</strong>
+        <small>${escapeHtml(secondarySignal)}</small>
       </div>
-      <div class="contact-directory-card-bottom">
-        <div class="contact-directory-main">
-          <strong>${isCustomer ? `${Number(item.purchase_count || 0).toLocaleString("es-CO")} compra(s) · ${money(item.total_spent || 0)}` : escapeHtml(item.recommended_action || item.commercial_status_label || "Revisar oportunidad")}</strong>
-          <small>${escapeHtml(isCustomer ? sales.detail : leadOriginText(item))}</small>
-        </div>
-        <span class="contact-directory-open">Ver ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
+      <div class="contact-directory-context">
+        <span><strong>${escapeHtml(station.short || "Sin estación")}</strong><small>Estación</small></span>
+        <span><strong>${activationCount.toLocaleString("es-CO")}</strong><small>Activaciones</small></span>
+        <span><strong>${escapeHtml(isCustomer ? money(item.total_spent || item.sales_total || 0) : leadTicketInventoryText(item))}</strong><small>${isCustomer ? "Revenue" : "Tickets"}</small></span>
       </div>
-      ${badges.length ? `<div class="contact-directory-badges">${badges.map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("")}</div>` : ""}
+      <span class="contact-directory-open">Ver ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
     </article>
   `;
 }
@@ -26969,7 +26973,7 @@ function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, se
   const sortedRows = rows.slice().sort(leadDirectorySort);
   const visibleRows = sortedRows.slice(0, limit);
   return `
-    <article class="contact-directory-segment">
+    <section class="contact-directory-segment">
       <div class="contact-directory-segment-head">
         <div class="contact-directory-segment-title">
           <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
@@ -26983,7 +26987,7 @@ function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, se
       <div class="contact-directory-list">
         ${visibleRows.length ? visibleRows.map((item) => leadDirectoryCardMarkup(item, segment)).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
       </div>
-    </article>
+    </section>
   `;
 }
 
@@ -27056,10 +27060,10 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         <p>${audience === "customers" ? "Revisa compradores con venta atribuida, tickets y señales de postventa sin mezclarlos con prospectos." : "Prioriza prospectos con ticket activo, alta intención o datos incompletos antes de pasarlos a agenda o activación."}</p>
       </div>
       <div class="contact-directory-summary" aria-label="Resumen del directorio">
-        <span><strong>${customers.length.toLocaleString("es-CO")}</strong><small>clientes</small></span>
-        <span><strong>${leads.length.toLocaleString("es-CO")}</strong><small>leads</small></span>
-        <span><strong>${activations.toLocaleString("es-CO")}</strong><small>activaciones</small></span>
-        <span><strong>${affiliates.toLocaleString("es-CO")}</strong><small>afiliados</small></span>
+        <span><strong>${customers.length.toLocaleString("es-CO")}</strong> clientes</span>
+        <span><strong>${leads.length.toLocaleString("es-CO")}</strong> leads</span>
+        <span><strong>${activations.toLocaleString("es-CO")}</strong> activaciones</span>
+        <span><strong>${affiliates.toLocaleString("es-CO")}</strong> afiliados</span>
       </div>
     </div>
     <div class="contact-directory-command-strip" aria-label="Acciones del directorio">
