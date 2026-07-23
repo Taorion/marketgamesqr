@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-tabs-arriba-v100";
+const APP_VERSION = "empresa-20260723-solo-directorio-comercial-v101";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28695,7 +28695,7 @@ function appendIfFound(parent, node) {
 }
 
 const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "agenda", "captures", "manual", "sales"];
-const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory", "manual", "agenda"];
+const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory"];
 
 function normalizeContactCenterTab(tab = "directory") {
   const requested = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "directory";
@@ -28887,7 +28887,7 @@ function mountContactCenterLayout() {
   const contactCenterShell = document.getElementById("contactCenterShell");
   ensureContactDirectoryUxStyles();
   if (contactCenterShell) contactCenterShell.dataset.contactDirectoryUx = "simple";
-  document.querySelectorAll('[data-contact-center-tab="directory"], [data-contact-center-tab="manual"], [data-contact-center-tab="agenda"]').forEach((button) => {
+  document.querySelectorAll('[data-contact-center-tab="directory"]').forEach((button) => {
     button.hidden = false;
     button.removeAttribute("hidden");
   });
@@ -28904,10 +28904,8 @@ function mountContactCenterLayout() {
   appendIfFound(overviewPanel, contactActionFeed);
   appendIfFound(overviewPanel, leadAttentionBoard);
 
-  appendIfFound(directoryPanel, document.querySelector(".lead-directory-command"));
   appendIfFound(directoryPanel, document.getElementById("leadDirectoryAudienceTabs"));
   appendIfFound(directoryPanel, document.querySelector(".lead-directory-card"));
-  appendIfFound(directoryPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
 
   appendIfFound(ticketsPanel, leadTicketInventoryBoard);
 

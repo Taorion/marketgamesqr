@@ -53617,13 +53617,13 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools {
   }
 }
 
-/* Contactos v100: audience tabs above directory, no repeated feed card. */
+/* Contactos v101: only the commercial directory remains visible. */
 html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tabs {
-  grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
-  padding: 6px !important;
-  border-radius: 12px !important;
-  background: #f7faf9 !important;
-  box-shadow: none !important;
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-operator-panel {
+  display: none !important;
 }
 
 html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"],
@@ -53643,7 +53643,11 @@ html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-cont
   display: none !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #leadFeedCard {
+html body[data-current-view="leads"] .portal-shell #leadDirectoryCommand,
+html body[data-current-view="leads"] .portal-shell #manualContactsDirectoryCard,
+html body[data-current-view="leads"] .portal-shell #manualLeadCard,
+html body[data-current-view="leads"] .portal-shell #leadFeedCard,
+html body[data-current-view="leads"] .portal-shell #campaignLeadsCard {
   display: none !important;
 }
 
