@@ -162,29 +162,32 @@ function renderPlans() {
   if (!planGrid) return;
   planGrid.innerHTML = plans.map((plan) => {
     const benefits = plan.included || [];
-    const primaryBenefits = benefits.slice(0, 7);
-    const extraBenefits = benefits.slice(7);
+    const primaryBenefits = benefits.slice(0, 5);
+    const extraBenefits = benefits.slice(5);
     return `
       <article class="plan-card ${selectedPlan?.code === plan.code ? "selected" : ""} ${plan.recommended ? "featured-plan" : ""} ${plan.notSubscription ? "entry-plan" : ""}">
         <div class="plan-card-head">
           <span>${escapeHtml(plan.mode || "Suscripción")}</span>
           ${plan.recommended ? '<em>Recomendado</em>' : ""}
         </div>
-        <h3>${escapeHtml(plan.name)}</h3>
-        <p>${escapeHtml(plan.access_summary || "")}</p>
-        <div class="plan-price-row">
-          <strong>${monthlyPlanLabel(plan)}</strong>
-          <span>${plan.notSubscription ? "Entrada básica" : "Suscripción mensual"}</span>
+        <div class="plan-title-row">
+          <h3>${escapeHtml(plan.name)}</h3>
+          <div class="plan-price-row">
+            <strong>${monthlyPlanLabel(plan)}</strong>
+            <span>${plan.notSubscription ? "Entrada básica" : "Suscripción mensual"}</span>
+          </div>
         </div>
-        <div class="plan-snapshot">
+        <p class="plan-summary">${escapeHtml(plan.access_summary || "")}</p>
+        <div class="plan-snapshot" aria-label="Resumen de capacidad">
           ${(plan.snapshot || []).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
         </div>
+        <div class="plan-includes-label">Capacidad principal</div>
         <ul class="plan-access-list">
           ${primaryBenefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
         </ul>
         ${extraBenefits.length ? `
           <details class="plan-details">
-            <summary>Ver capacidad completa</summary>
+            <summary>${extraBenefits.length} capacidades adicionales</summary>
             <ul class="plan-access-list">
               ${extraBenefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
             </ul>
