@@ -603,6 +603,66 @@ h3 {
   font-size: 1.1rem;
 }
 
+.relationship-constellation {
+  position: relative;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 8px;
+  padding: 34px 0 10px;
+}
+
+.relationship-constellation::before {
+  content: "";
+  position: absolute;
+  top: 53px;
+  left: 6%;
+  right: 6%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(1, 34, 104, 0), rgba(4, 128, 250, 0.55), rgba(7, 206, 251, 0.62), rgba(1, 34, 104, 0));
+}
+
+.relationship-constellation article {
+  position: relative;
+  min-height: auto;
+  padding: 62px 16px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.relationship-constellation article::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 44px;
+  aspect-ratio: 1;
+  border: 2px solid rgba(7, 206, 251, 0.68);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, var(--qori-blue-bright) 0 4px, transparent 5px),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 34px rgba(1, 82, 215, 0.16);
+}
+
+.relationship-constellation span {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--qori-blue-corp);
+}
+
+.relationship-constellation strong {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.relationship-constellation p {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.62;
+}
+
 .value-cycle {
   position: relative;
   display: grid;
@@ -665,6 +725,50 @@ h3 {
   line-height: 1.6;
 }
 
+.value-river {
+  gap: 0;
+  margin-top: 34px;
+  padding: 34px 0 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.value-river::before {
+  content: "";
+  position: absolute;
+  inset: 18px 0 auto;
+  height: 92px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(7, 206, 251, 0.18), transparent 22%),
+    radial-gradient(circle at 52% 50%, rgba(4, 128, 250, 0.16), transparent 24%),
+    radial-gradient(circle at 84% 50%, rgba(1, 82, 215, 0.13), transparent 25%);
+  pointer-events: none;
+}
+
+.value-river .cycle-line {
+  top: 64px;
+  left: 5%;
+  right: 5%;
+}
+
+.value-river .cycle-node {
+  min-height: auto;
+  padding: 46px 18px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.value-river .cycle-node span {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .philosophy-section,
 .product-section {
   width: 100%;
@@ -679,6 +783,23 @@ h3 {
 .philosophy-map {
   display: grid;
   gap: 16px;
+}
+
+.philosophy-weave {
+  position: relative;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.35fr) minmax(230px, 0.85fr);
+  align-items: stretch;
+  gap: clamp(18px, 3vw, 34px);
+}
+
+.philosophy-weave::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 18%;
+  right: 18%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(1, 34, 104, 0), rgba(7, 206, 251, 0.42), rgba(4, 128, 250, 0.48), rgba(1, 34, 104, 0));
 }
 
 .principle-card {
@@ -710,11 +831,81 @@ h3 {
   max-width: 620px;
 }
 
+.philosophy-weave .principle-card,
+.philosophy-weave .habits-grid article,
+.philosophy-weave .trust-signals-grid article {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.philosophy-weave .principle-card {
+  min-height: auto;
+  display: grid;
+  align-content: center;
+  padding: 12px 28px 12px 0;
+  overflow: visible;
+  border-right: 2px solid rgba(7, 206, 251, 0.28);
+  border-radius: 0;
+}
+
+.philosophy-weave .principle-card::after {
+  right: auto;
+  left: 0;
+  bottom: -70px;
+  top: auto;
+  width: 210px;
+  border-color: rgba(7, 206, 251, 0.16);
+}
+
 .habits-grid,
 .trust-signals-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.philosophy-weave .habits-grid {
+  position: relative;
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding-left: 30px;
+  border-left: 2px solid rgba(4, 128, 250, 0.18);
+}
+
+.philosophy-weave .habits-grid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -7px;
+  width: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--qori-cyan), var(--qori-blue-bright), var(--qori-blue-corp));
+}
+
+.philosophy-weave .habits-grid article {
+  min-height: auto;
+  padding: 0 0 22px;
+  border-radius: 0;
+}
+
+.philosophy-weave .habits-grid article + article {
+  padding-top: 22px;
+  border-top: 1px solid rgba(205, 224, 244, 0.92);
+}
+
+.philosophy-weave .trust-signals-grid {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 12px;
+}
+
+.philosophy-weave .trust-signals-grid article {
+  min-height: auto;
+  padding: 0 0 0 22px;
+  border-left: 3px solid rgba(7, 206, 251, 0.6);
+  border-radius: 0;
 }
 
 .habits-grid article,
@@ -747,12 +938,38 @@ h3 {
   gap: 14px;
 }
 
+.machine-path {
+  gap: 0;
+  padding-top: 36px;
+}
+
+.machine-path::before {
+  content: "";
+  position: absolute;
+  top: 53px;
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--qori-blue-deep), var(--qori-blue-bright), var(--qori-cyan));
+  opacity: 0.34;
+}
+
 .machine-timeline article {
   position: relative;
   min-height: 270px;
   display: grid;
   align-content: start;
   padding: 20px;
+}
+
+.machine-path article {
+  min-height: 245px;
+  padding: 74px 18px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .machine-timeline article::before {
@@ -763,6 +980,19 @@ h3 {
   border-radius: 14px;
   background: var(--qori-gradient);
   box-shadow: 0 12px 24px rgba(1, 82, 215, 0.2);
+}
+
+.machine-path article::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border: 9px solid rgba(232, 243, 251, 0.96);
+  border-radius: 50%;
+  background: var(--qori-gradient);
+  box-shadow: 0 18px 34px rgba(1, 82, 215, 0.2);
 }
 
 .machine-timeline strong {
@@ -781,13 +1011,13 @@ h3 {
   min-height: 372px;
   margin-bottom: 24px;
   overflow: hidden;
-  border: 1px solid rgba(205, 224, 244, 0.94);
-  border-radius: 34px;
+  border: 0;
+  border-radius: 0;
   background:
     radial-gradient(circle at 50% 50%, rgba(7, 206, 251, 0.18), transparent 30%),
     radial-gradient(circle at 20% 18%, rgba(4, 128, 250, 0.14), transparent 28%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 243, 251, 0.9));
-  box-shadow: var(--shadow-soft);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(232, 243, 251, 0.38));
+  box-shadow: none;
 }
 
 .ancestral-ring {
@@ -890,11 +1120,32 @@ h3 {
   gap: 16px;
 }
 
+.principles-flow {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid rgba(205, 224, 244, 0.95);
+  border-bottom: 1px solid rgba(205, 224, 244, 0.95);
+}
+
 .principles-grid article {
   position: relative;
   min-height: 260px;
   overflow: hidden;
   padding: 24px;
+}
+
+.principles-flow article {
+  min-height: 250px;
+  padding: 26px 18px;
+  border: 0;
+  border-left: 1px solid rgba(205, 224, 244, 0.9);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.principles-flow article:first-child {
+  border-left: 0;
 }
 
 .principles-grid article::before {
@@ -906,6 +1157,10 @@ h3 {
   aspect-ratio: 1;
   border: 18px solid rgba(7, 206, 251, 0.12);
   border-radius: 50%;
+}
+
+.principles-flow article::before {
+  display: none;
 }
 
 .principles-grid span {
@@ -921,6 +1176,17 @@ h3 {
   box-shadow: 0 14px 28px rgba(1, 82, 215, 0.2);
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.principles-flow span {
+  width: auto;
+  height: auto;
+  margin-bottom: 34px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--qori-blue-bright);
+  font-size: 0.82rem;
 }
 
 .principles-grid strong {
@@ -954,6 +1220,27 @@ h3 {
 
 .audience-grid strong {
   color: var(--qori-blue-corp);
+}
+
+.audience-spectrum {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid rgba(205, 224, 244, 0.95);
+  border-bottom: 1px solid rgba(205, 224, 244, 0.95);
+}
+
+.audience-spectrum article {
+  min-height: auto;
+  padding: 24px 18px;
+  border: 0;
+  border-left: 1px solid rgba(205, 224, 244, 0.9);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.audience-spectrum article:first-child {
+  border-left: 0;
 }
 
 .product-console {
@@ -1098,16 +1385,23 @@ h3 {
 }
 
 .manifesto-section {
-  padding: clamp(58px, 8vw, 98px) 0;
+  width: 100%;
+  max-width: none;
+  padding: clamp(58px, 8vw, 98px) max(16px, calc((100% - 1180px) / 2));
+  background:
+    linear-gradient(135deg, rgba(1, 34, 104, 0.97), rgba(3, 65, 179, 0.92) 54%, rgba(7, 206, 251, 0.72)),
+    var(--qori-blue-deep);
 }
 
 .manifesto-card {
   position: relative;
   overflow: hidden;
-  padding: clamp(28px, 5vw, 54px);
-  background:
-    linear-gradient(135deg, rgba(1, 34, 104, 0.96), rgba(3, 65, 179, 0.9) 54%, rgba(7, 206, 251, 0.72)),
-    var(--qori-blue-deep);
+  max-width: 1180px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .manifesto-card::after {
@@ -1408,6 +1702,32 @@ h3 {
     display: none;
   }
 
+  .relationship-constellation::before,
+  .philosophy-weave::before,
+  .machine-path::before {
+    display: none;
+  }
+
+  .relationship-constellation article,
+  .machine-path article {
+    padding-top: 58px;
+  }
+
+  .philosophy-weave {
+    grid-template-columns: 1fr;
+  }
+
+  .philosophy-weave .principle-card {
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid rgba(205, 224, 244, 0.9);
+    padding-bottom: 24px;
+  }
+
+  .philosophy-weave .trust-signals-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .ancestral-diagram {
     min-height: 430px;
   }
@@ -1521,6 +1841,16 @@ h3 {
     min-height: auto;
   }
 
+  .relationship-constellation {
+    padding-top: 10px;
+  }
+
+  .relationship-constellation article,
+  .value-river .cycle-node,
+  .machine-path article {
+    padding-right: 0;
+  }
+
   .value-cycle {
     padding: 12px;
     border-radius: 24px;
@@ -1528,6 +1858,56 @@ h3 {
 
   .cycle-node {
     min-height: auto;
+  }
+
+  .value-river {
+    padding: 8px 0 0;
+  }
+
+  .value-river::before {
+    display: none;
+  }
+
+  .value-river .cycle-node {
+    padding-top: 52px;
+  }
+
+  .philosophy-weave .habits-grid {
+    padding-left: 22px;
+  }
+
+  .philosophy-weave .trust-signals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .principles-flow {
+    border-top: 0;
+    border-bottom: 0;
+  }
+
+  .principles-flow article {
+    padding: 18px 0;
+    border-left: 0;
+    border-top: 1px solid rgba(205, 224, 244, 0.95);
+  }
+
+  .principles-flow article:first-child {
+    border-top: 0;
+  }
+
+  .audience-spectrum {
+    border-top: 0;
+    border-bottom: 0;
+  }
+
+  .audience-spectrum article {
+    padding: 18px 0;
+    border-left: 0;
+    border-top: 1px solid rgba(205, 224, 244, 0.95);
+  }
+
+  .audience-spectrum article:first-child {
+    border-top: 0;
   }
 
   .ancestral-diagram {
