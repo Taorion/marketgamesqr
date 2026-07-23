@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-ficha-cliente-interstitial-v104";
+const APP_VERSION = "empresa-20260723-ficha-cliente-limpia-v105";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29850,7 +29850,7 @@ function renderLeadDetailHeader(detail) {
     leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"}`;
   }
   if (leadDetailEyebrow) {
-    leadDetailEyebrow.textContent = `${lead.source_type || "PLAYER"} · ${lead.level || "Lead"}`;
+    leadDetailEyebrow.textContent = `Ficha comercial · ${lead.source_type || "PLAYER"} · ${lead.level || "Lead"}`;
   }
   if (leadEditManualButton) {
     leadEditManualButton.classList.toggle("hidden", lead.source_type !== "MANUAL");

@@ -54326,3 +54326,286 @@ html body .portal-shell #leadDetailModal .lead-tabs {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Contactos v105: cleaner, friendlier lead detail layout. */
+html body .portal-shell #leadDetailModal.lead-detail-workspace {
+  align-items: start !important;
+  place-items: start center !important;
+  padding: clamp(18px, 4vh, 42px) clamp(12px, 3vw, 34px) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22), transparent 38%),
+    rgba(8, 18, 15, 0.48) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
+  width: min(1040px, 100%) !important;
+  max-height: calc(100vh - clamp(36px, 8vh, 84px)) !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-detail-interstitial-card > :where(.lead-profile-header, .lead-quick-actions, .lead-tabs, .lead-tab-panel) {
+  margin-right: clamp(18px, 2.8vw, 28px) !important;
+  margin-left: clamp(18px, 2.8vw, 28px) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-workspace-head {
+  align-items: center !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: clamp(18px, 2.7vw, 26px) clamp(18px, 2.8vw, 28px) 16px !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.08) !important;
+  box-shadow: 0 8px 20px rgba(16, 37, 31, 0.035) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-workspace-head .mono-label {
+  color: #0f7458 !important;
+  font-size: 0.7rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-workspace-head h3 {
+  margin: 4px 0 3px !important;
+  color: #10251f !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-workspace-head p {
+  max-width: 72ch !important;
+  color: #64756e !important;
+  font-size: 0.88rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-detail-close-button {
+  border-radius: 999px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-profile-header {
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.75fr) !important;
+  gap: clamp(18px, 2.6vw, 28px) !important;
+  margin-top: 20px !important;
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.08) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-profile-header h4 {
+  margin: 10px 0 8px !important;
+  color: #10251f !important;
+  font-size: clamp(1.45rem, 2.4vw, 2.18rem) !important;
+  line-height: 1.08 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-profile-header p {
+  max-width: 72ch !important;
+  color: #64756e !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-status-row {
+  gap: 7px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-status-row button:first-of-type {
+  margin-left: auto !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-status-row .status-chip,
+html body .portal-shell #leadDetailModal .lead-status-row .pill {
+  min-height: 0 !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-status-row button {
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  border-radius: 10px !important;
+  font-size: 0.75rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-contact-strip {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)) !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-contact-strip span {
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(16, 37, 31, 0.08) !important;
+  border-radius: 12px !important;
+  background: #f8fbf9 !important;
+  color: #526a60 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-contact-strip strong {
+  margin-bottom: 2px !important;
+  color: #24483d !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-funnel-strip {
+  gap: 7px !important;
+  margin-top: 12px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-funnel-strip span {
+  min-height: 28px !important;
+  padding: 5px 9px !important;
+  border-color: rgba(16, 37, 31, 0.09) !important;
+  background: #ffffff !important;
+  color: #64756e !important;
+  font-size: 0.72rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-funnel-strip span.is-done {
+  border-color: rgba(15, 116, 88, 0.18) !important;
+  background: #eef8f2 !important;
+  color: #0f7458 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-decision-panel {
+  align-content: start !important;
+  gap: 12px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-health-card,
+html body .portal-shell #leadDetailModal .lead-header-metrics span,
+html body .portal-shell #leadDetailModal .lead-action-tile {
+  border: 1px solid rgba(16, 37, 31, 0.08) !important;
+  border-radius: 12px !important;
+  background: #f8fbf9 !important;
+  color: #10251f !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-health-card {
+  padding: 14px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-health-card strong {
+  color: #10251f !important;
+  font-size: 1.8rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-health-card small,
+html body .portal-shell #leadDetailModal .lead-action-tile span {
+  color: #64756e !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-header-metrics {
+  gap: 8px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-header-metrics span {
+  padding: 10px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-header-metrics strong {
+  color: #10251f !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-next-actions {
+  gap: 8px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-action-tile {
+  padding: 11px 12px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-action-tile:hover {
+  transform: none !important;
+  background: #f1f8f4 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-quick-actions {
+  gap: 8px !important;
+  margin-top: 2px !important;
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.08) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-quick-actions button {
+  min-height: 34px !important;
+  padding: 7px 11px !important;
+  border-radius: 10px !important;
+  font-size: 0.76rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tabs {
+  gap: 6px !important;
+  margin-top: 14px !important;
+  padding: 0 0 10px !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.08) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tabs .segment-tab {
+  min-height: 32px !important;
+  padding: 6px 10px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #64756e !important;
+  font-size: 0.76rem !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tabs .segment-tab.active {
+  background: #eef8f2 !important;
+  color: #0f7458 !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 116, 88, 0.12) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel {
+  gap: 12px !important;
+  margin-top: 14px !important;
+  padding: 0 0 clamp(18px, 2.6vw, 28px) !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel :where(.lead-detail-item, .lead-insight-box, .lead-timeline-item, .lead-action-card) {
+  border-color: rgba(16, 37, 31, 0.08) !important;
+  border-radius: 12px !important;
+  background: #f8fbf9 !important;
+  color: #10251f !important;
+}
+
+@media (max-width: 900px) {
+  html body .portal-shell #leadDetailModal .lead-profile-header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-status-row button:first-of-type {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 560px) {
+  html body .portal-shell #leadDetailModal.lead-detail-workspace {
+    padding: 8px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
+    max-height: calc(100vh - 16px) !important;
+    border-radius: 14px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-detail-interstitial-card > :where(.lead-profile-header, .lead-quick-actions, .lead-tabs, .lead-tab-panel) {
+    margin-right: 16px !important;
+    margin-left: 16px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-workspace-head {
+    padding: 16px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-contact-strip,
+  html body .portal-shell #leadDetailModal .lead-header-metrics {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
