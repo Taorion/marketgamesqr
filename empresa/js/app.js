@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contact-directory-feed-switch-v96";
+const APP_VERSION = "empresa-20260723-contactos-operativos-v97";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26965,8 +26965,9 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   `;
 }
 
-function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, segment }) {
+function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, segment, limit = 6 }) {
   const sortedRows = rows.slice().sort(leadDirectorySort);
+  const visibleRows = sortedRows.slice(0, limit);
   return `
     <article class="contact-directory-segment">
       <div class="contact-directory-segment-head">
@@ -26980,7 +26981,7 @@ function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, se
         <span class="pill muted">${sortedRows.length.toLocaleString("es-CO")}</span>
       </div>
       <div class="contact-directory-list">
-        ${sortedRows.length ? sortedRows.map((item) => leadDirectoryCardMarkup(item, segment)).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
+        ${visibleRows.length ? visibleRows.map((item) => leadDirectoryCardMarkup(item, segment)).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
       </div>
     </article>
   `;
@@ -27001,14 +27002,58 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const allRows = Array.isArray(rows) ? rows : [];
   const customers = allRows.filter(leadDirectoryIsCustomer);
   const leads = allRows.filter(leadDirectoryHasCommercialPotential);
+  const audience = leadDirectoryAudience();
+  const visibleRows = audience === "customers" ? customers : leads;
   const affiliates = allRows.filter((item) => leadDirectoryAffiliateLabel(item) === "Afiliado").length;
   const activations = allRows.reduce((sum, item) => sum + leadDirectoryActivationCount(item), 0);
+  const activeTicketRows = visibleRows.filter((item) => Number(item.active_tickets || 0) > 0);
+  const highPriorityLeads = leads.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH" || Number(item.active_tickets || 0) > 0);
+  const followUpLeads = leads.filter((item) => !highPriorityLeads.some((lead) => String(lead.id) === String(item.id) && String(lead.source_type || "PLAYER") === String(item.source_type || "PLAYER")));
+  const customerRepurchaseRows = customers.filter((item) => Number(item.active_tickets || 0) > 0 || Number(item.redeemed_tickets || 0) > 0 || item.last_purchase_at || item.last_sale_at);
+  const customerValueRows = customers.slice().sort((a, b) => Number(b.total_spent || b.sales_total || 0) - Number(a.total_spent || a.sales_total || 0));
+  const segmentMarkup = audience === "customers"
+    ? [
+      leadDirectorySegmentMarkup({
+        title: "Clientes con valor registrado",
+        subtitle: "Convertidos",
+        icon: "verified_user",
+        rows: customerValueRows,
+        emptyText: "Cuando una venta quede atribuida, el cliente aparecerá aquí.",
+        segment: "customer",
+      }),
+      leadDirectorySegmentMarkup({
+        title: "Clientes para recompra o postventa",
+        subtitle: "Siguiente venta",
+        icon: "repeat",
+        rows: customerRepurchaseRows,
+        emptyText: "Sin clientes con señales recientes de recompra o ticket activo.",
+        segment: "customer",
+      }),
+    ].join("")
+    : [
+      leadDirectorySegmentMarkup({
+        title: "Atender primero",
+        subtitle: "Leads calientes",
+        icon: "priority_high",
+        rows: highPriorityLeads,
+        emptyText: "Sin leads urgentes con los filtros actuales.",
+        segment: "lead",
+      }),
+      leadDirectorySegmentMarkup({
+        title: "Completar y nutrir",
+        subtitle: "Pendientes",
+        icon: "person_search",
+        rows: followUpLeads,
+        emptyText: "Sin prospectos pendientes para esta vista.",
+        segment: "lead",
+      }),
+    ].join("");
   board.innerHTML = `
     <div class="contact-directory-hero">
       <div>
         <span class="mono-label">Directorio comercial</span>
-        <h3>Clientes y leads separados por intención</h3>
-        <p>Usa las pestañas del listado para trabajar clientes que ya compraron o leads que todavía son prospectos con oportunidad comercial.</p>
+        <h3>${audience === "customers" ? "Clientes convertidos para cuidar y recomprar" : "Leads por convertir en clientes"}</h3>
+        <p>${audience === "customers" ? "Revisa compradores con venta atribuida, tickets y señales de postventa sin mezclarlos con prospectos." : "Prioriza prospectos con ticket activo, alta intención o datos incompletos antes de pasarlos a agenda o activación."}</p>
       </div>
       <div class="contact-directory-summary" aria-label="Resumen del directorio">
         <span><strong>${customers.length.toLocaleString("es-CO")}</strong><small>clientes</small></span>
@@ -27017,7 +27062,31 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         <span><strong>${affiliates.toLocaleString("es-CO")}</strong><small>afiliados</small></span>
       </div>
     </div>
+    <div class="contact-directory-command-strip" aria-label="Acciones del directorio">
+      <span><strong>${visibleRows.length.toLocaleString("es-CO")}</strong><small>${escapeHtml(leadDirectoryAudienceLabel(audience).toLowerCase())} visibles</small></span>
+      <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong><small>con ticket activo</small></span>
+      <button class="ghost-button" type="button" data-contact-directory-command="toggle-audience">
+        <span class="material-symbols-outlined" aria-hidden="true">${audience === "customers" ? "person_search" : "verified_user"}</span>
+        ${audience === "customers" ? "Ver leads" : "Ver clientes"}
+      </button>
+      <button class="solid-button" type="button" data-contact-directory-command="new-lead">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        Agregar prospecto
+      </button>
+    </div>
+    <div class="contact-directory-columns">
+      ${segmentMarkup}
+    </div>
   `;
+  board.querySelector('[data-contact-directory-command="toggle-audience"]')?.addEventListener("click", () => {
+    state.leadDirectoryAudience = audience === "customers" ? "leads" : "customers";
+    syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
+    renderLeadCrmTable();
+    renderContactDirectoryCards(state.leadCrmRows || []);
+    renderContactActionFeed(leadDirectorySegmentRows(state.leadCrmRows || []), []);
+    renderLegacyLeadTables(state.contactFeed || [], state.leadCrmRows || []);
+  });
+  board.querySelector('[data-contact-directory-command="new-lead"]')?.addEventListener("click", () => handleContactCenterStageAction("manual-lead"));
   board.querySelectorAll("[data-lead-id]").forEach((card) => {
     const open = () => openLeadDetail({
       id: card.dataset.leadId,
@@ -28679,7 +28748,7 @@ function appendIfFound(parent, node) {
 }
 
 const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "agenda", "captures", "manual", "sales"];
-const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory", "agenda"];
+const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory", "manual", "agenda"];
 
 function normalizeContactCenterTab(tab = "directory") {
   const requested = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "directory";
@@ -28693,13 +28762,13 @@ function ensureContactDirectoryUxStyles() {
   style.textContent = `
     #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-summary,
     #contactCenterShell[data-contact-directory-ux="simple"] #contactActionFeed,
-    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-card:not([data-contact-center-tab="directory"]):not([data-contact-center-tab="agenda"]),
-    #contactCenterShell[data-contact-directory-ux="simple"] [data-contact-rail]:not([data-contact-rail="directory"]):not([data-contact-rail="agenda"]) {
+    #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-card:not([data-contact-center-tab="directory"]):not([data-contact-center-tab="manual"]):not([data-contact-center-tab="agenda"]),
+    #contactCenterShell[data-contact-directory-ux="simple"] [data-contact-rail]:not([data-contact-rail="directory"]):not([data-contact-rail="manual"]):not([data-contact-rail="agenda"]) {
       display: none !important;
     }
     #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
     #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail {
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
     }
     #contactCenterShell[data-contact-directory-ux="simple"] .lead-directory-card .table-wrap {
       display: none;
@@ -28744,6 +28813,38 @@ function ensureContactDirectoryUxStyles() {
     .contact-directory-summary strong {
       font-size: 1.2rem;
       line-height: 1;
+    }
+    .contact-directory-command-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, auto)) minmax(150px, auto) minmax(170px, auto);
+      align-items: center;
+      justify-content: start;
+      gap: 0.65rem;
+      padding: 0.78rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      background: rgba(248, 250, 252, 0.92);
+    }
+    .contact-directory-command-strip > span {
+      display: grid;
+      min-height: 44px;
+      align-content: center;
+      padding: 0.45rem 0.7rem;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .contact-directory-command-strip > span strong,
+    .contact-directory-command-strip > span small {
+      line-height: 1.08;
+    }
+    .contact-directory-command-strip > span small {
+      color: var(--muted-text);
+    }
+    .contact-directory-command-strip button {
+      min-height: 44px;
+      justify-content: center;
+      white-space: nowrap;
     }
     .contact-directory-columns {
       display: grid;
@@ -28892,7 +28993,8 @@ function ensureContactDirectoryUxStyles() {
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail,
       .contact-directory-columns,
-      .contact-directory-hero {
+      .contact-directory-hero,
+      .contact-directory-command-strip {
         grid-template-columns: 1fr;
       }
       .contact-directory-summary {
@@ -28917,6 +29019,10 @@ function mountContactCenterLayout() {
   const contactCenterShell = document.getElementById("contactCenterShell");
   ensureContactDirectoryUxStyles();
   if (contactCenterShell) contactCenterShell.dataset.contactDirectoryUx = "simple";
+  document.querySelectorAll('[data-contact-center-tab="directory"], [data-contact-center-tab="manual"], [data-contact-center-tab="agenda"]').forEach((button) => {
+    button.hidden = false;
+    button.removeAttribute("hidden");
+  });
   const overviewPanel = document.querySelector('[data-contact-center-panel="overview"]');
   const directoryPanel = document.querySelector('[data-contact-center-panel="directory"]');
   const ticketsPanel = document.querySelector('[data-contact-center-panel="tickets"]');
@@ -28964,13 +29070,13 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
       secondaryAction: "export-all",
     },
     directory: {
-      meta: "Directorio 1 de 2 · Contactos",
+      meta: "Directorio 1 de 3 · Contactos",
       title: "Directorio de contactos",
       copy: "Clientes y leads separados en una vista simple. Cada tarjeta muestra canal, campaña, contacto, activaciones y afiliación; haz clic para abrir la ficha completa.",
-      primaryLabel: "Ver agenda",
-      primaryAction: "go-agenda",
-      secondaryLabel: "Exportar contactos",
-      secondaryAction: "export-all",
+      primaryLabel: "Agregar prospecto",
+      primaryAction: "manual-lead",
+      secondaryLabel: "Ver agenda",
+      secondaryAction: "go-agenda",
     },
     tickets: {
       meta: "Vista 3 de 7 · Tickets",
@@ -29000,9 +29106,9 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
       secondaryAction: "go-directory",
     },
     manual: {
-      meta: "Vista 6 de 7 · Contactos agregados",
-      title: "Directorio interno de contactos agregados",
-      copy: "Revisa contactos guardados manualmente o promovidos desde otros leads, edítalos y registra nuevos prospectos.",
+      meta: "Directorio 2 de 3 · Prospectos",
+      title: "Prospectos agregados",
+      copy: "Registra contactos que llegan por WhatsApp, llamada, feria, referido o correo y mantenlos dentro del flujo comercial.",
       primaryLabel: "Nuevo contacto",
       primaryAction: "manual-lead",
       secondaryLabel: "Ver directorio",
@@ -29038,9 +29144,9 @@ function updateContactCenterStage(tab = state.contactCenterTab || "directory") {
 
 function handleContactCenterStageAction(action = "") {
   if (action === "manual-lead") {
-    setContactCenterTab("directory");
-    document.querySelector(".lead-directory-command")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    leadCrmSearchInput?.focus();
+    setContactCenterTab("manual");
+    manualLeadForm?.closest("article")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => manualLeadNameInput?.focus?.({ preventScroll: true }), 120);
     return;
   }
   if (action === "create-capture") {
