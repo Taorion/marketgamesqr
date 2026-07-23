@@ -2912,3 +2912,161 @@ html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-det
     justify-content: stretch !important;
   }
 }
+
+/* Gaming Center v123: solo lista de activaciones, sin pantallas heredadas visibles. */
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid > :not(.gaming-activation-list-card):not(#activationShareModal):not(.gaming-activation-builder-modal):not(.gaming-activation-detail-modal) {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"].active {
+  gap: 16px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"] > .view-head {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, 0.86) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"] > .view-head h2 {
+  margin: 2px 0 4px !important;
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: 1.7rem !important;
+  line-height: 1.12 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"] > .view-head p {
+  max-width: 780px !important;
+  margin: 0 !important;
+  color: var(--qori-muted, #54708f) !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid {
+  display: block !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  align-items: center !important;
+  padding: 18px 20px !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head h3 {
+  margin: 3px 0 4px !important;
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: 1.15rem !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-card-subtitle {
+  max-width: 720px !important;
+  margin: 0 !important;
+  color: var(--qori-muted, #54708f) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.42 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  overflow-x: auto !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  min-width: 960px !important;
+  table-layout: fixed !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td {
+  padding: 14px 16px !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid rgba(205, 224, 244, 0.66) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th {
+  color: var(--qori-muted, #54708f) !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(4),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(5),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(4),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(5) {
+  text-align: center !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(1) { width: 30% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2) { width: 14% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(4),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(5) { width: 11% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(6) { width: 22% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row {
+  transition: background-color 0.16s ease !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:focus-visible {
+  background: rgba(247, 251, 255, 0.96) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-number-cell {
+  display: grid !important;
+  gap: 2px !important;
+  justify-items: center !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-number-cell strong {
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: 1rem !important;
+  line-height: 1.1 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-number-cell span {
+  color: var(--qori-muted, #54708f) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell small {
+  color: var(--qori-muted, #54708f) !important;
+  font-size: 0.74rem !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-detail-actions .solid-button {
+  white-space: nowrap !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"] > .view-head {
+    display: grid !important;
+    align-items: start !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+    display: grid !important;
+    align-items: start !important;
+  }
+}

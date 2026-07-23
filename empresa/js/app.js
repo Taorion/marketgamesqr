@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-gaming-activations-simple-v122";
+const APP_VERSION = "empresa-20260723-activaciones-lista-simple-v123";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -12166,11 +12166,11 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
       <article class="gaming-activation-builder-interstitial" role="document">
         <header class="gaming-activation-builder-modal-head">
           <div>
-            <span class="mono-label">Crear ticket</span>
+            <span class="mono-label">Crear activación</span>
             <h3 id="gamingActivationBuilderTitle">Configura una activación paso a paso</h3>
             <p>Define campaña, dinámica, captura, beneficio y reglas sin ver todo el formulario al mismo tiempo.</p>
           </div>
-          <button class="icon-button" type="button" data-close-gaming-activation-builder aria-label="Cerrar creación de ticket"><span class="material-symbols-outlined">close</span></button>
+          <button class="icon-button" type="button" data-close-gaming-activation-builder aria-label="Cerrar creación de activación"><span class="material-symbols-outlined">close</span></button>
         </header>
         <div class="gaming-activation-builder-modal-body" data-gaming-activation-builder-body></div>
       </article>
@@ -12278,7 +12278,7 @@ function openGamingActivationDetail(id = "") {
       <footer class="gaming-activation-detail-actions">
         <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url || "")}">Copiar link</button>
         <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar a lead</button>
-        <button class="solid-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar ticket</button>
+        <button class="solid-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar activación</button>
       </footer>
     `;
   }
@@ -12599,11 +12599,11 @@ function ensureGamingCenterUx() {
       <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
         <div class="gaming-center-command-copy">
           <span class="mono-label">Activaciones</span>
-          <h3>Gestiona tickets de activación</h3>
+          <h3>Activaciones creadas</h3>
           <p>Consulta lo creado en una lista simple y abre el detalle para ver rendimiento, campaña, canal y leads.</p>
         </div>
         <div class="gaming-center-quick-actions">
-          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">add_circle</span><span><strong>Crear ticket</strong><small>Abre el configurador paso a paso.</small></span></button>
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">add_circle</span><span><strong>Crear activación</strong><small>Abre el configurador paso a paso.</small></span></button>
           <button class="gaming-center-quick-action" type="button" data-gaming-center-action="published-activations"><span class="material-symbols-outlined">list_alt</span><span><strong>Ver activaciones</strong><small>Lista creada, rendimiento y estado.</small></span></button>
         </div>
       </section>
@@ -12710,7 +12710,7 @@ function ensureGamingCenterUx() {
   const publishedCard = view.querySelector(".gaming-activation-list-card");
   if (publishedCard && !publishedCard.querySelector(".gaming-published-toolbar")) {
     publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("beforeend", `
-      <button class="solid-button" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> Crear ticket</button>
+      <button class="solid-button" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> Crear activación</button>
     `);
     publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("afterend", `
       <div class="gaming-published-toolbar">
@@ -21038,11 +21038,13 @@ function renderTriviaLaunchers() {
           </div>
         </td>
         <td>
-          <div class="activation-metric-stack">
-            <span><strong>${escapeHtml(attemptsCount)}</strong>Leads</span>
-            <span><strong>${escapeHtml(winnersCount)}</strong>Tickets</span>
-            <span><strong>${escapeHtml(rate)}%</strong>Rendimiento</span>
-          </div>
+          <div class="activation-number-cell"><strong>${escapeHtml(attemptsCount)}</strong><span>Leads</span></div>
+        </td>
+        <td>
+          <div class="activation-number-cell"><strong>${escapeHtml(winnersCount)}</strong><span>Tickets</span></div>
+        </td>
+        <td>
+          <div class="activation-number-cell"><strong>${escapeHtml(rate)}%</strong><span>Rendimiento</span></div>
         </td>
         <td>
           <div class="activation-campaign-cell">
@@ -21050,20 +21052,10 @@ function renderTriviaLaunchers() {
             <small>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</small>
           </div>
         </td>
-        <td>
-          <div class="activation-row-actions activation-manage-actions">
-            <button class="ghost-button compact" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar link</button>
-            <button class="ghost-button compact" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar</button>
-            <button class="solid-button compact" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
-            ${item.status === "active"
-              ? `<button class="ghost-button compact" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="paused">Pausar</button>`
-              : `<button class="ghost-button compact" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="active">Activar</button>`}
-          </div>
-        </td>
       </tr>
     `;
     }).join("")
-    : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones creadas. Usa Crear ticket para configurar la primera.</td></tr>';
+    : '<tr><td colspan="6" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
 
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {
@@ -21078,33 +21070,6 @@ function renderTriviaLaunchers() {
     });
   });
 
-  triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
-      showFeedback("Link público de activación copiado.");
-    });
-  });
-  triviaLauncherTable.querySelectorAll("[data-copy-activation-invite]").forEach((button) => {
-    button.addEventListener("click", () => copyActivationInviteMessage(button.dataset.copyActivationInvite));
-  });
-  triviaLauncherTable.querySelectorAll("[data-share-activation]").forEach((button) => {
-    button.addEventListener("click", () => openActivationShareModal(button.dataset.shareActivation));
-  });
-  triviaLauncherTable.querySelectorAll("[data-activation-status]").forEach((button) => {
-    button.addEventListener("click", () => updateActivationStatus(button.dataset.activationStatus, button.dataset.nextStatus));
-  });
-  triviaLauncherTable.querySelectorAll("[data-edit-activation]").forEach((button) => {
-    button.addEventListener("click", () => editInteractiveActivation(button.dataset.editActivation));
-  });
-  triviaLauncherTable.querySelectorAll("[data-activation-data]").forEach((button) => {
-    button.addEventListener("click", () => showInteractiveActivationData(button.dataset.activationData));
-  });
-  triviaLauncherTable.querySelectorAll("[data-recycle-activation]").forEach((button) => {
-    button.addEventListener("click", () => recycleInteractiveActivation(button.dataset.recycleActivation));
-  });
-  triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
-    button.addEventListener("click", () => deleteInteractiveActivation(button.dataset.deleteActivation));
-  });
   updateGamingPublishedFilters();
 }
 
@@ -21507,7 +21472,7 @@ async function submitTriviaLauncher(event) {
   setButtonLoading(submitButton, true, "Lanzando...");
   triviaLauncherResult?.classList.add("hidden");
   if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
-  setInlineMessage(triviaLauncherMessage, `Creando ticket de activación ${activationTypeLabel(type).toLowerCase()} y generando link público.`, "info");
+  setInlineMessage(triviaLauncherMessage, `Creando activación ${activationTypeLabel(type).toLowerCase()} y generando link público.`, "info");
   try {
     const data = await api("/api/business/interactive-activations", {
       method: "POST",
