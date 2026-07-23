@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-entry-popup-20260723-v88">
+  <link rel="stylesheet" href="css/styles.css?v=sales-entry-modal-rebuild-20260723-v89">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4962,16 +4962,16 @@
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
 
-            <details class="surface-card data-table-card sales-create-panel" id="salesCreatePanel">
-              <summary class="sales-create-summary">
+            <article class="surface-card data-table-card sales-create-panel" id="salesCreatePanel" aria-label="Registro completo de venta">
+              <button class="sales-create-summary" id="salesCreateTrigger" type="button" aria-expanded="false">
                 <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
                 <span>
                   <strong>Registro completo de venta</strong>
                   <small>Ventana intersticial para cargar campaña, canal, cliente, productos y notas.</small>
                 </span>
                 <span class="sales-create-total-pill" id="salesCreateTotalPill">$0</span>
-                <span class="material-symbols-outlined sales-summary-chevron" aria-hidden="true">expand_more</span>
-              </summary>
+                <span class="material-symbols-outlined sales-summary-chevron" aria-hidden="true">open_in_full</span>
+              </button>
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Medición comercial</span>
@@ -5070,7 +5070,7 @@
                 </div>
                 <datalist id="acquisitionChannelDatalist"></datalist>
               </form>
-            </details>
+            </article>
 
             <article class="surface-card data-table-card sales-table-panel">
               <div class="table-card-head">
@@ -7292,7 +7292,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-entry-popup-20260723-v88" defer></script>
+  <script src="js/app.js?v=sales-entry-modal-rebuild-20260723-v89" defer></script>
 </body>
 </html>
 

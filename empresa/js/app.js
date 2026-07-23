@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-sales-entry-popup-v88";
+const APP_VERSION = "empresa-20260723-sales-entry-modal-rebuild-v89";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -865,6 +865,7 @@ const activationShareOpenWhatsAppButton = document.getElementById("activationSha
 const activationShareCopyMessageButton = document.getElementById("activationShareCopyMessageButton");
 const productVoteImages = {};
 const salesCreatePanel = document.getElementById("salesCreatePanel");
+const salesCreateTrigger = document.getElementById("salesCreateTrigger");
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
@@ -13799,10 +13800,9 @@ function syncCustomerSaleTotal() {
 
 function openSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
-  salesCreatePanel.open = true;
-  if (options.scroll !== false) {
-    salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  salesCreatePanel.classList.add("is-open");
+  document.body.classList.add("has-sales-entry-modal");
+  salesCreateTrigger?.setAttribute("aria-expanded", "true");
   if (options.focus !== false) {
     window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
   }
@@ -13810,7 +13810,9 @@ function openSalesCreatePanel(options = {}) {
 
 function closeSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
-  salesCreatePanel.open = false;
+  salesCreatePanel.classList.remove("is-open");
+  document.body.classList.remove("has-sales-entry-modal");
+  salesCreateTrigger?.setAttribute("aria-expanded", "false");
   if (options.scroll) {
     salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
@@ -14892,6 +14894,105 @@ function ensureSalesAnalysisStyles() {
     body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > form {
       grid-template-columns: 1fr !important;
       border-radius: 0 0 24px 24px !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel:not(.is-open) > .table-card-head,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel:not(.is-open) > .chart-explainer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel:not(.is-open) > form {
+      display: none !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel:not(.is-open) {
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: 1px solid rgba(15, 115, 84, .16) !important;
+      border-radius: 22px !important;
+      background: #ffffff !important;
+      box-shadow: 0 12px 34px rgba(15, 23, 42, .07) !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel:not(.is-open) .sales-create-summary {
+      width: 100%;
+      border: 0;
+      text-align: left;
+      background: linear-gradient(135deg, #f0fdf4, #ffffff) !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 10090 !important;
+      display: grid !important;
+      place-items: start center !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: clamp(12px, 3vw, 28px) !important;
+      overflow: auto !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: rgba(15, 23, 42, .72) !important;
+      box-shadow: none !important;
+      backdrop-filter: blur(10px);
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > .sales-create-summary,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > .chart-explainer,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > form {
+      width: min(820px, calc(100vw - 24px)) !important;
+      margin: 0 auto !important;
+      background: #ffffff !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > .sales-create-summary {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 3 !important;
+      border: 1px solid rgba(148, 163, 184, .22) !important;
+      border-bottom: 0 !important;
+      border-radius: 24px 24px 0 0 !important;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, .22) !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > .table-card-head {
+      display: none !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > .chart-explainer {
+      display: block !important;
+      padding: 0 18px 14px !important;
+      border-left: 1px solid rgba(148, 163, 184, .22) !important;
+      border-right: 1px solid rgba(148, 163, 184, .22) !important;
+      margin: 0 auto !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open > form.customer-sale-form {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+      padding: 0 18px 18px !important;
+      border: 1px solid rgba(148, 163, 184, .22) !important;
+      border-top: 0 !important;
+      border-radius: 0 0 24px 24px !important;
+      box-shadow: 0 28px 80px rgba(15, 23, 42, .28) !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sale-form-block,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sales-item-builder {
+      grid-column: 1 / -1 !important;
+      grid-row: auto !important;
+      position: static !important;
+      padding: 14px !important;
+      border-radius: 18px !important;
+      box-shadow: none !important;
+      background: #f8fafc !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sale-form-grid,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sales-item-row,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sale-form-actions {
+      grid-template-columns: 1fr !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .customer-sale-form .sale-field,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sale-customer-status {
+      grid-column: 1 / -1 !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel.is-open .sale-form-actions {
+      position: sticky !important;
+      bottom: 0 !important;
+      z-index: 4 !important;
+      background: rgba(255,255,255,.96) !important;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
@@ -38607,37 +38708,21 @@ salesAnalysisResetButton?.addEventListener("click", () => {
   };
   renderSalesView();
 });
-salesCreatePanel?.addEventListener("toggle", () => {
-  document.body.classList.toggle("has-sales-entry-modal", Boolean(salesCreatePanel.open));
-  if (salesCreatePanel.open) {
+salesCreateTrigger?.addEventListener("click", () => {
+  if (salesCreatePanel?.classList.contains("is-open")) {
+    closeSalesCreatePanel();
+  } else {
     syncCustomerSaleTotal();
-    window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
-  }
-});
-salesCreatePanel?.querySelector(".sales-create-summary")?.addEventListener("click", (event) => {
-  event.preventDefault();
-  if (salesCreatePanel.open) {
-    closeSalesCreatePanel();
-  } else {
-    openSalesCreatePanel();
-  }
-});
-salesCreatePanel?.querySelector(".sales-create-summary")?.addEventListener("keydown", (event) => {
-  if (!["Enter", " "].includes(event.key)) return;
-  event.preventDefault();
-  if (salesCreatePanel.open) {
-    closeSalesCreatePanel();
-  } else {
     openSalesCreatePanel();
   }
 });
 salesCreatePanel?.addEventListener("click", (event) => {
-  if (event.target === salesCreatePanel) {
+  if (salesCreatePanel.classList.contains("is-open") && event.target === salesCreatePanel) {
     closeSalesCreatePanel();
   }
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && salesCreatePanel?.open) {
+  if (event.key === "Escape" && salesCreatePanel?.classList.contains("is-open")) {
     closeSalesCreatePanel();
   }
 });
