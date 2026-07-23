@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=directorio-comercial-optimizado-20260723-v103">
+  <link rel="stylesheet" href="css/styles.css?v=ficha-cliente-interstitial-20260723-v104">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4762,14 +4762,15 @@
                 </table>
               </div>
             </article>
-            <article class="surface-card lead-detail-workspace hidden" id="leadDetailModal" aria-labelledby="leadDetailTitle">
+            <article class="surface-card lead-detail-workspace hidden" id="leadDetailModal" role="dialog" aria-modal="true" aria-labelledby="leadDetailTitle">
+              <div class="lead-detail-interstitial-card" role="document">
                 <div class="lead-workspace-head">
                   <div>
                     <span class="mono-label" id="leadDetailEyebrow">Ficha de lead</span>
                     <h3 id="leadDetailTitle">Lead</h3>
                     <p id="leadDetailSubtitle">Historial comercial y activaciones.</p>
                   </div>
-                  <button class="ghost-button" id="leadDetailCloseButton" type="button">Volver al listado</button>
+                  <button class="icon-button lead-detail-close-button" id="leadDetailCloseButton" type="button" aria-label="Cerrar ficha"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
                 <section class="lead-profile-header" id="leadDetailHeader"></section>
                 <div class="lead-quick-actions">
@@ -4797,6 +4798,7 @@
                   <button class="segment-tab" data-lead-tab="timeline" type="button" role="tab" aria-selected="false" tabindex="-1">Timeline</button>
                 </div>
                 <section class="lead-tab-panel" id="leadDetailContent" role="tabpanel"></section>
+              </div>
             </article>
             <div class="modal-shell hidden" id="leadActivationModal" role="dialog" aria-modal="true" aria-labelledby="leadActivationTitle">
               <article class="modal-card">
@@ -7298,7 +7300,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=directorio-comercial-optimizado-20260723-v103" defer></script>
+  <script src="js/app.js?v=ficha-cliente-interstitial-20260723-v104" defer></script>
 </body>
 </html>
 

@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-directorio-comercial-optimizado-v103";
+const APP_VERSION = "empresa-20260723-ficha-cliente-interstitial-v104";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2447,6 +2447,7 @@ function clearBusinessWorkspaceUi() {
   document.querySelectorAll(".modal-shell, .lead-detail-workspace, .chart-focus-overlay").forEach((element) => {
     element.classList.add("hidden");
   });
+  document.body.classList.remove("lead-detail-open");
   document.querySelectorAll(".modal-form, form[data-digital-asset-edit-form], #leadCaptureContentEditor, #manualLeadEditForm").forEach((form) => {
     if (typeof form.reset === "function") form.reset();
   });
@@ -30499,11 +30500,14 @@ async function openLeadDetail(leadRef, options = {}) {
   state.selectedLeadRef = leadRef;
   const nextTab = options.tab || (options.keepTab ? state.selectedLeadTab || "summary" : "summary");
   setLeadDetailTab(nextTab, { render: false });
-  if (leadDetailModal) leadDetailModal.classList.remove("hidden");
+  if (leadDetailModal) {
+    leadDetailModal.classList.remove("hidden");
+    document.body.classList.add("lead-detail-open");
+  }
   if (leadDetailContent) leadDetailContent.innerHTML = '<div class="empty-state compact">Cargando ficha del lead...</div>';
   try {
     await reloadSelectedLeadDetail({ keepTab: true, scrollTab: Boolean(options.tab) });
-    leadDetailModal?.scrollIntoView({ behavior: "smooth", block: "start" });
+    leadDetailCloseButton?.focus({ preventScroll: true });
   } catch (error) {
     if (leadDetailContent) leadDetailContent.innerHTML = `<div class="empty-state compact">${escapeHtml(error.message)}</div>`;
   }
@@ -30511,6 +30515,7 @@ async function openLeadDetail(leadRef, options = {}) {
 
 function closeLeadDetail() {
   leadDetailModal?.classList.add("hidden");
+  document.body.classList.remove("lead-detail-open");
 }
 
 function openLeadActivationModal(leadRef = state.selectedLeadRef, presetType = "") {
@@ -39150,6 +39155,10 @@ leadCrmNextButton?.addEventListener("click", () => {
 });
 leadDetailCloseButton?.addEventListener("click", closeLeadDetail);
 leadDetailModal?.addEventListener("click", (event) => {
+  if (event.target === leadDetailModal) {
+    closeLeadDetail();
+    return;
+  }
   const fastAction = event.target.closest("[data-lead-fast-action]");
   if (fastAction) {
     event.preventDefault();
