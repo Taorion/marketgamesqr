@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-qori-no-green-v115";
+const APP_VERSION = "empresa-20260723-rms-station-clean-list-v120";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -35915,28 +35915,23 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
         : "Selecciona los leads que deben avanzar a la siguiente estación.";
   const showInlineSend = phase !== "recoleccion";
   return `
-    <section class="rms-station-lane rms-station-output-lane" data-rms-station-output="${escapeHtml(phase)}">
-      <div class="rms-station-lane-head">
+    <section class="rms-station-output-summary" data-rms-station-output="${escapeHtml(phase)}">
+      <div class="rms-station-output-copy">
         <div>
-          <span class="mono-label">Salida</span>
+          <span class="mono-label">Salida seleccionada</span>
           <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} ${escapeHtml(outputVerb)}</strong>
-          <small>${escapeHtml(nextPhase ? `Listos para enviar a ${nextPhase.label}. Disponibles para salida: ${eligibleRows.length} de ${rows.length}.` : "Esta estación no tiene salida configurada.")}</small>
+          <small>${escapeHtml(nextPhase ? `${eligibleRows.length} de ${rows.length} cumplen condiciones para ${nextPhase.label}.` : "Esta estación no tiene salida configurada.")}</small>
         </div>
         ${showInlineSend ? `<button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
           ${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
         </button>` : ""}
       </div>
-      <div class="rms-station-output-list">
-        ${selectedRows.length ? selectedRows.map((item) => {
-          return `
-            <article>
-              <strong>${escapeHtml(item.name || "Contacto")}</strong>
-              <span>${escapeHtml(rmsStationOutputItemSummary(phase, item))}</span>
-              <small>${escapeHtml(item.product_interest || item.entry_summary || item.source_detail || item.campaign_name || "Sin contexto")}</small>
-            </article>
-          `;
-        }).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
-      </div>
+      ${selectedRows.length ? `
+        <div class="rms-station-output-pills" aria-label="Leads seleccionados para salida">
+          ${selectedRows.slice(0, 6).map((item) => `<span>${escapeHtml(item.name || "Contacto")}</span>`).join("")}
+          ${selectedRows.length > 6 ? `<span>+${(selectedRows.length - 6).toLocaleString("es-CO")}</span>` : ""}
+        </div>
+      ` : `<small class="rms-station-output-empty">${escapeHtml(emptyText)}</small>`}
     </section>
   `;
 }
@@ -35950,58 +35945,45 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
         ? "Inventario de Clasificador. La operacion Clasificacion asigna producto o servicio."
         : `Inventario actual de ${stage.label || "esta estación"}.`;
   return `
-    <div class="rms-station-lanes">
-      <section class="rms-station-lane rms-station-input-lane">
-        <div class="rms-station-lane-head">
-          <div>
-            <span class="mono-label">Entrada</span>
-            <strong>${Number(rows.length || 0).toLocaleString("es-CO")} dato(s) recibidos</strong>
-            <small>${escapeHtml(inputHelp)}</small>
-          </div>
+    <section class="rms-station-clean-shell rms-station-input-lane">
+      <div class="rms-station-list-head">
+        <div>
+          <span class="mono-label">Leads en estación</span>
+          <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s)</strong>
+          <small>${escapeHtml(inputHelp)} Haz clic en un lead para abrir el detalle.</small>
         </div>
-        <div class="rms-station-lead-toolbar">
-          <label class="rms-station-search-field">
-            <span class="material-symbols-outlined" aria-hidden="true">search</span>
-            <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar nombre, contacto, campaña o interés" aria-label="Buscar dentro de la estación">
-          </label>
-          <div class="rms-station-view-filters" role="group" aria-label="Filtrar leads de la estación">
-            <button type="button" data-rms-station-view="all" class="${state.rmsStationViewMode === "all" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "all"}">Todos <span>${rows.length}</span></button>
-            <button type="button" data-rms-station-view="selected" class="${state.rmsStationViewMode === "selected" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "selected"}">Seleccionados <span>${rmsStationSelectedRows(stage.key, rows).length}</span></button>
-            <button type="button" data-rms-station-view="ready" class="${state.rmsStationViewMode === "ready" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "ready"}">Listos <span>${rmsStationOutputEligibleRows(stage.key, rows).length}</span></button>
-            <button type="button" data-rms-station-view="risk" class="${state.rmsStationViewMode === "risk" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "risk"}">Riesgo <span>${rows.filter((item) => Number(item.risk_score || 0) >= 50).length}</span></button>
-          </div>
-          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
-        </div>
-        ${rmsStationLeadTableMarkup(rows, stage, nextPhase, operation)}
-        <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
-      </section>
+        <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
+      </div>
+      ${rmsStationToolbarMarkup(rows, stage)}
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
+      ${rmsStationLeadTableMarkup(rows, stage, nextPhase, operation)}
+      <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
+    </section>
+  `;
+}
+
+function rmsStationToolbarMarkup(rows = [], stage = {}) {
+  return `
+    <div class="rms-station-lead-toolbar">
+      <label class="rms-station-search-field">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar nombre, contacto, campaña o interés" aria-label="Buscar dentro de la estación">
+      </label>
+      <div class="rms-station-view-filters" role="group" aria-label="Filtrar leads de la estación">
+        <button type="button" data-rms-station-view="all" class="${state.rmsStationViewMode === "all" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "all"}">Todos <span>${rows.length}</span></button>
+        <button type="button" data-rms-station-view="selected" class="${state.rmsStationViewMode === "selected" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "selected"}">Seleccionados <span>${rmsStationSelectedRows(stage.key, rows).length}</span></button>
+        <button type="button" data-rms-station-view="ready" class="${state.rmsStationViewMode === "ready" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "ready"}">Listos <span>${rmsStationOutputEligibleRows(stage.key, rows).length}</span></button>
+        <button type="button" data-rms-station-view="risk" class="${state.rmsStationViewMode === "risk" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "risk"}">Riesgo <span>${rows.filter((item) => Number(item.risk_score || 0) >= 50).length}</span></button>
+      </div>
     </div>
   `;
 }
 
 function rmsStationLeadTableMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
   ensureRmsCaptureReviewStyles();
-  const isQualityStation = stage.key === "alimentacion";
   return `
-    <div class="rms-station-lead-table-wrap">
-      <table class="rms-station-lead-table ${isQualityStation ? "is-quality-first" : ""}">
-        <thead>
-          <tr>
-            ${isQualityStation ? "<th>Calidad</th>" : ""}
-            <th>${isQualityStation ? "Salida" : "Check"}</th>
-            <th>Lead</th>
-            <th>Contacto</th>
-            <th>Origen / campaña</th>
-            <th>Interés</th>
-            ${isQualityStation ? "" : `<th>${escapeHtml(stage.key === "recoleccion" ? "Criterio mínimo" : stage.key === "curaduria" ? "Estado en estación" : "Estado")}</th>`}
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("")}
-        </tbody>
-      </table>
+    <div class="rms-station-lead-table-wrap rms-station-clean-list" role="list" aria-label="Leads de la estación">
+      ${rows.map((item) => rmsStationLeadRowMarkup(item, stage, nextPhase, operation)).join("")}
     </div>
   `;
 }
@@ -36024,44 +36006,39 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
         ${stage.key === "recoleccion" ? `<small>${escapeHtml(readiness.detail)}</small>` : ""}
         ${stage.key === "curaduria" ? `<div class="rms-curation-checks">${curationAudit.checks.map((check) => `<span class="${check.ok ? "ok" : "missing"}">${escapeHtml(check.label)}</span>`).join("")}</div><small>${escapeHtml(quality)} · ${escapeHtml(rmsClassifiedProductName(item) ? "Producto clasificado" : "Producto pendiente")}</small>` : ""}
         <small>Entrada: ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")} · Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} / Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}</small>`;
+  const stationActionMarkup = stage.key === "alimentacion"
+    ? `<div class="rms-station-inline-action">${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida` : "Define calidad")}</small></div>`
+    : stage.key === "curaduria"
+      ? `<div class="rms-station-inline-action">${rmsProductClassificationMarkup(item)}</div>`
+      : `<div class="rms-station-inline-action"><span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : classification)}</span><small>${escapeHtml(stage.key === "recoleccion" ? readiness.detail : `Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} · Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}`)}</small></div>`;
   return `
-    <tr class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" tabindex="0">
-      ${stage.key === "alimentacion" ? `<td class="rms-station-quality-cell" data-label="Calidad">${statusMarkup}</td>` : ""}
-      <td class="rms-station-check-cell" data-label="Seleccionar">
-        <label class="rms-station-lead-check" title="Marcar lead para operar">
-          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
-          <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
-        </label>
-      </td>
-      <td data-label="Lead">
-        <button class="rms-station-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></button>
-        <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
-        <small>${escapeHtml(material)}</small>
-      </td>
-      <td data-label="Contacto">
-        <span>${escapeHtml(item.phone || "Sin WhatsApp")}</span>
-        <small>${escapeHtml(item.email || "Sin correo")}</small>
-      </td>
-      <td data-label="Origen / campaña">
-        <span>${escapeHtml(campaignChannel)}</span>
-        <small>${escapeHtml(origin)}</small>
-      </td>
-      <td data-label="Interés">
+    <article class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" role="button" tabindex="0">
+      <label class="rms-station-lead-check" title="Marcar lead para operar">
+        <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+        <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
+      </label>
+      <div class="rms-station-lead-main">
+        <strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>
+        <small>${escapeHtml([item.phone || "Sin WhatsApp", item.email || "Sin correo"].join(" · "))}</small>
+      </div>
+      <div class="rms-station-lead-context">
         <span>${escapeHtml(interest)}</span>
-        <small>${escapeHtml(item.active_tickets ? "Ticket activo" : item.coverage_type || "Sin cobertura")}</small>
-        ${stage.key === "recoleccion" ? rmsCaptureDataChips(item) : ""}
-        ${stage.key === "curaduria" ? rmsProductClassificationMarkup(item) : ""}
-      </td>
-      ${stage.key === "alimentacion" ? "" : `<td data-label="Estado">
-        ${statusMarkup}
-      </td>`}
-      <td data-label="Acciones">
-        <div class="rms-station-lead-buttons">
-          <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Analizar</button>
-          <button class="solid-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span> Operar</button>
-        </div>
-      </td>
-    </tr>
+        <small>${escapeHtml(campaignChannel)} · ${escapeHtml(origin)}</small>
+      </div>
+      <div class="rms-station-lead-status">
+        <span class="rms-priority ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || "Media")}</span>
+        <small>${escapeHtml(material)} · ${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</small>
+      </div>
+      ${stationActionMarkup}
+      <div class="rms-station-row-actions">
+        <button class="rms-station-row-detail" type="button" data-rms-review-capture="${escapeHtml(item.id)}" aria-label="Abrir detalle de ${escapeHtml(item.name || "lead")}">
+          <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        </button>
+        <button class="rms-station-row-operate" type="button" data-rms-inspect="${escapeHtml(item.id)}" aria-label="Operar ${escapeHtml(item.name || "lead")}">
+          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+        </button>
+      </div>
+    </article>
   `;
 }
 
@@ -36366,7 +36343,8 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-review-capture]").forEach((control) => {
     const openReview = (event) => {
-      if (control.tagName === "TR" && event.target.closest("button, input, select, textarea, label, a")) return;
+      const interactiveTarget = event.target.closest("button, input, select, textarea, label, a");
+      if (interactiveTarget && interactiveTarget !== control) return;
       event.preventDefault();
       event.stopPropagation();
       const item = rmsOpportunityById(control.dataset.rmsReviewCapture);
@@ -37417,32 +37395,31 @@ function rmsCollectorStationMarkup(rows = [], stage = {}, nextPhase = null, oper
   const hiddenCount = Math.max(0, matchingRows.length - renderedRows.length);
   return `
     <div class="rms-collector-station-shell">
-      <section class="rms-collector-work-hint" aria-label="Cómo trabajar la Estación 1">
-        <article><span>1</span><div><strong>Ingresar</strong><small>Carga un lead manual cuando llegue por WhatsApp, llamada, mostrador o referido.</small></div></article>
-        <article><span>2</span><div><strong>Revisar</strong><small>Haz clic sobre la tarjeta para abrir datos, respuestas del formulario y contexto.</small></div></article>
-        <article><span>3</span><div><strong>Pasar</strong><small>Marca solo los leads hábiles y envíalos a ${escapeHtml(nextPhase?.label || "la siguiente estación")}.</small></div></article>
-      </section>
-      <div class="rms-collector-station-grid">
-        <section class="rms-collector-lead-list rms-station-input-lane">
-          <div class="rms-collector-lead-list-head">
-            <div>
-              <span class="mono-label">Entrada · Estación 1</span>
-              <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s) recolectados</strong>
-              <small>${eligibleRows.length.toLocaleString("es-CO")} cumplen mínimo para Curaduría · ${selectedRows.length.toLocaleString("es-CO")} seleccionados para salida.</small>
-            </div>
-            <label class="rms-station-search-field">
-              <span class="material-symbols-outlined" aria-hidden="true">search</span>
-              <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar lead" aria-label="Buscar lead recolectado">
-            </label>
+      <section class="rms-station-clean-shell rms-collector-clean-shell rms-station-input-lane">
+        <div class="rms-station-list-head">
+          <div>
+            <span class="mono-label">Leads en estación</span>
+            <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s) recolectados</strong>
+            <small>${eligibleRows.length.toLocaleString("es-CO")} cumplen mínimo para ${escapeHtml(nextPhase?.label || "Curaduría")} · ${selectedRows.length.toLocaleString("es-CO")} seleccionados.</small>
           </div>
-          <div class="rms-collector-card-list">
-            ${renderedRows.map((item) => rmsCollectorLeadCardMarkup(item, stage, nextPhase, operation)).join("")}
+          <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${matchingRows.length}${hiddenCount ? ` · ${hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener la estación rápida` : ""}</small>
+        </div>
+        <div class="rms-station-lead-toolbar">
+          <label class="rms-station-search-field">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar lead" aria-label="Buscar lead recolectado">
+          </label>
+          <div class="rms-station-view-filters" role="group" aria-label="Filtrar leads recolectados">
+            <button type="button" data-rms-station-view="all" class="${state.rmsStationViewMode === "all" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "all"}">Todos <span>${rows.length}</span></button>
+            <button type="button" data-rms-station-view="selected" class="${state.rmsStationViewMode === "selected" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "selected"}">Seleccionados <span>${selectedRows.length}</span></button>
+            <button type="button" data-rms-station-view="ready" class="${state.rmsStationViewMode === "ready" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "ready"}">Listos <span>${eligibleRows.length}</span></button>
+            <button type="button" data-rms-station-view="risk" class="${state.rmsStationViewMode === "risk" ? "is-active" : ""}" aria-pressed="${state.rmsStationViewMode === "risk"}">Riesgo <span>${rows.filter((item) => Number(item.risk_score || 0) >= 50).length}</span></button>
           </div>
-          <small aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${matchingRows.length}${hiddenCount ? ` · ${hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener la estación rápida` : ""}</small>
-          ${!renderedRows.length ? '<div class="rms-station-no-results" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>' : '<div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>'}
-        </section>
+        </div>
         ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
-      </div>
+        ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
+        ${!renderedRows.length ? '<div class="rms-station-no-results" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>' : '<div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con esta búsqueda.</strong><small>Limpia el texto de búsqueda para volver a ver la entrada.</small></div>'}
+      </section>
     </div>
   `;
 }
