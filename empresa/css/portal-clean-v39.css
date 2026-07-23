@@ -588,7 +588,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell th {
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell td {
   padding: 11px 12px !important;
-  border-bottom: 1px solid #edf1ef !important;
+  border-bottom: 1px solid #f6fbff !important;
   color: #31506f !important;
 }
 
@@ -674,21 +674,21 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .app-shell.
 
 /* Dark profile */
 :root[data-theme="dark"] body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) {
-  --qori-canvas: #0b1512;
-  --qori-surface: #12201c;
-  --qori-surface-soft: #172823;
-  --qori-line: #293d36;
-  --qori-line-strong: #385249;
+  --qori-canvas: #052a6b;
+  --qori-surface: #052a6b;
+  --qori-surface-soft: #052a6b;
+  --qori-line: #052a6b;
+  --qori-line-strong: #052a6b;
   --qori-ink: #eaf4ff;
   --qori-muted: #9fb1c7;
   --qori-primary: #00bfe5;
   --qori-primary-dark: #00bfe5;
-  --qori-primary-soft: #17382e;
-  --qori-focus: rgba(65, 200, 157, 0.22);
+  --qori-primary-soft: #052a6b;
+  --qori-focus: rgba(7, 89, 214, 0.22);
 }
 
 :root[data-theme="dark"] body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.topbar, .sidebar) {
-  background: rgba(18, 32, 28, 0.98) !important;
+  background: rgba(5, 42, 107, 0.98) !important;
 }
 
 :root[data-theme="dark"] body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.search-shell, input, select, textarea) {
