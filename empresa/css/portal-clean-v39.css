@@ -2549,11 +2549,111 @@ html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login
     linear-gradient(135deg, #f6fbff 0%, #ffffff 46%, #e8f3fb 100%) !important;
 }
 
-html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-vision,
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-card {
   border-color: var(--qori-line) !important;
   background: rgba(255, 255, 255, 0.9) !important;
   box-shadow: var(--qori-shadow) !important;
+}
+
+/* Login GOS v126: filosofia abierta, sin caja pesada dentro del acceso. */
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-vision {
+  margin: 0 !important;
+  padding: clamp(10px, 2.2vw, 24px) 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-vision-copy {
+  padding: 0 clamp(2px, 1vw, 10px) !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-vision-copy > p {
+  max-width: 62ch !important;
+  margin-top: 10px !important;
+  color: #2a4562 !important;
+  line-height: 1.64 !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-technology-strip {
+  margin-top: 20px !important;
+  gap: 10px !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-technology-strip span,
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-rms-signal span {
+  border-color: rgba(5, 42, 107, 0.12) !important;
+  background: rgba(255, 255, 255, 0.52) !important;
+  color: #052a6b !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-visual {
+  width: min(100%, 760px) !important;
+  margin-top: clamp(22px, 3.2vw, 34px) !important;
+  padding: 0 clamp(2px, 1vw, 10px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-rms-command {
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.12) !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-flow {
+  gap: 14px !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-flow article,
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-core > div {
+  min-height: 0 !important;
+  padding: 0 0 0 14px !important;
+  border: 0 !important;
+  border-left: 2px solid rgba(0, 191, 229, 0.32) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-flow .material-symbols-outlined {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, rgba(232, 243, 251, 0.96), rgba(229, 251, 255, 0.92)) !important;
+  color: #0759d6 !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-flow article.is-core .material-symbols-outlined {
+  background: linear-gradient(135deg, #0759d6, #00bfe5) !important;
+}
+
+html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-core {
+  padding-top: 18px !important;
+  border-top: 1px solid rgba(5, 42, 107, 0.10) !important;
+}
+
+@media (max-width: 720px) {
+  html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-vision {
+    padding-top: 6px !important;
+  }
+
+  html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-visual {
+    margin-top: 24px !important;
+    padding: 0 !important;
+  }
+
+  html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-rms-command {
+    gap: 12px !important;
+  }
+
+  html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-flow,
+  html body:not(#qoriLoginGosOpenA#qoriLoginGosOpenB#qoriLoginGosOpenC#qoriLoginGosOpenD) .portal-shell .login-machine-core {
+    gap: 16px !important;
+  }
 }
 
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-title-logo {
