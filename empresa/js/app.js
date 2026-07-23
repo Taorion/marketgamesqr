@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-agenda-nav-fix-v124";
+const APP_VERSION = "empresa-20260723-rms-station-safe-entry-v125";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34676,7 +34676,14 @@ function renderRmsMachineView() {
   renderRmsAlerts(data.alerts || []);
   renderRmsDailyQueue(rmsDailySectionsFromOpportunities(opportunities));
   renderRmsMachineFilterOptions(stages);
-  renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+  try {
+    renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+  } catch (error) {
+    console.error("RMS station render failed", error);
+    resetRmsStationMode();
+    renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+    showFeedback("La estación no pudo abrirse completa. Volvimos al mapa para que el portal no quede bloqueado.", "error", { title: "Estaciones" });
+  }
   renderRmsStageBoard(stages, allOpportunities, isEmpty);
   renderRmsBulkToolbar();
   renderRmsEventLog(data.events || []);
@@ -35594,6 +35601,7 @@ function ensureRmsStationUxStyles() {
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { position: relative !important; top: auto !important; z-index: 4 !important; padding: 8px 10px !important; border-radius: 14px !important; box-shadow: 0 8px 18px rgba(23,65,91,.07) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-primary { display: grid !important; grid-template-columns: auto minmax(240px,1fr) minmax(190px,.42fr) auto !important; align-items: center !important; gap: 10px !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 72px !important; min-height: 40px !important; padding: 8px 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button > span:last-child { display: inline !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context { min-width: 0 !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context > strong { max-width: 100% !important; font-size: .92rem !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-context > small { font-size: .68rem !important; }
@@ -35603,7 +35611,7 @@ function ensureRmsStationUxStyles() {
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows > button { min-height: 40px !important; padding: 7px 9px !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 84px !important; }
     @media (max-width: 980px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-primary { grid-template-columns: auto minmax(0,1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-quick-jump, body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-column: 1 / -1 !important; } }
-    @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 58px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 68px !important; } }
+    @media (max-width: 560px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact { padding: 8px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button { min-width: 58px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-map-button > span:last-child { display: inline !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact .rms-station-navigation-arrows strong { max-width: 68px !important; } }
   `);
   rules.push(`
     body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table-wrap { overflow-x: auto !important; padding: 4px 6px 10px !important; border: 1px solid rgba(23,65,91,.1) !important; border-radius: 16px !important; background: #f7fbff !important; }
@@ -35654,7 +35662,8 @@ function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities 
     <section class="rms-station-navigation-hub rms-station-navigation-hub-compact" aria-label="Navegación de estaciones">
       <div class="rms-station-navigation-primary">
         <button class="ghost-button rms-station-map-button" type="button" data-rms-close-station>
-          <span>Mapa</span>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          <span>Volver a estaciones</span>
         </button>
         <div class="rms-station-navigation-context" aria-live="polite">
           <span>Estación ${String(currentIndex + 1).padStart(2, "0")} de ${String(stages.length).padStart(2, "0")}</span>
@@ -36067,6 +36076,18 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
       ` : `<small class="rms-station-output-empty">${escapeHtml(emptyText)}</small>`}
     </section>
   `;
+}
+
+function resetRmsStationMode() {
+  state.rmsStationScreenOpen = false;
+  state.rmsStationPhase = "";
+  state.rmsStationSearch = "";
+  state.rmsStationViewMode = "all";
+  state.rmsMachineFilters.phase = "";
+  state.rmsMachineSelectedIds = [];
+  state.rmsMachineInspectorId = "";
+  state.rmsProductClassificationDraft = {};
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
@@ -36587,6 +36608,13 @@ function bindRmsMachineActions(root) {
 function openRmsStation(phase = "", options = {}) {
   if (!phase) return;
   const stages = rmsFactoryStages(state.rmsMachine || {});
+  const targetStage = stages.find((item) => item.key === phase);
+  if (!targetStage) {
+    resetRmsStationMode();
+    renderRmsMachineView();
+    showFeedback("No encontramos esa estación. Volvimos al mapa de estaciones.", "error", { title: "Estaciones" });
+    return;
+  }
   const currentIndex = stages.findIndex((item) => item.key === state.rmsStationPhase);
   const targetIndex = stages.findIndex((item) => item.key === phase);
   state.rmsStationNavigationDirection = options.direction
@@ -36603,20 +36631,19 @@ function openRmsStation(phase = "", options = {}) {
   if (phase === "curaduria" && !state.inventoryLoaded) {
     loadInventoryProducts({ quiet: true }).then(renderRmsMachineView).catch(() => {});
   }
-  renderRmsMachineView();
-  rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+  try {
+    renderRmsMachineView();
+    rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    console.error("RMS station entry failed", error);
+    resetRmsStationMode();
+    renderRmsMachineView();
+    showFeedback("No pudimos abrir la estación sin bloquear la pantalla. Volvimos al mapa para que sigas operando.", "error", { title: "Estaciones" });
+  }
 }
 
 function closeRmsStation() {
-  state.rmsStationScreenOpen = false;
-  state.rmsStationPhase = "";
-  state.rmsStationSearch = "";
-  state.rmsStationViewMode = "all";
-  state.rmsMachineFilters.phase = "";
-  state.rmsMachineSelectedIds = [];
-  state.rmsMachineInspectorId = "";
-  state.rmsProductClassificationDraft = {};
-  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  resetRmsStationMode();
   renderRmsMachineView();
   (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
