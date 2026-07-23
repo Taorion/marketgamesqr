@@ -1000,6 +1000,27 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .login-titl
   filter: drop-shadow(0 6px 14px rgba(5, 42, 107, 0.12)) !important;
 }
 
+/* Qori v113: login uses the seal as the main brand, without repeating the name. */
+body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .login-title-lockup {
+  display: block !important;
+  margin: 18px 0 12px !important;
+}
+
+body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .login-title-logo {
+  width: min(520px, 86vw) !important;
+  height: auto !important;
+  max-height: 210px !important;
+  flex: 0 1 auto !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 720px) {
+  body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .login-title-logo {
+    width: min(360px, 88vw) !important;
+    max-height: 150px !important;
+  }
+}
+
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-brand h1,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .login-brand h1,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .view-head h2,
