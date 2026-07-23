@@ -376,6 +376,7 @@ h3 {
 .section-heading p,
 .relationship-grid p,
 .philosophy-map p,
+.value-cycle p,
 .machine-timeline p,
 .audience-grid p,
 .contact-copy p,
@@ -437,8 +438,9 @@ h3 {
 .manifesto-card span,
 .machine-timeline span,
 .relationship-grid span,
+.cycle-node span,
 .principle-card span,
-.o3-grid span {
+.habits-grid span {
   color: var(--qori-muted);
   font-size: 0.78rem;
   font-weight: 800;
@@ -524,14 +526,14 @@ h3 {
 .dashboard-grid article,
 .relationship-grid article,
 .principle-card,
-.o3-grid article,
-.r3-grid article,
+.habits-grid article,
+.trust-signals-grid article,
 .machine-timeline article,
 .audience-grid article,
 .product-console,
 .manifesto-card,
 .contact-form,
-.gos-grid article {
+.principles-grid article {
   border: 1px solid rgba(205, 224, 244, 0.92);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.9);
@@ -601,6 +603,68 @@ h3 {
   font-size: 1.1rem;
 }
 
+.value-cycle {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(205, 224, 244, 0.95);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 12% 16%, rgba(7, 206, 251, 0.16), transparent 28%),
+    linear-gradient(135deg, rgba(232, 243, 251, 0.88), rgba(255, 255, 255, 0.96));
+  box-shadow: var(--shadow-card);
+}
+
+.cycle-line {
+  position: absolute;
+  top: 52px;
+  left: 9%;
+  right: 9%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(1, 34, 104, 0), rgba(4, 128, 250, 0.56), rgba(7, 206, 251, 0));
+}
+
+.cycle-node {
+  position: relative;
+  z-index: 1;
+  min-height: 174px;
+  padding: 16px;
+  border: 1px solid rgba(205, 224, 244, 0.9);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.cycle-node span {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--qori-gradient);
+  color: var(--qori-white);
+  box-shadow: 0 14px 28px rgba(3, 65, 179, 0.18);
+}
+
+.cycle-node strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--qori-blue-deep);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.cycle-node p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
 .philosophy-section,
 .product-section {
   width: 100%;
@@ -646,32 +710,32 @@ h3 {
   max-width: 620px;
 }
 
-.o3-grid,
-.r3-grid {
+.habits-grid,
+.trust-signals-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
-.o3-grid article,
-.r3-grid article {
+.habits-grid article,
+.trust-signals-grid article {
   min-height: 190px;
   padding: 22px;
 }
 
-.o3-grid strong,
-.r3-grid strong {
+.habits-grid strong,
+.trust-signals-grid strong {
   display: block;
   margin: 10px 0 8px;
   color: var(--qori-blue-deep);
   font-size: 1.14rem;
 }
 
-.r3-grid article {
+.trust-signals-grid article {
   background: linear-gradient(180deg, #ffffff, rgba(232, 243, 251, 0.8));
 }
 
-.r3-grid span {
+.trust-signals-grid span {
   color: var(--qori-muted);
   line-height: 1.55;
 }
@@ -708,24 +772,132 @@ h3 {
   line-height: 1.2;
 }
 
-.gos-section {
+.principles-section {
   padding-top: clamp(74px, 8vw, 116px);
 }
 
-.gos-grid {
+.ancestral-diagram {
+  position: relative;
+  min-height: 372px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(205, 224, 244, 0.94);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(7, 206, 251, 0.18), transparent 30%),
+    radial-gradient(circle at 20% 18%, rgba(4, 128, 250, 0.14), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 243, 251, 0.9));
+  box-shadow: var(--shadow-soft);
+}
+
+.ancestral-ring {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(64vw, 430px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 24px solid rgba(4, 128, 250, 0.16);
+  border-left-color: rgba(7, 206, 251, 0.4);
+  border-radius: 50%;
+}
+
+.ancestral-ring::before,
+.ancestral-ring::after {
+  content: "";
+  position: absolute;
+  inset: 44px;
+  border: 18px solid rgba(1, 82, 215, 0.12);
+  border-top-color: rgba(7, 206, 251, 0.32);
+  border-radius: 50%;
+}
+
+.ancestral-ring::after {
+  inset: 108px;
+  border-width: 14px;
+  border-right-color: rgba(3, 65, 179, 0.3);
+}
+
+.ancestral-center {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 210px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  border: 1px solid rgba(7, 206, 251, 0.34);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(7, 206, 251, 0.2), transparent 44%),
+    rgba(255, 255, 255, 0.92);
+  box-shadow: 0 22px 52px rgba(1, 34, 104, 0.14);
+}
+
+.ancestral-center strong {
+  color: var(--qori-blue-deep);
+  font-size: 1.48rem;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.ancestral-center span {
+  color: var(--qori-blue-deep);
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.principle-mark {
+  position: absolute;
+  max-width: 180px;
+  padding: 10px 13px;
+  border: 1px solid rgba(205, 224, 244, 0.94);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--qori-blue-deep);
+  font-size: 0.86rem;
+  font-weight: 850;
+  box-shadow: 0 16px 36px rgba(1, 34, 104, 0.1);
+}
+
+.mark-one {
+  top: 16%;
+  left: 8%;
+}
+
+.mark-two {
+  top: 18%;
+  right: 8%;
+}
+
+.mark-three {
+  bottom: 18%;
+  left: 10%;
+}
+
+.mark-four {
+  right: 10%;
+  bottom: 16%;
+}
+
+.principles-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
-.gos-grid article {
+.principles-grid article {
   position: relative;
   min-height: 260px;
   overflow: hidden;
   padding: 24px;
 }
 
-.gos-grid article::before {
+.principles-grid article::before {
   content: "";
   position: absolute;
   right: -42px;
@@ -736,7 +908,7 @@ h3 {
   border-radius: 50%;
 }
 
-.gos-grid span {
+.principles-grid span {
   width: 48px;
   height: 48px;
   display: inline-flex;
@@ -751,7 +923,7 @@ h3 {
   font-weight: 900;
 }
 
-.gos-grid strong {
+.principles-grid strong {
   position: relative;
   display: block;
   margin-bottom: 12px;
@@ -761,7 +933,7 @@ h3 {
   line-height: 1.18;
 }
 
-.gos-grid p {
+.principles-grid p {
   position: relative;
   margin-bottom: 0;
   color: var(--qori-muted);
@@ -1224,10 +1396,30 @@ h3 {
 
   .relationship-grid,
   .audience-grid,
-  .o3-grid,
-  .r3-grid,
+  .value-cycle,
+  .principles-grid,
+  .habits-grid,
+  .trust-signals-grid,
   .console-topline {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cycle-line {
+    display: none;
+  }
+
+  .ancestral-diagram {
+    min-height: 430px;
+  }
+
+  .mark-one,
+  .mark-three {
+    left: 5%;
+  }
+
+  .mark-two,
+  .mark-four {
+    right: 5%;
   }
 
   .product-console,
@@ -1315,17 +1507,59 @@ h3 {
   .dashboard-grid,
   .relationship-grid,
   .audience-grid,
-  .o3-grid,
-  .r3-grid,
+  .value-cycle,
+  .habits-grid,
+  .trust-signals-grid,
   .machine-timeline,
-  .gos-grid,
+  .principles-grid,
   .console-topline,
   .footer-grid {
     grid-template-columns: 1fr;
   }
 
-  .gos-grid article {
+  .principles-grid article {
     min-height: auto;
+  }
+
+  .value-cycle {
+    padding: 12px;
+    border-radius: 24px;
+  }
+
+  .cycle-node {
+    min-height: auto;
+  }
+
+  .ancestral-diagram {
+    min-height: auto;
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 26px;
+  }
+
+  .ancestral-ring {
+    display: none;
+  }
+
+  .ancestral-center,
+  .principle-mark {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    transform: none;
+  }
+
+  .ancestral-center {
+    aspect-ratio: auto;
+    min-height: 118px;
+    border-radius: 22px;
+  }
+
+  .principle-mark {
+    border-radius: 18px;
+    text-align: center;
   }
 
   .console-sidebar {
@@ -1379,8 +1613,8 @@ h3 {
 
   .relationship-grid article,
   .audience-grid article,
-  .o3-grid article,
-  .r3-grid article,
+  .habits-grid article,
+  .trust-signals-grid article,
   .machine-timeline article {
     min-height: auto;
   }
