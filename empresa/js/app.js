@@ -1,12 +1,13 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-login-gos-open-v126";
+const APP_VERSION = "empresa-20260723-rms-station-fast-entry-v127";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
+const RMS_STATION_RENDER_LIMIT = 80;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -34690,6 +34691,35 @@ function renderRmsMachineView() {
   renderRmsLeadInspector();
 }
 
+function renderRmsStationOnly() {
+  const data = state.rmsMachine || {};
+  const stages = rmsFactoryStages(data);
+  const allOpportunities = data.opportunities || [];
+  const metrics = data.metrics || {};
+  const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
+  const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
+  if (rmsMachineGeneratedAt) {
+    rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
+  }
+  if (rmsMachineOpportunityCount) {
+    const phase = state.rmsStationPhase || state.rmsMachineFilters?.phase || "";
+    const rows = phase ? rmsStationRows(phase, allOpportunities) : allOpportunities;
+    rmsMachineOpportunityCount.textContent = phase
+      ? `${rows.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
+      : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
+  }
+  renderRmsMachineFilterOptions(stages);
+  try {
+    renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+  } catch (error) {
+    console.error("RMS station fast render failed", error);
+    resetRmsStationMode();
+    renderRmsMachineView();
+    showFeedback("La estación no pudo abrirse completa. Volvimos al mapa para que el portal no quede bloqueado.", "error", { title: "Estaciones" });
+  }
+  renderRmsBulkToolbar();
+}
+
 function rmsVisibleOpportunities(rows = []) {
   const phase = state.rmsMachineFilters?.phase || "";
   return rows.filter((item) => !phase || item.stage === phase);
@@ -35694,7 +35724,7 @@ function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities 
 
 function rmsStationRowMatches(item = {}, phase = "") {
   const query = String(state.rmsStationSearch || "").trim().toLowerCase();
-  const mode = phase === "recoleccion" ? "all" : (state.rmsStationViewMode || "all");
+  const mode = state.rmsStationViewMode || "all";
   const searchable = [item.name, item.phone, item.email, item.campaign_name, item.activation_name, item.channel, item.source_label, item.source_detail, item.product_interest, item.classified_product_name, item.priority_label, item.risk_label]
     .filter(Boolean)
     .join(" ")
@@ -35704,6 +35734,20 @@ function rmsStationRowMatches(item = {}, phase = "") {
   if (mode === "risk") return Number(item.risk_score || 0) >= 50;
   if (mode === "ready") return rmsStationOutputEligibleRows(phase, [item]).length > 0;
   return true;
+}
+
+function rmsStationDisplayRows(rows = [], phase = "") {
+  const selectedIds = new Set((state.rmsMachineSelectedIds || []).map((id) => String(id)));
+  const matchingRows = (rows || []).filter((item) => rmsStationRowMatches(item, phase));
+  const visibleRows = matchingRows
+    .slice()
+    .sort((a, b) => Number(selectedIds.has(String(b.id))) - Number(selectedIds.has(String(a.id))))
+    .slice(0, RMS_STATION_RENDER_LIMIT);
+  return {
+    matchingRows,
+    visibleRows,
+    hiddenCount: Math.max(0, matchingRows.length - visibleRows.length),
+  };
 }
 
 function applyRmsStationDomFilters(root = rmsStationWorkspace) {
@@ -35918,26 +35962,17 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.querySelector("[data-rms-station-clear-selection]")?.addEventListener("click", () => {
     const currentIds = new Set(rows.map((item) => item.id));
     state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => !currentIds.has(id));
-    renderRmsMachineView();
+    renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
       state.rmsStationSearch = event.target.value || "";
-      if (phase === "recoleccion") {
-        window.clearTimeout(state.rmsStationSearchRenderTimer);
-        state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsMachineView(), 120);
-        return;
-      }
-      applyRmsStationDomFilters(rmsStationWorkspace);
+      window.clearTimeout(state.rmsStationSearchRenderTimer);
+      state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsStationOnly(), 120);
   });
   rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((button) => {
     button.addEventListener("click", () => {
       state.rmsStationViewMode = button.dataset.rmsStationView || "all";
-      rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((item) => {
-        const active = item === button;
-        item.classList.toggle("is-active", active);
-        item.setAttribute("aria-pressed", String(active));
-      });
-      applyRmsStationDomFilters(rmsStationWorkspace);
+      renderRmsStationOnly();
     });
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
@@ -36091,6 +36126,8 @@ function resetRmsStationMode() {
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  const display = rmsStationDisplayRows(rows, stage.key || "");
+  const renderedRows = display.visibleRows;
   const inputHelp = stage.key === "recoleccion"
     ? "Inventario de leads capturados. La operacion Embudo decide cuales pasan a Curaduría."
     : stage.key === "alimentacion"
@@ -36106,12 +36143,12 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
           <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s)</strong>
           <small>${escapeHtml(inputHelp)} Haz clic en un lead para abrir el detalle.</small>
         </div>
-        <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${rows.length}</strong> de ${rows.length}</small>
+        <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${display.matchingRows.length}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener rápida la estación` : ""}</small>
       </div>
       ${rmsStationToolbarMarkup(rows, stage)}
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
-      ${rmsStationLeadTableMarkup(rows, stage, nextPhase, operation)}
-      <div class="rms-station-no-results hidden" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
+      ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
+      <div class="rms-station-no-results ${renderedRows.length ? "hidden" : ""}" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
     </section>
   `;
 }
@@ -36524,7 +36561,7 @@ function bindRmsMachineActions(root) {
       else current.delete(id);
       state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
       renderRmsBulkToolbar();
-      renderRmsMachineView();
+      renderRmsStationOnly();
       showFeedback(
         value ? `${rmsLeadQualityOption(value)?.label || "Calidad asignada"}: lead puesto en salida de Curaduría.` : "Calidad removida: lead retirado de salida.",
         "info",
@@ -36629,10 +36666,10 @@ function openRmsStation(phase = "", options = {}) {
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   if (phase === "curaduria" && !state.inventoryLoaded) {
-    loadInventoryProducts({ quiet: true }).then(renderRmsMachineView).catch(() => {});
+    loadInventoryProducts({ quiet: true }).then(renderRmsStationOnly).catch(() => {});
   }
   try {
-    renderRmsMachineView();
+    renderRmsStationOnly();
     rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     console.error("RMS station entry failed", error);
@@ -36925,7 +36962,8 @@ function selectRmsPhaseForBulk(phase = "") {
   }
   state.rmsMachineSelectedIds = ids;
   if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = "";
-  renderRmsMachineView();
+  if (state.rmsStationScreenOpen) renderRmsStationOnly();
+  else renderRmsMachineView();
   showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
   rmsBulkToolbar?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
