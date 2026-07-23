@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-qori-brand-refinement-v121";
+const APP_VERSION = "empresa-20260723-gaming-activations-simple-v122";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1364,7 +1364,7 @@ let state = {
   dashboardBuilderProfile: "marketing",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
-  ticketCenterTab: "center",
+  ticketCenterTab: "trivia",
   filter: "",
   dashboard: null,
   activityVersion: "",
@@ -12151,12 +12151,167 @@ function gamingCenterScrollTo(selector = "", options = {}) {
   }, 80);
 }
 
+function ensureGamingActivationBuilderModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
+  const builderCard = view?.querySelector(".gaming-activation-builder-card");
+  if (!view || !builderCard) return null;
+  let modal = view.querySelector("#gamingActivationBuilderModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.className = "modal-shell hidden gaming-activation-builder-modal";
+    modal.id = "gamingActivationBuilderModal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "gamingActivationBuilderTitle");
+    modal.innerHTML = `
+      <article class="gaming-activation-builder-interstitial" role="document">
+        <header class="gaming-activation-builder-modal-head">
+          <div>
+            <span class="mono-label">Crear ticket</span>
+            <h3 id="gamingActivationBuilderTitle">Configura una activación paso a paso</h3>
+            <p>Define campaña, dinámica, captura, beneficio y reglas sin ver todo el formulario al mismo tiempo.</p>
+          </div>
+          <button class="icon-button" type="button" data-close-gaming-activation-builder aria-label="Cerrar creación de ticket"><span class="material-symbols-outlined">close</span></button>
+        </header>
+        <div class="gaming-activation-builder-modal-body" data-gaming-activation-builder-body></div>
+      </article>
+    `;
+    view.appendChild(modal);
+  }
+  const body = modal.querySelector("[data-gaming-activation-builder-body]");
+  if (body && builderCard.parentElement !== body) body.appendChild(builderCard);
+  return modal;
+}
+
+function openGamingActivationBuilderModal(options = {}) {
+  setTicketCenterTab("trivia");
+  const modal = ensureGamingActivationBuilderModal();
+  if (!modal) return;
+  if (options.reset !== false) state.gamingActivationWizardStep = 0;
+  modal.classList.remove("hidden");
+  modal.removeAttribute("hidden");
+  updateGamingActivationWizard();
+  updateGamingBuilderProgress();
+  window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-builder]")?.focus({ preventScroll: true }), 40);
+}
+
+function closeGamingActivationBuilderModal() {
+  const modal = document.getElementById("gamingActivationBuilderModal");
+  modal?.classList.add("hidden");
+  modal?.setAttribute("hidden", "");
+}
+
+function activationMetricNumber(value = 0) {
+  return Number(value || 0).toLocaleString("es-CO");
+}
+
+function activationPerformanceRate(item = {}) {
+  const attempts = Number(item.attempts_count || 0);
+  const winners = Number(item.winners_count || 0);
+  if (!attempts) return 0;
+  return Math.max(0, Math.min(100, (winners / attempts) * 100));
+}
+
+function ensureGamingActivationDetailModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
+  if (!view) return null;
+  let modal = view.querySelector("#gamingActivationDetailModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden gaming-activation-detail-modal";
+  modal.id = "gamingActivationDetailModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "gamingActivationDetailTitle");
+  modal.innerHTML = `
+    <article class="gaming-activation-detail-card" role="document">
+      <header class="gaming-activation-detail-head">
+        <div>
+          <span class="mono-label" id="gamingActivationDetailEyebrow">Detalle de activación</span>
+          <h3 id="gamingActivationDetailTitle">Activación</h3>
+          <p id="gamingActivationDetailSubtitle">Rendimiento, canal, campaña y captura generada.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-gaming-activation-detail aria-label="Cerrar detalle de activación"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="gaming-activation-detail-body" id="gamingActivationDetailBody"></div>
+    </article>
+  `;
+  view.appendChild(modal);
+  return modal;
+}
+
+function openGamingActivationDetail(id = "") {
+  const item = activationById(id);
+  if (!item) return;
+  const modal = ensureGamingActivationDetailModal();
+  const rate = activationPerformanceRate(item);
+  const title = modal.querySelector("#gamingActivationDetailTitle");
+  const subtitle = modal.querySelector("#gamingActivationDetailSubtitle");
+  const eyebrow = modal.querySelector("#gamingActivationDetailEyebrow");
+  const body = modal.querySelector("#gamingActivationDetailBody");
+  if (eyebrow) eyebrow.textContent = `${activationTypeLabel(item.activation_type)} · ${activationStatusLabel(item.status)}`;
+  if (title) title.textContent = item.title || "Activación sin título";
+  if (subtitle) {
+    subtitle.textContent = `${item.campaign_name || "Sin campaña"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
+  }
+  if (body) {
+    const attempts = Number(item.attempts_count || 0);
+    const winners = Number(item.winners_count || 0);
+    const maxWinners = Number(item.max_winners || 0);
+    const maxBar = Math.max(attempts, winners, maxWinners, 1);
+    body.innerHTML = `
+      <section class="gaming-activation-detail-kpis">
+        <article><span>Leads obtenidos</span><strong>${activationMetricNumber(attempts)}</strong><small>Participaciones capturadas</small></article>
+        <article><span>Tickets generados</span><strong>${activationMetricNumber(winners)}</strong><small>Beneficios entregados</small></article>
+        <article><span>Rendimiento</span><strong>${rate.toFixed(1)}%</strong><small>Tickets sobre leads</small></article>
+        <article><span>Cupo</span><strong>${maxWinners ? activationMetricNumber(maxWinners) : "Libre"}</strong><small>${maxWinners ? `${Math.max(0, maxWinners - winners).toLocaleString("es-CO")} disponibles` : "Sin límite definido"}</small></article>
+      </section>
+      <section class="gaming-activation-detail-chart" aria-label="Gráfica de rendimiento">
+        <div><span>Leads</span><i style="--bar:${Math.max(6, (attempts / maxBar) * 100)}%"></i><strong>${activationMetricNumber(attempts)}</strong></div>
+        <div><span>Tickets</span><i style="--bar:${Math.max(6, (winners / maxBar) * 100)}%"></i><strong>${activationMetricNumber(winners)}</strong></div>
+        ${maxWinners ? `<div><span>Cupo</span><i style="--bar:${Math.max(6, (maxWinners / maxBar) * 100)}%"></i><strong>${activationMetricNumber(maxWinners)}</strong></div>` : ""}
+      </section>
+      <section class="gaming-activation-detail-grid">
+        <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong></article>
+        <article><span>Canal</span><strong>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</strong></article>
+        <article><span>Estado</span><strong>${escapeHtml(activationStatusLabel(item.status))}</strong></article>
+        <article><span>Link público</span><a href="${escapeHtml(item.public_url || "#")}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || "Abrir activación")}</a></article>
+      </section>
+      <footer class="gaming-activation-detail-actions">
+        <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url || "")}">Copiar link</button>
+        <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar a lead</button>
+        <button class="solid-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar ticket</button>
+      </footer>
+    `;
+  }
+  modal.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
+      showFeedback("Link público de activación copiado.");
+    });
+  });
+  modal.querySelectorAll("[data-share-activation]").forEach((button) => {
+    button.addEventListener("click", () => openActivationShareModal(button.dataset.shareActivation));
+  });
+  modal.querySelectorAll("[data-edit-activation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeGamingActivationDetail();
+      editInteractiveActivation(button.dataset.editActivation);
+      openGamingActivationBuilderModal({ reset: false });
+    });
+  });
+  modal.classList.remove("hidden");
+  modal.removeAttribute("hidden");
+  window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-detail]")?.focus({ preventScroll: true }), 40);
+}
+
+function closeGamingActivationDetail() {
+  const modal = document.getElementById("gamingActivationDetailModal");
+  modal?.classList.add("hidden");
+  modal?.setAttribute("hidden", "");
+}
+
 function runGamingCenterAction(action = "") {
   if (action === "create-activation") {
-    setTicketCenterTab("trivia");
-    const builder = document.querySelector(".gaming-activation-builder-card");
-    if (builder) setQuietZoneExpanded(builder, true);
-    gamingCenterScrollTo(".gaming-activation-builder-card");
+    openGamingActivationBuilderModal();
     return;
   }
   if (action === "published-activations") {
@@ -12167,21 +12322,11 @@ function runGamingCenterAction(action = "") {
     return;
   }
   if (action === "issue-ticket") {
-    state.gamingCenterCreationTool = "single";
-    setTicketCenterTab("center");
-    updateGamingCenterCreationTools();
-    const ticketCard = postSaleQrForm?.closest(".quiet-zone");
-    if (ticketCard) setQuietZoneExpanded(ticketCard, true);
-    gamingCenterScrollTo("#postSaleQrForm", { focusSelector: "#postSaleUseCaseInput" });
+    openGamingActivationBuilderModal();
     return;
   }
   if (action === "create-batch") {
-    state.gamingCenterCreationTool = "batch";
-    setTicketCenterTab("center");
-    updateGamingCenterCreationTools();
-    const batchCard = qrBatchForm?.closest(".quiet-zone");
-    if (batchCard) setQuietZoneExpanded(batchCard, true);
-    gamingCenterScrollTo("#qrBatchForm");
+    openGamingActivationBuilderModal();
     return;
   }
   if (action === "validate-ticket") {
@@ -12446,19 +12591,20 @@ function ensureGamingCenterUx() {
   const view = document.querySelector('.view-section[data-view="strategic-qr"]');
   const menu = view?.querySelector(".ticket-center-menu");
   if (!view || !menu) return;
+  state.ticketCenterTab = "trivia";
   ensureGamingCenterUxStyles();
   if (!view.querySelector(".gaming-center-command-center")) {
     const gamingViewHead = view.querySelector(":scope > .view-head");
     (gamingViewHead || strategicQrKpiGrid)?.insertAdjacentHTML("afterend", `
       <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
         <div class="gaming-center-command-copy">
-          <span class="mono-label">Empezar aquí</span>
-          <h3>¿Qué quieres lograr hoy?</h3>
-          <p>Elige un resultado. Abriremos directamente la herramienta correcta y ocultaremos lo que no necesitas.</p>
+          <span class="mono-label">Activaciones</span>
+          <h3>Gestiona tickets de activación</h3>
+          <p>Consulta lo creado en una lista simple y abre el detalle para ver rendimiento, campaña, canal y leads.</p>
         </div>
         <div class="gaming-center-quick-actions">
-          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="issue-ticket"><span class="material-symbols-outlined">confirmation_number</span><span><strong>Emitir tickets</strong><small>Ticket individual, QR reutilizable o paquete masivo.</small></span></button>
-          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">sports_esports</span><span><strong>Crear gamificaciones</strong><small>Juego, encuesta o dinámica con captura de leads y beneficio.</small></span></button>
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">add_circle</span><span><strong>Crear ticket</strong><small>Abre el configurador paso a paso.</small></span></button>
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="published-activations"><span class="material-symbols-outlined">list_alt</span><span><strong>Ver activaciones</strong><small>Lista creada, rendimiento y estado.</small></span></button>
         </div>
       </section>
     `);
@@ -12563,6 +12709,9 @@ function ensureGamingCenterUx() {
   }
   const publishedCard = view.querySelector(".gaming-activation-list-card");
   if (publishedCard && !publishedCard.querySelector(".gaming-published-toolbar")) {
+    publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("beforeend", `
+      <button class="solid-button" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> Crear ticket</button>
+    `);
     publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("afterend", `
       <div class="gaming-published-toolbar">
         <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
@@ -12572,9 +12721,21 @@ function ensureGamingCenterUx() {
     `);
     publishedCard.querySelector(".table-wrap")?.insertAdjacentHTML("afterend", '<div class="gaming-published-empty hidden" data-gaming-published-empty><strong>No hay activaciones con estos filtros.</strong><br><small>Cambia la búsqueda o vuelve a todos los estados.</small></div>');
   }
+  ensureGamingActivationBuilderModal(view);
+  ensureGamingActivationDetailModal(view);
   if (!view.dataset.gamingCenterUxBound) {
     view.dataset.gamingCenterUxBound = "true";
     view.addEventListener("click", (event) => {
+      if (event.target === document.getElementById("gamingActivationBuilderModal") || event.target.closest("[data-close-gaming-activation-builder]")) {
+        event.preventDefault();
+        closeGamingActivationBuilderModal();
+        return;
+      }
+      if (event.target === document.getElementById("gamingActivationDetailModal") || event.target.closest("[data-close-gaming-activation-detail]")) {
+        event.preventDefault();
+        closeGamingActivationDetail();
+        return;
+      }
       const action = event.target.closest("[data-gaming-center-action]")?.dataset.gamingCenterAction;
       if (action) {
         event.preventDefault();
@@ -12677,7 +12838,7 @@ function ensureGamingCenterUx() {
 }
 
 function setTicketCenterTab(tab) {
-  const nextTab = tab || "center";
+  const nextTab = state.currentView === "strategic-qr" ? "trivia" : (tab || "trivia");
   state.ticketCenterTab = nextTab;
   ensureGamingCenterUx();
   ticketCenterTabs.forEach((button) => {
@@ -20857,15 +21018,14 @@ function renderTriviaLaunchers() {
     ? state.triviaLaunchers.map((item) => {
       const attemptsCount = Number(item.attempts_count || 0).toLocaleString("es-CO");
       const winnersCount = Number(item.winners_count || 0).toLocaleString("es-CO");
-      const maxWinners = item.max_winners ? Number(item.max_winners || 0).toLocaleString("es-CO") : "";
+      const rate = activationPerformanceRate(item).toFixed(1);
       return `
-      <tr data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}">
+      <tr class="gaming-activation-list-row" data-open-activation-detail="${escapeHtml(item.id)}" data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}" tabindex="0">
         <td>
           <div class="activation-summary-cell">
             <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
             <div class="activation-meta-line">
               <span>${escapeHtml(activationTypeLabel(item.activation_type))}</span>
-              <span>${escapeHtml(item.campaign_name || "Sin campaña")}</span>
               <span>Creada ${escapeHtml(formatDate(item.created_at))}</span>
             </div>
             <small>${escapeHtml(activationParticipantPolicyLabel(item))}</small>
@@ -20879,39 +21039,44 @@ function renderTriviaLaunchers() {
         </td>
         <td>
           <div class="activation-metric-stack">
-            <span><strong>${escapeHtml(attemptsCount)}</strong>Intentos</span>
-            <span><strong>${escapeHtml(winnersCount)}</strong>QR generados</span>
-            ${item.max_winners ? `<span><strong>${escapeHtml(maxWinners)}</strong>Cupo</span>` : ""}
+            <span><strong>${escapeHtml(attemptsCount)}</strong>Leads</span>
+            <span><strong>${escapeHtml(winnersCount)}</strong>Tickets</span>
+            <span><strong>${escapeHtml(rate)}%</strong>Rendimiento</span>
           </div>
         </td>
         <td>
-          <div class="activation-share-cell">
-            <a class="table-link activation-public-link" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || "Abrir link público")}</a>
-            <small>${escapeHtml(item.public_url || "")}</small>
-          </div>
-          <div class="activation-row-actions activation-share-actions">
-            <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar link</button>
-            <button class="ghost-button" type="button" data-copy-activation-invite="${escapeHtml(item.id)}">Copiar mensaje</button>
-            <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar a lead</button>
-            <a class="ghost-button" href="${escapeHtml(item.public_url)}" target="_blank" rel="noopener">Abrir</a>
+          <div class="activation-campaign-cell">
+            <strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong>
+            <small>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</small>
           </div>
         </td>
         <td>
           <div class="activation-row-actions activation-manage-actions">
-            <button class="ghost-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
-            <button class="ghost-button" type="button" data-activation-data="${escapeHtml(item.id)}">Copiar datos</button>
+            <button class="ghost-button compact" type="button" data-copy-trivia-link="${escapeHtml(item.public_url)}">Copiar link</button>
+            <button class="ghost-button compact" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar</button>
+            <button class="solid-button compact" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
             ${item.status === "active"
-              ? `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="paused">Pausar</button>`
-              : `<button class="ghost-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="active">Activar</button>`}
-            <button class="ghost-button" type="button" data-recycle-activation="${escapeHtml(item.id)}">Duplicar</button>
-            <button class="ghost-button danger-button" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="archived">Archivar</button>
-            <button class="ghost-button danger-button" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
+              ? `<button class="ghost-button compact" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="paused">Pausar</button>`
+              : `<button class="ghost-button compact" type="button" data-activation-status="${escapeHtml(item.id)}" data-next-status="active">Activar</button>`}
           </div>
         </td>
       </tr>
     `;
     }).join("")
-    : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones publicadas. Crea una experiencia para obtener su link de juego.</td></tr>';
+    : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones creadas. Usa Crear ticket para configurar la primera.</td></tr>';
+
+  triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
+    const open = (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      event.preventDefault();
+      openGamingActivationDetail(row.dataset.openActivationDetail);
+    };
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      open(event);
+    });
+  });
 
   triviaLauncherTable.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -21342,7 +21507,7 @@ async function submitTriviaLauncher(event) {
   setButtonLoading(submitButton, true, "Lanzando...");
   triviaLauncherResult?.classList.add("hidden");
   if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
-  setInlineMessage(triviaLauncherMessage, `Renovando landing pública de ${activationTypeLabel(type).toLowerCase()} y generando link nuevo.`, "info");
+  setInlineMessage(triviaLauncherMessage, `Creando ticket de activación ${activationTypeLabel(type).toLowerCase()} y generando link público.`, "info");
   try {
     const data = await api("/api/business/interactive-activations", {
       method: "POST",
@@ -21358,8 +21523,8 @@ async function submitTriviaLauncher(event) {
     const inviteMessage = activationInviteMessage(activation);
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
-      <strong>Activación renovada</strong>
-      <p class="table-secondary">${archivedPrevious ? "El link anterior quedó archivado y este es el link vigente." : "Este es un link nuevo y vigente para compartir."} Primero dejan sus datos, luego completan la dinámica y el sistema emite el ticket según la regla configurada.</p>
+      <strong>Activación creada</strong>
+      <p class="table-secondary">${archivedPrevious ? "El link anterior quedó archivado y este es el link vigente." : "Este es un link nuevo y vigente para compartir."} Primero dejan sus datos, luego completan la dinámica y el sistema crea el ticket según la regla configurada.</p>
       <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
       <label class="activation-invite-preview"><span>Mensaje para invitar</span><textarea readonly rows="4">${escapeHtml(inviteMessage)}</textarea></label>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>
@@ -21375,11 +21540,14 @@ async function submitTriviaLauncher(event) {
       showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
     });
     document.getElementById("shareTriviaInviteResultButton")?.addEventListener("click", () => openActivationShareModal(activation.id));
-    setInlineMessage(triviaLauncherMessage, "Activación renovada. Comparte el link nuevo.", "success");
-    showFeedback("Activación renovada. El link público nuevo ya está listo.", "success", { title: "Constructor de activaciones" });
+    setInlineMessage(triviaLauncherMessage, "Activación creada. Ya aparece en la lista.", "success");
+    showFeedback("Activación creada y agregada a la lista.", "success", { title: "Gaming Center" });
     markTicketCenterDataStale(["activations", "metrics"]);
     await loadStrategicQrData({ groups: ["activations", "metrics"], force: true, quiet: true });
     renderStrategicQrView();
+    closeGamingActivationBuilderModal();
+    setTicketCenterTab("trivia");
+    gamingCenterScrollTo(".gaming-activation-list-card", { focus: false });
   } catch (error) {
     setInlineMessage(triviaLauncherMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo lanzar la activación" });
@@ -39449,7 +39617,7 @@ document.addEventListener("click", (event) => {
     const targetView = ticketViewButton.dataset.ticketOpenView;
     setView(targetView);
     if (targetView === "strategic-qr") {
-      setTicketCenterTab("center");
+      setTicketCenterTab("trivia");
     }
     return;
   }
@@ -39459,6 +39627,14 @@ document.addEventListener("click", (event) => {
   closePortalMenu();
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !document.getElementById("gamingActivationBuilderModal")?.classList.contains("hidden")) {
+    closeGamingActivationBuilderModal();
+    return;
+  }
+  if (event.key === "Escape" && !document.getElementById("gamingActivationDetailModal")?.classList.contains("hidden")) {
+    closeGamingActivationDetail();
+    return;
+  }
   if (event.key === "Escape" && !document.getElementById("rmsCaptureReviewModal")?.classList.contains("hidden")) {
     closeRmsCaptureReview();
     return;
