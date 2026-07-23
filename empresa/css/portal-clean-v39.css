@@ -3,23 +3,23 @@
 /* ========================================================================== */
 
 :root {
-  --qori-canvas: #f3f6f4;
+  --qori-canvas: #f3f7fb;
   --qori-surface: #ffffff;
-  --qori-surface-soft: #f7faf8;
-  --qori-line: #dce5e0;
-  --qori-line-strong: #c6d6ce;
-  --qori-ink: #163029;
-  --qori-muted: #63766f;
-  --qori-primary: #087a5a;
-  --qori-primary-dark: #056148;
-  --qori-primary-soft: #e8f5ef;
-  --qori-focus: rgba(8, 122, 90, 0.2);
+  --qori-surface-soft: #f6fbff;
+  --qori-line: #d8e6f2;
+  --qori-line-strong: #b8d2e9;
+  --qori-ink: #071832;
+  --qori-muted: #53677f;
+  --qori-primary: #0759d6;
+  --qori-primary-dark: #052a6b;
+  --qori-primary-soft: #eaf4ff;
+  --qori-focus: rgba(0, 191, 229, 0.2);
   --qori-radius-control: 9px;
   --qori-radius-panel: 14px;
   --qori-sidebar: 248px;
   --qori-sidebar-collapsed: 68px;
   --qori-topbar: 64px;
-  --qori-shadow: 0 3px 12px rgba(19, 48, 40, 0.045);
+  --qori-shadow: 0 3px 12px rgba(5, 42, 107, 0.045);
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) {
@@ -128,7 +128,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar > 
   padding: 11px !important;
   grid-template-columns: 40px minmax(0, 1fr) !important;
   gap: 10px !important;
-  border: 1px solid #bcd9cd !important;
+  border: 1px solid #b8d2e9 !important;
   border-radius: 13px !important;
   background: var(--qori-primary-soft) !important;
   color: var(--qori-ink) !important;
@@ -138,7 +138,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar > 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar > button.sidebar-sales-machine-button:hover,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar > button.sidebar-sales-machine-button:focus-visible {
   border-color: var(--qori-primary) !important;
-  background: #dff1e9 !important;
+  background: #e5fbff !important;
   transform: none !important;
 }
 
@@ -182,7 +182,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-na
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .nav-group-label {
   margin: 8px 8px 5px !important;
-  color: #7b8b84 !important;
+  color: #6e7f92 !important;
   font-size: 0.65rem !important;
   letter-spacing: 0.06em !important;
 }
@@ -199,7 +199,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .nav-item {
   border: 1px solid transparent !important;
   border-radius: var(--qori-radius-control) !important;
   background: transparent !important;
-  color: #385048 !important;
+  color: #31506f !important;
   box-shadow: none !important;
 }
 
@@ -211,7 +211,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .nav-item:h
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .nav-item.active,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="rms-machine"] .portal-shell .nav-item[data-view="rms-machine"] {
-  border-color: #c5ded4 !important;
+  border-color: #b8d2e9 !important;
   background: var(--qori-primary-soft) !important;
   color: var(--qori-primary-dark) !important;
   box-shadow: inset 3px 0 0 var(--qori-primary) !important;
@@ -233,7 +233,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-na
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-nav > .nav-item > span:last-child small {
   margin-top: 2px !important;
-  color: #7a8c85 !important;
+  color: #6e7f92 !important;
   font-size: 0.64rem !important;
   line-height: 1.15 !important;
 }
@@ -251,13 +251,13 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .portal-mor
   padding: 8px 10px !important;
   border-radius: 10px !important;
   background: transparent !important;
-  color: #385048 !important;
+  color: #31506f !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .portal-more-nav[open] > summary {
   border-bottom: 1px solid var(--qori-line) !important;
   border-radius: 10px 10px 0 0 !important;
-  background: #f1f6f3 !important;
+  background: #f6fbff !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .portal-more-nav-list {
@@ -281,7 +281,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .portal-too
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .portal-tool-group[open] > summary {
-  background: #edf4f0 !important;
+  background: #eaf4ff !important;
 }
 
 /* Page hierarchy */
@@ -385,7 +385,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.solid-
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.ghost-button, .link-button, .nav-link-button, .icon-button) {
   border: 1px solid var(--qori-line) !important;
   background: var(--qori-surface) !important;
-  color: #385048 !important;
+  color: #31506f !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.ghost-button, .link-button, .nav-link-button, .icon-button):hover {
@@ -500,7 +500,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="dashbo
   display: grid !important;
   grid-template-columns: 42px minmax(0, 1fr) 28px !important;
   gap: 13px !important;
-  border: 1px solid #bedbcf !important;
+  border: 1px solid #b8d2e9 !important;
   border-radius: var(--qori-radius-panel) !important;
   background: var(--qori-primary-soft) !important;
   color: var(--qori-ink) !important;
@@ -516,7 +516,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="dashbo
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="dashboard"] .portal-shell .portal-gaming-entry .gaming-entry-mark {
   width: 42px !important;
   height: 42px !important;
-  border: 1px solid #b9d7cb !important;
+  border: 1px solid #b8d2e9 !important;
   border-radius: 10px !important;
   background: var(--qori-surface) !important;
   color: var(--qori-primary) !important;
@@ -567,7 +567,7 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.contac
   border-color: var(--qori-line-strong) !important;
   background: var(--qori-surface) !important;
   color: var(--qori-primary-dark) !important;
-  box-shadow: 0 1px 4px rgba(19, 48, 40, 0.06) !important;
+  box-shadow: 0 1px 4px rgba(5, 42, 107, 0.06) !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell :is(.table-wrap, .data-table-scroll, .table-responsive) {
@@ -582,14 +582,14 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell table {
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell th {
   padding: 10px 12px !important;
   background: var(--qori-surface-soft) !important;
-  color: #4d625a !important;
+  color: #31506f !important;
   font-size: 0.7rem !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell td {
   padding: 11px 12px !important;
   border-bottom: 1px solid #edf1ef !important;
-  color: #3d524a !important;
+  color: #31506f !important;
 }
 
 /* Keep status semantics pill-shaped; everything else stays rectangular. */
@@ -631,13 +631,13 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="rms-ma
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card {
   border-color: var(--qori-line) !important;
   background: var(--qori-surface) !important;
-  box-shadow: 0 2px 8px rgba(19, 48, 40, 0.04) !important;
+  box-shadow: 0 2px 8px rgba(5, 42, 107, 0.04) !important;
 }
 
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card:hover,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card:focus-within {
   border-color: var(--qori-primary) !important;
-  box-shadow: 0 7px 18px rgba(8, 122, 90, 0.1) !important;
+  box-shadow: 0 7px 18px rgba(0, 191, 229, 0.1) !important;
   transform: translateY(-2px) !important;
 }
 
@@ -679,10 +679,10 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .app-shell.
   --qori-surface-soft: #172823;
   --qori-line: #293d36;
   --qori-line-strong: #385249;
-  --qori-ink: #edf6f2;
-  --qori-muted: #a7bbb3;
-  --qori-primary: #41c89d;
-  --qori-primary-dark: #73ddb9;
+  --qori-ink: #eaf4ff;
+  --qori-muted: #9fb1c7;
+  --qori-primary: #00bfe5;
+  --qori-primary-dark: #00bfe5;
   --qori-primary-soft: #17382e;
   --qori-focus: rgba(65, 200, 157, 0.22);
 }
@@ -875,7 +875,7 @@ body:not(#qoriStationsA#qoriStationsB#qoriStationsC#qoriStationsD)[data-current-
   border: 1px solid var(--qori-line) !important;
   border-radius: 18px !important;
   background: var(--qori-surface) !important;
-  box-shadow: 0 12px 30px rgba(21, 55, 44, 0.08) !important;
+  box-shadow: 0 12px 30px rgba(5, 42, 107, 0.08) !important;
 }
 
 body:not(#qoriStationsA#qoriStationsB#qoriStationsC#qoriStationsD)[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy {
@@ -892,10 +892,10 @@ body:not(#qoriStationsA#qoriStationsB#qoriStationsC#qoriStationsD)[data-current-
   display: grid !important;
   place-items: center !important;
   border-radius: 17px !important;
-  background: linear-gradient(145deg, #0f7354, #0a5943) !important;
+  background: linear-gradient(145deg, #0759d6, #052a6b) !important;
   color: #ffffff !important;
   font-size: 32px !important;
-  box-shadow: 0 10px 24px rgba(15, 115, 84, 0.22) !important;
+  box-shadow: 0 10px 24px rgba(0, 191, 229, 0.22) !important;
 }
 
 body:not(#qoriStationsA#qoriStationsB#qoriStationsC#qoriStationsD)[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy > h2 {
