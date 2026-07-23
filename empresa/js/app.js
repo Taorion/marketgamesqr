@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-entry-interstitial-v87";
+const APP_VERSION = "empresa-20260723-sales-entry-popup-v88";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14859,6 +14859,39 @@ function ensureSalesAnalysisStyles() {
     body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form select,
     body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form textarea {
       background: #fff;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 10090 !important;
+      display: block !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: clamp(.75rem, 2.5vw, 1.6rem) !important;
+      overflow: auto !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: rgba(15, 23, 42, .68) !important;
+      box-shadow: none !important;
+      backdrop-filter: blur(9px);
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > .sales-create-summary,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > .chart-explainer,
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > form {
+      width: min(780px, calc(100vw - 1.5rem)) !important;
+      margin-inline: auto !important;
+      background: #fff !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > .sales-create-summary {
+      margin-top: 0 !important;
+      border-radius: 24px 24px 0 0 !important;
+    }
+    body.has-sales-entry-modal .portal-shell .sales-create-panel[open] > form {
+      grid-template-columns: 1fr !important;
+      border-radius: 0 0 24px 24px !important;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
@@ -38579,6 +38612,23 @@ salesCreatePanel?.addEventListener("toggle", () => {
   if (salesCreatePanel.open) {
     syncCustomerSaleTotal();
     window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
+  }
+});
+salesCreatePanel?.querySelector(".sales-create-summary")?.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (salesCreatePanel.open) {
+    closeSalesCreatePanel();
+  } else {
+    openSalesCreatePanel();
+  }
+});
+salesCreatePanel?.querySelector(".sales-create-summary")?.addEventListener("keydown", (event) => {
+  if (!["Enter", " "].includes(event.key)) return;
+  event.preventDefault();
+  if (salesCreatePanel.open) {
+    closeSalesCreatePanel();
+  } else {
+    openSalesCreatePanel();
   }
 });
 salesCreatePanel?.addEventListener("click", (event) => {
