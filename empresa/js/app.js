@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-solo-directorio-comercial-v101";
+const APP_VERSION = "empresa-20260723-directorio-plano-v102";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26944,7 +26944,6 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
     : leadOriginText(item);
   return `
     <article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
-      <span class="lead-directory-avatar" aria-hidden="true">${escapeHtml(leadDirectoryInitials(item.name || (isCustomer ? "Cliente" : "Lead")).toUpperCase())}</span>
       <div class="contact-directory-name">
         <span>
           <strong>${escapeHtml(item.name || "Contacto sin nombre")}</strong>
@@ -27005,19 +27004,8 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         <span><strong>${leads.length.toLocaleString("es-CO")}</strong> leads</span>
         <span><strong>${activations.toLocaleString("es-CO")}</strong> activaciones</span>
         <span><strong>${affiliates.toLocaleString("es-CO")}</strong> afiliados</span>
+        <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong> tickets activos</span>
       </div>
-    </div>
-    <div class="contact-directory-command-strip" aria-label="Acciones del directorio">
-      <span><strong>${visibleRows.length.toLocaleString("es-CO")}</strong><small>${escapeHtml(leadDirectoryAudienceLabel(audience).toLowerCase())} visibles</small></span>
-      <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong><small>con ticket activo</small></span>
-      <button class="ghost-button" type="button" data-contact-directory-command="toggle-audience">
-        <span class="material-symbols-outlined" aria-hidden="true">${audience === "customers" ? "person_search" : "verified_user"}</span>
-        ${audience === "customers" ? "Ver leads" : "Ver clientes"}
-      </button>
-      <button class="solid-button" type="button" data-contact-directory-command="new-lead">
-        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
-        Agregar prospecto
-      </button>
     </div>
     <div class="contact-directory-list contact-directory-unified-list">
       ${sortedVisibleRows.length
@@ -27025,15 +27013,6 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
     </div>
   `;
-  board.querySelector('[data-contact-directory-command="toggle-audience"]')?.addEventListener("click", () => {
-    state.leadDirectoryAudience = audience === "customers" ? "leads" : "customers";
-    syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
-    renderLeadCrmTable();
-    renderContactDirectoryCards(state.leadCrmRows || []);
-    renderContactActionFeed(leadDirectorySegmentRows(state.leadCrmRows || []), []);
-    renderLegacyLeadTables(state.contactFeed || [], state.leadCrmRows || []);
-  });
-  board.querySelector('[data-contact-directory-command="new-lead"]')?.addEventListener("click", () => handleContactCenterStageAction("manual-lead"));
   board.querySelectorAll("[data-lead-id]").forEach((card) => {
     const open = () => openLeadDetail({
       id: card.dataset.leadId,
@@ -28722,21 +28701,27 @@ function ensureContactDirectoryUxStyles() {
     }
     .contact-directory-visual-board {
       display: grid;
-      gap: 1rem;
+      gap: 0.875rem;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
     .contact-directory-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 1rem;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.5rem;
       align-items: start;
-      padding: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      border-radius: 22px;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.06), rgba(59, 130, 246, 0.08));
+      padding: 0 0 0.875rem;
+      border: 0;
+      border-bottom: 1px solid rgba(16, 37, 31, 0.1);
+      border-radius: 0;
+      background: transparent;
     }
     .contact-directory-hero h3 {
       margin: 0.1rem 0;
-      font-size: clamp(1.35rem, 2.6vw, 2rem);
+      font-size: clamp(1.28rem, 1.8vw, 1.78rem);
     }
     .contact-directory-hero p {
       margin: 0;
@@ -28747,30 +28732,25 @@ function ensureContactDirectoryUxStyles() {
       display: flex;
       gap: 0.55rem;
       flex-wrap: wrap;
-      justify-content: flex-end;
+      justify-content: flex-start;
+      margin-top: 0.5rem;
     }
     .contact-directory-summary span {
-      display: grid;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.25rem;
       min-width: 90px;
-      padding: 0.65rem 0.8rem;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
     }
     .contact-directory-summary strong {
-      font-size: 1.2rem;
+      font-size: 1rem;
       line-height: 1;
     }
     .contact-directory-command-strip {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(120px, auto)) minmax(150px, auto) minmax(170px, auto);
-      align-items: center;
-      justify-content: start;
-      gap: 0.65rem;
-      padding: 0.78rem;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 18px;
-      background: rgba(248, 250, 252, 0.92);
+      display: none;
     }
     .contact-directory-command-strip > span {
       display: grid;
@@ -28795,23 +28775,28 @@ function ensureContactDirectoryUxStyles() {
     }
     .contact-directory-list {
       display: grid;
-      gap: 0.72rem;
+      gap: 0;
+      border-top: 1px solid rgba(16, 37, 31, 0.1);
     }
     .contact-directory-card-row {
       display: grid;
-      gap: 0.8rem;
-      padding: 0.95rem;
-      border-radius: 18px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(248, 250, 252, 0.94);
+      grid-template-columns: minmax(180px, 1.15fr) minmax(220px, 1.25fr) minmax(230px, 0.95fr) auto;
+      gap: 0.875rem;
+      align-items: center;
+      padding: 0.875rem 0;
+      border-radius: 0;
+      border: 0;
+      border-bottom: 1px solid rgba(16, 37, 31, 0.1);
+      background: transparent;
       cursor: pointer;
-      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      transition: background 160ms ease;
     }
     .contact-directory-card-row:hover,
     .contact-directory-card-row:focus-visible {
-      transform: translateY(-1px);
-      border-color: rgba(37, 99, 235, 0.45);
-      box-shadow: 0 18px 34px rgba(37, 99, 235, 0.12);
+      transform: none;
+      border-color: rgba(16, 37, 31, 0.1);
+      box-shadow: none;
+      background: rgba(15, 116, 88, 0.035);
       outline: none;
     }
     .contact-directory-name,
@@ -28871,7 +28856,7 @@ function ensureContactDirectoryUxStyles() {
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail,
       .contact-directory-hero,
-      .contact-directory-command-strip {
+      .contact-directory-card-row {
         grid-template-columns: 1fr;
       }
       .contact-directory-summary {
