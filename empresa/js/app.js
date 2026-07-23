@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-activaciones-lista-simple-v123";
+const APP_VERSION = "empresa-20260723-agenda-nav-fix-v124";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -29057,7 +29057,7 @@ function appendIfFound(parent, node) {
 }
 
 const CONTACT_CENTER_TAB_KEYS = ["overview", "directory", "tickets", "agenda", "captures", "manual", "sales"];
-const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory"];
+const CONTACT_CENTER_VISIBLE_TAB_KEYS = ["directory", "manual", "agenda"];
 
 function normalizeContactCenterTab(tab = "directory") {
   const requested = CONTACT_CENTER_TAB_KEYS.includes(tab) ? tab : "directory";
