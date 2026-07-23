@@ -24176,7 +24176,7 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const photoSource = affiliatePhotoSource(affiliate);
   const qrSource = affiliateQrSource(affiliate);
   const photo = await loadImageDataUrl(photoSource);
-  const platformLogo = await loadImageDataUrl("/img/Logotipo%20Qori%20VF.png");
+  const platformLogo = await loadImageDataUrl("/img/qori-logo.png");
   const qrImg = await loadImageDataUrl(qrSource);
 
   {
