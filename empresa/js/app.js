@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-entry-clean-v85";
+const APP_VERSION = "empresa-20260722-sales-entry-one-column-v86";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -13918,7 +13918,7 @@ function renderCustomerSaleItems() {
           <span>${escapeHtml(productLabel)}</span>
           <strong>${escapeHtml(money(customerSaleLineTotal(item)))}</strong>
         </div>
-        <button class="icon-button danger-button" type="button" data-sale-item-remove="${index}" aria-label="Quitar producto">&times;</button>
+        <button class="ghost-button danger-button compact" type="button" data-sale-item-remove="${index}">Quitar producto</button>
       </div>
     `;
   }).join("");
@@ -14757,6 +14757,65 @@ function ensureSalesAnalysisStyles() {
       margin-top: .2rem;
       border-radius: 18px;
       box-shadow: 0 16px 40px rgba(15, 23, 42, .14);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .sales-create-summary,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > .chart-explainer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > form {
+      width: min(780px, 100%);
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] > form.customer-sale-form {
+      display: grid;
+      grid-template-columns: 1fr !important;
+      gap: .8rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-summary,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-customer,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-builder,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-attribution,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions {
+      grid-column: 1 / -1 !important;
+      grid-row: auto !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-grid {
+      grid-template-columns: 1fr !important;
+      gap: .65rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-total,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-search,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-currency,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-existing,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-campaign,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-name,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form .sale-field-notes,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-customer-status {
+      grid-column: 1 / -1 !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-row {
+      grid-template-columns: 1fr !important;
+      gap: .55rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem .7rem;
+      border-radius: 12px;
+      background: #ecfdf5;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-row .danger-button {
+      justify-self: start;
+      width: auto;
+      min-width: 110px;
+      border-radius: 999px;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions {
+      grid-template-columns: 1fr !important;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions .error-line {
+      justify-self: stretch;
+      text-align: left;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
