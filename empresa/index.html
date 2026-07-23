@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sales-entry-modal-rebuild-20260723-v89">
+  <link rel="stylesheet" href="css/styles.css?v=sales-entry-visible-cta-20260723-v90">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-station-tables-20260722-v52">
 </head>
 <body data-current-view="rms-machine">
@@ -4957,7 +4957,13 @@
                 <h2>Ventas atribuidas</h2>
                 <p>Analiza ventas por cliente, producto, fecha, canal, campaña, sede o medio de llegada.</p>
               </div>
-              <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
+              <div class="head-actions">
+                <button class="solid-button" id="salesCreateHeadButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                  Registrar venta
+                </button>
+                <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
+              </div>
             </div>
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
@@ -7292,7 +7298,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sales-entry-modal-rebuild-20260723-v89" defer></script>
+  <script src="js/app.js?v=sales-entry-visible-cta-20260723-v90" defer></script>
 </body>
 </html>
 

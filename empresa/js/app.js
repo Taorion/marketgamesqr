@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-sales-entry-modal-rebuild-v89";
+const APP_VERSION = "empresa-20260723-sales-entry-visible-cta-v90";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -866,6 +866,7 @@ const activationShareCopyMessageButton = document.getElementById("activationShar
 const productVoteImages = {};
 const salesCreatePanel = document.getElementById("salesCreatePanel");
 const salesCreateTrigger = document.getElementById("salesCreateTrigger");
+const salesCreateHeadButton = document.getElementById("salesCreateHeadButton");
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
@@ -14371,6 +14372,24 @@ function ensureSalesAnalysisStyles() {
       margin-inline: auto;
     }
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .view-head { order: 1; }
+    body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .view-head .head-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .65rem;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    body[data-current-view="sales"] .portal-shell #salesCreateHeadButton {
+      min-height: 46px;
+      padding-inline: 1rem;
+      border-radius: 999px;
+      box-shadow: 0 14px 32px rgba(15, 115, 84, .22);
+    }
+    body[data-current-view="sales"] .portal-shell #salesCreateHeadButton .material-symbols-outlined {
+      font-size: 1.1rem;
+      vertical-align: middle;
+      margin-right: .25rem;
+    }
     body[data-current-view="sales"] .portal-shell .view-section[data-view="sales"] > .sales-kpis { order: 2; }
     body[data-current-view="sales"] .portal-shell .sales-table-panel {
       order: 4;
@@ -38715,6 +38734,10 @@ salesCreateTrigger?.addEventListener("click", () => {
     syncCustomerSaleTotal();
     openSalesCreatePanel();
   }
+});
+salesCreateHeadButton?.addEventListener("click", () => {
+  syncCustomerSaleTotal();
+  openSalesCreatePanel();
 });
 salesCreatePanel?.addEventListener("click", (event) => {
   if (salesCreatePanel.classList.contains("is-open") && event.target === salesCreatePanel) {
