@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=qori-no-green-20260723-v115">
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=qori-no-green-20260723-v115">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=qori-login-clean-20260723-v116">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -53,7 +53,7 @@
             </div>
             <div class="login-machine-flow">
               <article>
-                <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
                 <strong>Cuidar</strong>
                 <small>La relación antes de la acción</small>
               </article>
@@ -128,13 +128,16 @@
               </button>
             </form>
             <p class="error-line" id="loginError"></p>
-            <form class="login-form login-recovery-form" id="passwordResetRequestForm">
-              <label>
-                <span>Recuperar acceso</span>
-                <input id="passwordResetEmailInput" type="email" autocomplete="email" placeholder="correo@empresa.com">
-              </label>
-              <button class="ghost-button" type="submit">Enviar recuperación</button>
-            </form>
+            <details class="login-recovery-disclosure">
+              <summary>Recuperar acceso</summary>
+              <form class="login-form login-recovery-form" id="passwordResetRequestForm">
+                <label>
+                  <span>Correo corporativo</span>
+                  <input id="passwordResetEmailInput" type="email" autocomplete="email" placeholder="correo@empresa.com">
+                </label>
+                <button class="ghost-button" type="submit">Enviar recuperación</button>
+              </form>
+            </details>
             <form class="login-form hidden" id="passwordResetForm">
               <label>
                 <span>Nuevo password</span>

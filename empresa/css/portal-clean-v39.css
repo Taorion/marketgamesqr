@@ -1050,6 +1050,522 @@ body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-sa
   color: var(--qori-primary-dark) !important;
 }
 
+/* Qori v116: login visual cleanup, fewer nested boxes and stable responsive text. */
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-screen,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-screen * {
+  box-sizing: border-box !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-screen {
+  min-height: 100svh !important;
+  overflow-x: hidden !important;
+  padding: clamp(18px, 3vw, 36px) !important;
+  display: grid !important;
+  place-items: center !important;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(0, 191, 229, 0.10), transparent 30rem),
+    radial-gradient(circle at 12% 88%, rgba(7, 89, 214, 0.10), transparent 26rem),
+    linear-gradient(135deg, #ffffff 0%, #f7fbff 52%, #edf6ff 100%) !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-experience {
+  width: min(100%, 1180px) !important;
+  min-height: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px) !important;
+  align-items: center !important;
+  gap: clamp(24px, 4vw, 54px) !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-vision {
+  min-width: 0 !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  display: grid !important;
+  gap: clamp(18px, 3vw, 28px) !important;
+  align-content: center !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-vision::before,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-vision::after {
+  display: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-vision-copy {
+  max-width: 720px !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-title-lockup {
+  display: block !important;
+  margin: 12px 0 14px !important;
+  max-width: 100% !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-title-logo {
+  display: block !important;
+  width: min(420px, 100%) !important;
+  height: auto !important;
+  max-height: 168px !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+  filter: drop-shadow(0 8px 18px rgba(5, 42, 107, 0.12)) !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-vision-copy > p {
+  width: min(100%, 660px) !important;
+  margin: 0 !important;
+  color: #2f4b65 !important;
+  font-size: clamp(1rem, 1.2vw, 1.12rem) !important;
+  line-height: 1.58 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: pretty !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-technology-strip {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: min(100%, 680px) !important;
+  margin-top: 18px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-technology-strip span,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-signal span {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 30px !important;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(7, 89, 214, 0.14) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: #063a9f !important;
+  font-size: 0.78rem !important;
+  line-height: 1.2 !important;
+  font-weight: 760 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-visual {
+  width: min(100%, 760px) !important;
+  padding: clamp(16px, 2vw, 22px) !important;
+  display: grid !important;
+  gap: 16px !important;
+  border: 1px solid rgba(5, 42, 107, 0.10) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  box-shadow: 0 18px 46px rgba(5, 42, 107, 0.08) !important;
+  overflow: hidden !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-command {
+  padding: 0 0 14px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 16px !important;
+  align-items: start !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.10) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-command strong {
+  display: block !important;
+  max-width: 560px !important;
+  color: #071832 !important;
+  font-size: clamp(1rem, 1.2vw, 1.12rem) !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: pretty !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-signal {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  max-width: 240px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow i {
+  display: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core > div {
+  min-width: 0 !important;
+  min-height: 124px !important;
+  padding: 14px !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 8px !important;
+  border: 1px solid rgba(5, 42, 107, 0.09) !important;
+  border-radius: 12px !important;
+  background: rgba(248, 251, 255, 0.86) !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow .material-symbols-outlined {
+  width: 36px !important;
+  height: 36px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: #eaf4ff !important;
+  color: #0759d6 !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow .material-symbols-outlined {
+  font-size: 0 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow .material-symbols-outlined::before {
+  color: inherit !important;
+  font-family: Inter, system-ui, sans-serif !important;
+  font-size: 0.76rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article:nth-of-type(1) .material-symbols-outlined::before {
+  content: "CF" !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article:nth-of-type(2) .material-symbols-outlined::before {
+  content: "O3" !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article:nth-of-type(3) .material-symbols-outlined::before {
+  content: "GOS" !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article:nth-of-type(4) .material-symbols-outlined::before {
+  content: "3R" !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article.is-core .material-symbols-outlined {
+  background: linear-gradient(135deg, #0759d6, #00bfe5) !important;
+  color: #ffffff !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article strong,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core strong {
+  color: #071832 !important;
+  font-size: 0.96rem !important;
+  line-height: 1.24 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article small,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core span {
+  color: #53677f !important;
+  font-size: 0.84rem !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core > div {
+  min-height: 86px !important;
+  padding: 12px 14px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-access-panel {
+  min-width: 0 !important;
+  width: 100% !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 34px) !important;
+  border: 1px solid rgba(5, 42, 107, 0.12) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 20px 54px rgba(5, 42, 107, 0.12) !important;
+  overflow: hidden !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-brand {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.10) !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-brand .brand-logo {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  object-fit: contain !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-brand h1 {
+  margin: 0 !important;
+  color: #052a6b !important;
+  font-size: 1rem !important;
+  line-height: 1.15 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-brand p {
+  margin-top: 3px !important;
+  color: #53677f !important;
+  font-size: 0.82rem !important;
+  line-height: 1.25 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-copy {
+  margin: 22px 0 18px !important;
+  min-width: 0 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-copy h2 {
+  margin: 8px 0 10px !important;
+  max-width: 100% !important;
+  color: #052a6b !important;
+  font-size: clamp(1.9rem, 3vw, 2.45rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: balance !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-copy p {
+  margin: 0 !important;
+  max-width: 34ch !important;
+  color: #53677f !important;
+  font-size: 0.96rem !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-form {
+  display: grid !important;
+  gap: 13px !important;
+  min-width: 0 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .hidden,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .login-form.hidden,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card [hidden] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card :where(.error-line, .success-line):empty {
+  display: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-form label {
+  min-width: 0 !important;
+  color: #071832 !important;
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-form input,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-field input {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  background: #f8fbff !important;
+  border-color: rgba(5, 42, 107, 0.16) !important;
+  color: #071832 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .password-field {
+  min-width: 0 !important;
+  border-radius: 10px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-reveal-button {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  right: 6px !important;
+  overflow: hidden !important;
+  border-radius: 10px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-reveal-button .material-symbols-outlined {
+  width: 22px !important;
+  height: 22px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-reveal-button .material-symbols-outlined {
+  font-size: 0 !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-reveal-button .material-symbols-outlined::before {
+  content: "" !important;
+  width: 16px !important;
+  height: 10px !important;
+  display: block !important;
+  border: 2px solid currentColor !important;
+  border-radius: 999px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .password-reveal-button .material-symbols-outlined::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 4px !important;
+  height: 4px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure {
+  margin-top: 16px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(5, 42, 107, 0.10) !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure summary {
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  color: #052a6b !important;
+  font-size: 0.9rem !important;
+  font-weight: 800 !important;
+  list-style: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure summary::-webkit-details-marker {
+  display: none !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure summary::after {
+  content: "+" !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(7, 89, 214, 0.18) !important;
+  border-radius: 8px !important;
+  color: #0759d6 !important;
+  background: #f8fbff !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure[open] summary::after {
+  content: "-" !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-recovery-disclosure .login-recovery-form {
+  margin-top: 12px !important;
+}
+
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .solid-button,
+body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card .ghost-button {
+  width: 100% !important;
+  min-height: 44px !important;
+  border-radius: 10px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1020px) {
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-experience {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: min(100%, 760px) !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-screen {
+    padding: 14px !important;
+    place-items: start center !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-title-logo {
+    width: min(340px, 100%) !important;
+    max-height: 136px !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-visual {
+    padding: 14px !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-command,
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow,
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-rms-signal {
+    justify-content: flex-start !important;
+    max-width: none !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-flow article,
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-machine-core > div {
+    min-height: auto !important;
+  }
+
+  body:not(#qoriLoginCleanA#qoriLoginCleanB#qoriLoginCleanC#qoriLoginCleanD) .portal-shell .login-card {
+    padding: 22px !important;
+  }
+}
+
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar-sales-machine-copy small,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .mono-label,
 body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .nav-group-label {
