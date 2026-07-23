@@ -1,5 +1,4 @@
 const planGrid = document.getElementById("planGrid");
-const selectedBox = document.getElementById("selectedBox");
 const signupForm = document.getElementById("signupForm");
 const signupSection = document.getElementById("signupSection");
 const signupPlanSummary = document.getElementById("signupPlanSummary");
@@ -8,155 +7,109 @@ const submitButton = document.getElementById("submitButton");
 const formEyebrow = document.getElementById("formEyebrow");
 const formTitle = document.getElementById("formTitle");
 const formCopy = document.getElementById("formCopy");
-const paymentStatusSection = document.getElementById("paymentStatusSection");
-const paymentStatusEyebrow = document.getElementById("paymentStatusEyebrow");
-const paymentStatusTitle = document.getElementById("paymentStatusTitle");
-const paymentStatusCopy = document.getElementById("paymentStatusCopy");
-const paymentStatusActionTitle = document.getElementById("paymentStatusActionTitle");
-const paymentStatusActionCopy = document.getElementById("paymentStatusActionCopy");
-const paymentStatusPrimaryLink = document.getElementById("paymentStatusPrimaryLink");
-const themeSwitch = document.getElementById("themeSwitch");
-const themeSwitchLabel = document.getElementById("themeSwitchLabel");
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
-const THEME_KEY = "marketgames_portal_theme";
+
+const DESPEGA_PLAN = {
+  code: "DESPEGA",
+  name: "Despega",
+  monthly_price_cop: 75000,
+  mode: "Entrada básica",
+  access_summary: "Entrada sencilla para validar tickets y operar una primera capa de interacción con clientes.",
+  snapshot: ["1 sede", "1 usuario", "Validador incluido"],
+  included: [
+    "Acceso al portal / tickets",
+    "Exportación de base que interactuó con QR",
+    "Validador",
+    "Gaming Center sin historial",
+    "Leadboard",
+  ],
+  notSubscription: true,
+};
 
 const FALLBACK_PLANS = [
   {
     code: "STARTER",
-    name: "Started",
-    monthly_price_cop: 1000000,
-    access_summary: "Plan de entrada para negocios que quieren empezar a capturar leads, crear campañas y validar beneficios desde un portal comercial gamificado.",
+    name: "Crece",
+    monthly_price_cop: 229000,
+    mode: "Suscripción",
+    access_summary: "Operación inicial con gráficas, leads recientes, campañas y máquina.",
+    snapshot: ["50 leads", "1 campaña", "2 exportaciones"],
     included: [
-      "Acceso al portal",
+      "Acceso al portal / tickets",
       "Gráficas de redención",
-      "Visualización de últimos 50 leads",
+      "Últimos 50 leads",
       "2 exportaciones mensuales",
-      "Validador de tickets",
-      "Creación de campañas",
-      "Ver capacidad completa",
+      "Validador",
       "1 campaña activa en línea",
-      "1 sede",
-      "1 usuario",
-      "Gaming center: trivia y pregunta abierta sin historial de tickets",
-      "Agenda para programar tareas",
-      "10 tickets de cortesía en primera suscripción",
+      "1 sede / 1 usuario",
+      "Máquina incluida",
+      "Leadboard",
     ],
   },
   {
     code: "GROWTH",
-    name: "Medium",
+    name: "Escala",
+    monthly_price_cop: 899000,
+    mode: "Suscripción",
     recommended: true,
-    monthly_price_cop: 2500000,
-    access_summary: "Plan para negocios que quieren operar varias campañas, organizar contactos, medir resultados y activar seguimiento comercial con más estructura.",
+    access_summary: "Gestión avanzada con dashboard completo, fidelización, contactos, sales y agenda.",
+    snapshot: ["100 leads", "3 campañas", "10 exportaciones"],
     included: [
-      "Acceso al portal",
+      "Acceso al portal / tickets",
       "Gráficas de redención",
-      "Visualización de últimos 100 leads",
+      "Últimos 100 leads",
       "10 exportaciones mensuales",
-      "Validador de tickets",
-      "Creación de campañas",
-      "Ver capacidad completa",
-      "3 campañas activas en línea",
-      "2 sedes",
-      "2 usuarios",
-      "Gaming center con historial de tickets",
+      "1 sede / 2 usuarios",
+      "Gaming Center con historial",
       "Calculadora de campañas",
       "Dashboard completo",
-      "Programa de fidelización hasta 50 contactos",
-      "Branding en ticket",
-      "Gift cards: 10 unidades al mes",
+      "Fidelización hasta 50",
+      "Branding de ticket",
+      "10 Gift Cards al mes",
       "Directorio de contactos",
-      "Inventario de obsequios hasta 4 productos diferentes",
-      "Sales tracker",
-      "Asistencia de marketing al lanzamiento de Sales Machine",
-      "Agenda para programar tareas",
-      "10 afiliados",
-      "10 tickets de cortesía en primera suscripción",
+      "Sales",
+      "Agenda para tareas",
     ],
   },
   {
     code: "PRO",
-    name: "Premium",
-    monthly_price_cop: 4500000,
-    access_summary: "Plan para marcas que quieren todo el portal habilitado, sin límites de uso ni cantidad en las capacidades operativas.",
+    name: "Expande",
+    monthly_price_cop: 1899000,
+    mode: "Suscripción",
+    access_summary: "Operación completa con analítica predictiva, afiliados, premios y soporte de marketing.",
+    snapshot: ["Todos los leads", "Campañas ilimitadas", "Journey + premios"],
     included: [
-      "Acceso al portal",
+      "Acceso al portal / tickets",
       "Gráficas de redención",
-      "Visualización ilimitada de leads",
+      "Todos los leads",
       "Exportaciones ilimitadas",
-      "Validador de tickets",
-      "Creación de campañas en línea ilimitadas",
-      "Sedes ilimitadas",
-      "Usuarios ilimitados",
-      "Gaming center con historial de tickets",
-      "Acceso a todas las activaciones disponibles",
-      "Calculadora de campañas",
+      "2 sedes / 4 usuarios",
+      "Campañas en línea ilimitadas",
       "Dashboard completo con insights",
-      "Programa de fidelización ilimitado",
-      "Branding en ticket",
-      "Gift cards ilimitadas",
-      "Directorio de contactos",
-      "Inventario de obsequios con productos ilimitados",
-      "Sales tracker",
-      "Asistencia de marketing al lanzamiento de Sales Machine 2 veces al mes",
-      "Tareas + Customer Journey",
-      "Contactos con tickets pendientes por redimir",
-      "Afiliados ilimitados + Carnet digital",
+      "Fidelización ilimitada",
+      "Gift Card ilimitadas",
+      "Inventario ilimitado",
+      "Journey de clientes",
+      "Contactos con tickets por redimir",
+      "Afiliados con carnet digital",
       "Programa de premios",
-      "Analítica de predicción de redención de campañas",
-      "10 tickets de cortesía en primera suscripción",
+      "Analítica predictiva",
+      "Asistencia de marketing",
     ],
   },
 ];
 
 const CTA_LABELS = {
-  STARTER: "Suscribirme a Started",
-  GROWTH: "Elegir Medium",
-  PRO: "Activar Premium",
+  DESPEGA: "Solicitar Despega",
+  STARTER: "Activar Crece",
+  GROWTH: "Activar Escala",
+  PRO: "Activar Expande",
 };
 
-const PLAN_FOCUS = {
-  STARTER: "Entrada comercial",
-  GROWTH: "Operación recomendada",
-  PRO: "Sistema completo",
-};
-
-const PLAN_SNAPSHOT = {
-  STARTER: ["1 campaña activa", "1 sede", "2 exportaciones"],
-  GROWTH: ["3 campañas activas", "2 sedes", "10 exportaciones"],
-  PRO: ["Campañas ilimitadas", "Sedes ilimitadas", "Uso ilimitado"],
-};
-
-let plans = [];
+let plans = [DESPEGA_PLAN, ...FALLBACK_PLANS];
 let selectedPlan = null;
-
-function readPreferredTheme() {
-  try {
-    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
-  } catch {
-    return "dark";
-  }
-}
-
-function applyPackagesTheme(theme) {
-  const nextTheme = theme === "light" ? "light" : "dark";
-  document.documentElement.dataset.theme = nextTheme;
-  if (themeSwitch) themeSwitch.checked = nextTheme === "light";
-  if (themeSwitchLabel) themeSwitchLabel.textContent = nextTheme === "light" ? "Claro" : "Oscuro";
-  const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute("content", nextTheme === "light" ? "#fbfdfc" : "#050816");
-  try {
-    localStorage.setItem(THEME_KEY, nextTheme);
-  } catch {
-    // Theme persistence is optional.
-  }
-}
-
-function togglePackagesTheme() {
-  applyPackagesTheme(themeSwitch?.checked ? "light" : "dark");
-}
 
 function copMoney(value) {
   return `$${Number(value || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP`;
@@ -185,65 +138,59 @@ async function fetchJson(path, options = {}) {
   return data;
 }
 
-function normalizedPlan(plan) {
-  const fallback = FALLBACK_PLANS.find((item) => item.code === plan.code) || {};
+function qoriPlanFromApi(apiPlan) {
+  const fallback = FALLBACK_PLANS.find((item) => item.code === apiPlan.code);
+  if (!fallback) return null;
   return {
-    ...plan,
-    name: fallback.name || plan.name,
-    included: fallback.included || plan.included,
-    access_summary: fallback.access_summary || plan.access_summary,
-    recommended: Boolean(plan.recommended || fallback.recommended || plan.code === "GROWTH"),
+    ...fallback,
+    monthly_price_cop: Number(apiPlan.monthly_price_cop || fallback.monthly_price_cop),
+    annual_price_cop: apiPlan.annual_price_cop || null,
+    recommended: Boolean(apiPlan.recommended || fallback.recommended),
   };
 }
 
 function publicPlansFromApi(data) {
-  const allowed = ["STARTER", "GROWTH", "PRO"];
   const apiPlans = Array.isArray(data?.plans) ? data.plans : [];
-  const mapped = allowed
-    .map((code) => apiPlans.find((plan) => plan.code === code) || FALLBACK_PLANS.find((plan) => plan.code === code))
-    .filter(Boolean)
-    .map(normalizedPlan);
-  return mapped.length === 3 ? mapped : FALLBACK_PLANS;
+  const mapped = FALLBACK_PLANS.map((fallback) => {
+    const apiPlan = apiPlans.find((plan) => plan.code === fallback.code);
+    return apiPlan ? qoriPlanFromApi(apiPlan) : fallback;
+  }).filter(Boolean);
+  return [DESPEGA_PLAN, ...mapped];
 }
 
 function renderPlans() {
+  if (!planGrid) return;
   planGrid.innerHTML = plans.map((plan) => {
     const benefits = plan.included || [];
-    const primaryBenefits = benefits.slice(0, 6);
-    const extraBenefits = benefits.slice(6);
-    const snapshot = PLAN_SNAPSHOT[plan.code] || [];
+    const primaryBenefits = benefits.slice(0, 7);
+    const extraBenefits = benefits.slice(7);
     return `
-      <article class="package-card subscription-plan-card ${selectedPlan?.code === plan.code ? "selected" : ""} ${plan.recommended ? "featured-plan" : ""}">
+      <article class="plan-card ${selectedPlan?.code === plan.code ? "selected" : ""} ${plan.recommended ? "featured-plan" : ""} ${plan.notSubscription ? "entry-plan" : ""}">
         <div class="plan-card-head">
-          <span class="package-code">${escapeHtml(PLAN_FOCUS[plan.code] || plan.name)}</span>
-          ${plan.recommended ? '<span class="recommended-badge">Más recomendado</span>' : ""}
+          <span>${escapeHtml(plan.mode || "Suscripción")}</span>
+          ${plan.recommended ? '<em>Recomendado</em>' : ""}
         </div>
         <h3>${escapeHtml(plan.name)}</h3>
         <p>${escapeHtml(plan.access_summary || "")}</p>
         <div class="plan-price-row">
-          <div class="price">${monthlyPlanLabel(plan)}</div>
-          <span>Mensual</span>
+          <strong>${monthlyPlanLabel(plan)}</strong>
+          <span>${plan.notSubscription ? "Entrada básica" : "Suscripción mensual"}</span>
         </div>
         <div class="plan-snapshot">
-          ${snapshot.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+          ${(plan.snapshot || []).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
         </div>
         <ul class="plan-access-list">
-          ${primaryBenefits.map((benefit) => `
-            <li><span class="mark" aria-hidden="true"></span><span>${escapeHtml(benefit)}</span></li>
-          `).join("")}
+          ${primaryBenefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
         </ul>
         ${extraBenefits.length ? `
           <details class="plan-details">
             <summary>Ver capacidad completa</summary>
             <ul class="plan-access-list">
-              ${extraBenefits.map((benefit) => `
-                <li><span class="mark" aria-hidden="true"></span><span>${escapeHtml(benefit)}</span></li>
-              `).join("")}
+              ${extraBenefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
             </ul>
           </details>
         ` : ""}
-        <p class="ticket-balance-note">Incluye 10 tickets de cortesía solo en la primera suscripción.</p>
-        <button type="button" data-plan-code="${escapeHtml(plan.code)}" aria-label="${escapeHtml(CTA_LABELS[plan.code] || `Elegir ${plan.name}`)}">${escapeHtml(CTA_LABELS[plan.code] || "Elegir plan")}</button>
+        <button type="button" data-plan-code="${escapeHtml(plan.code)}">${escapeHtml(CTA_LABELS[plan.code] || "Elegir plan")}</button>
       </article>
     `;
   }).join("");
@@ -254,38 +201,38 @@ function renderPlans() {
 }
 
 function renderSelection() {
-  const title = selectedPlan ? `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}` : "Suscripción primero";
-  const copy = selectedPlan
-    ? `Vas a activar el plan ${selectedPlan.name}. Al confirmar tu primera suscripción recibes 10 tickets de cortesía.`
-    : "Contrata tu plan mensual y opera Sales Machine desde una cuenta privada para tu negocio.";
-  [selectedBox, signupPlanSummary].forEach((box) => {
-    if (!box) return;
-    box.innerHTML = `
-      <span>${selectedPlan ? "Plan seleccionado" : "Lógica comercial"}</span>
+  if (!selectedPlan) return;
+  const title = `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}`;
+  const copy = selectedPlan.notSubscription
+    ? "Despega es una entrada básica. Escríbenos para activarla sin flujo de suscripción automática."
+    : `Vas a activar ${selectedPlan.name}. Los tickets se recargan aparte según tu volumen de operación.`;
+  if (signupPlanSummary) {
+    signupPlanSummary.innerHTML = `
+      <span>Plan seleccionado</span>
       <strong>${escapeHtml(title)}</strong>
       <p>${escapeHtml(copy)}</p>
     `;
-  });
-  if (formEyebrow) formEyebrow.textContent = selectedPlan ? `Suscripción ${selectedPlan.name}` : "Activación del plan";
-  if (formTitle) formTitle.textContent = selectedPlan ? `Activar ${selectedPlan.name}` : "Registro y suscripción";
+  }
+  if (formEyebrow) formEyebrow.textContent = selectedPlan.notSubscription ? "Entrada Despega" : `Suscripción ${selectedPlan.name}`;
+  if (formTitle) formTitle.textContent = selectedPlan.notSubscription ? "Solicitar Despega" : `Activar ${selectedPlan.name}`;
   if (formCopy) {
-    formCopy.textContent = selectedPlan
-      ? `Hola, quiero suscribirme al plan ${selectedPlan.name} de Sales Machine.`
-      : "Selecciona Started, Medium o Premium para continuar.";
+    formCopy.textContent = selectedPlan.notSubscription
+      ? "Completa los datos y nuestro equipo te ayuda con la activación de entrada."
+      : "Completa los datos para crear la cuenta y continuar con Mercado Pago.";
   }
   if (submitButton) {
-    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripción") : "Activar suscripción";
+    submitButton.textContent = selectedPlan.notSubscription ? "Solicitar activación" : (CTA_LABELS[selectedPlan.code] || "Activar suscripción");
   }
 }
 
 function selectPlan(code) {
   selectedPlan = plans.find((plan) => plan.code === code) || null;
   renderPlans();
-  renderSelection();
   if (signupSection) {
     signupSection.classList.remove("hidden");
     signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  renderSelection();
   setMessage("", "");
 }
 
@@ -309,15 +256,32 @@ function signupPayload() {
     address: document.getElementById("address")?.value.trim() || null,
     terms_accepted: Boolean(document.getElementById("termsAccepted")?.checked),
     privacy_accepted: Boolean(document.getElementById("privacyAccepted")?.checked),
-    legal_version: "2026-07-09",
+    legal_version: "2026-07-23",
   };
+}
+
+async function submitEntryRequest(payload) {
+  const message = [
+    `Hola, quiero activar Qori ${selectedPlan.name}.`,
+    `Empresa: ${payload.company_name || "No registrada"}`,
+    `Contacto: ${payload.contact_name}`,
+    `Email: ${payload.email}`,
+    `Teléfono: ${payload.phone}`,
+  ].join("\n");
+  window.location.href = `https://wa.me/573057724185?text=${encodeURIComponent(message)}`;
 }
 
 async function submitSignup(event) {
   event.preventDefault();
   if (!selectedPlan?.code) {
-    setMessage("Selecciona un plan antes de registrar la suscripción.", "error");
+    setMessage("Selecciona un plan antes de continuar.", "error");
     document.getElementById("planes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  const payload = signupPayload();
+  if (selectedPlan.notSubscription) {
+    await submitEntryRequest(payload);
     return;
   }
 
@@ -325,21 +289,20 @@ async function submitSignup(event) {
   submitButton.textContent = "Creando suscripción...";
   setMessage("Registrando cuenta y preparando autorización segura en Mercado Pago.", "info");
   try {
-    const payload = {
-      ...signupPayload(),
-      plan_code: selectedPlan.code,
-      billing_cycle: "monthly",
-    };
     const data = await fetchJson("/api/public/signup/portal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        plan_code: selectedPlan.code,
+        billing_cycle: "monthly",
+      }),
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
       throw new Error("La suscripción fue registrada, pero no se recibió enlace de Mercado Pago.");
     }
-    setMessage("Suscripcion creada. Redirigiendo a Mercado Pago...", "success");
+    setMessage("Suscripción creada. Redirigiendo a Mercado Pago...", "success");
     window.location.href = checkoutUrl;
   } catch (error) {
     setMessage(error.message || "No se pudo completar la suscripción.", "error");
@@ -348,72 +311,22 @@ async function submitSignup(event) {
   }
 }
 
-function renderPaymentStatus() {
-  const status = urlParams.get("signup");
-  if (!status || !paymentStatusSection) return;
-  const content = {
-    success: {
-      eyebrow: "Pago aprobado",
-      title: "Tu suscripción fue aprobada",
-      copy: "El portal se activa cuando Mercado Pago confirma el pago. Si ya esta aprobado, ingresa con el correo y clave registrados.",
-      actionTitle: "Entra al portal",
-      actionCopy: "Recibirás 10 tickets de cortesía si es tu primera suscripción.",
-    },
-    card: {
-      eyebrow: "Tarjeta autorizada",
-      title: "Autorizacion recibida",
-      copy: "Mercado Pago confirmó la autorización. El portal procesa la activación y deja lista la cuenta.",
-      actionTitle: "Ingresa al portal",
-      actionCopy: "Gestiona campañas, leads, agenda y tickets desde tu cuenta.",
-    },
-    pending: {
-      eyebrow: "Pago pendiente",
-      title: "Mercado Pago esta validando",
-      copy: "Cuando el pago quede aprobado, se activa el portal y se entrega la cortesía si aplica.",
-      actionTitle: "Revisa luego",
-      actionCopy: "Puedes volver al portal después de la confirmación.",
-    },
-    failure: {
-      eyebrow: "Pago no completado",
-      title: "No se pudo activar la suscripción",
-      copy: "Intenta nuevamente o contacta al equipo comercial con el plan que elegiste.",
-      actionTitle: "Volver a elegir plan",
-      actionCopy: "La cuenta no queda activa hasta confirmar la suscripción.",
-      link: "/paquetes/#planes",
-    },
-  }[status];
-  if (!content) return;
-  paymentStatusSection.classList.remove("hidden");
-  paymentStatusEyebrow.textContent = content.eyebrow;
-  paymentStatusTitle.textContent = content.title;
-  paymentStatusCopy.textContent = content.copy;
-  paymentStatusActionTitle.textContent = content.actionTitle;
-  paymentStatusActionCopy.textContent = content.actionCopy;
-  paymentStatusPrimaryLink.href = content.link || "/empresa/";
-}
-
 async function loadPlans() {
   try {
     const data = await fetchJson("/api/public/subscription-plans");
     plans = publicPlansFromApi(data);
   } catch {
-    plans = FALLBACK_PLANS;
+    plans = [DESPEGA_PLAN, ...FALLBACK_PLANS];
   }
   renderPlans();
   if (initialPlanCode) {
     const match = plans.find((plan) => plan.code === initialPlanCode);
-    if (match) {
-      selectedPlan = match;
-      renderPlans();
-    }
+    if (match) selectedPlan = match;
   }
-  renderSelection();
+  if (selectedPlan) renderSelection();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  applyPackagesTheme(readPreferredTheme());
-  themeSwitch?.addEventListener("change", togglePackagesTheme);
   signupForm?.addEventListener("submit", submitSignup);
-  renderPaymentStatus();
   loadPlans();
 });

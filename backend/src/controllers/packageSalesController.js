@@ -207,7 +207,7 @@ async function createPackageRequest(req, res, next) {
 
 async function createPrepaidSignup(req, res, next) {
   try {
-    throw badRequest("La activacion publica por tickets esta deshabilitada. Elige un plan mensual para activar Sales Machine.");
+    throw badRequest("La activacion publica por tickets esta deshabilitada. Elige un plan mensual para activar Qori.");
   } catch (error) {
     next(error);
   }

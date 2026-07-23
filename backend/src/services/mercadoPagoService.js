@@ -798,7 +798,7 @@ async function createPortalSignupCheckout(client, payload) {
   const preapproval = await mpRequest("/preapproval", {
     method: "POST",
     body: JSON.stringify({
-      reason: `${plan.name} - portal Sales Machine (${billingLabel})`,
+      reason: `${plan.name} - portal Qori (${billingLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: payload.email,
       back_url: appUrl("/paquetes/?signup=card"),
