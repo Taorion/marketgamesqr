@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260722-sales-entry-one-column-v86";
+const APP_VERSION = "empresa-20260722-sales-entry-interstitial-v87";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14816,6 +14816,49 @@ function ensureSalesAnalysisStyles() {
     body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions .error-line {
       justify-self: stretch;
       text-align: left;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-summary {
+      order: 1;
+      border-color: rgba(15, 115, 84, .26);
+      background: #f0fdf4;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-attribution {
+      order: 2;
+      border-color: rgba(37, 99, 235, .22);
+      background: #eff6ff;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-customer {
+      order: 3;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-item-builder {
+      order: 4;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-actions {
+      order: 5;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-create-summary strong {
+      font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+      letter-spacing: -.03em;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sales-create-summary small {
+      font-size: .84rem;
+      line-height: 1.35;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-head strong {
+      font-size: 1rem;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-summary .sale-form-block-head > .material-symbols-outlined {
+      background: #dcfce7;
+      color: #047857;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .sale-form-block-attribution .sale-form-block-head > .material-symbols-outlined {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form input,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form select,
+    body[data-current-view="sales"] .portal-shell .sales-create-panel[open] .customer-sale-form textarea {
+      background: #fff;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
