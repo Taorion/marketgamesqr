@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-directorio-plano-v102";
+const APP_VERSION = "empresa-20260723-directorio-comercial-optimizado-v103";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26932,7 +26932,7 @@ function leadDirectorySort(a = {}, b = {}) {
 
 function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const isCustomer = segment === "customer" || leadDirectoryIsCustomer(item);
-  const badges = leadBadges(item).slice(0, 4);
+  const badges = leadBadges(item).slice(0, 2);
   const activationCount = leadDirectoryActivationCount(item);
   const station = leadDirectoryStationInfo(item);
   const sales = leadDirectorySalesSummary(item);
@@ -26951,7 +26951,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
         </span>
         <span class="contact-directory-badges">
           <span class="status-chip ${isCustomer ? "ok" : leadPriorityChipClass(item.care_priority)}">${isCustomer ? "Cliente" : escapeHtml(item.care_priority_label || "Lead")}</span>
-          ${badges.slice(0, 2).map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("")}
+          ${badges.map((badge) => `<span class="pill muted">${escapeHtml(badge)}</span>`).join("")}
         </span>
       </div>
       <div class="contact-directory-main">
@@ -26963,7 +26963,7 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
         <span><strong>${activationCount.toLocaleString("es-CO")}</strong><small>Activaciones</small></span>
         <span><strong>${escapeHtml(isCustomer ? money(item.total_spent || item.sales_total || 0) : leadTicketInventoryText(item))}</strong><small>${isCustomer ? "Revenue" : "Tickets"}</small></span>
       </div>
-      <span class="contact-directory-open">Ver ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
+      <span class="contact-directory-open">Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
     </article>
   `;
 }
@@ -26985,8 +26985,6 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const leads = allRows.filter(leadDirectoryHasCommercialPotential);
   const audience = leadDirectoryAudience();
   const visibleRows = audience === "customers" ? customers : leads;
-  const affiliates = allRows.filter((item) => leadDirectoryAffiliateLabel(item) === "Afiliado").length;
-  const activations = allRows.reduce((sum, item) => sum + leadDirectoryActivationCount(item), 0);
   const activeTicketRows = visibleRows.filter((item) => Number(item.active_tickets || 0) > 0);
   const sortedVisibleRows = visibleRows.slice().sort(leadDirectorySort).slice(0, 16);
   const emptyText = audience === "customers"
@@ -26995,15 +26993,13 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   board.innerHTML = `
     <div class="contact-directory-hero">
       <div>
-        <span class="mono-label">Directorio comercial</span>
-        <h3>${audience === "customers" ? "Clientes convertidos para cuidar y recomprar" : "Leads por convertir en clientes"}</h3>
+        <h3>Directorio comercial</h3>
         <p>${audience === "customers" ? "Revisa compradores con venta atribuida, tickets y señales de postventa sin mezclarlos con prospectos." : "Prioriza prospectos con ticket activo, alta intención o datos incompletos antes de pasarlos a agenda o activación."}</p>
       </div>
       <div class="contact-directory-summary" aria-label="Resumen del directorio">
+        <span><strong>${visibleRows.length.toLocaleString("es-CO")}</strong> visibles</span>
         <span><strong>${customers.length.toLocaleString("es-CO")}</strong> clientes</span>
         <span><strong>${leads.length.toLocaleString("es-CO")}</strong> leads</span>
-        <span><strong>${activations.toLocaleString("es-CO")}</strong> activaciones</span>
-        <span><strong>${affiliates.toLocaleString("es-CO")}</strong> afiliados</span>
         <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong> tickets activos</span>
       </div>
     </div>
@@ -28749,30 +28745,7 @@ function ensureContactDirectoryUxStyles() {
       font-size: 1rem;
       line-height: 1;
     }
-    .contact-directory-command-strip {
-      display: none;
-    }
-    .contact-directory-command-strip > span {
-      display: grid;
-      min-height: 44px;
-      align-content: center;
-      padding: 0.45rem 0.7rem;
-      border-radius: 14px;
-      background: #fff;
-      border: 1px solid rgba(148, 163, 184, 0.16);
-    }
-    .contact-directory-command-strip > span strong,
-    .contact-directory-command-strip > span small {
-      line-height: 1.08;
-    }
-    .contact-directory-command-strip > span small {
-      color: var(--muted-text);
-    }
-    .contact-directory-command-strip button {
-      min-height: 44px;
-      justify-content: center;
-      white-space: nowrap;
-    }
+    .contact-directory-command-strip { display: none; }
     .contact-directory-list {
       display: grid;
       gap: 0;
