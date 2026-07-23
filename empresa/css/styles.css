@@ -54850,3 +54850,350 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-open {
     display: none !important;
   }
 }
+
+/* Contactos v107: clearer, friendlier Clientes/Leads tabs. */
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs {
+  width: 100% !important;
+  max-width: 640px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 0 26px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button {
+  min-height: 76px !important;
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-content: start !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(16, 37, 31, 0.1) !important;
+  border-radius: 14px !important;
+  background: #f7faf8 !important;
+  color: #536960 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button:hover,
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button:focus-visible {
+  border-color: rgba(15, 116, 88, 0.22) !important;
+  background: #ffffff !important;
+  outline: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button.active {
+  border-color: rgba(15, 116, 88, 0.34) !important;
+  background: #ffffff !important;
+  color: #0f7458 !important;
+  box-shadow:
+    0 14px 28px rgba(16, 37, 31, 0.08),
+    inset 0 0 0 1px rgba(15, 116, 88, 0.08),
+    inset 4px 0 0 #0f7458 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .material-symbols-outlined {
+  width: 40px !important;
+  height: 40px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f7458 !important;
+  font-size: 21px !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 116, 88, 0.1) !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button.active .material-symbols-outlined {
+  background: #e9f8ee !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 116, 88, 0.16) !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button > span:not(.material-symbols-outlined) {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs strong,
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs small {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs strong {
+  color: #10251f !important;
+  font-size: 0.98rem !important;
+  font-weight: 800 !important;
+  line-height: 1.08 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button.active strong {
+  color: #0f7458 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs small {
+  color: #63776e !important;
+  font-size: 0.76rem !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button.active small {
+  color: #40675a !important;
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs {
+    max-width: none !important;
+    gap: 8px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs button {
+    min-height: 66px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 12px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .material-symbols-outlined {
+    display: none !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs strong {
+    font-size: 0.9rem !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs small {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Contactos v108: lead detail interstitial must scroll completely. */
+html body .portal-shell #leadDetailModal.lead-detail-workspace {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
+  max-height: calc(100dvh - 48px) !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-workspace-head {
+  top: 0 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel {
+  min-height: 0 !important;
+}
+
+@media (max-width: 760px) {
+  html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
+    max-height: calc(100dvh - 20px) !important;
+  }
+}
+
+/* Contactos v109: cleaner directory list rows. */
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head {
+  display: grid !important;
+  grid-template-columns: minmax(210px, 1.05fr) minmax(250px, 1.25fr) minmax(280px, 1fr) 76px !important;
+  gap: 18px !important;
+  align-items: center !important;
+  margin-top: 2px !important;
+  padding: 0 0 9px !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.11) !important;
+  color: #7a8a84 !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-unified-list {
+  border-top: 0 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+  position: relative !important;
+  grid-template-columns: minmax(210px, 1.05fr) minmax(250px, 1.25fr) minmax(280px, 1fr) 76px !important;
+  gap: 18px !important;
+  min-height: 74px !important;
+  padding: 15px 8px 15px 0 !important;
+  border-bottom: 1px solid rgba(16, 37, 31, 0.08) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 14px !important;
+  bottom: 14px !important;
+  width: 3px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row:hover,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row:focus-visible {
+  background: #f8fbf9 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row:hover::before,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row:focus-visible::before {
+  background: #0f7458 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-name {
+  gap: 6px !important;
+  padding-left: 12px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-name strong {
+  display: block !important;
+  color: #10251f !important;
+  font-size: 0.92rem !important;
+  line-height: 1.16 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-name small,
+html body[data-current-view="leads"] .portal-shell .contact-directory-main small,
+html body[data-current-view="leads"] .portal-shell .contact-directory-context small {
+  color: #6d7f78 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-main {
+  gap: 5px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-main strong {
+  color: #10251f !important;
+  font-size: 0.88rem !important;
+  line-height: 1.18 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context {
+  grid-template-columns: minmax(0, 1.2fr) 82px minmax(92px, 0.8fr) !important;
+  gap: 14px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context span {
+  display: grid !important;
+  gap: 3px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context strong {
+  color: #10251f !important;
+  font-size: 0.84rem !important;
+  line-height: 1.15 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-badges {
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .status-chip,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .pill {
+  position: relative !important;
+  padding: 0 0 0 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #65776f !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .status-chip::before,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .pill::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  width: 5px !important;
+  height: 5px !important;
+  border-radius: 999px !important;
+  background: #9baba4 !important;
+  transform: translateY(-50%) !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .status-chip.ok {
+  color: #0f7458 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row .status-chip.ok::before {
+  background: #0f7458 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-open {
+  min-height: 32px !important;
+  align-self: center !important;
+  justify-content: center !important;
+  padding: 0 9px !important;
+  border: 1px solid rgba(15, 116, 88, 0.14) !important;
+  border-radius: 999px !important;
+  background: #f2faf5 !important;
+  color: #0f7458 !important;
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-open .material-symbols-outlined {
+  font-size: 15px !important;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-list-head {
+    display: none !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+    min-height: 0 !important;
+    padding: 14px 0 !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-name {
+    padding-left: 10px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-context {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding-left: 10px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-main,
+  html body[data-current-view="leads"] .portal-shell .contact-directory-open {
+    margin-left: 10px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-open {
+    width: fit-content !important;
+  }
+}
+
+@media (max-width: 560px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-context {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

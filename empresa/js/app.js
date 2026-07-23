@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-visual-limpia-v106";
+const APP_VERSION = "empresa-20260723-contactos-lista-limpia-v109";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -27004,6 +27004,12 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong> tickets activos</span>
       </div>
     </div>
+    <div class="contact-directory-list-head" aria-hidden="true">
+      <span>Contacto</span>
+      <span>Señal comercial</span>
+      <span>Estado</span>
+      <span></span>
+    </div>
     <div class="contact-directory-list contact-directory-unified-list">
       ${sortedVisibleRows.length
         ? sortedVisibleRows.map((item) => leadDirectoryCardMarkup(item, audience === "customers" ? "customer" : "lead")).join("")
@@ -27093,7 +27099,11 @@ function syncLeadDirectoryAudienceTabs(rows = state.leadCrmRows || []) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", active ? "true" : "false");
     const small = button.querySelector("small");
-    if (small) small.textContent = active ? `${visibleCount.toLocaleString("es-CO")} visibles` : (button.dataset.leadDirectoryAudience === "customers" ? "Ya compraron" : "Prospectos por convertir");
+    if (small) {
+      small.textContent = button.dataset.leadDirectoryAudience === "customers"
+        ? `${visibleCount.toLocaleString("es-CO")} clientes con compra`
+        : `${visibleCount.toLocaleString("es-CO")} oportunidades abiertas`;
+    }
   });
 }
 
