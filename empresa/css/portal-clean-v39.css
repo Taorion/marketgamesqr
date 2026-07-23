@@ -2263,3 +2263,313 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
     text-align: left !important;
   }
 }
+
+/* Qori brand refinement v121: SaaS B2B premium, ancestral tech kept subtle. */
+:root {
+  --qori-blue-deep: #012268;
+  --qori-blue-corp: #0341b3;
+  --qori-blue-digital: #0152d7;
+  --qori-blue-bright: #0480fa;
+  --qori-cyan: #07cefb;
+  --qori-ice: #e8f3fb;
+  --qori-white: #ffffff;
+  --qori-text: #0b1e3d;
+  --qori-muted: #54708f;
+  --qori-line: #cde0f4;
+  --qori-canvas: #f4f8fc;
+  --qori-surface: #ffffff;
+  --qori-surface-soft: #f7fbff;
+  --qori-primary: var(--qori-blue-digital);
+  --qori-primary-dark: var(--qori-blue-deep);
+  --qori-primary-soft: var(--qori-ice);
+  --qori-focus: rgba(7, 206, 251, 0.22);
+  --qori-radius-control: 14px;
+  --qori-radius-panel: 20px;
+  --qori-shadow: 0 12px 30px rgba(1, 34, 104, 0.08);
+  --qori-shadow-hover: 0 18px 42px rgba(1, 34, 104, 0.12);
+  --qori-gradient-main: linear-gradient(135deg, #012268 0%, #0341b3 42%, #0480fa 75%, #07cefb 100%);
+  --qori-gradient-sober: linear-gradient(180deg, #012268 0%, #0152d7 100%);
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) {
+  background:
+    linear-gradient(90deg, rgba(205, 224, 244, 0.42) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(180deg, rgba(205, 224, 244, 0.32) 1px, transparent 1px) 0 0 / 44px 44px,
+    #f4f8fc !important;
+  color: var(--qori-text) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .app-main,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .app-shell {
+  background: transparent !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .topbar,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar {
+  border-color: rgba(205, 224, 244, 0.92) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px) saturate(1.08) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar {
+  background:
+    linear-gradient(180deg, rgba(232, 243, 251, 0.76), rgba(255, 255, 255, 0.94) 28%),
+    #ffffff !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar-brand .brand-logo,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar-sales-machine-logo {
+  border: 1px solid rgba(7, 206, 251, 0.28) !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(4, 128, 250, 0.1) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  h1,
+  h2,
+  .view-head h2,
+  .campaign-head h2,
+  .rms-machine-head-copy h2,
+  .table-card-head h3,
+  .login-copy h2
+) {
+  color: var(--qori-blue-deep) !important;
+  letter-spacing: 0 !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  p,
+  small,
+  li,
+  td,
+  .view-head p,
+  .table-card-subtitle,
+  .placeholder-card p
+) {
+  color: var(--qori-muted) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .surface-card,
+  .data-table-card,
+  .table-card,
+  .metric-card,
+  .revenue-card,
+  .lead-directory-card,
+  .contact-center-shell,
+  .contact-center-panel,
+  .lead-agenda-card,
+  .rms-factory-console,
+  .rms-station-workspace,
+  .rms-stage-slider-shell,
+  .modal-panel,
+  .drawer-panel,
+  .lead-detail-interstitial-card
+) {
+  border: 1px solid var(--qori-line) !important;
+  border-radius: var(--qori-radius-panel) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: var(--qori-shadow) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .surface-card .surface-card,
+  .surface-card .table-card,
+  .data-table-card .table-card,
+  .contact-center-shell .contact-center-panel,
+  .lead-directory-card .lead-directory-card,
+  .rms-factory-console .rms-station-workspace,
+  .lead-detail-interstitial-card .lead-tab-panel
+) {
+  border-color: rgba(205, 224, 244, 0.76) !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.solid-button, .request-button, button.solid-button) {
+  border: 0 !important;
+  border-radius: var(--qori-radius-control) !important;
+  background: var(--qori-gradient-main) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(4, 128, 250, 0.18) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.solid-button, .request-button, button.solid-button):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 14px 30px rgba(4, 128, 250, 0.22) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.ghost-button, .link-button, .nav-link-button, .icon-button, button.ghost-button) {
+  border: 1px solid var(--qori-line) !important;
+  border-radius: var(--qori-radius-control) !important;
+  background: #ffffff !important;
+  color: var(--qori-blue-deep) !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.ghost-button, .link-button, .nav-link-button, .icon-button, button.ghost-button):hover,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.ghost-button, .link-button, .nav-link-button, .icon-button, button.ghost-button):focus-visible {
+  border-color: rgba(7, 206, 251, 0.58) !important;
+  background: var(--qori-ice) !important;
+  color: var(--qori-blue-digital) !important;
+  box-shadow: 0 0 0 3px rgba(7, 206, 251, 0.16) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  input,
+  select,
+  textarea,
+  .search-shell,
+  .rms-station-search-field
+) {
+  border-color: var(--qori-line) !important;
+  border-radius: var(--qori-radius-control) !important;
+  background: #ffffff !important;
+  color: var(--qori-text) !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(input, select, textarea):focus,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.search-shell, .rms-station-search-field):focus-within {
+  border-color: var(--qori-cyan) !important;
+  box-shadow: 0 0 0 3px var(--qori-focus) !important;
+  outline: none !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .nav-item,
+  .tab-button,
+  .segment-tab,
+  .contact-center-tab-card,
+  .lead-directory-audience-tabs button,
+  .rms-station-view-filters > button
+) {
+  border-radius: var(--qori-radius-control) !important;
+  color: var(--qori-blue-deep) !important;
+  letter-spacing: 0 !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .nav-item.active,
+  .nav-item[aria-current="page"],
+  .tab-button.active,
+  .segment-tab.active,
+  .contact-center-tab-card.active,
+  .lead-directory-audience-tabs button.active,
+  .rms-station-view-filters > button.is-active
+) {
+  border-color: rgba(7, 206, 251, 0.52) !important;
+  background: linear-gradient(135deg, rgba(232, 243, 251, 0.95), rgba(7, 206, 251, 0.14)) !important;
+  color: var(--qori-blue-deep) !important;
+  box-shadow: inset 0 0 0 1px rgba(7, 206, 251, 0.16) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .material-symbols-outlined {
+  color: currentColor !important;
+  font-variation-settings: "FILL" 0, "wght" 430, "GRAD" 0, "opsz" 24 !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .icon-button,
+  .nav-item > .material-symbols-outlined,
+  .status-chip .material-symbols-outlined,
+  .rms-station-row-detail,
+  .rms-station-row-operate
+) {
+  color: var(--qori-blue-digital) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.data-table, table) {
+  border-color: var(--qori-line) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.data-table th, table th) {
+  background: var(--qori-blue-deep) !important;
+  color: #ffffff !important;
+  border-color: rgba(232, 243, 251, 0.18) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.data-table td, table td) {
+  border-color: rgba(205, 224, 244, 0.78) !important;
+  color: var(--qori-text) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.data-table tbody tr:hover, table tbody tr:hover) {
+  background: rgba(232, 243, 251, 0.72) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.mono-label, .nav-group-label, .breadcrumb, .pill, .feature-tier-badge) {
+  color: var(--qori-blue-digital) !important;
+  letter-spacing: 0.04em !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.status-chip, .pill, .feature-tier-badge, .rms-priority) {
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: var(--qori-blue-deep) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+  .status-chip.ok,
+  .status-chip.success,
+  .pill.success,
+  .error-line[data-kind="success"],
+  .validator-inline-message[data-kind="success"]
+) {
+  border-color: rgba(7, 206, 251, 0.34) !important;
+  background: rgba(7, 206, 251, 0.12) !important;
+  color: var(--qori-blue-deep) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.status-chip.warning, .pill.warning) {
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+  color: #7a4a00 !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(.status-chip.danger, .pill.danger, .error-line) {
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #9b1c1c !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .view-head,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .table-card-head,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .rms-machine-head,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .lead-directory-head {
+  border-bottom-color: rgba(205, 224, 244, 0.8) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-screen {
+  background:
+    linear-gradient(90deg, rgba(205, 224, 244, 0.36) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(180deg, rgba(205, 224, 244, 0.28) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(135deg, #f6fbff 0%, #ffffff 46%, #e8f3fb 100%) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-vision,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-card {
+  border-color: var(--qori-line) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: var(--qori-shadow) !important;
+}
+
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .login-title-logo {
+  filter: drop-shadow(0 16px 26px rgba(4, 128, 250, 0.16)) !important;
+}
+
+@media (max-width: 780px) {
+  html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where(
+    .surface-card,
+    .data-table-card,
+    .table-card,
+    .metric-card,
+    .lead-directory-card,
+    .contact-center-shell,
+    .rms-factory-console
+  ) {
+    border-radius: 16px !important;
+  }
+}
