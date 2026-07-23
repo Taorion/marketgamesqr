@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-sales-entry-modal-visible-content-v92";
+const APP_VERSION = "empresa-20260723-sales-entry-real-overlay-v93";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -13803,7 +13803,7 @@ function openSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
   salesCreatePanel.classList.add("is-open");
   document.body.classList.add("has-sales-entry-modal");
-  applySalesCreateModalInlineState(true);
+  mountSalesCreateModal();
   salesCreateTrigger?.setAttribute("aria-expanded", "true");
   if (options.focus !== false) {
     window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
@@ -13814,105 +13814,85 @@ function closeSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
   salesCreatePanel.classList.remove("is-open");
   document.body.classList.remove("has-sales-entry-modal");
-  applySalesCreateModalInlineState(false);
+  unmountSalesCreateModal();
   salesCreateTrigger?.setAttribute("aria-expanded", "false");
   if (options.scroll) {
     salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }
 
-function applySalesCreateModalInlineState(isOpen) {
-  if (!salesCreatePanel) return;
-  const visibleChildren = [
-    salesCreateTrigger,
-    salesCreatePanel.querySelector(".chart-explainer"),
-    customerAcquisitionForm,
-  ].filter(Boolean);
-  if (!isOpen) {
-    [
-      "position", "inset", "zIndex", "display", "gridTemplateColumns", "alignContent", "justifyItems",
-      "rowGap", "width", "height", "maxWidth", "maxHeight", "margin", "padding", "overflow",
-      "border", "borderRadius", "background", "boxShadow", "backdropFilter", "color",
-    ].forEach((property) => salesCreatePanel.style[property] = "");
-    visibleChildren.forEach((element) => {
-      [
-        "display", "opacity", "visibility", "pointerEvents", "width", "maxWidth", "margin",
-        "marginInline", "background", "color", "gridTemplateColumns", "gap", "padding",
-        "border", "borderTop", "borderRadius", "boxShadow", "overflow", "maxHeight",
-      ].forEach((property) => element.style[property] = "");
-    });
-    return;
+function ensureSalesCreateAnchor(element, id) {
+  if (!element?.parentElement) return null;
+  let anchor = document.getElementById(id);
+  if (!anchor) {
+    anchor = document.createElement("span");
+    anchor.id = id;
+    anchor.hidden = true;
+    element.parentElement.insertBefore(anchor, element);
   }
-  Object.assign(salesCreatePanel.style, {
-    position: "fixed",
-    inset: "0",
-    zIndex: "10090",
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    alignContent: "start",
-    justifyItems: "center",
-    rowGap: "0",
-    width: "100vw",
-    height: "100vh",
-    maxWidth: "none",
-    maxHeight: "none",
-    margin: "0",
-    padding: "clamp(12px, 3vw, 28px)",
-    overflow: "auto",
-    border: "0",
-    borderRadius: "0",
-    background: "rgba(15, 23, 42, .72)",
-    boxShadow: "none",
-    backdropFilter: "blur(10px)",
-    color: "#0f172a",
+  return anchor;
+}
+
+function salesCreateModalOverlay() {
+  let overlay = document.getElementById("salesEntryModalOverlay");
+  if (overlay) return overlay;
+  overlay = document.createElement("section");
+  overlay.id = "salesEntryModalOverlay";
+  overlay.className = "sales-entry-modal-overlay hidden";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "salesEntryModalTitle");
+  overlay.innerHTML = `
+    <div class="sales-entry-modal-backdrop" data-sales-modal-close></div>
+    <article class="sales-entry-modal-card" role="document">
+      <header class="sales-entry-modal-head">
+        <div>
+          <span class="mono-label">Registro de venta</span>
+          <h3 id="salesEntryModalTitle">Registrar venta completa</h3>
+          <p>Ingresa cliente, productos, campaña, canal, sede y notas en una sola ventana.</p>
+        </div>
+        <button class="ghost-button compact" type="button" data-sales-modal-close>Cerrar</button>
+      </header>
+      <div class="sales-entry-modal-body" data-sales-entry-modal-body></div>
+    </article>
+  `;
+  overlay.addEventListener("click", (event) => {
+    if (event.target?.closest?.("[data-sales-modal-close]")) closeSalesCreatePanel();
   });
-  Object.assign(salesCreateTrigger.style, {
-    display: "grid",
-    opacity: "1",
-    visibility: "visible",
-    pointerEvents: "auto",
-    width: "min(820px, calc(100vw - 24px))",
-    maxWidth: "100%",
-    margin: "0 auto",
-    background: "#ffffff",
-    color: "#0f172a",
-  });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function mountSalesCreateModal() {
+  if (!salesCreatePanel || !customerAcquisitionForm) return;
+  const overlay = salesCreateModalOverlay();
+  const modalBody = overlay.querySelector("[data-sales-entry-modal-body]");
   const explainer = salesCreatePanel.querySelector(".chart-explainer");
-  if (explainer) {
-    Object.assign(explainer.style, {
-      display: "block",
-      opacity: "1",
-      visibility: "visible",
-      pointerEvents: "auto",
-      width: "min(820px, calc(100vw - 24px))",
-      maxWidth: "100%",
-      margin: "0 auto",
-      background: "#ffffff",
-      color: "#475569",
-    });
+  ensureSalesCreateAnchor(explainer, "salesCreateExplainerAnchor");
+  ensureSalesCreateAnchor(customerAcquisitionForm, "salesCreateFormAnchor");
+  if (explainer && modalBody && explainer.parentElement !== modalBody) modalBody.appendChild(explainer);
+  if (modalBody && customerAcquisitionForm.parentElement !== modalBody) modalBody.appendChild(customerAcquisitionForm);
+  overlay.classList.remove("hidden");
+  overlay.hidden = false;
+  salesCreatePanel.style.visibility = "hidden";
+}
+
+function restoreSalesCreateElement(element, anchorId) {
+  const anchor = document.getElementById(anchorId);
+  if (!element || !anchor?.parentElement || element.parentElement === anchor.parentElement) return;
+  anchor.parentElement.insertBefore(element, anchor.nextSibling);
+}
+
+function unmountSalesCreateModal() {
+  const overlay = document.getElementById("salesEntryModalOverlay");
+  const explainer = overlay?.querySelector(".chart-explainer") || salesCreatePanel?.querySelector(".chart-explainer");
+  restoreSalesCreateElement(explainer, "salesCreateExplainerAnchor");
+  restoreSalesCreateElement(customerAcquisitionForm, "salesCreateFormAnchor");
+  if (overlay) {
+    overlay.classList.add("hidden");
+    overlay.hidden = true;
   }
-  if (customerAcquisitionForm) {
-    Object.assign(customerAcquisitionForm.style, {
-      display: "grid",
-      opacity: "1",
-      visibility: "visible",
-      pointerEvents: "auto",
-      width: "min(820px, calc(100vw - 24px))",
-      maxWidth: "100%",
-      margin: "0 auto",
-      gridTemplateColumns: "1fr",
-      gap: "12px",
-      padding: "0 18px 18px",
-      border: "1px solid rgba(148, 163, 184, .22)",
-      borderTop: "0",
-      borderRadius: "0 0 24px 24px",
-      background: "#ffffff",
-      color: "#0f172a",
-      boxShadow: "0 28px 80px rgba(15, 23, 42, .28)",
-      overflow: "visible",
-      maxHeight: "none",
-    });
-  }
+  if (salesCreatePanel) salesCreatePanel.style.visibility = "";
 }
 
 function customerSaleProductsPayload() {
@@ -15134,6 +15114,137 @@ function ensureSalesAnalysisStyles() {
       max-height: none !important;
       overflow: visible !important;
       background: #ffffff !important;
+    }
+    .sales-entry-modal-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 12000 !important;
+      display: grid !important;
+      place-items: start center !important;
+      padding: clamp(14px, 3vw, 30px) !important;
+      overflow: auto !important;
+      background: rgba(15, 23, 42, .72) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+    .sales-entry-modal-overlay.hidden,
+    .sales-entry-modal-overlay[hidden] {
+      display: none !important;
+    }
+    .sales-entry-modal-backdrop {
+      position: fixed !important;
+      inset: 0 !important;
+      cursor: default !important;
+    }
+    .sales-entry-modal-card {
+      position: relative !important;
+      z-index: 1 !important;
+      width: min(860px, calc(100vw - 24px)) !important;
+      display: grid !important;
+      gap: 0 !important;
+      overflow: hidden !important;
+      border: 1px solid rgba(148, 163, 184, .28) !important;
+      border-radius: 28px !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      box-shadow: 0 30px 90px rgba(15, 23, 42, .35) !important;
+    }
+    .sales-entry-modal-head {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      gap: 1rem !important;
+      padding: 18px 20px !important;
+      border-bottom: 1px solid rgba(148, 163, 184, .22) !important;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 70%) !important;
+    }
+    .sales-entry-modal-head h3 {
+      margin: .15rem 0 .25rem !important;
+      color: #0f172a !important;
+      font-size: clamp(1.3rem, 3vw, 1.8rem) !important;
+      letter-spacing: -.04em !important;
+    }
+    .sales-entry-modal-head p {
+      max-width: 620px !important;
+      margin: 0 !important;
+      color: #64748b !important;
+      line-height: 1.45 !important;
+    }
+    .sales-entry-modal-body {
+      display: grid !important;
+      gap: 14px !important;
+      padding: 18px 20px 20px !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    .sales-entry-modal-body > .chart-explainer {
+      display: block !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 12px 14px !important;
+      border: 1px solid rgba(37, 99, 235, .16) !important;
+      border-radius: 16px !important;
+      background: #eff6ff !important;
+      color: #475569 !important;
+      line-height: 1.45 !important;
+    }
+    .sales-entry-modal-body > .customer-sale-form {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      color: #0f172a !important;
+      box-shadow: none !important;
+    }
+    .sales-entry-modal-body .sale-form-block,
+    .sales-entry-modal-body .sales-item-builder {
+      display: grid !important;
+      gap: 12px !important;
+      padding: 15px !important;
+      border: 1px solid rgba(148, 163, 184, .22) !important;
+      border-radius: 18px !important;
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      box-shadow: none !important;
+    }
+    .sales-entry-modal-body .sale-form-grid,
+    .sales-entry-modal-body .sales-item-row,
+    .sales-entry-modal-body .sale-form-actions {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+    .sales-entry-modal-body .customer-sale-form :is(label, .sale-customer-status) {
+      display: grid !important;
+      grid-column: 1 / -1 !important;
+      gap: 6px !important;
+      color: #0f172a !important;
+    }
+    .sales-entry-modal-body .customer-sale-form label > span,
+    .sales-entry-modal-body .sales-item-row label span {
+      color: #475569 !important;
+      font-size: .78rem !important;
+      font-weight: 900 !important;
+    }
+    .sales-entry-modal-body .customer-sale-form :is(input, select, textarea) {
+      min-height: 44px !important;
+      width: 100% !important;
+      border: 1px solid rgba(148, 163, 184, .32) !important;
+      border-radius: 14px !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    .sales-entry-modal-body .sale-form-actions {
+      position: sticky !important;
+      bottom: -20px !important;
+      z-index: 2 !important;
+      padding: 14px !important;
+      border: 1px solid rgba(148, 163, 184, .22) !important;
+      border-radius: 18px !important;
+      background: rgba(255, 255, 255, .96) !important;
+      box-shadow: 0 16px 45px rgba(15, 23, 42, .14) !important;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
