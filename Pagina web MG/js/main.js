@@ -290,7 +290,7 @@ function initContactForm() {
       }
 
       form.reset();
-      setStatus(data.message || "Mensaje enviado. Sales Machine recibió tu consulta.", "success");
+      setStatus(data.message || "Mensaje enviado. Qori recibió tu consulta.", "success");
     } catch (error) {
       const message = error.name === "AbortError"
         ? "El envío tardó demasiado. Intenta nuevamente o escríbenos por WhatsApp."
@@ -403,6 +403,12 @@ function initImageLightbox() {
   });
 }
 
+function initCurrentYear() {
+  document.querySelectorAll("[data-year]").forEach((element) => {
+    element.textContent = String(new Date().getFullYear());
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initMenu();
   initReveal();
@@ -412,4 +418,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initContactForm();
   initAccessFeedback();
   initImageLightbox();
+  initCurrentYear();
 });
