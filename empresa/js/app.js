@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-simple-v98";
+const APP_VERSION = "empresa-20260723-contactos-lista-simple-v99";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26969,28 +26969,6 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   `;
 }
 
-function leadDirectorySegmentMarkup({ title, subtitle, icon, rows, emptyText, segment, limit = 6 }) {
-  const sortedRows = rows.slice().sort(leadDirectorySort);
-  const visibleRows = sortedRows.slice(0, limit);
-  return `
-    <section class="contact-directory-segment">
-      <div class="contact-directory-segment-head">
-        <div class="contact-directory-segment-title">
-          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
-          <div>
-            <span class="mono-label">${escapeHtml(subtitle)}</span>
-            <strong>${escapeHtml(title)}</strong>
-          </div>
-        </div>
-        <span class="pill muted">${sortedRows.length.toLocaleString("es-CO")}</span>
-      </div>
-      <div class="contact-directory-list">
-        ${visibleRows.length ? visibleRows.map((item) => leadDirectoryCardMarkup(item, segment)).join("") : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
-      </div>
-    </section>
-  `;
-}
-
 function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const directoryCard = document.querySelector(".lead-directory-card");
   if (!directoryCard) return;
@@ -27011,47 +26989,10 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const affiliates = allRows.filter((item) => leadDirectoryAffiliateLabel(item) === "Afiliado").length;
   const activations = allRows.reduce((sum, item) => sum + leadDirectoryActivationCount(item), 0);
   const activeTicketRows = visibleRows.filter((item) => Number(item.active_tickets || 0) > 0);
-  const highPriorityLeads = leads.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH" || Number(item.active_tickets || 0) > 0);
-  const followUpLeads = leads.filter((item) => !highPriorityLeads.some((lead) => String(lead.id) === String(item.id) && String(lead.source_type || "PLAYER") === String(item.source_type || "PLAYER")));
-  const customerRepurchaseRows = customers.filter((item) => Number(item.active_tickets || 0) > 0 || Number(item.redeemed_tickets || 0) > 0 || item.last_purchase_at || item.last_sale_at);
-  const customerValueRows = customers.slice().sort((a, b) => Number(b.total_spent || b.sales_total || 0) - Number(a.total_spent || a.sales_total || 0));
-  const segmentMarkup = audience === "customers"
-    ? [
-      leadDirectorySegmentMarkup({
-        title: "Clientes con valor registrado",
-        subtitle: "Convertidos",
-        icon: "verified_user",
-        rows: customerValueRows,
-        emptyText: "Cuando una venta quede atribuida, el cliente aparecerá aquí.",
-        segment: "customer",
-      }),
-      leadDirectorySegmentMarkup({
-        title: "Clientes para recompra o postventa",
-        subtitle: "Siguiente venta",
-        icon: "repeat",
-        rows: customerRepurchaseRows,
-        emptyText: "Sin clientes con señales recientes de recompra o ticket activo.",
-        segment: "customer",
-      }),
-    ].join("")
-    : [
-      leadDirectorySegmentMarkup({
-        title: "Atender primero",
-        subtitle: "Leads calientes",
-        icon: "priority_high",
-        rows: highPriorityLeads,
-        emptyText: "Sin leads urgentes con los filtros actuales.",
-        segment: "lead",
-      }),
-      leadDirectorySegmentMarkup({
-        title: "Completar y nutrir",
-        subtitle: "Pendientes",
-        icon: "person_search",
-        rows: followUpLeads,
-        emptyText: "Sin prospectos pendientes para esta vista.",
-        segment: "lead",
-      }),
-    ].join("");
+  const sortedVisibleRows = visibleRows.slice().sort(leadDirectorySort).slice(0, 16);
+  const emptyText = audience === "customers"
+    ? "Sin clientes para los filtros actuales."
+    : "Sin leads para los filtros actuales.";
   board.innerHTML = `
     <div class="contact-directory-hero">
       <div>
@@ -27078,8 +27019,10 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         Agregar prospecto
       </button>
     </div>
-    <div class="contact-directory-columns">
-      ${segmentMarkup}
+    <div class="contact-directory-list contact-directory-unified-list">
+      ${sortedVisibleRows.length
+        ? sortedVisibleRows.map((item) => leadDirectoryCardMarkup(item, audience === "customers" ? "customer" : "lead")).join("")
+        : `<div class="empty-state compact">${escapeHtml(emptyText)}</div>`}
     </div>
   `;
   board.querySelector('[data-contact-directory-command="toggle-audience"]')?.addEventListener("click", () => {
@@ -28850,41 +28793,6 @@ function ensureContactDirectoryUxStyles() {
       justify-content: center;
       white-space: nowrap;
     }
-    .contact-directory-columns {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-    }
-    .contact-directory-segment {
-      min-width: 0;
-      padding: 1rem;
-      border-radius: 22px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(255, 255, 255, 0.76);
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
-    }
-    .contact-directory-segment-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.8rem;
-    }
-    .contact-directory-segment-title {
-      display: flex;
-      gap: 0.65rem;
-      align-items: center;
-      min-width: 0;
-    }
-    .contact-directory-segment-title .material-symbols-outlined {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 14px;
-      background: rgba(37, 99, 235, 0.11);
-      color: #1d4ed8;
-    }
     .contact-directory-list {
       display: grid;
       gap: 0.72rem;
@@ -28906,54 +28814,20 @@ function ensureContactDirectoryUxStyles() {
       box-shadow: 0 18px 34px rgba(37, 99, 235, 0.12);
       outline: none;
     }
-    .contact-directory-card-top,
-    .contact-directory-card-bottom {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
     .contact-directory-name,
-    .contact-directory-main,
-    .contact-directory-meta {
+    .contact-directory-main {
       min-width: 0;
     }
     .contact-directory-name strong,
-    .contact-directory-main strong,
-    .contact-directory-meta strong {
+    .contact-directory-main strong {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .contact-directory-name small,
-    .contact-directory-main small,
-    .contact-directory-meta small {
+    .contact-directory-main small {
       color: var(--muted-text);
-    }
-    .contact-directory-meta-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-    .contact-directory-meta {
-      padding: 0.62rem 0.7rem;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(148, 163, 184, 0.16);
-    }
-    .contact-directory-station {
-      grid-column: 1 / -1;
-      border-color: rgba(37, 99, 235, 0.24);
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.86));
-    }
-    .contact-directory-sales {
-      grid-column: 1 / -1;
-      border-color: rgba(16, 185, 129, 0.28);
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(255, 255, 255, 0.88));
-    }
-    .contact-directory-sales strong {
-      color: #047857;
     }
     .lead-related-sales-snapshot {
       display: grid;
@@ -28996,22 +28870,12 @@ function ensureContactDirectoryUxStyles() {
     @media (max-width: 980px) {
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tab-rail,
       #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-stage-rail,
-      .contact-directory-columns,
       .contact-directory-hero,
       .contact-directory-command-strip {
         grid-template-columns: 1fr;
       }
       .contact-directory-summary {
         justify-content: flex-start;
-      }
-    }
-    @media (max-width: 680px) {
-      .contact-directory-meta-grid {
-        grid-template-columns: 1fr;
-      }
-      .contact-directory-card-top,
-      .contact-directory-card-bottom {
-        display: grid;
       }
     }
   `;

@@ -53617,7 +53617,7 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools {
   }
 }
 
-/* Contactos v98: flatter, friendlier operating surface. */
+/* Contactos v99: single list, no extra priority columns. */
 html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tabs {
   grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
   padding: 6px !important;
@@ -53751,43 +53751,16 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-summary st
   font-size: 1rem !important;
 }
 
-html body[data-current-view="leads"] .portal-shell .contact-directory-columns {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: start !important;
-  gap: 18px !important;
-}
-
-html body[data-current-view="leads"] .portal-shell .contact-directory-segment {
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html body[data-current-view="leads"] .portal-shell .contact-directory-segment-head {
-  margin: 0 0 8px !important;
-  padding: 0 !important;
-  border-bottom: 0 !important;
-}
-
-html body[data-current-view="leads"] .portal-shell .contact-directory-segment-title .material-symbols-outlined {
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 9px !important;
-  background: #eaf7ef !important;
-  color: #0f7458 !important;
-  font-size: 20px !important;
-}
-
-html body[data-current-view="leads"] .portal-shell .contact-directory-segment-title strong {
-  font-size: 1rem !important;
-}
-
 html body[data-current-view="leads"] .portal-shell .contact-directory-list {
   max-height: 720px !important;
   overflow: auto !important;
   padding-right: 2px !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-unified-list {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
   gap: 8px !important;
 }
 
@@ -53879,7 +53852,6 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-open {
   html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-tabs,
   html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] .contact-center-operator-panel,
   html body[data-current-view="leads"] .portal-shell .contact-directory-command-strip,
-  html body[data-current-view="leads"] .portal-shell .contact-directory-columns,
   html body[data-current-view="leads"] .portal-shell .contact-directory-hero,
   html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
     grid-template-columns: minmax(0, 1fr) !important;
