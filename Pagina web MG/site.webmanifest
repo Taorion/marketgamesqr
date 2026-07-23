@@ -1,25 +1,31 @@
-﻿{
-  "name": "Sales Machine RMS",
-  "short_name": "Sales Machine",
-  "description": "Sales Machine RMS v2.0 para construir una fábrica de ventas: masificar, organizar, medir y optimizar ingresos.",
+{
+  "name": "Qori",
+  "short_name": "Qori",
+  "description": "Qori es una filosofia empresarial convertida en tecnologia para crecer desde relaciones de confianza.",
   "lang": "es-CO",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f2faf7",
-  "theme_color": "#f2faf7",
+  "background_color": "#E8F3FB",
+  "theme_color": "#E8F3FB",
   "icons": [
     {
-      "src": "/img/SaleMachineLogo.png",
+      "src": "/img/qori-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/img/SaleMachineLogo.png",
+      "src": "/img/qori-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/img/qori-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
