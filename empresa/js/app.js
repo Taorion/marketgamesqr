@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-lista-simple-v99";
+const APP_VERSION = "empresa-20260723-contactos-tabs-arriba-v100";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28905,8 +28905,8 @@ function mountContactCenterLayout() {
   appendIfFound(overviewPanel, leadAttentionBoard);
 
   appendIfFound(directoryPanel, document.querySelector(".lead-directory-command"));
+  appendIfFound(directoryPanel, document.getElementById("leadDirectoryAudienceTabs"));
   appendIfFound(directoryPanel, document.querySelector(".lead-directory-card"));
-  appendIfFound(directoryPanel, leadFeedTable?.closest("article"));
   appendIfFound(directoryPanel, document.getElementById("campaignLeadsTable")?.closest("article"));
 
   appendIfFound(ticketsPanel, leadTicketInventoryBoard);
