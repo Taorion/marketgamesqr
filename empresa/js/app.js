@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-sales-entry-visible-cta-v90";
+const APP_VERSION = "empresa-20260723-sales-entry-modal-visible-content-v92";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -13803,6 +13803,7 @@ function openSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
   salesCreatePanel.classList.add("is-open");
   document.body.classList.add("has-sales-entry-modal");
+  applySalesCreateModalInlineState(true);
   salesCreateTrigger?.setAttribute("aria-expanded", "true");
   if (options.focus !== false) {
     window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
@@ -13813,9 +13814,104 @@ function closeSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
   salesCreatePanel.classList.remove("is-open");
   document.body.classList.remove("has-sales-entry-modal");
+  applySalesCreateModalInlineState(false);
   salesCreateTrigger?.setAttribute("aria-expanded", "false");
   if (options.scroll) {
     salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function applySalesCreateModalInlineState(isOpen) {
+  if (!salesCreatePanel) return;
+  const visibleChildren = [
+    salesCreateTrigger,
+    salesCreatePanel.querySelector(".chart-explainer"),
+    customerAcquisitionForm,
+  ].filter(Boolean);
+  if (!isOpen) {
+    [
+      "position", "inset", "zIndex", "display", "gridTemplateColumns", "alignContent", "justifyItems",
+      "rowGap", "width", "height", "maxWidth", "maxHeight", "margin", "padding", "overflow",
+      "border", "borderRadius", "background", "boxShadow", "backdropFilter", "color",
+    ].forEach((property) => salesCreatePanel.style[property] = "");
+    visibleChildren.forEach((element) => {
+      [
+        "display", "opacity", "visibility", "pointerEvents", "width", "maxWidth", "margin",
+        "marginInline", "background", "color", "gridTemplateColumns", "gap", "padding",
+        "border", "borderTop", "borderRadius", "boxShadow", "overflow", "maxHeight",
+      ].forEach((property) => element.style[property] = "");
+    });
+    return;
+  }
+  Object.assign(salesCreatePanel.style, {
+    position: "fixed",
+    inset: "0",
+    zIndex: "10090",
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    alignContent: "start",
+    justifyItems: "center",
+    rowGap: "0",
+    width: "100vw",
+    height: "100vh",
+    maxWidth: "none",
+    maxHeight: "none",
+    margin: "0",
+    padding: "clamp(12px, 3vw, 28px)",
+    overflow: "auto",
+    border: "0",
+    borderRadius: "0",
+    background: "rgba(15, 23, 42, .72)",
+    boxShadow: "none",
+    backdropFilter: "blur(10px)",
+    color: "#0f172a",
+  });
+  Object.assign(salesCreateTrigger.style, {
+    display: "grid",
+    opacity: "1",
+    visibility: "visible",
+    pointerEvents: "auto",
+    width: "min(820px, calc(100vw - 24px))",
+    maxWidth: "100%",
+    margin: "0 auto",
+    background: "#ffffff",
+    color: "#0f172a",
+  });
+  const explainer = salesCreatePanel.querySelector(".chart-explainer");
+  if (explainer) {
+    Object.assign(explainer.style, {
+      display: "block",
+      opacity: "1",
+      visibility: "visible",
+      pointerEvents: "auto",
+      width: "min(820px, calc(100vw - 24px))",
+      maxWidth: "100%",
+      margin: "0 auto",
+      background: "#ffffff",
+      color: "#475569",
+    });
+  }
+  if (customerAcquisitionForm) {
+    Object.assign(customerAcquisitionForm.style, {
+      display: "grid",
+      opacity: "1",
+      visibility: "visible",
+      pointerEvents: "auto",
+      width: "min(820px, calc(100vw - 24px))",
+      maxWidth: "100%",
+      margin: "0 auto",
+      gridTemplateColumns: "1fr",
+      gap: "12px",
+      padding: "0 18px 18px",
+      border: "1px solid rgba(148, 163, 184, .22)",
+      borderTop: "0",
+      borderRadius: "0 0 24px 24px",
+      background: "#ffffff",
+      color: "#0f172a",
+      boxShadow: "0 28px 80px rgba(15, 23, 42, .28)",
+      overflow: "visible",
+      maxHeight: "none",
+    });
   }
 }
 
@@ -15012,6 +15108,32 @@ function ensureSalesAnalysisStyles() {
       bottom: 0 !important;
       z-index: 4 !important;
       background: rgba(255,255,255,.96) !important;
+    }
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open {
+      grid-template-columns: 1fr !important;
+      align-content: start !important;
+      justify-items: center !important;
+      row-gap: 0 !important;
+      color: #0f172a !important;
+    }
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open > .sales-create-summary,
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open > .chart-explainer,
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open > .customer-sale-form {
+      display: grid !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      min-height: 0 !important;
+      color: #0f172a !important;
+    }
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open > .chart-explainer {
+      display: block !important;
+      background: #ffffff !important;
+    }
+    body.has-sales-entry-modal .portal-shell #salesCreatePanel.is-open > .customer-sale-form {
+      max-height: none !important;
+      overflow: visible !important;
+      background: #ffffff !important;
     }
     body.has-sales-entry-modal {
       overflow: hidden;
