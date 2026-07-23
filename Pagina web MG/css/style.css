@@ -396,7 +396,7 @@ h3 {
 
 .hero-support,
 .section-heading p,
-.problem-grid p,
+.relationship-grid p,
 .philosophy-map p,
 .machine-timeline p,
 .audience-grid p,
@@ -458,7 +458,7 @@ h3 {
 .signal-panel > span,
 .manifesto-card span,
 .machine-timeline span,
-.problem-grid span,
+.relationship-grid span,
 .principle-card span,
 .o3-grid span {
   color: var(--qori-muted);
@@ -544,7 +544,7 @@ h3 {
 }
 
 .dashboard-grid article,
-.problem-grid article,
+.relationship-grid article,
 .principle-card,
 .o3-grid article,
 .r3-grid article,
@@ -553,7 +553,7 @@ h3 {
 .product-console,
 .manifesto-card,
 .contact-form,
-.comparison-table {
+.gos-grid article {
   border: 1px solid rgba(205, 224, 244, 0.92);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.9);
@@ -598,25 +598,25 @@ h3 {
   margin-left: auto;
 }
 
-.problem-grid,
+.relationship-grid,
 .audience-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
-.problem-grid article,
+.relationship-grid article,
 .audience-grid article {
   min-height: 210px;
   padding: 22px;
 }
 
-.problem-grid span,
+.relationship-grid span,
 .machine-timeline span {
   color: var(--qori-blue-bright);
 }
 
-.problem-grid strong {
+.relationship-grid strong {
   display: block;
   margin: 12px 0 10px;
   color: var(--qori-blue-deep);
@@ -730,50 +730,64 @@ h3 {
   line-height: 1.2;
 }
 
-.compare-section {
+.gos-section {
   padding-top: clamp(74px, 8vw, 116px);
 }
 
-.comparison-table {
-  overflow: hidden;
-}
-
-.comparison-row {
+.gos-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--qori-line);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
-.comparison-row:first-child {
-  border-top: 0;
+.gos-grid article {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  padding: 24px;
 }
 
-.comparison-row > div {
-  min-height: 86px;
-  display: flex;
+.gos-grid article::before {
+  content: "";
+  position: absolute;
+  right: -42px;
+  top: -42px;
+  width: 144px;
+  aspect-ratio: 1;
+  border: 18px solid rgba(7, 206, 251, 0.12);
+  border-radius: 50%;
+}
+
+.gos-grid span {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
   align-items: center;
-  padding: 20px 24px;
-  color: var(--qori-muted);
-  line-height: 1.55;
-}
-
-.comparison-row > div + div {
-  color: var(--qori-blue-deep);
-  font-weight: 800;
-  border-left: 1px solid var(--qori-line);
-  background: rgba(232, 243, 251, 0.48);
-}
-
-.comparison-head > div {
-  min-height: 64px;
-  color: var(--qori-white);
-  font-weight: 900;
-  background: var(--qori-blue-deep);
-}
-
-.comparison-head > div + div {
+  justify-content: center;
+  margin-bottom: 34px;
+  border-radius: 16px;
   color: var(--qori-white);
   background: var(--qori-gradient);
+  box-shadow: 0 14px 28px rgba(1, 82, 215, 0.2);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.gos-grid strong {
+  position: relative;
+  display: block;
+  margin-bottom: 12px;
+  color: var(--qori-blue-deep);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.gos-grid p {
+  position: relative;
+  margin-bottom: 0;
+  color: var(--qori-muted);
+  line-height: 1.7;
 }
 
 .audience-grid article {
@@ -1230,7 +1244,7 @@ h3 {
     margin-left: auto;
   }
 
-  .problem-grid,
+  .relationship-grid,
   .audience-grid,
   .o3-grid,
   .r3-grid,
@@ -1324,20 +1338,19 @@ h3 {
   }
 
   .dashboard-grid,
-  .problem-grid,
+  .relationship-grid,
   .audience-grid,
   .o3-grid,
   .r3-grid,
   .machine-timeline,
-  .comparison-row,
+  .gos-grid,
   .console-topline,
   .footer-grid {
     grid-template-columns: 1fr;
   }
 
-  .comparison-row > div + div {
-    border-left: 0;
-    border-top: 1px solid var(--qori-line);
+  .gos-grid article {
+    min-height: auto;
   }
 
   .console-sidebar {
@@ -1389,7 +1402,7 @@ h3 {
     height: 38px;
   }
 
-  .problem-grid article,
+  .relationship-grid article,
   .audience-grid article,
   .o3-grid article,
   .r3-grid article,
