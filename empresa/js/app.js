@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-sales-entry-real-overlay-v93";
+const APP_VERSION = "empresa-20260723-contact-directory-split-v94";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -26738,7 +26738,7 @@ function leadBadges(item = {}) {
   const digitalAssetOrigin = String(item.channel || "").toLowerCase().includes("descarga de activo digital");
   return [
     digitalAssetOrigin ? "Activo digital" : "",
-    item.purchase_count > 0 ? "Comprador" : "",
+    leadDirectoryIsCustomer(item) ? "Comprador" : "",
     item.active_tickets > 0 ? "Ticket activo" : "",
     item.expired_tickets > 0 ? "Ticket vencido" : "",
     item.inactive_tickets > 0 ? "Ticket no activo" : "",
@@ -26781,10 +26781,9 @@ function leadDirectoryMetadata(item = {}) {
 }
 
 function leadDirectoryIsCustomer(item = {}) {
-  const status = String(item.commercial_status || item.status || "").toUpperCase();
-  return Number(item.purchase_count || 0) > 0
-    || Number(item.total_spent || 0) > 0
-    || ["BUYER", "RECURRENT", "VIP", "CONVERTED"].includes(status);
+  return Number(item.purchase_count || item.sales_count || item.purchases_count || 0) > 0
+    || Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0) > 0
+    || Boolean(item.last_purchase_at || item.last_sale_at);
 }
 
 function leadDirectoryChannel(item = {}) {
@@ -26824,13 +26823,13 @@ function leadDirectoryActivationCount(item = {}) {
 }
 
 function leadDirectorySalesSummary(item = {}) {
-  const purchaseCount = Number(item.purchase_count || 0);
-  const totalSpent = Number(item.total_spent || 0);
+  const purchaseCount = Number(item.purchase_count || item.sales_count || item.purchases_count || 0);
+  const totalSpent = Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0);
   const avgTicket = Number(item.avg_ticket || 0);
   const topProduct = String(item.top_product || item.product_name || item.favorite_product || "").trim();
   const topCategory = String(item.top_category || item.product_category || "").trim();
-  const lastPurchase = item.last_purchase_at || null;
-  if (!purchaseCount && !totalSpent) {
+  const lastPurchase = item.last_purchase_at || item.last_sale_at || null;
+  if (!purchaseCount && !totalSpent && !lastPurchase) {
     return {
       hasSales: false,
       label: "Sin ventas relacionadas",
@@ -26838,9 +26837,10 @@ function leadDirectorySalesSummary(item = {}) {
       meta: "",
     };
   }
+  const displayPurchaseCount = purchaseCount || (lastPurchase ? 1 : 0);
   return {
     hasSales: true,
-    label: `${purchaseCount.toLocaleString("es-CO")} venta(s) · ${money(totalSpent)}`,
+    label: `${displayPurchaseCount.toLocaleString("es-CO")} venta(s) · ${money(totalSpent)}`,
     detail: [
       topProduct ? `Producto: ${topProduct}` : "",
       topCategory ? `Categoría: ${topCategory}` : "",
@@ -27070,11 +27070,11 @@ function leadDirectoryAudienceLabel(audience = leadDirectoryAudience()) {
 
 function syncLeadDirectoryAudienceTabs(rows = state.leadCrmRows || []) {
   const audience = leadDirectoryAudience();
+  const customerCount = rows.filter(leadDirectoryIsCustomer).length;
+  const leadCount = rows.filter((item) => !leadDirectoryIsCustomer(item)).length;
   document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => {
     const active = button.dataset.leadDirectoryAudience === audience;
-    const visibleCount = button.dataset.leadDirectoryAudience === "customers"
-      ? rows.filter(leadDirectoryIsCustomer).length
-      : rows.filter((item) => !leadDirectoryIsCustomer(item)).length;
+    const visibleCount = button.dataset.leadDirectoryAudience === "customers" ? customerCount : leadCount;
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", active ? "true" : "false");
     const small = button.querySelector("small");
@@ -27327,7 +27327,7 @@ function renderLeadCrmTable() {
   if (leadCrmPaginationLabel) {
     const from = visibleRows.length ? Number(pagination.offset || 0) + 1 : 0;
     const to = Number(pagination.offset || 0) + visibleRows.length;
-    leadCrmPaginationLabel.textContent = `${leadDirectoryAudienceLabel(audience)} · ${from}-${to} de ${Number(pagination.total || visibleRows.length).toLocaleString("es-CO")}`;
+    leadCrmPaginationLabel.textContent = `${leadDirectoryAudienceLabel(audience)} · ${from}-${to} de ${visibleRows.length.toLocaleString("es-CO")} visibles`;
   }
   if (leadCrmPrevButton) leadCrmPrevButton.disabled = Number(pagination.offset || 0) <= 0;
   if (leadCrmNextButton) leadCrmNextButton.disabled = !pagination.has_more;
@@ -29337,7 +29337,7 @@ function renderContactCenterSummary(crmRows = []) {
   const totalContacts = Number(state.leadCrmPagination?.total ?? crmRows.length);
   const capturedLeads = (state.leadCaptureActivations || [])
     .reduce((sum, item) => sum + Number(item.metrics?.leads_captured || 0), 0);
-  const buyers = crmRows.filter((item) => Number(item.purchase_count || 0) > 0).length;
+  const buyers = crmRows.filter(leadDirectoryIsCustomer).length;
   const sales = state.selectedSales || [];
   const revenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
@@ -29510,7 +29510,7 @@ function renderLeadsView() {
     "name", "document_id", "phone", "email", "campaign_name", "attribution_source", "attribution_subject", "lead_temperature", "recommended_action",
   ]);
   const crmRows = state.leadCrmRows || [];
-  const buyers = crmRows.filter((item) => Number(item.purchase_count || 0) > 0).length;
+  const buyers = crmRows.filter(leadDirectoryIsCustomer).length;
   const totalScore = crmRows.reduce((sum, item) => sum + Number(item.score_total || 0), 0);
   const activeTickets = crmRows.reduce((sum, item) => sum + Number(item.active_tickets || 0), 0);
   const expiredTickets = crmRows.reduce((sum, item) => sum + Number(item.expired_tickets || 0), 0);
@@ -29519,7 +29519,7 @@ function renderLeadsView() {
   const highPriority = crmRows.filter((item) => String(item.care_priority || "").toUpperCase() === "HIGH").length;
   const withoutContact = crmRows.filter((item) => !item.email && !item.phone).length;
   const customers = crmRows
-    .filter((item) => Number(item.purchase_count || 0) > 0)
+    .filter(leadDirectoryIsCustomer)
     .sort((a, b) => Number(b.total_spent || 0) - Number(a.total_spent || 0))
     .slice(0, 4);
   const leadProbabilityGroups = [
@@ -29527,19 +29527,19 @@ function renderLeadsView() {
       key: "HIGH",
       title: "Probabilidad alta",
       meta: "Leads sin compra con ticket activo, activaciones o alta interacción",
-      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "HIGH"),
+      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "HIGH"),
     },
     {
       key: "MEDIUM",
       title: "Probabilidad media",
       meta: "Leads no convertidos con señales parciales",
-      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "MEDIUM"),
+      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "MEDIUM"),
     },
     {
       key: "LOW",
       title: "Probabilidad baja",
       meta: "Leads con poca información o baja actividad",
-      rows: crmRows.filter((item) => Number(item.purchase_count || 0) === 0 && String(item.care_priority || "").toUpperCase() === "LOW"),
+      rows: crmRows.filter((item) => !leadDirectoryIsCustomer(item) && String(item.care_priority || "").toUpperCase() === "LOW"),
     },
   ];
 
