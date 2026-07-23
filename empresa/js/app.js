@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-contactos-lista-limpia-v109";
+const APP_VERSION = "empresa-20260723-contactos-buscador-filtros-v111";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1509,6 +1509,11 @@ let state = {
     channel: "",
   },
   leadDirectoryAudience: "customers",
+  leadDirectoryFilters: {
+    search: "",
+    signal: "",
+    sort: "recommended",
+  },
   selectedLeadDetail: null,
   selectedLeadTab: "summary",
   selectedLeadRef: null,
@@ -26931,6 +26936,167 @@ function leadDirectorySort(a = {}, b = {}) {
     || new Date(b.last_interaction_at || b.updated_at || b.created_at || 0) - new Date(a.last_interaction_at || a.updated_at || a.created_at || 0);
 }
 
+function leadDirectoryPriorityScore(item = {}) {
+  const value = String(item.care_priority || item.priority || "").toUpperCase();
+  if (value === "HIGH") return 3;
+  if (value === "MEDIUM") return 2;
+  if (value === "LOW") return 1;
+  return 0;
+}
+
+function leadDirectoryComparableDate(item = {}) {
+  return new Date(item.last_interaction_at || item.last_purchase_at || item.last_sale_at || item.updated_at || item.created_at || 0).getTime() || 0;
+}
+
+function leadDirectoryNormalize(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function leadDirectorySearchHaystack(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  return [
+    item.name,
+    item.phone,
+    item.email,
+    item.document_id,
+    item.id,
+    item.commercial_status,
+    item.care_priority,
+    item.care_priority_label,
+    item.recommended_action,
+    item.top_interest,
+    item.favorite_product,
+    item.purchase_intent,
+    item.product_name,
+    item.top_product,
+    item.top_category,
+    leadDirectoryChannel(item),
+    leadDirectoryCampaign(item),
+    leadDirectoryContactLine(item),
+    leadOriginText(item),
+    leadTicketInventoryText(item),
+    leadDirectoryStationInfo(item).label,
+    metadata.manual_job_title,
+    metadata.manual_source,
+    metadata.manual_importance_reason,
+  ].filter(Boolean).join(" ");
+}
+
+function leadDirectoryMatchesSearch(item = {}, search = "") {
+  const term = leadDirectoryNormalize(search);
+  if (!term) return true;
+  return leadDirectoryNormalize(leadDirectorySearchHaystack(item)).includes(term);
+}
+
+function leadDirectoryMatchesSignal(item = {}, signal = "") {
+  const value = String(signal || "");
+  if (!value) return true;
+  const station = leadDirectoryStationInfo(item);
+  const purchaseCount = Number(item.purchase_count || item.sales_count || item.purchases_count || 0);
+  const revenue = Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0);
+  if (value === "active_tickets") return Number(item.active_tickets || 0) > 0;
+  if (value === "ticket_issues") return Number(item.expired_tickets || 0) > 0 || Number(item.inactive_tickets || 0) > 0;
+  if (value === "activations") return leadDirectoryActivationCount(item) > 0;
+  if (value === "without_contact") return !String(item.phone || "").trim() && !String(item.email || "").trim();
+  if (value === "manual") return String(item.source_type || "").toUpperCase() === "MANUAL";
+  if (value === "affiliate") return leadDirectoryAffiliateLabel(item) === "Afiliado";
+  if (value === "high_priority") return leadDirectoryPriorityScore(item) >= 3;
+  if (value === "assigned_station") return Boolean(station.assigned);
+  if (value === "with_revenue") return purchaseCount > 0 || revenue > 0;
+  return true;
+}
+
+function leadDirectorySortRows(rows = [], sortKey = "recommended") {
+  const sorted = rows.slice();
+  sorted.sort((a = {}, b = {}) => {
+    if (sortKey === "name") {
+      return String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base" })
+        || leadDirectorySort(a, b);
+    }
+    if (sortKey === "revenue") {
+      return Number(b.total_spent || b.sales_total || b.purchase_total || 0) - Number(a.total_spent || a.sales_total || a.purchase_total || 0)
+        || leadDirectorySort(a, b);
+    }
+    if (sortKey === "activations") {
+      return leadDirectoryActivationCount(b) - leadDirectoryActivationCount(a)
+        || leadDirectorySort(a, b);
+    }
+    if (sortKey === "tickets") {
+      return Number(b.active_tickets || 0) - Number(a.active_tickets || 0)
+        || Number(b.redeemed_tickets || 0) - Number(a.redeemed_tickets || 0)
+        || leadDirectorySort(a, b);
+    }
+    if (sortKey === "priority") {
+      return leadDirectoryPriorityScore(b) - leadDirectoryPriorityScore(a)
+        || Number(b.attention_score || 0) - Number(a.attention_score || 0)
+        || leadDirectorySort(a, b);
+    }
+    if (sortKey === "recent") {
+      return leadDirectoryComparableDate(b) - leadDirectoryComparableDate(a)
+        || leadDirectorySort(a, b);
+    }
+    return leadDirectorySort(a, b);
+  });
+  return sorted;
+}
+
+function leadDirectoryCurrentFilters() {
+  if (!state.leadDirectoryFilters || typeof state.leadDirectoryFilters !== "object") {
+    state.leadDirectoryFilters = { search: "", signal: "", sort: "recommended" };
+  }
+  return state.leadDirectoryFilters;
+}
+
+function leadDirectoryFilterOptions(audience = leadDirectoryAudience()) {
+  const base = [
+    ["", "Todas las señales"],
+    ["active_tickets", "Ticket activo"],
+    ["activations", "Con activaciones"],
+    ["assigned_station", "Con estacion RMS"],
+    ["affiliate", "Afiliados"],
+    ["without_contact", "Sin telefono/correo"],
+  ];
+  if (audience === "customers") {
+    return [
+      ["", "Todos los clientes"],
+      ["with_revenue", "Con revenue"],
+      ["active_tickets", "Ticket activo"],
+      ["activations", "Con activaciones"],
+      ["affiliate", "Afiliados"],
+      ["without_contact", "Sin telefono/correo"],
+    ];
+  }
+  return [
+    ...base,
+    ["high_priority", "Prioridad alta"],
+    ["ticket_issues", "Tickets por revisar"],
+    ["manual", "Ingresados manualmente"],
+  ];
+}
+
+function leadDirectoryFilterOptionMarkup(options = [], selected = "") {
+  return options.map(([value, label]) => (
+    `<option value="${escapeHtml(value)}" ${String(selected) === String(value) ? "selected" : ""}>${escapeHtml(label)}</option>`
+  )).join("");
+}
+
+function leadDirectoryFilteredResult(rows = [], audience = leadDirectoryAudience()) {
+  const filters = leadDirectoryCurrentFilters();
+  const segmentedRows = leadDirectorySegmentRows(rows, audience);
+  const filteredRows = segmentedRows
+    .filter((item) => leadDirectoryMatchesSearch(item, filters.search))
+    .filter((item) => leadDirectoryMatchesSignal(item, filters.signal));
+  return {
+    baseRows: segmentedRows,
+    filteredRows,
+    sortedRows: leadDirectorySortRows(filteredRows, filters.sort),
+  };
+}
+
 function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const isCustomer = segment === "customer" || leadDirectoryIsCustomer(item);
   const badges = leadBadges(item).slice(0, 2);
@@ -26985,25 +27151,63 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const customers = allRows.filter(leadDirectoryIsCustomer);
   const leads = allRows.filter(leadDirectoryHasCommercialPotential);
   const audience = leadDirectoryAudience();
-  const visibleRows = audience === "customers" ? customers : leads;
-  const activeTicketRows = visibleRows.filter((item) => Number(item.active_tickets || 0) > 0);
-  const sortedVisibleRows = visibleRows.slice().sort(leadDirectorySort).slice(0, 16);
+  const filters = leadDirectoryCurrentFilters();
+  const signalOptions = leadDirectoryFilterOptions(audience);
+  if (!signalOptions.some(([value]) => String(value) === String(filters.signal || ""))) {
+    filters.signal = "";
+  }
+  const { baseRows, filteredRows, sortedRows } = leadDirectoryFilteredResult(allRows, audience);
+  const activeTicketRows = filteredRows.filter((item) => Number(item.active_tickets || 0) > 0);
+  const sortedVisibleRows = sortedRows.slice(0, 24);
+  const hasDirectoryFilters = Boolean(String(filters.search || "").trim() || filters.signal);
   const emptyText = audience === "customers"
-    ? "Sin clientes para los filtros actuales."
-    : "Sin leads para los filtros actuales.";
+    ? (hasDirectoryFilters ? "Sin clientes para esta busqueda." : "Sin clientes para los filtros actuales.")
+    : (hasDirectoryFilters ? "Sin leads para esta busqueda." : "Sin leads para los filtros actuales.");
   board.innerHTML = `
     <div class="contact-directory-hero">
       <div>
-        <h3>Directorio comercial</h3>
+        <h3>${audience === "customers" ? "Clientes" : "Leads"}</h3>
         <p>${audience === "customers" ? "Revisa compradores con venta atribuida, tickets y señales de postventa sin mezclarlos con prospectos." : "Prioriza prospectos con ticket activo, alta intención o datos incompletos antes de pasarlos a agenda o activación."}</p>
       </div>
       <div class="contact-directory-summary" aria-label="Resumen del directorio">
-        <span><strong>${visibleRows.length.toLocaleString("es-CO")}</strong> visibles</span>
+        <span><strong>${filteredRows.length.toLocaleString("es-CO")}</strong> filtrados</span>
         <span><strong>${customers.length.toLocaleString("es-CO")}</strong> clientes</span>
         <span><strong>${leads.length.toLocaleString("es-CO")}</strong> leads</span>
         <span><strong>${activeTicketRows.length.toLocaleString("es-CO")}</strong> tickets activos</span>
       </div>
     </div>
+    <section class="contact-directory-toolbar" aria-label="Buscador y filtros del directorio">
+      <label class="contact-directory-search-control">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input id="contactDirectorySearchInput" type="search" value="${escapeHtml(filters.search || "")}" placeholder="Buscar por nombre, telefono, correo, cedula, campaña o canal">
+      </label>
+      <label class="contact-directory-select-control">
+        <span>Filtro</span>
+        <select id="contactDirectorySignalFilter">
+          ${leadDirectoryFilterOptionMarkup(signalOptions, filters.signal)}
+        </select>
+      </label>
+      <label class="contact-directory-select-control">
+        <span>Ordenar</span>
+        <select id="contactDirectorySortSelect">
+          ${leadDirectoryFilterOptionMarkup([
+            ["recommended", "Recomendado"],
+            ["recent", "Mas recientes"],
+            ["priority", "Prioridad"],
+            ["revenue", "Revenue"],
+            ["activations", "Activaciones"],
+            ["tickets", "Tickets activos"],
+            ["name", "Nombre A-Z"],
+          ], filters.sort || "recommended")}
+        </select>
+      </label>
+      <button class="ghost-button contact-directory-clear" id="contactDirectoryClearFilters" type="button" ${hasDirectoryFilters || filters.sort !== "recommended" ? "" : "disabled"}>
+        Limpiar
+      </button>
+      <small class="contact-directory-result-note">
+        Mostrando ${sortedVisibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias · ${baseRows.length.toLocaleString("es-CO")} en ${leadDirectoryAudienceLabel(audience).toLowerCase()}.
+      </small>
+    </section>
     <div class="contact-directory-list-head" aria-hidden="true">
       <span>Contacto</span>
       <span>Señal comercial</span>
@@ -27028,6 +27232,45 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
         open();
       }
     });
+  });
+  bindContactDirectoryControls(board);
+}
+
+function bindContactDirectoryControls(board) {
+  const filters = leadDirectoryCurrentFilters();
+  const rerender = (focusId = "", selectionStart = null) => {
+    renderContactDirectoryCards(state.leadCrmRows || []);
+    if (!focusId) return;
+    requestAnimationFrame(() => {
+      const target = document.getElementById(focusId);
+      if (!target) return;
+      target.focus();
+      if (target instanceof HTMLInputElement && Number.isFinite(selectionStart)) {
+        target.setSelectionRange(selectionStart, selectionStart);
+      }
+    });
+  };
+  const searchInput = board.querySelector("#contactDirectorySearchInput");
+  const signalFilter = board.querySelector("#contactDirectorySignalFilter");
+  const sortSelect = board.querySelector("#contactDirectorySortSelect");
+  const clearButton = board.querySelector("#contactDirectoryClearFilters");
+  searchInput?.addEventListener("input", () => {
+    filters.search = searchInput.value;
+    rerender("contactDirectorySearchInput", searchInput.selectionStart);
+  });
+  signalFilter?.addEventListener("change", () => {
+    filters.signal = signalFilter.value;
+    rerender("contactDirectorySignalFilter");
+  });
+  sortSelect?.addEventListener("change", () => {
+    filters.sort = sortSelect.value || "recommended";
+    rerender("contactDirectorySortSelect");
+  });
+  clearButton?.addEventListener("click", () => {
+    filters.search = "";
+    filters.signal = "";
+    filters.sort = "recommended";
+    rerender("contactDirectorySearchInput", 0);
   });
 }
 
@@ -39153,6 +39396,7 @@ leadCrmResetButton?.addEventListener("click", () => {
     if (input) input.value = "";
   });
   state.leadDirectoryAudience = "customers";
+  state.leadDirectoryFilters = { search: "", signal: "", sort: "recommended" };
   refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
 });
 leadCrmPrevButton?.addEventListener("click", () => {
