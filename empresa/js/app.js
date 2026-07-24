@@ -39421,9 +39421,16 @@ function rmsCollectorHasLeadDraft() {
 
 function updateRmsCollectorSubmitButtons() {
   const hasLeadDraft = rmsCollectorHasLeadDraft();
+  const isBusy = Boolean(state.rmsCollectorSubmitting);
   rmsCollectorModal?.classList.toggle("has-lead-draft", hasLeadDraft);
-  if (rmsCollectorSubmitButton) rmsCollectorSubmitButton.textContent = hasLeadDraft ? "Guardar y actualizar estación" : "Activar captura sin lead";
-  if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.textContent = hasLeadDraft ? "Guardar lead en Estación 1" : "Escribe datos del lead";
+  if (rmsCollectorSubmitButton) {
+    rmsCollectorSubmitButton.disabled = isBusy;
+    rmsCollectorSubmitButton.textContent = hasLeadDraft ? "Guardar y actualizar estación" : "Activar solo captura";
+  }
+  if (rmsCollectorLeadSubmitButton) {
+    rmsCollectorLeadSubmitButton.disabled = isBusy || !hasLeadDraft;
+    rmsCollectorLeadSubmitButton.textContent = hasLeadDraft ? "Guardar lead" : "Completa datos del lead";
+  }
   if (rmsCollectorLeadSubmitButton) rmsCollectorLeadSubmitButton.classList.toggle("is-waiting-lead", !hasLeadDraft);
 }
 
@@ -39476,6 +39483,8 @@ function renderRmsCollectorActivation() {
 
 async function submitRmsCollector(event) {
   event.preventDefault();
+  const submitter = event.submitter || document.activeElement;
+  const isLeadSubmit = submitter?.id === "rmsCollectorLeadSubmitButton";
   const source = rmsCollectorSourceInput?.value || "store_visitors";
   const capture = rmsCollectorCaptureInput?.value || "qr_ticket_capture";
   const coverage = rmsCollectorCoverageInput?.value || "ticket_expiring";
@@ -39488,8 +39497,15 @@ async function submitRmsCollector(event) {
   const leadInterest = String(rmsCollectorLeadInterestInput?.value || "").trim();
   const leadPriority = rmsCollectorLeadPriorityInput?.value || "HIGH";
   const hasLeadDraft = rmsCollectorHasLeadDraft();
+  if (isLeadSubmit && !hasLeadDraft) {
+    showFeedback("Completa los datos del lead antes de guardarlo.", "info", { title: "Nuevo lead" });
+    rmsCollectorLeadNameInput?.focus?.({ preventScroll: false });
+    updateRmsCollectorSubmitButtons();
+    return;
+  }
   if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail))) {
     showFeedback("Para ingresar un lead a recolectados agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
+    (!leadName ? rmsCollectorLeadNameInput : (rmsCollectorLeadPhoneInput || rmsCollectorLeadEmailInput))?.focus?.({ preventScroll: false });
     return;
   }
   if (state.rmsCollectorSubmitting) return;

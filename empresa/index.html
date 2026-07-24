@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliate-card-visible-20260724-v154">
+  <link rel="stylesheet" href="css/styles.css?v=new-lead-modal-polish-20260724-v155">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=affiliate-single-create-action-20260724-v149">
 </head>
 <body data-current-view="rms-machine">
@@ -934,8 +934,8 @@
                 <div class="modal-head">
                   <div>
                     <span class="mono-label">Leads recolectados</span>
-                    <h3 id="rmsCollectorTitle">Alimentar Máquina RMS</h3>
-                    <p>Ingresa el lead primero. La fuente, captura y cobertura quedan abajo como contexto para alimentar la Máquina RMS.</p>
+                    <h3 id="rmsCollectorTitle">Nuevo lead</h3>
+                    <p>Carga los datos esenciales. Nombre y WhatsApp o correo son suficientes para enviarlo a Leads recolectados.</p>
                   </div>
                   <button class="icon-button" type="button" id="rmsCollectorCloseButton" title="Cerrar">
                     <span class="material-symbols-outlined">close</span>
@@ -944,7 +944,7 @@
                 <form class="modal-form rms-collector-form" id="rmsCollectorForm">
                   <details class="span-2 rms-collector-context-details">
                     <summary>
-                      <span>Contexto opcional de captura</span>
+                      <span>Contexto opcional</span>
                       <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
                     </summary>
                     <div class="rms-collector-context-grid">
@@ -998,9 +998,9 @@
                   </details>
                   <div class="span-2 rms-collector-lead-entry">
                     <div class="rms-collector-lead-head">
-                      <span class="mono-label">Ingresar lead ahora</span>
-                      <strong>Nuevo lead para Leads recolectados</strong>
-                      <small>Llena nombre y WhatsApp o correo. Al guardar, entra visible a la primera estación de la Máquina RMS.</small>
+                      <span class="mono-label">Entrada directa</span>
+                      <strong>Enviar a Leads recolectados</strong>
+                      <small>Completa el contacto y una señal de interés. El lead queda visible en la primera estación.</small>
                     </div>
                     <div class="rms-collector-lead-grid">
                       <label>
@@ -1008,7 +1008,7 @@
                         <input id="rmsCollectorLeadNameInput" type="text" maxlength="160" placeholder="Ej: Laura Gomez">
                       </label>
                       <label>
-                        WhatsApp / telefono
+                        WhatsApp o teléfono
                         <input id="rmsCollectorLeadPhoneInput" type="text" maxlength="40" placeholder="Ej: 3001234567">
                       </label>
                       <label>
@@ -1025,26 +1025,26 @@
                         </select>
                       </label>
                       <label class="span-2">
-                        Interes / gusto capturado
+                        Interés capturado
                         <input id="rmsCollectorLeadInterestInput" type="text" maxlength="500" placeholder="Producto, necesidad, gusto, intención o contexto">
                       </label>
                     </div>
                     <div class="rms-collector-lead-submit">
                       <div>
-                        <strong>¿Ya tienes los datos del lead?</strong>
-                        <small>Presiona el botón para crearlo y verlo dentro de la estación Leads recolectados.</small>
+                        <strong>Listo para guardar</strong>
+                        <small>Se crea el contacto y entra a la estación Recolectar.</small>
                       </div>
-                      <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Ingresar lead a recolectados</button>
+                      <button class="solid-button" type="submit" id="rmsCollectorLeadSubmitButton">Guardar lead</button>
                     </div>
                   </div>
                   <label class="span-2">
-                    Resultado esperado
-                    <textarea id="rmsCollectorExpectedInput" rows="3">Oportunidades nuevas visibles dentro de la estación Leads recolectados.</textarea>
+                    Nota interna
+                    <textarea id="rmsCollectorExpectedInput" rows="3">Lead ingresado manualmente desde Nuevo lead.</textarea>
                   </label>
                   <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
                   <div class="modal-actions span-2">
                     <button class="ghost-button" type="button" id="rmsCollectorCancelButton">Cancelar</button>
-                    <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar captura</button>
+                    <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar solo captura</button>
                   </div>
                 </form>
               </div>
@@ -7286,7 +7286,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-card-visible-20260724-v154" defer></script>
+  <script src="js/app.js?v=new-lead-modal-polish-20260724-v155" defer></script>
 </body>
 </html>
 
