@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-flat-affiliates-visual-v147";
+const APP_VERSION = "empresa-20260724-affiliate-actions-nowrap-v148";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -32814,7 +32814,7 @@ function ensureAffiliatesUxStyles() {
     }
     .view-section[data-view="affiliates"] .affiliate-row-actions {
       display: grid !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-columns: repeat(2, minmax(74px, 1fr)) !important;
       gap: .45rem !important;
     }
     .view-section[data-view="affiliates"] .affiliate-row-actions .compact {
@@ -32824,6 +32824,16 @@ function ensureAffiliatesUxStyles() {
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
+      word-break: keep-all !important;
+      overflow-wrap: normal !important;
+      line-height: 1 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-row-actions .compact *,
+    .view-section[data-view="affiliates"] .affiliate-list-panel button,
+    .view-section[data-view="affiliates"] .affiliate-list-panel button * {
+      white-space: nowrap !important;
+      word-break: keep-all !important;
+      overflow-wrap: normal !important;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open,
     .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
