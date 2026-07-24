@@ -64,7 +64,7 @@ function setStatus(message, error = false) {
   const styles = getComputedStyle(document.body);
   const color = styles.getPropertyValue(error ? "--status-error" : "--status-ok").trim();
   els.statusMessage.textContent = message || "";
-  els.statusMessage.style.color = color || (error ? "#ff8aae" : "#b7ccc3");
+  els.statusMessage.style.color = color || (error ? "#ba1a1a" : "#0759d6");
 }
 
 async function fetchCard() {

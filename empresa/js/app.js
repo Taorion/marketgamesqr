@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v141";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v142";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -32320,9 +32320,10 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV75")) return;
+  if (document.getElementById("affiliatesUxStylesV76")) return;
+  document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV75";
+  style.id = "affiliatesUxStylesV76";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -32469,24 +32470,63 @@ function ensureAffiliatesUxStyles() {
     .view-section[data-view="affiliates"] .affiliate-list-panel {
       margin-top: 0;
       overflow: hidden;
-      border-radius: 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(5, 42, 107, .12);
+      background: #ffffff;
+      box-shadow: 0 18px 42px rgba(5, 42, 107, .08);
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel table {
       min-width: 880px;
-      border-collapse: separate;
-      border-spacing: 0;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(1),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(1) {
+      width: 27%;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(2),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(2) {
+      width: 24%;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(3),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(3),
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(4),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(4) {
+      width: 12%;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(5),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(5) {
+      width: 12%;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(6),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(6) {
+      width: 9%;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(7),
+    .view-section[data-view="affiliates"] .affiliate-list-panel td:nth-child(7) {
+      width: 16%;
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel th {
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #f6fbff;
+      background: #f8fbff;
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel td {
+      height: 62px;
       vertical-align: middle;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr {
+      border-bottom: 1px solid rgba(5, 42, 107, .08);
+      transition: background .16s ease, box-shadow .16s ease;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr:hover {
+      background: rgba(246, 251, 255, .9);
+      box-shadow: inset 3px 0 0 #00bff2;
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr.active {
       background: rgba(7, 89, 214, .06);
+      box-shadow: inset 3px 0 0 #0759d6;
     }
     .affiliate-table-main {
       display: grid;
@@ -32499,6 +32539,15 @@ function ensureAffiliatesUxStyles() {
       text-align: left;
       box-shadow: none;
     }
+    .affiliate-table-main strong,
+    .affiliate-table-main small,
+    .affiliate-table-contact,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td > .table-secondary,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td > strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .affiliate-table-main small,
     .affiliate-table-contact {
       color: #64748b;
@@ -32507,7 +32556,7 @@ function ensureAffiliatesUxStyles() {
     }
     .affiliate-row-actions {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: .45rem;
       justify-content: flex-end;
     }
@@ -32528,17 +32577,22 @@ function ensureAffiliatesUxStyles() {
       z-index: 1080;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open {
-      display: block !important;
+      display: grid !important;
+      grid-template-rows: auto auto 1fr;
       position: fixed;
       left: 50%;
-      top: 4vh;
-      transform: translateX(-50%);
-      width: min(960px, calc(100vw - 2rem));
-      max-height: 90vh;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(860px, calc(100vw - 2rem));
+      max-height: min(760px, calc(100vh - 2rem));
       overflow-y: auto;
       overscroll-behavior: contain;
       z-index: 1100;
-      padding: 1rem;
+      padding: 22px;
+      border-radius: 18px;
+      border: 1px solid rgba(5, 42, 107, .14);
+      background: #ffffff;
+      box-shadow: 0 30px 80px rgba(5, 42, 107, .26);
     }
     .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
       display: block !important;
@@ -32576,13 +32630,76 @@ function ensureAffiliatesUxStyles() {
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateManualPointsMessage {
       display: none !important;
     }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .table-card-head {
+      min-height: 54px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid rgba(5, 42, 107, .12);
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-summary {
+      min-height: 118px;
+      margin: 16px 0;
+      padding: 14px;
+      border: 1px solid rgba(5, 42, 107, .1);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      box-shadow: none;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-head {
+      min-height: 28px;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid div {
+      min-height: 52px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(246, 251, 255, .72);
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid dd {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+      gap: 14px;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions label {
+      display: grid;
+      grid-template-rows: auto minmax(42px, auto) auto;
+      min-height: 96px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(5, 42, 107, .1);
+      background: #f8fbff;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions :where(input, select) {
+      min-height: 42px;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions small {
+      min-height: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary,
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateAddPointsButton,
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliatePurchaseMessage {
       grid-column: 1 / -1;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary {
+      min-height: 86px;
+      align-content: center;
+      border: 0;
+      border-left: 3px solid #00bff2;
+      border-radius: 12px;
+      background: #f6fbff;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateAddPointsButton {
+      min-height: 44px;
     }
     @media (max-width: 980px) {
       .affiliate-command-strip,
@@ -32603,8 +32720,12 @@ function ensureAffiliatesUxStyles() {
       }
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open {
         top: 1rem;
+        transform: translateX(-50%);
         width: calc(100vw - 1rem);
         max-height: calc(100vh - 2rem);
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
         top: 1rem;

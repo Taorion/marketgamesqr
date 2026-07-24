@@ -4831,6 +4831,69 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="affiliates"] .p
   gap: 8px !important;
 }
 
+/* Qori affiliates polish v142: stable table and modal sizing. */
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel {
+  border: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 18px 42px rgba(5, 42, 107, .08) !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel .table-card-head {
+  padding: 16px 18px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel table {
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel tbody tr {
+  border-bottom: 1px solid rgba(5, 42, 107, .08) !important;
+  transition: background .16s ease, box-shadow .16s ease !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel tbody tr:hover {
+  background: rgba(246, 251, 255, .9) !important;
+  box-shadow: inset 3px 0 0 #00bff2 !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel tbody tr.active {
+  background: rgba(7, 89, 214, .06) !important;
+  box-shadow: inset 3px 0 0 #0759d6 !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel th,
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel td {
+  height: 62px !important;
+  padding: 11px 14px !important;
+  vertical-align: middle !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-panel th {
+  background: #f8fbff !important;
+  color: #53677f !important;
+  font-size: .7rem !important;
+  letter-spacing: .05em !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell :where(.affiliate-table-main strong, .affiliate-table-main small, .affiliate-table-contact, .affiliate-list-panel td > strong, .affiliate-list-panel td > .table-secondary) {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-row-actions {
+  flex-wrap: nowrap !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell .affiliate-row-actions .compact {
+  min-height: 34px !important;
+  border-radius: 9px !important;
+}
+
 html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell {
   padding: 18px !important;
 }
