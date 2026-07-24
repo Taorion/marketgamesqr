@@ -12312,7 +12312,12 @@ function openGamingActivationDetail(id = "") {
     button.addEventListener("click", () => {
       closeGamingActivationDetail();
       editInteractiveActivation(button.dataset.editActivation);
-      openGamingActivationBuilderModal({ reset: false });
+    });
+  });
+  modal.querySelectorAll("[data-delete-activation]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      closeGamingActivationDetail();
+      await deleteInteractiveActivation(button.dataset.deleteActivation);
     });
   });
   modal.classList.remove("hidden");
@@ -21069,10 +21074,16 @@ function renderTriviaLaunchers() {
             <small>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</small>
           </div>
         </td>
+        <td>
+          <div class="activation-table-actions">
+            <button class="ghost-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
+            <button class="ghost-button danger-button" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
+          </div>
+        </td>
       </tr>
     `;
     }).join("")
-    : '<tr><td colspan="6" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
+    : '<tr><td colspan="7" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
 
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {
@@ -21084,6 +21095,20 @@ function renderTriviaLaunchers() {
     row.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       open(event);
+    });
+  });
+
+  triviaLauncherTable.querySelectorAll("[data-edit-activation]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      editInteractiveActivation(button.dataset.editActivation);
+    });
+  });
+
+  triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteInteractiveActivation(button.dataset.deleteActivation);
     });
   });
 
@@ -21382,48 +21407,143 @@ async function updateActivationStatus(id, status) {
   }
 }
 
-async function editInteractiveActivation(id) {
+function ensureActivationEditModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
+  if (!view) return null;
+  let modal = view.querySelector("#activationEditModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden activation-edit-modal";
+  modal.id = "activationEditModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "activationEditTitle");
+  modal.innerHTML = `
+    <article class="activation-edit-card" role="document">
+      <header class="activation-edit-head">
+        <div>
+          <span class="mono-label">Editar activacion</span>
+          <h3 id="activationEditTitle">Ajustar activacion</h3>
+          <p>Modifica datos operativos sin recrear el link ni perder los leads capturados.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-activation-edit aria-label="Cerrar edicion"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <form class="activation-edit-form" id="activationEditForm">
+        <label class="span-2"><span>Titulo publico</span><input id="activationEditTitleInput" type="text" maxlength="160" required></label>
+        <label class="span-2"><span>Descripcion de la landing</span><textarea id="activationEditDescriptionInput" rows="3" maxlength="1000"></textarea></label>
+        <label><span>Estado</span><select id="activationEditStatusInput">
+          <option value="draft">Borrador</option>
+          <option value="active">Activa</option>
+          <option value="paused">Pausada</option>
+          <option value="closed">Cerrada</option>
+          <option value="archived">Anulada</option>
+        </select></label>
+        <label><span>Fecha de cierre</span><input id="activationEditEndsAtInput" type="datetime-local"></label>
+        <label><span>Cupo de beneficios</span><input id="activationEditMaxRewardsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
+        <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
+        <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
+          <option value="block_previous_winners">Si ya gano, bloquear nuevo beneficio</option>
+          <option value="allow_after_cooldown">Permitir despues de la espera</option>
+        </select></label>
+        <label class="span-2"><span>Mensaje para WhatsApp</span><textarea id="activationEditInviteInput" rows="4" maxlength="900"></textarea><small>Variables disponibles: {link}, {titulo}, {negocio}, {lead}</small></label>
+        <p class="form-message span-2" id="activationEditMessage" role="status" aria-live="polite"></p>
+        <div class="modal-button-row span-2">
+          <button class="ghost-button" type="button" data-close-activation-edit>Cancelar</button>
+          <button class="solid-button" type="submit" id="activationEditSaveButton">Guardar cambios</button>
+        </div>
+      </form>
+    </article>
+  `;
+  view.appendChild(modal);
+  modal.querySelectorAll("[data-close-activation-edit]").forEach((button) => {
+    button.addEventListener("click", closeActivationEditModal);
+  });
+  modal.querySelector("#activationEditForm")?.addEventListener("submit", submitActivationEditModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeActivationEditModal();
+  });
+  return modal;
+}
+
+function closeActivationEditModal() {
+  const modal = document.getElementById("activationEditModal");
+  modal?.classList.add("hidden");
+  modal?.setAttribute("hidden", "");
+}
+
+function editInteractiveActivation(id) {
   const activation = activationById(id);
   if (!activation) return;
-  const title = window.prompt("Titulo de la activación", activation.title || "");
-  if (title === null) return;
-  const description = window.prompt("Descripcion para la landing", activation.description || "");
-  if (description === null) return;
-  const inviteTemplate = window.prompt("Mensaje generico para invitar. Puedes usar {link}, {titulo} y {negocio}.", activationInviteTemplate(activation));
-  if (inviteTemplate === null) return;
-  const maxRewardsText = window.prompt("Cupo máximo de QR/beneficios. Deja vacío para sin limite.", activation.max_rewards || "");
-  if (maxRewardsText === null) return;
-  const maxRewards = String(maxRewardsText).trim() ? Number(maxRewardsText) : null;
+  const modal = ensureActivationEditModal();
+  if (!modal) return;
+  state.activationEditId = id;
+  const currentLock = activation.capture_config?.participant_lock || {};
+  modal.querySelector("#activationEditTitle").textContent = `Editar ${activation.title || "activacion"}`;
+  modal.querySelector("#activationEditTitleInput").value = activation.title || "";
+  modal.querySelector("#activationEditDescriptionInput").value = activation.description || "";
+  modal.querySelector("#activationEditStatusInput").value = activation.status || "draft";
+  modal.querySelector("#activationEditEndsAtInput").value = formatInputDateTime(activation.ends_at);
+  modal.querySelector("#activationEditMaxRewardsInput").value = activation.max_rewards || "";
+  modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
+  modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
+  modal.querySelector("#activationEditInviteInput").value = activationInviteTemplate(activation);
+  setFormMessage(modal.querySelector("#activationEditMessage"), "", "");
+  modal.classList.remove("hidden");
+  modal.removeAttribute("hidden");
+  window.setTimeout(() => modal.querySelector("#activationEditTitleInput")?.focus({ preventScroll: true }), 40);
+}
+
+async function submitActivationEditModal(event) {
+  event.preventDefault();
+  const modal = ensureActivationEditModal();
+  const id = state.activationEditId;
+  const activation = activationById(id);
+  if (!modal || !activation) return;
+  const form = modal.querySelector("#activationEditForm");
+  if (!form?.reportValidity()) return;
+  const title = String(modal.querySelector("#activationEditTitleInput")?.value || "").trim();
+  const description = String(modal.querySelector("#activationEditDescriptionInput")?.value || "").trim();
+  const status = String(modal.querySelector("#activationEditStatusInput")?.value || activation.status || "draft");
+  const inviteTemplate = String(modal.querySelector("#activationEditInviteInput")?.value || "").trim();
+  const maxRewardsText = String(modal.querySelector("#activationEditMaxRewardsInput")?.value || "").trim();
+  const maxRewards = maxRewardsText ? Number(maxRewardsText) : null;
   if (maxRewards !== null && (!Number.isFinite(maxRewards) || maxRewards < 1)) {
-    showFeedback("El cupo máximo debe ser un número mayor a cero o quedar vacío.", "error", { title: "Dato inválido" });
+    showFeedback("El cupo maximo debe ser un numero mayor a cero o quedar vacio.", "error", { title: "Dato invalido" });
     return;
   }
   const currentLock = activation.capture_config?.participant_lock || {};
-  const cooldownText = window.prompt("Días de espera entre intentos para este beneficiario.", currentLock.cooldown_days ?? 7);
-  if (cooldownText === null) return;
+  const cooldownText = String(modal.querySelector("#activationEditCooldownInput")?.value || "").trim();
   const cooldownDays = Number(cooldownText);
   if (!Number.isFinite(cooldownDays) || cooldownDays < 0 || cooldownDays > 365) {
-    showFeedback("Los días de espera deben estar entre 0 y 365.", "error", { title: "Dato inválido" });
+    showFeedback("Los dias de espera deben estar entre 0 y 365.", "error", { title: "Dato invalido" });
     return;
   }
-  const currentWinnerPolicy = currentLock.winner_policy || "block_previous_winners";
-  const winnerPolicy = window.prompt(
-    "Si ya gano beneficio escribe: block_previous_winners o allow_after_cooldown.",
-    currentWinnerPolicy
-  );
-  if (winnerPolicy === null) return;
+  const winnerPolicy = String(modal.querySelector("#activationEditWinnerPolicyInput")?.value || currentLock.winner_policy || "block_previous_winners");
   if (!["block_previous_winners", "allow_after_cooldown"].includes(winnerPolicy)) {
-    showFeedback("Política inválida. Usa block_previous_winners o allow_after_cooldown.", "error", { title: "Dato inválido" });
+    showFeedback("Politica invalida.", "error", { title: "Dato invalido" });
     return;
   }
+  const endsAtValue = String(modal.querySelector("#activationEditEndsAtInput")?.value || "").trim();
+  if (endsAtValue && Number.isNaN(new Date(endsAtValue).getTime())) {
+    showFeedback("La fecha de cierre no es valida.", "error", { title: "Dato invalido" });
+    return;
+  }
+  const endsAt = endsAtValue ? new Date(endsAtValue).toISOString() : null;
+  if (status === "archived" && activation.status !== "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedara inactivo y no recibira nuevas participaciones. Deseas continuar?`)) {
+    return;
+  }
+  const saveButton = modal.querySelector("#activationEditSaveButton");
+  setButtonLoading(saveButton, true, "Guardando...");
+  setFormMessage(modal.querySelector("#activationEditMessage"), "Guardando cambios...", "info");
   try {
     await patchInteractiveActivation(id, {
-      title: title.trim(),
-      description: description.trim() || null,
+      title,
+      description: description || null,
+      status,
+      ends_at: endsAt,
       max_rewards: maxRewards,
       visual_config: {
         ...(activation.visual_config || {}),
-        invite_message_template: inviteTemplate.trim() || defaultActivationInviteTemplate({ title: title.trim() }),
+        invite_message_template: inviteTemplate || defaultActivationInviteTemplate({ title }),
       },
       capture_config: {
         ...(activation.capture_config || {}),
@@ -21433,15 +21553,18 @@ async function editInteractiveActivation(id) {
           scope: currentLock.scope === "company" ? "company" : "activation",
           cooldown_days: cooldownDays,
           winner_policy: winnerPolicy,
-          label: `${cooldownDays} días de espera entre intentos`,
+          label: `${cooldownDays} dias de espera entre intentos`,
         },
       },
-    }, "Datos básicos actualizados.");
+    }, "Datos basicos actualizados.");
+    closeActivationEditModal();
   } catch (error) {
+    setFormMessage(modal.querySelector("#activationEditMessage"), error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo editar" });
+  } finally {
+    setButtonLoading(saveButton, false);
   }
 }
-
 async function recycleInteractiveActivation(id) {
   const activation = activationById(id);
   if (!activation) return;

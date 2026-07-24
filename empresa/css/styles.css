@@ -55977,3 +55977,199 @@ html body .portal-shell #activationShareModal .solid-button:disabled {
     flex-direction: column !important;
   }
 }
+
+/* Activation edit/delete controls: direct actions without rounded masks. */
+html body .portal-shell .activation-table-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  min-width: 160px !important;
+}
+
+html body .portal-shell .activation-table-actions .ghost-button,
+html body .portal-shell .gaming-activation-detail-actions .ghost-button,
+html body .portal-shell .gaming-activation-detail-actions .solid-button {
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  border-radius: 4px !important;
+  font-size: 0.8rem !important;
+  font-weight: 760 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .activation-table-actions .danger-button,
+html body .portal-shell .gaming-activation-detail-actions .danger-button {
+  border-color: rgba(180, 35, 24, 0.2) !important;
+  color: #b42318 !important;
+}
+
+html body .portal-shell .activation-table-actions .danger-button:hover,
+html body .portal-shell .gaming-activation-detail-actions .danger-button:hover {
+  background: rgba(180, 35, 24, 0.06) !important;
+}
+
+html body .portal-shell #activationEditModal {
+  background: rgba(246, 251, 255, 0.72) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-card {
+  width: min(94vw, 860px) !important;
+  max-height: min(88dvh, 820px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: 1px solid rgba(5, 42, 107, 0.14) !important;
+  border-radius: 6px !important;
+  background: #fffefa !important;
+  box-shadow: 0 24px 70px rgba(5, 42, 107, 0.16) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: 24px 28px 18px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.12) !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-head .mono-label {
+  color: #0759d6 !important;
+  font-size: 0.76rem !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-head h3,
+html body .portal-shell #activationEditModal .activation-edit-head p {
+  margin: 0 !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-head h3 {
+  margin-top: 4px !important;
+  color: #052a6b !important;
+  font-size: clamp(1.22rem, 2vw, 1.56rem) !important;
+  line-height: 1.18 !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-head p {
+  margin-top: 6px !important;
+  color: #53677f !important;
+  font-size: 0.9rem !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell #activationEditModal .icon-button {
+  width: 38px !important;
+  height: 38px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: #53677f !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px 22px !important;
+  padding: 26px 28px !important;
+  overflow-y: auto !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form label {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.12) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form label > span {
+  color: #53677f !important;
+  font-size: 0.78rem !important;
+  font-weight: 760 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form :where(input, select, textarea) {
+  min-height: 40px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #052a6b !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form textarea {
+  min-height: 90px !important;
+  padding-top: 4px !important;
+  resize: vertical !important;
+}
+
+html body .portal-shell #activationEditModal .activation-edit-form small {
+  color: #53677f !important;
+  font-size: 0.76rem !important;
+}
+
+html body .portal-shell #activationEditModal .form-message {
+  min-height: 18px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell #activationEditModal .modal-button-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding-top: 6px !important;
+}
+
+html body .portal-shell #activationEditModal .solid-button,
+html body .portal-shell #activationEditModal .ghost-button {
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  border-radius: 4px !important;
+  font-size: 0.86rem !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #activationEditModal .solid-button {
+  border-color: #0759d6 !important;
+  background: #0759d6 !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell #activationEditModal .ghost-button {
+  border: 1px solid rgba(5, 42, 107, 0.18) !important;
+  background: transparent !important;
+  color: #052a6b !important;
+}
+
+@media (max-width: 820px) {
+  html body .portal-shell #activationEditModal .activation-edit-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .portal-shell .activation-table-actions,
+  html body .portal-shell #activationEditModal .modal-button-row {
+    justify-content: stretch !important;
+    flex-direction: column !important;
+  }
+}
