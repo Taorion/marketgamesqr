@@ -337,7 +337,8 @@ function initImageLightbox() {
     ".rms-bento-card img",
     ".rms-product-card img",
     ".rms-guide-rail img",
-    ".rms-strategy-media img"
+    ".rms-strategy-media img",
+    ".activation-map-image"
   ].join(", "));
 
   if (!images.length) {
