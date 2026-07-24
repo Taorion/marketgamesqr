@@ -117,10 +117,16 @@ function safeBrandColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
+function qoriBrandColor(value, fallback) {
+  const legacyGreen = new Set(["#0f7354", "#09725f", "#0d6b52", "#118568", "#16a34a", "#22c55e", "#059669", "#047857", "#065f46", "#064e3b", "#14b8a6", "#0f766e"]);
+  const color = safeBrandColor(value, fallback).toLowerCase();
+  return legacyGreen.has(color) ? fallback : color;
+}
+
 function brandStyle(settings = {}) {
   return {
-    primary: safeBrandColor(settings.brand_primary, "#13212c"),
-    secondary: safeBrandColor(settings.brand_secondary, "#945d20"),
+    primary: qoriBrandColor(settings.brand_primary, "#052a6b"),
+    secondary: qoriBrandColor(settings.brand_secondary, "#00bfe5"),
     logoUrl: typeof settings.logo_data_url === "string" && settings.logo_data_url
       ? settings.logo_data_url
       : typeof settings.logo_url === "string" ? settings.logo_url : "",
@@ -141,7 +147,7 @@ function wrapSvgText(value, maxChars = 40, maxLines = 1) {
       return;
     }
     if (current) lines.push(current);
-    current = word.length > maxChars ? `${word.slice(0, Math.max(1, maxChars - 1))}…` : word;
+    current = word.length > maxChars ? `${word.slice(0, Math.max(1, maxChars - 1))}...` : word;
   });
   if (current) lines.push(current);
   return lines.slice(0, maxLines);
@@ -149,7 +155,7 @@ function wrapSvgText(value, maxChars = 40, maxLines = 1) {
 
 function brandedQrTextRows({ businessName, activationTitle, rewardLabel, publicCode }) {
   return [
-    ...wrapSvgText(businessName || "Sales Machine", 34, 1).map((text) => ({ text, size: 30, weight: 900, fill: "#111827" })),
+    ...wrapSvgText(businessName || "Qori", 34, 1).map((text) => ({ text, size: 30, weight: 900, fill: "#111827" })),
     ...wrapSvgText(rewardLabel || "Beneficio desbloqueado", 42, 2).map((text, index) => ({ text, size: index ? 22 : 25, weight: 800, fill: "#111827" })),
     ...wrapSvgText(activationTitle || "Activacion interactiva", 46, 1).map((text) => ({ text, size: 18, weight: 700, fill: "#4b5563" })),
     { text: publicCode || "QR UNICO", size: 18, weight: 900, fill: "#111827" },
@@ -213,7 +219,7 @@ async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, rewa
        <rect x="44" y="44" width="992" height="170" rx="42" fill="${escapeSvg(brand.primary)}"/>
        <rect x="44" y="154" width="992" height="120" fill="${escapeSvg(brand.primary)}"/>`}
   ${logo ? `<rect x="410" y="78" width="260" height="118" rx="28" fill="#ffffff" opacity="0.95"/>
-  <image href="${escapeSvg(logo)}" x="430" y="96" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${width / 2}" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Sales Machine</text>`}
+  <image href="${escapeSvg(logo)}" x="430" y="96" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${width / 2}" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Qori</text>`}
   <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="#ffffff"/>
   <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="none" stroke="${escapeSvg(brand.secondary)}" stroke-width="10"/>
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>

@@ -1,4 +1,4 @@
-﻿const SESSION_KEY = "qr_business_portal_session_v1";
+const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260724-affiliate-single-create-action-v149";
@@ -4828,7 +4828,7 @@ function setView(view) {
   const previousView = state.currentView;
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
-    showFeedback("Ese módulo es interno de Sales Machine. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
+    showFeedback("Ese módulo es interno de Qori. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
     if (view !== fallbackView) setView(fallbackView);
     return;
   }
@@ -4942,7 +4942,7 @@ function setView(view) {
   }
   if (view === "missions") {
     loadGamificationDashboard({ quiet: true }).then(renderMissionsView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Misiones Sales Machine.", "error", { title: "Misiones Sales Machine" });
+      showFeedback(error.message || "No se pudo cargar Misiones Qori.", "error", { title: "Misiones Qori" });
       renderMissionsView();
     });
   }
@@ -4957,7 +4957,7 @@ function setView(view) {
       renderInventoryProductOptions();
     }
     loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Catálogos Sales Machine.", "error", { title: "Catálogos Sales Machine" });
+      showFeedback(error.message || "No se pudo cargar Catálogos Qori.", "error", { title: "Catálogos Qori" });
       renderSmartCatalogView();
     });
   }
@@ -6468,7 +6468,7 @@ function renderCommandCenter() {
     <div class="command-center">
       <section class="command-hero">
         <div>
-          <span class="mono-label">Sales Machine RMS</span>
+          <span class="mono-label">Qori GOS</span>
           <h2>Centro de comando de revenue marketing</h2>
           <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, sucursales y revenue real.</p>
           <div class="command-hero-actions">
@@ -8857,7 +8857,7 @@ async function loadSmartCatalogDetail(catalogId, options = {}) {
   state.smartCatalogs = (state.smartCatalogs || []).map((catalog) => (
     catalog.id === data.catalog?.id ? { ...catalog, ...data.catalog } : catalog
   ));
-  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Sales Machine" });
+  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Qori" });
 }
 
 function setSmartCatalogTab(tab) {
@@ -8869,7 +8869,7 @@ async function refreshSmartCatalogs(options = {}) {
   state.smartCatalogLoaded = false;
   await loadSmartCatalogData({ force: true });
   renderSmartCatalogView();
-  if (!options.quiet) showFeedback("Catálogos Sales Machine actualizado.", "success", { title: "Sales Machine Smart Catalog" });
+  if (!options.quiet) showFeedback("Catálogos Qori actualizado.", "success", { title: "Qori Smart Catalog" });
 }
 
 async function submitSmartCatalog(event) {
@@ -8933,7 +8933,7 @@ async function copySmartCatalogLink(catalogId = "") {
   if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
-    showFeedback("Link público copiado.", "success", { title: "Catálogos Sales Machine" });
+    showFeedback("Link público copiado.", "success", { title: "Catálogos Qori" });
   } catch {
     window.prompt("Link público del catálogo", url);
   }
@@ -8964,7 +8964,7 @@ async function smartCatalogIntentAction(intentId, action) {
           priority: "HIGH",
         }),
       });
-      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Sales Machine" });
+      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Qori" });
     }
     if (action === "won") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
@@ -8973,10 +8973,10 @@ async function smartCatalogIntentAction(intentId, action) {
         body: JSON.stringify({
           sale_amount: intent?.sale_amount || intent?.product_price || 0,
           currency: intent?.sale_currency || intent?.product_currency || "COP",
-          notes: "Venta marcada desde Catálogos Sales Machine.",
+          notes: "Venta marcada desde Catálogos Qori.",
         }),
       });
-      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Sales Machine" });
+      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Qori" });
     }
     if (action === "ticket") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/send-post-sale-ticket`, {
@@ -8989,11 +8989,11 @@ async function smartCatalogIntentAction(intentId, action) {
           benefit_type: "CUSTOM",
         }),
       });
-      showFeedback("Ticket postventa generado.", "success", { title: "Postventa Sales Machine" });
+      showFeedback("Ticket postventa generado.", "success", { title: "Postventa Qori" });
     }
     await refreshSmartCatalogs({ quiet: true });
   } catch (error) {
-    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Sales Machine" });
+    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Qori" });
   }
 }
 
@@ -11279,7 +11279,7 @@ function renderCampaignView() {
               : `<strong>${escapeHtml(value)}</strong>`}
         </article>
       `).join("")
-    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Sales Machine aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
+    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Qori aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
   renderCampaignRelationsPanel();
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
@@ -22362,7 +22362,7 @@ function renderNoCampaignState() {
   renderAdminView();
   adminPanelMessage.textContent = isAdmin()
     ? "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`."
-    : "Usa el panel `/admin` para la operación interna de Sales Machine.";
+    : "Usa el panel `/admin` para la operación interna de Qori.";
   rangeButton.textContent = state.rangeDays ? `Últimos ${state.rangeDays} días` : "Todo el historial";
   drawDualLineChart(businessTrendChart, [], [], "count", ["Leads", "Redenciones"], [NEON_CHART.cyan, NEON_CHART.magenta]);
   drawSimpleLineChart(cacTrendChart, [], NEON_CHART.yellow, "Costo por lead");
@@ -22436,7 +22436,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "objective", label: "Qué quieres lograr", type: "single", optionsKey: "objectives" },
   ] },
   { id: "massification", kicker: "Paso 3", title: "Estrategia de Masificación", help: "Una campaña poderosa atrae varias personas, captura datos, entrega valor, filtra interés y activa seguimiento comercial.", fields: [
-    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. Sales Machine captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
+    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. Qori captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
     { key: "acquisitionMode", label: "Modo de atracción", type: "single", optionsKey: "acquisitionModes" },
     { key: "leadMagnet", label: "Excusa de valor", type: "single", optionsKey: "leadMagnets" },
     { key: "targetPublic", label: "Público a atraer", type: "single", optionsKey: "targetPublics" },
@@ -22490,7 +22490,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "hasDigitalAsset", label: "Incluye activo descargable", type: "single", options: ["Sí", "No"] },
     { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://..." },
   ] },
-  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Sales Machine usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
+  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Qori usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
     { key: "maxParticipants", label: "Participaciones máximas", type: "number", placeholder: "300" },
     { key: "participationFrequency", label: "Frecuencia", type: "single", options: ["Una vez por persona", "Varias veces", "Una vez por día", "Por compra"] },
     { key: "ticketLogic", label: "Cuándo se genera ticket", type: "multi", optionsKey: "ticketTypes" },
@@ -22668,7 +22668,7 @@ function strategyObjectiveText(answers = state.strategyWizardAnswers || {}) {
 
 function strategyCampaignName(answers = state.strategyWizardAnswers || {}) {
   if (answers.campaignName) return answers.campaignName;
-  const brand = answers.businessName || "Sales Machine";
+  const brand = answers.businessName || "Qori";
   const objective = normalizeInventoryLookup(answers.objective || "");
   const prefix = objective.includes("recompra") ? "Reto de Recompra" : objective.includes("refer") ? "Reto de Referidos" : objective.includes("lead") ? "Captura Relámpago" : "Campaña Gamificada";
   return `${prefix} ${brand}`.trim();
@@ -23932,7 +23932,7 @@ async function shareTicketQrFile({ filename, dataUrl, text }) {
   const file = new File([blob], filenameForDataUrl(filename, dataUrl), { type: blob.type || "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
-      title: "Ticket QR Sales Machine",
+      title: "Ticket QR Qori",
       text,
       files: [file],
     });
@@ -31868,7 +31868,7 @@ function renderRewardPassContext() {
   const cost = toNumber(context.reward_pass_ticket_cost || 1);
   const balance = toNumber(context.ticket_balance || context.qr_balance || 0);
   if (rewardPassTicketContext) {
-    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Sales Machine. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }
 
@@ -31910,7 +31910,7 @@ function renderRewardPassMetrics() {
     ["Valor redimido", money(metrics.total_redeemed_cop || 0), `${toNumber(metrics.redemption_count || 0)} redenciones`],
     ["Saldo pendiente", money(metrics.pending_balance_cop || 0), `${toNumber(metrics.partially_redeemed_count || 0)} parciales`],
     ["Saldo vencido", money(metrics.expired_balance_cop || 0), `${toNumber(metrics.expired_count || 0)} vencidos`],
-    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico Sales Machine"],
+    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico Qori"],
   ];
   if (rewardPassKpiGrid) {
     rewardPassKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
@@ -32293,7 +32293,7 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.font = "500 22px Inter, sans-serif";
   const pending = pass.status === "pending_claim";
   ctx.fillText(pending ? "Escanea este QR para reclamar y activar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
-  ctx.fillText("Administrado por Sales Machine QR Portal.", 94, 642);
+  ctx.fillText("Administrado por Qori GOS Portal.", 94, 642);
   if (pass.qr_image_data_url) {
     const qrImage = await new Promise((resolve, reject) => {
       const img = new Image();
@@ -38889,7 +38889,7 @@ function renderMissionActiveList(seasons = []) {
       <div class="mission-active-head">
         <div>
           <span class="mono-label">${escapeHtml(missionRankingLabel(season))}</span>
-          <h4>${escapeHtml(season.name || "Dinámica Sales Machine")}</h4>
+          <h4>${escapeHtml(season.name || "Dinámica Qori")}</h4>
           <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
         </div>
         <span class="status-chip ${missionStatusClass(season.status)}">${escapeHtml(missionStatusLabel(season.status))}</span>
@@ -39072,7 +39072,7 @@ function renderMissionRewards(rewards = []) {
     <article class="mission-reward-card">
       <div>
         <strong>${escapeHtml(reward.reward_name || "Recompensa")}</strong>
-        <small>${escapeHtml(reward.season_name || "Misión Sales Machine")}</small>
+        <small>${escapeHtml(reward.season_name || "Misión Qori")}</small>
       </div>
       <button class="ghost-button" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Marcar entregado</button>
     </article>
@@ -39192,10 +39192,10 @@ async function submitMissionWizard(event) {
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
     closeMissionWizard();
-    showFeedback("Dinámica Sales Machine creada y conectada con el portal.", "success", { title: "Misiones Sales Machine" });
+    showFeedback("Dinámica Qori creada y conectada con el portal.", "success", { title: "Misiones Qori" });
   } catch (error) {
     if (missionWizardMessage) missionWizardMessage.textContent = error.message || "No se pudo crear la dinámica.";
-    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Sales Machine" });
+    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Qori" });
   }
 }
 
@@ -39208,7 +39208,7 @@ async function createMissionAgendaTasks(seasonId, options = {}) {
       body: JSON.stringify({ season_id: seasonId }),
     });
     state.leadAgendaLoaded = false;
-    if (!options.quiet) showFeedback("Tareas de Misiones Sales Machine creadas en la agenda.", "success", { title: "Agenda" });
+    if (!options.quiet) showFeedback("Tareas de Misiones Qori creadas en la agenda.", "success", { title: "Agenda" });
   } catch (error) {
     if (!options.quiet) showFeedback(error.message || "No se pudieron crear las tareas.", "error", { title: "Agenda" });
   }
@@ -39224,9 +39224,9 @@ async function deliverMissionReward(rewardId) {
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
-    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Sales Machine" });
+    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Sales Machine" });
+    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Qori" });
   }
 }
 
@@ -40790,10 +40790,10 @@ activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 smartCatalogTabButtons.forEach((button) => {
   button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
 });
-smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Sales Machine" })));
+smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Qori" })));
 smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
   try {
-    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos Sales Machine", timeout: 0 });
+    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos Qori", timeout: 0 });
     const data = await api("/api/business/catalogs/templates/doctor-angie", {
       method: "POST",
       headers: authHeaders(),
@@ -40802,9 +40802,9 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     await refreshSmartCatalogs({ quiet: true });
     setSmartCatalogTab("products");
-    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos Sales Machine" });
+    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Sales Machine" });
+    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Qori" });
   }
 });
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);

@@ -7,7 +7,7 @@ body {
   min-height: 100vh;
   font-family: Inter, Arial, sans-serif;
   color: #18242b;
-  background: #edf4f2;
+  background: #f3f7fb;
 }
 
 .trivia-shell {
@@ -18,7 +18,7 @@ body {
   background:
     radial-gradient(circle at 12% 10%, rgba(255, 205, 87, .24), transparent 28%),
     linear-gradient(135deg, rgba(248, 252, 250, .96), rgba(225, 237, 235, .84)),
-    url("/img/MGLogo-01.png") center 7% / 190px auto no-repeat;
+    url("/img/Logotipo%20Qori%20VF.png") center 7% / 190px auto no-repeat;
 }
 
 .trivia-card {
@@ -38,7 +38,7 @@ body {
   color: #fff;
   background:
     linear-gradient(135deg, rgba(12, 81, 67, .96), rgba(19, 115, 86, .92)),
-    #0c5143;
+    #052a6b;
 }
 
 .trivia-head img {
@@ -78,8 +78,8 @@ body {
   padding: 16px;
   border: 1px solid #d7e2df;
   border-radius: 8px;
-  background: #f8fbfa;
-  color: #30423d;
+  background: #f6fbff;
+  color: #071832;
   font-weight: 700;
 }
 
@@ -91,9 +91,9 @@ body {
 
 .status-panel[data-tone="success"],
 .ticket-result[data-tone="success"] {
-  border-color: #96dfc5;
-  background: #effcf6;
-  color: #0d5a40;
+  border-color: #b8d2e9;
+  background: #e5fbff;
+  color: #052a6b;
 }
 
 .trivia-form {
@@ -121,7 +121,7 @@ body {
 }
 
 .trivia-progress strong {
-  color: #0d6b52;
+  color: #0759d6;
 }
 
 .progress-track {
@@ -136,7 +136,7 @@ body {
   width: 0;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #118568, #f2b84b);
+  background: linear-gradient(90deg, #00bfe5, #f2b84b);
   transition: width .2s ease;
 }
 
@@ -151,7 +151,7 @@ body {
 }
 
 .section-head span {
-  color: #0d6b52;
+  color: #0759d6;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -167,7 +167,7 @@ body {
 
 .section-head p {
   margin: 0;
-  color: #60716c;
+  color: #53677f;
   font-size: 14px;
 }
 
@@ -202,7 +202,7 @@ textarea {
 
 input:focus-visible,
 textarea:focus-visible {
-  border-color: #118568;
+  border-color: #00bfe5;
   box-shadow: 0 0 0 3px rgba(17, 133, 104, .16);
   outline: none;
 }
@@ -240,7 +240,7 @@ textarea:focus-visible {
   place-items: center;
   border-radius: 999px;
   color: #fff;
-  background: #0d6b52;
+  background: #0759d6;
   font-weight: 900;
 }
 
@@ -264,20 +264,20 @@ textarea:focus-visible {
   border-radius: 8px;
   padding: 11px;
   font-weight: 700;
-  background: #f8fbfa;
+  background: #f6fbff;
   cursor: pointer;
   transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
 }
 
 .answer-option:hover,
 .answer-option:focus-within {
-  border-color: #118568;
+  border-color: #00bfe5;
   background: #f0fbf6;
 }
 
 .answer-option.is-selected {
-  border-color: #118568;
-  background: #eaf9f2;
+  border-color: #00bfe5;
+  background: #eaf4ff;
   box-shadow: inset 0 0 0 1px rgba(17, 133, 104, .14);
 }
 
@@ -294,8 +294,8 @@ textarea:focus-visible {
   height: 28px;
   place-items: center;
   border-radius: 8px;
-  color: #0d6b52;
-  background: #e0f3eb;
+  color: #0759d6;
+  background: #eaf4ff;
   font-weight: 900;
 }
 
@@ -330,7 +330,7 @@ textarea:focus-visible {
   padding: 14px;
   color: #16322a;
   background:
-    linear-gradient(160deg, #ffffff, #eef7f3 58%, #ffe2a3);
+    linear-gradient(160deg, #ffffff, #eaf4ff 58%, #ffe2a3);
   font: inherit;
   font-weight: 900;
   text-align: center;
@@ -340,7 +340,7 @@ textarea:focus-visible {
 
 .reveal-card:hover,
 .reveal-card:focus-visible {
-  border-color: #118568;
+  border-color: #00bfe5;
   box-shadow: 0 12px 26px rgba(17, 133, 104, .14);
   outline: none;
   transform: translateY(-2px);
@@ -354,12 +354,12 @@ textarea:focus-visible {
   border-radius: 999px;
   padding: 8px;
   color: #fff;
-  background: #0d6b52;
+  background: #0759d6;
   font-size: 24px;
 }
 
 .reveal-card.is-selected {
-  border-color: #0d6b52;
+  border-color: #0759d6;
   background:
     linear-gradient(160deg, #e8fbf3, #ffffff 58%, #ffd16b);
 }
@@ -387,7 +387,7 @@ textarea:focus-visible {
   border-radius: 8px;
   padding: 38px 12px 12px;
   background:
-    linear-gradient(90deg, #d8f1e8, #ffe19a 50%, #d8f1e8);
+    linear-gradient(90deg, #e5fbff, #ffe19a 50%, #e5fbff);
 }
 
 .thermometer-track::before {
@@ -398,7 +398,7 @@ textarea:focus-visible {
   left: 12px;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #118568, #f2b84b 50%, #118568);
+  background: linear-gradient(90deg, #00bfe5, #f2b84b 50%, #00bfe5);
 }
 
 .thermometer-track i {
@@ -420,14 +420,14 @@ textarea:focus-visible {
   width: 18px;
   height: 34px;
   border-radius: 999px;
-  background: #0a3d31;
+  background: #052a6b;
   box-shadow: 0 6px 16px rgba(10, 61, 49, .24);
   transform: translateX(-50%);
 }
 
 .thermometer-game p {
   margin: 0;
-  color: #60716c;
+  color: #53677f;
   font-weight: 800;
 }
 
@@ -438,7 +438,7 @@ textarea:focus-visible {
   border-radius: 8px;
   padding: 12px 18px;
   color: #fff;
-  background: #0d6b52;
+  background: #0759d6;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
@@ -537,4 +537,114 @@ textarea:focus-visible {
     flex-direction: column;
     gap: 4px;
   }
+}
+
+/* Qori public blue system: removes legacy green branding from trivia links. */
+:root {
+  --qori-ink: #071832;
+  --qori-blue-deep: #052a6b;
+  --qori-blue: #0759d6;
+  --qori-cyan: #00bfe5;
+  --qori-paper: #f6fbff;
+  --qori-line: #d8e6f2;
+  --qori-muted: #53677f;
+}
+
+body {
+  color: var(--qori-ink);
+  background: #f3f7fb;
+}
+
+.trivia-shell {
+  background:
+    radial-gradient(circle at 14% 10%, rgba(0, 191, 229, .18), transparent 28%),
+    radial-gradient(circle at 86% 18%, rgba(7, 89, 214, .14), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 52%, #eaf4ff 100%),
+    url("/img/Logotipo%20Qori%20VF.png") center 7% / 190px auto no-repeat;
+}
+
+.trivia-card {
+  border-color: rgba(5, 42, 107, .12);
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 24px 70px rgba(5, 42, 107, .14);
+}
+
+.trivia-head {
+  background: linear-gradient(135deg, #052a6b 0%, #0759d6 62%, #00bfe5 100%);
+}
+
+.trivia-head span,
+.section-head span,
+.trivia-progress strong,
+.answer-key,
+.result-copy span {
+  color: var(--qori-blue);
+}
+
+.trivia-head p {
+  color: #eaf4ff;
+}
+
+.status-panel,
+.ticket-result,
+.trivia-progress,
+.question-card,
+.answer-option,
+.reveal-card {
+  border-color: var(--qori-line);
+  background: var(--qori-paper);
+  color: var(--qori-ink);
+}
+
+.status-panel[data-tone="success"],
+.ticket-result[data-tone="success"],
+.question-card.is-complete {
+  border-color: rgba(0, 191, 229, .24);
+  background: #e5fbff;
+  color: var(--qori-blue-deep);
+}
+
+.section-head h2 {
+  color: var(--qori-ink);
+}
+
+.section-head p,
+.thermometer-game p {
+  color: var(--qori-muted);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+.answer-option:hover,
+.answer-option:focus-within,
+.answer-option.is-selected,
+.reveal-card:hover,
+.reveal-card:focus-visible,
+.reveal-card.is-selected {
+  border-color: var(--qori-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 191, 229, .14);
+}
+
+.progress-track,
+.thermometer-track {
+  background: #d8e6f2;
+}
+
+.progress-track span,
+.thermometer-track::before,
+.submit-button,
+.ticket-result a,
+.question-title > span,
+.reveal-card strong {
+  background: linear-gradient(135deg, var(--qori-blue), var(--qori-blue-deep));
+  color: #ffffff;
+}
+
+.submit-button:hover,
+.ticket-result a:hover {
+  background: linear-gradient(135deg, #086cff, var(--qori-blue-deep));
+}
+
+.answer-key {
+  background: #eaf4ff;
 }

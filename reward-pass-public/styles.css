@@ -333,3 +333,51 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Qori public blue system. */
+:root {
+  background: #052a6b;
+  color: #f7fbff;
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0, 191, 229, 0.16), transparent 30%),
+    linear-gradient(180deg, #052a6b 0%, #071832 62%, #04122b 100%);
+}
+
+.rp-pass,
+.rp-activation-panel,
+.rp-claim-form {
+  border-color: rgba(0, 191, 229, 0.26);
+  background: rgba(5, 42, 107, 0.88);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+}
+
+.rp-eyebrow,
+.rp-code,
+.rp-activation-panel span,
+.rp-claim-note {
+  color: #00bfe5;
+}
+
+.rp-value,
+.rp-activation-panel {
+  border-color: rgba(0, 191, 229, 0.26);
+  background: rgba(0, 191, 229, 0.08);
+}
+
+.rp-value strong {
+  color: #ffffff;
+}
+
+.rp-status,
+.rp-action-button {
+  background: #00bfe5;
+  color: #052a6b;
+}
+
+.rp-action-button:nth-child(2) {
+  background: #eaf4ff;
+  color: #052a6b;
+}

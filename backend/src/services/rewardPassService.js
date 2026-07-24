@@ -10,7 +10,7 @@ const { ensureCreditAccount, trafficLabel } = require("./qrCreditService");
 const { logQrEvent } = require("./auditService");
 
 const DEFAULT_TICKET_COST = 1;
-const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Sales Machine QR Portal. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
+const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Qori GOS Portal. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
 
 Condiciones sugeridas:
 - Redimible unicamente en el negocio emisor.
@@ -22,7 +22,7 @@ Condiciones sugeridas:
 - La vigencia por defecto debe ser de 12 meses desde la activacion, salvo que el emisor configure un plazo mayor.
 - Vencida la vigencia, el saldo no utilizado podra perderse segun condiciones aceptadas al momento de adquisicion.
 - El emisor es responsable de la redencion comercial.
-- Sales Machine solo presta la tecnologia de administracion, QR, validacion y trazabilidad.`;
+- Qori solo presta la tecnologia de administracion, QR, validacion y trazabilidad.`;
 
 function userBusinessId(user) {
   if (!user?.business_id) {
@@ -509,7 +509,7 @@ async function createRewardPass(user, payload) {
         -ticketCost,
         balanceAfter,
         trafficLabel(ticketCost),
-        `Reward Pass ${publicCode} emitido. Derecho tecnologico Sales Machine descontado.`,
+        `Reward Pass ${publicCode} emitido. Derecho tecnologico Qori descontado.`,
         user.id,
       ]
     );
@@ -1133,7 +1133,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
     ? "Permite redenciones parciales hasta agotar saldo o hasta la fecha de vencimiento."
     : "De un solo uso segun condiciones del emisor.";
   drawWrappedText(page, partialText, { x: leftX, y: 78, maxWidth: 520, size: 10, font, color: soft, lineHeight: 13, maxLines: 2 });
-  drawWrappedText(page, `Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por Sales Machine QR Portal.`, {
+  drawWrappedText(page, `Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por Qori GOS Portal.`, {
     x: leftX,
     y: 52,
     maxWidth: 760,

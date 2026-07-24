@@ -180,7 +180,7 @@ function mapCatalogPayload(body = {}, userId = null) {
     cover_image_url: cleanText(body.cover_image_url, 1200),
     whatsapp_number: normalizeWhatsapp(body.whatsapp_number),
     default_cta_label: cleanText(body.default_cta_label || "Ordenar por WhatsApp", 80) || "Ordenar por WhatsApp",
-    theme_color: cleanText(body.theme_color || "#0f7354", 32) || "#0f7354",
+    theme_color: cleanText(body.theme_color || "#0759d6", 32) || "#0759d6",
     status,
     linked_campaign_id: body.linked_campaign_id || null,
     linked_activation_id: body.linked_activation_id || null,
@@ -632,7 +632,7 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
            email = coalesce(nullif($4, ''), email),
            phone = coalesce(nullif($5, ''), phone),
            interest = coalesce(nullif($6, ''), interest),
-           source = 'Catálogo Sales Machine',
+           source = 'Catalogo Qori',
            source_detail = $7,
            metadata = coalesce(metadata, '{}'::jsonb) || $8::jsonb,
            updated_at = now()
@@ -654,7 +654,7 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
   const created = await client.query(
     `insert into business_manual_leads
       (business_id, created_by_user_id, name, email, phone, source, source_detail, interest, status, priority, notes, metadata)
-     values ($1, $2, $3, $4, $5, 'Catálogo Sales Machine', $6, $7, 'NEW', 'HIGH', $8, $9::jsonb)
+     values ($1, $2, $3, $4, $5, 'Catalogo Qori', $6, $7, 'NEW', 'HIGH', $8, $9::jsonb)
      returning *`,
     [
       catalog.business_id,
@@ -664,7 +664,7 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
       phone,
       catalog.title,
       product?.name || catalog.title,
-      "Lead creado desde catálogo accionable conectado a WhatsApp.",
+      "Lead creado desde catalogo accionable conectado a WhatsApp.",
       JSON.stringify(leadMetadata),
     ]
   );
@@ -673,13 +673,13 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
 
 function buildWhatsappMessage(catalog, product, lead, body = {}) {
   const template = product?.whatsapp_message_template || body.whatsapp_message_template || "";
-  const base = template || "Hola, vengo desde Sales Machine. Me interesa ordenar: {product_name}. Mi nombre es {lead_name}. Vi el catálogo: {catalog_title}. Origen: {origin}.";
+  const base = template || "Hola, vengo desde Qori. Me interesa ordenar: {product_name}. Mi nombre es {lead_name}. Vi el catalogo: {catalog_title}. Origen: {origin}.";
   return base
     .replace(/\{product_name\}/g, product?.name || "producto del catalogo")
     .replace(/\{lead_name\}/g, lead?.name || body.customer_name || "cliente interesado")
     .replace(/\{catalog_title\}/g, catalog.title)
     .replace(/\{campaign_name\}/g, body.campaign_name || catalog.metadata?.campaign_name || "catalogo")
-    .replace(/\{origin\}/g, body.source || body.referral_source || "catalogo Sales Machine");
+    .replace(/\{origin\}/g, body.source || body.referral_source || "catalogo Qori");
 }
 
 async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", userId = null) {
@@ -711,8 +711,8 @@ async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", 
       intent.business_id,
       lead.id,
       phase,
-      phase === "postventa" ? "Enviar encuesta, garantía o beneficio de recompra" : "Contactar por WhatsApp y cerrar pedido",
-      phase === "revenue_generado" ? "Venta marcada desde Catálogos Sales Machine" : "Intención de pedido detectada desde Catálogos Sales Machine",
+      phase === "postventa" ? "Enviar encuesta, garantia o beneficio de recompra" : "Contactar por WhatsApp y cerrar pedido",
+      phase === "revenue_generado" ? "Venta marcada desde Catalogos Qori" : "Intencion de pedido detectada desde Catalogos Qori",
       revenuePotential,
       JSON.stringify(meta),
       userId,
@@ -911,7 +911,7 @@ async function markWon(businessId, intentId, body = {}, user) {
     const sale = await client.query(
       `insert into business_sales
         (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Catálogos Sales Machine', 'smart_catalog', $10, $11::jsonb)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Catalogos Qori', 'smart_catalog', $10, $11::jsonb)
        returning *`,
       [
         businessId,
@@ -1024,7 +1024,7 @@ async function sendPostSaleTicket(businessId, intentId, body = {}, user) {
     customer_phone: row.lead_phone || row.customer_phone,
     customer_email: row.lead_email || row.customer_email,
     product_name: row.product_name || "Compra desde catalogo",
-    notes: body.notes || "Ticket postventa generado desde Catálogos Sales Machine.",
+    notes: body.notes || "Ticket postventa generado desde Catalogos Qori.",
     expires_mode: body.expires_mode || "30_DAYS",
     expiration_days: Number(body.expiration_days || 30),
     metadata: {
@@ -1033,8 +1033,8 @@ async function sendPostSaleTicket(businessId, intentId, body = {}, user) {
       catalog_id: row.catalog_id,
       product_id: row.product_id,
       ticket_use_case: "smart_catalog_post_sale",
-      ticket_use_case_label: "Postventa Catalogo Sales Machine",
-      attribution_source: "Catálogos Sales Machine",
+      ticket_use_case_label: "Postventa Catalogo Qori",
+      attribution_source: "Catalogos Qori",
       attribution_subject: row.product_name || row.catalog_title,
     },
     benefit: {
@@ -1043,7 +1043,7 @@ async function sendPostSaleTicket(businessId, intentId, body = {}, user) {
       benefit_value: body.benefit_value || {
         fulfillment: {
           mode: "PHYSICAL_QR",
-          instructions: "Presenta este ticket para activar garantía, encuesta o beneficio de recompra.",
+          instructions: "Presenta este ticket para activar garantia, encuesta o beneficio de recompra.",
         },
       },
       reward_id: body.reward_id || null,
@@ -1083,11 +1083,11 @@ async function seedDoctorAngieCatalog(businessId, user) {
   const catalog = await createCatalog(businessId, user, {
     title: "Productos de la Doctora Angie",
     slug: "productos-doctora-angie",
-    description: "Descubre productos saludables seleccionados para acompañar tu bienestar. Escoge el producto que te interesa y ordénalo directamente por WhatsApp.",
+    description: "Descubre productos saludables seleccionados para acompanar tu bienestar. Escoge el producto que te interesa y ordenalo directamente por WhatsApp.",
     brand_name: "Doctora Angie",
     whatsapp_number: "573001112233",
     default_cta_label: "Ordenar por WhatsApp",
-    theme_color: "#0f7354",
+    theme_color: "#0759d6",
     status: "DRAFT",
     metadata: {
       template: "doctor_angie",
@@ -1095,10 +1095,10 @@ async function seedDoctorAngieCatalog(businessId, user) {
     },
   });
   const products = [
-    ["Combo energía saludable", "Combos fitness", 69000, "Combo funcional para acompañar entrenamiento y energía diaria."],
-    ["Snack proteico natural", "Snacks saludables", 18000, "Snack práctico con ingredientes naturales para antes o después del gimnasio."],
-    ["Plan de asesoría nutricional inicial", "Asesorías", 120000, "Primera asesoría para orientar hábitos, objetivos y ruta de bienestar."],
-    ["Kit bienestar semanal", "Productos recomendados", 99000, "Selección semanal de productos saludables recomendados por la doctora."],
+    ["Combo energia saludable", "Combos fitness", 69000, "Combo funcional para acompanar entrenamiento y energia diaria."],
+    ["Snack proteico natural", "Snacks saludables", 18000, "Snack practico con ingredientes naturales para antes o despues del gimnasio."],
+    ["Plan de asesoria nutricional inicial", "Asesorias", 120000, "Primera asesoria para orientar habitos, objetivos y ruta de bienestar."],
+    ["Kit bienestar semanal", "Productos recomendados", 99000, "Seleccion semanal de productos saludables recomendados por la doctora."],
     ["Pack gimnasio saludable", "Promociones para gimnasio", 79000, "Pack pensado para activaciones y aliados fitness."],
   ];
   const createdProducts = [];
@@ -1110,9 +1110,9 @@ async function seedDoctorAngieCatalog(businessId, user) {
       price,
       description,
       short_description: description,
-      product_type: category === "Asesorías" ? "advisory" : category.includes("Combo") ? "combo" : "physical",
+      product_type: category === "Asesorias" ? "advisory" : category.includes("Combo") ? "combo" : "physical",
       tags: [category, "bienestar", "gimnasio"],
-      benefits: ["Selección saludable", "Pedido directo por WhatsApp"],
+      benefits: ["Seleccion saludable", "Pedido directo por WhatsApp"],
       cta_label: "Ordenar por WhatsApp",
       display_order: index + 1,
       is_featured: index === 0,

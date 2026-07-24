@@ -1160,6 +1160,9 @@ function resolvePaperSize(paper = "a4") {
 }
 
 function getBrandStyle(settings = {}) {
+  const legacyGreen = new Set(["#0f7354", "#09725f", "#0d6b52", "#118568", "#16a34a", "#22c55e", "#059669", "#047857", "#065f46", "#064e3b", "#14b8a6", "#0f766e"]);
+  const primary = typeof settings.brand_primary === "string" ? settings.brand_primary : "#052a6b";
+  const secondary = typeof settings.brand_secondary === "string" ? settings.brand_secondary : "#00bfe5";
   const logoUrl = typeof settings.logo_data_url === "string" && settings.logo_data_url
     ? settings.logo_data_url
     : typeof settings.logo_url === "string" ? settings.logo_url : "";
@@ -1167,8 +1170,8 @@ function getBrandStyle(settings = {}) {
     ? settings.ticket_frame_data_url
     : typeof settings.ticket_frame_url === "string" ? settings.ticket_frame_url : "";
   return {
-    primary: typeof settings.brand_primary === "string" ? settings.brand_primary : "#13212c",
-    secondary: typeof settings.brand_secondary === "string" ? settings.brand_secondary : "#945d20",
+    primary: legacyGreen.has(primary.trim().toLowerCase()) ? "#052a6b" : primary,
+    secondary: legacyGreen.has(secondary.trim().toLowerCase()) ? "#00bfe5" : secondary,
     logoUrl,
     ticketFrameUrl,
   };
