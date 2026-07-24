@@ -35338,7 +35338,10 @@ function renderRmsStationLeanOnly() {
           <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones
         </button>
         <div class="rms-lean-station-title">
-          <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+          <figure class="rms-lean-station-media">
+            <img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || stage.label || "Estacion RMS")}" decoding="async">
+            <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+          </figure>
           <div>
             <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v144 limpio</span>
             <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
@@ -35908,6 +35911,8 @@ function rmsStationVisualMeta(phase = "") {
     recoleccion: {
       icon: "travel_explore",
       tone: "collector",
+      image: "/img/qori-station-01-recolectar.jpg",
+      imageAlt: "Estacion 01 Recolectar",
       screenTitle: "Estacion de almacenamiento: leads recolectados",
       visualLabel: "Inventario: leads recolectados",
       input: "Personas capturadas por vitrina, QR, activaciones, formularios, referidos, WhatsApp o carga manual.",
@@ -35918,6 +35923,8 @@ function rmsStationVisualMeta(phase = "") {
     alimentacion: {
       icon: "input_circle",
       tone: "intake",
+      image: "/img/qori-station-02-curaduria.jpg",
+      imageAlt: "Estacion 02 Curaduria",
       screenTitle: "Estacion de almacenamiento: Curaduría",
       visualLabel: "Inventario: leads para curar",
       input: "Leads que fueron seleccionados desde Leads recolectados.",
@@ -35928,6 +35935,8 @@ function rmsStationVisualMeta(phase = "") {
     curaduria: {
       icon: "fact_check",
       tone: "curation",
+      image: "/img/qori-station-03-clasificador.jpg",
+      imageAlt: "Estacion 03 Clasificador",
       screenTitle: "Estacion de almacenamiento: Clasificador",
       visualLabel: "Inventario: leads curados para clasificar",
       input: "Leads que Curaduría ya califico como baja, media o alta calidad.",
@@ -35938,6 +35947,8 @@ function rmsStationVisualMeta(phase = "") {
     clasificacion: {
       icon: "account_tree",
       tone: "classifier",
+      image: "/img/qori-station-04-activacion-1.jpg",
+      imageAlt: "Estacion 04 Activacion 1",
       screenTitle: "Estacion de almacenamiento: Activación 1",
       visualLabel: "Inventario: primera activación",
       input: "Leads curados con oferta interna asignada.",
@@ -35948,6 +35959,8 @@ function rmsStationVisualMeta(phase = "") {
     preprocesamiento: {
       icon: "stadia_controller",
       tone: "gamified",
+      image: "/img/qori-station-05-control-calidad-1.jpg",
+      imageAlt: "Estacion 05 Control de calidad 1",
       screenTitle: "Estacion de almacenamiento: Control de calidad 1",
       visualLabel: "Inventario: validación inicial",
       input: "Oportunidades activadas que necesitan validación antes de avanzar.",
@@ -35958,6 +35971,8 @@ function rmsStationVisualMeta(phase = "") {
     procesamiento: {
       icon: "precision_manufacturing",
       tone: "conversion",
+      image: "/img/qori-station-06-evaluacion.jpg",
+      imageAlt: "Estacion 06 Evaluacion",
       screenTitle: "Estacion de almacenamiento: Evaluación",
       visualLabel: "Inventario: oportunidades evaluadas",
       input: "Leads protegidos con interés activo.",
@@ -35968,6 +35983,8 @@ function rmsStationVisualMeta(phase = "") {
     control_anti_fuga: {
       icon: "monitor_heart",
       tone: "control",
+      image: "/img/qori-station-07-riesgos-fuga.jpg",
+      imageAlt: "Estacion 07 Riesgos de fuga",
       screenTitle: "Estacion de almacenamiento: Controlar",
       visualLabel: "Control anti-fuga",
       input: "Oportunidades operadas que pueden enfriarse.",
@@ -35978,6 +35995,8 @@ function rmsStationVisualMeta(phase = "") {
     accion_correctiva: {
       icon: "build_circle",
       tone: "recovery",
+      image: "/img/qori-station-08-negociacion.jpg",
+      imageAlt: "Estacion 08 Negociacion",
       screenTitle: "Estacion de almacenamiento: Corregir",
       visualLabel: "Inventario: oportunidades por corregir",
       input: "Leads atascados, fríos o en riesgo.",
@@ -35988,6 +36007,8 @@ function rmsStationVisualMeta(phase = "") {
     cierre: {
       icon: "payments",
       tone: "closing",
+      image: "/img/qori-station-09-ventas-atribuidas.jpg",
+      imageAlt: "Estacion 09 Ventas atribuidas",
       screenTitle: "Estacion de almacenamiento: Cerrar",
       visualLabel: "Inventario: cierres comerciales",
       input: "Clientes con intención y condiciones claras.",
@@ -35998,6 +36019,8 @@ function rmsStationVisualMeta(phase = "") {
     revenue_generado: {
       icon: "query_stats",
       tone: "revenue",
+      image: "/img/qori-station-10-control-calidad-2.jpg",
+      imageAlt: "Estacion 10 Control de calidad 2",
       screenTitle: "Estacion de almacenamiento: Revenue",
       visualLabel: "Inventario: revenue generado",
       input: "Ventas atribuidas, redenciones, recompras o suscripciones.",
@@ -36008,6 +36031,8 @@ function rmsStationVisualMeta(phase = "") {
     postventa: {
       icon: "redeem",
       tone: "postsale",
+      image: "/img/qori-station-11-activacion-2.jpg",
+      imageAlt: "Estacion 11 Activacion 2",
       screenTitle: "Estacion de almacenamiento: Postventa",
       visualLabel: "Inventario: clientes en postventa",
       input: "Clientes convertidos que no deben enfriarse después de pagar.",
@@ -36018,6 +36043,8 @@ function rmsStationVisualMeta(phase = "") {
     inteligencia: {
       icon: "psychology",
       tone: "intelligence",
+      image: "/img/qori-station-12-inteligencia-rms.jpg",
+      imageAlt: "Estacion 12 Inteligencia RMS",
       screenTitle: "Estacion de almacenamiento: Optimizar",
       visualLabel: "Inventario: aprendizaje RMS",
       input: "Datos de campañas, ganchos, vendedores, tickets, fugas y ventas.",
@@ -37193,6 +37220,9 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           <span class="rms-station-entry-number">Estación ${String(index + 1).padStart(2, "0")}</span>
           <span class="rms-station-entry-count">${Number(rowsAll.length).toLocaleString("es-CO")} lead${rowsAll.length === 1 ? "" : "s"}</span>
         </div>
+        <figure class="rms-station-entry-media">
+          <img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || stage.label || `Estacion ${index + 1}`)}" loading="lazy" decoding="async">
+        </figure>
         <div class="rms-station-entry-main">
           <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
           <div>
