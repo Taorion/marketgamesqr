@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v139";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v140";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34872,7 +34872,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
       <td>
         <label class="rms-lean-station-check" title="Seleccionar lead">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
-          <span>${selected ? "Seleccionado" : "Seleccionar"}</span>
+          <span>${selected ? "Elegido" : "Elegir"}</span>
         </label>
       </td>
       <td>
@@ -34933,15 +34933,18 @@ function renderRmsStationLeanOnly() {
         <button class="ghost-button compact" type="button" data-rms-close-station>
           <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones
         </button>
-        <div>
-          <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v139 fluido</span>
-          <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
-          <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
+        <div class="rms-lean-station-title">
+          <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+          <div>
+            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v140 premium</span>
+            <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
+            <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
+          </div>
         </div>
         <div class="rms-lean-station-actions">
-          ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector>Nuevo lead</button>` : ""}
-          <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}>Seleccionar listos</button>
-          <button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")}</button>
+          ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
+          <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Listos</button>
+          <button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")} <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
         </div>
       </header>
       <div class="rms-lean-station-tools">
