@@ -1,13 +1,14 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-rms-station-fast-entry-v127";
+const APP_VERSION = "empresa-20260723-rms-station-nonblocking-v128";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
-const RMS_STATION_RENDER_LIMIT = 80;
+const RMS_STATION_RENDER_INITIAL_LIMIT = 32;
+const RMS_STATION_RENDER_INCREMENT = 32;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -1472,6 +1473,9 @@ let state = {
   rmsStationSearch: "",
   rmsStationViewMode: "all",
   rmsStationNavigationDirection: "forward",
+  rmsStationRenderLimit: RMS_STATION_RENDER_INITIAL_LIMIT,
+  rmsStationListDeferred: false,
+  rmsStationFastRenderTimer: null,
   rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
@@ -35738,11 +35742,12 @@ function rmsStationRowMatches(item = {}, phase = "") {
 
 function rmsStationDisplayRows(rows = [], phase = "") {
   const selectedIds = new Set((state.rmsMachineSelectedIds || []).map((id) => String(id)));
+  const limit = Math.max(RMS_STATION_RENDER_INITIAL_LIMIT, Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT));
   const matchingRows = (rows || []).filter((item) => rmsStationRowMatches(item, phase));
   const visibleRows = matchingRows
     .slice()
     .sort((a, b) => Number(selectedIds.has(String(b.id))) - Number(selectedIds.has(String(a.id))))
-    .slice(0, RMS_STATION_RENDER_LIMIT);
+    .slice(0, limit);
   return {
     matchingRows,
     visibleRows,
@@ -35824,16 +35829,17 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const phase = stage.key;
   state.rmsStationPhase = phase;
   const rows = rmsStationRows(phase, opportunities);
-  const outputEligibleRows = rmsStationOutputEligibleRows(phase, rows);
+  const isDeferredList = Boolean(state.rmsStationListDeferred);
+  const outputEligibleRows = isDeferredList ? [] : rmsStationOutputEligibleRows(phase, rows);
   const operation = stage.operation || (state.rmsMachine?.operations || {})[phase] || {};
   const operationName = operation.name || operation.primaryAction || "Operacion";
   const stationStorageLabel = stage.storageLabel || `Almacena ${stage.label || "oportunidades"}`;
   const nextPhase = rmsStationNextPhase(stage, stages);
   const previousStage = stages[stageIndex - 1] || null;
   const followingStage = stages[stageIndex + 1] || null;
-  const selectedRows = rmsStationSelectedRows(phase, rows);
-  const riskCount = rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
-  const revenue = rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
+  const selectedRows = isDeferredList ? [] : rmsStationSelectedRows(phase, rows);
+  const riskCount = isDeferredList ? 0 : rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
+  const revenue = isDeferredList ? 0 : rows.reduce((sum, item) => sum + Number(item.revenue_potential || 0), 0);
   const visual = rmsStationVisualMeta(phase);
   const isCollectorStation = phase === "recoleccion";
   const selectAllLabel = phase === "recoleccion"
@@ -35966,14 +35972,20 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   });
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
       state.rmsStationSearch = event.target.value || "";
+      state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
       window.clearTimeout(state.rmsStationSearchRenderTimer);
       state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsStationOnly(), 120);
   });
   rmsStationWorkspace.querySelectorAll("[data-rms-station-view]").forEach((button) => {
     button.addEventListener("click", () => {
       state.rmsStationViewMode = button.dataset.rmsStationView || "all";
+      state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
       renderRmsStationOnly();
     });
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-show-more]")?.addEventListener("click", () => {
+    state.rmsStationRenderLimit = Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT) + RMS_STATION_RENDER_INCREMENT;
+    renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
@@ -36114,10 +36126,16 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
 }
 
 function resetRmsStationMode() {
+  if (state.rmsStationFastRenderTimer) {
+    window.clearTimeout(state.rmsStationFastRenderTimer);
+    state.rmsStationFastRenderTimer = null;
+  }
   state.rmsStationScreenOpen = false;
   state.rmsStationPhase = "";
   state.rmsStationSearch = "";
   state.rmsStationViewMode = "all";
+  state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+  state.rmsStationListDeferred = false;
   state.rmsMachineFilters.phase = "";
   state.rmsMachineSelectedIds = [];
   state.rmsMachineInspectorId = "";
@@ -36126,6 +36144,7 @@ function resetRmsStationMode() {
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
+  const deferredList = Boolean(state.rmsStationListDeferred);
   const display = rmsStationDisplayRows(rows, stage.key || "");
   const renderedRows = display.visibleRows;
   const inputHelp = stage.key === "recoleccion"
@@ -36143,12 +36162,22 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
           <strong>${Number(rows.length || 0).toLocaleString("es-CO")} lead(s)</strong>
           <small>${escapeHtml(inputHelp)} Haz clic en un lead para abrir el detalle.</small>
         </div>
-        <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${display.matchingRows.length}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener rápida la estación` : ""}</small>
+        <small class="rms-station-visible-summary" aria-live="polite">${deferredList ? "Preparando lista ligera..." : `Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${display.matchingRows.length}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener rápida la estación` : ""}`}</small>
       </div>
-      ${rmsStationToolbarMarkup(rows, stage)}
-      ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
-      ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
-      <div class="rms-station-no-results ${renderedRows.length ? "hidden" : ""}" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
+      ${deferredList ? `
+        <div class="rms-station-lead-table-wrap rms-station-clean-list" aria-live="polite">
+          <article class="rms-loading-card">
+            <span class="busy-spinner" aria-hidden="true"></span>
+            <div><strong>Abriendo estación</strong><p>Estamos cargando la lista por bloques para que el portal no se bloquee.</p></div>
+          </article>
+        </div>
+      ` : `
+        ${rmsStationToolbarMarkup(rows, stage)}
+        ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
+        ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
+        ${display.hiddenCount ? `<button class="ghost-button rms-station-show-more" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
+        <div class="rms-station-no-results ${renderedRows.length ? "hidden" : ""}" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
+      `}
     </section>
   `;
 }
@@ -36663,6 +36692,12 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsStationPhase = phase;
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
+  state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+  state.rmsStationListDeferred = true;
+  if (state.rmsStationFastRenderTimer) {
+    window.clearTimeout(state.rmsStationFastRenderTimer);
+    state.rmsStationFastRenderTimer = null;
+  }
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   if (phase === "curaduria" && !state.inventoryLoaded) {
@@ -36670,7 +36705,12 @@ function openRmsStation(phase = "", options = {}) {
   }
   try {
     renderRmsStationOnly();
-    rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+    rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });
+    state.rmsStationFastRenderTimer = window.setTimeout(() => {
+      state.rmsStationListDeferred = false;
+      state.rmsStationFastRenderTimer = null;
+      if (state.rmsStationScreenOpen && state.rmsStationPhase === phase) renderRmsStationOnly();
+    }, 80);
   } catch (error) {
     console.error("RMS station entry failed", error);
     resetRmsStationMode();
