@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-station-images-20260724-v156">
+  <link rel="stylesheet" href="css/styles.css?v=sidebar-o3-gos-20260724-v157">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=affiliate-single-create-action-20260724-v149">
 </head>
 <body data-current-view="rms-machine">
@@ -175,88 +175,98 @@
           </div>
         </div>
 
-        <button class="sidebar-sales-machine-button" type="button" data-portal-shortcut="rms-stations" aria-label="Poner en marcha la fábrica de ventas en la Máquina RMS">
-          <span class="sidebar-sales-machine-logo">
-            <img src="/img/qori-logo.png?v=qori-brand-sello-20260723-v112" alt="" aria-hidden="true">
-          </span>
-          <span class="sidebar-sales-machine-copy">
-            <span>Qori</span>
-            <strong>Fabricar ventas</strong>
-            <small>Máquina RMS</small>
-          </span>
-          <span class="sidebar-sales-machine-ignition" aria-hidden="true">
-            <span class="material-symbols-outlined">account_tree</span>
-          </span>
-        </button>
-
         <nav class="sidebar-nav" aria-label="Navegación principal del portal">
-          <span class="nav-group-label">Ir directo</span>
-          <button class="nav-item nav-item-core active" data-view="rms-machine" type="button">
-            <span class="material-symbols-outlined">account_tree</span>
-            <span><strong>Máquina RMS</strong><small>Procesar leads por estación</small></span>
-          </button>
-          <button class="nav-item nav-item-core" data-view="campaigns" type="button">
-            <span class="material-symbols-outlined">campaign</span>
-            <span><strong>Campañas</strong><small>Planear, crear y emitir QR</small></span>
-          </button>
-          <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
-            <span class="material-symbols-outlined">list_alt</span>
-            <span><strong>Activaciones</strong><small>Lista y rendimiento</small></span>
-          </button>
-          <button class="nav-item nav-item-core" data-view="validator" type="button">
-            <span class="material-symbols-outlined">qr_code_scanner</span>
-            <span><strong>Validador QR</strong><small>Escanear y redimir tickets</small></span>
-          </button>
+          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-offer">
+            <span class="nav-group-label" id="sidebar-section-offer">Ofrece</span>
+            <button class="nav-item nav-item-core" data-view="campaigns" type="button">
+              <span class="material-symbols-outlined">campaign</span>
+              <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
+            </button>
+            <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
+              <span class="material-symbols-outlined">bolt</span>
+              <span><strong>Activaciones</strong><small>Experiencias, links y tickets</small></span>
+            </button>
+            <button class="nav-item" data-view="smart-catalogs" type="button">
+              <span class="material-symbols-outlined">storefront</span>
+              <span><strong>Catálogos</strong><small>Oferta comercial publicada</small></span>
+            </button>
+            <button class="nav-item" data-view="inventory" type="button">
+              <span class="material-symbols-outlined">inventory_2</span>
+              <span><strong>Productos</strong><small>Inventario y reglas de venta</small></span>
+            </button>
+            <button class="nav-item" data-view="reward-passes" type="button">
+              <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
+              <span><strong>Reward Pass</strong><small>Beneficios y pases digitales</small></span>
+            </button>
+          </section>
 
-          <details class="portal-more-nav">
-            <summary><span class="material-symbols-outlined">apps</span><span>Más herramientas</span><span class="material-symbols-outlined">expand_more</span></summary>
-            <div class="portal-more-nav-list">
-              <details class="portal-tool-group" data-tool-group="commercial">
-                <summary><span class="material-symbols-outlined">handshake</span><span><strong>Gestión comercial</strong><small>Contactos, agenda y ventas</small></span><span class="material-symbols-outlined">expand_more</span></summary>
-                <div>
-                  <button class="nav-item" data-view="leads" data-contact-center-nav="directory" type="button"><span class="material-symbols-outlined">group</span><span>Contactos</span></button>
-                  <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button"><span class="material-symbols-outlined">event_note</span><span>Agenda comercial</span></button>
-                  <button class="nav-item" data-view="sales" type="button"><span class="material-symbols-outlined">payments</span><span>Ventas atribuidas</span></button>
-                </div>
-              </details>
+          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-operate">
+            <span class="nav-group-label" id="sidebar-section-operate">Opera</span>
+            <button class="nav-item nav-item-core active" data-view="rms-machine" type="button">
+              <span class="material-symbols-outlined">account_tree</span>
+              <span><strong>Máquina RMS</strong><small>Procesar leads por estación</small></span>
+            </button>
+            <button class="nav-item" data-view="leads" data-contact-center-nav="directory" type="button">
+              <span class="material-symbols-outlined">group</span>
+              <span><strong>Contactos</strong><small>Clientes y leads</small></span>
+            </button>
+            <button class="nav-item" data-view="leads" data-contact-center-nav="agenda" type="button">
+              <span class="material-symbols-outlined">event_note</span>
+              <span><strong>Agenda comercial</strong><small>Seguimiento y tareas</small></span>
+            </button>
+            <button class="nav-item" data-view="sales" type="button">
+              <span class="material-symbols-outlined">payments</span>
+              <span><strong>Ventas atribuidas</strong><small>Revenue conectado a origen</small></span>
+            </button>
+            <button class="nav-item" data-view="validator" type="button">
+              <span class="material-symbols-outlined">qr_code_scanner</span>
+              <span><strong>Validador QR</strong><small>Redimir y confirmar tickets</small></span>
+            </button>
+            <button class="nav-item" data-view="redemptions" type="button">
+              <span class="material-symbols-outlined">redeem</span>
+              <span><strong>Redenciones</strong><small>Historial de beneficios</small></span>
+            </button>
+            <button class="nav-item" data-view="affiliates" type="button">
+              <span class="material-symbols-outlined">card_membership</span>
+              <span><strong>Afiliados</strong><small>Puntos, compras y carnet</small></span>
+            </button>
+          </section>
 
-              <details class="portal-tool-group" data-tool-group="operate">
-                <summary><span class="material-symbols-outlined">inventory_2</span><span><strong>Opera y optimiza</strong><small>Oferta, catálogo y productos</small></span><span class="material-symbols-outlined">expand_more</span></summary>
-                <div>
-                  <button class="nav-item" data-view="smart-catalogs" type="button"><span class="material-symbols-outlined">storefront</span><span>Catálogos</span></button>
-                  <button class="nav-item" data-view="inventory" type="button"><span class="material-symbols-outlined">inventory_2</span><span>Productos</span></button>
-                </div>
-              </details>
+          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-optimize">
+            <span class="nav-group-label" id="sidebar-section-optimize">Optimiza</span>
+            <button class="nav-item" data-view="dashboard" type="button">
+              <span class="material-symbols-outlined">dashboard</span>
+              <span><strong>Centro de Revenue</strong><small>Lectura ejecutiva RMS</small></span>
+            </button>
+            <button class="nav-item" data-view="channels" type="button">
+              <span class="material-symbols-outlined">hub</span>
+              <span><strong>Canales ROI</strong><small>Comparar fuentes y retorno</small></span>
+            </button>
+            <button class="nav-item" data-view="competition" type="button">
+              <span class="material-symbols-outlined">monitoring</span>
+              <span><strong>Radar Competitivo</strong><small>Mercado, precios y hallazgos</small></span>
+            </button>
+            <button class="nav-item" data-view="branches" type="button">
+              <span class="material-symbols-outlined">storefront</span>
+              <span><strong>Sedes</strong><small>Puntos físicos y operación</small></span>
+            </button>
+            <button class="nav-item" data-view="missions" type="button">
+              <span class="material-symbols-outlined">emoji_events</span>
+              <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
+            </button>
+          </section>
 
-              <details class="portal-tool-group" data-tool-group="loyalty">
-                <summary><span class="material-symbols-outlined">favorite</span><span><strong>Fidelización</strong><small>Retención y beneficios</small></span><span class="material-symbols-outlined">expand_more</span></summary>
-                <div>
-                  <button class="nav-item" data-view="missions" type="button"><span class="material-symbols-outlined">emoji_events</span><span>Temporadas</span></button>
-                  <button class="nav-item" data-view="redemptions" type="button"><span class="material-symbols-outlined">redeem</span><span>Redenciones</span></button>
-                  <button class="nav-item" data-view="reward-passes" type="button"><span class="material-symbols-outlined">featured_seasonal_and_gifts</span><span>Reward Pass</span></button>
-                  <button class="nav-item" data-view="affiliates" type="button"><span class="material-symbols-outlined">card_membership</span><span>Afiliados</span></button>
-                </div>
-              </details>
-
-              <details class="portal-tool-group" data-tool-group="intelligence">
-                <summary><span class="material-symbols-outlined">query_stats</span><span><strong>RMS Intelligence</strong><small>Analítica y decisiones</small></span><span class="material-symbols-outlined">expand_more</span></summary>
-                <div>
-                  <button class="nav-item" data-view="dashboard" type="button"><span class="material-symbols-outlined">dashboard</span><span>Centro de Revenue</span></button>
-                  <button class="nav-item" data-view="channels" type="button"><span class="material-symbols-outlined">hub</span><span>Canales ROI</span></button>
-                  <button class="nav-item" data-view="competition" type="button"><span class="material-symbols-outlined">monitoring</span><span>Radar Competitivo</span></button>
-                  <button class="nav-item" data-view="branches" type="button"><span class="material-symbols-outlined">storefront</span><span>Sedes</span></button>
-                </div>
-              </details>
-
-              <details class="portal-tool-group" data-tool-group="account">
-                <summary><span class="material-symbols-outlined">settings</span><span><strong>Administración</strong><small>Cuenta, plan y permisos</small></span><span class="material-symbols-outlined">expand_more</span></summary>
-                <div>
-                  <button class="nav-item" data-view="account" type="button"><span class="material-symbols-outlined">manage_accounts</span><span>Administración</span></button>
-                  <button class="nav-item" data-view="admin" type="button"><span class="material-symbols-outlined">admin_panel_settings</span><span>Admin</span></button>
-                </div>
-              </details>
-            </div>
-          </details>
+          <section class="sidebar-nav-section sidebar-nav-section-gos" aria-labelledby="sidebar-section-gos">
+            <span class="nav-group-label" id="sidebar-section-gos">GOS</span>
+            <button class="nav-item" data-view="account" type="button">
+              <span class="material-symbols-outlined">manage_accounts</span>
+              <span><strong>Cuenta</strong><small>Empresa, plan y permisos</small></span>
+            </button>
+            <button class="nav-item" data-view="admin" type="button">
+              <span class="material-symbols-outlined">admin_panel_settings</span>
+              <span><strong>Admin</strong><small>Control del sistema</small></span>
+            </button>
+          </section>
         </nav>
 
       </aside>

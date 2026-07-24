@@ -57112,3 +57112,152 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-media
     height: 120px !important;
   }
 }
+
+/* Sidebar O3/GOS structure v157: offer, operate, optimize and system governance. */
+html body .portal-shell .sidebar {
+  --sidebar-section-line: rgba(214, 170, 75, 0.18);
+  --sidebar-section-label: rgba(255, 244, 215, 0.68);
+  --sidebar-nav-soft: rgba(255, 252, 242, 0.68);
+  --sidebar-nav-strong: #fffaf0;
+  --sidebar-nav-hover: rgba(255, 244, 215, 0.08);
+  --sidebar-nav-active: linear-gradient(135deg, rgba(0, 191, 229, 0.98), rgba(33, 90, 118, 0.92));
+}
+
+html body .portal-shell .sidebar-nav {
+  gap: 14px !important;
+  margin-top: 18px !important;
+  padding: 2px 4px 28px 0 !important;
+}
+
+html body .portal-shell .sidebar-nav-section {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid var(--sidebar-section-line) !important;
+}
+
+html body .portal-shell .sidebar-nav-section-gos {
+  margin-top: auto !important;
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-group-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 6px 5px !important;
+  color: var(--sidebar-section-label) !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-group-label::after {
+  content: "" !important;
+  height: 1px !important;
+  flex: 1 1 auto !important;
+  background: var(--sidebar-section-line) !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item {
+  min-height: 38px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 7px 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--sidebar-nav-soft) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item > .material-symbols-outlined {
+  width: 22px !important;
+  flex: 0 0 22px !important;
+  margin: 0 !important;
+  color: rgba(7, 206, 251, 0.72) !important;
+  font-size: 20px !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item > span:last-child {
+  display: grid !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item strong,
+html body .portal-shell .sidebar-nav-section .nav-item small {
+  display: block !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item strong {
+  color: inherit !important;
+  font-size: 0.82rem !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item small {
+  color: rgba(255, 252, 242, 0.48) !important;
+  font-size: 0.68rem !important;
+  font-weight: 650 !important;
+  line-height: 1.15 !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item:hover,
+html body .portal-shell .sidebar-nav-section .nav-item:focus-visible {
+  background: var(--sidebar-nav-hover) !important;
+  border-color: rgba(214, 170, 75, 0.16) !important;
+  color: var(--sidebar-nav-strong) !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item.active {
+  background: var(--sidebar-nav-active) !important;
+  border-color: rgba(7, 206, 251, 0.34) !important;
+  color: #ffffff !important;
+  box-shadow: inset 3px 0 0 #d6aa4b !important;
+}
+
+html body .portal-shell .sidebar-nav-section .nav-item.active > .material-symbols-outlined,
+html body .portal-shell .sidebar-nav-section .nav-item.active small {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav {
+  gap: 8px !important;
+  padding-right: 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section {
+  justify-items: center !important;
+  padding-bottom: 8px !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-group-label {
+  display: none !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-item {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-item > .material-symbols-outlined {
+  width: auto !important;
+  flex-basis: auto !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-item > span:last-child {
+  display: none !important;
+}
