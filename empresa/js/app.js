@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v138";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v139";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34934,7 +34934,7 @@ function renderRmsStationLeanOnly() {
           <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones
         </button>
         <div>
-          <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v138 simple</span>
+          <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v139 fluido</span>
           <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
           <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
         </div>
