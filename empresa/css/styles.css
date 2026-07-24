@@ -56423,3 +56423,96 @@ html body .portal-shell :is(.modal-card, .gaming-activation-detail-card, .activa
     white-space: normal !important;
   }
 }
+
+/* Affiliates hover stability: rows and detail controls must not jump on hover. */
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable,
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tbody,
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tr,
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable td {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tbody tr {
+  height: 62px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.08) !important;
+  background: transparent !important;
+  outline: 1px solid transparent !important;
+  outline-offset: -1px !important;
+  transition: background-color 0.14s ease, outline-color 0.14s ease !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tbody tr:hover,
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tbody tr:focus-within {
+  background: rgba(246, 251, 255, 0.82) !important;
+  outline-color: rgba(0, 191, 229, 0.18) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable tbody tr.active {
+  background: rgba(7, 89, 214, 0.055) !important;
+  outline-color: rgba(7, 89, 214, 0.22) !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable .affiliate-table-main {
+  width: 100% !important;
+  min-height: 42px !important;
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  justify-content: start !important;
+  justify-items: start !important;
+  align-content: center !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  text-align: left !important;
+  white-space: normal !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable .affiliate-table-main:hover,
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable .affiliate-table-main:focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable .affiliate-row-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(74px, 1fr)) !important;
+  justify-content: end !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 164px !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateTable .affiliate-row-actions .compact {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel,
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel :where(.affiliate-selected-summary, .affiliate-card-actions label, .affiliate-purchase-summary, input, select, textarea, button) {
+  backface-visibility: hidden !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel :where(.affiliate-selected-summary, .affiliate-card-actions label, .affiliate-purchase-summary):hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
