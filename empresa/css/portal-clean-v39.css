@@ -4996,7 +4996,7 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(
 
 /* Qori portal visual excellence v134 - final winning layer. */
 
-/* Qori RMS station fluid mode v143 */
+/* Qori RMS station fluid mode v144 */
 html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station {
   display: grid;
   gap: 20px;
@@ -5192,53 +5192,29 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-check
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status {
   min-width: 130px;
-}
-
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
   color: #53677f;
-  font-size: .82rem;
+  font-size: .84rem;
   font-weight: 760;
   line-height: 1.35;
+  text-align: center;
+  white-space: normal;
 }
 
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status i {
-  display: block;
-  flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #8aa2ba;
-  box-shadow: 0 0 0 4px rgba(138, 162, 186, .12);
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.high,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.urgent,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.ok {
+  color: #0759d6;
 }
 
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status :where(span) {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.medium,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.pending,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.warning {
+  color: #087aa0;
 }
 
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.high i,
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.urgent i,
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.ok i {
-  background: #0759d6;
-  box-shadow: 0 0 0 4px rgba(7, 89, 214, .12);
-}
-
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.medium i,
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.pending i,
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.warning i {
-  background: #00bff2;
-  box-shadow: 0 0 0 4px rgba(0, 191, 242, .14);
-}
-
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.low i,
-html body[data-current-view="rms-machine"] .portal-shell .rms-soft-status.muted i {
-  background: #8aa2ba;
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.low,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-status.muted {
+  color: #6c7f95;
 }
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-quality .rms-lead-quality-field {
