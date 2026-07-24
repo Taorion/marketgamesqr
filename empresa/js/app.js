@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v136";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v137";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1486,6 +1486,7 @@ let state = {
   rmsStationRenderLimit: RMS_STATION_RENDER_INITIAL_LIMIT,
   rmsStationListDeferred: false,
   rmsStationFastRenderTimer: null,
+  rmsStationOpenSeq: 0,
   rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
@@ -34854,6 +34855,7 @@ function renderRmsMachineView() {
   renderRmsBulkToolbar();
   renderRmsEventLog(data.events || []);
   renderRmsLeadInspector();
+  warmRmsStationRuntime();
 }
 
 function renderRmsStationOnly() {
@@ -34965,14 +34967,7 @@ function renderRmsIndustrialFlow(steps = []) {
   `).join("") || '<div class="empty-state compact">La ruta industrial se activará cuando entren oportunidades RMS.</div>';
   rmsIndustrialFlow.querySelectorAll("[data-rms-flow-phase]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.rmsMachineFilters.phase = button.dataset.rmsFlowPhase || "";
-      if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = state.rmsMachineFilters.phase;
-      if (state.rmsMachineFilters.phase) {
-        state.rmsStationPhase = state.rmsMachineFilters.phase;
-        state.rmsStationScreenOpen = true;
-      }
-      renderRmsMachineView();
-      rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openRmsStation(button.dataset.rmsFlowPhase || "", { source: "flow" });
     });
   });
 }
@@ -34991,12 +34986,7 @@ function renderRmsAlerts(alerts = []) {
   `).join("");
   rmsMachineAlerts.querySelectorAll("[data-rms-alert-phase]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.rmsMachineFilters.phase = button.dataset.rmsAlertPhase || "";
-      if (state.rmsMachineFilters.phase) {
-        state.rmsStationPhase = state.rmsMachineFilters.phase;
-        state.rmsStationScreenOpen = true;
-      }
-      renderRmsMachineView();
+      openRmsStation(button.dataset.rmsAlertPhase || "", { source: "alert" });
     });
   });
 }
@@ -35847,6 +35837,25 @@ function ensureRmsStationUxStyles() {
   document.head.appendChild(style);
 }
 
+function warmRmsStationRuntime() {
+  if (document.body?.dataset?.rmsStationRuntimeWarm === "true") return;
+  document.body.dataset.rmsStationRuntimeWarm = "true";
+  const warm = () => {
+    try {
+      ensureRmsStationUxStyles();
+      ensureRmsCaptureReviewStyles();
+    } catch (error) {
+      console.warn("RMS station warmup skipped", error);
+      document.body.dataset.rmsStationRuntimeWarm = "false";
+    }
+  };
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(warm, { timeout: 1200 });
+  } else {
+    window.setTimeout(warm, 80);
+  }
+}
+
 function rmsStationNavigatorMarkup(stages = [], currentIndex = 0, opportunities = []) {
   const currentStage = stages[currentIndex] || stages[0] || {};
   const previousStage = stages[currentIndex - 1] || null;
@@ -36065,7 +36074,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
             <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
-          <span class="rms-station-build-badge">Qori v136 apertura inmediata</span>
+          <span class="rms-station-build-badge">Qori v137 anti-bloqueo</span>
           <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
@@ -36799,6 +36808,54 @@ function bindRmsMachineActions(root) {
   });
 }
 
+function renderRmsStationInstantShell(phase = "", stages = []) {
+  if (!rmsStationWorkspace || !phase) return;
+  const index = Math.max(0, stages.findIndex((item) => item.key === phase));
+  const stage = stages[index] || stages[0] || { key: phase, label: "Estación RMS" };
+  const visual = rmsStationVisualMeta(phase);
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <div class="rms-station-screen-shell rms-station-fast-shell">
+      <section class="rms-station-navigation-hub rms-station-navigation-hub-compact" aria-label="Navegación de estaciones">
+        <div class="rms-station-navigation-primary">
+          <button class="ghost-button rms-station-map-button" type="button" data-rms-close-station>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span>Volver a estaciones</span>
+          </button>
+          <div class="rms-station-navigation-context" aria-live="polite">
+            <span>Estación ${String(index + 1).padStart(2, "0")} de ${String(stages.length || 1).padStart(2, "0")}</span>
+            <strong>${escapeHtml(stage.label || "Estación RMS")}</strong>
+            <small>Vista operativa abierta. Preparando lista ligera.</small>
+            <i aria-hidden="true"><span style="width:${stages.length > 1 ? Math.round((index / (stages.length - 1)) * 100) : 100}%"></span></i>
+          </div>
+        </div>
+      </section>
+      <section class="rms-station-primary-brief" aria-label="Objetivo de la estación">
+        <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+        <div>
+          <span class="mono-label">Estación abierta</span>
+          <strong>${escapeHtml(stage.operation?.primaryAction || stage.operation?.name || "Operar")}</strong>
+          <small>Qori v137 modo anti-bloqueo: primero abre, luego sincroniza.</small>
+        </div>
+      </section>
+      <section class="rms-station-clean-shell rms-station-input-lane" aria-live="polite">
+        <div class="rms-station-list-head">
+          <div>
+            <span class="mono-label">Leads en estación</span>
+            <strong>Lista ligera</strong>
+            <small>Si la red tarda, el portal no queda bloqueado.</small>
+          </div>
+          <small class="rms-station-visible-summary">Sincronizando...</small>
+        </div>
+      </section>
+    </div>
+  `;
+  rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => {
+    button.addEventListener("click", closeRmsStation);
+  });
+}
+
 function openRmsStation(phase = "", options = {}) {
   if (!phase) return;
   const stages = rmsFactoryStages(state.rmsMachine || {});
@@ -36831,16 +36888,26 @@ function openRmsStation(phase = "", options = {}) {
   if (phase === "curaduria" && !state.inventoryLoaded) {
     loadInventoryProducts({ quiet: true }).catch(() => {});
   }
+  const openSeq = ++state.rmsStationOpenSeq;
   try {
-    renderRmsStationOnly();
+    renderRmsStationInstantShell(phase, stages);
     rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });
+    window.setTimeout(() => {
+      if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
+      try {
+        renderRmsStationOnly();
+      } catch (renderError) {
+        console.error("RMS station deferred render failed", renderError);
+      }
+    }, 60);
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
       .then(() => {
-        if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase) return;
+        if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         renderRmsStationOnly();
       })
       .catch((renderError) => {
         console.error("RMS station lite load failed", renderError);
+        if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         renderRmsStationOnly();
         showFeedback("La estación quedó operativa con datos locales. La actualización ligera no respondió a tiempo.", "info", { title: "Estaciones" });
       });
@@ -39249,13 +39316,12 @@ rmsMachineSearchInput?.addEventListener("keydown", (event) => {
 rmsMachinePhaseFilter?.addEventListener("change", () => {
   state.rmsMachineFilters.phase = rmsMachinePhaseFilter.value || "";
   if (state.rmsMachineFilters.phase) {
-    state.rmsStationPhase = state.rmsMachineFilters.phase;
-    state.rmsStationScreenOpen = true;
+    openRmsStation(state.rmsMachineFilters.phase, { source: "phase-filter" });
   } else {
     state.rmsStationPhase = "";
     state.rmsStationScreenOpen = false;
+    renderRmsMachineView();
   }
-  renderRmsMachineView();
 });
 rmsMachinePriorityFilter?.addEventListener("change", () => {
   state.rmsMachineFilters.priority = rmsMachinePriorityFilter.value || "";
