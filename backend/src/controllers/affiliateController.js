@@ -15,6 +15,7 @@ const {
   awardAffiliatePoints,
   getPublicAffiliateCard,
   removeAffiliateFromCampaign,
+  updateAffiliate,
   updateAffiliateLedgerEntry,
 } = require("../services/affiliateService");
 const { validate } = require("../utils/validators");
@@ -33,6 +34,10 @@ const createAffiliateSchema = z.object({
   photo_data_url: z.string().trim().min(20).optional().nullable(),
   notes: z.string().trim().max(500).optional().nullable(),
   card_metadata: z.record(z.any()).optional().nullable(),
+});
+
+const updateAffiliateSchema = createAffiliateSchema.partial().refine((body) => Object.keys(body).length > 0, {
+  message: "Debes enviar al menos un campo para actualizar.",
 });
 
 const awardPointsSchema = z.object({
@@ -126,6 +131,17 @@ async function getBusinessAffiliate(req, res, next) {
       listAffiliateRewardUnlocks(req.params.id, req.params.affiliateId, req.user),
     ]);
     res.json({ affiliate, ledger, reward_unlocks });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateBusinessAffiliate(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(updateAffiliateSchema, req.body);
+    const affiliate = await updateAffiliate(req.params.id, req.params.affiliateId, req.user, body);
+    res.json({ affiliate });
   } catch (error) {
     next(error);
   }
@@ -269,6 +285,7 @@ module.exports = {
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
+  updateBusinessAffiliate,
   updateBusinessAffiliateLedgerEntry,
   deleteBusinessAffiliate,
   removeBusinessCampaignAffiliate,

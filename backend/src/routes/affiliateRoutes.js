@@ -11,6 +11,7 @@ const {
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
+  updateBusinessAffiliate,
   updateBusinessAffiliateLedgerEntry,
   deleteBusinessAffiliate,
   removeBusinessCampaignAffiliate,
@@ -28,6 +29,7 @@ router.get("/businesses/:id/campaigns/:campaignId/affiliates", listBusinessCampa
 router.post("/businesses/:id/campaigns/:campaignId/affiliates", assignBusinessCampaignAffiliate);
 router.delete("/businesses/:id/campaigns/:campaignId/affiliates/:affiliateId", removeBusinessCampaignAffiliate);
 router.get("/businesses/:id/affiliates/:affiliateId", getBusinessAffiliate);
+router.patch("/businesses/:id/affiliates/:affiliateId", updateBusinessAffiliate);
 router.post("/businesses/:id/affiliates/:affiliateId/points", awardBusinessAffiliatePoints);
 router.patch("/businesses/:id/affiliates/:affiliateId/ledger/:ledgerId", updateBusinessAffiliateLedgerEntry);
 router.post("/businesses/:id/affiliates/:affiliateId/reward-tickets", createBusinessAffiliateRewardTicket);

@@ -154,6 +154,38 @@ async function createAffiliate(businessId, user, body) {
   return affiliate;
 }
 
+async function updateAffiliate(businessId, affiliateId, user, body) {
+  ensureBusinessAccess(user, businessId);
+  const result = await query(
+    `update affiliates
+     set full_name = coalesce($3, full_name),
+         document_id = $4,
+         phone = $5,
+         email = $6,
+         photo_data_url = coalesce($7, photo_data_url),
+         notes = $8,
+         card_metadata = coalesce(card_metadata, '{}'::jsonb) || coalesce($9::jsonb, '{}'::jsonb),
+         updated_at = now()
+     where business_id = $1 and id = $2
+     returning id`,
+    [
+      businessId,
+      affiliateId,
+      body.full_name || null,
+      body.document_id || null,
+      body.phone || null,
+      body.email || null,
+      body.photo_data_url || null,
+      body.notes || null,
+      body.card_metadata || {},
+    ]
+  );
+  if (!result.rowCount) {
+    throw notFound("Affiliate not found.");
+  }
+  return getAffiliate(businessId, affiliateId, user);
+}
+
 async function getAffiliate(businessId, affiliateId, user) {
   ensureBusinessAccess(user, businessId);
   const result = await query(
@@ -828,5 +860,6 @@ module.exports = {
   listAffiliateLedger,
   removeAffiliateFromCampaign,
   awardAffiliatePoints,
+  updateAffiliate,
   updateAffiliateLedgerEntry,
 };

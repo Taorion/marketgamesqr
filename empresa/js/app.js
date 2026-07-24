@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260723-rms-station-nonblocking-v128";
+const APP_VERSION = "empresa-20260724-affiliates-list-modal-v130";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -411,6 +411,14 @@ const salesAnalysisBranchInput = document.getElementById("salesAnalysisBranchInp
 const salesAnalysisGroupInput = document.getElementById("salesAnalysisGroupInput");
 const salesAnalysisResetButton = document.getElementById("salesAnalysisResetButton");
 const affiliateCreateForm = document.getElementById("affiliateCreateForm");
+const affiliateOpenCreateButton = document.getElementById("affiliateOpenCreateButton");
+const affiliateListCreateButton = document.getElementById("affiliateListCreateButton");
+const affiliateCreatePanel = document.getElementById("affiliateCreatePanel");
+const affiliateCreateModeLabel = document.getElementById("affiliateCreateModeLabel");
+const affiliateCreateTitle = document.getElementById("affiliateCreateTitle");
+const affiliateCreateSubmitButton = document.getElementById("affiliateCreateSubmitButton");
+const affiliateCreateCloseButton = document.getElementById("affiliateCreateCloseButton");
+const affiliateCreateCancelButton = document.getElementById("affiliateCreateCancelButton");
 const affiliateFullNameInput = document.getElementById("affiliateFullNameInput");
 const affiliateDocumentInput = document.getElementById("affiliateDocumentInput");
 const affiliatePhoneInput = document.getElementById("affiliatePhoneInput");
@@ -1541,6 +1549,7 @@ let state = {
   selectedAffiliate: null,
   selectedAffiliateLedger: [],
   affiliateLedgerEditingId: null,
+  affiliateEditingId: null,
   affiliateScannerStream: null,
   affiliateScannerLoopHandle: 0,
   affiliateScannerCanvas: document.createElement("canvas"),
@@ -24846,13 +24855,63 @@ async function normalizeAffiliatePhotoDataUrl(source, options = {}) {
   return canvas.toDataURL(options.mimeType || "image/jpeg", quality);
 }
 
-function resetAffiliateForm() {
-  affiliateCreateForm.reset();
+function syncAffiliateFormChrome() {
+  const isEditing = Boolean(state.affiliateEditingId);
+  if (affiliateCreateModeLabel) affiliateCreateModeLabel.textContent = isEditing ? "Editar afiliado" : "Nuevo afiliado";
+  if (affiliateCreateTitle) affiliateCreateTitle.textContent = isEditing ? "Actualizar datos" : "Registrar afiliado";
+  if (affiliateCreateSubmitButton) affiliateCreateSubmitButton.textContent = isEditing ? "Guardar cambios" : "Crear afiliado";
+}
+
+function resetAffiliateForm(options = {}) {
+  affiliateCreateForm?.reset();
   affiliateCapturedPhotoDataUrl = "";
   if (affiliatePhotoInput) affiliatePhotoInput.value = "";
   stopAffiliateCamera();
   syncAffiliatePhotoPreview("");
-  affiliateCreateMessage.textContent = "";
+  if (!options.preserveMode) state.affiliateEditingId = null;
+  syncAffiliateFormChrome();
+  if (affiliateCreateMessage) affiliateCreateMessage.textContent = "";
+}
+
+function findAffiliateById(affiliateId) {
+  return (state.affiliates || []).find((item) => item.id === affiliateId)
+    || (state.selectedAffiliate?.id === affiliateId ? state.selectedAffiliate : null);
+}
+
+function fillAffiliateForm(affiliate) {
+  if (!affiliateCreateForm) return;
+  affiliateFullNameInput.value = affiliate?.full_name || "";
+  affiliateDocumentInput.value = affiliate?.document_id || "";
+  affiliatePhoneInput.value = affiliate?.phone || "";
+  affiliateEmailInput.value = affiliate?.email || "";
+  affiliateNotesInput.value = affiliate?.notes || "";
+  affiliateCapturedPhotoDataUrl = affiliatePhotoSource(affiliate) || "";
+  if (affiliatePhotoInput) affiliatePhotoInput.value = "";
+  syncAffiliatePhotoPreview(affiliateCapturedPhotoDataUrl);
+  syncAffiliateFormChrome();
+}
+
+function openAffiliateCreateModal(options = {}) {
+  ensureAffiliatesUxStyles();
+  setupAffiliatePhotoCaptureUi();
+  const affiliate = options.affiliateId ? findAffiliateById(options.affiliateId) : null;
+  state.affiliateEditingId = affiliate?.id || null;
+  if (affiliate) {
+    fillAffiliateForm(affiliate);
+  } else {
+    resetAffiliateForm();
+  }
+  affiliateViewSection()?.classList.add("affiliate-modal-open");
+  affiliateCreatePanel?.classList.add("is-modal-open");
+  window.requestAnimationFrame(() => affiliateFullNameInput?.focus());
+}
+
+function closeAffiliateCreateModal(options = {}) {
+  affiliateCreatePanel?.classList.remove("is-modal-open");
+  if (!document.getElementById("affiliateOperatePanel")?.classList.contains("is-modal-open")) {
+    affiliateViewSection()?.classList.remove("affiliate-modal-open");
+  }
+  if (!options.keepForm) resetAffiliateForm();
 }
 
 function renderBusinessLogoPanel() {
@@ -25205,7 +25264,7 @@ function syncAffiliatePhotoPreview(dataUrl) {
   if (startButton) startButton.textContent = hasCamera ? "Camara activa" : "Abrir camara";
   if (uploadButton) uploadButton.textContent = hasPhoto ? "Cambiar foto" : "Subir foto";
   if (submitButton) {
-    submitButton.textContent = "Crear afiliado y ticket";
+    submitButton.textContent = state.affiliateEditingId ? "Guardar cambios" : "Crear afiliado";
   }
   syncAffiliateStepper();
 }
@@ -25361,7 +25420,8 @@ function setupAffiliatePhotoCaptureUi() {
 async function submitAffiliateForm(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
-  affiliateCreateMessage.textContent = "Creando afiliado...";
+  const editingId = state.affiliateEditingId;
+  affiliateCreateMessage.textContent = editingId ? "Guardando afiliado..." : "Creando afiliado...";
 
   try {
     const uploadedPhotoDataUrl = affiliateCapturedPhotoDataUrl
@@ -25378,17 +25438,24 @@ async function submitAffiliateForm(event) {
       },
     };
 
-    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(payload),
-    });
+    const data = await api(
+      editingId
+        ? `/api/portal/businesses/${session.user.business_id}/affiliates/${editingId}`
+        : `/api/portal/businesses/${session.user.business_id}/affiliates`,
+      {
+        method: editingId ? "PATCH" : "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      }
+    );
 
     const affiliate = {
       ...(data.affiliate || {}),
       business_logo_data_url: businessProfileLogoSource(),
     };
-    state.affiliates = [affiliate, ...(state.affiliates || []).filter((item) => item.id !== affiliate.id)];
+    state.affiliates = editingId
+      ? (state.affiliates || []).map((item) => (item.id === affiliate.id ? { ...item, ...affiliate } : item))
+      : [affiliate, ...(state.affiliates || []).filter((item) => item.id !== affiliate.id)];
     state.selectedAffiliateId = affiliate.id;
     state.selectedAffiliate = affiliate;
     state.contactFeedLoaded = false;
@@ -25396,8 +25463,9 @@ async function submitAffiliateForm(event) {
     state.leadCrmPagination.offset = 0;
     affiliateCreateMessage.textContent = "";
     resetAffiliateForm();
+    closeAffiliateCreateModal();
     await renderAffiliatesView();
-    showFeedback("Afiliado creado correctamente.");
+    showFeedback(editingId ? "Afiliado actualizado correctamente." : "Afiliado creado correctamente.");
   } catch (error) {
     affiliateCreateMessage.textContent = error.message;
   }
@@ -31277,8 +31345,10 @@ function openAffiliateOperationModal() {
 }
 
 function closeAffiliateOperationModal() {
-  affiliateViewSection()?.classList.remove("affiliate-modal-open");
   document.getElementById("affiliateOperatePanel")?.classList.remove("is-modal-open");
+  if (!affiliateCreatePanel?.classList.contains("is-modal-open")) {
+    affiliateViewSection()?.classList.remove("affiliate-modal-open");
+  }
 }
 
 function renderAffiliateLedgerTable() {
@@ -31532,7 +31602,12 @@ async function renderAffiliatesView() {
         <td><strong>${escapeHtml(money(purchaseTotal))}</strong><span class="table-secondary">${escapeHtml(purchases.toLocaleString("es-CO"))} movimientos</span></td>
         <td>${escapeHtml(item.last_purchase_at ? formatDateShort(item.last_purchase_at) : "-")}</td>
         <td><span class="status-chip ${status === "INACTIVE" ? "muted" : "ok"}">${escapeHtml(status === "INACTIVE" ? "Inactivo" : "Activo")}</span></td>
-        <td><button class="solid-button compact" type="button" data-affiliate-select="${escapeHtml(item.id)}">Asignar compra</button></td>
+        <td>
+          <div class="affiliate-row-actions">
+            <button class="ghost-button compact" type="button" data-affiliate-edit="${escapeHtml(item.id)}">Editar</button>
+            <button class="solid-button compact" type="button" data-affiliate-select="${escapeHtml(item.id)}">Compra</button>
+          </div>
+        </td>
       </tr>
     `;
   }).join("") || '<tr><td colspan="7">Todavia no hay afiliados creados.</td></tr>';
@@ -31555,6 +31630,12 @@ async function renderAffiliatesView() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       openAffiliateForPoints(button.dataset.affiliateSelect);
+    });
+  });
+  affiliateTable.querySelectorAll("[data-affiliate-edit]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openAffiliateCreateModal({ affiliateId: button.dataset.affiliateEdit });
     });
   });
   if (!selected) {
@@ -32236,9 +32317,9 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV74")) return;
+  if (document.getElementById("affiliatesUxStylesV75")) return;
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV74";
+  style.id = "affiliatesUxStylesV75";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -32383,10 +32464,26 @@ function ensureAffiliatesUxStyles() {
       display: block;
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel {
-      margin-top: 1rem;
+      margin-top: 0;
+      overflow: hidden;
+      border-radius: 18px;
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel table {
-      min-width: 820px;
+      min-width: 880px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f6fbff;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel td {
+      vertical-align: middle;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr.active {
+      background: rgba(7, 89, 214, .06);
     }
     .affiliate-table-main {
       display: grid;
@@ -32404,6 +32501,17 @@ function ensureAffiliatesUxStyles() {
       color: #64748b;
       font-size: .82rem;
       line-height: 1.35;
+    }
+    .affiliate-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      justify-content: flex-end;
+    }
+    .affiliate-row-actions .compact {
+      min-height: 34px;
+      padding: .45rem .7rem;
+      white-space: nowrap;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel {
       display: none !important;
@@ -32428,6 +32536,31 @@ function ensureAffiliatesUxStyles() {
       overscroll-behavior: contain;
       z-index: 1100;
       padding: 1rem;
+    }
+    .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
+      display: block !important;
+      position: fixed;
+      left: 50%;
+      top: 6vh;
+      transform: translateX(-50%);
+      width: min(720px, calc(100vw - 2rem));
+      max-height: 88vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      z-index: 1100;
+      padding: 1rem;
+    }
+    .view-section[data-view="affiliates"] #affiliateCreatePanel .affiliate-form {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .view-section[data-view="affiliates"] #affiliateCreatePanel .modal-actions {
+      margin-top: .25rem;
+      padding: .75rem 0 0;
+      border: 0;
+      background: transparent;
+    }
+    .view-section[data-view="affiliates"] #affiliateCreatePanel .modal-button-row {
+      justify-content: flex-end;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-preview-wrap,
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateCardMeta,
@@ -32469,6 +32602,14 @@ function ensureAffiliatesUxStyles() {
         top: 1rem;
         width: calc(100vw - 1rem);
         max-height: calc(100vh - 2rem);
+      }
+      .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
+        top: 1rem;
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 2rem);
+      }
+      .view-section[data-view="affiliates"] #affiliateCreatePanel .affiliate-form {
+        grid-template-columns: 1fr;
       }
     }
   `;
@@ -39922,12 +40063,19 @@ downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliate
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
 refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
+affiliateOpenCreateButton?.addEventListener("click", () => openAffiliateCreateModal());
+affiliateListCreateButton?.addEventListener("click", () => openAffiliateCreateModal());
+affiliateCreateCloseButton?.addEventListener("click", closeAffiliateCreateModal);
+affiliateCreateCancelButton?.addEventListener("click", closeAffiliateCreateModal);
 document.querySelector('.view-section[data-view="affiliates"]')?.addEventListener("click", (event) => {
   const jumpButton = event.target.closest("[data-affiliate-jump]");
   if (!jumpButton) return;
+  if (jumpButton.dataset.affiliateJump === "create") {
+    openAffiliateCreateModal();
+    return;
+  }
   const targetByJump = {
     search: "affiliateSearchPanel",
-    create: "affiliateCreatePanel",
     operate: "affiliateOperatePanel",
     rewards: "affiliateRewardsPanel",
     referrals: "affiliateReferralsPanel",
@@ -39937,6 +40085,11 @@ document.querySelector('.view-section[data-view="affiliates"]')?.addEventListene
   const target = targetId ? document.getElementById(targetId) : null;
   if (!target) return;
   target.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || state.currentView !== "affiliates") return;
+  closeAffiliateCreateModal();
+  closeAffiliateOperationModal();
 });
 affiliateFinderSearchButton?.addEventListener("click", () => searchAffiliateForPoints());
 affiliateFinderInput?.addEventListener("keydown", (event) => {

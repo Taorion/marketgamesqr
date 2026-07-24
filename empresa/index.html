@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=qori-no-green-20260723-v115">
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-collector-modal-repair-20260724-v129">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=affiliates-list-modal-20260724-v130">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -6552,6 +6552,7 @@
                 <p>Tabla simple de afiliados. Haz clic sobre un afiliado para atribuir una compra, asignar puntos y cerrar la operación.</p>
               </div>
               <div class="view-head-actions">
+                <button class="solid-button" id="affiliateOpenCreateButton" type="button">Agregar afiliado</button>
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
               </div>
             </div>
@@ -6669,10 +6670,10 @@
               <article class="surface-card affiliate-panel" id="affiliateCreatePanel">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Nuevo afiliado</span>
-                    <strong>Registrar carnet</strong>
+                    <span class="mono-label" id="affiliateCreateModeLabel">Nuevo afiliado</span>
+                    <strong id="affiliateCreateTitle">Registrar afiliado</strong>
                   </div>
-                  <span class="status-chip pending">Paso 1</span>
+                  <button class="icon-button" id="affiliateCreateCloseButton" type="button" aria-label="Cerrar formulario de afiliado"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <form class="modal-form affiliate-form" id="affiliateCreateForm">
                   <label>
@@ -6698,7 +6699,8 @@
                   <div class="modal-actions span-2">
                     <p class="error-line" id="affiliateCreateMessage"></p>
                     <div class="modal-button-row">
-                      <button class="solid-button" type="submit">Crear afiliado y carnet</button>
+                      <button class="solid-button" id="affiliateCreateSubmitButton" type="submit">Crear afiliado</button>
+                      <button class="ghost-button" type="button" id="affiliateCreateCancelButton">Cancelar</button>
                       <button class="ghost-button" type="button" id="resetAffiliateFormButton">Limpiar</button>
                     </div>
                   </div>
@@ -6883,9 +6885,9 @@
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Afiliados del negocio</span>
-                    <strong>Listado y puntos</strong>
+                    <strong>Lista simple de afiliados</strong>
                   </div>
-                  <span class="table-secondary">Haz clic en una fila para operar</span>
+                  <button class="solid-button compact" id="affiliateListCreateButton" type="button">Agregar afiliado</button>
                 </div>
                 <div class="table-wrap">
                   <table>
@@ -6897,7 +6899,7 @@
                         <th>Compras</th>
                         <th>Última compra</th>
                         <th>Estado</th>
-                        <th>Acción</th>
+                        <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="affiliateTable"></tbody>
@@ -7284,7 +7286,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-nonblocking-20260723-v128" defer></script>
+  <script src="js/app.js?v=affiliates-list-modal-20260724-v130" defer></script>
 </body>
 </html>
 
