@@ -22,6 +22,143 @@
   --qori-shadow: 0 3px 12px rgba(5, 42, 107, 0.045);
 }
 
+/* Qori portal visual excellence v134 - station lite proof and flat RMS workspace. */
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell {
+  gap: 12px !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell :where(.rms-station-navigation-hub, .rms-station-primary-brief, .rms-station-command-dock, .rms-station-screen, .rms-station-clean-shell) {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-primary-brief {
+  grid-template-columns: 40px minmax(0,1fr) auto !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(5, 42, 107, 0.14) !important;
+  background: #f7fbff !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-brief-metrics {
+  display: none !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock {
+  position: static !important;
+  grid-template-columns: minmax(0,1fr) auto !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(5, 42, 107, 0.13) !important;
+  background: #ffffff !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-status > .material-symbols-outlined {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-status small {
+  display: none !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions > button {
+  min-height: 36px !important;
+  padding: 7px 11px !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-screen {
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  background: #ffffff !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head {
+  min-height: 48px !important;
+  grid-template-columns: minmax(0,1fr) auto auto !important;
+  gap: 10px !important;
+  padding: 9px 12px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, 0.78) !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-build-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+  padding: 5px 9px !important;
+  border: 1px solid rgba(7, 206, 251, 0.38) !important;
+  border-radius: 999px !important;
+  background: #e8f7ff !important;
+  color: #052a6b !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-list-head {
+  padding: 10px 12px !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar {
+  grid-template-columns: minmax(260px,1fr) auto !important;
+  padding: 8px !important;
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  background: #f7fbff !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-output-lane {
+  display: none !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-clean-list {
+  gap: 0 !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row {
+  min-height: 62px !important;
+  grid-template-columns: 38px minmax(180px,1fr) minmax(180px,0.9fr) minmax(120px,0.5fr) minmax(120px,0.55fr) auto !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  border-width: 0 0 1px !important;
+  border-color: rgba(205, 224, 244, 0.78) !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row:hover,
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row.is-selected {
+  transform: none !important;
+  background: #f7fbff !important;
+  box-shadow: inset 3px 0 0 #07cefb !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-inline-action {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-show-more {
+  width: calc(100% - 24px) !important;
+  margin: 10px 12px 12px !important;
+}
+
+@media (max-width: 980px) {
+  html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock,
+  html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head,
+  html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar,
+  html body:not(#qoriV134A#qoriV134B#qoriV134C)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Qori portal visual excellence v131: Stitch-inspired forms, Qori brand colors. */
 html body {
   --qori-blue-deep: #012268;
@@ -4790,6 +4927,119 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(
 
   html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="leads"] .portal-shell :where(.lead-directory-audience-tabs, .lead-directory-card-row),
   html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Qori portal visual excellence v134 - final winning layer. */
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell,
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-output-lane,
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell :where(.rms-station-visual-grid, .rms-station-workflow-guide, .rms-station-secondary-details) {
+  display: none !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell :where(.rms-station-navigation-hub, .rms-station-primary-brief, .rms-station-command-dock, .rms-station-screen, .rms-station-clean-shell) {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell {
+  gap: 12px !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock {
+  position: static !important;
+  grid-template-columns: minmax(0,1fr) auto !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(5, 42, 107, 0.13) !important;
+  background: #ffffff !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-command-status small {
+  display: none !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-screen {
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  background: #ffffff !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head {
+  min-height: 48px !important;
+  grid-template-columns: minmax(0,1fr) auto auto !important;
+  gap: 10px !important;
+  padding: 9px 12px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, 0.78) !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-build-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+  padding: 5px 9px !important;
+  border: 1px solid rgba(7, 206, 251, 0.38) !important;
+  border-radius: 999px !important;
+  background: #e8f7ff !important;
+  color: #052a6b !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar {
+  grid-template-columns: minmax(260px,1fr) auto !important;
+  padding: 8px !important;
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  background: #f7fbff !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-clean-list {
+  gap: 0 !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row {
+  min-height: 62px !important;
+  grid-template-columns: 38px minmax(180px,1fr) minmax(180px,0.9fr) minmax(120px,0.5fr) minmax(120px,0.55fr) auto !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  border-width: 0 0 1px !important;
+  border-color: rgba(205, 224, 244, 0.78) !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row:hover,
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row.is-selected {
+  transform: none !important;
+  background: #f7fbff !important;
+  box-shadow: inset 3px 0 0 #07cefb !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-inline-action {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-show-more {
+  width: calc(100% - 24px) !important;
+  margin: 10px 12px 12px !important;
+}
+
+@media (max-width: 980px) {
+  html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock,
+  html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head,
+  html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar,
+  html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-lead-row {
     grid-template-columns: 1fr !important;
   }
 }

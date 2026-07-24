@@ -1,14 +1,14 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v133";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v134";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
-const RMS_STATION_RENDER_INITIAL_LIMIT = 18;
-const RMS_STATION_RENDER_INCREMENT = 18;
+const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
+const RMS_STATION_RENDER_INCREMENT = 10;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -34566,8 +34566,8 @@ async function loadRmsMachineData(options = {}) {
   if (!options.quiet) renderRmsMachineLoading();
   try {
     const params = new URLSearchParams();
-    params.set("limit", "180");
-    params.set("section_limit", "18");
+    params.set("limit", "72");
+    params.set("section_limit", "8");
     const search = state.rmsMachineFilters?.search || state.filter || "";
     if (search) params.set("search", search);
     if (state.rmsMachineFilters?.priority) params.set("priority", state.rmsMachineFilters.priority);
@@ -34806,6 +34806,10 @@ function renderRmsMachineView() {
   const metrics = data.metrics || {};
   const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
   const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
+  if (state.rmsStationScreenOpen) {
+    renderRmsStationOnly();
+    return;
+  }
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -36047,6 +36051,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
             <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
+          <span class="rms-station-build-badge">Qori v134 liviano</span>
           <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
