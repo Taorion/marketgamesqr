@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-rms-station-display-labels-v146";
+const APP_VERSION = "empresa-20260724-flat-affiliates-visual-v147";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -32320,10 +32320,11 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV76")) return;
+  if (document.getElementById("affiliatesUxStylesV77")) return;
+  document.getElementById("affiliatesUxStylesV76")?.remove();
   document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV76";
+  style.id = "affiliatesUxStylesV77";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -32735,6 +32736,110 @@ function ensureAffiliatesUxStyles() {
       .view-section[data-view="affiliates"] #affiliateCreatePanel .affiliate-form {
         grid-template-columns: 1fr;
       }
+    }
+    .view-section[data-view="affiliates"] .affiliate-layout,
+    .view-section[data-view="affiliates"] .affiliate-primary-panel,
+    .view-section[data-view="affiliates"] .affiliate-list-panel,
+    .view-section[data-view="affiliates"] #affiliateLedgerPanel {
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel {
+      margin-top: .75rem !important;
+      overflow: visible !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel .table-card-head {
+      min-height: 58px !important;
+      padding: 0 0 14px !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel .table-wrap {
+      border-radius: 0 !important;
+      border-top: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel table {
+      min-width: 980px !important;
+      width: 100% !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td {
+      height: auto !important;
+      min-height: 58px !important;
+      padding: 13px 12px !important;
+      overflow: hidden !important;
+      vertical-align: middle !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th {
+      position: static !important;
+      background: transparent !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .14) !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr {
+      background: transparent !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+      box-shadow: none !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr:hover {
+      background: rgba(0, 210, 255, .055) !important;
+      box-shadow: inset 3px 0 0 #00bff2 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr.active {
+      background: rgba(7, 89, 214, .055) !important;
+      box-shadow: inset 3px 0 0 #0759d6 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-table-main,
+    .view-section[data-view="affiliates"] .affiliate-table-contact,
+    .view-section[data-view="affiliates"] .affiliate-row-actions {
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-table-main strong,
+    .view-section[data-view="affiliates"] .affiliate-table-main small,
+    .view-section[data-view="affiliates"] .affiliate-table-contact,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td > .table-secondary,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td > strong {
+      display: block !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-row-actions {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: .45rem !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-row-actions .compact {
+      min-width: 0 !important;
+      width: 100% !important;
+      padding: .45rem .55rem !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open,
+    .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
+      border-radius: 14px !important;
+      max-width: calc(100vw - 32px) !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-summary,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid div,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions label,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid div {
+      border-bottom: 1px solid rgba(5, 42, 107, .09) !important;
+      border-radius: 0 !important;
     }
   `;
   document.head.appendChild(style);
@@ -36117,6 +36222,103 @@ function ensureRmsStationUxStyles() {
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table td > span,
     :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-open { color: #f6fbff !important; }
     @media (max-width: 760px) { body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table { min-width: 920px !important; } body[data-current-view="rms-machine"] .portal-shell .rms-station-quality-cell { min-width: 210px !important; } }
+  `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-shell,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-screen,
+    body[data-current-view="rms-machine"] .portal-shell .rms-lean-station,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-navigation-hub-compact {
+      border: 0 !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+      border-radius: 0 !important;
+      background: rgba(247, 250, 253, .94) !important;
+      box-shadow: none !important;
+      padding: 8px 0 12px !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table-wrap,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-output-lane,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-input-output,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lane,
+    body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier,
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-primary-brief,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint article,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-lead-card,
+    body[data-current-view="rms-machine"] .portal-shell .rms-collector-select-control {
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-toolbar {
+      border-top: 1px solid rgba(5, 42, 107, .1) !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+      padding: 12px 0 !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table {
+      min-width: 980px !important;
+      border-collapse: collapse !important;
+      border-spacing: 0 !important;
+      background: transparent !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table thead th {
+      position: static !important;
+      background: transparent !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .14) !important;
+      padding: 11px 10px !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody tr {
+      outline: 0 !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody tr:hover {
+      background: rgba(0, 210, 255, .055) !important;
+      box-shadow: inset 3px 0 0 #00bff2 !important;
+      transform: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td:first-child,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-lead-table tbody td:last-child,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quality-cell {
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      padding: 13px 10px !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-quick-jump select,
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field select {
+      border-radius: 10px !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-view-filters button span,
+    body[data-current-view="rms-machine"] .portal-shell .status-chip,
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-output-pills span {
+      background: transparent !important;
+      border: 0 !important;
+      padding: 0 !important;
+      color: #052a6b !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-meta,
+    body[data-current-view="rms-machine"] .portal-shell .rms-lead-quality-field > span {
+      background: transparent !important;
+      border: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
