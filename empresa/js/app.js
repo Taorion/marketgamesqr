@@ -21227,7 +21227,7 @@ function renderActivationShareModal() {
                 <strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong>
                 <small>${escapeHtml(activationShareContactLine(lead))}</small>
               </span>
-              <span class="status-chip ${hasPhone ? "ok" : "pending"}">${hasPhone ? "WhatsApp" : "Sin telefono"}</span>
+              <span class="activation-share-phone-state ${hasPhone ? "is-ready" : "is-missing"}">${hasPhone ? "WhatsApp listo" : "Sin telefono"}</span>
             </button>
           `;
         }).join("")
