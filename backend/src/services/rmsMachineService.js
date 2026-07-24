@@ -565,14 +565,19 @@ async function stateRowsFor(businessId, rows = []) {
   return new Map(result.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
 }
 
-async function recentStateRowsForBusiness(businessId, limit = 240) {
+async function recentStateRowsForBusiness(businessId, limit = 240, phase = "") {
+  const normalizedPhase = phase ? normalizePhase(phase, "") : "";
+  const params = [businessId, Math.min(Math.max(Number(limit || 240), 1), 500)];
+  const phaseClause = normalizedPhase ? "and rms_phase = $3" : "";
+  if (normalizedPhase) params.push(normalizedPhase);
   const result = await query(
     `select *
        from rms_lead_state
       where business_id = $1
+        ${phaseClause}
       order by updated_at desc
       limit $2`,
-    [businessId, Math.min(Math.max(Number(limit || 240), 1), 500)]
+    params
   );
   return result.rows || [];
 }
@@ -688,9 +693,16 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
 
 async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
-  const data = await listLeadCrmRows(businessId, { ...filters, limit, offset: filters.offset || 0 });
+  const phaseFilter = normalizePhase(filters.rms_phase || filters.phase, "");
+  const lite = ["1", "true", true].includes(filters.lite);
+  const data = await listLeadCrmRows(businessId, {
+    ...filters,
+    ...(phaseFilter ? { rms_phase: phaseFilter } : {}),
+    limit,
+    offset: filters.offset || 0,
+  });
   const baseRows = data.leads || data.rows || [];
-  const recentStateRows = await recentStateRowsForBusiness(businessId);
+  const recentStateRows = await recentStateRowsForBusiness(businessId, phaseFilter ? limit : 240, phaseFilter);
   const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
   const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
   const extraRows = missingStateRows.length
@@ -708,7 +720,8 @@ async function listRmsOpportunities(businessId, filters = {}) {
     ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
     ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
   ]);
-  const inventoryProducts = await inventoryProductsForBusiness(businessId);
+  const needsInventory = !phaseFilter || ["curaduria", "clasificacion"].includes(phaseFilter);
+  const inventoryProducts = needsInventory ? await inventoryProductsForBusiness(businessId) : [];
   const opportunities = mergedRows.map((row) => (
     opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`), inventoryProducts)
   )).sort((a, b) => b.priority_score - a.priority_score || b.risk_score - a.risk_score);
@@ -717,21 +730,23 @@ async function listRmsOpportunities(businessId, filters = {}) {
     pagination: data.pagination || { total: opportunities.length, limit, offset: 0, has_more: false },
     stages: RMS_PHASES,
     operations: PHASE_OPERATIONS,
-    funnel: buildIntakeFunnel(opportunities),
-    process_flow: buildIndustrialProcess(opportunities),
-    alerts: rmsAlerts(opportunities),
+    funnel: lite ? [] : buildIntakeFunnel(opportunities),
+    process_flow: lite ? [] : buildIndustrialProcess(opportunities),
+    alerts: lite ? [] : rmsAlerts(opportunities),
+    scope: phaseFilter ? { mode: "station", phase: phaseFilter, lite } : { mode: "machine", phase: "", lite },
   };
 }
 
 async function getDailyQueue(businessId, filters = {}) {
-  const { opportunities, pagination, stages, operations, funnel, process_flow, alerts } = await listRmsOpportunities(businessId, filters);
+  const { opportunities, pagination, stages, operations, funnel, process_flow, alerts, scope } = await listRmsOpportunities(businessId, filters);
+  const lite = ["1", "true", true].includes(filters.lite);
   const labels = sectionLabels();
   const sections = Object.keys(labels).map((key) => ({
     key,
     label: labels[key],
     items: opportunities.filter((item) => item.section === key).slice(0, Number(filters.section_limit || 18)),
   }));
-  const events = await listRmsEvents(businessId, { limit: 12 });
+  const events = lite ? { events: [] } : await listRmsEvents(businessId, { limit: 12 });
   const metrics = rmsMetrics(opportunities);
   return {
     generated_at: new Date().toISOString(),
@@ -745,6 +760,7 @@ async function getDailyQueue(businessId, filters = {}) {
     alerts,
     events: events.events,
     pagination,
+    scope,
   };
 }
 

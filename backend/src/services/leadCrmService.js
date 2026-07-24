@@ -224,6 +224,10 @@ function listWhere(filters, params) {
     params.push(String(filters.priority).toUpperCase());
     clauses.push(`care_priority = $${params.length}`);
   }
+  if (filters.rms_phase) {
+    params.push(String(filters.rms_phase || "").trim().toLowerCase());
+    clauses.push(`coalesce(rms_phase, 'recoleccion') = $${params.length}`);
+  }
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
   if (filters.is_affiliate === "true") clauses.push("is_affiliate = true");
