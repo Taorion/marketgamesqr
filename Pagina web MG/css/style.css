@@ -1616,20 +1616,27 @@ h3 {
 .activation-showcase {
   width: var(--container);
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-  gap: clamp(30px, 6vw, 82px);
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.88fr);
+  gap: clamp(28px, 5vw, 68px);
   align-items: center;
   margin: clamp(34px, 6vw, 68px) auto 0;
   padding: clamp(22px, 3vw, 34px) 0 clamp(10px, 2vw, 22px);
+}
+
+.activation-showcase *,
+.activation-showcase *::before,
+.activation-showcase *::after {
+  min-width: 0;
 }
 
 .activation-visual {
   position: relative;
   min-height: 430px;
   display: grid;
-  grid-template-columns: minmax(150px, 0.62fr) minmax(260px, 1.15fr) minmax(180px, 0.78fr);
+  grid-template-columns: minmax(132px, 0.58fr) minmax(240px, 1.12fr) minmax(158px, 0.72fr);
   gap: clamp(14px, 2vw, 22px);
   align-items: center;
+  overflow: hidden;
 }
 
 .activation-visual::before {
@@ -1658,6 +1665,7 @@ h3 {
 .activation-loop {
   position: relative;
   z-index: 1;
+  overflow: hidden;
   box-shadow: 0 20px 58px rgba(1, 34, 104, 0.12);
 }
 
@@ -1675,7 +1683,7 @@ h3 {
 
 .scan-card::before {
   content: "";
-  width: 82px;
+  width: clamp(58px, 5.4vw, 82px);
   aspect-ratio: 1;
   display: block;
   margin-bottom: 4px;
@@ -1692,6 +1700,7 @@ h3 {
   font-size: 0.76rem;
   font-weight: 900;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .scan-card strong,
@@ -1707,6 +1716,7 @@ h3 {
 .scan-card small {
   color: var(--qori-muted);
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .activation-loop {
@@ -1741,6 +1751,7 @@ h3 {
   z-index: 1;
   display: grid;
   gap: 14px;
+  overflow: hidden;
 }
 
 .experience-screen > span {
@@ -1753,14 +1764,16 @@ h3 {
 
 .experience-screen strong {
   color: var(--qori-blue-deep);
-  font-size: clamp(2rem, 4vw, 3.6rem);
-  line-height: 0.96;
+  font-size: clamp(1.8rem, 3.5vw, 3.05rem);
+  line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .experience-screen small {
   color: var(--qori-muted);
   font-size: 0.96rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .experience-chips {
@@ -1782,6 +1795,9 @@ h3 {
   font-style: normal;
   font-size: 0.86rem;
   font-weight: 900;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  text-align: center;
   box-shadow: 0 10px 22px rgba(1, 34, 104, 0.06);
 }
 
@@ -1851,40 +1867,47 @@ h3 {
 }
 
 .lead-ticket strong {
-  font-size: 1.16rem;
+  font-size: clamp(1rem, 1.25vw, 1.14rem);
+  overflow-wrap: anywhere;
 }
 
 .activation-copy h3 {
-  max-width: 13ch;
+  max-width: 15ch;
   margin: 10px 0 0;
   color: var(--qori-blue-deep);
-  font-size: clamp(2rem, 4vw, 3.55rem);
-  line-height: 1;
+  font-size: clamp(1.9rem, 3.25vw, 3rem);
+  line-height: 1.03;
+  overflow-wrap: anywhere;
 }
 
 .activation-copy p {
-  max-width: 620px;
+  max-width: 560px;
   margin: 18px 0 0;
   color: var(--qori-muted);
-  font-size: 1.06rem;
-  line-height: 1.62;
+  font-size: 1rem;
+  line-height: 1.58;
+  overflow-wrap: anywhere;
 }
 
 .activation-steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   margin-top: 26px;
   border-top: 1px solid rgba(3, 65, 179, 0.18);
   border-bottom: 1px solid rgba(3, 65, 179, 0.18);
 }
 
 .activation-steps article {
-  padding: 18px 16px;
-  border-left: 1px solid rgba(205, 224, 244, 0.95);
+  display: grid;
+  grid-template-columns: minmax(76px, 0.28fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px solid rgba(205, 224, 244, 0.95);
 }
 
 .activation-steps article:first-child {
-  border-left: 0;
+  border-top: 0;
 }
 
 .activation-steps strong {
@@ -1895,9 +1918,9 @@ h3 {
 
 .activation-steps span {
   display: block;
-  margin-top: 7px;
   color: var(--qori-muted);
   line-height: 1.42;
+  overflow-wrap: anywhere;
 }
 
 .activation-pulse article {
@@ -1907,8 +1930,8 @@ h3 {
 .activation-pulse article::after {
   content: "";
   position: absolute;
-  left: 16px;
-  right: 16px;
+  left: 0;
+  width: 52px;
   bottom: -1px;
   height: 3px;
   border-radius: 999px;
@@ -3030,18 +3053,12 @@ h3 {
   }
 
   .activation-visual {
-    min-height: 560px;
+    min-height: auto;
     grid-template-columns: 1fr;
   }
 
   .activation-visual::after {
-    left: 50%;
-    right: auto;
-    top: 10%;
-    bottom: 10%;
-    width: 2px;
-    height: auto;
-    background: linear-gradient(180deg, rgba(7, 206, 251, 0), rgba(4, 128, 250, 0.72), rgba(7, 206, 251, 0));
+    display: none;
   }
 
   .scan-card,
@@ -3055,31 +3072,35 @@ h3 {
   .activation-visual {
     align-content: center;
     justify-items: center;
-    gap: 18px;
+    gap: 14px;
   }
 
   .scan-card,
   .lead-ticket {
-    width: min(100%, 310px);
+    width: 100%;
     min-height: auto;
   }
 
   .activation-loop {
-    width: min(270px, 74vw);
+    width: 100%;
+    min-height: auto;
+    border-radius: 24px;
+    outline-offset: 5px;
   }
 
-  .loop-node {
-    min-width: 78px;
-    min-height: 34px;
-    font-size: 0.75rem;
+  .experience-screen strong {
+    font-size: clamp(1.75rem, 9vw, 2.45rem);
   }
 
-  .node-benefit {
-    right: -8px;
+  .experience-chips {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
-  .node-validation {
-    left: -8px;
+  .experience-chips em {
+    min-height: 38px;
+    padding: 0 8px;
+    font-size: 0.78rem;
   }
 
   .activation-copy h3 {
@@ -3094,6 +3115,8 @@ h3 {
 
   .activation-steps article,
   .activation-steps article:first-child {
+    grid-template-columns: 1fr;
+    gap: 5px;
     padding: 15px 0;
     border-left: 0;
     border-top: 1px solid rgba(205, 224, 244, 0.95);
