@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v140";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v141";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34864,9 +34864,12 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
-  const qualityControl = stage.key === "alimentacion"
-    ? `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`
-    : `<td><span class="status-chip ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</span></td>`;
+  let stationControl = `<td><span class="status-chip ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</span></td>`;
+  if (stage.key === "alimentacion") {
+    stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
+  } else if (["curaduria", "clasificacion"].includes(stage.key)) {
+    stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
+  }
   return `
     <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
       <td>
@@ -34887,7 +34890,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.stage_label || stage.label || "")}</small>
       </td>
-      ${qualityControl}
+      ${stationControl}
       <td>
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
         <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
@@ -34913,6 +34916,7 @@ function renderRmsStationLeanOnly() {
   const selectedRows = rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const visual = rmsStationVisualMeta(phase);
+  const stationControlLabel = ["curaduria", "clasificacion"].includes(phase) ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -34936,7 +34940,7 @@ function renderRmsStationLeanOnly() {
         <div class="rms-lean-station-title">
           <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
           <div>
-            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v140 premium</span>
+            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v141 clasificador</span>
             <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
             <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
           </div>
@@ -34965,7 +34969,7 @@ function renderRmsStationLeanOnly() {
               <th>Lead</th>
               <th>Origen</th>
               <th>Interés</th>
-              <th>Estado</th>
+              <th>${escapeHtml(stationControlLabel)}</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -35285,6 +35289,7 @@ function rmsClassifiedProductName(item = {}) {
 function rmsClassificationSourceLabel(item = {}) {
   const source = String(item.classification_source || "").toLowerCase();
   if (item.classification_is_manual || source.includes("manual")) return "Clasificación manual";
+  if (source === "auto_activation_product") return "Clasificación automática por activación";
   if (source === "auto_inventory_match") return "Clasificación automática por inventario";
   if (source === "interest_without_inventory_match") return "Interés detectado sin producto creado";
   return "Sin clasificación de producto";
@@ -37012,12 +37017,17 @@ function openRmsStation(phase = "", options = {}) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
     state.rmsStationFastRenderTimer = null;
   }
+  const openSeq = ++state.rmsStationOpenSeq;
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
-  if (phase === "curaduria" && !state.inventoryLoaded) {
-    loadInventoryProducts({ quiet: true }).catch(() => {});
+  if (["curaduria", "clasificacion"].includes(phase) && !state.inventoryLoaded) {
+    loadInventoryProducts({ quiet: true })
+      .then(() => {
+        if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
+        renderRmsStationOnly();
+      })
+      .catch(() => {});
   }
-  const openSeq = ++state.rmsStationOpenSeq;
   try {
     renderRmsStationOnly();
     rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });

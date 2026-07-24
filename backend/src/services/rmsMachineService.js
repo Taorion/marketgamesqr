@@ -257,11 +257,33 @@ function productClassificationFor(row = {}, stateRow = null, inventoryProducts =
       is_manual: true,
     };
   }
+  const activationProductId = firstPresent(
+    metadata.rms_intake?.product_interest_id,
+    metadata.rms_intake?.product_id,
+    metadata.activation_form?.product_interest_id,
+    metadata.activation_form?.product_id,
+    metadata.product_interest_id,
+    metadata.inventory_product_id
+  );
+  if (activationProductId) {
+    const product = inventoryProducts.find((item) => String(item.id) === String(activationProductId));
+    if (product) {
+      return {
+        product_id: product.id,
+        product_name: product.name,
+        product_category: product.category || "",
+        source: "auto_activation_product",
+        confidence: 1,
+        is_manual: false,
+      };
+    }
+  }
   const interest = firstPresent(
     row.top_interest,
     row.top_product,
     row.top_category,
     row.product_interest,
+    metadata.rms_intake?.product_interest,
     metadata.rms_intake?.interest,
     metadata.interest,
     metadata.favorite_product,

@@ -5115,6 +5115,76 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-quali
   min-width: 170px;
 }
 
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product {
+  min-width: 310px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier {
+  display: grid;
+  gap: 7px;
+  max-width: 420px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier label {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: #53677f;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product :where(select, input) {
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  border-bottom: 1px solid rgba(5, 42, 107, .2);
+  border-radius: 0;
+  background: transparent;
+  color: #052a6b;
+  font-size: .82rem;
+  box-shadow: none;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product :where(select, input):focus {
+  border-color: #00bff2;
+  outline: 0;
+  box-shadow: 0 1px 0 #00bff2;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier-meta,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier-meta {
+  color: #53677f;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier-meta small {
+  color: #0b63f6;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-product .rms-product-classifier-actions .compact {
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: .72rem;
+}
+
 html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station :where(.ghost-button, .solid-button).compact {
   min-height: 38px;
   border-radius: 10px;
