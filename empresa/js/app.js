@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v142";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v143";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34985,7 +34985,14 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
-  let stationControl = `<td><span class="status-chip ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</span></td>`;
+  let stationControl = `
+    <td class="rms-lean-station-status">
+      <span class="rms-soft-status ${escapeHtml(item.priority_class || "medium")}">
+        <i aria-hidden="true"></i>
+        <span>${escapeHtml(item.priority_label || readiness.label || "Media")}</span>
+      </span>
+    </td>
+  `;
   if (stage.key === "alimentacion") {
     stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
   } else if (["curaduria", "clasificacion"].includes(stage.key)) {
@@ -34994,9 +35001,8 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   return `
     <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
       <td>
-        <label class="rms-lean-station-check" title="Seleccionar lead">
-          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
-          <span>${selected ? "Elegido" : "Elegir"}</span>
+        <label class="rms-lean-station-check">
+          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
         </label>
       </td>
       <td>
@@ -35061,7 +35067,7 @@ function renderRmsStationLeanOnly() {
         <div class="rms-lean-station-title">
           <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
           <div>
-            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v141 clasificador</span>
+            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v143 soft</span>
             <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
             <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
           </div>
@@ -35086,7 +35092,7 @@ function renderRmsStationLeanOnly() {
         <table class="rms-lean-station-table">
           <thead>
             <tr>
-              <th>Selección</th>
+              <th class="rms-lean-selection-heading" aria-label="Seleccionar"></th>
               <th>Lead</th>
               <th>Origen</th>
               <th>Interés</th>
