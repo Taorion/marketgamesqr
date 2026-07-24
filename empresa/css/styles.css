@@ -56516,3 +56516,43 @@ html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel :
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* Affiliates digital card: visible, compact and stable inside the interstitial. */
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap {
+  display: block !important;
+  width: min(420px, 100%) !important;
+  max-height: 230px !important;
+  margin: 10px auto 8px !important;
+  padding: 8px !important;
+  border: 1px solid rgba(5, 42, 107, 0.1) !important;
+  border-radius: 8px !important;
+  background: #f8fbff !important;
+  overflow: hidden !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open #affiliateCardMeta {
+  display: block !important;
+  margin: 0 0 4px !important;
+  color: #53677f !important;
+  font-size: 0.76rem !important;
+  line-height: 1.35 !important;
+  text-align: center !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open #downloadAffiliateCardButton,
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open #copyAffiliateCardLinkButton {
+  display: inline-flex !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  white-space: nowrap !important;
+}

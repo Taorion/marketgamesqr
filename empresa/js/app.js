@@ -32743,11 +32743,7 @@ function ensureAffiliatesUxStyles() {
     .view-section[data-view="affiliates"] #affiliateCreatePanel .modal-button-row {
       justify-content: flex-end;
     }
-    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-preview-wrap,
-    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateCardMeta,
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-builder,
-    .view-section[data-view="affiliates"] #affiliateOperatePanel #downloadAffiliateCardButton,
-    .view-section[data-view="affiliates"] #affiliateOperatePanel #copyAffiliateCardLinkButton,
     .view-section[data-view="affiliates"] #affiliateOperatePanel label:has(#affiliateManualPointsInput),
     .view-section[data-view="affiliates"] #affiliateOperatePanel label:has(#affiliateManualPointsReasonInput),
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateManualPointsButton,
@@ -32761,12 +32757,36 @@ function ensureAffiliatesUxStyles() {
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-summary {
       min-height: 118px;
-      margin: 16px 0;
+      margin: 12px 0;
       padding: 14px;
       border: 1px solid rgba(5, 42, 107, .1);
       border-radius: 14px;
       background: linear-gradient(180deg, #ffffff, #f8fbff);
       box-shadow: none;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-preview-wrap {
+      width: min(420px, 100%);
+      max-height: 230px;
+      margin: 12px auto 8px;
+      padding: 8px;
+      border: 1px solid rgba(5, 42, 107, .1);
+      border-radius: 12px;
+      background: #f8fbff;
+      overflow: hidden;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-preview-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateCardMeta {
+      margin: 0;
+      color: #53677f;
+      font-size: .76rem;
+      line-height: 1.35;
+      text-align: center;
+      overflow-wrap: anywhere;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-head {
       min-height: 28px;
@@ -32810,9 +32830,18 @@ function ensureAffiliatesUxStyles() {
       white-space: nowrap;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #downloadAffiliateCardButton,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #copyAffiliateCardLinkButton,
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateAddPointsButton,
     .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliatePurchaseMessage {
+      grid-column: auto;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliatePurchaseMessage {
       grid-column: 1 / -1;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel #affiliateAddPointsButton {
+      grid-column: span 2;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-purchase-summary {
       min-height: 86px;
