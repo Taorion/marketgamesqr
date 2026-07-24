@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v137";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v138";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -34855,36 +34855,162 @@ function renderRmsMachineView() {
   renderRmsBulkToolbar();
   renderRmsEventLog(data.events || []);
   renderRmsLeadInspector();
-  warmRmsStationRuntime();
 }
 
-function renderRmsStationOnly() {
+function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
+  const readiness = stage.key === "recoleccion" ? rmsCollectorReadiness(item) : { ready: true, label: item.priority_label || "Operable" };
+  const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
+  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+  const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
+  const qualityControl = stage.key === "alimentacion"
+    ? `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`
+    : `<td><span class="status-chip ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</span></td>`;
+  return `
+    <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
+      <td>
+        <label class="rms-lean-station-check" title="Seleccionar lead">
+          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" ${selected ? "checked" : ""}>
+          <span>${selected ? "Seleccionado" : "Seleccionar"}</span>
+        </label>
+      </td>
+      <td>
+        <strong>${escapeHtml(item.name || "Contacto")}</strong>
+        <small>${escapeHtml(contact)}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(origin)}</span>
+        <small>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</small>
+      </td>
+      <td>
+        <span>${escapeHtml(interest)}</span>
+        <small>${escapeHtml(item.stage_label || stage.label || "")}</small>
+      </td>
+      ${qualityControl}
+      <td>
+        <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
+        <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
+      </td>
+    </tr>
+  `;
+}
+
+function renderRmsStationLeanOnly() {
   const data = state.rmsMachine || {};
   const stages = rmsFactoryStages(data);
   const allOpportunities = data.opportunities || [];
   const metrics = data.metrics || {};
   const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
   const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
+  const phase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "recoleccion";
+  const stageIndex = Math.max(0, stages.findIndex((item) => item.key === phase));
+  const stage = stages[stageIndex] || stages[0] || { key: phase, label: "Estación RMS", operation: {} };
+  const nextPhase = rmsStationNextPhase(stage, stages);
+  const rows = rmsStationRows(phase, allOpportunities);
+  const display = rmsStationDisplayRows(rows, phase);
+  const renderedRows = display.visibleRows;
+  const selectedRows = rmsStationSelectedRows(phase, rows);
+  const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
+  const visual = rmsStationVisualMeta(phase);
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
   if (rmsMachineOpportunityCount) {
-    const phase = state.rmsStationPhase || state.rmsMachineFilters?.phase || "";
-    const rows = phase ? rmsStationRows(phase, allOpportunities) : allOpportunities;
     rmsMachineOpportunityCount.textContent = phase
       ? `${rows.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
       : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
   }
   renderRmsMachineFilterOptions(stages);
+  if (!rmsStationWorkspace) return;
+  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
+  consoleShell?.classList.add("is-station-mode");
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <section class="rms-lean-station" aria-label="Estación RMS simple">
+      <header class="rms-lean-station-head">
+        <button class="ghost-button compact" type="button" data-rms-close-station>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones
+        </button>
+        <div>
+          <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v138 simple</span>
+          <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
+          <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
+        </div>
+        <div class="rms-lean-station-actions">
+          ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector>Nuevo lead</button>` : ""}
+          <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}>Seleccionar listos</button>
+          <button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")}</button>
+        </div>
+      </header>
+      <div class="rms-lean-station-tools">
+        <label>
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar en esta estación">
+        </label>
+        <select data-rms-station-picker aria-label="Cambiar estación">
+          ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${index === stageIndex ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.short_label || item.label || "Estación")}</option>`).join("")}
+        </select>
+        <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
+      </div>
+      <div class="rms-lean-station-table-wrap">
+        <table class="rms-lean-station-table">
+          <thead>
+            <tr>
+              <th>Selección</th>
+              <th>Lead</th>
+              <th>Origen</th>
+              <th>Interés</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderedRows.map((item) => rmsStationLeanRowMarkup(item, stage, nextPhase)).join("") || `<tr><td colspan="6">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <footer class="rms-lean-station-foot">
+        <span>Mostrando ${renderedRows.length.toLocaleString("es-CO")} de ${display.matchingRows.length.toLocaleString("es-CO")}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar` : ""}</span>
+        ${display.hiddenCount ? `<button class="ghost-button compact" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
+      </footer>
+    </section>
+  `;
+  bindRmsMachineActions(rmsStationWorkspace);
+  rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
+  rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
+  rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
+    state.rmsStationSearch = event.target.value || "";
+    state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+    window.clearTimeout(state.rmsStationSearchRenderTimer);
+    state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsStationOnly(), 120);
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-show-more]")?.addEventListener("click", () => {
+    state.rmsStationRenderLimit = Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT) + RMS_STATION_RENDER_INCREMENT;
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-select-ready]")?.addEventListener("click", () => {
+    state.rmsMachineSelectedIds = eligibleRows.map((item) => item.id);
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-lean-send]")?.addEventListener("click", async () => {
+    if (!selectedRows.length || !nextPhase) return;
+    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
+    await moveSelectedRmsPhase();
+  });
+  renderRmsBulkToolbar();
+}
+
+function renderRmsStationOnly() {
   try {
-    renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
+    renderRmsStationLeanOnly();
   } catch (error) {
-    console.error("RMS station fast render failed", error);
+    console.error("RMS station simple render failed", error);
     resetRmsStationMode();
     renderRmsMachineView();
-    showFeedback("La estación no pudo abrirse completa. Volvimos al mapa para que el portal no quede bloqueado.", "error", { title: "Estaciones" });
+    showFeedback("La estación falló y volvimos al mapa para no bloquear el portal.", "error", { title: "Estaciones" });
   }
-  renderRmsBulkToolbar();
 }
 
 function rmsVisibleOpportunities(rows = []) {
@@ -36890,16 +37016,8 @@ function openRmsStation(phase = "", options = {}) {
   }
   const openSeq = ++state.rmsStationOpenSeq;
   try {
-    renderRmsStationInstantShell(phase, stages);
+    renderRmsStationOnly();
     rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });
-    window.setTimeout(() => {
-      if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
-      try {
-        renderRmsStationOnly();
-      } catch (renderError) {
-        console.error("RMS station deferred render failed", renderError);
-      }
-    }, 60);
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
@@ -37191,6 +37309,9 @@ function toggleRmsSelection(id = "", selected = false) {
   stationRow?.querySelector(".rms-station-lead-check .material-symbols-outlined")?.replaceChildren(document.createTextNode(selected ? "check_circle" : "radio_button_unchecked"));
   updateRmsStationOutputPreview();
   updateRmsStationCommandDock();
+  if (state.rmsStationScreenOpen && document.querySelector(".rms-lean-station")) {
+    renderRmsStationOnly();
+  }
   if (state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion") {
     showFeedback(
       selected

@@ -4932,6 +4932,144 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(
 }
 
 /* Qori portal visual excellence v134 - final winning layer. */
+
+/* Qori RMS station simple mode v138 */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  color: #052a6b;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(5, 42, 107, .12);
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head h3 {
+  margin: 2px 0 3px;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head p,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools > span {
+  color: #53677f;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools label {
+  display: grid;
+  grid-template-columns: 22px minmax(180px, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid rgba(5, 42, 107, .16);
+  border-radius: 12px;
+  background: #fff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools input,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools select {
+  min-height: 36px;
+  border: 1px solid rgba(5, 42, 107, .16);
+  border-radius: 10px;
+  background: #fff;
+  color: #052a6b;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools label input {
+  min-height: 30px;
+  border: 0;
+  outline: 0;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(5, 42, 107, .12);
+  border-radius: 14px;
+  background: #fff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table th,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(5, 42, 107, .09);
+  text-align: left;
+  vertical-align: middle;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table th {
+  background: #f6fbff;
+  color: #53677f;
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td > strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td > span,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td > small {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tr:hover {
+  background: #f6fbff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tr.is-selected {
+  background: #eef6ff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 750;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-quality .rms-lead-quality-field {
+  min-width: 170px;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-foot {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-tools label {
+    min-width: 0;
+    width: 100%;
+  }
+}
 html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell,
 html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-station-output-lane,
 html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell :where(.rms-station-visual-grid, .rms-station-workflow-guide, .rms-station-secondary-details) {
