@@ -1,14 +1,14 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v135";
+const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v136";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
-const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
-const RMS_STATION_RENDER_INCREMENT = 10;
+const RMS_STATION_RENDER_INITIAL_LIMIT = 6;
+const RMS_STATION_RENDER_INCREMENT = 8;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -34584,6 +34584,9 @@ async function loadRmsMachineData(options = {}) {
     const data = await api(`/api/business/rms-machine?${params.toString()}`, {
       headers: authHeaders(),
     });
+    if (stationPhase && (!state.rmsStationScreenOpen || state.rmsStationPhase !== stationPhase)) {
+      return data;
+    }
     state.rmsMachine = data;
     state.rmsMachineScope = data?.scope || (stationPhase ? { mode: "station", phase: stationPhase, lite: true } : { mode: "machine", phase: "", lite: false });
     rebuildRmsOpportunityIndex(data?.opportunities || []);
@@ -36062,7 +36065,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
             <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
-          <span class="rms-station-build-badge">Qori v135 estación ligera</span>
+          <span class="rms-station-build-badge">Qori v136 apertura inmediata</span>
           <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
@@ -36818,7 +36821,7 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
-  state.rmsStationListDeferred = true;
+  state.rmsStationListDeferred = false;
   if (state.rmsStationFastRenderTimer) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
     state.rmsStationFastRenderTimer = null;
@@ -36834,14 +36837,12 @@ function openRmsStation(phase = "", options = {}) {
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase) return;
-        state.rmsStationListDeferred = false;
         renderRmsStationOnly();
       })
       .catch((renderError) => {
         console.error("RMS station lite load failed", renderError);
-        state.rmsStationListDeferred = false;
         renderRmsStationOnly();
-        showFeedback("La estación abrió con datos locales mientras se estabiliza la carga ligera.", "info", { title: "Estaciones" });
+        showFeedback("La estación quedó operativa con datos locales. La actualización ligera no respondió a tiempo.", "info", { title: "Estaciones" });
       });
   } catch (error) {
     console.error("RMS station entry failed", error);
