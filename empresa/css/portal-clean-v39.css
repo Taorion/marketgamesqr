@@ -3170,3 +3170,290 @@ html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-det
     align-items: start !important;
   }
 }
+
+/* RMS collector modal v129: centered lead intake, controlled scroll and stable footer. */
+html body.has-rms-collector-modal {
+  overflow: hidden !important;
+}
+
+html body > #rmsCollectorModal.modal-shell:not(.hidden),
+html body .portal-shell #rmsCollectorModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  width: 100vw !important;
+  min-width: 0 !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: clamp(12px, 2vw, 24px) !important;
+  overflow: hidden !important;
+  background: rgba(1, 34, 104, 0.46) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-card,
+html body .portal-shell #rmsCollectorModal .rms-collector-card {
+  width: min(900px, calc(100vw - 28px)) !important;
+  max-width: min(900px, calc(100vw - 28px)) !important;
+  height: auto !important;
+  max-height: min(90dvh, 820px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(205, 224, 244, 0.92) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 28px 76px rgba(1, 34, 104, 0.28) !important;
+  transform: none !important;
+}
+
+html body > #rmsCollectorModal .modal-head,
+html body .portal-shell #rmsCollectorModal .modal-head {
+  min-height: 0 !important;
+  padding: 18px 20px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, 0.84) !important;
+  background: linear-gradient(135deg, #f7fbff, #ffffff) !important;
+}
+
+html body > #rmsCollectorModal .modal-head > div,
+html body .portal-shell #rmsCollectorModal .modal-head > div {
+  min-width: 0 !important;
+}
+
+html body > #rmsCollectorModal .modal-head h3,
+html body .portal-shell #rmsCollectorModal .modal-head h3 {
+  margin: 3px 0 5px !important;
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: clamp(1.2rem, 2vw, 1.55rem) !important;
+  line-height: 1.14 !important;
+}
+
+html body > #rmsCollectorModal .modal-head p,
+html body .portal-shell #rmsCollectorModal .modal-head p {
+  max-width: 62ch !important;
+  margin: 0 !important;
+  color: var(--qori-muted, #54708f) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.45 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form,
+html body .portal-shell #rmsCollectorModal .rms-collector-form {
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 18px 20px 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 14px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  background: #ffffff !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form::before,
+html body .portal-shell #rmsCollectorModal .rms-collector-form::before {
+  display: none !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-entry,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-entry {
+  order: 1 !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  display: grid !important;
+  gap: 14px !important;
+  border: 1px solid rgba(7, 89, 214, 0.18) !important;
+  border-radius: 14px !important;
+  background: #f7fbff !important;
+  box-shadow: none !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-head,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-head {
+  min-width: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-head strong,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-head strong {
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: 1rem !important;
+  line-height: 1.22 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-head small,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-head small {
+  max-width: 70ch !important;
+  color: var(--qori-muted, #54708f) !important;
+  line-height: 1.4 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-grid,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-grid,
+html body > #rmsCollectorModal .rms-collector-context-grid,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-details,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-details {
+  order: 2 !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-details summary,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-details summary {
+  min-height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  color: var(--qori-blue-deep, #012268) !important;
+  font-weight: 850 !important;
+}
+
+html body > #rmsCollectorModal label,
+html body .portal-shell #rmsCollectorModal label {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 6px !important;
+  color: var(--qori-ink, #071832) !important;
+  font-size: 0.82rem !important;
+  font-weight: 780 !important;
+  line-height: 1.2 !important;
+}
+
+html body > #rmsCollectorModal input,
+html body > #rmsCollectorModal select,
+html body > #rmsCollectorModal textarea,
+html body .portal-shell #rmsCollectorModal input,
+html body .portal-shell #rmsCollectorModal select,
+html body .portal-shell #rmsCollectorModal textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  padding: 9px 11px !important;
+  border: 1px solid rgba(184, 210, 233, 0.95) !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: var(--qori-ink, #071832) !important;
+  box-shadow: none !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-submit,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-submit {
+  padding: 12px 14px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border: 1px solid rgba(205, 224, 244, 0.9) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form > label.span-2,
+html body .portal-shell #rmsCollectorModal .rms-collector-form > label.span-2 {
+  order: 3 !important;
+  grid-column: 1 / -1 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-summary,
+html body .portal-shell #rmsCollectorModal .rms-collector-summary {
+  order: 4 !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  background: #f7fbff !important;
+}
+
+html body > #rmsCollectorModal .modal-actions,
+html body .portal-shell #rmsCollectorModal .modal-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  order: 5 !important;
+  grid-column: 1 / -1 !important;
+  margin: 4px -20px 0 !important;
+  padding: 14px 20px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  border-top: 1px solid rgba(205, 224, 244, 0.86) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 -12px 24px rgba(1, 34, 104, 0.06) !important;
+}
+
+html body > #rmsCollectorModal .modal-actions > *,
+html body .portal-shell #rmsCollectorModal .modal-actions > * {
+  min-width: 150px !important;
+}
+
+@media (max-width: 720px) {
+  html body > #rmsCollectorModal.modal-shell:not(.hidden),
+  html body .portal-shell #rmsCollectorModal.modal-shell:not(.hidden) {
+    padding: 10px !important;
+    place-items: stretch !important;
+  }
+
+  html body > #rmsCollectorModal .rms-collector-card,
+  html body .portal-shell #rmsCollectorModal .rms-collector-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 16px !important;
+  }
+
+  html body > #rmsCollectorModal .modal-head,
+  html body > #rmsCollectorModal .rms-collector-form,
+  html body .portal-shell #rmsCollectorModal .modal-head,
+  html body .portal-shell #rmsCollectorModal .rms-collector-form {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  html body > #rmsCollectorModal .rms-collector-form,
+  html body > #rmsCollectorModal .rms-collector-lead-grid,
+  html body > #rmsCollectorModal .rms-collector-context-grid,
+  html body > #rmsCollectorModal .rms-collector-lead-submit,
+  html body .portal-shell #rmsCollectorModal .rms-collector-form,
+  html body .portal-shell #rmsCollectorModal .rms-collector-lead-grid,
+  html body .portal-shell #rmsCollectorModal .rms-collector-context-grid,
+  html body .portal-shell #rmsCollectorModal .rms-collector-lead-submit {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body > #rmsCollectorModal .modal-actions,
+  html body .portal-shell #rmsCollectorModal .modal-actions {
+    margin-left: -14px !important;
+    margin-right: -14px !important;
+    padding: 12px 14px !important;
+    display: grid !important;
+  }
+
+  html body > #rmsCollectorModal .modal-actions > *,
+  html body .portal-shell #rmsCollectorModal .modal-actions > * {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
