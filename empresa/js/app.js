@@ -1,7 +1,7 @@
 ﻿const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v144";
+const APP_VERSION = "empresa-20260724-rms-station-display-labels-v146";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -27083,17 +27083,17 @@ function leadDirectorySalesSummary(item = {}) {
 
 const LEAD_DIRECTORY_RMS_STATIONS = {
   recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
-  alimentacion: { label: "Estación 02 · Alimentar", short: "02 Alimentar" },
-  curaduria: { label: "Estación 03 · Curados", short: "03 Curados" },
-  clasificacion: { label: "Estación 04 · Clasificar", short: "04 Clasificar" },
-  preprocesamiento: { label: "Estación 05 · Gamificar", short: "05 Gamificar" },
-  procesamiento: { label: "Estación 06 · Procesar", short: "06 Procesar" },
-  control_anti_fuga: { label: "Estación 07 · Controlar", short: "07 Controlar" },
-  accion_correctiva: { label: "Estación 08 · Corregir", short: "08 Corregir" },
-  cierre: { label: "Estación 09 · Cerrar", short: "09 Cerrar" },
-  revenue_generado: { label: "Estación 10 · Revenue", short: "10 Revenue" },
-  postventa: { label: "Estación 11 · Postventa", short: "11 Postventa" },
-  inteligencia: { label: "Estación 12 · Optimizar", short: "12 Optimizar" },
+  alimentacion: { label: "Estación 02 · Curaduría", short: "02 Curaduría" },
+  curaduria: { label: "Estación 03 · Clasificador", short: "03 Clasificador" },
+  clasificacion: { label: "Estación 04 · Activación 1", short: "04 Activación 1" },
+  preprocesamiento: { label: "Estación 05 · Control de calidad 1", short: "05 Control calidad 1" },
+  procesamiento: { label: "Estación 06 · Evaluación", short: "06 Evaluación" },
+  control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
+  accion_correctiva: { label: "Estación 08 · Negociación", short: "08 Negociación" },
+  cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
+  revenue_generado: { label: "Estación 10 · Control de calidad 2", short: "10 Control calidad 2" },
+  postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
+  inteligencia: { label: "Estación 12 · Inteligencia RMS", short: "12 Inteligencia" },
 };
 
 function leadDirectoryStationInfo(item = {}) {
@@ -33488,30 +33488,33 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "recoleccion",
     label: "Leads recolectados",
+    short_label: "Recolectar",
     storageLabel: "Almacena leads capturados",
     operation: {
-      name: "Embudo",
+      name: "Recolectar",
       primaryAction: "Seleccionar leads procesables",
       materialLabel: "Contacto, origen, interes y permiso para avanzar",
-      buttonLabel: "Pasar por embudo",
+      buttonLabel: "Enviar a Alimentar",
       nextPhase: "alimentacion",
     },
   },
   {
     key: "alimentacion",
     label: "Curaduría",
-    storageLabel: "Almacena leads listos para curar",
+    short_label: "Curaduría",
+    storageLabel: "Almacena leads listos para calidad",
     operation: {
-      name: "Curar",
+      name: "Alimentar",
       primaryAction: "Asignar calidad del lead",
       materialLabel: "Probabilidad, rapidez y recursos necesarios",
-      buttonLabel: "Curar calidad",
+      buttonLabel: "Enviar a Curados",
       nextPhase: "curaduria",
     },
   },
   {
     key: "curaduria",
     label: "Clasificador",
+    short_label: "Clasificador",
     storageLabel: "Almacena leads curados para clasificar",
     operation: {
       name: "Clasificacion",
@@ -33524,6 +33527,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "clasificacion",
     label: "Activación 1",
+    short_label: "Activación 1",
     storageLabel: "Almacena leads clasificados para activar",
     operation: {
       name: "Preprocesar",
@@ -33536,6 +33540,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "preprocesamiento",
     label: "Control de calidad 1",
+    short_label: "Control calidad 1",
     storageLabel: "Almacena oportunidades activadas para validar",
     operation: {
       name: "Gamificar",
@@ -33548,6 +33553,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "procesamiento",
     label: "Evaluación",
+    short_label: "Evaluación",
     storageLabel: "Almacena oportunidades accionadas para evaluar",
     operation: {
       name: "Accionar",
@@ -33560,6 +33566,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "control_anti_fuga",
     label: "Riesgos de fuga",
+    short_label: "Riesgos de fuga",
     storageLabel: "Almacena oportunidades con posible atasco",
     operation: {
       name: "Controlar fuga",
@@ -33572,6 +33579,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "accion_correctiva",
     label: "Negociación",
+    short_label: "Negociación",
     storageLabel: "Almacena oportunidades recuperables para negociar",
     operation: {
       name: "Recuperar",
@@ -33584,6 +33592,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "cierre",
     label: "Ventas atribuidas",
+    short_label: "Ventas atribuidas",
     storageLabel: "Almacena ventas listas para atribuir",
     operation: {
       name: "Cerrar",
@@ -33596,6 +33605,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "revenue_generado",
     label: "Control de calidad 2",
+    short_label: "Control calidad 2",
     storageLabel: "Almacena ventas atribuidas para validar",
     operation: {
       name: "Atribuir revenue",
@@ -33608,6 +33618,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "postventa",
     label: "Activación 2",
+    short_label: "Activación 2",
     storageLabel: "Almacena clientes compradores para reactivar",
     operation: {
       name: "Fidelizar",
@@ -33620,6 +33631,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "inteligencia",
     label: "Inteligencia RMS",
+    short_label: "Inteligencia",
     storageLabel: "Almacena senales para optimizar la fabrica",
     operation: {
       name: "Optimizar",
@@ -33646,6 +33658,7 @@ function rmsFactoryStages(data = {}) {
       ...blueprint,
       ...stage,
       label: blueprint.label || stage.label,
+      short_label: blueprint.short_label || stage.short_label || blueprint.label || stage.label,
       storageLabel: blueprint.storageLabel || stage.storageLabel,
       operation: mergedOperation,
     };
@@ -34748,54 +34761,54 @@ const RMS_TUTORIAL_STEPS = [
     action: "collector",
     input: "Leads de activaciones, QR, campañas, formularios, WhatsApp, eventos o carga manual.",
     operation: "Operacion Embudo: seleccionar solo los leads con contacto, origen e interes minimo para procesarlos.",
-    output: "Leads seleccionados para entrar a Curaduría. Lo no procesable se queda en recolectados hasta completar datos.",
+    output: "Leads seleccionados para entrar a Alimentar. Lo no procesable se queda en recolectados hasta completar datos.",
     operatorHint: "Esta estacion no convence: guarda materia prima y permite escoger que si merece avanzar.",
   },
   {
     key: "funnel-gate",
     phase: "alimentacion",
     icon: "filter_alt",
-    title: "Curar los leads seleccionados",
-    subtitle: "Curaduría",
-    actionLabel: "Ver Curaduría",
+    title: "Alimentar los leads seleccionados",
+    subtitle: "Alimentar",
+    actionLabel: "Ver Alimentar",
     action: "station",
     input: "Leads que salieron del embudo inicial desde Leads recolectados.",
     operation: "Operacion Curar: asignar calidad alta, media o baja segun probabilidad, rapidez y recursos necesarios para convertir.",
-    output: "Leads con calidad asignada listos para almacenarse en Clasificador.",
+    output: "Leads con calidad asignada listos para almacenarse en Curados.",
     operatorHint: "La calidad no es producto: es probabilidad, velocidad y costo operativo para convertir.",
   },
   {
     key: "curation",
     phase: "curaduria",
     icon: "fact_check",
-    title: "Clasificar los leads curados",
-    subtitle: "Clasificador",
-    actionLabel: "Ver Clasificador",
+    title: "Revisar leads curados",
+    subtitle: "Curados",
+    actionLabel: "Ver Curados",
     action: "station",
     input: "Leads que ya tienen calidad asignada en Curaduría.",
-    operation: "Operacion Clasificacion: asignar producto, servicio o linea interna que se va a ofrecer al lead.",
-    output: "Lead clasificado contra inventario, listo para Activación 1.",
-    operatorHint: "Clasificador no mide calidad; asigna la oferta interna que se va a trabajar.",
+    operation: "Operacion Curados: revisar calidad heredada, dato defendible, contacto, origen e interes.",
+    output: "Lead curado y listo para Clasificar.",
+    operatorHint: "Curados no asigna producto; confirma que el dato tiene sentido antes de enviarlo a Clasificar.",
   },
   {
     key: "classification",
     phase: "clasificacion",
     icon: "category",
-    title: "Activar los clasificados",
-    subtitle: "Activación 1",
-    actionLabel: "Ver Activación 1",
+    title: "Clasificar por producto",
+    subtitle: "Clasificar",
+    actionLabel: "Ver Clasificar",
     action: "station",
-    input: "Leads curados con producto o servicio asignado.",
-    operation: "Operacion Preprocesar: ordenar prioridad, estado, temperatura y siguiente paso antes de activar ganchos.",
-    output: "Lead activado y listo para Control de calidad 1.",
-    operatorHint: "Activación 1 convierte clasificación en una acción inicial medible.",
+    input: "Leads curados que necesitan producto o servicio asignado.",
+    operation: "Operacion Clasificar: asignar el producto con el que se va a contactar al lead.",
+    output: "Lead clasificado por producto y listo para Gamificar.",
+    operatorHint: "Clasificar convierte el interés en una oferta concreta antes de gamificar.",
   },
   {
     key: "anti-leak",
     phase: "preprocesamiento",
     icon: "sports_esports",
     title: "Validar la activación inicial",
-    subtitle: "Control de calidad 1",
+    subtitle: "Gamificar",
     actionLabel: "Crear gancho",
     action: "missions",
     input: "Lead activado que debe validarse antes de avanzar.",
@@ -34988,7 +35001,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   let stationControl = `<td class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
   if (stage.key === "alimentacion") {
     stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
-  } else if (["curaduria", "clasificacion"].includes(stage.key)) {
+  } else if (stage.key === "curaduria") {
     stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
   }
   return `
@@ -35036,7 +35049,7 @@ function renderRmsStationLeanOnly() {
   const selectedRows = rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const visual = rmsStationVisualMeta(phase);
-  const stationControlLabel = ["curaduria", "clasificacion"].includes(phase) ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
+  const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -35302,17 +35315,17 @@ function renderRmsDailyQueue(sections = []) {
 function rmsStageEmptyMarkup(stage = {}) {
   const map = {
     recoleccion: ["Sin leads recolectados.", "Esta estacion almacena leads capturados. La operacion Embudo selecciona cuales son procesables.", "Ingresar lead", "collector"],
-    alimentacion: ["Sin leads en Curaduría.", "Esta estacion almacena leads filtrados. La operacion Curar asigna calidad alta, media o baja.", "Cargar leads", "contacts-manual"],
-    curaduria: ["Sin leads en Clasificador.", "Esta estacion almacena leads curados. La operacion Clasificacion asigna producto o servicio interno.", "Ver contactos", "contacts-manual"],
-    clasificacion: ["Sin Activación 1.", "Esta estacion almacena leads con oferta asignada. La primera activación ordena prioridad y siguiente paso.", "Ver leads", "contacts-manual"],
-    preprocesamiento: ["Sin Control de calidad 1.", "Esta estacion valida la primera activación antes de pasar a evaluación.", "Crear ticket", "reward-passes"],
-    procesamiento: ["Sin Evaluación.", "Esta estacion almacena oportunidades accionadas para revisar respuesta y siguiente paso.", "Ver leads", "contacts-manual"],
+    alimentacion: ["Sin leads en Alimentar.", "Esta estacion almacena leads filtrados. La operacion Alimentar asigna calidad alta, media o baja.", "Cargar leads", "contacts-manual"],
+    curaduria: ["Sin leads en Curados.", "Esta estacion almacena leads con calidad heredada y dato defendible antes de clasificar producto.", "Ver contactos", "contacts-manual"],
+    clasificacion: ["Sin leads en Clasificar.", "Esta estacion asigna producto o servicio interno antes de Gamificar.", "Ver leads", "contacts-manual"],
+    preprocesamiento: ["Sin leads en Gamificar.", "Esta estacion prepara ticket, beneficio o dinámica anti-fuga.", "Crear ticket", "reward-passes"],
+    procesamiento: ["Sin leads en Evaluación.", "Esta estacion almacena oportunidades accionadas para revisar respuesta y siguiente paso.", "Ver leads", "contacts-manual"],
     control_anti_fuga: ["Sin riesgos de fuga.", "Esta estacion almacena oportunidades con posible atasco para corregir antes de perderlas.", "Ver leads", "contacts-manual"],
-    accion_correctiva: ["Sin Negociación.", "Esta estacion almacena oportunidades que necesitan negociación, condición o último beneficio.", "Ver leads", "contacts-manual"],
-    cierre: ["Sin Ventas atribuidas.", "Esta estacion almacena cierres para registrar la fuente real del revenue.", "Registrar venta", "sales"],
-    revenue_generado: ["Sin Control de calidad 2.", "Esta estacion valida ventas atribuidas antes de pasar a Activación 2.", "Ver ventas", "sales"],
-    postventa: ["Sin Activación 2.", "Esta estacion almacena clientes despues de comprar para garantia, encuesta, recompra o referido.", "Activar recompra", "reward-passes"],
-    inteligencia: ["Sin Inteligencia RMS.", "Esta estacion almacena senales para entender que produjo revenue o fuga.", "Ver leads", "contacts-manual"],
+    accion_correctiva: ["Sin leads en Corregir.", "Esta estacion almacena oportunidades que necesitan negociación, condición o último beneficio.", "Ver leads", "contacts-manual"],
+    cierre: ["Sin leads en Cerrar.", "Esta estacion almacena cierres para registrar la fuente real del revenue.", "Registrar venta", "sales"],
+    revenue_generado: ["Sin Revenue.", "Esta estacion valida ventas atribuidas antes de pasar a Postventa.", "Ver ventas", "sales"],
+    postventa: ["Sin Postventa.", "Esta estacion almacena clientes despues de comprar para garantia, encuesta, recompra o referido.", "Activar recompra", "reward-passes"],
+    inteligencia: ["Sin Optimizar.", "Esta estacion almacena senales para entender que produjo revenue o fuga.", "Ver leads", "contacts-manual"],
   };
   const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
   return `
@@ -35404,6 +35417,24 @@ function rmsClassifiedProductName(item = {}) {
   const selected = rmsClassifiedProductValue(item);
   const product = findInventoryProduct(selected);
   return product?.name || item.classified_product_name || item.product_interest || "";
+}
+
+function rmsHasConfirmedProductClassification(item = {}) {
+  const draft = rmsClassifiedProductDraft(item);
+  if (draft?.product_select && draft.product_select !== OPEN_PRODUCT_VALUE) return true;
+  if (draft?.open_product_name) return true;
+  if (item.classified_product_id) return true;
+  const source = String(item.classification_source || "").toLowerCase();
+  if (item.classification_is_manual) return true;
+  return [
+    "auto_activation_product",
+    "auto_inventory_match",
+    "manual_curados",
+    "manual_inventory",
+    "manual_open_product",
+    "station_output_inventory",
+    "station_output_open_interest",
+  ].includes(source);
 }
 
 function rmsClassificationSourceLabel(item = {}) {
@@ -35551,7 +35582,7 @@ function rmsStationFocusConsoleMarkup(phase = "", rows = [], nextPhase = null) {
         <div class="rms-station-focus-copy">
           <span class="mono-label">Compuerta del embudo</span>
           <h4>La salida no depende de chulear al azar: exige una probabilidad explícita.</h4>
-          <p>${escapeHtml(qualified ? `${qualified.toLocaleString("es-CO")} lead(s) ya pueden pasar a ${nextPhase?.label || "Clasificador"}.` : "Selecciona calidad alta, media o baja para convertir entrada cruda en salida operable.")}</p>
+          <p>${escapeHtml(qualified ? `${qualified.toLocaleString("es-CO")} lead(s) ya pueden pasar a ${nextPhase?.label || "Curados"}.` : "Selecciona calidad alta, media o baja para convertir entrada cruda en salida operable.")}</p>
         </div>
         <div class="rms-funnel-quality-board">
           ${qualityCounts.map((quality) => {
@@ -35614,7 +35645,7 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads recolectados",
       input: "Personas capturadas por vitrina, QR, activaciones, formularios, referidos, WhatsApp o carga manual.",
       output: "Solo leads procesables seleccionados para entrar a Curaduría.",
-      focus: "Guardar materia prima comercial y ejecutar la operacion Embudo: decidir que leads si se pueden procesar.",
+      focus: "Guardar materia prima comercial y decidir que leads si pueden entrar al flujo.",
       checklist: ["Contacto minimo", "Origen de captura", "Interes inicial", "Permiso o contexto", "Seleccion para salida"],
     },
     alimentacion: {
@@ -35624,7 +35655,7 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads para curar",
       input: "Leads que fueron seleccionados desde Leads recolectados.",
       output: "Leads con calidad alta, media o baja listos para almacenarse en Clasificador.",
-      focus: "Ejecutar la operacion Curar: estimar probabilidad, rapidez y recursos necesarios para convertir.",
+      focus: "Curar la maquina con una calidad clara: alta, media o baja.",
       checklist: ["Dato suficiente", "Senal de interes", "Calidad alta/media/baja", "Razon de calidad", "Salida a Clasificador"],
     },
     curaduria: {
@@ -35634,8 +35665,8 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads curados para clasificar",
       input: "Leads que Curaduría ya califico como baja, media o alta calidad.",
       output: "Leads con producto o servicio interno asignado para Activación 1.",
-      focus: "Ejecutar la operacion Clasificacion: amarrar cada lead a lo que la empresa puede ofrecer.",
-      checklist: ["Calidad heredada de Curaduría", "Producto del inventario", "Interes declarado", "Crear producto faltante", "Clasificacion editable"],
+      focus: "Asignar el producto con el que se va a contactar al lead. Si viene de una activación con producto, queda clasificado automaticamente.",
+      checklist: ["Calidad heredada", "Producto del inventario", "Interes declarado", "Crear producto faltante", "Salida a Activación 1"],
     },
     clasificacion: {
       icon: "account_tree",
@@ -35670,8 +35701,8 @@ function rmsStationVisualMeta(phase = "") {
     control_anti_fuga: {
       icon: "monitor_heart",
       tone: "control",
-      screenTitle: "Detectar fuga, bloqueo o atasco",
-      visualLabel: "Control de calidad comercial",
+      screenTitle: "Estacion de almacenamiento: Controlar",
+      visualLabel: "Control anti-fuga",
       input: "Oportunidades operadas que pueden enfriarse.",
       output: "Riesgo detectado y tarea correctiva definida.",
       focus: "Encontrar tickets por vencer, clientes sin tarea o cierres sin seguimiento.",
@@ -35680,8 +35711,8 @@ function rmsStationVisualMeta(phase = "") {
     accion_correctiva: {
       icon: "build_circle",
       tone: "recovery",
-      screenTitle: "Estacion de almacenamiento: Negociación",
-      visualLabel: "Inventario: oportunidades negociables",
+      screenTitle: "Estacion de almacenamiento: Corregir",
+      visualLabel: "Inventario: oportunidades por corregir",
       input: "Leads atascados, fríos o en riesgo.",
       output: "Cliente negociado, movido, pospuesto o marcado como perdido.",
       focus: "Negociar condiciones, resolver objeciones y preparar el paso a venta atribuida.",
@@ -35690,8 +35721,8 @@ function rmsStationVisualMeta(phase = "") {
     cierre: {
       icon: "payments",
       tone: "closing",
-      screenTitle: "Estacion de almacenamiento: Ventas atribuidas",
-      visualLabel: "Inventario: cierres atribuidos",
+      screenTitle: "Estacion de almacenamiento: Cerrar",
+      visualLabel: "Inventario: cierres comerciales",
       input: "Clientes con intención y condiciones claras.",
       output: "Venta atribuida a fuente, campaña, ticket, vendedor o acción.",
       focus: "Registrar la venta y dejar claro qué acción produjo revenue.",
@@ -35700,8 +35731,8 @@ function rmsStationVisualMeta(phase = "") {
     revenue_generado: {
       icon: "query_stats",
       tone: "revenue",
-      screenTitle: "Estacion de almacenamiento: Control de calidad 2",
-      visualLabel: "Inventario: ventas por validar",
+      screenTitle: "Estacion de almacenamiento: Revenue",
+      visualLabel: "Inventario: revenue generado",
       input: "Ventas atribuidas, redenciones, recompras o suscripciones.",
       output: "Revenue validado y listo para Activación 2.",
       focus: "Validar que la venta atribuida tenga valor, fuente, producto y siguiente acción de Activación 2.",
@@ -35710,8 +35741,8 @@ function rmsStationVisualMeta(phase = "") {
     postventa: {
       icon: "redeem",
       tone: "postsale",
-      screenTitle: "Estacion de almacenamiento: Activación 2",
-      visualLabel: "Inventario: Activación 2",
+      screenTitle: "Estacion de almacenamiento: Postventa",
+      visualLabel: "Inventario: clientes en postventa",
       input: "Clientes convertidos que no deben enfriarse después de pagar.",
       output: "Cliente con agradecimiento, reward, garantía, encuesta o ticket de próxima compra.",
       focus: "Ejecutar la segunda activación para recompra, satisfacción, referido o retención.",
@@ -35720,7 +35751,7 @@ function rmsStationVisualMeta(phase = "") {
     inteligencia: {
       icon: "psychology",
       tone: "intelligence",
-      screenTitle: "Estacion de almacenamiento: Inteligencia RMS",
+      screenTitle: "Estacion de almacenamiento: Optimizar",
       visualLabel: "Inventario: aprendizaje RMS",
       input: "Datos de campañas, ganchos, vendedores, tickets, fugas y ventas.",
       output: "Aprendizaje para alimentar mejor el siguiente ciclo.",
@@ -36278,7 +36309,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     : phase === "alimentacion"
       ? "Seleccionar cualificados"
       : phase === "curaduria"
-        ? "Seleccionar clasificados"
+        ? "Seleccionar curados"
+        : phase === "clasificacion"
+          ? "Seleccionar clasificados"
         : "Seleccionar salida";
   const commandActionsMarkup = isCollectorStation
     ? `
@@ -36444,7 +36477,7 @@ function rmsCollectorReadiness(item = {}) {
 
 function rmsStationOutputEligibleRows(phase = "", rows = []) {
   if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
-  if (phase === "curaduria") return (rows || []).filter((item) => Boolean(rmsClassifiedProductName(item)));
+  if (phase === "curaduria") return (rows || []).filter((item) => rmsHasConfirmedProductClassification(item));
   if (phase !== "recoleccion") return rows || [];
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
@@ -36469,7 +36502,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
     ? "lead(s) procesable(s)"
     : phase === "alimentacion"
       ? "lead(s) curado(s)"
-      : phase === "curaduria"
+    : phase === "curaduria"
         ? "lead(s) clasificado(s)"
         : "lead(s) seleccionado(s)";
   const emptyText = phase === "alimentacion"
@@ -37287,13 +37320,13 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
       to_phase: item.stage || "curaduria",
       priority: rmsPriorityCode(item),
       recommended_action: options.clear ? "Clasificación de producto pendiente" : `Lead clasificado para ${nextDraft.product_name}`,
-      last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_curados",
+      last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_clasificar",
       last_material_sent: options.clear ? null : (nextDraft.inventory_product_id || nextDraft.product_name),
       revenue_potential: Number(item.revenue_potential || 0),
       reason: options.clear ? "Clasificación interna eliminada desde Clasificador." : `Clasificación interna en Clasificador: ${nextDraft.product_name}.`,
       metadata: {
         source_module: "rms_machine",
-        source_flow: "curados_product_classification",
+        source_flow: "clasificador_product_classification",
         from_phase: item.stage || "curaduria",
         rms_opportunity_id: item.id || null,
         lead_quality: rmsLeadQualityValue(item) || item.state_metadata?.lead_quality || null,
@@ -37314,6 +37347,8 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
 function rmsProductClassificationMetadata(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
   const selectedProduct = draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id);
+  const source = String(item.classification_source || "").toLowerCase();
+  if (!draft && !item.classified_product_id && source === "interest_without_inventory_match") return {};
   const productName = draft?.open_product_name || selectedProduct?.name || item.classified_product_name || item.product_interest || "";
   return productName ? {
     classified_product_id: selectedProduct?.id || item.classified_product_id || null,
@@ -37424,7 +37459,7 @@ function toggleRmsSelection(id = "", selected = false) {
     showFeedback("Primero selecciona calidad alta, media o baja para poner este lead en salida.", "info", { title: "Curaduría" });
     return;
   }
-  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsClassifiedProductName(item)) {
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
     if (checkbox) checkbox.checked = false;
     showFeedback("Primero clasifica este lead por producto o servicio interno.", "info", { title: "Clasificador" });
@@ -37470,8 +37505,8 @@ function selectRmsPhaseForBulk(phase = "") {
     const message = phase === "alimentacion"
       ? "La salida de Curaduría exige calidad alta, media o baja. Cualifica al menos un lead antes de enviarlo a Clasificador."
       : phase === "curaduria"
-        ? "La salida de Clasificador exige producto o servicio clasificado. Usa el selector de inventario o crea el producto."
-        : "La salida de Leads recolectados exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
+        ? "La salida de Clasificador exige producto o servicio confirmado. Usa el selector de inventario, guarda el nombre sugerido o crea el producto."
+        : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
@@ -37508,7 +37543,7 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
     },
     preprocesamiento: () => {
       setView("missions");
-      showFeedback("Prepara Control de calidad 1 con ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
+      showFeedback("Prepara Gamificar con ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
     },
     procesamiento: () => {
       setContactCenterTab("directory");
@@ -37685,7 +37720,7 @@ async function moveSelectedRmsPhase() {
         showFeedback("Todos los leads de Curaduría necesitan calidad alta, media o baja antes de pasar a Clasificador.", "info", { title: "Curaduría" });
         continue;
       }
-      if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+      if (item.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
         showFeedback("Todos los leads de Clasificador necesitan producto o servicio antes de avanzar.", "info", { title: "Clasificador" });
         continue;
       }
@@ -37699,13 +37734,13 @@ async function moveSelectedRmsPhase() {
           to_phase: toPhase,
           priority: qualityOption?.priority || (item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM"),
           recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || "",
-          last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : undefined,
+          last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "classifier_product_classified" : undefined,
           last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || undefined,
           revenue_potential: Number(item.revenue_potential || 0),
           reason: qualityOption ? `Lead cualificado en Curaduría como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead clasificado para ${productClassification.classified_product_name}.` : "Movimiento manual desde Mapa Operativo RMS",
           metadata: {
             source_module: "rms_machine",
-            source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_output",
+            source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "classifier_product_output" : "station_output",
             from_phase: item.stage,
             ...(qualityOption ? {
               lead_quality: qualityOption.value,
@@ -37767,7 +37802,7 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     showFeedback("Selecciona calidad alta, media o baja antes de enviar este lead a Clasificador.", "info", { title: "Curaduría" });
     return;
   }
-  if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+  if (item.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     showFeedback("Clasifica este lead por producto o servicio interno antes de enviarlo.", "info", { title: "Clasificador" });
     return;
   }
@@ -37783,13 +37818,13 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
         to_phase: toPhase,
         priority: qualityOption?.priority || rmsPriorityCode(item),
         recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || item.raw_recommended_action || "",
-        last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : options.last_operation || `move_to_${toPhase}`,
+        last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "classifier_product_classified" : options.last_operation || `move_to_${toPhase}`,
         last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || item.coverage_type || "",
         revenue_potential: Number(item.revenue_potential || 0),
         reason: qualityOption ? `Lead cualificado en Curaduría como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead clasificado para ${productClassification.classified_product_name}.` : options.reason || "Avance operativo desde pantalla de estación RMS.",
         metadata: {
           source_module: "rms_machine",
-          source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_workspace",
+          source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "classifier_product_output" : "station_workspace",
           from_phase: item.stage || null,
           rms_opportunity_id: item.id || null,
           campaign_id: item.campaign_id || null,

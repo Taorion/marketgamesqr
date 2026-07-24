@@ -3,18 +3,18 @@ const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, listLeadCrmRows } = require("./leadCrmService");
 
 const RMS_PHASES = [
-  { key: "recoleccion", label: "Recolector de Oportunidades", short_label: "Recolectar" },
-  { key: "alimentacion", label: "Embudo de Entrada", short_label: "Alimentar" },
-  { key: "curaduria", label: "Curados", short_label: "Curados" },
-  { key: "clasificacion", label: "Clasificador RMS", short_label: "Clasificar" },
-  { key: "preprocesamiento", label: "Preprocesador Gamificado", short_label: "Gamificar" },
-  { key: "procesamiento", label: "Maquina RMS de Conversion", short_label: "Procesar" },
-  { key: "control_anti_fuga", label: "Control Anti-Fuga", short_label: "Controlar" },
-  { key: "accion_correctiva", label: "Recuperacion RMS", short_label: "Corregir" },
-  { key: "cierre", label: "Cierre Comercial", short_label: "Cerrar" },
-  { key: "revenue_generado", label: "Revenue Generado", short_label: "Revenue" },
-  { key: "postventa", label: "Postventa Gamificada", short_label: "Postventa" },
-  { key: "inteligencia", label: "Inteligencia RMS", short_label: "Optimizar" },
+  { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
+  { key: "alimentacion", label: "Curaduría", short_label: "Curaduría" },
+  { key: "curaduria", label: "Clasificador", short_label: "Clasificador" },
+  { key: "clasificacion", label: "Activación 1", short_label: "Activación 1" },
+  { key: "preprocesamiento", label: "Control de calidad 1", short_label: "Control calidad 1" },
+  { key: "procesamiento", label: "Evaluación", short_label: "Evaluación" },
+  { key: "control_anti_fuga", label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
+  { key: "accion_correctiva", label: "Negociación", short_label: "Negociación" },
+  { key: "cierre", label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
+  { key: "revenue_generado", label: "Control de calidad 2", short_label: "Control calidad 2" },
+  { key: "postventa", label: "Activación 2", short_label: "Activación 2" },
+  { key: "inteligencia", label: "Inteligencia RMS", short_label: "Inteligencia" },
 ];
 
 const STAGES = RMS_PHASES;
@@ -36,16 +36,16 @@ const LEGACY_PHASE_ALIASES = {
 const INDUSTRIAL_PROCESS = [
   { key: "recoleccion", label: "Recoleccion", phase: "recoleccion", description: "QR, activaciones, formularios, referidos, campanas y contactos existentes." },
   { key: "alimentacion", label: "Alimentacion", phase: "alimentacion", description: "La persona entra oficialmente como materia prima comercial RMS." },
-  { key: "curaduria", label: "Curados", phase: "curaduria", description: "Se recibe la calidad del embudo y se clasifica por producto o servicio interno." },
-  { key: "clasificacion", label: "Clasificacion operativa", phase: "clasificacion", description: "Se separa por estado comercial, prioridad, ticket, temperatura y posibilidad de avance." },
-  { key: "preprocesamiento", label: "Preprocesamiento gamificado", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
-  { key: "procesamiento", label: "Procesamiento comercial", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
-  { key: "control", label: "Control anti-fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
-  { key: "correccion", label: "Accion correctiva", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
-  { key: "cierre", label: "Cierre comercial", phase: "cierre", description: "Interes, propuesta, beneficio, cobro y pago se ensamblan en venta." },
-  { key: "revenue", label: "Revenue generado", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
+  { key: "curaduria", label: "Clasificador", phase: "curaduria", description: "Se asigna producto o servicio interno para contactar al lead con una oferta clara." },
+  { key: "clasificacion", label: "Activación 1", phase: "clasificacion", description: "Se separa por estado comercial, prioridad, ticket, temperatura y posibilidad de avance." },
+  { key: "preprocesamiento", label: "Control de calidad 1", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
+  { key: "procesamiento", label: "Evaluación", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
+  { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
+  { key: "correccion", label: "Negociación", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
+  { key: "cierre", label: "Ventas atribuidas", phase: "cierre", description: "Interes, propuesta, beneficio, cobro y pago se ensamblan en venta." },
+  { key: "revenue", label: "Control de calidad 2", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
   { key: "postventa", label: "Postventa", phase: "postventa", description: "Agradecimiento, garantia, ticket proxima compra, encuesta o programa VIP." },
-  { key: "retroalimentacion", label: "Retroalimentacion", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
+  { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
 ];
 
 const PHASE_OPERATIONS = {
@@ -277,6 +277,22 @@ function productClassificationFor(row = {}, stateRow = null, inventoryProducts =
         is_manual: false,
       };
     }
+  }
+  const activationProductName = firstPresent(
+    metadata.rms_intake?.product_interest_mode === "PROMOTED_PRODUCT" ? metadata.rms_intake?.product_interest : "",
+    metadata.activation_form?.product_interest_mode === "PROMOTED_PRODUCT" ? metadata.activation_form?.product_interest : "",
+    metadata.activation_form?.product_name
+  );
+  if (activationProductName) {
+    const product = inventoryProducts.find((item) => normalizeProductLookup(item.name) === normalizeProductLookup(activationProductName));
+    return {
+      product_id: product?.id || null,
+      product_name: product?.name || activationProductName,
+      product_category: product?.category || "",
+      source: "auto_activation_product",
+      confidence: product?.id ? 1 : 0.85,
+      is_manual: false,
+    };
   }
   const interest = firstPresent(
     row.top_interest,

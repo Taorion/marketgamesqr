@@ -1,8 +1,11 @@
 services:
   - type: web
-    name: market-games-portal
+    name: market-games-portal-staging
     runtime: node
     plan: free
+    repo: https://github.com/Taorion/marketgamesqr.git
+    branch: staging
+    autoDeployTrigger: commit
     buildCommand: npm install
     startCommand: npm run db:migrate && npm start
     healthCheckPath: /api/health
