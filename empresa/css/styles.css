@@ -57261,3 +57261,206 @@ html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-i
 html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section .nav-item > span:last-child {
   display: none !important;
 }
+
+/* RMS station protagonist slides v158. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+  min-height: 72px !important;
+  padding: 10px 2px 12px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board {
+  gap: 18px !important;
+  padding: 0 12px 12px 2px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+  flex: 0 0 min(920px, calc(100% - 72px)) !important;
+  width: min(920px, calc(100% - 72px)) !important;
+  min-width: min(920px, calc(100% - 72px)) !important;
+  height: clamp(430px, 56vh, 560px) !important;
+  min-height: 430px !important;
+  max-height: 560px !important;
+  display: grid !important;
+  grid-template-columns: minmax(280px, .92fr) minmax(320px, 1.08fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+  gap: 18px !important;
+  position: relative !important;
+  isolation: isolate !important;
+  padding: 28px !important;
+  border: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(115deg, #ffffff 0%, #f6fbff 48%, #ffffff 100%) !important;
+  box-shadow: 0 24px 52px rgba(5, 42, 107, .12) !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card.has-stage-material {
+  border-color: rgba(7, 206, 251, .38) !important;
+  background: linear-gradient(115deg, #ffffff 0%, #f1fbff 50%, #ffffff 100%) !important;
+  box-shadow: 0 30px 70px rgba(5, 42, 107, .16) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:focus {
+  border-color: rgba(7, 89, 214, .34) !important;
+  background: linear-gradient(115deg, #ffffff 0%, #eefaff 54%, #ffffff 100%) !important;
+  box-shadow: 0 34px 78px rgba(5, 42, 107, .18) !important;
+  transform: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media {
+  grid-column: 2 !important;
+  grid-row: 1 / -1 !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center right !important;
+  filter: drop-shadow(0 24px 34px rgba(5, 42, 107, .16)) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-topline,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-flow,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button {
+  grid-column: 1 !important;
+  z-index: 2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-topline {
+  grid-row: 1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main {
+  grid-row: 2 !important;
+  align-self: center !important;
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  gap: 14px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main > .material-symbols-outlined {
+  width: 48px !important;
+  height: 48px !important;
+  flex-basis: 48px !important;
+  border-radius: 14px !important;
+  background: #052a6b !important;
+  color: #07cefb !important;
+  font-size: 26px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main strong {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
+  color: #052a6b !important;
+  font-size: clamp(1.85rem, 3.2vw, 3.15rem) !important;
+  line-height: .98 !important;
+  letter-spacing: 0 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main small {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
+  max-width: 34ch !important;
+  margin-top: 10px !important;
+  color: #53677f !important;
+  font-size: .98rem !important;
+  line-height: 1.45 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-flow {
+  grid-row: 3 !important;
+  justify-content: flex-start !important;
+  gap: 14px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button {
+  grid-row: 4 !important;
+  justify-self: start !important;
+  align-self: end !important;
+  min-height: 46px !important;
+  min-width: 190px !important;
+  margin: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(100deg, #0759d6, #00bff2) !important;
+  box-shadow: 0 16px 30px rgba(7, 89, 214, .22) !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+    flex-basis: 88% !important;
+    width: 88% !important;
+    min-width: 88% !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 220px auto auto auto !important;
+    height: auto !important;
+    min-height: 520px !important;
+    max-height: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    height: 220px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    align-self: start !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-flow {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button {
+    grid-column: 1 !important;
+    grid-row: 5 !important;
+  }
+}
+
+@media (max-width: 580px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+    flex-basis: 92% !important;
+    width: 92% !important;
+    min-width: 92% !important;
+    grid-template-rows: auto 190px auto auto auto !important;
+    min-height: 500px !important;
+    padding: 18px !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media {
+    height: 190px !important;
+  }
+}
