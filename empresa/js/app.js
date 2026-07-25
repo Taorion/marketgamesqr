@@ -1877,6 +1877,35 @@ function ensureSidebarRuntimeFeedbackStyles() {
       border: 0 !important;
       box-shadow: none !important;
     }
+    /* Runtime owner of the sidebar: preserve the primary RMS state after navigation. */
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+      border: 1px solid rgba(11, 99, 246, .74) !important;
+      border-radius: 10px !important;
+      background: linear-gradient(135deg, #0b63f6 0%, #0759d6 48%, #052a6b 100%) !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      box-shadow: 0 10px 22px rgba(5, 42, 107, .22), inset 3px 0 0 #69ddff !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > span:last-child,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+      color: rgba(232, 245, 255, .9) !important;
+      -webkit-text-fill-color: rgba(232, 245, 255, .9) !important;
+      opacity: 1 !important;
+    }
   `;
   document.head.appendChild(style);
 }
