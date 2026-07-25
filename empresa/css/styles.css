@@ -57464,3 +57464,226 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell
     height: 190px !important;
   }
 }
+
+/* Portal depill visual cleanup v159: readable text states without mask containers. */
+html body .portal-shell {
+  --qori-radius-panel: 8px;
+  --qori-radius-control: 6px;
+  --qori-status-ok: #0759d6;
+  --qori-status-warn: #9a5a00;
+  --qori-status-danger: #a9443d;
+  --qori-status-muted: #53677f;
+}
+
+html body .portal-shell :where(
+  .pill,
+  .status-chip,
+  .result-chip,
+  .badge,
+  .chip,
+  .insight-badge,
+  .feature-tier-badge,
+  .subscription-limit-chip,
+  .rms-flow-chip,
+  .rms-priority,
+  .rms-risk,
+  .rms-stage-tag,
+  .rms-station-entry-count,
+  .rms-station-entry-alert,
+  .rms-station-entry-next,
+  .affiliate-referral-status,
+  .sale-customer-status,
+  .qr-batch-status-cell,
+  .strategic-ticket-status-cell,
+  .ticket-status-label,
+  .lead-status-chip,
+  .contact-status-chip,
+  .lead-quality-chip,
+  .lead-directory-status,
+  .contact-directory-status,
+  .gaming-activation-status,
+  .activation-status,
+  .redemption-status,
+  .reward-pass-status
+):not(button):not(a):not(input):not(select):not(textarea) {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--qori-status-muted) !important;
+  font-size: .78rem !important;
+  font-weight: 760 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: normal !important;
+}
+
+html body .portal-shell :where(.status-chip.ok, .pill.ok, .badge.ok, .chip.ok, .result-chip.ok, .is-ready, .is-success):not(button):not(a) {
+  color: var(--qori-status-ok) !important;
+}
+
+html body .portal-shell :where(.status-chip.pending, .pill.pending, .badge.pending, .chip.pending, .result-chip.pending, .is-risk, .is-warning):not(button):not(a) {
+  color: var(--qori-status-warn) !important;
+}
+
+html body .portal-shell :where(.status-chip.danger, .pill.danger, .badge.danger, .chip.danger, .result-chip.danger, .is-error):not(button):not(a) {
+  color: var(--qori-status-danger) !important;
+}
+
+html body .portal-shell :where(
+  .pill,
+  .status-chip,
+  .result-chip,
+  .badge,
+  .chip,
+  .feature-tier-badge,
+  .rms-station-entry-alert,
+  .rms-station-entry-next
+) .material-symbols-outlined {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: currentColor !important;
+  font-size: 1em !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell :where(
+  .lead-directory-card-row strong,
+  .lead-directory-card-name,
+  .contact-directory-card-row strong,
+  .contact-directory-card-name,
+  .lead-crm-name,
+  .contact-name,
+  .affiliate-row strong,
+  .affiliate-name,
+  .customer-name
+) {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #052a6b !important;
+  font-weight: 850 !important;
+  line-height: 1.22 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .portal-shell :where(
+  .surface-card,
+  .dashboard-card,
+  .lead-directory-card,
+  .lead-directory-card-row,
+  .contact-directory-card-row,
+  .contact-center-shell,
+  .affiliate-panel,
+  .affiliate-card,
+  .modal-card,
+  .rms-station-entry-card,
+  .rms-station-lead-row,
+  .rms-collector-lead-card,
+  .gaming-published-row,
+  .campaign-item,
+  .compact-table,
+  .table-wrap
+) {
+  border-radius: var(--qori-radius-panel) !important;
+}
+
+html body .portal-shell :where(
+  article,
+  section,
+  aside,
+  .card,
+  .panel,
+  .row,
+  .table-wrap,
+  .surface-card,
+  .modal-card
+):not(.login-screen):not(.modal-shell):not(.app-shell) {
+  border-radius: var(--qori-radius-panel) !important;
+}
+
+html body .portal-shell :where(
+  .nav-item,
+  .tab-button,
+  .segment-tab,
+  .contact-center-tab-card,
+  .ticket-center-menu button,
+  .dashboard-profile-tabs button
+) {
+  border-radius: var(--qori-radius-control) !important;
+}
+
+html body .portal-shell :where(td, .lead-directory-card-row, .contact-directory-card-row, .affiliate-row) :where(.pill, .status-chip, .badge, .chip) {
+  vertical-align: baseline !important;
+}
+
+html body .portal-shell :where(button, .solid-button, .ghost-button, .danger-button, input, select, textarea) {
+  border-radius: var(--qori-radius-control) !important;
+}
+
+html body[data-current-view] .portal-shell :is(
+  .mono-label,
+  .portal-location-pill,
+  .activation-meta-line span,
+  .tag-row span,
+  .status-row span,
+  .revenue-action-chips span,
+  .focus-chip-row span,
+  .validator-hero-copy .mono-label,
+  .gaming-center-command-copy .mono-label,
+  .gaming-activation-builder-card > .table-card-head .mono-label,
+  .gaming-activation-builder-card > .table-card-head .status-chip
+):not(button):not(a):not(input):not(select):not(textarea) {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  display: inline !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #53677f !important;
+  font-size: .76rem !important;
+  font-weight: 780 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view] .portal-shell :is(.status-chip, .result-chip, .pill, .badge, .chip):not(button):not(a) {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view] .portal-shell :is(.status-chip.ok, .result-chip.ok, .pill.ok, .badge.ok, .chip.ok):not(button):not(a) {
+  color: var(--qori-status-ok) !important;
+}
+
+html body[data-current-view] .portal-shell :is(.status-chip.pending, .status-chip.warning, .result-chip.pending, .pill.pending, .badge.pending, .chip.pending):not(button):not(a) {
+  color: var(--qori-status-warn) !important;
+}
+
+html body[data-current-view] .portal-shell :is(.status-chip.danger, .result-chip.danger, .pill.danger, .badge.danger, .chip.danger):not(button):not(a) {
+  color: var(--qori-status-danger) !important;
+}
