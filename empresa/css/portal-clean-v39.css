@@ -7706,3 +7706,42 @@ html body[data-current-view] .portal-shell .sidebar .sidebar-nav-section:has(.na
   justify-self: start !important;
   text-align: left !important;
 }
+
+/* Sidebar operate alignment v194: hard-anchor Opera to the same left rail. */
+html body .portal-shell .sidebar #sidebar-section-operate,
+html body .portal-shell .sidebar .sidebar-operate-toggle,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] > .nav-group-toggle,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"].is-open > .nav-group-toggle,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"].is-current > .nav-group-toggle {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 24px !important;
+  justify-items: stretch !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .sidebar #sidebar-section-operate > span:first-child,
+html body .portal-shell .sidebar .sidebar-operate-toggle > span:first-child,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] > .nav-group-toggle > span:first-child,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"].is-open > .nav-group-toggle > span:first-child,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"].is-current > .nav-group-toggle > span:first-child,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child,
+html body[data-current-view="leads"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child,
+html body[data-current-view="sales"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child,
+html body[data-current-view="validator"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child,
+html body[data-current-view="redemptions"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child,
+html body[data-current-view="affiliates"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle > span:first-child {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-self: stretch !important;
+  text-align: left !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current > .nav-group-toggle::before,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] > .nav-group-toggle::before,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"].is-current > .nav-group-toggle::before {
+  display: none !important;
+  content: none !important;
+}
