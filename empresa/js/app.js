@@ -1283,12 +1283,67 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
-  let style = document.getElementById("sidebarRuntimeFeedbackStylesV188");
+  let style = document.getElementById("sidebarRuntimeFeedbackStylesV189");
   if (!style) {
     style = document.createElement("style");
-    style.id = "sidebarRuntimeFeedbackStylesV188";
+    style.id = "sidebarRuntimeFeedbackStylesV189";
   }
   style.textContent = `
+    body .portal-shell .sidebar .sidebar-nav {
+      align-items: stretch !important;
+    }
+    body .portal-shell .sidebar .nav-item {
+      display: grid !important;
+      grid-template-columns: 28px minmax(0, 1fr) !important;
+      column-gap: 10px !important;
+      align-items: center !important;
+      justify-items: start !important;
+      width: 100% !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .nav-item > .material-symbols-outlined {
+      grid-column: 1 !important;
+      justify-self: center !important;
+      align-self: center !important;
+      margin: 0 !important;
+    }
+    body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+      grid-column: 2 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      text-align: left !important;
+      line-height: 1.15 !important;
+    }
+    body .portal-shell .sidebar .nav-item strong,
+    body .portal-shell .sidebar .nav-item small {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      text-align: left !important;
+      white-space: normal !important;
+      overflow-wrap: normal !important;
+      word-break: normal !important;
+      hyphens: none !important;
+    }
+    body .portal-shell .sidebar .nav-group-toggle {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 24px !important;
+      column-gap: 10px !important;
+      align-items: center !important;
+      width: 100% !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .nav-group-toggle span:first-child {
+      justify-self: start !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .nav-group-toggle .material-symbols-outlined {
+      justify-self: end !important;
+    }
     body .portal-shell .sidebar .sidebar-primary-nav-item,
     body .portal-shell .sidebar .sidebar-primary-nav-item.active,
     body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
