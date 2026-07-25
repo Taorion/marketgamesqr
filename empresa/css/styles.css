@@ -58618,3 +58618,86 @@ html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section-panel 
     display: grid !important;
   }
 }
+
+/* Affiliate create/edit modal v166: fixed panel, no hover jump inside the interstitial. */
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open:hover,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open:focus,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open:focus-within {
+  top: max(24px, 6vh) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(
+  .surface-card,
+  .affiliate-panel,
+  .affiliate-form,
+  .affiliate-form *,
+  .affiliate-photo-capture,
+  .affiliate-photo-capture *,
+  .affiliate-photo-preview,
+  .affiliate-photo-placeholder,
+  .modal-actions,
+  .modal-button-row,
+  label,
+  input,
+  select,
+  textarea,
+  button,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+),
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(
+  .surface-card,
+  .affiliate-panel,
+  .affiliate-form,
+  .affiliate-form *,
+  .affiliate-photo-capture,
+  .affiliate-photo-capture *,
+  .affiliate-photo-preview,
+  .affiliate-photo-placeholder,
+  .modal-actions,
+  .modal-button-row,
+  label,
+  input,
+  select,
+  textarea,
+  button,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+):hover,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(
+  input,
+  select,
+  textarea,
+  button,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+):focus,
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(
+  input,
+  select,
+  textarea,
+  button,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+):focus-visible {
+  transform: none !important;
+  translate: none !important;
+  scale: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(.solid-button, .ghost-button, .icon-button):hover {
+  box-shadow: none !important;
+}
