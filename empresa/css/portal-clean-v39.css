@@ -6412,6 +6412,94 @@ html body[data-current-view="admin"] .portal-shell .sidebar .sidebar-nav-section
   -webkit-text-fill-color: #ffffff !important;
 }
 
+/* Sidebar primary RMS and current item feedback v188. */
+html body .portal-shell .sidebar .sidebar-primary-nav-item,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+html body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-primary-nav-item.active {
+  margin: 2px 0 16px !important;
+  padding: 10px 8px 13px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(88, 220, 255, .34) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #f7fbff !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+html body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active::before,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle span:first-child {
+  color: #58dcff !important;
+  -webkit-text-fill-color: #58dcff !important;
+  text-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle::after {
+  width: 0 !important;
+  opacity: 0 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
+  border-color: transparent !important;
+  border-left-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) {
+  position: relative !important;
+  padding-left: 12px !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"])::before {
+  display: block !important;
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 9px !important;
+  bottom: 9px !important;
+  width: 2px !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, #58dcff, rgba(88, 220, 255, .34)) !important;
+  box-shadow: 0 0 14px rgba(88, 220, 255, .42) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) small {
+  color: #d9ecfb !important;
+  -webkit-text-fill-color: #d9ecfb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) > .material-symbols-outlined {
+  color: #58dcff !important;
+  -webkit-text-fill-color: #58dcff !important;
+  opacity: 1 !important;
+}
+
 /* Sidebar current section v186: strong section feedback, zero selected-item treatment. */
 html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
 html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,

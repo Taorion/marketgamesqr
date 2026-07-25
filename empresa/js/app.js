@@ -1218,7 +1218,6 @@ const sidebarSectionByView = Object.freeze({
   "smart-catalogs": "offer",
   inventory: "offer",
   "reward-passes": "offer",
-  "rms-machine": "operate",
   leads: "operate",
   sales: "operate",
   validator: "operate",
@@ -1271,18 +1270,64 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
     setSidebarAccordionSection(currentSectionKey);
     return;
   }
+  if (view === "rms-machine") {
+    sidebarNavSections.forEach((section) => {
+      section.classList.remove("is-open");
+      section.querySelector("[data-sidebar-group-toggle]")?.setAttribute("aria-expanded", "false");
+    });
+    return;
+  }
   if (!sidebarNavSections.some((section) => section.classList.contains("is-open"))) {
     setSidebarAccordionSection("operate");
   }
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
-  let style = document.getElementById("sidebarRuntimeFeedbackStylesV187");
+  let style = document.getElementById("sidebarRuntimeFeedbackStylesV188");
   if (!style) {
     style = document.createElement("style");
-    style.id = "sidebarRuntimeFeedbackStylesV187";
+    style.id = "sidebarRuntimeFeedbackStylesV188";
   }
   style.textContent = `
+    body .portal-shell .sidebar .sidebar-primary-nav-item,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+    body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item {
+      margin: 2px 0 16px !important;
+      padding: 10px 8px 13px !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(88, 220, 255, .34) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #f7fbff !important;
+      filter: none !important;
+      transform: none !important;
+      outline: 0 !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+    body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active::before,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active::after,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item::before,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item::after {
+      display: none !important;
+      content: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle span:first-child {
+      color: #58dcff !important;
+      -webkit-text-fill-color: #58dcff !important;
+      text-shadow: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle::before {
+      display: none !important;
+      content: none !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .nav-group-toggle::after {
+      width: 0 !important;
+      opacity: 0 !important;
+    }
     body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
     body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
     body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
@@ -1343,6 +1388,35 @@ function ensureSidebarRuntimeFeedbackStyles() {
     body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
       color: #ffffff !important;
       -webkit-text-fill-color: #ffffff !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) {
+      position: relative !important;
+      padding-left: 12px !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"])::before {
+      display: block !important;
+      content: "" !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 9px !important;
+      bottom: 9px !important;
+      width: 2px !important;
+      border-radius: 0 !important;
+      background: linear-gradient(180deg, #58dcff, rgba(88, 220, 255, .34)) !important;
+      box-shadow: 0 0 14px rgba(88, 220, 255, .42) !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) strong {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) small {
+      color: #d9ecfb !important;
+      -webkit-text-fill-color: #d9ecfb !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"]:not([data-view="rms-machine"]) > .material-symbols-outlined {
+      color: #58dcff !important;
+      -webkit-text-fill-color: #58dcff !important;
+      opacity: 1 !important;
     }
     body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle {
       padding: 0 0 12px 8px !important;
@@ -5045,7 +5119,7 @@ function setView(view) {
     const isLeadsBase = button.dataset.view === "leads"
       && view === "leads"
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
-    const isRegular = button.dataset.view === view && view !== "leads";
+    const isRegular = button.dataset.view === view && view !== "leads" && view !== "rms-machine";
     const isActive = isLeadsBase || isRegular;
     button.classList.remove("active");
     button.removeAttribute("aria-current");
