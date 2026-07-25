@@ -1715,6 +1715,27 @@ function ensureSidebarRuntimeFeedbackStyles() {
       text-align: right !important;
       white-space: nowrap !important;
     }
+    /* Sidebar Opera text left v196: keep every submenu label anchored left. */
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item {
+      justify-content: stretch !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: flex-start !important;
+      justify-items: start !important;
+      place-items: start !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item strong,
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item small {
+      display: block !important;
+      align-self: stretch !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -5246,6 +5267,83 @@ function applyPlanNavigation() {
     }
   });
   requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
+  forceOperateMenuLeftAlignment();
+}
+
+function setImportantStyle(node, property, value) {
+  if (!node) return;
+  node.style.setProperty(property, value, "important");
+}
+
+function forceOperateMenuLeftAlignment() {
+  const rows = document.querySelectorAll('.sidebar [data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item');
+  rows.forEach((row) => {
+    setImportantStyle(row, "display", "grid");
+    setImportantStyle(row, "grid-template-columns", "28px minmax(0, 1fr) 34px");
+    setImportantStyle(row, "grid-auto-flow", "column");
+    setImportantStyle(row, "align-items", "center");
+    setImportantStyle(row, "justify-items", "stretch");
+    setImportantStyle(row, "justify-content", "stretch");
+    setImportantStyle(row, "column-gap", "10px");
+    setImportantStyle(row, "min-height", "54px");
+    setImportantStyle(row, "padding", "8px 4px 8px 8px");
+    setImportantStyle(row, "text-align", "left");
+
+    const icon = row.querySelector(":scope > .material-symbols-outlined");
+    setImportantStyle(icon, "grid-column", "1");
+    setImportantStyle(icon, "width", "28px");
+    setImportantStyle(icon, "min-width", "28px");
+    setImportantStyle(icon, "max-width", "28px");
+    setImportantStyle(icon, "height", "28px");
+    setImportantStyle(icon, "display", "inline-grid");
+    setImportantStyle(icon, "place-items", "center");
+    setImportantStyle(icon, "overflow", "hidden");
+    setImportantStyle(icon, "font-family", '"Material Symbols Outlined"');
+    setImportantStyle(icon, "font-size", "22px");
+    setImportantStyle(icon, "line-height", "1");
+    setImportantStyle(icon, "white-space", "nowrap");
+    setImportantStyle(icon, "text-align", "center");
+
+    const text = row.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
+    setImportantStyle(text, "grid-column", "2");
+    setImportantStyle(text, "min-width", "0");
+    setImportantStyle(text, "width", "100%");
+    setImportantStyle(text, "display", "flex");
+    setImportantStyle(text, "flex-direction", "column");
+    setImportantStyle(text, "align-items", "flex-start");
+    setImportantStyle(text, "justify-content", "flex-start");
+    setImportantStyle(text, "justify-items", "start");
+    setImportantStyle(text, "justify-self", "stretch");
+    setImportantStyle(text, "place-items", "start");
+    setImportantStyle(text, "text-align", "left");
+    text?.querySelectorAll(":scope > strong, :scope > small").forEach((copy) => {
+      setImportantStyle(copy, "display", "block");
+      setImportantStyle(copy, "width", "100%");
+      setImportantStyle(copy, "max-width", "100%");
+      setImportantStyle(copy, "margin", "0");
+      setImportantStyle(copy, "padding", "0");
+      setImportantStyle(copy, "text-align", "left");
+      setImportantStyle(copy, "align-self", "stretch");
+      setImportantStyle(copy, "white-space", "nowrap");
+      setImportantStyle(copy, "overflow", "hidden");
+      setImportantStyle(copy, "text-overflow", "ellipsis");
+    });
+
+    const badge = row.querySelector(":scope > .feature-tier-badge");
+    setImportantStyle(badge, "grid-column", "3");
+    setImportantStyle(badge, "justify-self", "end");
+    setImportantStyle(badge, "align-self", "center");
+    setImportantStyle(badge, "width", "34px");
+    setImportantStyle(badge, "min-width", "34px");
+    setImportantStyle(badge, "max-width", "34px");
+    setImportantStyle(badge, "display", "inline-flex");
+    setImportantStyle(badge, "justify-content", "flex-end");
+    setImportantStyle(badge, "align-items", "center");
+    setImportantStyle(badge, "margin", "0");
+    setImportantStyle(badge, "padding", "0");
+    setImportantStyle(badge, "text-align", "right");
+    setImportantStyle(badge, "white-space", "nowrap");
+  });
 }
 
 function viewNeedsCampaignData(view) {
@@ -5375,7 +5473,10 @@ function setView(view) {
     button.dataset.sidebarCurrentMatch = isActive ? "true" : "false";
   });
   syncSidebarAccordionWithActiveNav(view);
-  queueMicrotask(ensureSidebarRuntimeFeedbackStyles);
+  queueMicrotask(() => {
+    ensureSidebarRuntimeFeedbackStyles();
+    forceOperateMenuLeftAlignment();
+  });
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
     const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
     details.open = hasActiveTool;
@@ -41945,6 +42046,8 @@ syncActivationFormBuilder();
 updateActivationProductIntentMode();
 renderShell();
 ensureSidebarRuntimeFeedbackStyles();
+forceOperateMenuLeftAlignment();
+queueMicrotask(forceOperateMenuLeftAlignment);
 startQuietCanvasObserver();
 scheduleQuietCanvasEnhancement();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");

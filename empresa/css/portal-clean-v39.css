@@ -7826,3 +7826,29 @@ html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section[data-si
   text-align: right !important;
   white-space: nowrap !important;
 }
+
+/* Sidebar Opera text left v196: keep every submenu label anchored left. */
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item {
+  justify-content: stretch !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  justify-items: start !important;
+  place-items: start !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item strong,
+html body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item small {
+  display: block !important;
+  align-self: stretch !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
