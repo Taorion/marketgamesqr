@@ -6177,3 +6177,118 @@ html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-ba
   color: #58dcff !important;
   -webkit-text-fill-color: #58dcff !important;
 }
+
+/* Sidebar feedback v179: clearer active, hover, focus and expanded-section cues. */
+html body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle {
+  cursor: pointer !important;
+  transition: border-color .16s ease, color .16s ease, opacity .16s ease !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle .material-symbols-outlined {
+  transition: color .16s ease, opacity .16s ease, transform .18s ease !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle .material-symbols-outlined,
+html body .portal-shell .sidebar .nav-group-toggle[aria-expanded="true"] .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle[aria-expanded="true"] .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle[aria-expanded="true"] .material-symbols-outlined {
+  color: #58dcff !important;
+  opacity: 1 !important;
+  transform: rotate(180deg) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle {
+  border-bottom-color: rgba(88, 220, 255, .56) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item {
+  position: relative !important;
+  cursor: pointer !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after {
+  display: block !important;
+  content: "" !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 50% !important;
+  width: 0 !important;
+  height: 2px !important;
+  background: #58dcff !important;
+  opacity: 0 !important;
+  transform: translateY(-50%) !important;
+  transition: width .16s ease, opacity .16s ease !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover::after,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible::after {
+  width: 9px !important;
+  opacity: .7 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  width: 16px !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small {
+  color: #e4f4ff !important;
+  -webkit-text-fill-color: #e4f4ff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:active {
+  opacity: .82 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html body .portal-shell .sidebar .nav-group-toggle:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:focus-visible {
+  outline: 1px solid rgba(88, 220, 255, .72) !important;
+  outline-offset: 2px !important;
+}
