@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-sidebar-accordion-v160";
+const APP_VERSION = "empresa-20260724-affiliate-modal-stability-v161";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -32472,11 +32472,12 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV77")) return;
+  if (document.getElementById("affiliatesUxStylesV78")) return;
+  document.getElementById("affiliatesUxStylesV77")?.remove();
   document.getElementById("affiliatesUxStylesV76")?.remove();
   document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV77";
+  style.id = "affiliatesUxStylesV78";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -32734,18 +32735,20 @@ function ensureAffiliatesUxStyles() {
       grid-template-rows: auto auto 1fr;
       position: fixed;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      top: max(24px, 5vh);
+      transform: translateX(-50%);
       width: min(860px, calc(100vw - 2rem));
-      max-height: min(760px, calc(100vh - 2rem));
+      max-height: min(760px, calc(100vh - 48px));
       overflow-y: auto;
       overscroll-behavior: contain;
       z-index: 1100;
       padding: 22px;
-      border-radius: 18px;
+      border-radius: 10px;
       border: 1px solid rgba(5, 42, 107, .14);
       background: #ffffff;
       box-shadow: 0 30px 80px rgba(5, 42, 107, .26);
+      contain: layout paint;
+      transition: none !important;
     }
     .view-section[data-view="affiliates"] #affiliateCreatePanel.is-modal-open {
       display: block !important;
@@ -32845,9 +32848,11 @@ function ensureAffiliatesUxStyles() {
       grid-template-rows: auto minmax(42px, auto) auto;
       min-height: 96px;
       padding: 12px;
-      border-radius: 12px;
+      border-radius: 8px;
       border: 1px solid rgba(5, 42, 107, .1);
       background: #f8fbff;
+      transform: none !important;
+      transition: border-color .14s ease, background-color .14s ease !important;
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-card-actions :where(input, select) {
       min-height: 42px;
@@ -33031,6 +33036,42 @@ function ensureAffiliatesUxStyles() {
     .view-section[data-view="affiliates"] #affiliateOperatePanel .affiliate-selected-grid div {
       border-bottom: 1px solid rgba(5, 42, 107, .09) !important;
       border-radius: 0 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open:hover,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open:focus-within {
+      top: max(24px, 5vh) !important;
+      transform: translateX(-50%) !important;
+      transition: none !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :where(
+      .affiliate-card-preview-wrap,
+      .affiliate-card-preview-wrap img,
+      .affiliate-selected-summary,
+      .affiliate-selected-grid,
+      .affiliate-selected-grid div,
+      .affiliate-card-actions,
+      .affiliate-card-actions label,
+      .affiliate-purchase-summary,
+      .affiliate-card-note
+    ),
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :where(
+      .affiliate-card-preview-wrap,
+      .affiliate-card-preview-wrap img,
+      .affiliate-selected-summary,
+      .affiliate-selected-grid,
+      .affiliate-selected-grid div,
+      .affiliate-card-actions,
+      .affiliate-card-actions label,
+      .affiliate-purchase-summary,
+      .affiliate-card-note
+    ):hover {
+      transform: none !important;
+      box-shadow: none !important;
+      transition-property: border-color, background-color, color !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :where(.solid-button, .ghost-button, .icon-button):hover {
+      transform: none !important;
     }
   `;
   document.head.appendChild(style);

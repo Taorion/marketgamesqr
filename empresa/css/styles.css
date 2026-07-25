@@ -57774,3 +57774,57 @@ html body .portal-shell .app-shell.sidebar-collapsed .nav-group-toggle span:firs
 html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section-panel {
   display: none !important;
 }
+
+/* Affiliates modal stability v161: the interstitial must not jump on hover. */
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open,
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open:hover,
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open:focus-within {
+  top: max(24px, 5vh) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: min(860px, calc(100vw - 2rem)) !important;
+  max-height: min(760px, calc(100vh - 48px)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  border-radius: 10px !important;
+  contain: layout paint !important;
+  transition: none !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open :where(
+  .affiliate-card-preview-wrap,
+  .affiliate-card-preview-wrap img,
+  .affiliate-selected-summary,
+  .affiliate-selected-grid,
+  .affiliate-selected-grid div,
+  .affiliate-card-actions,
+  .affiliate-card-actions label,
+  .affiliate-purchase-summary,
+  .affiliate-card-note,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+),
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open :where(
+  .affiliate-card-preview-wrap,
+  .affiliate-card-preview-wrap img,
+  .affiliate-selected-summary,
+  .affiliate-selected-grid,
+  .affiliate-selected-grid div,
+  .affiliate-card-actions,
+  .affiliate-card-actions label,
+  .affiliate-purchase-summary,
+  .affiliate-card-note,
+  .solid-button,
+  .ghost-button,
+  .icon-button
+):hover {
+  transform: none !important;
+  box-shadow: none !important;
+  transition-property: border-color, background-color, color !important;
+}
+
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-actions label {
+  min-height: 96px !important;
+  border-radius: 8px !important;
+}
