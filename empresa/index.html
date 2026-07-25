@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=affiliate-modal-stability-20260724-v161">
+  <link rel="stylesheet" href="css/styles.css?v=affiliate-detail-points-20260725-v162">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=affiliate-single-create-action-20260724-v149">
 </head>
 <body data-current-view="rms-machine">
@@ -6763,10 +6763,17 @@
                     <input id="affiliatePurchaseAmountInput" type="text" inputmode="numeric" placeholder="Ej: 120.000">
                     <small>Es suficiente para registrar la venta y sumar puntos al afiliado. Los productos son opcionales.</small>
                   </label>
-                  <div class="affiliate-purchase-summary">
-                    <span>Total compra</span>
-                    <strong id="affiliatePurchaseTotalText">$0</strong>
-                    <small id="affiliatePurchasePointsText">0 puntos estimados</small>
+                  <div class="affiliate-purchase-summary affiliate-points-calculator">
+                    <div class="affiliate-points-total">
+                      <span>Total compra</span>
+                      <strong id="affiliatePurchaseTotalText">$0</strong>
+                    </div>
+                    <div class="affiliate-points-result">
+                      <span>Puntos estimados</span>
+                      <strong id="affiliatePurchasePointsValue">0</strong>
+                    </div>
+                    <small id="affiliatePurchasePointsText">Escribe el monto para calcular puntos.</small>
+                    <small class="affiliate-points-formula" id="affiliatePurchaseFormulaText">Regla de puntos pendiente.</small>
                   </div>
                   <label class="span-2">
                     <span>Nota interna</span>
@@ -7316,7 +7323,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=affiliate-modal-stability-20260724-v161" defer></script>
+  <script src="js/app.js?v=affiliate-detail-points-20260725-v162" defer></script>
 </body>
 </html>
 

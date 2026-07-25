@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-affiliate-modal-stability-v161";
+const APP_VERSION = "empresa-20260725-affiliate-detail-points-v162";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -527,7 +527,9 @@ const affiliatePurchaseNotesInput = document.getElementById("affiliatePurchaseNo
 const affiliatePurchaseItemsList = document.getElementById("affiliatePurchaseItemsList");
 const affiliatePurchaseAddItemButton = document.getElementById("affiliatePurchaseAddItemButton");
 const affiliatePurchaseTotalText = document.getElementById("affiliatePurchaseTotalText");
+const affiliatePurchasePointsValue = document.getElementById("affiliatePurchasePointsValue");
 const affiliatePurchasePointsText = document.getElementById("affiliatePurchasePointsText");
+const affiliatePurchaseFormulaText = document.getElementById("affiliatePurchaseFormulaText");
 const affiliatePurchaseMessage = document.getElementById("affiliatePurchaseMessage");
 const affiliateOperationFeed = document.getElementById("affiliateOperationFeed");
 const affiliateAddPointsButton = document.getElementById("affiliateAddPointsButton");
@@ -24187,20 +24189,27 @@ function renderAffiliateSelectedSummary(affiliate = null) {
   const businessProfile = businessCardProfile(affiliate);
   const qrToken = String(affiliate.qr_token || "");
   const digitalUrl = affiliateDigitalCardUrl(affiliate);
+  const currentPoints = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
+  const purchaseTotal = toNumber(affiliate.purchase_total || affiliate.total_purchase_amount || 0);
   const rows = [
-    ["Afiliado", firstTextValue(affiliate.full_name, affiliate.name, "-")],
     ["Documento", firstTextValue(affiliate.document_id, affiliate.document, "-")],
-    ["Teléfono", firstTextValue(affiliate.phone, "-")],
+    ["Telefono", firstTextValue(affiliate.phone, "-")],
     ["Email", firstTextValue(affiliate.email, "-")],
-    ["Puntos", toNumber(affiliate.points_total || affiliate.ledger_points || 0)],
     ["Negocio", firstTextValue(businessProfile.name, affiliate.business_name, "-")],
     ["Carnet digital", digitalUrl || "-"],
     ["Ticket afiliado", qrToken ? `${qrToken.slice(0, 16)}...` : "Sin token"],
   ];
   affiliateSelectedSummary.innerHTML = `
     <div class="affiliate-selected-head">
-      <span class="status-chip ok">Afiliado seleccionado</span>
-      <strong>${escapeHtml(firstTextValue(affiliate.full_name, affiliate.name, "Afiliado"))}</strong>
+      <div>
+        <span class="affiliate-selected-kicker">Afiliado seleccionado</span>
+        <strong>${escapeHtml(firstTextValue(affiliate.full_name, affiliate.name, "Afiliado"))}</strong>
+      </div>
+      <div class="affiliate-selected-balance">
+        <span>Puntos actuales</span>
+        <strong>${escapeHtml(currentPoints.toLocaleString("es-CO"))}</strong>
+        <small>${escapeHtml(money(purchaseTotal))} en compras</small>
+      </div>
     </div>
     <dl class="affiliate-selected-grid">
       ${rows.map(([label, value]) => `
@@ -25895,13 +25904,36 @@ function affiliatePurchasePayloadProducts(total = 0) {
   }];
 }
 
-function affiliateReferralPointsEstimate(total) {
+function affiliateReferralPointsEstimateDetail(total) {
   const rules = state.affiliatePointRules || {};
   const pointAmount = Number(rules.point_amount_cop || 1000);
   const rate = Number(rules.referral_rate || 1);
-  if (!pointAmount || !rate || !Number.isFinite(total) || total <= 0) return null;
+  if (!pointAmount || !rate || !Number.isFinite(total) || total <= 0) {
+    return {
+      points: null,
+      raw: 0,
+      pointAmount,
+      rate,
+      rounding: rules.referral_rounding || "floor",
+      formula: `Regla: ${rate} punto${rate === 1 ? "" : "s"} por cada ${money(pointAmount)} COP.`,
+    };
+  }
   const raw = (total / pointAmount) * rate;
-  return Math.max(0, rules.referral_rounding === "ceil" ? Math.ceil(raw) : Math.floor(raw));
+  const rounding = rules.referral_rounding === "ceil" ? "ceil" : "floor";
+  const points = Math.max(0, rounding === "ceil" ? Math.ceil(raw) : Math.floor(raw));
+  const roundedRaw = Math.round(raw * 100) / 100;
+  return {
+    points,
+    raw,
+    pointAmount,
+    rate,
+    rounding,
+    formula: `${money(total)} / ${money(pointAmount)} x ${rate} = ${roundedRaw.toLocaleString("es-CO")} -> ${points.toLocaleString("es-CO")} puntos (${rounding === "ceil" ? "redondeo arriba" : "redondeo abajo"}).`,
+  };
+}
+
+function affiliateReferralPointsEstimate(total) {
+  return affiliateReferralPointsEstimateDetail(total).points;
 }
 
 function renderAffiliateOperationFeed() {
@@ -25911,7 +25943,8 @@ function renderAffiliateOperationFeed() {
   const products = affiliatePurchasePayloadProducts(affiliatePurchaseTotal());
   const openCount = saleOpenProductCount(products);
   const total = affiliatePurchaseTotal();
-  const points = affiliateReferralPointsEstimate(total);
+  const pointsDetail = affiliateReferralPointsEstimateDetail(total);
+  const points = pointsDetail.points;
   const hasPurchase = total > 0;
   const hasProducts = namedItems.length > 0;
   const steps = [
@@ -25976,10 +26009,16 @@ function updateAffiliatePurchaseTotals() {
   }
   if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.value = productSummary || "Compra afiliado";
   if (affiliatePurchaseTotalText) affiliatePurchaseTotalText.textContent = money(total);
+  if (affiliatePurchasePointsValue) {
+    affiliatePurchasePointsValue.textContent = points === null ? "0" : points.toLocaleString("es-CO");
+  }
   if (affiliatePurchasePointsText) {
     affiliatePurchasePointsText.textContent = points === null
-      ? "Puntos calculados al registrar"
-      : `${points.toLocaleString("es-CO")} puntos estimados`;
+      ? "Escribe el monto para calcular puntos."
+      : "Estimacion previa al registro de la compra.";
+  }
+  if (affiliatePurchaseFormulaText) {
+    affiliatePurchaseFormulaText.textContent = pointsDetail.formula;
   }
   renderAffiliateOperationFeed();
   return { items, total, productSummary, points };
@@ -32472,12 +32511,13 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV78")) return;
+  if (document.getElementById("affiliatesUxStylesV79")) return;
+  document.getElementById("affiliatesUxStylesV78")?.remove();
   document.getElementById("affiliatesUxStylesV77")?.remove();
   document.getElementById("affiliatesUxStylesV76")?.remove();
   document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV78";
+  style.id = "affiliatesUxStylesV79";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -33072,6 +33112,157 @@ function ensureAffiliatesUxStyles() {
     }
     .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :where(.solid-button, .ghost-button, .icon-button):hover {
       transform: none !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open {
+      grid-template-rows: auto minmax(150px, auto) auto minmax(0, 1fr) !important;
+      gap: 12px !important;
+      color: #052a6b !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .table-card-head {
+      align-items: center !important;
+      padding: 0 0 12px !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .table-card-head .mono-label,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-kicker {
+      display: block !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      color: #53677f !important;
+      font-size: .74rem !important;
+      font-weight: 820 !important;
+      letter-spacing: 0 !important;
+      text-transform: none !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open #affiliateCardTitle {
+      color: #052a6b !important;
+      font-size: 1.25rem !important;
+      line-height: 1.2 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-head {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, auto) !important;
+      gap: 14px !important;
+      align-items: end !important;
+      min-height: 0 !important;
+      margin-bottom: 10px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-head strong {
+      display: block !important;
+      margin-top: 2px !important;
+      color: #052a6b !important;
+      font-size: 1.05rem !important;
+      line-height: 1.2 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+      text-align: right !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-balance span,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-balance small {
+      display: block !important;
+      color: #53677f !important;
+      font-size: .74rem !important;
+      line-height: 1.2 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-balance strong {
+      color: #0759d6 !important;
+      font-size: 1.55rem !important;
+      line-height: 1.05 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-summary {
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 0 12px !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 10px 16px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid div {
+      min-height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dt {
+      color: #53677f !important;
+      font-size: .72rem !important;
+      font-weight: 760 !important;
+      line-height: 1.2 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dd {
+      margin: 2px 0 0 !important;
+      color: #052a6b !important;
+      font-size: .86rem !important;
+      font-weight: 760 !important;
+      line-height: 1.25 !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-card-actions {
+      grid-template-columns: minmax(180px, .75fr) minmax(220px, .9fr) minmax(240px, 1fr) !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-calculator {
+      display: grid !important;
+      grid-template-columns: minmax(120px, .8fr) minmax(130px, .8fr) !important;
+      gap: 8px 14px !important;
+      align-content: center !important;
+      min-height: 108px !important;
+      padding: 12px 0 !important;
+      border: 0 !important;
+      border-block: 1px solid rgba(5, 42, 107, .1) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-calculator span {
+      display: block !important;
+      color: #53677f !important;
+      font-size: .72rem !important;
+      font-weight: 760 !important;
+      line-height: 1.2 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-calculator strong {
+      display: block !important;
+      margin-top: 3px !important;
+      color: #052a6b !important;
+      font-size: 1.28rem !important;
+      line-height: 1.05 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-result strong {
+      color: #0759d6 !important;
+      font-size: 1.65rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-calculator small {
+      grid-column: 1 / -1 !important;
+      display: block !important;
+      color: #53677f !important;
+      font-size: .76rem !important;
+      line-height: 1.32 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-formula {
+      color: #052a6b !important;
+      font-weight: 760 !important;
+    }
+    @media (max-width: 760px) {
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-head,
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-card-actions,
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-calculator {
+        grid-template-columns: 1fr !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+        text-align: left !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
+        grid-template-columns: 1fr !important;
+      }
     }
   `;
   document.head.appendChild(style);
