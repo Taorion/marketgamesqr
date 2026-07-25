@@ -31505,9 +31505,6 @@ function renderAffiliateFinderResults(rows = []) {
 
 async function openAffiliateForPoints(affiliateId) {
   if (!affiliateId) return;
-  if (!state.affiliatesLoaded && session?.user?.business_id) {
-    await loadAffiliatesData();
-  }
   const changedAffiliate = state.selectedAffiliateId && state.selectedAffiliateId !== affiliateId;
   if (changedAffiliate) {
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
@@ -31521,12 +31518,26 @@ async function openAffiliateForPoints(affiliateId) {
   if (state.currentView !== "affiliates") {
     setView("affiliates");
   }
-  await renderAffiliatesView();
-  const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
-  renderAffiliateFinderResults([]);
-  setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
   openAffiliateOperationModal();
-  affiliatePurchaseAmountInput?.focus();
+  if (affiliateCardTitle) affiliateCardTitle.textContent = "Cargando afiliado...";
+  if (affiliateCardMeta) affiliateCardMeta.textContent = "Estamos abriendo la ficha, carnet y calculo de puntos.";
+  affiliateCardPreviewWrap?.classList.add("is-loading");
+  setAffiliateFinderMessage("Abriendo ficha del afiliado...", "info");
+  try {
+    if (!state.affiliatesLoaded && session?.user?.business_id) {
+      await loadAffiliatesData();
+    }
+    await renderAffiliatesView();
+    const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
+    renderAffiliateFinderResults([]);
+    setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
+    affiliatePurchaseAmountInput?.focus?.({ preventScroll: true });
+  } catch (error) {
+    affiliateCardPreviewWrap?.classList.remove("is-loading");
+    if (affiliateCardTitle) affiliateCardTitle.textContent = "No se pudo cargar el afiliado";
+    if (affiliateCardMeta) affiliateCardMeta.textContent = error?.message || "Reintenta abrir la ficha o actualiza el listado.";
+    setAffiliateFinderMessage(error?.message || "No se pudo abrir la ficha del afiliado.", "error");
+  }
 }
 
 function affiliateViewSection() {
