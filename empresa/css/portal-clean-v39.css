@@ -6353,3 +6353,129 @@ html[data-theme="light"] body .portal-shell .theme-switch,
 html[data-theme="dark"] body .portal-shell .theme-switch {
   display: none !important;
 }
+
+/* Sidebar active clean feedback v182: readable selection without glow-heavy highlight. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border-left-color: rgba(88, 220, 255, .82) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #58dcff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+  color: #cfe0ee !important;
+  -webkit-text-fill-color: #cfe0ee !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  border-left-color: rgba(88, 220, 255, .48) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle {
+  padding: 0 0 8px 8px !important;
+  border-bottom-color: rgba(216, 230, 242, .18) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle:hover,
+html body .portal-shell .sidebar .nav-group-toggle:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:hover,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:focus-visible {
+  border-bottom-color: rgba(88, 220, 255, .54) !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  color: #58dcff !important;
+  -webkit-text-fill-color: #58dcff !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:hover span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle:focus-visible span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle {
+  border-bottom-color: rgba(88, 220, 255, .42) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle {
+  border-bottom-color: rgba(88, 220, 255, .42) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section:has(.nav-item.active) .nav-group-toggle span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
