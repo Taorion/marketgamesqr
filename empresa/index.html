@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=portal-depill-clean-20260724-v159">
+  <link rel="stylesheet" href="css/styles.css?v=sidebar-accordion-20260724-v160">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=affiliate-single-create-action-20260724-v149">
 </head>
 <body data-current-view="rms-machine">
@@ -176,8 +176,12 @@
         </div>
 
         <nav class="sidebar-nav" aria-label="Navegación principal del portal">
-          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-offer">
-            <span class="nav-group-label" id="sidebar-section-offer">Ofrece</span>
+          <section class="sidebar-nav-section" data-sidebar-section="offer" aria-labelledby="sidebar-section-offer">
+            <button class="nav-group-toggle" id="sidebar-section-offer" data-sidebar-group-toggle="offer" type="button" aria-expanded="false" aria-controls="sidebar-section-offer-panel">
+              <span>Ofrece</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sidebar-nav-section-panel" id="sidebar-section-offer-panel">
             <button class="nav-item nav-item-core" data-view="campaigns" type="button">
               <span class="material-symbols-outlined">campaign</span>
               <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
@@ -198,10 +202,15 @@
               <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
               <span><strong>Reward Pass</strong><small>Beneficios y pases digitales</small></span>
             </button>
+            </div>
           </section>
 
-          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-operate">
-            <span class="nav-group-label" id="sidebar-section-operate">Opera</span>
+          <section class="sidebar-nav-section is-open" data-sidebar-section="operate" aria-labelledby="sidebar-section-operate">
+            <button class="nav-group-toggle" id="sidebar-section-operate" data-sidebar-group-toggle="operate" type="button" aria-expanded="true" aria-controls="sidebar-section-operate-panel">
+              <span>Opera</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sidebar-nav-section-panel" id="sidebar-section-operate-panel">
             <button class="nav-item nav-item-core active" data-view="rms-machine" type="button">
               <span class="material-symbols-outlined">account_tree</span>
               <span><strong>Máquina RMS</strong><small>Procesar leads por estación</small></span>
@@ -230,10 +239,15 @@
               <span class="material-symbols-outlined">card_membership</span>
               <span><strong>Afiliados</strong><small>Puntos, compras y carnet</small></span>
             </button>
+            </div>
           </section>
 
-          <section class="sidebar-nav-section" aria-labelledby="sidebar-section-optimize">
-            <span class="nav-group-label" id="sidebar-section-optimize">Optimiza</span>
+          <section class="sidebar-nav-section" data-sidebar-section="optimize" aria-labelledby="sidebar-section-optimize">
+            <button class="nav-group-toggle" id="sidebar-section-optimize" data-sidebar-group-toggle="optimize" type="button" aria-expanded="false" aria-controls="sidebar-section-optimize-panel">
+              <span>Optimiza</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sidebar-nav-section-panel" id="sidebar-section-optimize-panel">
             <button class="nav-item" data-view="dashboard" type="button">
               <span class="material-symbols-outlined">dashboard</span>
               <span><strong>Centro de Revenue</strong><small>Lectura ejecutiva RMS</small></span>
@@ -254,10 +268,15 @@
               <span class="material-symbols-outlined">emoji_events</span>
               <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
             </button>
+            </div>
           </section>
 
-          <section class="sidebar-nav-section sidebar-nav-section-gos" aria-labelledby="sidebar-section-gos">
-            <span class="nav-group-label" id="sidebar-section-gos">GOS</span>
+          <section class="sidebar-nav-section sidebar-nav-section-gos" data-sidebar-section="gos" aria-labelledby="sidebar-section-gos">
+            <button class="nav-group-toggle" id="sidebar-section-gos" data-sidebar-group-toggle="gos" type="button" aria-expanded="false" aria-controls="sidebar-section-gos-panel">
+              <span>GOS</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sidebar-nav-section-panel" id="sidebar-section-gos-panel">
             <button class="nav-item" data-view="account" type="button">
               <span class="material-symbols-outlined">manage_accounts</span>
               <span><strong>Cuenta</strong><small>Empresa, plan y permisos</small></span>
@@ -266,6 +285,7 @@
               <span class="material-symbols-outlined">admin_panel_settings</span>
               <span><strong>Admin</strong><small>Control del sistema</small></span>
             </button>
+            </div>
           </section>
         </nav>
 
@@ -7296,7 +7316,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-station-slides-20260724-v158" defer></script>
+  <script src="js/app.js?v=sidebar-accordion-20260724-v160" defer></script>
 </body>
 </html>
 

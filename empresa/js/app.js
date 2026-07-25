@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-rms-station-protagonist-slides-v158";
+const APP_VERSION = "empresa-20260724-sidebar-accordion-v160";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1208,6 +1208,8 @@ const featureUpgradePrimaryLink = document.getElementById("featureUpgradePrimary
 const featureUpgradeCloseButton = document.getElementById("featureUpgradeCloseButton");
 const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSecondaryButton");
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
+const sidebarNavSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
+const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-group-toggle]"));
 navButtons.forEach((button) => {
   const copy = button.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
   const label = String(copy?.querySelector("strong")?.textContent || copy?.textContent || "")
@@ -1217,6 +1219,32 @@ navButtons.forEach((button) => {
   if (!button.getAttribute("aria-label")) button.setAttribute("aria-label", label);
   if (!button.getAttribute("title")) button.setAttribute("title", label);
 });
+
+function setSidebarAccordionSection(sectionKey, options = {}) {
+  const allowCollapse = Boolean(options.allowCollapse);
+  const target = sidebarNavSections.find((section) => section.dataset.sidebarSection === sectionKey);
+  if (!target) return;
+  const shouldCloseTarget = allowCollapse && target.classList.contains("is-open");
+  sidebarNavSections.forEach((section) => {
+    const isTarget = section === target;
+    const isOpen = isTarget && !shouldCloseTarget;
+    section.classList.toggle("is-open", isOpen);
+    const toggle = section.querySelector("[data-sidebar-group-toggle]");
+    if (toggle) toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+}
+
+function syncSidebarAccordionWithActiveNav() {
+  const activeButton = navButtons.find((button) => button.classList.contains("active"));
+  const activeSection = activeButton?.closest("[data-sidebar-section]");
+  if (activeSection?.dataset.sidebarSection) {
+    setSidebarAccordionSection(activeSection.dataset.sidebarSection);
+    return;
+  }
+  if (!sidebarNavSections.some((section) => section.classList.contains("is-open"))) {
+    setSidebarAccordionSection("operate");
+  }
+}
 const portalShortcutButtons = Array.from(document.querySelectorAll("[data-portal-shortcut]"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
 const segmentTabs = Array.from(document.querySelectorAll("[data-redemption-sales-tab]"));
@@ -4875,6 +4903,7 @@ function setView(view) {
     if (isActive) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
   });
+  syncSidebarAccordionWithActiveNav();
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
     const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
     details.open = hasActiveTool;
@@ -39924,11 +39953,20 @@ adminCampaignSlugInput?.addEventListener("input", () => {
 });
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    const ownerSection = button.closest("[data-sidebar-section]");
+    if (ownerSection?.dataset.sidebarSection) {
+      setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
+    }
     if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
       openContactCenterSection(button.dataset.contactCenterNav);
       return;
     }
     setView(button.dataset.view);
+  });
+});
+sidebarGroupToggles.forEach((button) => {
+  button.addEventListener("click", () => {
+    setSidebarAccordionSection(button.dataset.sidebarGroupToggle, { allowCollapse: true });
   });
 });
 portalShortcutButtons.forEach((button) => {

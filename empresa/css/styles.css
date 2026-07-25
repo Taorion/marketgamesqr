@@ -57687,3 +57687,90 @@ html body[data-current-view] .portal-shell :is(.status-chip.pending, .status-chi
 html body[data-current-view] .portal-shell :is(.status-chip.danger, .result-chip.danger, .pill.danger, .badge.danger, .chip.danger):not(button):not(a) {
   color: var(--qori-status-danger) !important;
 }
+
+/* Sidebar accordion v160: one clear section open at a time. */
+html body .portal-shell .sidebar-nav {
+  gap: 8px !important;
+}
+
+html body .portal-shell .sidebar-nav-section {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .nav-group-toggle,
+:root[data-theme="light"] .portal-shell .nav-group-toggle {
+  width: 100% !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 8px 10px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffd978 !important;
+  font-size: .73rem !important;
+  font-weight: 860 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+}
+
+html body .portal-shell .nav-group-toggle:hover,
+html body .portal-shell .nav-group-toggle:focus-visible {
+  background: rgba(255, 255, 255, .08) !important;
+  outline: none !important;
+}
+
+html body .portal-shell .nav-group-toggle .material-symbols-outlined {
+  width: auto !important;
+  height: auto !important;
+  color: currentColor !important;
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+  transition: transform .18s ease !important;
+}
+
+html body .portal-shell .sidebar-nav-section.is-open > .nav-group-toggle .material-symbols-outlined {
+  transform: rotate(180deg) !important;
+}
+
+html body .portal-shell .sidebar-nav-section-panel {
+  display: block !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  transition: max-height .22s ease, opacity .16s ease, padding .16s ease !important;
+}
+
+html body .portal-shell .sidebar-nav-section.is-open > .sidebar-nav-section-panel {
+  max-height: 760px !important;
+  opacity: 1 !important;
+  padding: 3px 0 6px !important;
+}
+
+html body .portal-shell .sidebar-nav-section:not(.is-open) > .sidebar-nav-section-panel {
+  pointer-events: none !important;
+}
+
+html body .portal-shell .sidebar-nav-section-panel .nav-item {
+  margin: 2px 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .nav-group-toggle {
+  justify-content: center !important;
+  padding-inline: 0 !important;
+}
+
+html body .portal-shell .app-shell.sidebar-collapsed .nav-group-toggle span:first-child,
+html body .portal-shell .app-shell.sidebar-collapsed .sidebar-nav-section-panel {
+  display: none !important;
+}
