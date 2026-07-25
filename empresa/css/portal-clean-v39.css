@@ -6412,6 +6412,136 @@ html body[data-current-view="admin"] .portal-shell .sidebar .sidebar-nav-section
   -webkit-text-fill-color: #ffffff !important;
 }
 
+/* Sidebar EOF override v190: right-aligned labels and fully neutral RMS. */
+html body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html body .portal-shell .sidebar .nav-item strong,
+html body .portal-shell .sidebar .nav-item small {
+  align-items: flex-end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  justify-self: end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+html body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(216, 230, 242, .16) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  color: #bfd7eb !important;
+  -webkit-text-fill-color: #bfd7eb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  opacity: .82 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+  color: #d8e6f2 !important;
+  -webkit-text-fill-color: #d8e6f2 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+html body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+}
+
+/* Sidebar final alignment and neutral RMS v190. */
+html body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html body .portal-shell .sidebar .nav-item strong,
+html body .portal-shell .sidebar .nav-item small {
+  align-items: flex-end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  justify-self: end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+html body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(216, 230, 242, .16) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  color: #bfd7eb !important;
+  -webkit-text-fill-color: #bfd7eb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  opacity: .82 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+  color: #d8e6f2 !important;
+  -webkit-text-fill-color: #d8e6f2 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+html body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+}
+
 /* Sidebar primary RMS and current item feedback v188. */
 html body .portal-shell .sidebar .sidebar-primary-nav-item,
 html body .portal-shell .sidebar .sidebar-primary-nav-item.active,
@@ -7281,4 +7411,68 @@ html body[data-current-view="account"] .portal-shell .sidebar .sidebar-nav-secti
 html body[data-current-view="admin"] .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="gos"] .nav-group-toggle span:first-child {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
+}
+/* Sidebar true EOF override v190: right-aligned labels and fully neutral RMS. */
+html body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html body .portal-shell .sidebar .nav-item strong,
+html body .portal-shell .sidebar .nav-item small {
+  align-items: flex-end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  justify-self: end !important;
+  text-align: right !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+html body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(216, 230, 242, .16) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  color: #bfd7eb !important;
+  -webkit-text-fill-color: #bfd7eb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  opacity: .82 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+  color: #d8e6f2 !important;
+  -webkit-text-fill-color: #d8e6f2 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body .portal-shell .sidebar .sidebar-primary-nav-item.active small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+  color: #8fb0ca !important;
+  -webkit-text-fill-color: #8fb0ca !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+html body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
 }

@@ -1283,10 +1283,10 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
-  let style = document.getElementById("sidebarRuntimeFeedbackStylesV189");
+  let style = document.getElementById("sidebarRuntimeFeedbackStylesV190");
   if (!style) {
     style = document.createElement("style");
-    style.id = "sidebarRuntimeFeedbackStylesV189";
+    style.id = "sidebarRuntimeFeedbackStylesV190";
   }
   style.textContent = `
     body .portal-shell .sidebar .sidebar-nav {
@@ -1520,6 +1520,62 @@ function ensureSidebarRuntimeFeedbackStyles() {
       margin-left: 2px !important;
       padding-left: 10px !important;
       border-left: 2px solid rgba(88, 220, 255, .42) !important;
+    }
+    body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+    body .portal-shell .sidebar .nav-item strong,
+    body .portal-shell .sidebar .nav-item small {
+      align-items: flex-end !important;
+      text-align: right !important;
+    }
+    body .portal-shell .sidebar .nav-group-toggle span:first-child {
+      justify-self: end !important;
+      text-align: right !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active,
+    body .portal-shell .sidebar .sidebar-primary-nav-item[aria-current="page"],
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+      border: 0 !important;
+      border-bottom: 1px solid rgba(216, 230, 242, .16) !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      outline: 0 !important;
+      color: #bfd7eb !important;
+      -webkit-text-fill-color: #bfd7eb !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active > .material-symbols-outlined,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item > .material-symbols-outlined,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+      color: #8fb0ca !important;
+      -webkit-text-fill-color: #8fb0ca !important;
+      opacity: .82 !important;
+      text-shadow: none !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item strong,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active strong,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item strong,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+      color: #d8e6f2 !important;
+      -webkit-text-fill-color: #d8e6f2 !important;
+      text-shadow: none !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item small,
+    body .portal-shell .sidebar .sidebar-primary-nav-item.active small,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .sidebar-primary-nav-item small,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+      color: #8fb0ca !important;
+      -webkit-text-fill-color: #8fb0ca !important;
+      text-shadow: none !important;
+    }
+    body .portal-shell .sidebar .sidebar-primary-nav-item::before,
+    body .portal-shell .sidebar .sidebar-primary-nav-item::after,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+    body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+      display: none !important;
+      content: none !important;
+      opacity: 0 !important;
     }
   `;
   document.head.appendChild(style);
