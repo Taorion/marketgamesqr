@@ -1577,6 +1577,44 @@ function ensureSidebarRuntimeFeedbackStyles() {
       content: none !important;
       opacity: 0 !important;
     }
+    /* Sidebar left alignment v193: cover primary item, section headers, open/current states and nested items. */
+    body[data-current-view] .portal-shell .sidebar .nav-item,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+    body[data-current-view] .portal-shell .sidebar .sidebar-primary-nav-item {
+      justify-items: start !important;
+      text-align: left !important;
+    }
+    body[data-current-view] .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+    body[data-current-view] .portal-shell .sidebar .nav-item > span:last-child,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+    body[data-current-view] .portal-shell .sidebar .sidebar-primary-nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+      align-items: flex-start !important;
+      justify-items: start !important;
+      justify-self: stretch !important;
+      text-align: left !important;
+    }
+    body[data-current-view] .portal-shell .sidebar .nav-item strong,
+    body[data-current-view] .portal-shell .sidebar .nav-item small,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+    body[data-current-view] .portal-shell .sidebar .sidebar-primary-nav-item strong,
+    body[data-current-view] .portal-shell .sidebar .sidebar-primary-nav-item small {
+      text-align: left !important;
+    }
+    body[data-current-view] .portal-shell .sidebar .nav-group-toggle,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section .nav-group-toggle,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle {
+      justify-items: start !important;
+      text-align: left !important;
+    }
+    body[data-current-view] .portal-shell .sidebar .nav-group-toggle span:first-child,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section .nav-group-toggle span:first-child,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle span:first-child,
+    body[data-current-view] .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle span:first-child {
+      justify-self: start !important;
+      text-align: left !important;
+    }
   `;
   document.head.appendChild(style);
 }
