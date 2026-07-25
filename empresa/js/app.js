@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260725-affiliate-detail-points-v162";
+const APP_VERSION = "empresa-20260725-affiliate-open-fallback-v171";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -25038,8 +25038,9 @@ function resetAffiliateForm(options = {}) {
 }
 
 function findAffiliateById(affiliateId) {
-  return (state.affiliates || []).find((item) => item.id === affiliateId)
-    || (state.selectedAffiliate?.id === affiliateId ? state.selectedAffiliate : null);
+  const targetId = String(affiliateId || "");
+  return (state.affiliates || []).find((item) => String(item.id || "") === targetId)
+    || (String(state.selectedAffiliate?.id || "") === targetId ? state.selectedAffiliate : null);
 }
 
 function fillAffiliateForm(affiliate) {
@@ -31503,6 +31504,31 @@ function renderAffiliateFinderResults(rows = []) {
   });
 }
 
+function renderAffiliateSelectionFallback(affiliate) {
+  if (!affiliate) return;
+  state.selectedAffiliate = {
+    ...affiliate,
+    business_logo_data_url: businessProfileLogoSource() || businessLogoSource(affiliate) || "",
+    qr_data_url: affiliateQrSource(affiliate),
+  };
+  if (affiliateCardTitle) affiliateCardTitle.textContent = state.selectedAffiliate.full_name || "Afiliado";
+  if (affiliateCardMeta) affiliateCardMeta.textContent = affiliateCardMetaText(state.selectedAffiliate);
+  renderAffiliateSelectedSummary(state.selectedAffiliate);
+  renderAffiliatePurchaseCampaignOptions();
+  renderAffiliatePurchaseItems();
+  if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = false;
+  if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.disabled = false;
+  if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.disabled = false;
+  if (affiliateManualPointsInput) affiliateManualPointsInput.disabled = false;
+  if (affiliateManualPointsReasonInput) affiliateManualPointsReasonInput.disabled = false;
+  if (affiliateManualPointsButton) affiliateManualPointsButton.disabled = false;
+  if (affiliateAddPointsButton) affiliateAddPointsButton.disabled = false;
+  if (downloadAffiliateCardButton) downloadAffiliateCardButton.disabled = false;
+  if (copyAffiliateCardLinkButton) copyAffiliateCardLinkButton.disabled = !affiliateDigitalCardUrl(state.selectedAffiliate);
+  if (affiliateGenerateReferralQrButton) affiliateGenerateReferralQrButton.disabled = false;
+  if (affiliateLedgerTitle) affiliateLedgerTitle.textContent = `Movimientos de ${state.selectedAffiliate.full_name || "afiliado"}`;
+}
+
 async function openAffiliateForPoints(affiliateId) {
   if (!affiliateId) return;
   const changedAffiliate = state.selectedAffiliateId && state.selectedAffiliateId !== affiliateId;
@@ -31523,20 +31549,44 @@ async function openAffiliateForPoints(affiliateId) {
   if (affiliateCardMeta) affiliateCardMeta.textContent = "Estamos abriendo la ficha, carnet y calculo de puntos.";
   affiliateCardPreviewWrap?.classList.add("is-loading");
   setAffiliateFinderMessage("Abriendo ficha del afiliado...", "info");
+  let localSelected = findAffiliateById(affiliateId);
+  if (localSelected) {
+    renderAffiliateSelectionFallback(localSelected);
+  }
   try {
     if (!state.affiliatesLoaded && session?.user?.business_id) {
       await loadAffiliatesData();
     }
-    await renderAffiliatesView();
-    const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => item.id === affiliateId);
+    localSelected = findAffiliateById(affiliateId) || localSelected;
+    if (localSelected && !state.selectedAffiliate) {
+      renderAffiliateSelectionFallback(localSelected);
+    }
+    try {
+      await renderAffiliatesView();
+    } catch (renderError) {
+      if (!localSelected) throw renderError;
+      console.warn("Affiliate detail panel rendered from cached row after detail refresh failed.", renderError);
+      renderAffiliateSelectionFallback(localSelected);
+      affiliateCardPreviewWrap?.classList.remove("is-loading");
+      if (affiliateLedgerTable) {
+        affiliateLedgerTable.innerHTML = '<tr><td colspan="6">No se pudieron cargar los movimientos ahora. La ficha básica sigue disponible.</td></tr>';
+      }
+    }
+    const selected = state.selectedAffiliate || findAffiliateById(affiliateId) || localSelected;
     renderAffiliateFinderResults([]);
     setAffiliateFinderMessage(`Afiliado seleccionado: ${selected?.full_name || "afiliado"}. Escribe el monto total de la compra. Puedes agregar productos si quieres alimentar Productos automaticamente.`, "success");
     affiliatePurchaseAmountInput?.focus?.({ preventScroll: true });
   } catch (error) {
     affiliateCardPreviewWrap?.classList.remove("is-loading");
-    if (affiliateCardTitle) affiliateCardTitle.textContent = "No se pudo cargar el afiliado";
-    if (affiliateCardMeta) affiliateCardMeta.textContent = error?.message || "Reintenta abrir la ficha o actualiza el listado.";
-    setAffiliateFinderMessage(error?.message || "No se pudo abrir la ficha del afiliado.", "error");
+    localSelected = localSelected || findAffiliateById(affiliateId);
+    if (localSelected) {
+      renderAffiliateSelectionFallback(localSelected);
+      setAffiliateFinderMessage("Ficha abierta con datos básicos. Actualiza el listado si necesitas movimientos o premios.", "success");
+      return;
+    }
+    if (affiliateCardTitle) affiliateCardTitle.textContent = "Selecciona de nuevo el afiliado";
+    if (affiliateCardMeta) affiliateCardMeta.textContent = error?.message || "Actualiza el listado e intenta abrir la ficha otra vez.";
+    setAffiliateFinderMessage(error?.message || "No se pudo abrir la ficha del afiliado. Actualiza el listado.", "error");
   }
 }
 
