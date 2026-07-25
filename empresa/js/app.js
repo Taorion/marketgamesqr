@@ -1212,6 +1212,26 @@ const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSec
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const sidebarNavSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
 const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-group-toggle]"));
+const sidebarSectionByView = Object.freeze({
+  campaigns: "offer",
+  "strategic-qr": "offer",
+  "smart-catalogs": "offer",
+  inventory: "offer",
+  "reward-passes": "offer",
+  "rms-machine": "operate",
+  leads: "operate",
+  sales: "operate",
+  validator: "operate",
+  redemptions: "operate",
+  affiliates: "operate",
+  dashboard: "optimize",
+  channels: "optimize",
+  competition: "optimize",
+  branches: "optimize",
+  missions: "optimize",
+  account: "gos",
+  admin: "gos",
+});
 navButtons.forEach((button) => {
   const copy = button.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
   const label = String(copy?.querySelector("strong")?.textContent || copy?.textContent || "")
@@ -1236,11 +1256,19 @@ function setSidebarAccordionSection(sectionKey, options = {}) {
   });
 }
 
-function syncSidebarAccordionWithActiveNav() {
-  const activeButton = navButtons.find((button) => button.classList.contains("active"));
-  const activeSection = activeButton?.closest("[data-sidebar-section]");
-  if (activeSection?.dataset.sidebarSection) {
-    setSidebarAccordionSection(activeSection.dataset.sidebarSection);
+function syncSidebarAccordionWithActiveNav(view = state.currentView) {
+  const currentSectionKey = sidebarSectionByView[view] || "";
+  sidebarNavSections.forEach((section) => {
+    const isCurrent = section.dataset.sidebarSection === currentSectionKey;
+    section.classList.toggle("is-current", isCurrent);
+    const toggle = section.querySelector("[data-sidebar-group-toggle]");
+    if (toggle) {
+      if (isCurrent) toggle.setAttribute("aria-current", "page");
+      else toggle.removeAttribute("aria-current");
+    }
+  });
+  if (currentSectionKey) {
+    setSidebarAccordionSection(currentSectionKey);
     return;
   }
   if (!sidebarNavSections.some((section) => section.classList.contains("is-open"))) {
@@ -4899,11 +4927,11 @@ function setView(view) {
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
     const isRegular = button.dataset.view === view && view !== "leads";
     const isActive = isLeadsBase || isRegular;
-    button.classList.toggle("active", isActive);
-    if (isActive) button.setAttribute("aria-current", "page");
-    else button.removeAttribute("aria-current");
+    button.classList.remove("active");
+    button.removeAttribute("aria-current");
+    button.dataset.sidebarCurrentMatch = isActive ? "true" : "false";
   });
-  syncSidebarAccordionWithActiveNav();
+  syncSidebarAccordionWithActiveNav(view);
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
     const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
     details.open = hasActiveTool;
@@ -29695,10 +29723,11 @@ function setContactCenterTab(tab = "directory") {
         && nextTab !== "sales"
         && (contactTarget === "agenda" ? nextTab === "agenda" : nextTab !== "agenda");
       const isActive = isSalesAlias || isLeadsBase;
-      button.classList.toggle("active", isActive);
-      if (isActive) button.setAttribute("aria-current", "page");
-      else button.removeAttribute("aria-current");
+      button.classList.remove("active");
+      button.removeAttribute("aria-current");
+      button.dataset.sidebarCurrentMatch = isActive ? "true" : "false";
     });
+    syncSidebarAccordionWithActiveNav("leads");
   }
   contactCenterTabs.forEach((button) => {
     const active = button.dataset.contactCenterTab === nextTab;

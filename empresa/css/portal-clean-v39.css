@@ -6412,6 +6412,135 @@ html body[data-current-view="admin"] .portal-shell .sidebar .sidebar-nav-section
   -webkit-text-fill-color: #ffffff !important;
 }
 
+/* Sidebar current section v186: strong section feedback, zero selected-item treatment. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border-color: transparent !important;
+  border-left-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  outline-offset: 2px !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"] > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] > .material-symbols-outlined {
+  color: #6be1ff !important;
+  opacity: .88 !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"] strong,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] strong {
+  color: #f7fbff !important;
+  -webkit-text-fill-color: #f7fbff !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"] small,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] small {
+  color: #bfd7eb !important;
+  -webkit-text-fill-color: #bfd7eb !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover > .material-symbols-outlined,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible > .material-symbols-outlined {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle {
+  border-bottom-color: rgba(88, 220, 255, .72) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: .78rem !important;
+  letter-spacing: .14em !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::before,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::before,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::before {
+  display: block !important;
+  content: "ACTUAL" !important;
+  position: absolute !important;
+  right: 26px !important;
+  bottom: 8px !important;
+  color: #58dcff !important;
+  font-size: .55rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .12em !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle::after,
+html body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle::after {
+  width: calc(100% - 16px) !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle .material-symbols-outlined {
+  color: #58dcff !important;
+  opacity: 1 !important;
+}
+
 /* Sidebar section feedback v183: current context lives in the section, not the item. */
 html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
 html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
