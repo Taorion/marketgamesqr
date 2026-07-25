@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260725-contacts-agenda-split-v172";
+const APP_VERSION = "empresa-20260725-light-profile-only-v181";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2224,38 +2224,36 @@ function setupPasswordRevealButtons() {
 
 function readPreferredTheme() {
   try {
-    const storedTheme = localStorage.getItem(THEME_KEY);
-    if (storedTheme === "light" || storedTheme === "dark") return storedTheme;
-    return localStorage.getItem(LIGHT_MODE_KEY) === "1" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, "light");
   } catch {
-    return "dark";
+    // Theme persistence is optional; Qori now uses the light profile only.
   }
+  return "light";
 }
 
-function applyPortalTheme(theme) {
-  const nextTheme = theme === "light" ? "light" : "dark";
+function applyPortalTheme() {
+  const nextTheme = "light";
   document.documentElement.dataset.theme = nextTheme;
   if (themeSwitch) themeSwitch.checked = nextTheme === "light";
-  if (themeSwitchLabel) themeSwitchLabel.textContent = nextTheme === "light" ? "Claro" : "Oscuro";
+  if (themeSwitchLabel) themeSwitchLabel.textContent = "Claro";
   if (themeSwitch) {
-    themeSwitch.setAttribute("aria-checked", nextTheme === "light" ? "true" : "false");
-    themeSwitch.title = nextTheme === "light" ? "Cambiar a perfil oscuro" : "Cambiar a perfil claro";
+    themeSwitch.setAttribute("aria-checked", "true");
+    themeSwitch.disabled = true;
+    themeSwitch.title = "Perfil claro Qori";
   }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute("content", nextTheme === "light" ? "#f6fbff" : "#073b4c");
+  if (themeMeta) themeMeta.setAttribute("content", "#f6fbff");
   try {
     localStorage.setItem(THEME_KEY, nextTheme);
-    if (nextTheme === "light") localStorage.setItem(LIGHT_MODE_KEY, "1");
-    else localStorage.removeItem(LIGHT_MODE_KEY);
   } catch {
-    // Preference persistence is optional; the UI can still switch for this session.
+    // Preference persistence is optional; the UI remains light for this session.
   }
   return nextTheme;
 }
 
 function togglePortalTheme() {
-  const nextTheme = applyPortalTheme(themeSwitch?.checked ? "light" : "dark");
-  showFeedback(`Perfil ${nextTheme === "light" ? "claro" : "oscuro"} activado.`, "info");
+  applyPortalTheme();
+  showFeedback("Perfil claro Qori activo.", "info");
 }
 
 function showFeedback(message, kind = "success", options = {}) {

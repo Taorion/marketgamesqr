@@ -6346,3 +6346,10 @@ html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data
   color: #d8e6f2 !important;
   -webkit-text-fill-color: #d8e6f2 !important;
 }
+
+/* Light profile only v181: the dark visual profile is retired. */
+html body .portal-shell .theme-switch,
+html[data-theme="light"] body .portal-shell .theme-switch,
+html[data-theme="dark"] body .portal-shell .theme-switch {
+  display: none !important;
+}
