@@ -60477,3 +60477,51 @@ html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
   background: linear-gradient(90deg, rgba(7, 206, 251, .14), rgba(255, 255, 255, .03) 72%, transparent) !important;
   box-shadow: inset 2px 0 0 rgba(7, 206, 251, .95) !important;
 }
+
+/* Sidebar Qori mark v198: use the favicon seal free, without a logo container. */
+html body .portal-shell .sidebar .sidebar-brand {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 0 16px !important;
+  margin: 0 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(216, 230, 242, .16) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand .sidebar-qori-mark,
+html body .portal-shell .sidebar .sidebar-brand .brand-logo.sidebar-qori-mark,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-brand .brand-logo.sidebar-qori-mark,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-brand .brand-logo.sidebar-qori-mark {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  aspect-ratio: 1 / 1 !important;
+  display: block !important;
+  object-fit: contain !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand > div {
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand h1,
+html body .portal-shell .sidebar .sidebar-brand p {
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
