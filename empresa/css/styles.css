@@ -59775,3 +59775,38 @@ html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .
   color: #07cefb !important;
   -webkit-text-fill-color: #07cefb !important;
 }
+
+/* Sidebar section-only feedback v187: never highlight Máquina RMS as a selected item. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"],
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
+  border-color: transparent !important;
+  border-left-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle {
+  border-bottom: 2px solid rgba(88, 220, 255, .92) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .sidebar-nav-section-panel {
+  margin-left: 2px !important;
+  padding-left: 10px !important;
+  border-left: 2px solid rgba(88, 220, 255, .42) !important;
+}

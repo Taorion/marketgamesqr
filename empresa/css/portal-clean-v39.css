@@ -6444,6 +6444,12 @@ html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data
   content: none !important;
 }
 
+html body .portal-shell .sidebar .sidebar-nav-section.is-current .sidebar-nav-section-panel {
+  margin-left: 2px !important;
+  padding-left: 10px !important;
+  border-left: 2px solid rgba(88, 220, 255, .42) !important;
+}
+
 html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
 html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
 html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"] > .material-symbols-outlined,
@@ -6539,6 +6545,29 @@ html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-cur
 html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-current .nav-group-toggle .material-symbols-outlined {
   color: #58dcff !important;
   opacity: 1 !important;
+}
+
+/* Sidebar section-only hard stop v187: Máquina RMS remains visually neutral. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"],
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border-color: transparent !important;
+  border-left-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active::after,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[aria-current="page"]::after,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::before,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"]::after {
+  display: none !important;
+  content: none !important;
 }
 
 /* Sidebar section feedback v183: current context lives in the section, not the item. */
