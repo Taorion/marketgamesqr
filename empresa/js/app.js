@@ -1736,6 +1736,73 @@ function ensureSidebarRuntimeFeedbackStyles() {
       padding: 0 !important;
       text-align: left !important;
     }
+    /* Sidebar menu v197: Optimiza and GOS follow the same clean left rail. */
+    body .portal-shell .sidebar .sidebar-nav-section > .nav-group-toggle {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 24px !important;
+      align-items: center !important;
+      justify-items: stretch !important;
+      justify-content: stretch !important;
+      gap: 8px !important;
+      min-height: 38px !important;
+      padding: 8px 4px 8px 8px !important;
+      border-radius: 0 !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section > .nav-group-toggle > span:first-child {
+      width: 100% !important;
+      justify-self: start !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+    body .portal-shell .sidebar .sidebar-primary-nav-item {
+      display: grid !important;
+      grid-template-columns: 28px minmax(0, 1fr) 34px !important;
+      align-items: center !important;
+      justify-items: stretch !important;
+      justify-content: stretch !important;
+      column-gap: 10px !important;
+      min-height: 54px !important;
+      padding: 8px 4px 8px 8px !important;
+      border-radius: 0 !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+    body .portal-shell .sidebar .sidebar-primary-nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+      grid-column: 2 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: flex-start !important;
+      justify-self: stretch !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+    body .portal-shell .sidebar .sidebar-primary-nav-item strong,
+    body .portal-shell .sidebar .sidebar-primary-nav-item small {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+    body .portal-shell .sidebar .sidebar-primary-nav-item:hover {
+      background: linear-gradient(90deg, rgba(7, 206, 251, .1), transparent 80%) !important;
+      box-shadow: inset 2px 0 0 rgba(7, 206, 251, .62) !important;
+      transform: none !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item[data-sidebar-current-match="true"],
+    body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
+      background: linear-gradient(90deg, rgba(7, 206, 251, .14), rgba(255, 255, 255, .03) 72%, transparent) !important;
+      box-shadow: inset 2px 0 0 rgba(7, 206, 251, .95) !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -5267,7 +5334,7 @@ function applyPlanNavigation() {
     }
   });
   requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
-  forceOperateMenuLeftAlignment();
+  forceSidebarMenuLeftAlignment();
 }
 
 function setImportantStyle(node, property, value) {
@@ -5276,7 +5343,26 @@ function setImportantStyle(node, property, value) {
 }
 
 function forceOperateMenuLeftAlignment() {
-  const rows = document.querySelectorAll('.sidebar [data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item');
+  forceSidebarMenuLeftAlignment();
+}
+
+function forceSidebarMenuLeftAlignment() {
+  const groupToggles = document.querySelectorAll(".sidebar .sidebar-nav-section > .nav-group-toggle");
+  groupToggles.forEach((toggle) => {
+    setImportantStyle(toggle, "display", "grid");
+    setImportantStyle(toggle, "grid-template-columns", "minmax(0, 1fr) 24px");
+    setImportantStyle(toggle, "align-items", "center");
+    setImportantStyle(toggle, "justify-items", "stretch");
+    setImportantStyle(toggle, "justify-content", "stretch");
+    setImportantStyle(toggle, "text-align", "left");
+    setImportantStyle(toggle, "border-radius", "0");
+    const label = toggle.querySelector(":scope > span:first-child");
+    setImportantStyle(label, "justify-self", "start");
+    setImportantStyle(label, "text-align", "left");
+    setImportantStyle(label, "width", "100%");
+  });
+
+  const rows = document.querySelectorAll(".sidebar .sidebar-nav-section-panel .nav-item, .sidebar .sidebar-primary-nav-item");
   rows.forEach((row) => {
     setImportantStyle(row, "display", "grid");
     setImportantStyle(row, "grid-template-columns", "28px minmax(0, 1fr) 34px");
@@ -5288,6 +5374,7 @@ function forceOperateMenuLeftAlignment() {
     setImportantStyle(row, "min-height", "54px");
     setImportantStyle(row, "padding", "8px 4px 8px 8px");
     setImportantStyle(row, "text-align", "left");
+    setImportantStyle(row, "border-radius", "0");
 
     const icon = row.querySelector(":scope > .material-symbols-outlined");
     setImportantStyle(icon, "grid-column", "1");
@@ -5475,7 +5562,7 @@ function setView(view) {
   syncSidebarAccordionWithActiveNav(view);
   queueMicrotask(() => {
     ensureSidebarRuntimeFeedbackStyles();
-    forceOperateMenuLeftAlignment();
+    forceSidebarMenuLeftAlignment();
   });
   document.querySelectorAll(".portal-more-nav").forEach((details) => {
     const hasActiveTool = Boolean(details.querySelector(".nav-item.active"));
@@ -42046,8 +42133,8 @@ syncActivationFormBuilder();
 updateActivationProductIntentMode();
 renderShell();
 ensureSidebarRuntimeFeedbackStyles();
-forceOperateMenuLeftAlignment();
-queueMicrotask(forceOperateMenuLeftAlignment);
+forceSidebarMenuLeftAlignment();
+queueMicrotask(forceSidebarMenuLeftAlignment);
 startQuietCanvasObserver();
 scheduleQuietCanvasEnhancement();
 const paymentResult = new URLSearchParams(window.location.search).get("payment");
