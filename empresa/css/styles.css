@@ -59464,9 +59464,9 @@ html[data-theme="dark"] body .portal-shell .sidebar {
   --sidebar-title-cold: #cfefff !important;
   --sidebar-title-cyan: #07cefb !important;
   --sidebar-title-muted: #a9c7df !important;
-  --sidebar-active-bg: #e8f6ff !important;
-  --sidebar-active-ink: #012268 !important;
-  --sidebar-active-subtle: #294f7b !important;
+  --sidebar-active-bg: #052a6b !important;
+  --sidebar-active-ink: #ffffff !important;
+  --sidebar-active-subtle: #d8e6f2 !important;
 }
 
 html body .portal-shell .sidebar .nav-group-toggle,
@@ -59664,4 +59664,114 @@ html body[data-current-view="leads"] .portal-shell .view-section[data-view="lead
   html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .table-card-head {
     grid-template-columns: minmax(0, 1fr) !important;
   }
+}
+
+/* Sidebar dark readable v173: no pale menu states, no light text on light backgrounds. */
+html body .portal-shell .sidebar,
+html[data-theme="light"] body .portal-shell .sidebar,
+html[data-theme="dark"] body .portal-shell .sidebar {
+  --sidebar-active-bg: #052a6b !important;
+  --sidebar-active-ink: #ffffff !important;
+  --sidebar-active-subtle: #d8e6f2 !important;
+  --sidebar-title-cold: #eaf4ff !important;
+  --sidebar-title-cyan: #07cefb !important;
+  --sidebar-title-muted: #b9c7e4 !important;
+  background:
+    radial-gradient(circle at 20px 24px, rgba(7, 206, 251, .18), transparent 30%),
+    linear-gradient(180deg, #052a6b 0%, #012268 48%, #031b46 100%) !important;
+  color: #eaf4ff !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle {
+  background: transparent !important;
+  color: #07cefb !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  color: #07cefb !important;
+  text-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item {
+  background: transparent !important;
+  color: #eaf4ff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong {
+  color: #eaf4ff !important;
+  -webkit-text-fill-color: #eaf4ff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small {
+  color: #b9c7e4 !important;
+  -webkit-text-fill-color: #b9c7e4 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined {
+  color: #07cefb !important;
+  -webkit-text-fill-color: #07cefb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  background: #063b86 !important;
+  color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
+  background: #052a6b !important;
+  border-left-color: #07cefb !important;
+  color: #ffffff !important;
+  box-shadow: inset 4px 0 0 #07cefb, 0 10px 24px rgba(1, 34, 104, .24) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small {
+  color: #d8e6f2 !important;
+  -webkit-text-fill-color: #d8e6f2 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined {
+  color: #07cefb !important;
+  -webkit-text-fill-color: #07cefb !important;
 }
