@@ -1524,12 +1524,12 @@ function ensureSidebarRuntimeFeedbackStyles() {
     body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
     body .portal-shell .sidebar .nav-item strong,
     body .portal-shell .sidebar .nav-item small {
-      align-items: flex-end !important;
-      text-align: right !important;
+      align-items: flex-start !important;
+      text-align: left !important;
     }
     body .portal-shell .sidebar .nav-group-toggle span:first-child {
-      justify-self: end !important;
-      text-align: right !important;
+      justify-self: start !important;
+      text-align: left !important;
     }
     body .portal-shell .sidebar .sidebar-primary-nav-item,
     body .portal-shell .sidebar .sidebar-primary-nav-item.active,
