@@ -5942,3 +5942,39 @@ html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-ba
   color: #07cefb !important;
   -webkit-text-fill-color: #07cefb !important;
 }
+
+/* Sidebar text no-clip v177: keep menu typography from being vertically cut. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item {
+  min-height: 52px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge),
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+  align-self: center !important;
+  gap: 4px !important;
+  overflow: visible !important;
+  padding-block: 1px !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small {
+  overflow: visible !important;
+  line-height: 1.32 !important;
+  text-overflow: clip !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small {
+  font-size: .71rem !important;
+}
