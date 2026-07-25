@@ -7982,3 +7982,20 @@ html body .portal-shell .sidebar .sidebar-brand p {
   padding: 0 !important;
   text-align: left !important;
 }
+
+/* Campaigns Qori center v199: base tokens before runtime cascade. */
+html body[data-current-view="campaigns"] .portal-shell .view-section[data-view="campaigns"] {
+  --qori-blue-deep: #012268;
+  --qori-blue-corp: #0341B3;
+  --qori-blue-digital: #0152D7;
+  --qori-blue-bright: #0480FA;
+  --qori-cyan: #07CEFB;
+  --qori-ice: #E8F3FB;
+  --qori-white: #FFFFFF;
+  --qori-text: #0B1E3D;
+  --qori-muted: #54708F;
+  --qori-line: #CDE0F4;
+  --qori-radius-card: 20px;
+  --qori-radius-button: 14px;
+  --qori-shadow-soft: 0 12px 30px rgba(1,34,104,0.08);
+}

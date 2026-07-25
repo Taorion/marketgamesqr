@@ -6357,6 +6357,7 @@ async function loadWorkspace() {
     }
     renderBusinessLogoPanel();
     renderCampaignStateGrid();
+    renderCampaignCommandKpis();
     renderCampaignList();
     renderCampaignAssociationInputs();
     if (isAdmin()) renderAdminView();
@@ -6471,6 +6472,7 @@ async function refreshLiveBusinessData() {
     if (shouldRefreshDashboard) renderDashboard();
     if (shouldRefreshCampaigns) {
       renderCampaignStateGrid();
+      renderCampaignCommandKpis();
       renderCampaignList();
       renderCampaignAssociationInputs();
     }
@@ -10633,8 +10635,428 @@ function ensureCampaignLibraryUxStyles() {
   document.head.appendChild(style);
 }
 
+function campaignQoriCenterCss() {
+  return `
+    body[data-current-view="campaigns"] .portal-shell .view-section[data-view="campaigns"] {
+      --qori-blue-deep: #012268;
+      --qori-blue-corp: #0341B3;
+      --qori-blue-digital: #0152D7;
+      --qori-blue-bright: #0480FA;
+      --qori-cyan: #07CEFB;
+      --qori-ice: #E8F3FB;
+      --qori-white: #FFFFFF;
+      --qori-text: #0B1E3D;
+      --qori-muted: #54708F;
+      --qori-line: #CDE0F4;
+      --qori-radius-card: 20px;
+      --qori-radius-button: 14px;
+      --qori-shadow-soft: 0 12px 30px rgba(1,34,104,0.08);
+      display: grid !important;
+      gap: 20px !important;
+      color: var(--qori-text) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-head {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      align-items: end !important;
+      gap: 18px !important;
+      padding: 20px 22px !important;
+      border: 1px solid var(--qori-line) !important;
+      border-radius: var(--qori-radius-card) !important;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F4FAFF 66%, #EAF7FF 100%) !important;
+      box-shadow: var(--qori-shadow-soft) !important;
+      overflow: hidden !important;
+      position: relative !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-head::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: auto -48px -74px auto !important;
+      width: 190px !important;
+      height: 190px !important;
+      border: 1px solid rgba(7,206,251,.18) !important;
+      border-radius: 999px !important;
+      background: radial-gradient(circle, rgba(7,206,251,.12), transparent 62%) !important;
+      pointer-events: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-breadcrumb {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin: 0 0 8px !important;
+      color: var(--qori-muted) !important;
+      font-size: .78rem !important;
+      font-weight: 800 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #campaignHeroTitle {
+      margin: 0 !important;
+      color: var(--qori-blue-deep) !important;
+      font-size: clamp(1.65rem, 2.2vw, 2.35rem) !important;
+      line-height: 1.08 !important;
+      letter-spacing: 0 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #campaignHeroSubtitle {
+      max-width: 760px !important;
+      margin: 8px 0 0 !important;
+      color: var(--qori-muted) !important;
+      font-size: .96rem !important;
+      line-height: 1.5 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-head .head-actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      gap: 9px !important;
+      max-width: 620px !important;
+      position: relative !important;
+      z-index: 1 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #requestCampaignButton { order: 1 !important; }
+    body[data-current-view="campaigns"] .portal-shell #editCampaignButton { order: 2 !important; }
+    body[data-current-view="campaigns"] .portal-shell #campaignStrategyAssistantButton { order: 3 !important; }
+    body[data-current-view="campaigns"] .portal-shell #exportCampaignReportButton { order: 4 !important; }
+    body[data-current-view="campaigns"] .portal-shell #markReadyCampaignButton { order: 5 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-head :where(.solid-button, .ghost-button),
+    body[data-current-view="campaigns"] .portal-shell .campaign-section-tabs button,
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-actions button {
+      min-height: 40px !important;
+      border-radius: var(--qori-radius-button) !important;
+      padding: 9px 14px !important;
+      font-weight: 850 !important;
+      white-space: nowrap !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #requestCampaignButton,
+    body[data-current-view="campaigns"] .portal-shell .campaign-head .solid-button:not(#editCampaignButton) {
+      border: 0 !important;
+      background: linear-gradient(135deg, #012268 0%, #0341B3 44%, #0480FA 78%, #07CEFB 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 12px 24px rgba(1,34,104,.18) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #editCampaignButton,
+    body[data-current-view="campaigns"] .portal-shell .campaign-head .ghost-button {
+      border: 1px solid var(--qori-line) !important;
+      background: rgba(255,255,255,.9) !important;
+      color: var(--qori-blue-deep) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell #campaignStateGrid {
+      display: grid !important;
+      grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
+      gap: 14px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-command-kpi {
+      min-height: 132px !important;
+      padding: 17px !important;
+      border: 1px solid var(--qori-line) !important;
+      border-radius: var(--qori-radius-card) !important;
+      background: #fff !important;
+      box-shadow: var(--qori-shadow-soft) !important;
+      display: grid !important;
+      align-content: start !important;
+      gap: 6px !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-command-kpi > .material-symbols-outlined {
+      width: 30px !important;
+      height: 30px !important;
+      color: var(--qori-blue-digital) !important;
+      font-size: 24px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-command-kpi .mono-label {
+      color: var(--qori-muted) !important;
+      font-size: .68rem !important;
+      letter-spacing: .08em !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-command-kpi strong {
+      color: var(--qori-blue-deep) !important;
+      font-size: clamp(1.42rem, 2vw, 2rem) !important;
+      line-height: 1.05 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-shell {
+      display: grid !important;
+      gap: 15px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      gap: 14px !important;
+      align-items: end !important;
+      padding-bottom: 10px !important;
+      border-bottom: 1px solid rgba(205,224,244,.85) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head h3 {
+      margin: 0 !important;
+      color: var(--qori-blue-deep) !important;
+      font-size: 1.18rem !important;
+      line-height: 1.22 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-library-head p {
+      max-width: 760px !important;
+      margin: 5px 0 0 !important;
+      color: var(--qori-muted) !important;
+      line-height: 1.45 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-quick-list {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0 !important;
+      border: 1px solid var(--qori-line) !important;
+      border-radius: var(--qori-radius-card) !important;
+      overflow: hidden !important;
+      background: #fff !important;
+      box-shadow: var(--qori-shadow-soft) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item {
+      display: grid !important;
+      grid-template-columns: minmax(240px, 1.25fr) minmax(420px, 1.65fr) auto !important;
+      align-items: center !important;
+      gap: 18px !important;
+      min-height: 86px !important;
+      padding: 16px 18px !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(205,224,244,.74) !important;
+      border-radius: 0 !important;
+      background: #fff !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item:last-child { border-bottom: 0 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item:hover {
+      background: linear-gradient(90deg, rgba(232,243,251,.82), #fff 72%) !important;
+      box-shadow: inset 3px 0 0 rgba(4,128,250,.34) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item.active {
+      background: linear-gradient(90deg, rgba(7,206,251,.12), #fff 76%) !important;
+      box-shadow: inset 4px 0 0 var(--qori-cyan) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      justify-content: flex-start !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title h3 {
+      margin: 0 !important;
+      color: var(--qori-blue-deep) !important;
+      font-size: 1rem !important;
+      line-height: 1.2 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-main p,
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-channel {
+      color: var(--qori-muted) !important;
+      font-size: .78rem !important;
+      line-height: 1.35 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(92px, 1fr)) !important;
+      gap: 12px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics span {
+      display: grid !important;
+      gap: 2px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      color: var(--qori-muted) !important;
+      font-size: .67rem !important;
+      font-weight: 850 !important;
+      text-transform: uppercase !important;
+      white-space: nowrap !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics strong {
+      color: var(--qori-blue-deep) !important;
+      font-size: .95rem !important;
+      text-transform: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-actions {
+      display: flex !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-section-tabs {
+      display: inline-flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      padding: 6px !important;
+      width: fit-content !important;
+      max-width: 100% !important;
+      border: 1px solid var(--qori-line) !important;
+      border-radius: 18px !important;
+      background: var(--qori-ice) !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-section-tabs button {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      border: 1px solid transparent !important;
+      background: transparent !important;
+      color: var(--qori-muted) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-section-tabs button.active {
+      border-color: rgba(7,206,251,.8) !important;
+      background: #fff !important;
+      color: var(--qori-blue-deep) !important;
+      box-shadow: 0 8px 18px rgba(1,34,104,.08) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-tab-mark {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 26px !important;
+      height: 26px !important;
+      border: 1px solid rgba(7,206,251,.4) !important;
+      border-radius: 999px !important;
+      color: var(--qori-blue-digital) !important;
+      background: #fff !important;
+      font-size: .72rem !important;
+      font-weight: 900 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-overview-grid {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr) !important;
+      gap: 16px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell :where(.insight-card, .campaign-channel-roi-card, .campaign-cost-card, .campaign-assistant-tab-card, .campaign-config-card, .campaign-relations-card, .chart-card, .data-table-card, .explain-card) {
+      border: 1px solid var(--qori-line) !important;
+      border-radius: var(--qori-radius-card) !important;
+      background: #fff !important;
+      box-shadow: var(--qori-shadow-soft) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .dark-hero-card {
+      border: 1px solid rgba(7,206,251,.32) !important;
+      border-radius: var(--qori-radius-card) !important;
+      background: linear-gradient(135deg, #012268 0%, #0341B3 58%, #0480FA 100%) !important;
+      box-shadow: 0 16px 34px rgba(1,34,104,.16) !important;
+      color: #fff !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .dark-hero-card :where(strong, span, p) { color: #fff !important; }
+    body[data-current-view="campaigns"] .portal-shell .table-wrap {
+      border: 1px solid rgba(205,224,244,.72) !important;
+      border-radius: 16px !important;
+      overflow: auto !important;
+      background: #fff !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell table th {
+      background: #F2F8FE !important;
+      color: var(--qori-blue-deep) !important;
+      border-bottom: 1px solid var(--qori-line) !important;
+      font-weight: 900 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell table td {
+      border-bottom: 1px solid rgba(205,224,244,.64) !important;
+      color: var(--qori-text) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell table tr:hover td {
+      background: rgba(232,243,251,.5) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-shell {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr) !important;
+      gap: 16px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-panel,
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-fieldset,
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-metric-group,
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-section {
+      border: 1px solid var(--qori-line) !important;
+      border-radius: 18px !important;
+      background: #fff !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-results {
+      background: linear-gradient(180deg, #F6FBFF, #FFFFFF) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-cost-answer-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+      gap: 10px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell :where(input, select, textarea) {
+      border: 1px solid var(--qori-line) !important;
+      border-radius: 14px !important;
+      background: #fff !important;
+      color: var(--qori-text) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell :where(input, select, textarea):focus {
+      border-color: var(--qori-cyan) !important;
+      box-shadow: 0 0 0 3px rgba(7,206,251,.16) !important;
+      outline: 0 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-assistant-tab-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-assistant-tab-grid article {
+      border: 1px solid var(--qori-line) !important;
+      border-radius: 18px !important;
+      background: linear-gradient(180deg, #FFFFFF, #F6FBFF) !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-empty-list {
+      display: grid !important;
+      justify-items: start !important;
+      gap: 10px !important;
+      padding: 26px !important;
+      border: 1px dashed rgba(4,128,250,.42) !important;
+      border-radius: var(--qori-radius-card) !important;
+      background: linear-gradient(135deg, #FFFFFF, #F6FBFF) !important;
+      color: var(--qori-blue-deep) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-empty-actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+    }
+    @media (max-width: 1180px) {
+      body[data-current-view="campaigns"] .portal-shell .campaign-head,
+      body[data-current-view="campaigns"] .portal-shell .campaign-library-head,
+      body[data-current-view="campaigns"] .portal-shell .campaign-overview-grid,
+      body[data-current-view="campaigns"] .portal-shell .campaign-cost-shell {
+        grid-template-columns: 1fr !important;
+      }
+      body[data-current-view="campaigns"] .portal-shell .campaign-head .head-actions {
+        justify-content: flex-start !important;
+      }
+      body[data-current-view="campaigns"] .portal-shell #campaignStateGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+      body[data-current-view="campaigns"] .portal-shell .campaign-item {
+        grid-template-columns: 1fr !important;
+        align-items: start !important;
+      }
+    }
+    @media (max-width: 720px) {
+      body[data-current-view="campaigns"] .portal-shell #campaignStateGrid,
+      body[data-current-view="campaigns"] .portal-shell .campaign-item-metrics,
+      body[data-current-view="campaigns"] .portal-shell .campaign-assistant-tab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  `;
+}
+
+function ensureCampaignQoriCenterStyles() {
+  if (document.getElementById("campaignQoriCenterStyles")) return;
+  const style = document.createElement("style");
+  style.id = "campaignQoriCenterStyles";
+  style.textContent = campaignQoriCenterCss();
+  document.head.appendChild(style);
+}
+
 function campaignListCardMarkup(campaign = {}) {
   const active = campaign.id === state.selectedCampaignId;
+  const channel = launchChannelsLabel(campaign.launch_channels);
   return `
     <article class="campaign-item ${active ? "active" : ""}" data-campaign-id="${escapeHtml(campaign.id)}">
       <div class="campaign-item-main">
@@ -10643,6 +11065,7 @@ function campaignListCardMarkup(campaign = {}) {
           <span class="status-chip ${campaign.status === "ACTIVE" ? "ok" : "muted"}">${escapeHtml(statusLabel(campaign.status))}</span>
         </div>
         <p>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
+        <small class="campaign-item-channel">${escapeHtml(channel || "Canal sin definir")}</small>
       </div>
       <div class="campaign-item-metrics" aria-label="Resumen de campaña">
         <span>Leads<strong>${toNumber(campaign.total_leads)}</strong></span>
@@ -10651,6 +11074,7 @@ function campaignListCardMarkup(campaign = {}) {
         <span>ROI<strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></span>
       </div>
       <div class="campaign-item-actions">
+        <button class="ghost-button compact" type="button" data-campaign-select="${escapeHtml(campaign.id)}">Ver</button>
         <button class="ghost-button compact" type="button" data-campaign-edit="${escapeHtml(campaign.id)}" ${canManageCampaigns() ? "" : "disabled"}>Editar</button>
       </div>
     </article>
@@ -10688,10 +11112,17 @@ function bindCampaignListActions(container) {
       openCampaignModal("create");
     });
   });
+  container.querySelectorAll("[data-campaign-tab-open]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setCampaignSectionTab(button.dataset.campaignTabOpen || "analysis");
+    });
+  });
 }
 
 function renderCampaignList() {
   ensureCampaignLibraryUxStyles();
+  ensureCampaignQoriCenterStyles();
   const campaigns = currentCampaignRows();
   const emptyMarkup = `
     <article class="campaign-empty-list">
@@ -10701,8 +11132,19 @@ function renderCampaignList() {
     </article>
   `;
   if (!campaigns.length) {
-    if (campaignList) campaignList.innerHTML = emptyMarkup;
-    if (campaignQuickList) campaignQuickList.innerHTML = emptyMarkup;
+    const qoriEmptyMarkup = `
+      <article class="campaign-empty-list">
+        <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+        <strong>Crea tu primera campaÃ±a Qori</strong>
+        <p>Define objetivo, canal, inversiÃ³n y dinÃ¡mica para empezar a medir revenue.</p>
+        <div class="campaign-empty-actions">
+          <button class="solid-button compact" type="button" data-campaign-empty-create>Nueva campaÃ±a</button>
+          <button class="ghost-button compact" type="button" data-campaign-tab-open="assistant">Usar asistente estratÃ©gico</button>
+        </div>
+      </article>
+    `;
+    if (campaignList) campaignList.innerHTML = qoriEmptyMarkup;
+    if (campaignQuickList) campaignQuickList.innerHTML = qoriEmptyMarkup;
     bindCampaignListActions(campaignList);
     bindCampaignListActions(campaignQuickList);
     return;
@@ -10733,6 +11175,35 @@ function renderCampaignStateGrid() {
 
   campaignStateGrid.innerHTML = items.map(([label, value, meta]) => `
     <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <div class="kpi-meta">${escapeHtml(meta)}</div>
+    </article>
+  `).join("");
+}
+
+function renderCampaignCommandKpis() {
+  if (!campaignStateGrid) return;
+  const groups = state.campaignGroups || {};
+  const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
+  const campaignInvestment = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.budget_total), 0);
+  const campaignRevenue = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.attributed_revenue), 0);
+  const totalLeads = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.total_leads), 0);
+  const totalRedemptions = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.total_qr_redeemed), 0);
+  const activeCount = groups.active?.length || campaigns.filter((campaign) => campaign.status === "ACTIVE").length;
+  const totalSales = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0);
+  const roi = campaignInvestment ? (campaignRevenue - campaignInvestment) / campaignInvestment : null;
+  const items = [
+    ["Campanas creadas", campaigns.length, `${activeCount} activas`, "campaign"],
+    ["Leads totales", totalLeads.toLocaleString("es-CO"), "Captados por campana", "groups"],
+    ["Redenciones", totalRedemptions.toLocaleString("es-CO"), "Beneficios usados", "redeem"],
+    ["Revenue atribuido", money(campaignRevenue), `${totalSales} ventas`, "payments"],
+    ["ROI actual", ratioLabel(roi), campaignInvestment ? roiDecisionLabel(roi, campaignRevenue, campaignInvestment) : "Carga inversion", "trending_up"],
+  ];
+
+  campaignStateGrid.innerHTML = items.map(([label, value, meta, icon]) => `
+    <article class="kpi-card campaign-command-kpi">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
       <span class="mono-label">${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
       <div class="kpi-meta">${escapeHtml(meta)}</div>
@@ -23155,10 +23626,10 @@ async function startValidatorScanner() {
 function renderNoCampaignState() {
   hideFeedback();
   campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
-  campaignStateGrid.innerHTML = "";
+  renderCampaignCommandKpis();
   campaignBreadcrumb.textContent = "Sin campaña seleccionada";
   campaignHeroTitle.textContent = "Campañas y QR";
-  campaignHeroSubtitle.textContent = "Crea campañas, conecta QR y mide rendimiento multicanal, inversión, leads y conversión.";
+  campaignHeroSubtitle.textContent = "Crea campañas, conecta QR y mide leads, redenciones, revenue y ROI.";
   editCampaignButton.classList.add("hidden");
   markReadyCampaignButton.classList.add("hidden");
   campaignInsightText.textContent = "No hay campañas registradas para este negocio.";
