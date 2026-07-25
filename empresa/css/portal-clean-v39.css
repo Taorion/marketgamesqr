@@ -5443,3 +5443,149 @@ html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Sidebar Qori contrast v174: blue frame, clear menu text and readable MED badges. */
+html body .portal-shell .sidebar,
+html[data-theme="light"] body .portal-shell .sidebar,
+html[data-theme="dark"] body .portal-shell .sidebar,
+html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar,
+html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell .sidebar,
+html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell .sidebar {
+  background:
+    radial-gradient(circle at 24px 28px, rgba(7, 206, 251, .18), transparent 34%),
+    linear-gradient(180deg, #052a6b 0%, #012268 48%, #031b46 100%) !important;
+  color: #f5fbff !important;
+}
+
+html body .portal-shell .sidebar :where(.sidebar-brand h1, .sidebar-brand p),
+html[data-theme="light"] body .portal-shell .sidebar :where(.sidebar-brand h1, .sidebar-brand p),
+html[data-theme="dark"] body .portal-shell .sidebar :where(.sidebar-brand h1, .sidebar-brand p) {
+  color: #f5fbff !important;
+  -webkit-text-fill-color: #f5fbff !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle {
+  min-height: 38px !important;
+  border: 1px solid rgba(7, 206, 251, .28) !important;
+  background: rgba(1, 34, 104, .68) !important;
+  color: #f5fbff !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle span,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle span {
+  color: #f5fbff !important;
+  -webkit-text-fill-color: #f5fbff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section.is-open .nav-group-toggle {
+  border-color: rgba(7, 206, 251, .72) !important;
+  background: #052a6b !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar .nav-item,
+html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell .sidebar .nav-item {
+  background: transparent !important;
+  color: #f5fbff !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html body .portal-shell .sidebar .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) small {
+  color: #d8e6f2 !important;
+  -webkit-text-fill-color: #d8e6f2 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item > .material-symbols-outlined {
+  color: #07cefb !important;
+  -webkit-text-fill-color: #07cefb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  background: rgba(7, 206, 251, .14) !important;
+  color: #ffffff !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  background: #052a6b !important;
+  border-left-color: #07cefb !important;
+  color: #ffffff !important;
+  box-shadow: inset 4px 0 0 #07cefb !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible small {
+  color: #eaf4ff !important;
+  -webkit-text-fill-color: #eaf4ff !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar .nav-item > .feature-tier-badge {
+  min-width: 34px !important;
+  border: 1px solid rgba(7, 206, 251, .56) !important;
+  background: rgba(7, 206, 251, .16) !important;
+  color: #f5fbff !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined {
+  color: #f5fbff !important;
+  -webkit-text-fill-color: #f5fbff !important;
+}
