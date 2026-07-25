@@ -58701,3 +58701,480 @@ html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is
 html body[data-current-view="affiliates"] .portal-shell #affiliateCreatePanel.is-modal-open :where(.solid-button, .ghost-button, .icon-button):hover {
   box-shadow: none !important;
 }
+
+/* Revenue center visual rhythm v167: clearer sections, calmer panels and easier scanning. */
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active:not([hidden]) {
+  --rev-ink: #0b1e3d;
+  --rev-strong: #012268;
+  --rev-blue: #0759d6;
+  --rev-cyan: #07cefb;
+  --rev-muted: #54708f;
+  --rev-line: #cde0f4;
+  --rev-soft: #f6fbff;
+  --rev-ice: #e8f3fb;
+  display: grid !important;
+  gap: clamp(24px, 2.6vw, 36px) !important;
+  align-content: start !important;
+  padding-bottom: 56px !important;
+  color: var(--rev-ink) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry,
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell,
+html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace,
+html body[data-current-view="dashboard"] .portal-shell #commandCenterRoot,
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid,
+html body[data-current-view="dashboard"] .portal-shell .explain-grid,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-charts,
+html body[data-current-view="dashboard"] .portal-shell .insight-grid,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > article.data-table-card,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .tables-grid {
+  width: min(100%, 1240px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+  min-height: 0 !important;
+  padding: clamp(26px, 3vw, 42px) clamp(26px, 3.4vw, 48px) !important;
+  border: 1px solid rgba(205, 224, 244, .95) !important;
+  border-radius: 10px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(7, 206, 251, .16), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 62%, #e8f3fb 100%) !important;
+  box-shadow: 0 18px 42px rgba(1, 34, 104, .075) !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head h2 {
+  color: var(--rev-strong) !important;
+  font-family: "Plus Jakarta Sans", "Manrope", Inter, system-ui, sans-serif !important;
+  font-size: clamp(1.75rem, 2.4vw, 2.72rem) !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head p {
+  max-width: 72ch !important;
+  color: var(--rev-muted) !important;
+  font-family: "Manrope", "Plus Jakarta Sans", Inter, system-ui, sans-serif !important;
+  font-size: 1rem !important;
+  line-height: 1.62 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active .portal-gaming-entry.gaming-core-entry {
+  min-height: 64px !important;
+  margin-top: -12px !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(205, 224, 244, .9) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(1, 34, 104, .045) !important;
+  transform: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell,
+html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace {
+  position: relative !important;
+  display: grid !important;
+  gap: 22px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell::before,
+html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace::before,
+html body[data-current-view="dashboard"] .portal-shell #commandCenterRoot::before,
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid::before,
+html body[data-current-view="dashboard"] .portal-shell .explain-grid::before,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-charts::before,
+html body[data-current-view="dashboard"] .portal-shell .insight-grid::before,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > article.data-table-card::before,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .tables-grid::before {
+  display: block !important;
+  margin: 0 0 12px !important;
+  color: var(--rev-blue) !important;
+  font-family: "Plus Jakarta Sans", "Manrope", Inter, system-ui, sans-serif !important;
+  font-size: .72rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell::before { content: "01 Vista configurable" !important; }
+html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace::before { content: "02 Acciones de revenue" !important; }
+html body[data-current-view="dashboard"] .portal-shell #commandCenterRoot::before { content: "03 Lectura ejecutiva RMS" !important; }
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid::before { content: "04 Indicadores principales" !important; grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .explain-grid::before { content: "05 Interpretacion" !important; grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-charts:not(.dashboard-deep-grid)::before { content: "06 Graficas principales" !important; grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-deep-grid::before { content: "07 Analisis operativo" !important; grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .insight-grid::before { content: "08 Insight y geografia" !important; grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > article.data-table-card::before { content: "09 Sucursales" !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .tables-grid::before { content: "10 Actividad reciente" !important; grid-column: 1 / -1 !important; }
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, auto) !important;
+  gap: 18px !important;
+  align-items: end !important;
+  padding: 22px 0 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .95) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head h3,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head h3,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library h4,
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head h3,
+html body[data-current-view="dashboard"] .portal-shell .card-head h3,
+html body[data-current-view="dashboard"] .portal-shell .table-card-head strong {
+  color: var(--rev-strong) !important;
+  font-family: "Plus Jakarta Sans", "Manrope", Inter, system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head p,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head p,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library p,
+html body[data-current-view="dashboard"] .portal-shell .chart-explainer,
+html body[data-current-view="dashboard"] .portal-shell .explain-card p {
+  color: var(--rev-muted) !important;
+  line-height: 1.52 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+  justify-self: end !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: min(100%, 520px) !important;
+  padding: 6px !important;
+  border: 1px solid rgba(205, 224, 244, .95) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button {
+  min-height: 36px !important;
+  padding: 8px 10px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: var(--rev-muted) !important;
+  font-size: .76rem !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button.active {
+  background: var(--rev-ice) !important;
+  color: var(--rev-strong) !important;
+  box-shadow: inset 0 -2px 0 var(--rev-blue) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout {
+  display: grid !important;
+  grid-template-columns: minmax(260px, .32fr) minmax(0, 1fr) !important;
+  gap: 22px !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas,
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head,
+html body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-card,
+html body[data-current-view="dashboard"] .portal-shell .revenue-path-step,
+html body[data-current-view="dashboard"] .portal-shell .revenue-onboarding,
+html body[data-current-view="dashboard"] .portal-shell .chart-card,
+html body[data-current-view="dashboard"] .portal-shell .map-card,
+html body[data-current-view="dashboard"] .portal-shell .explain-card,
+html body[data-current-view="dashboard"] .portal-shell .data-table-card {
+  border: 1px solid rgba(205, 224, 244, .95) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(1, 34, 104, .055) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+  padding: 20px !important;
+  position: sticky !important;
+  top: 86px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list {
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item {
+  min-height: 72px !important;
+  padding: 12px 10px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas {
+  display: grid !important;
+  gap: 18px !important;
+  padding: 22px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 16px !important;
+  align-items: end !important;
+  padding: 0 0 16px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .85) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions .ghost-button {
+  min-height: 36px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(260px, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card {
+  min-height: 148px !important;
+  padding: 18px !important;
+  border-radius: 8px !important;
+  border-color: rgba(205, 224, 244, .95) !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table {
+  grid-column: span 2 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace:not(.hidden) {
+  display: grid !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  padding: 22px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip > * {
+  min-height: 96px !important;
+  border-radius: 8px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+  grid-template-columns: minmax(0, .92fr) minmax(340px, 1.08fr) !important;
+  gap: 18px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-card {
+  padding: 22px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button,
+html body[data-current-view="dashboard"] .portal-shell .revenue-path-step button {
+  min-height: 42px !important;
+  border-radius: 6px !important;
+  background: var(--rev-soft) !important;
+  color: var(--rev-strong) !important;
+  transform: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-path-guide {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+  grid-template-columns: minmax(220px, .82fr) repeat(3, minmax(170px, 1fr)) minmax(180px, .72fr) !important;
+  gap: 14px !important;
+  padding: 22px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid .kpi-card {
+  min-height: 132px !important;
+  padding: 18px !important;
+  border-radius: 8px !important;
+  border-color: rgba(205, 224, 244, .95) !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(1, 34, 104, .045) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid .kpi-card.highlight {
+  background: linear-gradient(145deg, #012268, #0341b3) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .explain-grid,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-charts,
+html body[data-current-view="dashboard"] .portal-shell .insight-grid,
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .tables-grid {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .explain-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-charts {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .chart-card,
+html body[data-current-view="dashboard"] .portal-shell .data-table-card,
+html body[data-current-view="dashboard"] .portal-shell .map-card {
+  padding: 20px !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .chart-card canvas {
+  height: clamp(260px, 28vw, 340px) !important;
+  margin-top: 12px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .card-head,
+html body[data-current-view="dashboard"] .portal-shell .table-card-head {
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .8) !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .mono-label {
+  color: var(--rev-blue) !important;
+  letter-spacing: .06em !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .pill,
+html body[data-current-view="dashboard"] .portal-shell .status-chip {
+  border-radius: 5px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .table-wrap {
+  border: 1px solid rgba(205, 224, 244, .85) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell th {
+  background: var(--rev-soft) !important;
+  color: var(--rev-blue) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell tr:hover td {
+  background: rgba(232, 243, 251, .48) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].active:not([hidden]) {
+  --rev-ink: #eaf4ff;
+  --rev-strong: #f7fbff;
+  --rev-muted: #b9c7e4;
+  --rev-line: rgba(205, 224, 244, .2);
+  --rev-soft: rgba(232, 243, 251, .08);
+  --rev-ice: rgba(7, 206, 251, .12);
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell :where(
+  .view-section[data-view="dashboard"] > .view-head,
+  .dashboard-widget-library,
+  .dashboard-canvas,
+  .revenue-workspace-head,
+  .next-best-action-card,
+  .revenue-objective-card,
+  .revenue-path-step,
+  .revenue-onboarding,
+  .chart-card,
+  .map-card,
+  .explain-card,
+  .data-table-card,
+  .dashboard-widget-card
+) {
+  border-color: var(--rev-line) !important;
+  background: rgba(5, 42, 107, .5) !important;
+}
+
+@media (max-width: 1120px) {
+  html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell > .dashboard-builder-head,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head,
+  html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head,
+  html body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+    position: static !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions {
+    justify-self: start !important;
+  }
+}
+
+@media (max-width: 820px) {
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid,
+  html body[data-current-view="dashboard"] .portal-shell .explain-grid,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-charts,
+  html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid,
+  html body[data-current-view="dashboard"] .portal-shell .revenue-onboarding {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table {
+    grid-column: auto !important;
+  }
+}
