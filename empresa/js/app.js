@@ -1845,6 +1845,38 @@ function ensureSidebarRuntimeFeedbackStyles() {
       padding: 0 !important;
       text-align: left !important;
     }
+    /* Sidebar Qori mark v200: free seal with no inherited icon box. */
+    body .portal-shell .sidebar .sidebar-brand {
+      grid-template-columns: 52px minmax(0, 1fr) !important;
+      gap: 12px !important;
+      background: transparent !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(216, 230, 242, .14) !important;
+      box-shadow: none !important;
+    }
+    body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark,
+    body .portal-shell .sidebar .sidebar-brand img.sidebar-qori-mark {
+      width: 52px !important;
+      height: 52px !important;
+      min-width: 52px !important;
+      max-width: 52px !important;
+      display: block !important;
+      object-fit: contain !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      filter: none !important;
+      outline: 0 !important;
+    }
+    body .portal-shell .sidebar .sidebar-brand > div {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
   `;
   document.head.appendChild(style);
 }

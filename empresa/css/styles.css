@@ -60526,6 +60526,49 @@ html body .portal-shell .sidebar .sidebar-brand p {
   text-align: left !important;
 }
 
+/* Sidebar Qori mark v200: free seal with no inherited icon box. */
+html body .portal-shell .sidebar .sidebar-brand {
+  grid-template-columns: 52px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(216, 230, 242, .14) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark,
+html body .portal-shell .sidebar .sidebar-brand img.sidebar-qori-mark,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark {
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  max-width: 52px !important;
+  display: block !important;
+  object-fit: contain !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  outline: 0 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark::before,
+html body .portal-shell .sidebar .sidebar-brand > .sidebar-qori-mark::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-brand > div {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 /* Campaigns Qori center v199: base tokens before runtime cascade. */
 html body[data-current-view="campaigns"] .portal-shell .view-section[data-view="campaigns"] {
   --qori-blue-deep: #012268;
