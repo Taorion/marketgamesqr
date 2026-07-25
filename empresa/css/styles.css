@@ -59456,3 +59456,94 @@ html[data-theme="light"] body .portal-shell .sidebar-nav-section[data-sidebar-se
 html[data-theme="dark"] body .portal-shell .sidebar-nav-section[data-sidebar-section="optimize"] .sidebar-nav-section-panel .nav-item.active {
   background: linear-gradient(90deg, rgba(7, 206, 251, .15), rgba(143, 200, 255, .07) 56%, transparent 100%) !important;
 }
+
+/* Sidebar readable titles v170: avoid white titles over bright/soft menu states. */
+html body .portal-shell .sidebar,
+html[data-theme="light"] body .portal-shell .sidebar,
+html[data-theme="dark"] body .portal-shell .sidebar {
+  --sidebar-title-cold: #cfefff !important;
+  --sidebar-title-cyan: #07cefb !important;
+  --sidebar-title-muted: #a9c7df !important;
+  --sidebar-active-bg: #e8f6ff !important;
+  --sidebar-active-ink: #012268 !important;
+  --sidebar-active-subtle: #294f7b !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle {
+  background: transparent !important;
+  color: var(--sidebar-title-cyan) !important;
+}
+
+html body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="light"] body .portal-shell .sidebar .nav-group-toggle span:first-child,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-group-toggle span:first-child {
+  color: var(--sidebar-title-cyan) !important;
+  text-shadow: 0 1px 10px rgba(7, 206, 251, .18) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item {
+  background: transparent !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item strong {
+  color: var(--sidebar-title-cold) !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item small {
+  color: var(--sidebar-title-muted) !important;
+  opacity: 1 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  background: rgba(7, 206, 251, .09) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
+  color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active {
+  background: var(--sidebar-active-bg) !important;
+  border-left-color: var(--sidebar-title-cyan) !important;
+  color: var(--sidebar-active-ink) !important;
+  box-shadow: inset 4px 0 0 var(--sidebar-title-cyan), 0 10px 22px rgba(1, 34, 104, .16) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong {
+  color: var(--sidebar-active-ink) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active small {
+  color: var(--sidebar-active-subtle) !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined {
+  color: #0480fa !important;
+}
