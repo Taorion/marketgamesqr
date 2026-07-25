@@ -5845,3 +5845,100 @@ html[data-theme="dark"] body .portal-shell .app-shell.sidebar-collapsed .topbar 
   left: var(--qori-sidebar-collapsed) !important;
   width: calc(100% - var(--qori-sidebar-collapsed)) !important;
 }
+
+/* Sidebar menu unmasked v176: no rounded button masks inside the blue frame. */
+html body .portal-shell .sidebar .sidebar-nav-section-panel,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel {
+  gap: 0 !important;
+  padding-top: 4px !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item,
+html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD) .portal-shell .sidebar .nav-item,
+html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell .sidebar .nav-item {
+  min-height: 48px !important;
+  padding: 7px 4px 7px 10px !important;
+  border: 0 !important;
+  border-left: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::before,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::before,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::before,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible {
+  border-left-color: rgba(7, 206, 251, .62) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active,
+html body[data-current-view="rms-machine"] .portal-shell .sidebar .nav-item[data-view="rms-machine"] {
+  border-left-color: #07cefb !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:hover strong,
+html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item:focus-visible strong {
+  color: #eaf9ff !important;
+  -webkit-text-fill-color: #eaf9ff !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge,
+html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell .sidebar .nav-item > .feature-tier-badge {
+  min-width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #07cefb !important;
+}
+
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html[data-theme="light"] body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge span,
+html[data-theme="dark"] body .portal-shell .sidebar .nav-item > .feature-tier-badge .material-symbols-outlined {
+  color: #07cefb !important;
+  -webkit-text-fill-color: #07cefb !important;
+}
