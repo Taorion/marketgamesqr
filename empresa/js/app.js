@@ -1651,6 +1651,70 @@ function ensureSidebarRuntimeFeedbackStyles() {
       display: none !important;
       content: none !important;
     }
+    /* Sidebar Opera rows v195: fixed icon/text/badge columns, no vertical stacking. */
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item {
+      display: grid !important;
+      grid-template-columns: 28px minmax(0, 1fr) 34px !important;
+      grid-auto-flow: column !important;
+      grid-auto-rows: auto !important;
+      align-items: center !important;
+      justify-items: stretch !important;
+      column-gap: 10px !important;
+      min-height: 54px !important;
+      padding: 8px 4px 8px 8px !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > .material-symbols-outlined {
+      grid-column: 1 !important;
+      width: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
+      height: 28px !important;
+      display: inline-grid !important;
+      place-items: center !important;
+      overflow: hidden !important;
+      font-family: "Material Symbols Outlined" !important;
+      font-size: 22px !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      text-align: center !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > span:not(.material-symbols-outlined):not(.feature-tier-badge) {
+      grid-column: 2 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      display: grid !important;
+      gap: 2px !important;
+      align-items: center !important;
+      justify-items: start !important;
+      justify-self: stretch !important;
+      place-items: center start !important;
+      text-align: left !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item strong,
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item small {
+      width: 100% !important;
+      max-width: 100% !important;
+      text-align: left !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section[data-sidebar-section="operate"] .sidebar-nav-section-panel .nav-item > .feature-tier-badge {
+      grid-column: 3 !important;
+      justify-self: end !important;
+      align-self: center !important;
+      width: 34px !important;
+      min-width: 34px !important;
+      max-width: 34px !important;
+      display: inline-flex !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: right !important;
+      white-space: nowrap !important;
+    }
   `;
   document.head.appendChild(style);
 }
