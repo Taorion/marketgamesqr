@@ -59547,3 +59547,121 @@ html[data-theme="light"] body .portal-shell .sidebar .sidebar-nav-section-panel 
 html[data-theme="dark"] body .portal-shell .sidebar .sidebar-nav-section-panel .nav-item.active > .material-symbols-outlined {
   color: #0480fa !important;
 }
+
+/* Contactos/Agenda split v172: separate commercial screens and scroll areas. */
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
+  min-height: calc(100vh - 96px) !important;
+  align-content: start !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 8 !important;
+  padding-top: 4px !important;
+  padding-bottom: 14px !important;
+  background: linear-gradient(180deg, #f6fbff 0%, rgba(246, 251, 255, .96) 72%, rgba(246, 251, 255, 0) 100%) !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] > .view-head .lead-export-actions {
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #leadAgendaCard,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #contactPanelAgenda {
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactCenterSummaryGrid,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactActionFeed,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelDirectory,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelManual,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelOverview,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelTickets,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelCaptures,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelSales {
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #contactPanelDirectory.active,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelAgenda.active {
+  display: block !important;
+  max-height: calc(100vh - 224px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  padding-right: 8px !important;
+  scrollbar-color: rgba(7, 206, 251, .5) transparent !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactCenterShell[data-contact-directory-ux="simple"] {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .contact-center-operator-panel {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  padding: 0 0 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .contact-center-operator-panel h3 {
+  margin: 4px 0 !important;
+  color: #012268 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .contact-center-operator-panel p {
+  max-width: 760px !important;
+  color: #54708f !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard {
+  display: grid !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 0 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 16px !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .lead-agenda-toolbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 4 !important;
+  padding: 10px 0 !important;
+  background: #f6fbff !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .lead-agenda-board {
+  min-height: 360px !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #contactPanelDirectory.active,
+  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelAgenda.active {
+    max-height: none !important;
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] .contact-center-operator-panel,
+  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .table-card-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

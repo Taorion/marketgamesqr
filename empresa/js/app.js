@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260725-affiliate-open-fallback-v171";
+const APP_VERSION = "empresa-20260725-contacts-agenda-split-v172";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -8145,7 +8145,7 @@ function navigatePortalShortcut(target = "") {
   }
   const contactTabs = {
     agenda: "agenda",
-    contacts: "overview",
+    contacts: "directory",
     sales: "sales",
   };
   if (contactTabs[shortcut]) {
@@ -29621,6 +29621,23 @@ function updateContactCenterStage(tab = state.contactCenterTab || "directory") {
   }
 }
 
+function syncCommercialWorkspaceMode(tab = state.contactCenterTab || "directory") {
+  const mode = normalizeContactCenterTab(tab) === "agenda" ? "agenda" : "contacts";
+  const leadsSection = document.querySelector('.view-section[data-view="leads"]');
+  if (leadsSection) {
+    leadsSection.dataset.commercialMode = mode;
+    const title = leadsSection.querySelector(":scope > .view-head h2");
+    const copy = leadsSection.querySelector(":scope > .view-head p");
+    if (title) title.textContent = mode === "agenda" ? "Agenda comercial" : "Directorio comercial";
+    if (copy) {
+      copy.textContent = mode === "agenda"
+        ? "Tareas, llamadas, reuniones y seguimientos en una pantalla independiente del directorio."
+        : "Clientes y leads separados, con señales claras para abrir la ficha, revisar tickets y decidir el siguiente contacto.";
+    }
+  }
+  document.body.dataset.commercialMode = mode;
+}
+
 function handleContactCenterStageAction(action = "") {
   if (action === "manual-lead") {
     setContactCenterTab("manual");
@@ -29670,6 +29687,7 @@ function setContactCenterTab(tab = "directory") {
   const contactCenterShell = document.getElementById("contactCenterShell");
   state.contactCenterTab = nextTab;
   if (contactCenterShell) contactCenterShell.dataset.contactStage = nextTab;
+  syncCommercialWorkspaceMode(nextTab);
   updateContactCenterStage(nextTab);
   if (state.currentView === "leads") {
     navButtons.forEach((button) => {
