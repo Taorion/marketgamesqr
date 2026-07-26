@@ -33,6 +33,7 @@ const busyOverlayTitle = document.getElementById("busyOverlayTitle");
 const busyOverlayMessage = document.getElementById("busyOverlayMessage");
 const menuToggleButton = document.getElementById("menuToggleButton");
 const searchInput = document.getElementById("searchInput");
+const portalSearchResults = document.getElementById("portalSearchResults");
 const refreshButton = document.getElementById("refreshButton");
 const notificationsButton = document.getElementById("notificationsButton");
 const settingsButton = document.getElementById("settingsButton");
@@ -41868,6 +41869,70 @@ revenueActionObjectiveInput?.addEventListener("change", updateRevenueActionToolO
 [revenueActionToolInput, revenueActionSegmentInput, revenueActionCoverageInput, revenueActionTaskInput, revenueActionDueInput].forEach((input) => {
   input?.addEventListener("change", renderRevenueActionSummary);
 });
+
+const PORTAL_SEARCH_TARGETS = [
+  { view: "rms-machine", label: "Estaciones RMS", keywords: "estaciones rms maquina fabrica leads recolectar" },
+  { view: "campaigns", label: "Campañas y QR", keywords: "campana campañas qr oferta" },
+  { view: "strategic-qr", label: "Activaciones", keywords: "activacion activaciones juegos dinamicas tickets" },
+  { view: "smart-catalogs", label: "Catálogos", keywords: "catalogo catalogos productos oferta" },
+  { view: "inventory", label: "Productos e inventario", keywords: "producto productos inventario" },
+  { view: "leads", label: "Contactos y leads", keywords: "cliente clientes contacto contactos lead leads" },
+  { view: "sales", label: "Ventas", keywords: "venta ventas revenue" },
+  { view: "validator", label: "Validar tickets", keywords: "ticket tickets validar redimir redencion" },
+  { view: "dashboard", label: "Centro de Revenue", keywords: "dashboard reportes metricas revenue" },
+  { view: "reward-passes", label: "Reward Pass", keywords: "reward beneficios pass" },
+];
+
+function portalSearchText(value = "") {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function portalSearchMatches(query = "") {
+  const normalized = portalSearchText(query);
+  if (!normalized) return [];
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  return PORTAL_SEARCH_TARGETS.filter((target) => {
+    const haystack = portalSearchText(`${target.label} ${target.keywords}`);
+    return tokens.some((token) => haystack.includes(token));
+  }).slice(0, 6);
+}
+
+function renderPortalSearchResults(query = "") {
+  if (!portalSearchResults) return;
+  const matches = portalSearchMatches(query);
+  if (!matches.length) {
+    portalSearchResults.innerHTML = "";
+    portalSearchResults.classList.add("hidden");
+    return;
+  }
+  portalSearchResults.innerHTML = matches.map((target) => `
+    <button type="button" role="option" data-portal-search-view="${escapeHtml(target.view)}">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+      ${escapeHtml(target.label)}
+    </button>
+  `).join("");
+  portalSearchResults.classList.remove("hidden");
+}
+
+function runPortalSearch(query = "", forcedView = "") {
+  const normalized = portalSearchText(query);
+  const target = forcedView
+    ? PORTAL_SEARCH_TARGETS.find((item) => item.view === forcedView)
+    : portalSearchMatches(normalized)[0];
+  portalSearchResults?.classList.add("hidden");
+  if (target) {
+    state.filter = "";
+    if (target.view === "leads") openContactCenterSection("directory");
+    else setView(target.view);
+    showFeedback(`${target.label} abierto.`, "info", { title: "Buscador" });
+    return;
+  }
+  if (!normalized) return;
+  state.filter = query.trim();
+  openContactCenterSection("directory");
+  showFeedback(`Buscando “${query.trim()}” en contactos.`, "info", { title: "Buscador" });
+}
+
 searchInput.addEventListener("input", (event) => {
   state.filter = event.target.value || "";
   if (state.dashboard) renderDashboard();
@@ -41890,6 +41955,17 @@ searchInput.addEventListener("input", (event) => {
     renderMissionsView();
   }
   if (isAdmin()) renderAdminView();
+  renderPortalSearchResults(event.target.value || "");
+});
+searchInput.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  runPortalSearch(searchInput.value || "");
+});
+portalSearchResults?.addEventListener("click", (event) => {
+  const result = event.target.closest("[data-portal-search-view]");
+  if (!result) return;
+  runPortalSearch(searchInput?.value || "", result.dataset.portalSearchView || "");
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
 campaignSectionTabs.forEach((button) => {
@@ -41933,6 +42009,21 @@ navButtons.forEach((button) => {
     setView(button.dataset.view);
   });
 });
+document.querySelector(".sidebar")?.addEventListener("click", (event) => {
+  const button = event.target.closest(".nav-item[data-view]");
+  const isDesktopCollapsed = Boolean(workspace?.classList.contains("sidebar-collapsed"))
+    && window.matchMedia("(min-width: 961px)").matches;
+  if (!button || !isDesktopCollapsed) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const ownerSection = button.closest("[data-sidebar-section]");
+  if (ownerSection?.dataset.sidebarSection) setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
+  if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
+    openContactCenterSection(button.dataset.contactCenterNav);
+    return;
+  }
+  setView(button.dataset.view);
+}, true);
 sidebarGroupToggles.forEach((button) => {
   button.addEventListener("click", () => {
     setSidebarAccordionSection(button.dataset.sidebarGroupToggle, { allowCollapse: true });
@@ -42489,7 +42580,7 @@ validatorRedeemButton.addEventListener("click", redeemValidatorToken);
 validatorSaleForm.addEventListener("submit", saveValidatorAttributedSale);
 validatorSaleAmountInput?.addEventListener("input", () => rewardPassBalancePreview(true));
 validatorRewardPassRedeemInput?.addEventListener("input", () => rewardPassBalancePreview(false));
-notificationsButton.addEventListener("click", () => {
+notificationsButton?.addEventListener("click", () => {
   const pending = (state.selectedRedemptions || []).filter((item) => !item.sale_amount).length;
   showFeedback(
     pending
@@ -42497,7 +42588,7 @@ notificationsButton.addEventListener("click", () => {
       : "No hay alertas pendientes en la campaña seleccionada."
   );
 });
-settingsButton.addEventListener("click", () => {
+settingsButton?.addEventListener("click", () => {
   setView("account");
   showFeedback("Cuenta y configuración abiertas.", "info");
 });

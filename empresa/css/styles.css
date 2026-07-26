@@ -60953,3 +60953,64 @@ html body[data-current-view="campaigns"] .portal-shell .campaign-item-actions [d
     width: 100% !important;
   }
 }
+
+/* Portal navigation v216: compact navigation remains actionable and search shows destinations. */
+html body .portal-shell .search-shell {
+  position: relative !important;
+}
+
+html body .portal-shell .portal-search-results {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  z-index: 80 !important;
+  display: grid !important;
+  min-width: min(360px, calc(100vw - 32px)) !important;
+  overflow: hidden !important;
+  border: 1px solid #cfe0f1 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 16px 34px rgba(8, 51, 104, .14) !important;
+}
+
+html body .portal-shell .portal-search-results.hidden {
+  display: none !important;
+}
+
+html body .portal-shell .portal-search-results button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 40px !important;
+  padding: 9px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e8f0f7 !important;
+  background: #ffffff !important;
+  color: #103c7a !important;
+  font-size: .84rem !important;
+  font-weight: 750 !important;
+  text-align: left !important;
+}
+
+html body .portal-shell .portal-search-results button:last-child {
+  border-bottom: 0 !important;
+}
+
+html body .portal-shell .portal-search-results button:hover,
+html body .portal-shell .portal-search-results button:focus-visible {
+  background: #f2f8ff !important;
+}
+
+html body .portal-shell .portal-search-results .material-symbols-outlined {
+  color: #0a58bd !important;
+  font-size: 18px !important;
+}
+
+@media (min-width: 961px) {
+  html body .portal-shell .app-shell.sidebar-collapsed .sidebar .sidebar-nav-section-panel .nav-item {
+    position: relative !important;
+    z-index: 2 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+}
