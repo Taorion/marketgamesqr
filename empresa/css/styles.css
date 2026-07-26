@@ -61417,3 +61417,66 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-context sm
   html body[data-current-view="leads"] .portal-shell .contact-directory-list-head { display: none !important; }
   html body[data-current-view="leads"] .portal-shell .contact-directory-card-row { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+/* Agenda: one continuous work area, never a nested panel with a viewport cap. */
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelAgenda.active,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .quiet-zone-control-head,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .table-card-head {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 0 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d9e6f2 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard > .quiet-zone-control-head .quiet-zone-toggle {
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard.quiet-zone.is-collapsed > .lead-agenda-toolbar {
+  display: grid !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard.quiet-zone.is-collapsed > .lead-agenda-board {
+  display: block !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-toolbar,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-controls,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-view-tabs {
+  position: static !important;
+  margin: 0 !important;
+  padding: 12px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d9e6f2 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-fast-actions,
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-kpis {
+  display: none !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #leadAgendaCard .lead-agenda-board {
+  min-height: 360px !important;
+  margin-top: 18px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
