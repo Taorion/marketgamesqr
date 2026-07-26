@@ -11322,6 +11322,29 @@ function campaignListCardMarkup(campaign = {}) {
   `;
 }
 
+function openCampaignInterstitial(campaign = state.selectedCampaign) {
+  if (!campaign) return;
+  let modal = document.getElementById("campaignInterstitialModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "campaignInterstitialModal";
+    modal.className = "modal-shell hidden";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal-card campaign-interstitial-card">
+      <div class="modal-head"><div><span class="mono-label">Campaña</span><h3>${escapeHtml(campaign.name || "Campaña")}</h3></div><button class="icon-button" type="button" data-close-campaign-interstitial aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button></div>
+      <p class="table-secondary">${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
+      <div class="campaign-interstitial-metrics"><div><span>Leads</span><strong>${toNumber(campaign.total_leads)}</strong></div><div><span>Redenciones</span><strong>${toNumber(campaign.total_qr_redeemed)}</strong></div><div><span>Revenue</span><strong>${escapeHtml(money(campaign.attributed_revenue || 0))}</strong></div><div><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div></div>
+      <div class="modal-button-row"><button class="ghost-button" type="button" data-close-campaign-interstitial>Cerrar</button><button class="solid-button" type="button" data-edit-campaign-interstitial>Editar campaña</button></div>
+    </div>`;
+  modal.classList.remove("hidden");
+  modal.querySelectorAll("[data-close-campaign-interstitial]").forEach((button) => button.addEventListener("click", () => modal.classList.add("hidden")));
+  modal.querySelector("[data-edit-campaign-interstitial]")?.addEventListener("click", () => { modal.classList.add("hidden"); openCampaignModal("edit"); });
+}
+
 function bindCampaignListActions(container) {
   if (!container) return;
   container.querySelectorAll("[data-campaign-id]").forEach((item) => {
@@ -11331,9 +11354,10 @@ function bindCampaignListActions(container) {
     });
   });
   container.querySelectorAll("[data-campaign-select]").forEach((button) => {
-    button.addEventListener("click", (event) => {
+    button.addEventListener("click", async (event) => {
       event.stopPropagation();
-      selectCampaign(button.dataset.campaignSelect);
+      await selectCampaign(button.dataset.campaignSelect);
+      openCampaignInterstitial(state.selectedCampaign);
     });
   });
   container.querySelectorAll("[data-campaign-edit]").forEach((button) => {
