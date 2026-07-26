@@ -60706,6 +60706,92 @@ body[data-current-view="channels"] .portal-shell .channel-analytics-layout,
 body[data-current-view="channels"] .portal-shell .channel-effort-layout { position:relative !important; z-index:0 !important; }
 @media (max-width:720px) { body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel.is-channel-modal-open, body[data-current-view="channels"] .portal-shell #channelEffortFormPanel.is-channel-modal-open { top:10px !important; width:calc(100vw - 20px) !important; max-height:calc(100vh - 20px) !important; padding:16px !important; } }
 
+/* Commercial directory: one work surface, full-width tabs and no card-within-card treatment. */
+html body[data-current-view="leads"] .portal-shell .contact-center-shell,
+html body[data-current-view="leads"] .portal-shell #contactPanelDirectory,
+html body[data-current-view="leads"] .portal-shell .lead-directory-card,
+html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard {
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+html body[data-current-view="leads"] .portal-shell .lead-directory-card > .table-card-head,
+html body[data-current-view="leads"] .portal-shell .lead-directory-card > .table-wrap,
+html body[data-current-view="leads"] .portal-shell .lead-directory-card > .lead-directory-pagination { display:none !important; }
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs {
+  width:100% !important;
+  margin:0 0 14px !important;
+  padding:0 !important;
+  gap:0 !important;
+  border:0 !important;
+  border-bottom:1px solid #d9e6f2 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+}
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .lead-directory-audience-tab {
+  min-height:52px !important;
+  display:flex !important;
+  justify-content:center !important;
+  gap:8px !important;
+  padding:0 16px !important;
+  border:0 !important;
+  border-bottom:3px solid transparent !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#61758c !important;
+}
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .lead-directory-audience-tab :is(.material-symbols-outlined,small) { display:none !important; }
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .lead-directory-audience-tab.active,
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .lead-directory-audience-tab[aria-selected="true"] {
+  border-color:#0759d6 !important;
+  background:transparent !important;
+  color:#052a6b !important;
+  box-shadow:none !important;
+}
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs .lead-directory-audience-tab strong { font-size:.92rem !important; }
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button {
+  min-height:52px !important;
+  display:flex !important;
+  justify-content:center !important;
+  gap:8px !important;
+  padding:0 16px !important;
+  border:0 !important;
+  border-bottom:3px solid transparent !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#61758c !important;
+  box-shadow:none !important;
+}
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button :is(.material-symbols-outlined,small) { display:none !important; }
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button.active,
+html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button[aria-selected="true"] { border-color:#0759d6 !important; color:#052a6b !important; box-shadow:none !important; }
+html body[data-current-view="leads"] .portal-shell .contact-directory-hero {
+  display:flex !important;
+  align-items:flex-end !important;
+  justify-content:space-between !important;
+  gap:16px !important;
+  margin:0 !important;
+  padding:10px 0 14px !important;
+  border-bottom:1px solid #d9e6f2 !important;
+  background:transparent !important;
+}
+html body[data-current-view="leads"] .portal-shell .contact-directory-summary { padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; }
+html body[data-current-view="leads"] .portal-shell .contact-directory-toolbar { margin:0 !important; padding:14px 0 !important; border:0 !important; background:transparent !important; }
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head { margin:0 !important; border-radius:0 !important; }
+html body[data-current-view="leads"] .portal-shell .contact-directory-list { margin:0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; }
+html body[data-current-view="leads"] .portal-shell .contact-directory-card { border-radius:0 !important; box-shadow:none !important; }
+@media (max-width:720px) { html body[data-current-view="leads"] .portal-shell .contact-directory-hero { display:block !important; } html body[data-current-view="leads"] .portal-shell .contact-directory-summary { margin-top:10px !important; } }
+
+/* A collapsed sidebar is icon-only: no status/current text is allowed to consume its width. */
+#workspace.sidebar-collapsed .sidebar .nav-item.active::after,
+.portal-shell.sidebar-collapsed .sidebar .nav-item.active::after,
+#workspace.sidebar-collapsed .sidebar .sidebar-nav-section.is-current .nav-group-toggle::before,
+.portal-shell.sidebar-collapsed .sidebar .sidebar-nav-section.is-current .nav-group-toggle::before { display:none !important; content:none !important; }
+
 /* Campaign header v208: copy and actions must never compete for a narrow row. */
 @media (max-width: 1280px) {
   html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {
