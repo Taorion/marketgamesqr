@@ -60640,6 +60640,36 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell
 @media (max-width:760px) { .campaign-interstitial-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); } .campaign-performance-grid { grid-template-columns:1fr; } }
 @media (max-width:560px) { .campaign-interstitial-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .campaign-efficiency-card dl { grid-template-columns:1fr; } .campaign-funnel-row { grid-template-columns:100px minmax(55px,1fr) 36px; gap:7px; } }
 
+/* Operator cleanup: keep wide data usable and make the two task modals deterministic. */
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card { overflow:visible !important; }
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card .table-wrap { max-width:100% !important; max-height:none !important; overflow-x:auto !important; overflow-y:visible !important; padding-bottom:4px !important; }
+.ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card table { min-width:980px !important; width:max-content !important; }
+
+body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head { grid-template-columns:minmax(0,1fr) auto !important; min-height:112px !important; padding:20px 22px !important; border-radius:16px !important; }
+body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head .head-actions { align-self:center !important; margin:0 !important; }
+body[data-current-view="validator"] .portal-shell .validator-operator-hero :is(h3,p,strong,small) { color:#fff !important; }
+body[data-current-view="validator"] .portal-shell .validator-hero-copy .mono-label { color:#fff !important; }
+body[data-current-view="validator"] .portal-shell #validatorCameraStatus { display:none !important; }
+body[data-current-view="validator"] .portal-shell .validator-grid { grid-template-columns:minmax(0,1fr) !important; gap:12px !important; }
+body[data-current-view="validator"] .portal-shell .validator-grid > .validator-panel:nth-child(2) { padding:14px 16px !important; }
+body[data-current-view="validator"] .portal-shell .validator-grid > .validator-panel:nth-child(2) .card-head { display:none !important; }
+body[data-current-view="validator"] .portal-shell .validator-grid > .validator-panel:nth-child(2)::before { content:"Ingreso manual"; display:block; margin-bottom:8px; color:#53677f; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+body[data-current-view="validator"] .portal-shell .validator-grid > .validator-panel:nth-child(2) .validator-manual-grid { max-width:760px !important; padding:8px !important; border-radius:12px !important; }
+body[data-current-view="validator"] .portal-shell .validator-grid > .validator-panel:nth-child(2) .validator-manual-grid input { min-height:42px !important; }
+body[data-current-view="validator"] .portal-shell .validator-sale-panel .modal-actions { padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; }
+body[data-current-view="validator"] .portal-shell #validatorSaleStatus:empty { display:none !important; }
+
+.affiliate-operation-backdrop { position:fixed; inset:0; z-index:1080; display:none; background:rgba(2,20,51,.48); backdrop-filter:blur(5px); }
+.affiliate-operation-backdrop.is-open { display:block; }
+html body[data-current-view="affiliates"] .portal-shell .view-section[data-view="affiliates"].affiliate-modal-open::after { display:none !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open { z-index:1100 !important; width:min(920px,calc(100vw - 32px)) !important; max-height:calc(100vh - 32px) !important; top:16px !important; padding:24px !important; border-radius:18px !important; background:#fff !important; box-shadow:0 30px 80px rgba(2,20,51,.28) !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap { width:min(500px,100%) !important; min-height:200px !important; max-height:300px !important; margin:4px auto 12px !important; background:#f4f8fd !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap img { min-height:190px !important; object-fit:contain !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-selected-summary { padding:16px 0 !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-points-calculator { grid-column:1 / -1 !important; min-height:auto !important; }
+@media (max-width:720px) { body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head { grid-template-columns:1fr !important; min-height:0 !important; } html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open { width:calc(100vw - 20px) !important; top:10px !important; padding:16px !important; } html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns:1fr !important; } }
+
 /* Campaign header v208: copy and actions must never compete for a narrow row. */
 @media (max-width: 1280px) {
   html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {

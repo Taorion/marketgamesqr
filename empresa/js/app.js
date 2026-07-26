@@ -25849,8 +25849,15 @@ function loadImageDataUrl(src) {
     if (!String(src).startsWith("data:")) {
       img.crossOrigin = "anonymous";
     }
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    const timeout = window.setTimeout(() => resolve(null), 5000);
+    img.onload = () => {
+      window.clearTimeout(timeout);
+      resolve(img);
+    };
+    img.onerror = () => {
+      window.clearTimeout(timeout);
+      resolve(null);
+    };
     img.src = src;
   });
 }
@@ -27078,6 +27085,16 @@ async function ensureBusinessProfileForCard() {
   }
 }
 
+function affiliateCardFallbackDataUrl(affiliate = {}) {
+  const safe = (value) => String(value || "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+  const name = safe(firstTextValue(affiliate.full_name, affiliate.name, "Afiliado"));
+  const points = safe(toNumber(affiliate.points_total || affiliate.ledger_points || 0).toLocaleString("es-CO"));
+  const business = safe(businessCardProfile(affiliate).name || "Negocio");
+  const token = safe(String(affiliate.qr_token || "SIN TICKET").slice(0, 18).toUpperCase());
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#052a6b"/><stop offset="1" stop-color="#0759d6"/></linearGradient></defs><rect width="1200" height="760" rx="36" fill="url(#g)"/><circle cx="1050" cy="-20" r="250" fill="#00bfe5" opacity=".16"/><text x="72" y="112" fill="#9defff" font-family="Arial" font-size="28" font-weight="700">CARNET DIGITAL</text><text x="72" y="210" fill="#fff" font-family="Arial" font-size="62" font-weight="800">${name}</text><text x="72" y="264" fill="#d8e6f2" font-family="Arial" font-size="28">${business}</text><rect x="72" y="334" width="620" height="250" rx="26" fill="#fff" opacity=".12"/><text x="112" y="410" fill="#9defff" font-family="Arial" font-size="25">PUNTOS ACTUALES</text><text x="112" y="510" fill="#fff" font-family="Arial" font-size="82" font-weight="800">${points}</text><rect x="806" y="292" width="250" height="250" rx="24" fill="#fff"/><path d="M846 332h170v170H846z" fill="#052a6b"/><text x="931" y="634" fill="#d8e6f2" font-family="Arial" font-size="23" text-anchor="middle">${token}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 async function renderAffiliateCardPreview(affiliate) {
   if (!affiliate) return;
   affiliateCardPreviewWrap?.classList.remove("is-empty");
@@ -27092,15 +27109,21 @@ async function renderAffiliateCardPreview(affiliate) {
       state.selectedAffiliate = renderAffiliate;
       state.affiliates = (state.affiliates || []).map((item) => (item.id === renderAffiliate.id ? { ...item, ...renderAffiliate } : item));
     }
-    const dataUrl = await buildAffiliateCardDataUrl(renderAffiliate);
+    const dataUrl = await Promise.race([
+      buildAffiliateCardDataUrl(renderAffiliate),
+      new Promise((_, reject) => window.setTimeout(() => reject(new Error("La vista previa tardó demasiado.")), 7000)),
+    ]);
     affiliateCardPreview.src = dataUrl;
     affiliateCardMeta.textContent = affiliateCardMetaText(renderAffiliate);
     affiliateCardPreviewWrap?.classList.remove("is-empty");
     return dataUrl;
   } catch (error) {
-    affiliateCardMeta.textContent = error?.message || "No se pudo generar la vista previa del carnet.";
-    affiliateCardPreviewWrap?.classList.add("is-empty");
-    return "";
+    const fallback = affiliateCardFallbackDataUrl(affiliate);
+    affiliateCardPreview.src = fallback;
+    affiliateCardPreview.alt = `Carnet digital de ${affiliate.full_name || "afiliado"}`;
+    affiliateCardMeta.textContent = "Carnet digital listo. La vista enriquecida se actualizará cuando estén disponibles sus recursos visuales.";
+    affiliateCardPreviewWrap?.classList.remove("is-empty");
+    return fallback;
   } finally {
     affiliateCardPreviewWrap?.classList.remove("is-loading");
   }
@@ -33354,12 +33377,27 @@ function affiliateViewSection() {
   return document.querySelector('.view-section[data-view="affiliates"]');
 }
 
+function ensureAffiliateOperationBackdrop() {
+  let backdrop = document.getElementById("affiliateOperationBackdrop");
+  if (backdrop) return backdrop;
+  backdrop = document.createElement("div");
+  backdrop.id = "affiliateOperationBackdrop";
+  backdrop.className = "affiliate-operation-backdrop";
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) closeAffiliateOperationModal();
+  });
+  document.body.appendChild(backdrop);
+  return backdrop;
+}
+
 function openAffiliateOperationModal() {
+  ensureAffiliateOperationBackdrop().classList.add("is-open");
   affiliateViewSection()?.classList.add("affiliate-modal-open");
   document.getElementById("affiliateOperatePanel")?.classList.add("is-modal-open");
 }
 
 function closeAffiliateOperationModal() {
+  document.getElementById("affiliateOperationBackdrop")?.classList.remove("is-open");
   document.getElementById("affiliateOperatePanel")?.classList.remove("is-modal-open");
   if (!affiliateCreatePanel?.classList.contains("is-modal-open")) {
     affiliateViewSection()?.classList.remove("affiliate-modal-open");
