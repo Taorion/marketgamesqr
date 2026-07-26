@@ -5545,12 +5545,13 @@ function forceSidebarMenuLeftAlignment() {
       '.sidebar .nav-item[data-view="rms-machine"], .sidebar .sidebar-primary-nav-item, .sidebar .nav-item.active'
     );
     rmsEntries.forEach((entry) => {
-      setImportantStyle(entry, "border", "1px solid rgba(11, 99, 246, .74)");
-      setImportantStyle(entry, "border-radius", "10px");
-      setImportantStyle(entry, "background", "linear-gradient(135deg, #0b63f6 0%, #0759d6 48%, #052a6b 100%)");
+      setImportantStyle(entry, "border", "0");
+      setImportantStyle(entry, "border-left", "3px solid #ffffff");
+      setImportantStyle(entry, "border-radius", "0");
+      setImportantStyle(entry, "background", "transparent");
       setImportantStyle(entry, "color", "#ffffff");
       setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
-      setImportantStyle(entry, "box-shadow", "0 10px 22px rgba(5, 42, 107, .22), inset 3px 0 0 #69ddff");
+      setImportantStyle(entry, "box-shadow", "none");
       const rmsIcon = entry.querySelector(":scope > .material-symbols-outlined");
       setImportantStyle(rmsIcon, "color", "#ffffff");
       setImportantStyle(rmsIcon, "-webkit-text-fill-color", "#ffffff");
