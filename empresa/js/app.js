@@ -11421,6 +11421,18 @@ function campaignQoriCenterCss() {
         justify-content: flex-start !important;
       }
     }
+
+    /* Campaign runtime v212: campaign statistics belong in the detail overlay, never below the list. */
+    body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] > .sales-kpis,
+    body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] > .campaign-roi-summary-card,
+    body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] > .campaign-layout {
+      display: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item.active {
+      border-color: #b8d0e7 !important;
+      background: #ffffff !important;
+      box-shadow: inset 3px 0 0 #0a4fa9, 0 7px 16px rgba(11, 64, 128, .06) !important;
+    }
   `;
 }
 
