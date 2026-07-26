@@ -5539,6 +5539,29 @@ function forceSidebarMenuLeftAlignment() {
     setImportantStyle(badge, "text-align", "right");
     setImportantStyle(badge, "white-space", "nowrap");
   });
+
+  if (document.body.dataset.currentView === "rms-machine") {
+    const rmsEntries = document.querySelectorAll(
+      '.sidebar .nav-item[data-view="rms-machine"], .sidebar .sidebar-primary-nav-item, .sidebar .nav-item.active'
+    );
+    rmsEntries.forEach((entry) => {
+      setImportantStyle(entry, "border", "1px solid rgba(11, 99, 246, .74)");
+      setImportantStyle(entry, "border-radius", "10px");
+      setImportantStyle(entry, "background", "linear-gradient(135deg, #0b63f6 0%, #0759d6 48%, #052a6b 100%)");
+      setImportantStyle(entry, "color", "#ffffff");
+      setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
+      setImportantStyle(entry, "box-shadow", "0 10px 22px rgba(5, 42, 107, .22), inset 3px 0 0 #69ddff");
+      const rmsIcon = entry.querySelector(":scope > .material-symbols-outlined");
+      setImportantStyle(rmsIcon, "color", "#ffffff");
+      setImportantStyle(rmsIcon, "-webkit-text-fill-color", "#ffffff");
+      setImportantStyle(rmsIcon, "opacity", "1");
+      entry.querySelectorAll(":scope strong, :scope small").forEach((copy) => {
+        setImportantStyle(copy, "color", copy.tagName === "SMALL" ? "rgba(232, 245, 255, .9)" : "#ffffff");
+        setImportantStyle(copy, "-webkit-text-fill-color", copy.tagName === "SMALL" ? "rgba(232, 245, 255, .9)" : "#ffffff");
+        setImportantStyle(copy, "opacity", "1");
+      });
+    });
+  }
 }
 
 function viewNeedsCampaignData(view) {
