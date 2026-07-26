@@ -60617,13 +60617,28 @@ html body[data-current-view="campaigns"] .portal-shell #campaignStrategyAssistan
 html body[data-current-view="campaigns"] .portal-shell #editCampaignButton,
 html body[data-current-view="campaigns"] .portal-shell #exportCampaignReportButton,
 html body[data-current-view="campaigns"] .portal-shell #markReadyCampaignButton { display: none !important; }
-.campaign-interstitial-card { width:min(680px,calc(100vw - 32px)) !important; display:grid; gap:18px; }
+.campaign-interstitial-card { width:min(900px,calc(100vw - 32px)) !important; max-height:min(820px,calc(100vh - 32px)); overflow:auto; display:grid; gap:18px; }
 .campaign-interstitial-card .table-secondary { margin:0; color:#54708f; }
-.campaign-interstitial-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.campaign-interstitial-metrics { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
 .campaign-interstitial-metrics > div { padding:14px; border:1px solid #cde0f4; border-radius:12px; background:#f8fbff; display:grid; gap:4px; }
 .campaign-interstitial-metrics span { color:#54708f; font-size:.72rem; text-transform:uppercase; font-weight:800; }
 .campaign-interstitial-metrics strong { color:#052a6b; font-size:1.1rem; }
-@media (max-width:560px) { .campaign-interstitial-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.campaign-performance-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr); gap:14px; }
+.campaign-funnel-card,.campaign-efficiency-card { padding:16px; border:1px solid #d7e6f6; border-radius:14px; background:#fbfdff; }
+.campaign-detail-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; color:#052a6b; }
+.campaign-detail-heading span { font-weight:800; }
+.campaign-detail-heading small { color:#64748b; font-size:.78rem; }
+.campaign-funnel-row { display:grid; grid-template-columns:118px minmax(80px,1fr) 42px; gap:10px; align-items:center; margin:10px 0; color:#48627f; font-size:.82rem; }
+.campaign-funnel-row > div { height:9px; overflow:hidden; border-radius:999px; background:#e8f0f8; }
+.campaign-funnel-row i { display:block; height:100%; min-width:0; border-radius:inherit; }
+.campaign-funnel-row strong { text-align:right; color:#052a6b; font-size:.82rem; }
+.campaign-efficiency-card dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; }
+.campaign-efficiency-card dl div { padding:10px; border-radius:10px; background:#f3f8fd; }
+.campaign-efficiency-card dt { color:#64748b; font-size:.72rem; }
+.campaign-efficiency-card dd { margin:4px 0 0; color:#052a6b; font-size:.93rem; font-weight:800; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main .rms-station-entry-explainer { display:block !important; max-width:42ch !important; margin:8px 0 0 !important; color:#64748b !important; font-size:.78rem !important; line-height:1.45 !important; }
+@media (max-width:760px) { .campaign-interstitial-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); } .campaign-performance-grid { grid-template-columns:1fr; } }
+@media (max-width:560px) { .campaign-interstitial-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .campaign-efficiency-card dl { grid-template-columns:1fr; } .campaign-funnel-row { grid-template-columns:100px minmax(55px,1fr) 36px; gap:7px; } }
 
 /* Campaign header v208: copy and actions must never compete for a narrow row. */
 @media (max-width: 1280px) {

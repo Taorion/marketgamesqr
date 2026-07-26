@@ -11488,6 +11488,24 @@ function campaignListCardMarkup(campaign = {}) {
 
 function openCampaignInterstitial(campaign = state.selectedCampaign) {
   if (!campaign) return;
+  const leads = toNumber(campaign.total_leads);
+  const tickets = toNumber(campaign.total_qr_generated);
+  const redemptions = toNumber(campaign.total_qr_redeemed);
+  const sales = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count);
+  const investment = toNumber(campaign.budget_total || campaign.investment || campaign.cost_total);
+  const revenue = toNumber(campaign.attributed_revenue || campaign.observed_revenue);
+  const redemptionRate = tickets ? (redemptions / tickets) * 100 : 0;
+  const conversionRate = leads ? (sales / leads) * 100 : 0;
+  const averageTicket = sales ? revenue / sales : 0;
+  const cpl = leads ? investment / leads : 0;
+  const cac = sales ? investment / sales : 0;
+  const funnelMax = Math.max(leads, tickets, redemptions, sales, 1);
+  const funnel = [
+    ["Leads captados", leads, "#0759d6"],
+    ["Tickets emitidos", tickets, "#00bfe5"],
+    ["Redenciones", redemptions, "#7c5ce0"],
+    ["Ventas atribuidas", sales, "#00a878"],
+  ];
   let modal = document.getElementById("campaignInterstitialModal");
   if (!modal) {
     modal = document.createElement("div");
@@ -11501,7 +11519,13 @@ function openCampaignInterstitial(campaign = state.selectedCampaign) {
     <div class="modal-card campaign-interstitial-card">
       <div class="modal-head"><div><span class="mono-label">Campaña</span><h3>${escapeHtml(campaign.name || "Campaña")}</h3></div><button class="icon-button" type="button" data-close-campaign-interstitial aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button></div>
       <p class="table-secondary">${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
-      <div class="campaign-interstitial-metrics"><div><span>Leads</span><strong>${toNumber(campaign.total_leads)}</strong></div><div><span>Redenciones</span><strong>${toNumber(campaign.total_qr_redeemed)}</strong></div><div><span>Revenue</span><strong>${escapeHtml(money(campaign.attributed_revenue || 0))}</strong></div><div><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div></div>
+      <section class="campaign-interstitial-summary" aria-label="Resumen de rendimiento">
+        <div class="campaign-interstitial-metrics"><div><span>Leads</span><strong>${leads.toLocaleString("es-CO")}</strong></div><div><span>Tickets</span><strong>${tickets.toLocaleString("es-CO")}</strong></div><div><span>Redenciones</span><strong>${redemptions.toLocaleString("es-CO")}</strong></div><div><span>Ventas</span><strong>${sales.toLocaleString("es-CO")}</strong></div><div><span>Revenue</span><strong>${escapeHtml(money(revenue))}</strong></div><div><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div></div>
+        <div class="campaign-performance-grid">
+          <section class="campaign-funnel-card"><div class="campaign-detail-heading"><span>Embudo de campaña</span><small>Del interés a la venta</small></div>${funnel.map(([label, value, color]) => `<div class="campaign-funnel-row"><span>${escapeHtml(label)}</span><div><i style="width:${Math.max(value ? 8 : 0, Math.round((value / funnelMax) * 100))}%;background:${color}"></i></div><strong>${Number(value).toLocaleString("es-CO")}</strong></div>`).join("")}</section>
+          <section class="campaign-efficiency-card"><div class="campaign-detail-heading"><span>Eficiencia</span><small>Indicadores para decidir</small></div><dl><div><dt>Inversión</dt><dd>${escapeHtml(money(investment))}</dd></div><div><dt>Tasa de redención</dt><dd>${redemptionRate.toFixed(1)}%</dd></div><div><dt>Conversión a venta</dt><dd>${conversionRate.toFixed(1)}%</dd></div><div><dt>Costo por lead</dt><dd>${escapeHtml(money(cpl))}</dd></div><div><dt>Costo por venta</dt><dd>${escapeHtml(money(cac))}</dd></div><div><dt>Ticket promedio</dt><dd>${escapeHtml(money(averageTicket))}</dd></div></dl></section>
+        </div>
+      </section>
       <div class="modal-button-row"><button class="ghost-button" type="button" data-close-campaign-interstitial>Cerrar</button><button class="solid-button" type="button" data-edit-campaign-interstitial>Editar campaña</button></div>
     </div>`;
   modal.classList.remove("hidden");
@@ -33551,13 +33575,69 @@ async function renderAffiliatesView() {
   ensureAffiliatesUxStyles();
   setupAffiliatePhotoCaptureUi();
   renderAffiliateDashboard();
-  const rows = withFilters(
+  const allRows = withFilters(
     state.affiliates || [],
     ["full_name", "document_id", "phone", "email", "status", "business_name", "qr_token", "notes"],
     ["created_at", "updated_at"]
   );
+  const affiliateSearchInput = document.getElementById("affiliateListSearchInput");
+  const affiliateStatusInput = document.getElementById("affiliateListStatusFilter");
+  const affiliatePageSizeInput = document.getElementById("affiliateListPageSize");
+  const affiliateCount = document.getElementById("affiliateListCount");
+  const affiliatePagination = document.getElementById("affiliateListPagination");
+  const affiliateQuery = String(state.affiliateListQuery || "").trim().toLocaleLowerCase("es");
+  const affiliateStatus = state.affiliateListStatus || "ALL";
+  const filteredRows = allRows.filter((item) => {
+    const matchesStatus = affiliateStatus === "ALL" || String(item.status || "ACTIVE").toUpperCase() === affiliateStatus;
+    const matchesQuery = !affiliateQuery || [item.full_name, item.document_id, item.phone, item.email, item.notes]
+      .some((value) => String(value || "").toLocaleLowerCase("es").includes(affiliateQuery));
+    return matchesStatus && matchesQuery;
+  });
+  const pageSize = Math.max(1, Number(state.affiliateListPageSize || 10));
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  state.affiliateListPage = Math.min(Math.max(1, Number(state.affiliateListPage || 1)), pageCount);
+  const pageStart = (state.affiliateListPage - 1) * pageSize;
+  const rows = filteredRows.slice(pageStart, pageStart + pageSize);
+  if (affiliateSearchInput && affiliateSearchInput.value !== (state.affiliateListQuery || "")) affiliateSearchInput.value = state.affiliateListQuery || "";
+  if (affiliateStatusInput) affiliateStatusInput.value = affiliateStatus;
+  if (affiliatePageSizeInput) affiliatePageSizeInput.value = String(pageSize);
+  if (affiliateCount) affiliateCount.textContent = filteredRows.length ? `${pageStart + 1}-${Math.min(pageStart + pageSize, filteredRows.length)} de ${filteredRows.length}` : "0 afiliados";
+  if (affiliatePagination) {
+    affiliatePagination.innerHTML = pageCount > 1 ? `
+      <button class="ghost-button compact" type="button" data-affiliate-page="${state.affiliateListPage - 1}" ${state.affiliateListPage === 1 ? "disabled" : ""}>Anterior</button>
+      <span>Página ${state.affiliateListPage} de ${pageCount}</span>
+      <button class="ghost-button compact" type="button" data-affiliate-page="${state.affiliateListPage + 1}" ${state.affiliateListPage === pageCount ? "disabled" : ""}>Siguiente</button>` : "";
+    affiliatePagination.querySelectorAll("[data-affiliate-page]").forEach((button) => button.addEventListener("click", () => {
+      state.affiliateListPage = Number(button.dataset.affiliatePage || 1);
+      renderAffiliatesView();
+    }));
+  }
+  if (affiliateSearchInput && !affiliateSearchInput.dataset.bound) {
+    affiliateSearchInput.dataset.bound = "1";
+    affiliateSearchInput.addEventListener("input", () => {
+      state.affiliateListQuery = affiliateSearchInput.value;
+      state.affiliateListPage = 1;
+      renderAffiliatesView();
+    });
+  }
+  if (affiliateStatusInput && !affiliateStatusInput.dataset.bound) {
+    affiliateStatusInput.dataset.bound = "1";
+    affiliateStatusInput.addEventListener("change", () => {
+      state.affiliateListStatus = affiliateStatusInput.value;
+      state.affiliateListPage = 1;
+      renderAffiliatesView();
+    });
+  }
+  if (affiliatePageSizeInput && !affiliatePageSizeInput.dataset.bound) {
+    affiliatePageSizeInput.dataset.bound = "1";
+    affiliatePageSizeInput.addEventListener("change", () => {
+      state.affiliateListPageSize = Number(affiliatePageSizeInput.value || 10);
+      state.affiliateListPage = 1;
+      renderAffiliatesView();
+    });
+  }
 
-  const selectedRow = rows.find((item) => item.id === state.selectedAffiliateId) || null;
+  const selectedRow = allRows.find((item) => item.id === state.selectedAffiliateId) || null;
   const selected = selectedRow && state.selectedAffiliate?.id === selectedRow.id
     ? {
         ...selectedRow,
@@ -33579,7 +33659,6 @@ async function renderAffiliatesView() {
     const purchases = toNumber(item.point_events || 0);
     const purchaseTotal = toNumber(item.purchase_total || 0);
     const contact = [item.document_id, item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
-    const status = String(item.status || "ACTIVE").toUpperCase();
     return `
       <tr data-affiliate-id="${escapeHtml(item.id)}" data-affiliate-row-select="${escapeHtml(item.id)}" tabindex="0" class="${item.id === state.selectedAffiliateId ? "active" : ""}">
         <td>
@@ -33592,7 +33671,6 @@ async function renderAffiliatesView() {
         <td><strong>${escapeHtml(points.toLocaleString("es-CO"))}</strong></td>
         <td><strong>${escapeHtml(money(purchaseTotal))}</strong><span class="table-secondary">${escapeHtml(purchases.toLocaleString("es-CO"))} movimientos</span></td>
         <td>${escapeHtml(item.last_purchase_at ? formatDateShort(item.last_purchase_at) : "-")}</td>
-        <td><span class="status-chip ${status === "INACTIVE" ? "muted" : "ok"}">${escapeHtml(status === "INACTIVE" ? "Inactivo" : "Activo")}</span></td>
         <td>
           <div class="affiliate-row-actions">
             <button class="ghost-button compact" type="button" data-affiliate-edit="${escapeHtml(item.id)}">Editar</button>
@@ -33601,7 +33679,7 @@ async function renderAffiliatesView() {
         </td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="7">Todavia no hay afiliados creados.</td></tr>';
+  }).join("") || '<tr><td colspan="6">No hay afiliados con estos filtros.</td></tr>';
 
   affiliateTable.querySelectorAll("[data-affiliate-row-select]").forEach((row) => {
     const selectRow = () => {
@@ -34308,13 +34386,14 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV79")) return;
+  if (document.getElementById("affiliatesUxStylesV80")) return;
+  document.getElementById("affiliatesUxStylesV79")?.remove();
   document.getElementById("affiliatesUxStylesV78")?.remove();
   document.getElementById("affiliatesUxStylesV77")?.remove();
   document.getElementById("affiliatesUxStylesV76")?.remove();
   document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV79";
+  style.id = "affiliatesUxStylesV80";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -35060,6 +35139,124 @@ function ensureAffiliatesUxStyles() {
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
         grid-template-columns: 1fr !important;
       }
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel {
+      overflow: visible !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel .table-card-head {
+      padding: 0 0 14px !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-toolbar {
+      display: grid !important;
+      grid-template-columns: minmax(240px, 1fr) auto auto auto !important;
+      gap: 10px !important;
+      align-items: end !important;
+      padding: 14px 0 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-search,
+    .view-section[data-view="affiliates"] .affiliate-list-filter {
+      display: grid !important;
+      gap: 5px !important;
+      min-width: 0 !important;
+      color: #53677f !important;
+      font-size: .72rem !important;
+      font-weight: 750 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-search {
+      grid-template-columns: 20px minmax(0, 1fr) !important;
+      align-items: center !important;
+      min-height: 42px !important;
+      padding: 0 12px !important;
+      border: 1px solid #cde0f4 !important;
+      border-radius: 10px !important;
+      background: #fff !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-search input {
+      min-height: 38px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      outline: 0 !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-filter select {
+      min-width: 104px !important;
+      min-height: 42px !important;
+      padding: 0 28px 0 10px !important;
+      border-radius: 10px !important;
+      background: #fff !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-count {
+      min-width: 110px !important;
+      padding-bottom: 11px !important;
+      color: #53677f !important;
+      font-size: .8rem !important;
+      white-space: nowrap !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel .table-wrap {
+      max-height: none !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      border: 1px solid #d7e6f6 !important;
+      border-radius: 12px !important;
+      background: #fff !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel table {
+      min-width: 760px !important;
+      width: 100% !important;
+      table-layout: auto !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th,
+    .view-section[data-view="affiliates"] .affiliate-list-panel td {
+      height: auto !important;
+      padding: 14px 12px !important;
+      border: 0 !important;
+      border-bottom: 1px solid #edf3f9 !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th {
+      position: static !important;
+      background: #f6faff !important;
+      color: #43617f !important;
+      font-size: .72rem !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(1) { width: 28% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(2) { width: 24% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(3) { width: 10% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(4) { width: 16% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(5) { width: 12% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel th:nth-child(6) { width: 10% !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr,
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr.active,
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr:hover {
+      box-shadow: none !important;
+      outline: 0 !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-panel tbody tr:hover { background: #f8fbff !important; }
+    .view-section[data-view="affiliates"] .affiliate-list-panel #affiliateTable .affiliate-table-main {
+      min-height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      appearance: none !important;
+      box-shadow: none !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-pagination {
+      display: flex !important;
+      justify-content: flex-end !important;
+      gap: 8px !important;
+      padding-top: 14px !important;
+    }
+    .view-section[data-view="affiliates"] .affiliate-list-pagination button { min-width: 38px !important; }
+    @media (max-width: 720px) {
+      .view-section[data-view="affiliates"] .affiliate-list-toolbar { grid-template-columns: 1fr 1fr !important; }
+      .view-section[data-view="affiliates"] .affiliate-list-search { grid-column: 1 / -1 !important; }
+      .view-section[data-view="affiliates"] .affiliate-list-count { padding-bottom: 0 !important; }
     }
   `;
   document.head.appendChild(style);
@@ -39308,9 +39505,21 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const operationName = operation.name || operation.primaryAction || "Operacion";
-    const stationAction = stage.key === "recoleccion"
-      ? "Atrae y recolecta oportunidades"
-      : (operation.primaryAction || operationName);
+    const stationCopy = {
+      recoleccion: {
+        action: "Atrae y recolecta oportunidades",
+        detail: "Registra datos de contacto y el interés inicial para alimentar el embudo comercial.",
+      },
+      curaduria: {
+        action: "Filtra y prioriza oportunidades",
+        detail: "Revisa calidad, datos y necesidad; deja listos los leads con mayor potencial para el siguiente paso.",
+      },
+      alimentacion: {
+        action: "Asigna el producto o servicio ideal",
+        detail: "Relaciona cada oportunidad con la oferta más relevante antes de activar la conversación comercial.",
+      },
+    }[stage.key] || { action: operation.primaryAction || operationName, detail: "Organiza los leads y define el siguiente movimiento comercial." };
+    const stationAction = stationCopy.action;
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
@@ -39329,6 +39538,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           <div>
             <strong>${escapeHtml(stage.label || `Estación ${index + 1}`)}</strong>
             <small>${escapeHtml(stationAction)}</small>
+            <p class="rms-station-entry-explainer">${escapeHtml(stationCopy.detail)}</p>
           </div>
         </div>
         <div class="rms-station-entry-flow">

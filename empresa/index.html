@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=campaign-calculator-20260726-v217">
+  <link rel="stylesheet" href="css/styles.css?v=affiliate-campaign-insights-20260726-v218">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
 </head>
 <body data-current-view="rms-machine">
@@ -6565,7 +6565,7 @@
               <div>
                 <span class="mono-label">Sistema de afiliados</span>
                 <h2>Afiliados</h2>
-                <p>Tabla simple de afiliados. Haz clic sobre un afiliado para atribuir una compra, asignar puntos y cerrar la operación.</p>
+                <p>Consulta afiliados, revisa su actividad y registra una compra cuando la necesites.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="refreshAffiliatesButton" type="button">Actualizar</button>
@@ -6903,13 +6903,36 @@
                 <div class="qr-result hidden" id="affiliateReferralQrResult"></div>
               </article>
 
-              <article class="surface-card data-table-card affiliate-list-panel" id="affiliateListPanel">
+              <article class="surface-card data-table-card affiliate-list-panel" id="affiliateListPanel" data-quiet-zone-ignore>
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Afiliados del negocio</span>
-                    <strong>Lista simple de afiliados</strong>
+                    <strong>Directorio de afiliados</strong>
                   </div>
                   <button class="solid-button compact" id="affiliateListCreateButton" type="button">Agregar afiliado</button>
+                </div>
+                <div class="affiliate-list-toolbar" aria-label="Buscar y filtrar afiliados">
+                  <label class="affiliate-list-search">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    <input id="affiliateListSearchInput" type="search" placeholder="Buscar por nombre, teléfono o documento">
+                  </label>
+                  <label class="affiliate-list-filter">
+                    <span>Estado</span>
+                    <select id="affiliateListStatusFilter">
+                      <option value="ALL">Todos</option>
+                      <option value="ACTIVE">Activos</option>
+                      <option value="INACTIVE">Inactivos</option>
+                    </select>
+                  </label>
+                  <label class="affiliate-list-filter affiliate-list-page-size">
+                    <span>Mostrar</span>
+                    <select id="affiliateListPageSize">
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                    </select>
+                  </label>
+                  <span class="affiliate-list-count" id="affiliateListCount" aria-live="polite"></span>
                 </div>
                 <div class="table-wrap">
                   <table>
@@ -6920,13 +6943,13 @@
                         <th>Puntos</th>
                         <th>Compras</th>
                         <th>Última compra</th>
-                        <th>Estado</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="affiliateTable"></tbody>
                   </table>
                 </div>
+                <div class="affiliate-list-pagination" id="affiliateListPagination" aria-label="Paginación de afiliados"></div>
               </article>
             </section>
 
@@ -7308,7 +7331,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=campaign-calculator-20260726-v217" defer></script>
+  <script src="js/app.js?v=affiliate-campaign-insights-20260726-v218" defer></script>
 </body>
 </html>
 
