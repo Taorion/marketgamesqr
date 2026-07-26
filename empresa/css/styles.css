@@ -60660,3 +60660,100 @@ html body[data-current-view="campaigns"] .portal-shell #markReadyCampaignButton 
     grid-column: 1 / -1 !important;
   }
 }
+
+/* Campaign header v209: one calm entry point into the campaigns workspace. */
+html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 24px !important;
+  margin-bottom: 20px !important;
+  padding: 22px 24px !important;
+  border: 1px solid #cfe0f4 !important;
+  border-radius: 18px !important;
+  background: linear-gradient(118deg, #ffffff 0%, #f5faff 100%) !important;
+  box-shadow: 0 12px 28px rgba(14, 67, 126, 0.08) !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head .campaign-breadcrumb {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 0 7px !important;
+  color: #0763d9 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.035em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head .campaign-breadcrumb .material-symbols-outlined {
+  display: none !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head #campaignBreadcrumb {
+  color: #64809f !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head #campaignHeroTitle {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #092a62 !important;
+  font-size: clamp(1.5rem, 2.2vw, 2rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.04em !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head #campaignHeroSubtitle {
+  max-width: 58ch !important;
+  margin: 8px 0 0 !important;
+  color: #587292 !important;
+  font-size: 0.94rem !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head .head-actions {
+  display: flex !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head #requestCampaignButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 154px !important;
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #075ad0 0%, #063b9e 100%) !important;
+  box-shadow: 0 8px 16px rgba(7, 69, 170, 0.22) !important;
+  color: #ffffff !important;
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .campaign-head #requestCampaignButton:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 11px 20px rgba(7, 69, 170, 0.28) !important;
+}
+
+@media (max-width: 780px) {
+  html body[data-current-view="campaigns"] .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 16px !important;
+    padding: 18px !important;
+  }
+
+  html body[data-current-view="campaigns"] .portal-shell .campaign-head .head-actions {
+    justify-content: flex-start !important;
+  }
+}
