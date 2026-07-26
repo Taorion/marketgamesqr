@@ -35712,7 +35712,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
     storageLabel: "Almacena leads capturados",
     operation: {
       name: "Recolectar",
-      primaryAction: "Seleccionar leads procesables",
+      primaryAction: "Atrae y recolecta oportunidades",
       materialLabel: "Contacto, origen, interes y permiso para avanzar",
       buttonLabel: "Enviar a Alimentar",
       nextPhase: "alimentacion",
@@ -38465,6 +38465,40 @@ function ensureRmsStationUxStyles() {
       padding-left: 0 !important;
       padding-right: 0 !important;
     }
+  `);
+  rules.push(`
+    /* RMS navigation v214: collapsed groups keep only their chevron. */
+    @media (min-width: 961px) {
+      html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-group-toggle > span:first-child {
+        display: none !important;
+      }
+      html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-group-toggle {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        justify-items: center !important;
+        padding-inline: 0 !important;
+      }
+      html body .portal-shell .app-shell.sidebar-collapsed .sidebar .nav-group-toggle > .material-symbols-outlined {
+        display: grid !important;
+        justify-self: center !important;
+      }
+    }
+
+    /* RMS navigation v214: filters precede the station carousel. */
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 14px !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-station-workspace { order: 0 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+      order: 1 !important;
+      margin: 0 !important;
+      padding: 0 0 12px !important;
+      border-top: 0 !important;
+      border-bottom: 1px solid #dce8f4 !important;
+    }
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell { order: 2 !important; }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
