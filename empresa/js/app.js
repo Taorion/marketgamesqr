@@ -5455,19 +5455,24 @@ function forceOperateMenuLeftAlignment() {
 }
 
 function forceSidebarMenuLeftAlignment() {
+  const isDesktopCollapsed = Boolean(workspace?.classList.contains("sidebar-collapsed"))
+    && window.matchMedia("(min-width: 961px)").matches;
   const groupToggles = document.querySelectorAll(".sidebar .sidebar-nav-section > .nav-group-toggle");
   groupToggles.forEach((toggle) => {
     setImportantStyle(toggle, "display", "grid");
-    setImportantStyle(toggle, "grid-template-columns", "minmax(0, 1fr) 24px");
+    setImportantStyle(toggle, "grid-template-columns", isDesktopCollapsed ? "1fr" : "minmax(0, 1fr) 24px");
     setImportantStyle(toggle, "align-items", "center");
-    setImportantStyle(toggle, "justify-items", "stretch");
-    setImportantStyle(toggle, "justify-content", "stretch");
+    setImportantStyle(toggle, "justify-items", isDesktopCollapsed ? "center" : "stretch");
+    setImportantStyle(toggle, "justify-content", isDesktopCollapsed ? "center" : "stretch");
     setImportantStyle(toggle, "text-align", "left");
     setImportantStyle(toggle, "border-radius", "0");
     const label = toggle.querySelector(":scope > span:first-child");
-    setImportantStyle(label, "justify-self", "start");
+    setImportantStyle(label, "display", isDesktopCollapsed ? "none" : "block");
+    setImportantStyle(label, "justify-self", isDesktopCollapsed ? "center" : "start");
     setImportantStyle(label, "text-align", "left");
-    setImportantStyle(label, "width", "100%");
+    setImportantStyle(label, "width", isDesktopCollapsed ? "auto" : "100%");
+    const chevron = toggle.querySelector(":scope > .material-symbols-outlined");
+    setImportantStyle(chevron, "justify-self", isDesktopCollapsed ? "center" : "end");
   });
 
   const rows = document.querySelectorAll(".sidebar .sidebar-nav-section-panel .nav-item, .sidebar .sidebar-primary-nav-item");
@@ -5921,6 +5926,7 @@ function togglePortalMenu() {
   workspace.dataset.sidebarDesktopChoice = "1";
   delete workspace.dataset.sidebarAutoCollapsed;
   workspace.classList.toggle("sidebar-collapsed");
+  forceSidebarMenuLeftAlignment();
 }
 
 function syncPortalResponsiveSidebar() {
@@ -5929,11 +5935,13 @@ function syncPortalResponsiveSidebar() {
   if (compactDesktop && !workspace.dataset.sidebarDesktopChoice) {
     workspace.classList.add("sidebar-collapsed");
     workspace.dataset.sidebarAutoCollapsed = "1";
+    forceSidebarMenuLeftAlignment();
     return;
   }
   if (!compactDesktop && workspace.dataset.sidebarAutoCollapsed === "1") {
     workspace.classList.remove("sidebar-collapsed");
     delete workspace.dataset.sidebarAutoCollapsed;
+    forceSidebarMenuLeftAlignment();
   }
 }
 
@@ -39203,6 +39211,9 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const operationName = operation.name || operation.primaryAction || "Operacion";
+    const stationAction = stage.key === "recoleccion"
+      ? "Atrae y recolecta oportunidades"
+      : (operation.primaryAction || operationName);
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
@@ -39220,7 +39231,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon)}</span>
           <div>
             <strong>${escapeHtml(stage.label || `Estación ${index + 1}`)}</strong>
-            <small>${escapeHtml(operation.primaryAction || operationName)}</small>
+            <small>${escapeHtml(stationAction)}</small>
           </div>
         </div>
         <div class="rms-station-entry-flow">
