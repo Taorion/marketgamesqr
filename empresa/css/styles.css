@@ -61014,3 +61014,68 @@ html body .portal-shell .portal-search-results .material-symbols-outlined {
     cursor: pointer !important;
   }
 }
+
+/* Campaign calculator v217: discoverable from the create-campaign dialog. */
+html body .portal-shell .campaign-entry-switch .campaign-calculator-entry {
+  grid-column: 1 / -1 !important;
+  min-height: 38px !important;
+  color: #0a4ca6 !important;
+}
+
+html body .campaign-calculator-modal-card {
+  width: min(650px, calc(100vw - 32px)) !important;
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body .campaign-calculator-modal-copy {
+  margin: -6px 0 0 !important;
+  color: #5d7695 !important;
+}
+
+html body .campaign-calculator-modal-grid,
+html body .campaign-calculator-modal-results {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body .campaign-calculator-modal-grid label {
+  display: grid !important;
+  gap: 6px !important;
+  color: #58718e !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+}
+
+html body .campaign-calculator-modal-grid input {
+  min-height: 42px !important;
+}
+
+html body .campaign-calculator-modal-results > div {
+  display: grid !important;
+  gap: 4px !important;
+  padding: 12px !important;
+  border: 1px solid #d6e4f2 !important;
+  border-radius: 11px !important;
+  background: #f8fbff !important;
+}
+
+html body .campaign-calculator-modal-results span {
+  color: #6e86a1 !important;
+  font-size: .66rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+html body .campaign-calculator-modal-results strong {
+  color: #092e69 !important;
+  font-size: 1rem !important;
+}
+
+@media (max-width: 580px) {
+  html body .campaign-calculator-modal-grid,
+  html body .campaign-calculator-modal-results {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

@@ -11474,7 +11474,6 @@ function campaignListCardMarkup(campaign = {}) {
       <div class="campaign-item-main">
         <div class="campaign-item-title">
           <h3>${escapeHtml(campaign.name || "Campaña sin nombre")}</h3>
-          <span class="status-chip ${campaign.status === "ACTIVE" ? "ok" : "muted"}">${escapeHtml(statusLabel(campaign.status))}</span>
         </div>
         <p>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
         <small class="campaign-item-channel">${escapeHtml(channel || "Canal sin definir")}</small>
@@ -24730,7 +24729,104 @@ function applyStrategyWizardToCampaignForm() {
   return true;
 }
 
+function ensureCampaignQuickCalculator() {
+  if (!campaignModalForm) return;
+  const entrySwitch = campaignModalForm.querySelector(".campaign-entry-switch");
+  if (!entrySwitch) return;
+
+  let entryButton = document.getElementById("campaignCalculatorEntryButton");
+  if (!entryButton) {
+    entryButton = document.createElement("button");
+    entryButton.id = "campaignCalculatorEntryButton";
+    entryButton.type = "button";
+    entryButton.className = "ghost-button campaign-calculator-entry";
+    entryButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">calculate</span> Abrir calculadora de campaña';
+    entrySwitch.appendChild(entryButton);
+  }
+
+  let calculatorModal = document.getElementById("campaignCalculatorModal");
+  if (!calculatorModal) {
+    calculatorModal = document.createElement("div");
+    calculatorModal.id = "campaignCalculatorModal";
+    calculatorModal.className = "modal-shell hidden";
+    calculatorModal.setAttribute("role", "dialog");
+    calculatorModal.setAttribute("aria-modal", "true");
+    calculatorModal.setAttribute("aria-labelledby", "campaignCalculatorTitle");
+    calculatorModal.innerHTML = `
+      <div class="modal-card campaign-calculator-modal-card">
+        <div class="modal-head">
+          <div><span class="mono-label">Calculadora</span><h3 id="campaignCalculatorTitle">Proyecta tu campaña</h3></div>
+          <button class="icon-button" type="button" data-campaign-calculator-close aria-label="Cerrar calculadora"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <p class="campaign-calculator-modal-copy">Explora el costo y la meta comercial antes de guardar la campaña.</p>
+        <div class="campaign-calculator-modal-grid">
+          <label><span>Inversión total</span><input data-campaign-quick-budget type="number" min="0" step="1000" value="0"></label>
+          <label><span>Leads esperados</span><input data-campaign-quick-leads type="number" min="1" step="1" value="0"></label>
+          <label><span>Ventas esperadas</span><input data-campaign-quick-sales type="number" min="1" step="1" value="0"></label>
+          <label><span>Ticket promedio</span><input data-campaign-quick-ticket type="number" min="0" step="1000" value="0"></label>
+        </div>
+        <div class="campaign-calculator-modal-results" data-campaign-quick-result aria-live="polite"></div>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" data-campaign-calculator-close>Cerrar</button>
+          <button class="solid-button" type="button" data-campaign-calculator-apply>Usar valores en campaña</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(calculatorModal);
+
+    const budgetInput = calculatorModal.querySelector("[data-campaign-quick-budget]");
+    const leadsInput = calculatorModal.querySelector("[data-campaign-quick-leads]");
+    const salesInput = calculatorModal.querySelector("[data-campaign-quick-sales]");
+    const ticketInput = calculatorModal.querySelector("[data-campaign-quick-ticket]");
+    const result = calculatorModal.querySelector("[data-campaign-quick-result]");
+    const render = () => {
+      const investment = toNumber(budgetInput?.value || 0);
+      const leads = toNumber(leadsInput?.value || 0);
+      const sales = toNumber(salesInput?.value || 0);
+      const ticket = toNumber(ticketInput?.value || 0);
+      const revenue = sales * ticket;
+      const cpl = leads ? investment / leads : 0;
+      const cac = sales ? investment / sales : 0;
+      const roi = investment ? ((revenue - investment) / investment) * 100 : 0;
+      result.innerHTML = `
+        <div><span>Costo por lead</span><strong>${escapeHtml(money(cpl))}</strong></div>
+        <div><span>Costo por venta</span><strong>${escapeHtml(money(cac))}</strong></div>
+        <div><span>Revenue proyectado</span><strong>${escapeHtml(money(revenue))}</strong></div>
+        <div><span>ROI proyectado</span><strong>${investment ? `${Math.round(roi)}%` : "-"}</strong></div>
+      `;
+    };
+    [budgetInput, leadsInput, salesInput, ticketInput].forEach((input) => input?.addEventListener("input", render));
+    calculatorModal.querySelectorAll("[data-campaign-calculator-close]").forEach((button) => button.addEventListener("click", () => calculatorModal.classList.add("hidden")));
+    calculatorModal.querySelector("[data-campaign-calculator-apply]")?.addEventListener("click", () => {
+      campaignFormBudget.value = budgetInput?.value || 0;
+      campaignFormLeadsGoal.value = leadsInput?.value || 0;
+      campaignFormGoal.value = Math.round(toNumber(salesInput?.value || 0) * toNumber(ticketInput?.value || 0));
+      renderCampaignChannelBudgetRows();
+      calculatorModal.classList.add("hidden");
+      setInlineMessage(campaignModalMessage, "Los valores calculados se copiaron al formulario. Puedes ajustarlos antes de guardar.", "success");
+    });
+    calculatorModal.addEventListener("click", (event) => {
+      if (event.target === calculatorModal) calculatorModal.classList.add("hidden");
+    });
+    calculatorModal.dataset.ready = "true";
+  }
+
+  entryButton.onclick = () => {
+    const budgetInput = calculatorModal.querySelector("[data-campaign-quick-budget]");
+    const leadsInput = calculatorModal.querySelector("[data-campaign-quick-leads]");
+    const salesInput = calculatorModal.querySelector("[data-campaign-quick-sales]");
+    const ticketInput = calculatorModal.querySelector("[data-campaign-quick-ticket]");
+    if (budgetInput) budgetInput.value = campaignFormBudget?.value || 0;
+    if (leadsInput) leadsInput.value = campaignFormLeadsGoal?.value || 0;
+    if (salesInput) salesInput.value = 0;
+    if (ticketInput) ticketInput.value = 0;
+    budgetInput?.dispatchEvent(new Event("input", { bubbles: true }));
+    calculatorModal.classList.remove("hidden");
+  };
+}
+
 function openCampaignModal(mode) {
+  ensureCampaignQuickCalculator();
   if (mode === "edit" && !state.selectedCampaign) {
     showFeedback("Selecciona una campaña antes de editar.", "error");
     return;
