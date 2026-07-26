@@ -5545,13 +5545,13 @@ function forceSidebarMenuLeftAlignment() {
       '.sidebar .nav-item[data-view="rms-machine"], .sidebar .sidebar-primary-nav-item, .sidebar .nav-item.active'
     );
     rmsEntries.forEach((entry) => {
-      setImportantStyle(entry, "border", "0");
-      setImportantStyle(entry, "border-left", "3px solid #ffffff");
-      setImportantStyle(entry, "border-radius", "0");
-      setImportantStyle(entry, "background", "transparent");
+      setImportantStyle(entry, "border", "1px solid rgba(105, 221, 255, .52)");
+      setImportantStyle(entry, "border-left", "3px solid #69ddff");
+      setImportantStyle(entry, "border-radius", "10px");
+      setImportantStyle(entry, "background", "linear-gradient(135deg, #0b63f6 0%, #0759d6 48%, #052a6b 100%)");
       setImportantStyle(entry, "color", "#ffffff");
       setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
-      setImportantStyle(entry, "box-shadow", "none");
+      setImportantStyle(entry, "box-shadow", "0 12px 24px rgba(4, 55, 150, .34), 0 0 20px rgba(105, 221, 255, .14), inset 0 1px 0 rgba(255, 255, 255, .14)");
       const rmsIcon = entry.querySelector(":scope > .material-symbols-outlined");
       setImportantStyle(rmsIcon, "color", "#ffffff");
       setImportantStyle(rmsIcon, "-webkit-text-fill-color", "#ffffff");
