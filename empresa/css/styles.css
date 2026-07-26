@@ -61361,3 +61361,24 @@ html body .portal-shell .smart-catalog-tabs {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Commercial directory: the whole list belongs to the page, never to a clipped viewport box. */
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #contactPanelDirectory.active {
+  max-height: none !important;
+  overflow: visible !important;
+  overscroll-behavior: auto !important;
+  padding-right: 0 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="contacts"] #contactPanelDirectory.active .contact-directory-list {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* A narrow sidebar behaves as a persistent accordion, not a toggle that can hide the current group. */
+@media (min-width: 961px) {
+  #workspace.sidebar-collapsed .sidebar .sidebar-nav-section.is-current.is-open > .sidebar-nav-section-panel,
+  .portal-shell.sidebar-collapsed .sidebar .sidebar-nav-section.is-current.is-open > .sidebar-nav-section-panel {
+    display: grid !important;
+  }
+}

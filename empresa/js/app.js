@@ -42425,7 +42425,9 @@ document.querySelector(".sidebar")?.addEventListener("click", (event) => {
 }, true);
 sidebarGroupToggles.forEach((button) => {
   button.addEventListener("click", () => {
-    setSidebarAccordionSection(button.dataset.sidebarGroupToggle, { allowCollapse: true });
+    // The compact sidebar is an accordion: opening one section must preserve it
+    // and close the rest, never leave the user with no current section visible.
+    setSidebarAccordionSection(button.dataset.sidebarGroupToggle);
   });
 });
 portalShortcutButtons.forEach((button) => {
