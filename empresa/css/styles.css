@@ -61381,4 +61381,39 @@ html body[data-current-view="leads"] .portal-shell .view-section[data-view="lead
   .portal-shell.sidebar-collapsed .sidebar .sidebar-nav-section.is-current.is-open > .sidebar-nav-section-panel {
     display: grid !important;
   }
+
+  #workspace.sidebar-collapsed .sidebar .sidebar-nav-section:not(.is-current) > .sidebar-nav-section-panel,
+  .portal-shell.sidebar-collapsed .sidebar .sidebar-nav-section:not(.is-current) > .sidebar-nav-section-panel {
+    display: none !important;
+  }
+}
+
+/* The legacy grid is retained for data compatibility but is not part of the directory experience. */
+html body[data-current-view="leads"] .portal-shell #contactPanelDirectory .lead-directory-card > .table-wrap,
+html body[data-current-view="leads"] .portal-shell #contactPanelDirectory .lead-directory-card .table-wrap {
+  display: none !important;
+}
+
+/* Four readable columns: contact, opportunity, operational state and a clear action. */
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+  grid-template-columns: minmax(190px, 1fr) minmax(260px, 1.45fr) minmax(180px, .8fr) 72px !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context strong,
+html body[data-current-view="leads"] .portal-shell .contact-directory-context small {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-list-head { display: none !important; }
+  html body[data-current-view="leads"] .portal-shell .contact-directory-card-row { grid-template-columns: minmax(0, 1fr) !important; }
 }

@@ -29345,9 +29345,10 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
         <small>${escapeHtml(secondarySignal)}</small>
       </div>
       <div class="contact-directory-context">
-        <span><strong>${escapeHtml(station.short || "Sin estación")}</strong><small>Estación</small></span>
-        <span><strong>${activationCount.toLocaleString("es-CO")}</strong><small>Activaciones</small></span>
-        <span><strong>${escapeHtml(isCustomer ? money(item.total_spent || item.sales_total || 0) : leadTicketInventoryText(item))}</strong><small>${isCustomer ? "Revenue" : "Tickets"}</small></span>
+        <span>
+          <strong>${escapeHtml(station.short || "Sin estación")}</strong>
+          <small>${activationCount.toLocaleString("es-CO")} activaciones · ${escapeHtml(isCustomer ? money(item.total_spent || item.sales_total || 0) : leadTicketInventoryText(item))}</small>
+        </span>
       </div>
       <span class="contact-directory-open">Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
     </article>
