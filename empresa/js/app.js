@@ -9516,6 +9516,61 @@ function renderSmartCatalogWorkbench() {
   const catalogs = state.smartCatalogs || [];
   const activeCatalog = smartCatalogSelectedCatalog();
   const products = state.smartCatalogProducts || [];
+  workbench.innerHTML = `
+    <article class="smart-catalog-workbench-card">
+      <div class="smart-catalog-workbench-head">
+        <div>
+          <span class="mono-label">Paso 1</span>
+          <h3>Elige tu catálogo</h3>
+          <p class="table-secondary">${catalogs.length ? "Selecciona uno para continuar con su oferta." : "Aún no tienes catálogos. Crea el primero para empezar."}</p>
+        </div>
+        <button class="ghost-button compact" type="button" data-smart-catalog-jump="catalogs">${catalogs.length ? "Administrar" : "Crear catálogo"}</button>
+      </div>
+      <div class="smart-catalog-card-list">
+        ${catalogs.length ? catalogs.map((catalog) => {
+          const active = activeCatalog?.id === catalog.id;
+          return `
+            <button class="smart-catalog-card-button ${active ? "is-active" : ""}" type="button" data-smart-catalog-workbench-select="${escapeHtml(catalog.id)}">
+              <span class="smart-catalog-card-top">
+                <span><strong>${escapeHtml(catalog.title || "Catálogo")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
+                <span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span>
+              </span>
+              <span class="smart-catalog-card-metrics">
+                <span class="pill muted">${Number(catalog.product_count || 0).toLocaleString("es-CO")} productos</span>
+                <span class="pill muted">${Number(catalog.view_count || 0).toLocaleString("es-CO")} vistas</span>
+                <span class="pill muted">${Number(catalog.intent_count || 0).toLocaleString("es-CO")} interesados</span>
+              </span>
+            </button>
+          `;
+        }).join("") : '<div class="empty-state compact">Cuando crees el catálogo aparecerá aquí y podrás agregar su oferta.</div>'}
+      </div>
+    </article>
+    <article class="smart-catalog-workbench-card is-primary">
+      <div class="smart-catalog-workbench-head">
+        <div>
+          <span class="mono-label">Siguiente paso</span>
+          <h3>${escapeHtml(activeCatalog?.title || "Crea tu primer catálogo")}</h3>
+          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Este catálogo ya está listo para recibir productos.") : "Solo necesitas un nombre y el WhatsApp que recibirá las consultas."}</p>
+        </div>
+        ${activeCatalog ? `<span class="status-chip ${smartCatalogStatusClass(activeCatalog.status)}">${escapeHtml(smartCatalogStatusLabel(activeCatalog.status))}</span>` : ""}
+      </div>
+      <div class="smart-catalog-active-panel">
+        <h3>${activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) publicados` : "Empieza con la información básica"}</h3>
+        <p>${activeCatalog ? "Cuando termines la oferta, comparte el enlace y las consultas quedarán registradas como intenciones comerciales." : "Después podrás añadir productos, precios, imágenes y el mensaje de WhatsApp."}</p>
+        <div class="smart-catalog-active-metrics">
+          <span><strong>${Number(activeCatalog?.product_count || products.length || 0).toLocaleString("es-CO")}</strong><small>Productos</small></span>
+          <span><strong>${Number(activeCatalog?.view_count || 0).toLocaleString("es-CO")}</strong><small>Vistas</small></span>
+          <span><strong>${Number(activeCatalog?.intent_count || 0).toLocaleString("es-CO")}</strong><small>Interesados</small></span>
+        </div>
+        <div class="smart-catalog-active-actions">
+          <button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear catálogo"}</button>
+          <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar enlace</button>
+          <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents" ${activeCatalog ? "" : "disabled"}>Ver interesados</button>
+        </div>
+      </div>
+    </article>
+  `;
+  return;
   const featuredProducts = products.filter((product) => product.is_featured || smartCatalogProductBenefits(product).length);
   const benefits = products
     .flatMap((product) => smartCatalogProductBenefits(product).map((benefit) => ({ benefit, product })))
