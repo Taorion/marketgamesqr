@@ -61480,3 +61480,128 @@ html body[data-current-view="leads"] .portal-shell .view-section[data-view="lead
   background: transparent !important;
   box-shadow: none !important;
 }
+
+/* Campaign calculator: a real cost builder for physical and digital activations. */
+html body .campaign-calculator-modal-card {
+  width: min(960px, calc(100vw - 32px)) !important;
+  max-height: min(820px, calc(100vh - 28px)) !important;
+  overflow: auto !important;
+  gap: 18px !important;
+}
+
+html body .campaign-quick-estimates {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body .campaign-quick-estimates label,
+html body .campaign-quick-cost-row label {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  color: #58718e !important;
+  font-size: .75rem !important;
+  font-weight: 800 !important;
+}
+
+html body .campaign-quick-estimates input,
+html body .campaign-quick-cost-row input {
+  min-width: 0 !important;
+  min-height: 42px !important;
+}
+
+html body .campaign-quick-cost-builder {
+  display: grid !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border: 1px solid #d6e7f4 !important;
+  border-radius: 16px !important;
+  background: #f8fcff !important;
+}
+
+html body .campaign-quick-cost-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+html body .campaign-quick-cost-head strong {
+  display: block !important;
+  margin-top: 2px !important;
+  color: #092e69 !important;
+}
+
+html body .campaign-quick-presets {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+html body .campaign-quick-presets button {
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  border: 1px solid #c8ddf2 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #0a4ca6 !important;
+  font: inherit !important;
+  font-size: .78rem !important;
+  font-weight: 750 !important;
+  cursor: pointer !important;
+}
+
+html body .campaign-quick-cost-list {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+html body .campaign-quick-cost-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.6fr) 100px minmax(140px, .9fr) minmax(112px, .65fr) 38px !important;
+  align-items: end !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  border: 1px solid #dceaf5 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+html body .campaign-quick-cost-row > strong {
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  color: #092e69 !important;
+  font-size: .92rem !important;
+}
+
+html body .campaign-quick-cost-row .icon-button {
+  width: 38px !important;
+  min-width: 38px !important;
+  min-height: 42px !important;
+}
+
+html body .campaign-calculator-modal-results {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+html body .campaign-calculator-modal-results > div.positive { border-color: #9edeca !important; background: #f2fff9 !important; }
+html body .campaign-calculator-modal-results > div.negative { border-color: #f0c5c5 !important; background: #fff7f7 !important; }
+
+html body .campaign-quick-cost-note {
+  margin: -6px 0 0 !important;
+  color: #58718e !important;
+  font-size: .8rem !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 760px) {
+  html body .campaign-quick-estimates,
+  html body .campaign-calculator-modal-results,
+  html body .campaign-quick-cost-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .campaign-quick-cost-row > strong { min-height: auto !important; }
+}

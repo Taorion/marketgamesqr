@@ -24834,72 +24834,161 @@ function ensureCampaignQuickCalculator() {
     calculatorModal.innerHTML = `
       <div class="modal-card campaign-calculator-modal-card">
         <div class="modal-head">
-          <div><span class="mono-label">Calculadora</span><h3 id="campaignCalculatorTitle">Proyecta tu campaña</h3></div>
+          <div><span class="mono-label">Presupuesto de campaña</span><h3 id="campaignCalculatorTitle">Calcula tu inversión real</h3></div>
           <button class="icon-button" type="button" data-campaign-calculator-close aria-label="Cerrar calculadora"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <p class="campaign-calculator-modal-copy">Explora el costo y la meta comercial antes de guardar la campaña.</p>
-        <div class="campaign-calculator-modal-grid">
-          <label><span>Inversión total</span><input data-campaign-quick-budget type="number" min="0" step="1000" value="0"></label>
-          <label><span>Leads esperados</span><input data-campaign-quick-leads type="number" min="1" step="1" value="0"></label>
-          <label><span>Ventas esperadas</span><input data-campaign-quick-sales type="number" min="1" step="1" value="0"></label>
+        <p class="campaign-calculator-modal-copy">Incluye materiales, pauta, personal, premios y tecnología. Luego define la meta comercial y usa el resultado en tu campaña.</p>
+        <section class="campaign-quick-estimates" aria-label="Supuestos comerciales">
+          <label><span>Leads esperados</span><input data-campaign-quick-leads type="number" min="0" step="1" value="0"></label>
+          <label><span>Conversión a venta %</span><input data-campaign-quick-conversion type="number" min="0" max="100" step="0.1" value="10"></label>
           <label><span>Ticket promedio</span><input data-campaign-quick-ticket type="number" min="0" step="1000" value="0"></label>
-        </div>
+        </section>
+        <section class="campaign-quick-cost-builder" aria-label="Inversión por rubro">
+          <div class="campaign-quick-cost-head">
+            <div><span class="mono-label">Inversión por rubro</span><strong>¿Qué vas a usar?</strong></div>
+            <button class="ghost-button compact" type="button" data-campaign-quick-add>Agregar concepto</button>
+          </div>
+          <div class="campaign-quick-presets" aria-label="Agregar rubros frecuentes">
+            <button type="button" data-campaign-quick-preset="flyers">Volantes</button>
+            <button type="button" data-campaign-quick-preset="ads">Pauta digital</button>
+            <button type="button" data-campaign-quick-preset="technology">QR y landing</button>
+            <button type="button" data-campaign-quick-preset="staff">Personal</button>
+            <button type="button" data-campaign-quick-preset="rewards">Premios</button>
+          </div>
+          <div class="campaign-quick-cost-list" data-campaign-quick-cost-list></div>
+        </section>
         <div class="campaign-calculator-modal-results" data-campaign-quick-result aria-live="polite"></div>
+        <p class="campaign-quick-cost-note" data-campaign-quick-note></p>
         <div class="modal-actions">
           <button class="ghost-button" type="button" data-campaign-calculator-close>Cerrar</button>
-          <button class="solid-button" type="button" data-campaign-calculator-apply>Usar valores en campaña</button>
+          <button class="solid-button" type="button" data-campaign-calculator-apply>Usar presupuesto en campaña</button>
         </div>
       </div>
     `;
     document.body.appendChild(calculatorModal);
 
-    const budgetInput = calculatorModal.querySelector("[data-campaign-quick-budget]");
     const leadsInput = calculatorModal.querySelector("[data-campaign-quick-leads]");
-    const salesInput = calculatorModal.querySelector("[data-campaign-quick-sales]");
+    const conversionInput = calculatorModal.querySelector("[data-campaign-quick-conversion]");
     const ticketInput = calculatorModal.querySelector("[data-campaign-quick-ticket]");
     const result = calculatorModal.querySelector("[data-campaign-quick-result]");
+    const note = calculatorModal.querySelector("[data-campaign-quick-note]");
+    const costList = calculatorModal.querySelector("[data-campaign-quick-cost-list]");
+    const presets = {
+      flyers: { label: "Volantes e impresión", quantity: 500, unit_cost: 350 },
+      ads: { label: "Pauta digital", quantity: 1, unit_cost: 150000 },
+      technology: { label: "QR, landing y herramientas tecnológicas", quantity: 1, unit_cost: 80000 },
+      staff: { label: "Personal de activación", quantity: 1, unit_cost: 120000 },
+      rewards: { label: "Premios y beneficios", quantity: 20, unit_cost: 10000 },
+    };
+    let costs = [];
+    const totalInvestment = () => costs.reduce((sum, item) => sum + (toNumber(item.quantity) * toNumber(item.unit_cost)), 0);
+    const summaryText = () => costs
+      .filter((item) => String(item.label || "").trim())
+      .map((item) => `${item.label}: ${Math.max(0, toNumber(item.quantity))} x ${money(item.unit_cost)}`)
+      .join(" · ");
+    const renderCosts = () => {
+      if (!costList) return;
+      costList.innerHTML = costs.length ? costs.map((item, index) => `
+        <div class="campaign-quick-cost-row" data-campaign-quick-cost-row="${index}">
+          <label><span>Concepto</span><input data-campaign-quick-cost-field="label" type="text" value="${escapeHtml(item.label || "")}" placeholder="Ej: volantes, pauta, QR, promotor..."></label>
+          <label><span>Cantidad</span><input data-campaign-quick-cost-field="quantity" type="number" min="0" step="1" value="${escapeHtml(item.quantity || 0)}"></label>
+          <label><span>Costo unitario</span><input data-campaign-quick-cost-field="unit_cost" type="number" min="0" step="100" value="${escapeHtml(item.unit_cost || 0)}"></label>
+          <strong>${escapeHtml(money(toNumber(item.quantity) * toNumber(item.unit_cost)))}</strong>
+          <button class="icon-button" type="button" data-campaign-quick-remove="${index}" aria-label="Quitar concepto"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        </div>
+      `).join("") : '<div class="empty-state compact">Agrega los materiales, servicios o tecnología que vas a invertir.</div>';
+      render();
+    };
     const render = () => {
-      const investment = toNumber(budgetInput?.value || 0);
+      const investment = totalInvestment();
       const leads = toNumber(leadsInput?.value || 0);
-      const sales = toNumber(salesInput?.value || 0);
+      const conversion = Math.min(100, toNumber(conversionInput?.value || 0));
+      const sales = Math.round(leads * conversion / 100);
       const ticket = toNumber(ticketInput?.value || 0);
       const revenue = sales * ticket;
       const cpl = leads ? investment / leads : 0;
       const cac = sales ? investment / sales : 0;
+      const utility = revenue - investment;
       const roi = investment ? ((revenue - investment) / investment) * 100 : 0;
       result.innerHTML = `
+        <div><span>Inversión total</span><strong>${escapeHtml(money(investment))}</strong></div>
+        <div><span>Ventas estimadas</span><strong>${sales.toLocaleString("es-CO")}</strong></div>
         <div><span>Costo por lead</span><strong>${escapeHtml(money(cpl))}</strong></div>
         <div><span>Costo por venta</span><strong>${escapeHtml(money(cac))}</strong></div>
         <div><span>Revenue proyectado</span><strong>${escapeHtml(money(revenue))}</strong></div>
-        <div><span>ROI proyectado</span><strong>${investment ? `${Math.round(roi)}%` : "-"}</strong></div>
+        <div class="${utility < 0 ? "negative" : "positive"}"><span>Resultado / ROI</span><strong>${investment ? `${escapeHtml(money(utility))} · ${Math.round(roi)}%` : "Agrega inversión"}</strong></div>
       `;
+      if (note) note.textContent = costs.length
+        ? `Presupuesto: ${summaryText()}.`
+        : "Agrega al menos un rubro de inversión para calcular la viabilidad.";
     };
-    [budgetInput, leadsInput, salesInput, ticketInput].forEach((input) => input?.addEventListener("input", render));
+    [leadsInput, conversionInput, ticketInput].forEach((input) => input?.addEventListener("input", render));
+    calculatorModal.querySelector("[data-campaign-quick-add]")?.addEventListener("click", () => {
+      costs.push({ label: "Otro concepto", quantity: 1, unit_cost: 0 });
+      renderCosts();
+    });
+    calculatorModal.querySelectorAll("[data-campaign-quick-preset]").forEach((button) => button.addEventListener("click", () => {
+      const preset = presets[button.dataset.campaignQuickPreset];
+      if (!preset) return;
+      costs.push({ ...preset });
+      renderCosts();
+    }));
+    costList?.addEventListener("input", (event) => {
+      const row = event.target.closest("[data-campaign-quick-cost-row]");
+      const field = event.target.dataset.campaignQuickCostField;
+      if (!row || !field) return;
+      const item = costs[Number(row.dataset.campaignQuickCostRow)];
+      if (!item) return;
+      item[field] = field === "label" ? event.target.value : toNumber(event.target.value);
+      const total = row.querySelector("strong");
+      if (total) total.textContent = money(toNumber(item.quantity) * toNumber(item.unit_cost));
+      render();
+    });
+    costList?.addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-campaign-quick-remove]");
+      if (!remove) return;
+      costs.splice(Number(remove.dataset.campaignQuickRemove), 1);
+      renderCosts();
+    });
     calculatorModal.querySelectorAll("[data-campaign-calculator-close]").forEach((button) => button.addEventListener("click", () => calculatorModal.classList.add("hidden")));
     calculatorModal.querySelector("[data-campaign-calculator-apply]")?.addEventListener("click", () => {
-      campaignFormBudget.value = budgetInput?.value || 0;
+      const investment = totalInvestment();
+      const leads = toNumber(leadsInput?.value || 0);
+      const sales = Math.round(leads * Math.min(100, toNumber(conversionInput?.value || 0)) / 100);
+      const ticket = toNumber(ticketInput?.value || 0);
+      campaignFormBudget.value = Math.round(investment);
       campaignFormLeadsGoal.value = leadsInput?.value || 0;
-      campaignFormGoal.value = Math.round(toNumber(salesInput?.value || 0) * toNumber(ticketInput?.value || 0));
+      campaignFormGoal.value = Math.round(sales * ticket);
+      if (campaignFormStrategy && costs.length) {
+        const budgetLine = `Presupuesto estimado: ${summaryText()}.`;
+        campaignFormStrategy.value = campaignFormStrategy.value.includes(budgetLine)
+          ? campaignFormStrategy.value
+          : [campaignFormStrategy.value.trim(), budgetLine].filter(Boolean).join("\n");
+      }
       renderCampaignChannelBudgetRows();
       calculatorModal.classList.add("hidden");
-      setInlineMessage(campaignModalMessage, "Los valores calculados se copiaron al formulario. Puedes ajustarlos antes de guardar.", "success");
+      setInlineMessage(campaignModalMessage, "El presupuesto desglosado y las metas calculadas se copiaron a la campaña. Puedes ajustarlos antes de guardar.", "success");
     });
     calculatorModal.addEventListener("click", (event) => {
       if (event.target === calculatorModal) calculatorModal.classList.add("hidden");
     });
+    calculatorModal._setCampaignQuickCalculator = (values = {}) => {
+      costs = values.costs?.length ? values.costs.map((item) => ({ ...item })) : [];
+      if (leadsInput) leadsInput.value = values.leads || 0;
+      if (conversionInput) conversionInput.value = values.conversion ?? 10;
+      if (ticketInput) ticketInput.value = values.ticket || 0;
+      renderCosts();
+    };
     calculatorModal.dataset.ready = "true";
   }
 
   entryButton.onclick = () => {
-    const budgetInput = calculatorModal.querySelector("[data-campaign-quick-budget]");
-    const leadsInput = calculatorModal.querySelector("[data-campaign-quick-leads]");
-    const salesInput = calculatorModal.querySelector("[data-campaign-quick-sales]");
-    const ticketInput = calculatorModal.querySelector("[data-campaign-quick-ticket]");
-    if (budgetInput) budgetInput.value = campaignFormBudget?.value || 0;
-    if (leadsInput) leadsInput.value = campaignFormLeadsGoal?.value || 0;
-    if (salesInput) salesInput.value = 0;
-    if (ticketInput) ticketInput.value = 0;
-    budgetInput?.dispatchEvent(new Event("input", { bubbles: true }));
+    calculatorModal._setCampaignQuickCalculator?.({
+      leads: campaignFormLeadsGoal?.value || 0,
+      conversion: 10,
+      ticket: 0,
+      costs: campaignFormBudget?.value ? [{ label: "Inversión inicial", quantity: 1, unit_cost: toNumber(campaignFormBudget.value) }] : [],
+    });
     calculatorModal.classList.remove("hidden");
   };
 }
