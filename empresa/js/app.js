@@ -11433,6 +11433,19 @@ function campaignQoriCenterCss() {
       background: #ffffff !important;
       box-shadow: inset 3px 0 0 #0a4fa9, 0 7px 16px rgba(11, 64, 128, .06) !important;
     }
+
+    /* Campaign runtime v213: status belongs under the campaign name. */
+    body[data-current-view="campaigns"] .portal-shell .campaign-item-title {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 5px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-item .status-chip {
+      justify-self: start !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] :is(.sales-kpis, .campaign-roi-summary-card, .campaign-layout) {
+      display: none !important;
+    }
   `;
 }
 
