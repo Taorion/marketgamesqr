@@ -60670,6 +60670,42 @@ html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.i
 html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-points-calculator { grid-column:1 / -1 !important; min-height:auto !important; }
 @media (max-width:720px) { body[data-current-view="validator"] .portal-shell .view-section[data-view="validator"] > .view-head { grid-template-columns:1fr !important; min-height:0 !important; } html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open { width:calc(100vw - 20px) !important; top:10px !important; padding:16px !important; } html body[data-current-view="affiliates"] .portal-shell #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns:1fr !important; } }
 
+/* Channels: creation belongs in a modal, never in the analytics flow. */
+body[data-current-view="channels"] .portal-shell :is(#acquisitionChannelFormPanel,#channelEffortFormPanel),
+body[data-current-view="channels"] .portal-shell :is(#acquisitionChannelFormPanel,#channelEffortFormPanel):hover {
+  display:none !important;
+  transform:none !important;
+  transition:none !important;
+  box-shadow:none !important;
+}
+body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel.is-channel-modal-open,
+body[data-current-view="channels"] .portal-shell #channelEffortFormPanel.is-channel-modal-open {
+  display:block !important;
+  position:fixed !important;
+  left:50% !important;
+  top:16px !important;
+  width:min(920px,calc(100vw - 32px)) !important;
+  max-height:calc(100vh - 32px) !important;
+  margin:0 !important;
+  padding:22px !important;
+  overflow:auto !important;
+  overscroll-behavior:contain !important;
+  transform:translateX(-50%) !important;
+  transition:none !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 30px 80px rgba(2,20,51,.28) !important;
+  z-index:1100 !important;
+}
+body[data-current-view="channels"] .portal-shell .view-section[data-view="channels"].channel-modal-open::after {
+  display:block !important;
+  z-index:1080 !important;
+}
+body[data-current-view="channels"] .portal-shell :is(#acquisitionChannelFormPanel.is-channel-modal-open,#channelEffortFormPanel.is-channel-modal-open):hover { transform:translateX(-50%) !important; }
+body[data-current-view="channels"] .portal-shell .channel-analytics-layout,
+body[data-current-view="channels"] .portal-shell .channel-effort-layout { position:relative !important; z-index:0 !important; }
+@media (max-width:720px) { body[data-current-view="channels"] .portal-shell #acquisitionChannelFormPanel.is-channel-modal-open, body[data-current-view="channels"] .portal-shell #channelEffortFormPanel.is-channel-modal-open { top:10px !important; width:calc(100vw - 20px) !important; max-height:calc(100vh - 20px) !important; padding:16px !important; } }
+
 /* Campaign header v208: copy and actions must never compete for a narrow row. */
 @media (max-width: 1280px) {
   html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {
