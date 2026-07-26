@@ -60610,3 +60610,39 @@ html body[data-current-view="campaigns"] .portal-shell .view-section[data-view="
   --qori-radius-button: 14px;
   --qori-shadow-soft: 0 12px 30px rgba(1,34,104,0.08);
 }
+
+/* Campaign header v208: copy and actions must never compete for a narrow row. */
+@media (max-width: 1280px) {
+  html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 16px !important;
+    padding: 20px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head > div:first-child {
+    max-width: 620px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head .head-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: min(100%, 560px) !important;
+    max-width: 560px !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head .head-actions > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+  }
+
+  html body .portal-shell .content-shell > .view-section.active[data-view="campaigns"] > .campaign-head #campaignStrategyAssistantButton {
+    grid-column: 1 / -1 !important;
+  }
+}
