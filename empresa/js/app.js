@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-portal-rhythm-v162";
+const APP_VERSION = "empresa-20260727-activation-builder-v163";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14359,8 +14359,8 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
         <header class="gaming-activation-builder-modal-head">
           <div>
             <span class="mono-label">Crear activación</span>
-            <h3 id="gamingActivationBuilderTitle">Configura una activación paso a paso</h3>
-            <p>Define campaña, dinámica, captura, beneficio y reglas sin ver todo el formulario al mismo tiempo.</p>
+            <h3 id="gamingActivationBuilderTitle">Crea una activación que puedas medir</h3>
+            <p>Elige la dinámica, define qué capturas y qué entregas. Avanza paso a paso: la publicación solo aparece al final.</p>
           </div>
           <button class="icon-button" type="button" data-close-gaming-activation-builder aria-label="Cerrar creación de activación"><span class="material-symbols-outlined">close</span></button>
         </header>

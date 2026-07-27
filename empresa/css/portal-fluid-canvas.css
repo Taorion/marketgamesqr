@@ -771,3 +771,357 @@ html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriR
     border-radius: 20px !important;
   }
 }
+
+/* Activation builder v163 ----------------------------------------------------
+ * This is a true creation interstitial.  The original builder had its own
+ * header, process strip, catalogue card and form cards inside a modal.  The
+ * hierarchy now has a single frame: context, progress, one step, and a stable
+ * publish action.  Nothing functional is removed; only competing containers.
+ */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal.gaming-activation-builder-modal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 11020 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(16px, 3vw, 48px) !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(3, 28, 68, .56) !important;
+  backdrop-filter: blur(13px) saturate(.9) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: min(1240px, 100%) !important;
+  max-width: 1240px !important;
+  max-height: min(900px, calc(100dvh - clamp(32px, 6vw, 96px))) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: linear-gradient(150deg, #ffffff 0%, #fbfdff 64%, #eef9ff 100%) !important;
+  box-shadow: 0 32px 100px rgba(0, 22, 60, .38) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: clamp(24px, 3vw, 38px) clamp(24px, 4vw, 52px) 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(100deg, #073f9b, #0758d7 55%, #008fd8) !important;
+  color: #ffffff !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-head :is(h3, p, .mono-label) {
+  color: #ffffff !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
+  max-width: 26ch !important;
+  margin: 6px 0 4px !important;
+  font-size: clamp(1.55rem, 3vw, 2.35rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
+  max-width: 66ch !important;
+  margin: 0 !important;
+  opacity: .84 !important;
+  line-height: 1.48 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button {
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255, 255, 255, .28) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, .12) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+  background: transparent !important;
+}
+
+/* The card is now a transparent host for the actual creation flow. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-card,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-card > :is(.table-card-head, .gaming-activation-command-strip, .interactive-activation-nav, .interactive-catalog-note, .gaming-activation-recipes) {
+  display: none !important;
+}
+
+/* Progress and navigation are the only persistent orientation elements. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-assistant {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  display: grid !important;
+  grid-template-columns: minmax(180px, .7fr) minmax(0, 1.7fr) auto !important;
+  align-items: center !important;
+  gap: 22px !important;
+  margin: 0 !important;
+  padding: 18px clamp(24px, 4vw, 52px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .20), 0 8px 18px rgba(25, 82, 132, .06) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-progress-copy {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-section-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-section-nav::-webkit-scrollbar {
+  display: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-section-nav button {
+  flex: 0 0 auto !important;
+  min-height: 34px !important;
+  padding: 0 11px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #5b7794 !important;
+  box-shadow: none !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-section-nav button.is-active,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-section-nav button:hover {
+  background: rgba(0, 173, 239, .12) !important;
+  color: #0758d7 !important;
+}
+
+/* One generous work surface per step, separated by a line rather than cards. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+  width: min(100% - clamp(36px, 8vw, 112px), 980px) !important;
+  margin: 0 auto !important;
+  padding: clamp(30px, 5vw, 56px) 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) + :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+  box-shadow: inset 0 1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-builder-section-head {
+  grid-template-columns: 54px minmax(0, 1fr) !important;
+  gap: 16px !important;
+  padding: 0 0 26px !important;
+  margin: 0 0 28px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .20) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-builder-section-head > span {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #0758d7, #00a9ec) !important;
+  box-shadow: 0 12px 24px rgba(0, 89, 202, .20) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-builder-section-head strong {
+  font-size: clamp(1.16rem, 2vw, 1.42rem) !important;
+  letter-spacing: -.026em !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-builder-section-head small {
+  max-width: 66ch !important;
+  font-size: .9rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Fields read as a quiet form, not a mosaic of raised boxes. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard label {
+  padding: 8px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard :is(input, select, textarea) {
+  min-height: 46px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .40) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard :is(input, select, textarea):focus {
+  box-shadow: inset 0 -2px 0 #00a9ec !important;
+}
+
+/* Dynamic choices are a readable vertical catalog with only hover feedback. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-catalog-tools {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px 22px !important;
+  margin: 0 0 20px !important;
+  padding: 0 0 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-category-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-picker {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  max-height: 410px !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(92, 143, 186, .18), inset 0 -1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option {
+  grid-template-columns: 44px minmax(0, 1fr) minmax(170px, .6fr) !important;
+  grid-template-rows: auto !important;
+  min-height: 68px !important;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .14) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option .material-symbols-outlined {
+  grid-row: auto !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option strong,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option small {
+  grid-column: auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option small {
+  text-align: right !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option:hover,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option.active {
+  background: linear-gradient(90deg, rgba(0, 169, 236, .12), rgba(237, 250, 255, .55) 70%, transparent) !important;
+  box-shadow: inset 3px 0 0 #00a9ec, inset 0 -1px 0 rgba(92, 143, 186, .14) !important;
+  transform: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-wizard-footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 18px clamp(24px, 4vw, 52px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 -8px 22px rgba(25, 82, 132, .08), inset 0 1px 0 rgba(92, 143, 186, .20) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal.gaming-activation-builder-modal:not(.hidden) {
+    padding: 0 !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+    width: 100% !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-builder-assistant {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 15px 22px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+    width: calc(100% - 40px) !important;
+    padding-block: 30px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .gaming-activation-catalog-tools {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 4px 10px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) .portal-shell #gamingActivationBuilderModal .activation-type-option small {
+    grid-column: 2 !important;
+    text-align: left !important;
+  }
+}
