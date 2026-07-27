@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
-  <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=20260727-v166">
+  <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=20260727-v167">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -773,8 +773,14 @@
                 <div class="rms-stage-board" id="rmsStageBoard" tabindex="0" aria-label="Desliza horizontalmente para recorrer las estaciones"></div>
                 <div class="rms-stage-slider-progress" aria-hidden="true"><span id="rmsStageSliderProgress"></span></div>
               </section>
-              <details class="rms-board-tools">
-                <summary><span class="material-symbols-outlined" aria-hidden="true">tune</span> Buscar, filtrar y operar por lote</summary>
+              <section class="rms-board-tools" aria-labelledby="rmsBoardToolsTitle">
+                <div class="rms-board-tools-title" id="rmsBoardToolsTitle">
+                  <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                  <div>
+                    <span class="mono-label">Herramientas de estaciones</span>
+                    <strong>Buscar, filtrar y operar por lote</strong>
+                  </div>
+                </div>
                 <div class="rms-board-quick-actions" aria-label="Acciones de las estaciones">
                   <span class="pill muted" id="rmsMachineOpportunityCount">0 oportunidades</span>
                   <button class="solid-button" id="rmsMachineCollectorButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>
@@ -817,7 +823,7 @@
                   <button class="solid-button" id="rmsBulkExecuteButton" type="button">Ejecutar operación</button>
                   <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
                 </div>
-              </details>
+              </section>
             </section>
 
             <section class="rms-machine-hero">

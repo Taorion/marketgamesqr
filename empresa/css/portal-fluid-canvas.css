@@ -660,6 +660,134 @@ html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriA
   }
 }
 
+/* RMS tools v167 -------------------------------------------------------------
+ * Search and batch work are a top-level workflow, never a side tab. */
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+  order: 1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(18px, 2.6vw, 30px) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(24px, 3.2vw, 42px) var(--portal-region-gutter) clamp(28px, 3.5vw, 46px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, rgba(244, 251, 255, .78), rgba(255, 255, 255, .20)) !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule), inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools > .rms-board-tools-title {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title > .material-symbols-outlined {
+  display: grid !important;
+  width: 42px !important;
+  height: 42px !important;
+  place-items: center !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #0759d6, #00a9ec) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(7, 89, 214, .16) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title > div {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title :is(.mono-label, strong) {
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: clamp(1rem, 1.4vw, 1.16rem) !important;
+  line-height: 1.25 !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 0 20px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(180px, .95fr) minmax(160px, .78fr) auto !important;
+  gap: 16px !important;
+  align-items: end !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(230px, 1.25fr) minmax(180px, .82fr) repeat(3, auto) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell {
+  order: 2 !important;
+}
+
+@media (max-width: 980px) {
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+    padding-inline: var(--portal-region-gutter-tight) !important;
+  }
+
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions > :is(button, .pill),
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar > :is(button, select) {
+    width: 100% !important;
+  }
+}
+
 /* Portal rhythm v162 ---------------------------------------------------------
  * A radius must never behave like a mask.  Earlier module-specific rules used
  * `overflow: hidden` to create rounded cards, which clipped headings and the
