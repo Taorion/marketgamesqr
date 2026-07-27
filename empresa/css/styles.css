@@ -61843,6 +61843,80 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-context {
   }
 }
 
+/* Smart Catalog v154: one uninterrupted vertical workflow instead of side-by-side panels. */
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-panels,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-panel,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-split {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-split,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-dashboard-grid,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-settings {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 28px !important;
+  align-items: start !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-table-card,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-step,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-settings > article {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 16px !important;
+  padding: 0 0 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dce8f4 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form > label,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form > label.span-2 {
+  grid-column: auto !important;
+  width: 100% !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form textarea,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form input,
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-form select {
+  width: 100% !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-table-card {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-table-card > .table-card-head {
+  padding: 0 0 16px !important;
+  border-bottom: 1px solid #dce8f4 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-table-card .table-wrap {
+  width: 100% !important;
+  overflow-x: auto !important;
+}
+
+html body .portal-shell .view-section.active[data-view="smart-catalogs"] .smart-catalog-table-card table {
+  min-width: 760px !important;
+}
+
 /* Ficha de contacto v231: un intersticial claro para decidir y operar sin salir del directorio. */
 html body.lead-detail-open { overflow: hidden !important; }
 
