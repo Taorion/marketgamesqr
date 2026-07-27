@@ -62261,3 +62261,93 @@ html body > #smartCatalogCreateModal .smart-catalog-form {
   html body > #smartCatalogCreateModal .modal-head,
   html body > #smartCatalogCreateModal .smart-catalog-form { padding-right: 16px !important; padding-left: 16px !important; }
 }
+
+/* Productos v238: una tabla operativa; creación y análisis fuera del flujo principal. */
+html body[data-current-view="inventory"] .portal-shell #inventoryKpiGrid,
+html body[data-current-view="inventory"] .portal-shell #inventoryCommandPanel,
+html body[data-current-view="inventory"] .portal-shell #inventoryProductGrid { display: none !important; }
+
+html body[data-current-view="inventory"] .portal-shell .inventory-layout { display: block !important; margin-top: 0 !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card { padding: 0 !important; overflow: hidden !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 18px 20px !important;
+  border-bottom: 1px solid #e3edf6 !important;
+}
+
+html body[data-current-view="inventory"] .portal-shell .inventory-table-tools {
+  display: grid !important;
+  grid-template-columns: minmax(210px, 1fr) minmax(126px, auto) minmax(150px, auto) !important;
+  gap: 8px !important;
+  width: min(100%, 660px) !important;
+}
+html body[data-current-view="inventory"] .portal-shell .inventory-table-tools input,
+html body[data-current-view="inventory"] .portal-shell .inventory-table-tools select {
+  width: 100% !important;
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  border: 1px solid #cfe0ef !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card .table-wrap { border: 0 !important; border-radius: 0 !important; overflow-x: auto !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card table { min-width: 680px !important; width: 100% !important; table-layout: fixed !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card th:nth-child(1) { width: 34% !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card th:nth-child(2) { width: 18% !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card th:nth-child(3) { width: 22% !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card th:nth-child(4) { width: 14% !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card th:nth-child(5) { width: 12% !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card tbody tr { cursor: pointer !important; }
+html body[data-current-view="inventory"] .portal-shell .inventory-table-card tbody tr:hover { background: #f4fbff !important; }
+
+html body > #inventoryProductModal.modal-shell:not(.hidden),
+html body > #inventoryProductDetailModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10050 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  background: rgba(4, 27, 68, .62) !important;
+}
+html body > #inventoryProductDetailModal .inventory-product-detail-card {
+  width: min(1040px, 100%) !important;
+  max-height: calc(100dvh - 32px) !important;
+  padding: 22px !important;
+  overflow: auto !important;
+}
+.inventory-detail-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #e3edf6; }
+.inventory-detail-heading h3 { margin: 4px 0; font-size: clamp(1.45rem, 3vw, 2.15rem); }
+.inventory-detail-heading p { margin: 0; color: #5b718c; }
+.inventory-detail-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
+.inventory-detail-summary article { padding: 12px; border: 1px solid #dbe8f4; border-radius: 14px; background: #f8fbff; }
+.inventory-detail-summary span, .inventory-detail-section > span { color: #5b718c; font-size: .74rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+.inventory-detail-summary strong { display: block; margin-top: 4px; color: #082e75; font-size: 1.15rem; }
+.inventory-detail-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(310px, .9fr); gap: 14px; }
+.inventory-detail-section { min-width: 0; padding: 16px; border: 1px solid #dbe8f4; border-radius: 16px; background: #fff; }
+.inventory-detail-section h4 { margin: 4px 0; font-size: 1rem; }
+.inventory-detail-section p { margin: 0; color: #5b718c; font-size: .9rem; }
+.inventory-chart { display: flex; align-items: end; gap: 6px; min-height: 180px; padding: 16px 0 4px; overflow-x: auto; }
+.inventory-chart-bar { display: grid; grid-template-rows: 1fr auto; gap: 6px; min-width: 28px; height: 156px; color: #64748b; font-size: .65rem; text-align: center; }
+.inventory-chart-bar i { align-self: end; min-height: 4px; border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, #14b8e8, #1554c0); }
+.inventory-detail-customers { display: grid; gap: 10px; max-height: 270px; overflow: auto; }
+.inventory-detail-customer { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #e8eff6; }
+.inventory-detail-customer:last-child { padding-bottom: 0; border-bottom: 0; }
+.inventory-detail-customer strong, .inventory-detail-customer small { display: block; }
+.inventory-detail-customer small { margin-top: 2px; color: #64748b; }
+.inventory-detail-customer > span { text-align: right; }
+.inventory-detail-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+@media (max-width: 760px) {
+  html body[data-current-view="inventory"] .portal-shell .inventory-table-card > .table-card-head { align-items: stretch !important; flex-direction: column !important; }
+  html body[data-current-view="inventory"] .portal-shell .inventory-table-tools { grid-template-columns: 1fr 1fr !important; width: 100% !important; }
+  html body[data-current-view="inventory"] .portal-shell .inventory-table-tools input { grid-column: 1 / -1 !important; }
+  .inventory-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inventory-detail-grid { grid-template-columns: 1fr; }
+}

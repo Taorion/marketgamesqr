@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=smart-catalog-workspace-20260727-v237">
+  <link rel="stylesheet" href="css/styles.css?v=inventory-detail-workspace-20260727-v238">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
 </head>
 <body data-current-view="rms-machine">
@@ -5356,40 +5356,13 @@
             <div class="view-head">
               <div>
                 <h2>Productos</h2>
-                <p>Agrega, encuentra y edita productos de venta con precio, stock, SKU y categoría en una sola vista.</p>
+                <p>Consulta tu inventario, abre cada producto para ver su desempeño y crea nuevos productos cuando los necesites.</p>
               </div>
               <div class="button-row">
-                <button class="ghost-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
-                <button class="ghost-button" id="refreshInventoryButton" type="button">Actualizar</button>
+                <button class="solid-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
+                <button class="ghost-button compact" id="refreshInventoryButton" type="button">Actualizar</button>
               </div>
             </div>
-
-            <section class="kpi-grid sales-kpis" id="inventoryKpiGrid"></section>
-
-            <section class="inventory-command-panel" id="inventoryCommandPanel">
-              <article class="surface-card inventory-guide-card">
-                <span class="mono-label">Cómo cargar productos</span>
-                <h3>Producto listo para vender en 3 datos</h3>
-                <ol class="inventory-guide-list">
-                  <li><span>1</span><div><strong>Nombre y categoría</strong><small>Qué vendes y cómo lo agrupas.</small></div></li>
-                  <li><span>2</span><div><strong>Precio y costo</strong><small>Para venta, margen y análisis.</small></div></li>
-                  <li><span>3</span><div><strong>Stock y código</strong><small>SKU o barras si quieres control operativo.</small></div></li>
-                </ol>
-              </article>
-              <article class="surface-card inventory-filter-card">
-                <div>
-                  <span class="mono-label">Visualización</span>
-                  <h3>Productos incluidos</h3>
-                  <p>Filtra rápido y selecciona cualquier producto para editarlo.</p>
-                </div>
-                <div class="inventory-filter-row">
-                  <label><span>Ver</span><select id="inventoryQuickFilter"><option value="all">Todos</option><option value="active">Activos</option><option value="low_stock">Stock bajo</option><option value="without_code">Sin código/SKU</option><option value="archived">Archivados</option></select></label>
-                  <label><span>Categoría</span><select id="inventoryCategoryFilter"><option value="">Todas</option></select></label>
-                </div>
-              </article>
-            </section>
-
-            <section class="inventory-product-grid" id="inventoryProductGrid" aria-label="Productos incluidos"></section>
 
             <section class="inventory-layout">
               <div class="modal-shell hidden" id="inventoryProductModal" role="dialog" aria-modal="true" aria-labelledby="inventoryFormTitle" aria-hidden="true">
@@ -5430,25 +5403,27 @@
                 </article>
               </div>
 
-              <article class="surface-card data-table-card inventory-table-card">
+              <article class="surface-card data-table-card inventory-table-card" data-quiet-zone-ignore>
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Inventario</span>
                     <strong>Productos registrados</strong>
                   </div>
-                  <input id="inventorySearchInput" type="search" placeholder="Buscar por nombre, código, SKU, marca o categoría">
+                  <div class="inventory-table-tools" aria-label="Buscar y filtrar productos">
+                    <input id="inventorySearchInput" type="search" placeholder="Buscar productos">
+                    <select id="inventoryQuickFilter" aria-label="Estado del inventario"><option value="all">Todos</option><option value="active">Activos</option><option value="low_stock">Stock bajo</option><option value="without_code">Sin código</option><option value="archived">Archivados</option></select>
+                    <select id="inventoryCategoryFilter" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+                  </div>
                 </div>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Producto</th>
-                        <th>Código / SKU</th>
                         <th>Categoría</th>
-                        <th>Precio</th>
-                        <th>Stock</th>
+                        <th>Precio y stock</th>
                         <th>Estado</th>
-                        <th>Acción</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody id="inventoryTable"></tbody>
@@ -7324,7 +7299,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=smart-catalog-workspace-20260727-v237" defer></script>
+  <script src="js/app.js?v=inventory-detail-workspace-20260727-v238" defer></script>
 </body>
 </html>
 

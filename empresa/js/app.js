@@ -1920,6 +1920,129 @@ function ensureSidebarRuntimeFeedbackStyles() {
     }
   `;
   document.head.appendChild(style);
+  if (false) { // Legacy insertion kept inert; inventory styles are mounted by ensureInventoryUxStyles.
+  const refinement = document.createElement("style");
+  refinement.id = "inventoryUxStylesV71";
+  refinement.textContent = `
+    /* Productos v71: listado limpio; creación y detalle fuera de la pantalla. */
+    .view-section[data-view="inventory"] #inventoryKpiGrid,
+    .view-section[data-view="inventory"] #inventoryCommandPanel,
+    .view-section[data-view="inventory"] #inventoryProductGrid {
+      display: none !important;
+    }
+    .view-section[data-view="inventory"] .view-head {
+      margin-bottom: 1rem;
+    }
+    .view-section[data-view="inventory"] .inventory-layout {
+      margin-top: 0;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card {
+      padding: 0;
+      overflow: hidden;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card .table-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.1rem 1.2rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .inventory-table-tools {
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) minmax(126px, auto) minmax(150px, auto);
+      align-items: center;
+      gap: 0.55rem;
+      width: min(100%, 660px);
+    }
+    .view-section[data-view="inventory"] .inventory-table-tools input,
+    .view-section[data-view="inventory"] .inventory-table-tools select {
+      min-height: 40px;
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 10px;
+      padding: 0 0.7rem;
+      background: #fff;
+      color: var(--ink);
+    }
+    .view-section[data-view="inventory"] .inventory-table-card .table-wrap {
+      border: 0;
+      border-radius: 0;
+      overflow-x: auto;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card table {
+      min-width: 680px;
+      width: 100%;
+      table-layout: fixed;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card th:nth-child(1) { width: 34%; }
+    .view-section[data-view="inventory"] .inventory-table-card th:nth-child(2) { width: 18%; }
+    .view-section[data-view="inventory"] .inventory-table-card th:nth-child(3) { width: 22%; }
+    .view-section[data-view="inventory"] .inventory-table-card th:nth-child(4) { width: 14%; }
+    .view-section[data-view="inventory"] .inventory-table-card th:nth-child(5) { width: 12%; }
+    .view-section[data-view="inventory"] .inventory-table-card tbody tr {
+      cursor: pointer;
+      transition: background 140ms ease;
+    }
+    .view-section[data-view="inventory"] .inventory-table-card tbody tr:hover {
+      background: rgba(14, 165, 233, 0.055);
+    }
+    .inventory-product-detail-modal .inventory-product-detail-card {
+      width: min(1040px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+    .inventory-detail-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .inventory-detail-heading h3 { margin: 0.15rem 0 0.2rem; font-size: clamp(1.45rem, 3vw, 2.15rem); }
+    .inventory-detail-heading p { margin: 0; color: var(--muted-text); }
+    .inventory-detail-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin: 1rem 0;
+    }
+    .inventory-detail-summary article {
+      padding: 0.8rem;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 14px;
+      background: #f8fbff;
+    }
+    .inventory-detail-summary span,
+    .inventory-detail-section > span { color: #64748b; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; }
+    .inventory-detail-summary strong { display: block; margin-top: 0.3rem; color: var(--ink); font-size: 1.18rem; }
+    .inventory-detail-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(310px, 0.9fr); gap: 1rem; }
+    .inventory-detail-section { min-width: 0; padding: 1rem; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; background: #fff; }
+    .inventory-detail-section h4 { margin: 0.25rem 0 0.15rem; font-size: 1rem; }
+    .inventory-detail-section p { margin: 0; color: var(--muted-text); font-size: 0.9rem; }
+    .inventory-chart { display: flex; align-items: end; gap: 0.35rem; min-height: 180px; padding: 1rem 0 0.2rem; overflow-x: auto; }
+    .inventory-chart-bar { display: grid; grid-template-rows: 1fr auto; gap: 0.4rem; min-width: 28px; height: 156px; text-align: center; color: #64748b; font-size: 0.66rem; }
+    .inventory-chart-bar i { align-self: end; min-height: 4px; border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, #14b8e8, #1554c0); }
+    .inventory-detail-customers { display: grid; gap: 0.65rem; max-height: 270px; overflow: auto; }
+    .inventory-detail-customer { display: flex; justify-content: space-between; gap: 0.7rem; padding-bottom: 0.65rem; border-bottom: 1px solid rgba(148, 163, 184, 0.16); }
+    .inventory-detail-customer:last-child { padding-bottom: 0; border-bottom: 0; }
+    .inventory-detail-customer strong,
+    .inventory-detail-customer small { display: block; }
+    .inventory-detail-customer small { color: #64748b; margin-top: 0.12rem; }
+    .inventory-detail-customer > span { text-align: right; }
+    .inventory-detail-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1rem; }
+    @media (max-width: 760px) {
+      .view-section[data-view="inventory"] .inventory-table-card .table-card-head,
+      .inventory-detail-heading { align-items: stretch; flex-direction: column; }
+      .inventory-table-tools { grid-template-columns: 1fr 1fr; width: 100%; }
+      .inventory-table-tools input { grid-column: 1 / -1; }
+      .inventory-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .inventory-detail-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(refinement);
+  }
 }
 const portalShortcutButtons = Array.from(document.querySelectorAll("[data-portal-shortcut]"));
 const viewSections = Array.from(document.querySelectorAll(".view-section"));
@@ -19534,6 +19657,12 @@ function renderInventoryProductGrid(rows = []) {
 
 function renderInventoryView() {
   ensureInventoryUxStyles();
+  const inventoryCard = inventoryTable?.closest(".inventory-table-card");
+  if (inventoryCard) {
+    inventoryCard.dataset.quietZoneIgnore = "true";
+    inventoryCard.querySelector(".quiet-zone-toggle")?.remove();
+    inventoryCard.querySelector(".quiet-zone-control-head")?.classList.remove("quiet-zone-control-head");
+  }
   if (inventoryQuickFilter) inventoryQuickFilter.value = state.inventoryQuickFilter || "all";
   renderInventoryCategoryFilter();
   if (inventoryKpiGrid) {
@@ -19547,12 +19676,10 @@ function renderInventoryView() {
   }
   if (!inventoryTable) return;
   if (!state.inventoryLoaded) {
-    inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
-    renderInventoryProductGrid([]);
+    inventoryTable.innerHTML = '<tr><td colspan="5">Cargando productos...</td></tr>';
     return;
   }
   const rows = filteredInventoryProducts();
-  renderInventoryProductGrid(rows);
   if (!rows.length) {
     inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales y quedarán guardados aquí.</td></tr>';
     return;
@@ -19562,42 +19689,158 @@ function renderInventoryView() {
     const minStock = Number(product.min_stock_quantity || 0);
     const isLow = product.status === "ACTIVE" && stock <= minStock;
     return `
-      <tr>
+      <tr data-inventory-detail-row="${escapeHtml(product.id)}" tabindex="0">
         <td>
           <strong>${escapeHtml(product.name)}</strong>
           <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto guardado")}</span>
         </td>
-        <td>
-          <span>${escapeHtml(product.barcode || "-")}</span>
-          <span class="table-secondary">${escapeHtml(product.sku || "Sin SKU")}</span>
-        </td>
         <td>${escapeHtml(product.category || "-")}</td>
-        <td>${escapeHtml(money(product.unit_price || 0))}</td>
         <td>
+          <strong>${escapeHtml(money(product.unit_price || 0))}</strong>
           <strong class="${isLow ? "stock-low" : ""}">${escapeHtml(stock.toLocaleString("es-CO"))} ${escapeHtml(product.unit_label || "unidad")}</strong>
           <span class="table-secondary">Min. ${escapeHtml(String(minStock))}</span>
         </td>
         <td><span class="status-pill ${inventoryStatusClass(product)}">${escapeHtml(inventoryStatusLabel(product.status))}</span></td>
         <td>
           <div class="table-actions">
-            <button class="ghost-button" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
-            <button class="ghost-button danger-button" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>
+            <button class="ghost-button compact" type="button" data-inventory-detail="${escapeHtml(product.id)}">Ver</button>
+            <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
           </div>
         </td>
       </tr>
     `;
   }).join("");
+  inventoryTable.querySelectorAll("[data-inventory-detail-row]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button, input, select, a")) return;
+      openInventoryProductDetail(row.dataset.inventoryDetailRow);
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openInventoryProductDetail(row.dataset.inventoryDetailRow);
+      }
+    });
+  });
+  inventoryTable.querySelectorAll("[data-inventory-detail]").forEach((button) => {
+    button.addEventListener("click", () => openInventoryProductDetail(button.dataset.inventoryDetail));
+  });
   inventoryTable.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
   });
-  inventoryTable.querySelectorAll("[data-inventory-archive]").forEach((button) => {
-    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
+}
+
+function ensureInventoryProductDetailModal() {
+  let modal = document.getElementById("inventoryProductDetailModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.id = "inventoryProductDetailModal";
+  modal.className = "modal-shell hidden inventory-product-detail-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "inventoryProductDetailTitle");
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-close-inventory-detail]")) {
+      event.preventDefault();
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+    }
   });
+  return modal;
+}
+
+function inventoryDetailDate(value) {
+  const date = value ? new Date(`${String(value).slice(0, 10)}T00:00:00`) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString("es-CO", { day: "2-digit", month: "short" })
+    : "-";
+}
+
+function renderInventoryProductDetail(data = {}) {
+  const modal = ensureInventoryProductDetailModal();
+  const product = data.product || {};
+  const summary = data.summary || {};
+  const timeline = Array.isArray(data.timeline) ? data.timeline.slice(-30) : [];
+  const customers = Array.isArray(data.customers) ? data.customers : [];
+  const maximum = Math.max(1, ...timeline.map((item) => Number(item.revenue || 0)));
+  const chart = timeline.length
+    ? timeline.map((item) => {
+      const revenue = Number(item.revenue || 0);
+      const height = Math.max(5, Math.round((revenue / maximum) * 100));
+      return `<span class="inventory-chart-bar" title="${escapeHtml(`${inventoryDetailDate(item.day)} · ${money(revenue)}`)}"><i style="height:${height}%"></i><b>${escapeHtml(inventoryDetailDate(item.day))}</b></span>`;
+    }).join("")
+    : '<p class="empty-state compact">Aún no hay ventas registradas para este producto.</p>';
+  const customerRows = customers.length
+    ? customers.map((customer) => `
+      <div class="inventory-detail-customer">
+        <div><strong>${escapeHtml(customer.customer_name || "Cliente")}</strong><small>${escapeHtml(customer.customer_email || customer.customer_phone || "Sin dato de contacto")}</small></div>
+        <span><strong>${escapeHtml(money(customer.revenue || 0))}</strong><small>${escapeHtml(`${Number(customer.purchases || 0)} compra(s) · ${Number(customer.units || 0)} unidad(es)`)}</small></span>
+      </div>
+    `).join("")
+    : '<p class="empty-state compact">Las personas que compren este producto aparecerán aquí.</p>';
+  modal.innerHTML = `
+    <article class="surface-card modal-card inventory-product-detail-card" role="document">
+      <div class="inventory-detail-heading">
+        <div>
+          <span class="mono-label">DETALLE DEL PRODUCTO</span>
+          <h3 id="inventoryProductDetailTitle">${escapeHtml(product.name || "Producto")}</h3>
+          <p>${escapeHtml([product.category, product.brand, product.sku || product.barcode].filter(Boolean).join(" · ") || "Sin categoría ni código registrados")}</p>
+        </div>
+        <button class="icon-button" type="button" data-close-inventory-detail aria-label="Cerrar detalle de producto"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+      <section class="inventory-detail-summary" aria-label="Resumen de rendimiento">
+        <article><span>Ventas</span><strong>${escapeHtml(Number(summary.sales_count || 0).toLocaleString("es-CO"))}</strong></article>
+        <article><span>Ingresos</span><strong>${escapeHtml(money(summary.revenue || 0))}</strong></article>
+        <article><span>Unidades</span><strong>${escapeHtml(Number(summary.units_sold || 0).toLocaleString("es-CO"))}</strong></article>
+        <article><span>Clientes</span><strong>${escapeHtml(Number(summary.customers_count || 0).toLocaleString("es-CO"))}</strong></article>
+      </section>
+      <div class="inventory-detail-grid">
+        <section class="inventory-detail-section">
+          <span>Rendimiento en el tiempo</span>
+          <h4>Ventas por fecha</h4>
+          <p>Los últimos movimientos registrados de este producto.</p>
+          <div class="inventory-chart" aria-label="Gráfico de ventas por fecha">${chart}</div>
+        </section>
+        <section class="inventory-detail-section">
+          <span>Compradores</span>
+          <h4>Clientes que lo han comprado</h4>
+          <p>Historial agregado por cliente.</p>
+          <div class="inventory-detail-customers">${customerRows}</div>
+        </section>
+      </div>
+      <div class="inventory-detail-actions">
+        <button class="ghost-button" type="button" data-close-inventory-detail>Cerrar</button>
+        <button class="solid-button" type="button" data-edit-inventory-detail="${escapeHtml(product.id || "")}">Editar producto</button>
+      </div>
+    </article>
+  `;
+  modal.querySelector("[data-edit-inventory-detail]")?.addEventListener("click", () => {
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    editInventoryProduct(product.id);
+  });
+  return modal;
+}
+
+async function openInventoryProductDetail(productId) {
+  const product = findInventoryProductById(productId);
+  if (!product) return;
+  const modal = renderInventoryProductDetail({ product, summary: {}, timeline: [], customers: [] });
+  modal.classList.remove("hidden");
+  modal.removeAttribute("aria-hidden");
+  try {
+    const data = await api(`/api/business/inventory/products/${productId}/insights`, { headers: authHeaders() });
+    renderInventoryProductDetail({ ...data, product: data.product || product });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo cargar el detalle del producto.", "error", { title: "Productos" });
+  }
 }
 
 function openInventoryProductModal(options = {}) {
   if (!inventoryProductModal) return;
   ensureInventoryUxStyles();
+  if (inventoryProductModal.parentElement !== document.body) document.body.appendChild(inventoryProductModal);
   inventoryProductModal.classList.remove("hidden");
   inventoryProductModal.removeAttribute("aria-hidden");
   const focusTarget = options.focusTarget || inventoryNameInput;
@@ -43419,6 +43662,12 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !inventoryProductModal?.classList.contains("hidden")) {
     closeInventoryProductModal();
+    return;
+  }
+  const inventoryDetailModal = document.getElementById("inventoryProductDetailModal");
+  if (event.key === "Escape" && inventoryDetailModal && !inventoryDetailModal.classList.contains("hidden")) {
+    inventoryDetailModal.classList.add("hidden");
+    inventoryDetailModal.setAttribute("aria-hidden", "true");
     return;
   }
   if (event.key === "Escape") closePortalMenu();

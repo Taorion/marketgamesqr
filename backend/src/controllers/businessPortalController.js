@@ -3514,6 +3514,90 @@ async function listInventoryProducts(req, res, next) {
   }
 }
 
+async function getInventoryProductInsights(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const productResult = await query(
+      "select * from business_inventory_products where id = $1 and business_id = $2 limit 1",
+      [req.params.productId, businessId]
+    );
+    if (!productResult.rowCount) throw badRequest("Producto de inventario no encontrado.");
+    const product = productResult.rows[0];
+    const insightResult = await query(
+      `with matched_sales as (
+         select bs.created_at,
+                coalesce(nullif(bs.customer_name, ''), 'Cliente sin identificar') as customer_name,
+                bs.customer_phone,
+                bs.customer_email,
+                coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_email, ''), nullif(bs.customer_phone, ''), nullif(bs.customer_name, '')) as customer_key,
+                greatest(1, coalesce(nullif(line->>'quantity', '')::numeric, 1)) as quantity,
+                coalesce(nullif(line->>'line_total', '')::numeric, nullif(line->>'unit_price', '')::numeric, bs.sale_amount, 0)::numeric as revenue
+           from business_sales bs
+           cross join lateral jsonb_array_elements(coalesce(bs.metadata->'products', '[]'::jsonb)) as line
+          where bs.business_id = $1
+            and line->>'inventory_product_id' = $2
+         union all
+         select bs.created_at,
+                coalesce(nullif(bs.customer_name, ''), 'Cliente sin identificar') as customer_name,
+                bs.customer_phone,
+                bs.customer_email,
+                coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_email, ''), nullif(bs.customer_phone, ''), nullif(bs.customer_name, '')) as customer_key,
+                1::numeric as quantity,
+                coalesce(bs.sale_amount, 0)::numeric as revenue
+           from business_sales bs
+          where bs.business_id = $1
+            and lower(coalesce(bs.product_name, '')) = lower($3)
+            and not exists (
+              select 1
+                from jsonb_array_elements(coalesce(bs.metadata->'products', '[]'::jsonb)) as line
+               where line->>'inventory_product_id' = $2
+            )
+       ),
+       timeline as (
+         select created_at::date as day,
+                count(*)::int as sales,
+                coalesce(sum(quantity), 0)::numeric as units,
+                coalesce(sum(revenue), 0)::numeric as revenue
+           from matched_sales
+          group by created_at::date
+          order by created_at::date asc
+       ),
+       customers as (
+         select customer_name,
+                max(customer_phone) as customer_phone,
+                max(customer_email) as customer_email,
+                count(*)::int as purchases,
+                coalesce(sum(quantity), 0)::numeric as units,
+                coalesce(sum(revenue), 0)::numeric as revenue,
+                max(created_at) as last_purchase
+           from matched_sales
+          group by customer_name, customer_key
+          order by revenue desc, last_purchase desc
+          limit 60
+       )
+       select jsonb_build_object(
+                'sales_count', (select count(*)::int from matched_sales),
+                'units_sold', (select coalesce(sum(quantity), 0)::numeric from matched_sales),
+                'revenue', (select coalesce(sum(revenue), 0)::numeric from matched_sales),
+                'customers_count', (select count(distinct nullif(customer_key, ''))::int from matched_sales)
+              ) as summary,
+              coalesce((select jsonb_agg(to_jsonb(timeline) order by day) from timeline), '[]'::jsonb) as timeline,
+              coalesce((select jsonb_agg(to_jsonb(customers)) from customers), '[]'::jsonb) as customers`,
+      [businessId, req.params.productId, product.name]
+    );
+    const insights = insightResult.rows[0] || {};
+    res.json({
+      product,
+      summary: insights.summary || { sales_count: 0, units_sold: 0, revenue: 0, customers_count: 0 },
+      timeline: Array.isArray(insights.timeline) ? insights.timeline : [],
+      customers: Array.isArray(insights.customers) ? insights.customers : [],
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -5455,6 +5539,7 @@ module.exports = {
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
+  getInventoryProductInsights,
   listInventoryProducts,
   updateInventoryProduct,
   listCampaigns,
