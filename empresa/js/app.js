@@ -20508,6 +20508,7 @@ function competitionViewSection() {
 }
 
 function openCompetitorFormModal() {
+  if (competitorFormPanel?.parentElement !== document.body) document.body.appendChild(competitorFormPanel);
   competitionViewSection()?.classList.add("competition-modal-open");
   competitorFormPanel?.classList.add("is-competition-modal-open");
 }
