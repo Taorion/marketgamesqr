@@ -1254,8 +1254,13 @@ function setSidebarAccordionSection(sectionKey, options = {}) {
     const isTarget = section === target;
     const isOpen = isTarget && !shouldCloseTarget;
     section.classList.toggle("is-open", isOpen);
+    section.classList.toggle("is-current", isTarget);
     const toggle = section.querySelector("[data-sidebar-group-toggle]");
-    if (toggle) toggle.setAttribute("aria-expanded", String(isOpen));
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", String(isOpen));
+      if (isTarget) toggle.setAttribute("aria-current", "page");
+      else toggle.removeAttribute("aria-current");
+    }
   });
 }
 
@@ -1275,10 +1280,8 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
     return;
   }
   if (view === "rms-machine") {
-    sidebarNavSections.forEach((section) => {
-      section.classList.remove("is-open");
-      section.querySelector("[data-sidebar-group-toggle]")?.setAttribute("aria-expanded", "false");
-    });
+    // The icon-only machine view still needs a usable first menu group.
+    setSidebarAccordionSection("offer");
     return;
   }
   if (!sidebarNavSections.some((section) => section.classList.contains("is-open"))) {
