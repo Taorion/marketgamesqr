@@ -49,6 +49,8 @@ const campaignKpiGrid = document.getElementById("campaignKpiGrid");
 const salesKpiGrid = document.getElementById("salesKpiGrid");
 const branchKpiGrid = document.getElementById("branchKpiGrid");
 const newBranchButton = document.getElementById("newBranchButton");
+const branchSearchInput = document.getElementById("branchSearchInput");
+const branchListCount = document.getElementById("branchListCount");
 const branchFormPanel = document.getElementById("branchFormPanel");
 const branchFormCloseButton = document.getElementById("branchFormCloseButton");
 const branchDetailModal = document.getElementById("branchDetailModal");
@@ -37639,6 +37641,12 @@ function openBranchDetailModal(key = "") {
         <div class="branch-detail-box"><span>Responsable</span><strong>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</strong></div>
         <div class="branch-detail-box"><span>Notas</span><strong>${escapeHtml(row.notes || "-")}</strong></div>
       </div>
+      ${row.id ? `
+        <div class="branch-detail-actions">
+          <button class="ghost-button" type="button" data-branch-detail-edit="${escapeHtml(row.id)}">Editar sede</button>
+          <button class="ghost-button ${row.is_active ? "danger" : ""}" type="button" data-branch-detail-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Desactivar sede" : "Reactivar sede"}</button>
+        </div>
+      ` : ""}
       <h4>Ventas atribuidas a esta sede</h4>
       ${branchDetailTable(["Cliente", "Valor", "Producto", "Pago", "Canal", "Fecha"], sales.slice(0, 80).map((item) => `
         <tr>
@@ -37661,6 +37669,14 @@ function openBranchDetailModal(key = "") {
         </tr>
       `), "Sin redenciones registradas en esta sede.")}
     `;
+    branchDetailBody.querySelector("[data-branch-detail-edit]")?.addEventListener("click", () => {
+      closeBranchDetailModal();
+      editBranch(row.id);
+    });
+    branchDetailBody.querySelector("[data-branch-detail-toggle]")?.addEventListener("click", () => {
+      closeBranchDetailModal();
+      toggleBranchActive(row.id, row.is_active !== true);
+    });
   }
   branchDetailModal.classList.remove("hidden");
   branchDetailModal.removeAttribute("aria-hidden");
@@ -37792,7 +37808,15 @@ function renderBranchesView() {
   if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
     loadBusinessBranches().then(renderBranchesView).catch((error) => showFeedback(error.message, "error"));
   }
-  const rows = branchActivityRows();
+  const allRows = branchActivityRows();
+  const branchSearch = String(branchSearchInput?.value || "").trim().toLowerCase();
+  const rows = allRows.filter((row) => !branchSearch || [
+    row.branch,
+    row.address,
+    row.contact_name,
+    row.contact_phone,
+    row.branch_type,
+  ].join(" ").toLowerCase().includes(branchSearch));
   const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
   const topBranch = rows[0]?.branch || "Sin datos";
   const activeBranches = (state.businessBranches || []).filter((branch) => branch.is_active !== false).length;
@@ -37808,33 +37832,26 @@ function renderBranchesView() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
+  if (branchListCount) branchListCount.textContent = `${rows.length} de ${allRows.length} sede${allRows.length === 1 ? "" : "s"}`;
 
   branchTable.innerHTML = rows.map((row) => `
     <tr data-branch-detail-row="${escapeHtml(branchRowKey(row))}">
       <td>
         <span class="branch-simple-cell">
           <strong>${escapeHtml(row.branch)}</strong>
-          <small>${escapeHtml(row.notes || "Haz clic para ver resultados")}</small>
+          <small>${escapeHtml([branchTypeLabel(row.branch_type), row.address].filter(Boolean).join(" · ") || "Haz clic para ver resultados")}</small>
         </span>
       </td>
-      <td>${escapeHtml(branchTypeLabel(row.branch_type))}</td>
       <td>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</td>
-      <td><span class="branch-secondary">${escapeHtml(row.address || "-")}</span></td>
-      <td>${escapeHtml(row.redemptions)}</td>
-      <td>${escapeHtml(row.sales)}</td>
-      <td><strong>${escapeHtml(money(row.revenue))}</strong></td>
+      <td><span class="branch-performance"><strong>${escapeHtml(money(row.revenue))}</strong><small>${escapeHtml(`${row.sales} ventas · ${row.redemptions} redenciones`)}</small></span></td>
       <td><span class="status-chip ${row.id && row.is_active !== false ? "ok" : "pending"}">${escapeHtml(row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin sede")}</span></td>
       <td>
         <span class="branch-row-actions">
-          <button class="ghost-button" type="button" data-branch-detail="${escapeHtml(branchRowKey(row))}">Detalle</button>
-          ${row.id ? `
-            <button class="ghost-button" type="button" data-branch-edit="${escapeHtml(row.id)}">Editar</button>
-            <button class="ghost-button danger" type="button" data-branch-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Eliminar" : "Reactivar"}</button>
-          ` : ""}
+          <button class="ghost-button compact" type="button" data-branch-detail="${escapeHtml(branchRowKey(row))}">Abrir</button>
         </span>
       </td>
     </tr>
-  `).join("") || `<tr><td colspan="9">${state.businessBranchesLoading ? "Cargando sedes..." : "Sin sedes registradas ni actividad por sucursal."}</td></tr>`;
+  `).join("") || `<tr><td colspan="5">${state.businessBranchesLoading ? "Cargando sedes..." : "No encontramos sedes con esa búsqueda."}</td></tr>`;
   branchTable.querySelectorAll("[data-branch-detail-row]").forEach((row) => {
     row.addEventListener("click", (event) => {
       if (event.target.closest("button, a, input, select, textarea")) return;
@@ -44065,6 +44082,7 @@ rewardPassDownloadImageButton?.addEventListener("click", downloadSelectedRewardP
 rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("pdf").catch((error) => showFeedback(error.message, "error")));
 rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
 branchCreateForm?.addEventListener("submit", submitBranchCreate);
+branchSearchInput?.addEventListener("input", renderBranchesView);
 newBranchButton?.addEventListener("click", () => {
   resetBranchForm();
   openBranchFormModal();

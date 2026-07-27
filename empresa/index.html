@@ -6073,7 +6073,7 @@
             <div class="view-head">
               <div>
                 <h2>Sedes</h2>
-                <p>Tabla simple para leer sedes, responsables, redenciones, ventas y revenue generado por cada punto.</p>
+                <p>Consulta tus puntos de venta y consignaciones. Abre una sede para revisar sus resultados y movimientos.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="newBranchButton" type="button">
@@ -6128,21 +6128,27 @@
             </article>
             <article class="surface-card data-table-card">
               <div class="table-card-head">
-                <span class="mono-label">Sedes registradas y rendimiento</span>
+                <div>
+                  <span class="mono-label">Sedes registradas</span>
+                  <h3>Rendimiento por punto</h3>
+                </div>
+                <div class="branch-list-tools">
+                  <label class="branch-search-field">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    <input id="branchSearchInput" type="search" placeholder="Buscar sede, responsable o ciudad">
+                  </label>
+                  <span class="table-secondary" id="branchListCount" aria-live="polite"></span>
+                </div>
               </div>
               <div class="table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th>Sede</th>
-                      <th>Tipo</th>
                       <th>Responsable</th>
-                      <th>Ubicación</th>
-                      <th>Redenciones</th>
-                      <th>Ventas</th>
-                      <th>Revenue generado</th>
+                      <th>Resultados</th>
                       <th>Estado</th>
-                      <th>Acciones</th>
+                      <th aria-label="Acciones"></th>
                     </tr>
                   </thead>
                   <tbody id="branchTable"></tbody>
