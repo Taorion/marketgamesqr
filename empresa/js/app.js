@@ -27462,6 +27462,7 @@ function fillAffiliateForm(affiliate) {
 function openAffiliateCreateModal(options = {}) {
   ensureAffiliatesUxStyles();
   setupAffiliatePhotoCaptureUi();
+  if (affiliateCreatePanel?.parentElement !== document.body) document.body.appendChild(affiliateCreatePanel);
   const affiliate = options.affiliateId ? findAffiliateById(options.affiliateId) : null;
   state.affiliateEditingId = affiliate?.id || null;
   if (affiliate) {
@@ -34007,8 +34008,10 @@ function ensureAffiliateOperationBackdrop() {
 
 function openAffiliateOperationModal() {
   ensureAffiliateOperationBackdrop().classList.add("is-open");
+  const panel = document.getElementById("affiliateOperatePanel");
+  if (panel?.parentElement !== document.body) document.body.appendChild(panel);
   affiliateViewSection()?.classList.add("affiliate-modal-open");
-  document.getElementById("affiliateOperatePanel")?.classList.add("is-modal-open");
+  panel?.classList.add("is-modal-open");
 }
 
 function closeAffiliateOperationModal() {

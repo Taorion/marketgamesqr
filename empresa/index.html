@@ -6657,19 +6657,19 @@
                 <form class="modal-form affiliate-form" id="affiliateCreateForm">
                   <label>
                     <span>Nombre completo</span>
-                    <input id="affiliateFullNameInput" type="text" required>
+                    <input id="affiliateFullNameInput" type="text" autocomplete="name" minlength="3" maxlength="160" required>
                   </label>
                   <label>
                     <span>Documento</span>
-                    <input id="affiliateDocumentInput" type="text">
+                    <input id="affiliateDocumentInput" type="text" inputmode="numeric" pattern="[0-9A-Za-z.-]{5,30}" maxlength="30" required>
                   </label>
                   <label>
                     <span>Teléfono</span>
-                    <input id="affiliatePhoneInput" type="tel">
+                    <input id="affiliatePhoneInput" type="tel" autocomplete="tel" inputmode="tel" pattern="[0-9+() -]{7,20}" maxlength="20" required>
                   </label>
                   <label>
                     <span>Email</span>
-                    <input id="affiliateEmailInput" type="email">
+                    <input id="affiliateEmailInput" type="email" autocomplete="email" maxlength="160" required>
                   </label>
                   <label class="span-2">
                     <span>Intereses y notas</span>
