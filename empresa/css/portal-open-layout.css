@@ -1,0 +1,233 @@
+/*
+ * Portal open layout
+ * A shared reading system for every business view: fewer boxed surfaces,
+ * clearer whitespace, and contained data tables that never push the portal.
+ */
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active {
+  width: min(1320px, 100%) !important;
+  max-width: 1320px !important;
+  margin-inline: auto !important;
+  gap: clamp(34px, 5vw, 72px) !important;
+  padding: clamp(28px, 4vw, 62px) clamp(20px, 5vw, 72px) 104px !important;
+}
+
+/* Let sections read as one calm page instead of a stack of cards. */
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active > :is(.surface-card, .data-table-card, .table-card, .chart-card, .lead-directory-card, .affiliate-list-panel, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .lead-agenda-card, .rms-stage-slider-shell, .rms-station-workspace, .rms-station-clean-shell, .gaming-activation-list-card, .campaign-library-shell, .inventory-command-panel, .channel-analytics-layout),
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .chart-card) :is(.surface-card, .data-table-card, .table-card, .chart-card) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active > .view-head,
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 18px 32px !important;
+  margin: 0 !important;
+  padding: 0 0 clamp(20px, 3vw, 30px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #cfe0ef !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head) > * {
+  min-width: 0 !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.data-table-card, .table-card, .lead-directory-card, .affiliate-list-panel, .campaign-library-shell, .channel-analytics-layout) {
+  display: grid !important;
+  gap: clamp(20px, 3vw, 34px) !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* Filters are a toolbar, not a second nested panel. */
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-toolbar, .table-filters, .directory-filters, .lead-directory-filters, .gaming-published-toolbar, .inventory-filter-card, .channel-filters, .filter-row, .rms-board-tools) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: end !important;
+  gap: 12px 16px !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e1ecf5 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Universal data containment.  The viewport never grows because of a table. */
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  overscroll-behavior-inline: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+  border: 0 !important;
+  border-top: 1px solid #bfd8e9 !important;
+  border-bottom: 1px solid #bfd8e9 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table,
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table :is(th, td) {
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 16px clamp(10px, 1.35vw, 20px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e0ebf4 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #16355f !important;
+  vertical-align: top !important;
+  line-height: 1.48 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  text-overflow: clip !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table thead th {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 2px solid #b7d4e9 !important;
+  background: transparent !important;
+  color: #31506f !important;
+  font-size: .73rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table tbody tr,
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table tbody tr:hover,
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table tbody tr.active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table tbody tr:hover td,
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table tbody tr.active td {
+  background: linear-gradient(90deg, rgba(0, 184, 255, .08), rgba(255, 255, 255, 0)) !important;
+}
+
+/* Known directory and campaign lists use the same open row rhythm as tables. */
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.campaign-quick-list, .contact-directory-list, .lead-directory-list, .affiliate-top-list, .lead-agenda-list, .mission-active-list) {
+  display: grid !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #bfd8e9 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.campaign-item, .contact-directory-card-row, .affiliate-top-row, .lead-agenda-item, .mission-active-card) {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: clamp(18px, 2.5vw, 28px) 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e0ebf4 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.campaign-item:hover, .campaign-item.active, .contact-directory-card-row:hover, .contact-directory-card-row:focus-visible, .affiliate-top-row:hover, .affiliate-top-row.active) {
+  background: linear-gradient(90deg, rgba(0, 184, 255, .09), rgba(255, 255, 255, 0) 74%) !important;
+  box-shadow: inset 3px 0 0 #00b8ff !important;
+  transform: none !important;
+}
+
+/* KPI numbers remain visible, but stop pretending to be a collection of miniature panels. */
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.kpi-grid, .collapsible-kpi-grid, .missions-kpis, .rms-kpi-grid, .campaign-summary-grid, .ticket-module-grid, .account-summary-grid, .contact-center-summary) > * {
+  padding: 0 clamp(14px, 2vw, 26px) !important;
+  border: 0 !important;
+  border-left: 1px solid #d9e7f2 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.kpi-grid, .collapsible-kpi-grid, .missions-kpis, .rms-kpi-grid, .campaign-summary-grid, .ticket-module-grid, .account-summary-grid, .contact-center-summary) > :first-child {
+  padding-left: 0 !important;
+  border-left: 0 !important;
+}
+
+@media (max-width: 900px) {
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active {
+    gap: 34px !important;
+    padding: 28px 22px 72px !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head) {
+    align-items: flex-start !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.campaign-item, .contact-directory-card-row) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active {
+    gap: 28px !important;
+    padding: 24px 16px 60px !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head) {
+    display: grid !important;
+    gap: 14px !important;
+    padding-bottom: 18px !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.table-toolbar, .table-filters, .directory-filters, .lead-directory-filters, .gaming-published-toolbar, .inventory-filter-card, .channel-filters, .filter-row, .rms-board-tools) > * {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table :is(th, td) {
+    padding: 13px 9px !important;
+    font-size: .8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active table thead th {
+    font-size: .64rem !important;
+  }
+
+  body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.active :is(.kpi-grid, .collapsible-kpi-grid, .missions-kpis, .rms-kpi-grid, .campaign-summary-grid, .ticket-module-grid, .account-summary-grid, .contact-center-summary) > * {
+    padding: 14px 0 !important;
+    border-top: 1px solid #d9e7f2 !important;
+    border-left: 0 !important;
+  }
+}
