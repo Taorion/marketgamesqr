@@ -659,3 +659,115 @@ html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriA
     text-align: left !important;
   }
 }
+
+/* Portal rhythm v162 ---------------------------------------------------------
+ * A radius must never behave like a mask.  Earlier module-specific rules used
+ * `overflow: hidden` to create rounded cards, which clipped headings and the
+ * first/last columns.  This final layer keeps the reading gutter outside the
+ * content and leaves only table lanes responsible for horizontal scrolling.
+ */
+:root {
+  --portal-reading-gutter: clamp(22px, 3.2vw, 52px);
+  --portal-reading-gutter-compact: clamp(18px, 2.3vw, 34px);
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active {
+  gap: clamp(50px, 6vw, 96px) !important;
+}
+
+/* Content starts inside a deliberate gutter instead of against a radius. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.data-table-card, .table-card, .inventory-table-card, .gaming-activation-list-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  padding-inline: var(--portal-reading-gutter) !important;
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* The old inventory shell was the most visible offender: it clipped its own
+ * header to simulate a rounded card.  Keep its hierarchy, but let text breathe. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG)[data-current-view="inventory"] .portal-shell .inventory-table-card {
+  padding-inline: var(--portal-reading-gutter) !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG)[data-current-view="inventory"] .portal-shell .inventory-table-card > .table-card-head {
+  padding: 0 0 26px !important;
+  gap: 22px 34px !important;
+}
+
+/* Complex modules may retain a visual surface, but never a clipping surface. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .inventory-table-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* Tables have their own, intentionally scrollable lane.  Extra first and last
+ * cell padding prevents the rounded viewport from visually biting the text. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  border-radius: 0 !important;
+  scroll-padding-inline: var(--portal-reading-gutter-compact) !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active table :is(th, td):first-child {
+  padding-left: var(--portal-reading-gutter-compact) !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active table :is(th, td):last-child {
+  padding-right: var(--portal-reading-gutter-compact) !important;
+}
+
+/* Small labels and headings must wrap rather than disappear under a radius. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head, .quiet-zone-control-head) :is(h1, h2, h3, strong, p, small, .mono-label) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* The affiliate operation uses a dialog radius only on the outer shell; its
+ * reading area is padded independently so no text can touch a curved edge. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open {
+  width: min(1140px, calc(100vw - 56px)) !important;
+  max-height: calc(100dvh - 56px) !important;
+  padding: clamp(30px, 4.6vw, 58px) !important;
+  border-radius: 26px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open :is(.affiliate-selected-head, .affiliate-card-preview-wrap, #affiliateCardMeta, .affiliate-card-actions) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active {
+    gap: 42px !important;
+  }
+
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.data-table-card, .table-card, .inventory-table-card, .gaming-activation-list-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+    padding-inline: 18px !important;
+  }
+
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    padding: 28px 22px !important;
+    border-radius: 20px !important;
+  }
+}
