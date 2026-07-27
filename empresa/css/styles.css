@@ -60698,6 +60698,54 @@ html body > #competitorFormPanel.is-competition-modal-open .modal-actions {
   }
 }
 
+/* Temporadas v245: primero comparar compradores, luego crear dinámicas. */
+html body[data-current-view="missions"] .portal-shell .view-section[data-view="missions"] {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="missions"] .portal-shell .missions-head { order: 1 !important; margin: 0 !important; }
+html body[data-current-view="missions"] .portal-shell .mission-command-center { order: 2 !important; display: block !important; margin: 0 !important; }
+html body[data-current-view="missions"] .portal-shell .mission-what-card,
+html body[data-current-view="missions"] .portal-shell .missions-onboarding { display: none !important; }
+html body[data-current-view="missions"] .portal-shell .mission-control-card {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+html body[data-current-view="missions"] .portal-shell .mission-control-card h3 { font-size: 1.25rem !important; }
+html body[data-current-view="missions"] .portal-shell .mission-control-row {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+html body[data-current-view="missions"] .portal-shell .mission-control-row label { gap: 6px !important; }
+html body[data-current-view="missions"] .portal-shell .mission-control-row select { width: 100% !important; min-height: 46px !important; }
+html body[data-current-view="missions"] .portal-shell .mission-quick-actions { gap: 8px !important; }
+html body[data-current-view="missions"] .portal-shell .mission-visualization-grid { order: 3 !important; display: block !important; margin: 0 !important; }
+html body[data-current-view="missions"] .portal-shell .mission-leaderboard-panel { padding: 20px !important; box-shadow: none !important; }
+html body[data-current-view="missions"] .portal-shell .mission-leaderboard-table-wrap { border-radius: 12px !important; }
+html body[data-current-view="missions"] .portal-shell .missions-hero { order: 4 !important; display: block !important; margin: 0 !important; }
+html body[data-current-view="missions"] .portal-shell .missions-kpis { display: grid !important; grid-template-columns: 1fr !important; gap: 10px !important; }
+html body[data-current-view="missions"] .portal-shell .mission-kpi-card { min-height: 0 !important; }
+html body[data-current-view="missions"] .portal-shell .mission-create-next {
+  order: 5 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+  align-items: start !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+html body[data-current-view="missions"] .portal-shell .mission-create-next h3 { margin: 4px 0 6px !important; font-size: 1.25rem !important; }
+html body[data-current-view="missions"] .portal-shell .mission-create-next p { max-width: 72ch !important; margin: 0 !important; color: #64748b !important; }
+html body[data-current-view="missions"] .portal-shell .mission-create-next .solid-button { justify-self: start !important; }
+
 /* Campaigns simple flow: header, list, and an interstitial detail only. */
 html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] > :not(.campaign-head):not(.campaign-library-shell) { display: none !important; }
 html body[data-current-view="campaigns"] .portal-shell #campaignStrategyAssistantButton,

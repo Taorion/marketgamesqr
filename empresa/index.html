@@ -1098,7 +1098,6 @@
                 <p>Visualiza quién compró más por día, semana, mes o año y premia al contacto directamente desde el ranking.</p>
               </div>
               <div class="view-head-actions">
-                <button class="solid-button" id="missionsCreateButton" type="button" hidden>Crear temporada</button>
                 <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
                 <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
               </div>
@@ -1137,6 +1136,7 @@
                 </div>
                 <div class="mission-control-row">
                   <label><span>Periodo del ranking</span><select id="missionSeasonFilter"><option value="day">Hoy</option><option value="week">Semana actual</option><option value="month">Mes actual</option><option value="year">Año actual</option></select></label>
+                  <label><span>Ordenar por</span><select id="missionLeaderboardOrder"><option value="total_spent_desc">Mayor valor comprado</option><option value="purchases_desc">Más compras</option><option value="average_ticket_desc">Mayor ticket promedio</option><option value="recent_desc">Compra más reciente</option></select></label>
                   <div class="mission-quick-actions">
                     <button class="solid-button compact" type="button" data-mission-period="week">Top semana</button>
                     <button class="ghost-button compact" type="button" data-mission-period="month">Top mes</button>
@@ -1156,6 +1156,15 @@
                 </div>
                 <div class="mission-leaderboard" id="missionLeaderboard"></div>
               </article>
+            </section>
+
+            <section class="surface-card mission-create-next">
+              <div>
+                <span class="mono-label">Dinámicas y temporadas</span>
+                <h3>Crea una competencia cuando la necesites</h3>
+                <p>Usa una temporada para activar ranking por compras, trivia, recompra o referidos después de revisar el comportamiento del periodo.</p>
+              </div>
+              <button class="solid-button" id="missionsCreateButton" type="button">Crear dinámica o temporada</button>
             </section>
 
             <div class="modal-shell hidden" id="missionWizardModal" role="dialog" aria-modal="true" aria-labelledby="missionWizardTitle">

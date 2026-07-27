@@ -150,6 +150,7 @@ const missionsKpiGrid = document.getElementById("missionsKpiGrid");
 const missionTemplateGrid = document.getElementById("missionTemplateGrid");
 const missionActiveList = document.getElementById("missionActiveList");
 const missionLeaderboard = document.getElementById("missionLeaderboard");
+const missionLeaderboardOrder = document.getElementById("missionLeaderboardOrder");
 const missionRewardsPending = document.getElementById("missionRewardsPending");
 const missionsCreateButton = document.getElementById("missionsCreateButton");
 const missionsRefreshButton = document.getElementById("missionsRefreshButton");
@@ -41997,11 +41998,24 @@ function syncMissionPeriodControls() {
   });
 }
 
+function sortMissionLeaderboardRows(rows = []) {
+  const order = missionLeaderboardOrder?.value || "total_spent_desc";
+  const numberValue = (row, field) => Number(row?.[field] || 0);
+  const dateValue = (row) => new Date(row?.last_activity_at || 0).getTime() || 0;
+  return [...(Array.isArray(rows) ? rows : [])].sort((left, right) => {
+    if (order === "purchases_desc") return numberValue(right, "purchases_count") - numberValue(left, "purchases_count");
+    if (order === "average_ticket_desc") return numberValue(right, "average_ticket") - numberValue(left, "average_ticket");
+    if (order === "recent_desc") return dateValue(right) - dateValue(left);
+    return numberValue(right, "total_spent") - numberValue(left, "total_spent");
+  });
+}
+
 function renderMissionsView() {
   ensureMissionsUxStyles();
   const period = normalizeMissionPeriod(state.missionSeasonFilter || "week");
   state.missionSeasonFilter = period;
   syncMissionPeriodControls();
+  state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
   renderMissionsKpis();
   renderMissionLeaderboard(state.missionLeaderboardRows || [], "PURCHASES");
   if (state.missionLeaderboardLoadedPeriod !== period && !state.missionLeaderboardLoading) {
@@ -42131,7 +42145,7 @@ async function loadMissionPurchaseLeaderboard(period = "week") {
   }
   try {
     const data = await api(`/api/business/gamification/purchase-leaderboard?period=${encodeURIComponent(normalizedPeriod)}&limit=50`, { headers: authHeaders() });
-    state.missionLeaderboardRows = data.leaderboard || [];
+    state.missionLeaderboardRows = sortMissionLeaderboardRows(data.leaderboard || []);
     state.missionLeaderboardSummary = {
       ...(data.summary || {}),
       start_date: data.start_date || null,
@@ -42203,7 +42217,7 @@ function renderMissionLeaderboard(rows = [], rankingType = "") {
               const contactMeta = row.phone || row.email || row.document_id || "Venta sin contacto conectado";
               return `
                 <tr>
-                  <td><span class="mission-rank-badge">#${Number(row.rank || index + 1).toLocaleString("es-CO")}</span></td>
+                  <td><span class="mission-rank-badge">#${Number(index + 1).toLocaleString("es-CO")}</span></td>
                   <td>
                     <button class="link-button mission-contact-link" type="button" data-mission-open-contact="${index}">
                       <strong>${escapeHtml(row.name || "Cliente")}</strong>
@@ -43163,7 +43177,7 @@ rmsHowStartButton?.addEventListener("click", () => {
   closeRmsHowModal();
   openRmsCollectorModal();
 });
-missionsCreateButton?.addEventListener("click", () => openPurchaseCompetition("month"));
+missionsCreateButton?.addEventListener("click", () => openMissionWizard("top_clients_week"));
 document.querySelectorAll("[data-purchase-competition-period]").forEach((button) => {
   button.addEventListener("click", () => openPurchaseCompetition(button.dataset.purchaseCompetitionPeriod || "month"));
 });
@@ -43192,6 +43206,10 @@ missionSeasonFilter?.addEventListener("change", () => {
   state.missionSeasonFilter = normalizeMissionPeriod(missionSeasonFilter.value || "week");
   state.missionLeaderboardLoadedPeriod = "";
   renderMissionsView();
+});
+missionLeaderboardOrder?.addEventListener("change", () => {
+  state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
+  renderMissionLeaderboard(state.missionLeaderboardRows, "PURCHASES");
 });
 missionWizardCloseButton?.addEventListener("click", closeMissionWizard);
 missionWizardCancelButton?.addEventListener("click", closeMissionWizard);
