@@ -37563,6 +37563,7 @@ function branchesViewSection() {
 
 function openBranchFormModal() {
   ensureBranchesUxStyles();
+  if (branchFormPanel?.parentElement !== document.body) document.body.appendChild(branchFormPanel);
   branchesViewSection()?.classList.add("branch-modal-open");
   branchFormPanel?.classList.add("is-branch-modal-open");
 }

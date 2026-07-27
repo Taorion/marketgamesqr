@@ -62634,3 +62634,79 @@ html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form tex
   html body > #acquisitionChannelFormPanel.is-channel-modal-open { width: calc(100vw - 20px) !important; max-height: calc(100dvh - 20px) !important; padding: 16px !important; }
   html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form { grid-template-columns: 1fr !important; }
 }
+
+/* Sedes v244: alta aislada del listado operativo. */
+html body > #branchFormPanel:not(.is-branch-modal-open) {
+  display: none !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open {
+  position: fixed !important;
+  z-index: 1101 !important;
+  top: 50% !important;
+  left: 50% !important;
+  display: block !important;
+  width: min(780px, calc(100vw - 32px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+  margin: 0 !important;
+  padding: 22px !important;
+  overflow: auto !important;
+  border: 1px solid #cfe0f2 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 30px 80px rgba(2, 20, 51, .30) !important;
+  transform: translate(-50%, -50%) !important;
+  transition: none !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open:hover {
+  transform: translate(-50%, -50%) !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open .table-card-head {
+  position: sticky !important;
+  top: -22px !important;
+  z-index: 2 !important;
+  margin: -22px -22px 18px !important;
+  padding: 18px 22px 14px !important;
+  border-bottom: 1px solid #e3edf6 !important;
+  background: #fff !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open .lead-agenda-create-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open .lead-agenda-create-form :is(input, select, textarea) {
+  width: 100% !important;
+  min-height: 44px !important;
+  border-radius: 10px !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open .lead-agenda-create-form textarea {
+  min-height: 96px !important;
+}
+
+html body > #branchFormPanel.is-branch-modal-open .form-message {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 720px) {
+  html body > #branchFormPanel.is-branch-modal-open {
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 16px !important;
+  }
+
+  html body > #branchFormPanel.is-branch-modal-open .table-card-head {
+    top: -16px !important;
+    margin: -16px -16px 16px !important;
+    padding: 16px !important;
+  }
+
+  html body > #branchFormPanel.is-branch-modal-open .lead-agenda-create-form {
+    grid-template-columns: 1fr !important;
+  }
+}
