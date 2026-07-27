@@ -62758,3 +62758,21 @@ html body > #branchFormPanel.is-branch-modal-open .form-message {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Admin v245: Cuenta prioriza a la persona y su plan; las acciones viven en el menú Admin. */
+body[data-current-view="account"] .account-summary-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+body[data-current-view="account"] .account-summary-grid > :nth-child(1) { order: 3; }
+body[data-current-view="account"] .account-summary-grid > :nth-child(2) { order: 1; }
+body[data-current-view="account"] .account-summary-grid > :nth-child(3) { order: 2; }
+
+body[data-current-view="account"] .account-admin-nav {
+  display: none !important;
+}
+
+body[data-current-view="account"] :is(#accountProfileOverview, #accountSectionBilling, #accountSectionAssets) {
+  scroll-margin-top: 84px;
+}

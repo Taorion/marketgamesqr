@@ -187,10 +187,6 @@
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
             <div class="sidebar-nav-section-panel" id="sidebar-section-offer-panel">
-            <button class="nav-item nav-item-core" data-view="campaigns" type="button">
-              <span class="material-symbols-outlined">campaign</span>
-              <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
-            </button>
             <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
               <span class="material-symbols-outlined">bolt</span>
               <span><strong>Activaciones</strong><small>Experiencias, links y tickets</small></span>
@@ -245,7 +241,7 @@
 
           <section class="sidebar-nav-section" data-sidebar-section="optimize" aria-labelledby="sidebar-section-optimize">
             <button class="nav-group-toggle" id="sidebar-section-optimize" data-sidebar-group-toggle="optimize" type="button" aria-expanded="false" aria-controls="sidebar-section-optimize-panel">
-              <span>Optimiza</span>
+              <span>GOS</span>
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
             <div class="sidebar-nav-section-panel" id="sidebar-section-optimize-panel">
@@ -261,6 +257,10 @@
               <span class="material-symbols-outlined">monitoring</span>
               <span><strong>Radar Competitivo</strong><small>Mercado, precios y hallazgos</small></span>
             </button>
+            <button class="nav-item" data-view="campaigns" type="button">
+              <span class="material-symbols-outlined">campaign</span>
+              <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
+            </button>
             <button class="nav-item" data-view="branches" type="button">
               <span class="material-symbols-outlined">storefront</span>
               <span><strong>Sedes</strong><small>Puntos físicos y operación</small></span>
@@ -274,13 +274,21 @@
 
           <section class="sidebar-nav-section sidebar-nav-section-gos" data-sidebar-section="gos" aria-labelledby="sidebar-section-gos">
             <button class="nav-group-toggle" id="sidebar-section-gos" data-sidebar-group-toggle="gos" type="button" aria-expanded="false" aria-controls="sidebar-section-gos-panel">
-              <span>GOS</span>
+              <span>Admin</span>
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
             <div class="sidebar-nav-section-panel" id="sidebar-section-gos-panel">
-            <button class="nav-item" data-view="account" type="button">
+            <button class="nav-item" data-view="account" data-account-anchor="accountProfileOverview" type="button">
               <span class="material-symbols-outlined">manage_accounts</span>
-              <span><strong>Cuenta</strong><small>Empresa, plan y permisos</small></span>
+              <span><strong>Cuenta</strong><small>Perfil, empresa y plan</small></span>
+            </button>
+            <button class="nav-item" data-view="account" data-account-anchor="accountSectionBilling" type="button">
+              <span class="material-symbols-outlined">confirmation_number</span>
+              <span><strong>Recargas</strong><small>Tickets y cambio de plan</small></span>
+            </button>
+            <button class="nav-item" data-view="account" data-account-anchor="accountSectionAssets" type="button">
+              <span class="material-symbols-outlined">perm_media</span>
+              <span><strong>Activos digitales</strong><small>Logo, marco y archivos</small></span>
             </button>
             <button class="nav-item" data-view="admin" type="button">
               <span class="material-symbols-outlined">admin_panel_settings</span>
@@ -1258,12 +1266,12 @@
           <section class="view-section" data-view="account">
             <div class="view-head">
               <div>
-                <h2>Administración</h2>
-                <p>Cuenta, datos personales, plan, tickets, activos digitales, marca y usuarios con acceso al portal.</p>
+                <h2>Cuenta</h2>
+                <p>Tu perfil, empresa y plan actual. Gestiona recargas y activos digitales desde Admin.</p>
               </div>
             </div>
 
-            <section class="account-summary-grid">
+            <section class="account-summary-grid" id="accountProfileOverview">
               <article class="surface-card account-profile-card">
                 <span class="mono-label">Empresa en sesión</span>
                 <h3 id="accountBusinessName">Empresa</h3>
@@ -1359,12 +1367,12 @@
 
             <section class="account-settings-grid">
               <div class="account-section-divider account-section-data" id="accountSectionData">
-                <span class="mono-label">01 · Cuenta</span>
-                <h3>Datos personales y de empresa</h3>
-                <p>Revisa y actualiza la información básica del negocio, contacto y seguridad de acceso.</p>
+                <span class="mono-label">01 · Recargas y plan</span>
+                <h3>Compra tickets o cambia de plan</h3>
+                <p>Recarga tickets, revisa pagos recientes o cambia de plan cuando lo necesites.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-billing-card account-span-full">
+              <article class="surface-card account-settings-card account-billing-card account-span-full" id="accountSectionBilling">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Pagos y renovaciones</span>
@@ -1459,10 +1467,10 @@
                 <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
               </article>
 
-              <div class="account-section-divider account-section-billing" id="accountSectionBilling">
-                <span class="mono-label">02 · Plan y tickets</span>
-                <h3>Comprar tickets o elegir otro plan</h3>
-                <p>Compra paquetes de tickets, revisa pagos recientes, renueva mensualidad o cambia de plan.</p>
+              <div class="account-section-divider account-section-billing" id="accountSectionCompany">
+                <span class="mono-label">02 · Empresa</span>
+                <h3>Datos de tu empresa</h3>
+                <p>Actualiza la información comercial, el contacto y los datos visibles de tu negocio.</p>
               </div>
 
               <article class="surface-card account-settings-card account-company-card account-span-8">
@@ -1519,9 +1527,9 @@
               </article>
 
               <div class="account-section-divider account-section-assets" id="accountSectionAssets">
-                <span class="mono-label">03 · Activos digitales y marca</span>
-                <h3>Biblioteca, logo y marco de tickets</h3>
-                <p>Carga activos digitales para entregar a leads, logo del negocio y marco visual para tickets QR.</p>
+                <span class="mono-label">03 · Activos digitales</span>
+                <h3>Logo, marco y archivos de tu empresa</h3>
+                <p>Gestiona tu logo, marco QR y archivos digitales que podrás entregar a tus clientes.</p>
               </div>
 
               <article class="surface-card account-settings-card digital-asset-library-card account-span-8">

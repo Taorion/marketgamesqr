@@ -1218,7 +1218,7 @@ const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const sidebarNavSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
 const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-group-toggle]"));
 const sidebarSectionByView = Object.freeze({
-  campaigns: "offer",
+  campaigns: "optimize",
   "strategic-qr": "offer",
   "smart-catalogs": "offer",
   inventory: "offer",
@@ -1288,6 +1288,15 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
   if (!sidebarNavSections.some((section) => section.classList.contains("is-open"))) {
     setSidebarAccordionSection("operate");
   }
+}
+
+function openAccountSection(anchorId = "") {
+  state.accountNavigationAnchor = anchorId;
+  setView("account");
+  if (!anchorId || state.currentView !== "account") return;
+  window.requestAnimationFrame(() => {
+    document.getElementById(anchorId)?.scrollIntoView({ behavior: "auto", block: "start" });
+  });
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
@@ -2199,6 +2208,7 @@ const lightTestMode = routeLightMode || (() => {
 let session = loadSession();
 let state = {
   currentView: PORTAL_DEFAULT_VIEW,
+  accountNavigationAnchor: "",
   dashboardBuilderProfile: "marketing",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
@@ -5835,6 +5845,7 @@ async function loadAccountWorkspaceData(options = {}) {
 function setView(view) {
   const requestedView = view;
   const previousView = state.currentView;
+  if (view !== "account") state.accountNavigationAnchor = "";
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
     showFeedback("Ese módulo es interno de Qori. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
@@ -5875,11 +5886,15 @@ function setView(view) {
   document.body.dataset.currentView = view;
   navButtons.forEach((button) => {
     const contactTarget = button.dataset.contactCenterNav || "";
+    const accountTarget = button.dataset.accountAnchor || "";
     const isLeadsBase = button.dataset.view === "leads"
       && view === "leads"
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
-    const isRegular = button.dataset.view === view && view !== "leads" && view !== "rms-machine";
-    const isActive = isLeadsBase || isRegular;
+    const isAccountTarget = button.dataset.view === "account"
+      && view === "account"
+      && accountTarget === state.accountNavigationAnchor;
+    const isRegular = button.dataset.view === view && view !== "leads" && view !== "rms-machine" && view !== "account";
+    const isActive = isLeadsBase || isAccountTarget || isRegular;
     button.classList.remove("active");
     button.removeAttribute("aria-current");
     button.dataset.sidebarCurrentMatch = isActive ? "true" : "false";
@@ -43013,6 +43028,10 @@ navButtons.forEach((button) => {
     if (ownerSection?.dataset.sidebarSection) {
       setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
     }
+    if (button.dataset.accountAnchor) {
+      openAccountSection(button.dataset.accountAnchor);
+      return;
+    }
     if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
       openContactCenterSection(button.dataset.contactCenterNav);
       return;
@@ -43029,6 +43048,10 @@ document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   event.stopImmediatePropagation();
   const ownerSection = button.closest("[data-sidebar-section]");
   if (ownerSection?.dataset.sidebarSection) setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
+  if (button.dataset.accountAnchor) {
+    openAccountSection(button.dataset.accountAnchor);
+    return;
+  }
   if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
     openContactCenterSection(button.dataset.contactCenterNav);
     return;
