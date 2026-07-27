@@ -1267,3 +1267,287 @@ html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriN
     padding: 0 !important;
   }
 }
+
+/* Portal composition v165 ----------------------------------------------------
+ * The portal is a continuous workspace.  Regions are separated through
+ * breathing room, a calm reading measure and short dividers—not nested boxes.
+ * This intentionally targets only the application canvas, never the sidebar. */
+:root {
+  --portal-flow-gap: clamp(34px, 5vw, 74px);
+  --portal-section-gap: clamp(24px, 3.4vw, 48px);
+  --portal-content-inset: clamp(20px, 3vw, 46px);
+  --portal-subtle-rule: rgba(52, 115, 166, .16);
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .app-main,
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .content-shell {
+  overflow-x: clip !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active {
+  gap: var(--portal-flow-gap) !important;
+}
+
+/* Let primary regions read as chapters instead of enclosed cards. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.modal-card) {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* This is the only recurring visual separator below the page heading. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.view-head, .modal-card) + :is(section, article):not(.modal-card) {
+  padding-top: var(--portal-flow-gap) !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Remove the second and third frames used by operational modules.  Their
+ * content keeps a generous inset, so the lack of a box never means crowding. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .surface-card,
+  .data-table-card,
+  .table-card,
+  .chart-card,
+  .lead-directory-card,
+  .contact-directory-card,
+  .affiliate-list-panel,
+  .campaign-library-shell,
+  .gaming-activation-list-card,
+  .inventory-table-card,
+  .ticket-module-card,
+  .ticket-center-panel,
+  .reward-pass-panel,
+  .branch-panel,
+  .season-panel,
+  .catalog-panel,
+  .channel-analytics-layout,
+  .dashboard-builder-shell,
+  .dashboard-canvas,
+  .agenda-panel,
+  .rms-station-workspace,
+  .rms-station-clean-shell
+):not(.modal-card) {
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .data-table-card,
+  .table-card,
+  .lead-directory-card,
+  .affiliate-list-panel,
+  .campaign-library-shell,
+  .gaming-activation-list-card,
+  .inventory-table-card,
+  .ticket-module-card,
+  .reward-pass-panel,
+  .branch-panel,
+  .season-panel,
+  .catalog-panel,
+  .channel-analytics-layout,
+  .dashboard-builder-shell,
+  .dashboard-canvas,
+  .agenda-panel
+):not(.modal-card) {
+  padding-block: clamp(18px, 2.4vw, 34px) !important;
+}
+
+/* Headings form a generous editorial band.  Their rule begins after the
+ * first line and never cuts the text itself. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-card-head,
+  .lead-directory-head,
+  .campaign-library-head,
+  .affiliate-list-head,
+  .inventory-list-head,
+  .channel-analytics-head,
+  .dashboard-canvas-head,
+  .quiet-zone-control-head,
+  .view-section-head,
+  .section-head
+) {
+  align-items: flex-end !important;
+  gap: 18px clamp(24px, 3vw, 48px) !important;
+  padding: 0 0 var(--portal-section-gap) !important;
+  margin: 0 0 var(--portal-section-gap) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-card-head,
+  .lead-directory-head,
+  .campaign-library-head,
+  .affiliate-list-head,
+  .inventory-list-head,
+  .channel-analytics-head,
+  .dashboard-canvas-head,
+  .quiet-zone-control-head,
+  .view-section-head,
+  .section-head
+) > :first-child {
+  min-width: min(100%, 38rem) !important;
+}
+
+/* Controls live in a compact command row, not inside another pale card. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-toolbar,
+  .table-filters,
+  .directory-filters,
+  .lead-directory-filters,
+  .gaming-published-toolbar,
+  .inventory-filter-card,
+  .channel-filters,
+  .filter-row,
+  .rms-board-tools,
+  .dashboard-profile-tabs,
+  .contact-audience-tabs
+) {
+  box-sizing: border-box !important;
+  gap: 12px 16px !important;
+  padding: 0 0 var(--portal-section-gap) !important;
+  margin: 0 0 var(--portal-section-gap) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Metric collections get a calm baseline rather than a mosaic of tiles. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-grid,
+  .metrics-grid,
+  .dashboard-kpi-grid,
+  .overview-kpis,
+  .campaign-item-metrics
+) {
+  gap: 0 !important;
+  align-items: stretch !important;
+  border-block: 1px solid var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-card,
+  .metric-card,
+  .dashboard-kpi,
+  .overview-kpi
+) {
+  min-width: 0 !important;
+  padding: clamp(18px, 2.3vw, 30px) var(--portal-content-inset) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset -1px 0 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-card,
+  .metric-card,
+  .dashboard-kpi,
+  .overview-kpi
+):last-child {
+  box-shadow: none !important;
+}
+
+/* Rows have breathing room and feedback without the rounded cages. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .campaign-item,
+  .contact-directory-card-row,
+  .affiliate-top-row,
+  .lead-agenda-item,
+  .mission-active-card,
+  .contact-directory-row
+) {
+  margin: 0 !important;
+  padding: clamp(20px, 2.5vw, 32px) var(--portal-content-inset) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .campaign-item,
+  .contact-directory-card-row,
+  .affiliate-top-row,
+  .lead-agenda-item,
+  .mission-active-card,
+  .contact-directory-row
+):hover {
+  transform: none !important;
+  background: linear-gradient(90deg, rgba(235, 249, 255, .82), rgba(255, 255, 255, 0)) !important;
+  box-shadow: inset 3px 0 0 #05b9e7, inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Tables keep one roomy, scrollable lane and never inherit a rounded mask. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-wrap,
+  .table-scroll,
+  .data-table-scroll,
+  .table-responsive,
+  .compact-table,
+  .drilldown-table-wrap,
+  .command-table-wrap,
+  .dashboard-roi-table-wrap,
+  .competition-detail-table-wrap,
+  .branch-detail-table-wrap,
+  .rms-station-lead-table-wrap,
+  .rms-lean-station-table-wrap,
+  .mission-leaderboard-table-wrap,
+  .agenda-table-wrap
+) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule), inset 0 -1px 0 var(--portal-subtle-rule) !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active table :is(th, td) {
+  padding-block: clamp(16px, 2vw, 26px) !important;
+  border-radius: 0 !important;
+}
+
+/* Responsive composition: do not compress content to preserve a desktop row. */
+@media (max-width: 760px) {
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active {
+    gap: clamp(30px, 10vw, 52px) !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.view-head, .modal-card) + :is(section, article):not(.modal-card) {
+    padding-top: clamp(30px, 10vw, 52px) !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+    .kpi-grid,
+    .metrics-grid,
+    .dashboard-kpi-grid,
+    .overview-kpis,
+    .campaign-item-metrics
+  ) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+    .kpi-card,
+    .metric-card,
+    .dashboard-kpi,
+    .overview-kpi
+  ) {
+    padding-inline: 0 !important;
+    box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+  }
+}
