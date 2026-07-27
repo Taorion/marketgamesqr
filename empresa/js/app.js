@@ -32556,9 +32556,6 @@ function renderLeadDetailHeader(detail) {
   const analysis = leadAnalysisModel(detail);
   const tickets = detail.benefits || [];
   const groupedTickets = ticketGroups(tickets);
-  const activationTotal = Number(summary.activations_count || 0) || (detail.activations || []).length || (detail.games || []).length || 0;
-  const affiliateLabel = detail.affiliate ? "Afiliado" : "No afiliado";
-  const station = leadDirectoryStationInfo(lead);
   const pendingAgendaRows = leadDetailAgendaRows(detail).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
   if (leadDetailTitle) leadDetailTitle.textContent = lead.name || "Lead sin nombre";
   if (leadDetailSubtitle) {
@@ -32571,66 +32568,42 @@ function renderLeadDetailHeader(detail) {
     leadEditManualButton.classList.toggle("hidden", lead.source_type !== "MANUAL");
   }
   if (!leadDetailHeader) return;
+  const nextAction = analysis.nextActions?.[0] || { title: "Revisar ficha", detail: "Consulta sus datos y decide el siguiente contacto." };
   leadDetailHeader.innerHTML = `
     <div class="lead-identity-block">
       <div class="lead-status-row">
         <span class="status-chip ${commercialChipClass(lead.commercial_status)}">${escapeHtml(lead.commercial_status_label || lead.commercial_status || "Nuevo")}</span>
         <span class="pill muted">${escapeHtml(analysis.stage)}</span>
-        <span class="pill muted">${escapeHtml(station.short)}</span>
-        <span class="pill muted">${pendingAgendaRows.length.toLocaleString("es-CO")} agenda pendiente</span>
-        <span class="pill muted">Recompra ${escapeHtml(analysis.probability)}</span>
-        <span class="pill muted">Datos ${escapeHtml(analysis.dataQuality)}</span>
+        ${pendingAgendaRows.length ? `<span class="pill muted">${pendingAgendaRows.length.toLocaleString("es-CO")} tarea(s) pendiente(s)</span>` : ""}
         ${lead.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-edit-manual-lead>Editar datos</button>` : ""}
-        ${lead.source_type !== "MANUAL" ? `<button class="solid-button" type="button" data-add-lead-contact>Agregar a contactos</button>` : ""}
-        <button class="ghost-button danger-button" type="button" data-delete-lead-detail>Eliminar contacto</button>
       </div>
       <h4>${escapeHtml(lead.name || "Lead")}</h4>
-      <p>${escapeHtml(lead.insight || "")}</p>
+      <p>${escapeHtml(lead.insight || "Revisa la oportunidad y define su siguiente acción comercial.")}</p>
       <div class="lead-contact-strip">
-        <span><strong>Documento</strong>${escapeHtml(lead.document_id || "-")}</span>
         <span><strong>Email</strong>${escapeHtml(lead.email || "-")}</span>
         <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
-        <span><strong>Canal</strong>${escapeHtml(lead.channel || "-")}</span>
         <span><strong>Campaña</strong>${escapeHtml(lead.campaign_name || "-")}</span>
-        <span><strong>Estación actual</strong>${escapeHtml(station.label)}</span>
-        <span><strong>Activaciones</strong>${activationTotal.toLocaleString("es-CO")}</span>
-        <span><strong>Afiliación</strong>${escapeHtml(affiliateLabel)}</span>
-      </div>
-      <div class="lead-funnel-strip">
-        ${analysis.funnel.map(([label, done]) => `<span class="${done ? "is-done" : ""}">${escapeHtml(label)}</span>`).join("")}
       </div>
     </div>
     <div class="lead-decision-panel">
       <article class="lead-health-card">
-        <span class="mono-label">Salud comercial</span>
+        <span class="mono-label">Prioridad comercial</span>
         <strong>${analysis.healthScore}/100</strong>
         <div class="lead-health-bar"><span style="width:${analysis.healthScore}%"></span></div>
-        <small>${escapeHtml(analysis.topInterest)} · redencion ${analysis.redemptionRate}%</small>
+        <small>${escapeHtml(analysis.topInterest)} · ${escapeHtml(analysis.probability)}</small>
       </article>
       <div class="lead-header-metrics">
         <span><strong>${Number(summary.score_total || 0).toLocaleString("es-CO")}</strong>Score</span>
         <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
         <span><strong>${groupedTickets.active.length}</strong>Activos sin redimir</span>
-        <span><strong>${groupedTickets.expired.length}</strong>Tickets vencidos</span>
-        <span><strong>${groupedTickets.inactive.length}</strong>No activos</span>
-        <span><strong>${groupedTickets.redeemed.length}</strong>Redimidos</span>
       </div>
-      <div class="lead-next-actions">
-        ${analysis.nextActions.map((item) => `
-          <button class="lead-action-tile is-${escapeHtml(item.tone)}" type="button" data-lead-fast-action="${escapeHtml(item.preset)}">
-            <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.detail)}</span>
-          </button>
-        `).join("")}
+      <div class="lead-next-step">
+        <span class="mono-label">Siguiente paso</span>
+        <strong>${escapeHtml(nextAction.title)}</strong>
+        <small>${escapeHtml(nextAction.detail)}</small>
       </div>
     </div>
   `;
-  leadDetailHeader.querySelector("[data-delete-lead-detail]")?.addEventListener("click", () => {
-    deleteLeadContact(
-      { id: lead.id, source_type: lead.source_type || "PLAYER" },
-      lead.name || "este contacto"
-    );
-  });
   leadDetailHeader.querySelector("[data-edit-manual-lead]")?.addEventListener("click", () => {
     setLeadDetailTab("personal", { scrollTab: true });
     document.getElementById("manualLeadEditNameInput")?.focus();
