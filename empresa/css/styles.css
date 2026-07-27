@@ -61892,3 +61892,42 @@ html body #leadDetailModal .lead-tab-panel {
   html body #leadDetailModal .lead-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
   html body #leadDetailModal .lead-tab-panel { padding: 14px 16px 20px !important; }
 }
+
+/* Entrega de activación v235: ventana global, nunca contenida por el directorio. */
+html body > #leadActivationModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10020 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(12px, 3vw, 32px) !important;
+  background: rgba(4, 27, 68, .62) !important;
+  overflow: hidden !important;
+}
+
+html body > #leadActivationModal .modal-card {
+  width: min(860px, 100%) !important;
+  max-height: calc(100dvh - 24px) !important;
+  margin: 0 !important;
+  border: 1px solid #d8e5f2 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 32px 96px rgba(1, 25, 66, .38) !important;
+  overflow: hidden !important;
+}
+
+html body > #leadActivationModal .modal-form {
+  min-height: 0 !important;
+  padding: 20px 24px 24px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+@media (max-width: 760px) {
+  html body > #leadActivationModal.modal-shell:not(.hidden) { padding: 8px !important; }
+  html body > #leadActivationModal .modal-card { max-height: calc(100dvh - 16px) !important; border-radius: 14px !important; }
+  html body > #leadActivationModal .modal-form { padding: 16px !important; }
+}

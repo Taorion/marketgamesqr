@@ -31575,7 +31575,8 @@ function mountContactCenterLayout() {
   // La ficha debe vivir en el body: así el fixed cubre toda la aplicación y no
   // queda limitado por el shell desplazable del directorio.
   appendIfFound(document.body, leadDetailModal);
-  appendIfFound(contactCenterShell, leadActivationModal);
+  // La entrega de ticket debe vivir fuera del directorio para no quedar recortada.
+  appendIfFound(document.body, leadActivationModal);
 
   state.contactCenterMounted = true;
 }
