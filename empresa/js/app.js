@@ -2213,7 +2213,7 @@ let state = {
   smartCatalogProducts: [],
   smartCatalogIntents: [],
   smartCatalogSelectedCatalogId: "",
-  smartCatalogTab: "dashboard",
+  smartCatalogTab: "catalogs",
   smartCatalogLoaded: false,
   smartCatalogLoading: false,
   leadCrmFilters: {
@@ -9697,6 +9697,7 @@ function renderSmartCatalogWorkbench() {
 
 function renderSmartCatalogView() {
   ensureSmartCatalogUxStyles();
+  normalizeSmartCatalogWorkspace();
   renderSmartCatalogCampaignOptions();
   renderSmartCatalogCatalogOptions();
   smartCatalogTabButtons.forEach((button) => {
@@ -9754,8 +9755,71 @@ async function loadSmartCatalogDetail(catalogId, options = {}) {
 }
 
 function setSmartCatalogTab(tab) {
-  state.smartCatalogTab = tab || "dashboard";
+  state.smartCatalogTab = tab || "catalogs";
   renderSmartCatalogView();
+}
+
+function ensureSmartCatalogCreateModal() {
+  if (!smartCatalogForm) return null;
+  let modal = document.getElementById("smartCatalogCreateModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden smart-catalog-create-modal";
+  modal.id = "smartCatalogCreateModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "smartCatalogCreateModalTitle");
+  modal.innerHTML = `
+    <article class="modal-card smart-catalog-create-modal-card" role="document">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label">NUEVO CATÁLOGO</span>
+          <h3 id="smartCatalogCreateModalTitle">Crea una vitrina pública</h3>
+          <p>Define tu marca y WhatsApp. Después agrega productos y comparte el enlace.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-smart-catalog-create aria-label="Cerrar creación de catálogo"><span class="material-symbols-outlined">close</span></button>
+      </div>
+    </article>
+  `;
+  modal.querySelector(".smart-catalog-create-modal-card")?.appendChild(smartCatalogForm);
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-close-smart-catalog-create]")) {
+      event.preventDefault();
+      closeSmartCatalogCreateModal();
+    }
+  });
+  return modal;
+}
+
+function openSmartCatalogCreateModal() {
+  const modal = ensureSmartCatalogCreateModal();
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  window.setTimeout(() => smartCatalogForm?.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
+}
+
+function closeSmartCatalogCreateModal() {
+  document.getElementById("smartCatalogCreateModal")?.classList.add("hidden");
+}
+
+function normalizeSmartCatalogWorkspace() {
+  const view = document.querySelector('.view-section[data-view="smart-catalogs"]');
+  const listCard = smartCatalogTable?.closest(".smart-catalog-table-card");
+  if (!view || !listCard) return;
+  view.querySelector('[data-smart-catalog-tab="catalogs"]')?.replaceChildren("Mis catálogos");
+  view.querySelector('[data-smart-catalog-tab="dashboard"]')?.replaceChildren("Cómo funciona");
+  const head = listCard.querySelector(":scope > .table-card-head");
+  if (head && !head.querySelector("[data-open-smart-catalog-create]")) {
+    const button = document.createElement("button");
+    button.className = "solid-button compact";
+    button.type = "button";
+    button.dataset.openSmartCatalogCreate = "true";
+    button.textContent = "Crear catálogo";
+    button.addEventListener("click", openSmartCatalogCreateModal);
+    head.appendChild(button);
+  }
+  ensureSmartCatalogCreateModal();
 }
 
 async function refreshSmartCatalogs(options = {}) {
@@ -9780,6 +9844,7 @@ async function submitSmartCatalog(event) {
     smartCatalogForm.reset();
     setInlineMessage(smartCatalogMessage, "Catálogo creado. Agrega productos y comparte el link público.", "success");
     await refreshSmartCatalogs({ quiet: true });
+    closeSmartCatalogCreateModal();
     setSmartCatalogTab("products");
   } catch (error) {
     setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear el catálogo.", "error");

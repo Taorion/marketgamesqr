@@ -62098,3 +62098,166 @@ html body > #gamingActivationDetailModal .gaming-activation-detail-actions {
   html body > #gamingActivationDetailModal .gaming-activation-detail-head,
   html body > #gamingActivationDetailModal .gaming-activation-detail-body { padding-right: 16px !important; padding-left: 16px !important; }
 }
+
+/* Catálogos v237: iniciar por las vitrinas creadas y separar cada tarea. */
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-hero,
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-kpis {
+  display: none !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-head {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  margin-bottom: 16px !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-tabs {
+  position: static !important;
+  display: flex !important;
+  gap: 8px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow-x: auto !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-tabs button {
+  flex: 0 0 auto !important;
+  min-height: 40px !important;
+  padding: 8px 14px !important;
+  border: 1px solid #dce8f3 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: #526e8d !important;
+  font-size: .8rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-tabs button.active {
+  border-color: #006eff !important;
+  background: #e9f7ff !important;
+  color: #073b84 !important;
+  box-shadow: inset 0 -2px 0 #006eff !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell [data-smart-catalog-panel="catalogs"] .smart-catalog-split {
+  display: block !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card {
+  max-width: none !important;
+  padding: 0 !important;
+  border: 1px solid #dce8f3 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(5, 42, 107, .06) !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 18px 20px !important;
+  border-bottom: 1px solid #e2ebf4 !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card > .table-card-head h3 { margin: 3px 0 0 !important; }
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card .table-wrap { overflow: visible !important; }
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th,
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td {
+  min-width: 0 !important;
+  padding: 13px 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e8eff6 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th:nth-child(1),
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(1) { width: 36% !important; }
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th:nth-child(2),
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(2) { width: 14% !important; }
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th:nth-child(3),
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(3) { width: 20% !important; }
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th:nth-child(4),
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(4) { width: 10% !important; }
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card th:nth-child(5),
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(5) { width: 20% !important; }
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td small {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body > #smartCatalogCreateModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10040 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(12px, 3vw, 32px) !important;
+  background: rgba(4, 27, 68, .62) !important;
+}
+
+html body > #smartCatalogCreateModal .smart-catalog-create-modal-card {
+  width: min(840px, 100%) !important;
+  max-height: calc(100dvh - 24px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  border: 1px solid #d8e5f2 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 32px 96px rgba(1, 25, 66, .38) !important;
+  overflow: hidden !important;
+}
+
+html body > #smartCatalogCreateModal .modal-head {
+  padding: 20px 24px 14px !important;
+  border-bottom: 1px solid #e2ebf4 !important;
+}
+
+html body > #smartCatalogCreateModal .modal-head p { margin: 4px 0 0 !important; color: #5b718c !important; }
+
+html body > #smartCatalogCreateModal .smart-catalog-form {
+  min-height: 0 !important;
+  padding: 20px 24px 24px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-head { grid-template-columns: 1fr !important; }
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card > .table-card-head { align-items: flex-start !important; }
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card thead { display: none !important; }
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card table,
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card tbody,
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card tr,
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td { display: block !important; width: 100% !important; }
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card tr { padding: 10px 14px !important; }
+  html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td { padding: 5px 0 !important; }
+  html body > #smartCatalogCreateModal.modal-shell:not(.hidden) { padding: 8px !important; }
+  html body > #smartCatalogCreateModal .smart-catalog-create-modal-card { max-height: calc(100dvh - 16px) !important; border-radius: 14px !important; }
+  html body > #smartCatalogCreateModal .modal-head,
+  html body > #smartCatalogCreateModal .smart-catalog-form { padding-right: 16px !important; padding-left: 16px !important; }
+}
