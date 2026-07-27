@@ -57169,6 +57169,37 @@ html body .portal-shell .sidebar-nav-section-admin {
   border-bottom: 0 !important;
 }
 
+/* Admin is navigated as distinct screens, not one long account canvas. */
+html body .portal-shell [data-view="account"] .account-screen-hidden {
+  display: none !important;
+}
+
+html body .portal-shell [data-view="account"] .account-summary-grid {
+  align-items: stretch !important;
+}
+
+html body .portal-shell [data-view="account"].account-screen-billing .account-summary-grid,
+html body .portal-shell [data-view="account"].account-screen-assets .account-summary-grid,
+html body .portal-shell [data-view="account"].account-screen-admin .account-summary-grid {
+  display: none !important;
+}
+
+html body .portal-shell [data-view="account"].account-screen-billing .account-settings-grid,
+html body .portal-shell [data-view="account"].account-screen-assets .account-settings-grid,
+html body .portal-shell [data-view="account"].account-screen-admin .account-settings-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 780px) {
+  html body .portal-shell [data-view="account"] .account-settings-grid {
+    display: block !important;
+  }
+
+  html body .portal-shell [data-view="account"] .account-settings-grid > [data-account-screen]:not(.account-screen-hidden) {
+    margin-bottom: 16px !important;
+  }
+}
+
 html body .portal-shell .sidebar-nav-section .nav-group-label {
   display: flex !important;
   align-items: center !important;

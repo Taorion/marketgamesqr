@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=sidebar-sections-20260727-v148">
+  <link rel="stylesheet" href="css/styles.css?v=admin-independent-screens-20260727-v149">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
 </head>
 <body data-current-view="rms-machine">
@@ -287,15 +287,15 @@
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
             <div class="sidebar-nav-section-panel" id="sidebar-section-admin-panel">
-            <button class="nav-item" data-view="account" data-account-anchor="accountProfileOverview" type="button">
+            <button class="nav-item" data-view="account" data-account-screen="profile" type="button">
               <span class="material-symbols-outlined">manage_accounts</span>
               <span><strong>Cuenta</strong><small>Perfil, empresa y plan</small></span>
             </button>
-            <button class="nav-item" data-view="account" data-account-anchor="accountSectionBilling" type="button">
+            <button class="nav-item" data-view="account" data-account-screen="billing" type="button">
               <span class="material-symbols-outlined">confirmation_number</span>
               <span><strong>Recargas</strong><small>Tickets y cambio de plan</small></span>
             </button>
-            <button class="nav-item" data-view="account" data-account-anchor="accountSectionAssets" type="button">
+            <button class="nav-item" data-view="account" data-account-screen="assets" type="button">
               <span class="material-symbols-outlined">perm_media</span>
               <span><strong>Activos digitales</strong><small>Logo, marco y archivos</small></span>
             </button>
@@ -1275,13 +1275,13 @@
           <section class="view-section" data-view="account">
             <div class="view-head">
               <div>
-                <h2>Cuenta</h2>
-                <p>Tu perfil, empresa y plan actual. Gestiona recargas y activos digitales desde Admin.</p>
+                <h2 id="accountViewTitle">Cuenta</h2>
+                <p id="accountViewSubtitle">Tu perfil, empresa y plan actual.</p>
               </div>
             </div>
 
             <section class="account-summary-grid" id="accountProfileOverview">
-              <article class="surface-card account-profile-card">
+              <article class="surface-card account-profile-card" data-account-screen="profile">
                 <span class="mono-label">Empresa en sesión</span>
                 <h3 id="accountBusinessName">Empresa</h3>
                 <div class="account-meta-grid">
@@ -1304,7 +1304,7 @@
                 </div>
               </article>
 
-              <article class="surface-card account-profile-card">
+              <article class="surface-card account-profile-card" data-account-screen="profile">
                 <span class="mono-label">Usuario activo</span>
                 <h3 id="accountUserName">Usuario</h3>
                 <div class="account-meta-grid">
@@ -1327,7 +1327,7 @@
                 </div>
               </article>
 
-              <article class="surface-card account-profile-card">
+              <article class="surface-card account-profile-card" data-account-screen="billing">
                 <span class="mono-label">Cuenta y tickets</span>
                 <h3 id="accountPlanName">Plan</h3>
                 <div class="account-meta-grid">
@@ -1355,7 +1355,7 @@
               </article>
             </section>
 
-            <article class="surface-card account-deal-card hidden" id="accountCommercialDealCard">
+            <article class="surface-card account-deal-card hidden" id="accountCommercialDealCard" data-account-screen="billing">
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Declaracion comercial</span>
@@ -1367,21 +1367,14 @@
               <div class="account-deal-grid" id="accountCommercialDealGrid"></div>
             </article>
 
-            <section class="account-admin-nav" aria-label="Secciones de administración">
-              <a href="#accountSectionData"><span class="material-symbols-outlined" aria-hidden="true">badge</span><strong>Cuenta</strong><small>Empresa, usuario y datos personales</small></a>
-              <a href="#accountSectionBilling"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><strong>Plan y tickets</strong><small>Comprar tickets o elegir otro plan</small></a>
-              <a href="#accountSectionAssets"><span class="material-symbols-outlined" aria-hidden="true">perm_media</span><strong>Activos y marca</strong><small>Activos digitales, logo y marco QR</small></a>
-              <a href="#accountSectionUsers"><span class="material-symbols-outlined" aria-hidden="true">group_add</span><strong>Usuarios</strong><small>Accesos del equipo al portal</small></a>
-            </section>
-
             <section class="account-settings-grid">
-              <div class="account-section-divider account-section-data" id="accountSectionData">
+              <div class="account-section-divider account-section-data" id="accountSectionData" data-account-screen="billing">
                 <span class="mono-label">01 · Recargas y plan</span>
                 <h3>Compra tickets o cambia de plan</h3>
                 <p>Recarga tickets, revisa pagos recientes o cambia de plan cuando lo necesites.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-billing-card account-span-full" id="accountSectionBilling">
+              <article class="surface-card account-settings-card account-billing-card account-span-full" id="accountSectionBilling" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Pagos y renovaciones</span>
@@ -1428,7 +1421,7 @@
                 <p class="error-line" id="subscriptionRenewalMessage"></p>
               </article>
 
-              <article class="surface-card data-table-card qr-credit-shop-card account-only-commerce-card account-span-5" id="accountQrCreditShopCard">
+              <article class="surface-card data-table-card qr-credit-shop-card account-only-commerce-card account-span-5" id="accountQrCreditShopCard" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Recarga automatica</span>
@@ -1462,7 +1455,7 @@
                 </div>
               </article>
 
-              <article class="surface-card portal-pricing-card account-only-commerce-card account-span-7" id="accountPortalPlansCard">
+              <article class="surface-card portal-pricing-card account-only-commerce-card account-span-7" id="accountPortalPlansCard" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Planes del portal</span>
@@ -1476,13 +1469,13 @@
                 <div class="portal-pricing-grid" id="subscriptionPlansGrid"></div>
               </article>
 
-              <div class="account-section-divider account-section-billing" id="accountSectionCompany">
+              <div class="account-section-divider account-section-billing" id="accountSectionCompany" data-account-screen="profile">
                 <span class="mono-label">02 · Empresa</span>
                 <h3>Datos de tu empresa</h3>
                 <p>Actualiza la información comercial, el contacto y los datos visibles de tu negocio.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-company-card account-span-8">
+              <article class="surface-card account-settings-card account-company-card account-span-8" data-account-screen="profile">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Datos básicos</span>
@@ -1511,7 +1504,7 @@
                 </form>
               </article>
 
-              <article class="surface-card account-settings-card account-logo-card account-span-4">
+              <article class="surface-card account-settings-card account-logo-card account-span-4" data-account-screen="profile">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Configuración visible</span>
@@ -1535,13 +1528,13 @@
                 </div>
               </article>
 
-              <div class="account-section-divider account-section-assets" id="accountSectionAssets">
+              <div class="account-section-divider account-section-assets" id="accountSectionAssets" data-account-screen="assets">
                 <span class="mono-label">03 · Activos digitales</span>
                 <h3>Logo, marco y archivos de tu empresa</h3>
                 <p>Gestiona tu logo, marco QR y archivos digitales que podrás entregar a tus clientes.</p>
               </div>
 
-              <article class="surface-card account-settings-card digital-asset-library-card account-span-8">
+              <article class="surface-card account-settings-card digital-asset-library-card account-span-8" data-account-screen="assets">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Activos digitales</span>
@@ -1565,7 +1558,7 @@
                 <div class="digital-assets-grid" id="digitalAssetsGrid"></div>
               </article>
 
-              <article class="surface-card account-settings-card account-ticket-frame-card account-span-4">
+              <article class="surface-card account-settings-card account-ticket-frame-card account-span-4" data-account-screen="assets">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Brand tickets</span>
@@ -1591,7 +1584,7 @@
                 </div>
               </article>
 
-              <article class="surface-card account-settings-card account-security-card account-span-4">
+              <article class="surface-card account-settings-card account-security-card account-span-4" data-account-screen="profile">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Seguridad</span>
@@ -1633,13 +1626,13 @@
                 </form>
               </article>
 
-              <div class="account-section-divider account-section-users" id="accountSectionUsers">
+              <div class="account-section-divider account-section-users" id="accountSectionUsers" data-account-screen="admin">
                 <span class="mono-label">04 · Usuarios</span>
                 <h3>Usuarios con acceso al portal</h3>
                 <p>Agrega usuarios del equipo y gestiona quién puede entrar al portal operativo.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-users-card account-span-8">
+              <article class="surface-card account-settings-card account-users-card account-span-8" data-account-screen="admin">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Usuarios del negocio</span>
@@ -7308,7 +7301,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=sidebar-sections-20260727-v148" defer></script>
+  <script src="js/app.js?v=admin-independent-screens-20260727-v149" defer></script>
 </body>
 </html>
 

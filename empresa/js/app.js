@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-sidebar-sections-v148";
+const APP_VERSION = "empresa-20260727-admin-independent-screens-v149";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1294,13 +1294,49 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
   }
 }
 
-function openAccountSection(anchorId = "") {
-  state.accountNavigationAnchor = anchorId;
-  setView("account");
-  if (!anchorId || state.currentView !== "account") return;
-  window.requestAnimationFrame(() => {
-    document.getElementById(anchorId)?.scrollIntoView({ behavior: "auto", block: "start" });
+const ACCOUNT_SCREEN_COPY = Object.freeze({
+  profile: {
+    title: "Cuenta",
+    subtitle: "Consulta y actualiza tu perfil, empresa y seguridad de acceso.",
+  },
+  billing: {
+    title: "Recargas",
+    subtitle: "Compra tickets, revisa tu saldo y administra el plan del portal.",
+  },
+  assets: {
+    title: "Activos digitales",
+    subtitle: "Administra logo, marco QR y archivos para entregar a tus clientes.",
+  },
+  admin: {
+    title: "Administración",
+    subtitle: "Gestiona usuarios y permisos del equipo con acceso al portal.",
+  },
+});
+
+function normalizeAccountScreen(screen = "") {
+  return ACCOUNT_SCREEN_COPY[screen] ? screen : "profile";
+}
+
+function applyAccountScreen() {
+  const screen = normalizeAccountScreen(state.accountScreen);
+  state.accountScreen = screen;
+  const copy = ACCOUNT_SCREEN_COPY[screen];
+  document.querySelectorAll('[data-view="account"] [data-account-screen]').forEach((node) => {
+    node.classList.toggle("account-screen-hidden", node.dataset.accountScreen !== screen);
   });
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-profile", screen === "profile");
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-billing", screen === "billing");
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-assets", screen === "assets");
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-admin", screen === "admin");
+  const title = document.getElementById("accountViewTitle");
+  const subtitle = document.getElementById("accountViewSubtitle");
+  if (title) title.textContent = copy.title;
+  if (subtitle) subtitle.textContent = copy.subtitle;
+}
+
+function openAccountSection(screen = "") {
+  state.accountScreen = normalizeAccountScreen(screen);
+  setView("account");
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
@@ -2212,7 +2248,7 @@ const lightTestMode = routeLightMode || (() => {
 let session = loadSession();
 let state = {
   currentView: PORTAL_DEFAULT_VIEW,
-  accountNavigationAnchor: "",
+  accountScreen: "profile",
   dashboardBuilderProfile: "marketing",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
@@ -5620,6 +5656,7 @@ function renderAccountView() {
   if (accountTicketFrameRemoveButton) {
     accountTicketFrameRemoveButton.disabled = !ticketFrame;
   }
+  applyAccountScreen();
 }
 
 function applyPlanNavigation() {
@@ -5849,7 +5886,6 @@ async function loadAccountWorkspaceData(options = {}) {
 function setView(view) {
   const requestedView = view;
   const previousView = state.currentView;
-  if (view !== "account") state.accountNavigationAnchor = "";
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
     showFeedback("Ese módulo es interno de Qori. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
@@ -5890,13 +5926,13 @@ function setView(view) {
   document.body.dataset.currentView = view;
   navButtons.forEach((button) => {
     const contactTarget = button.dataset.contactCenterNav || "";
-    const accountTarget = button.dataset.accountAnchor || "";
+    const accountTarget = button.dataset.accountScreen || "";
     const isLeadsBase = button.dataset.view === "leads"
       && view === "leads"
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
     const isAccountTarget = button.dataset.view === "account"
       && view === "account"
-      && accountTarget === state.accountNavigationAnchor;
+      && accountTarget === state.accountScreen;
     const isRegular = button.dataset.view === view && view !== "leads" && view !== "rms-machine" && view !== "account";
     const isActive = isLeadsBase || isAccountTarget || isRegular;
     button.classList.remove("active");
@@ -43120,8 +43156,8 @@ navButtons.forEach((button) => {
     if (ownerSection?.dataset.sidebarSection) {
       setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
     }
-    if (button.dataset.accountAnchor) {
-      openAccountSection(button.dataset.accountAnchor);
+    if (button.dataset.accountScreen) {
+      openAccountSection(button.dataset.accountScreen);
       return;
     }
     if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
@@ -43140,8 +43176,8 @@ document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   event.stopImmediatePropagation();
   const ownerSection = button.closest("[data-sidebar-section]");
   if (ownerSection?.dataset.sidebarSection) setSidebarAccordionSection(ownerSection.dataset.sidebarSection);
-  if (button.dataset.accountAnchor) {
-    openAccountSection(button.dataset.accountAnchor);
+  if (button.dataset.accountScreen) {
+    openAccountSection(button.dataset.accountScreen);
     return;
   }
   if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
