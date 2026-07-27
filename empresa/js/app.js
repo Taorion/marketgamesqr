@@ -320,6 +320,9 @@ const campaignSectionTabs = Array.from(document.querySelectorAll("[data-campaign
 const campaignSectionTabOpenButtons = Array.from(document.querySelectorAll("[data-campaign-tab-open]"));
 const campaignSectionPanels = Array.from(document.querySelectorAll("[data-campaign-tab-panel]"));
 const campaignStateGrid = document.getElementById("campaignStateGrid");
+const campaignInsightsPanel = document.getElementById("campaignInsightsPanel");
+const campaignInsightsPeriod = document.getElementById("campaignInsightsPeriod");
+const campaignInsightsBody = document.getElementById("campaignInsightsBody");
 const campaignRoiTable = document.getElementById("campaignRoiTable");
 const campaignInsightText = document.getElementById("campaignInsightText");
 const campaignObjectiveValue = document.getElementById("campaignObjectiveValue");
@@ -11510,6 +11513,64 @@ function campaignQoriCenterCss() {
     body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] :is(.sales-kpis, .campaign-roi-summary-card, .campaign-layout) {
       display: none !important;
     }
+
+    /* Campaign runtime v227: detailed analysis is available on demand, without crowding the list. */
+    body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"] > .campaign-insights-panel {
+      display: block !important;
+      margin-top: 18px !important;
+      overflow: hidden !important;
+      border: 1px solid #d7e3ef !important;
+      border-radius: 16px !important;
+      background: #ffffff !important;
+      box-shadow: 0 10px 26px rgba(12,54,106,.05) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-panel > summary {
+      display: grid !important;
+      grid-template-columns: auto minmax(0,1fr) auto !important;
+      align-items: center !important;
+      gap: 12px !important;
+      min-height: 72px !important;
+      padding: 15px 18px !important;
+      cursor: pointer !important;
+      color: #0a2d64 !important;
+      list-style: none !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-panel > summary::-webkit-details-marker { display: none !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-panel > summary > .material-symbols-outlined { display: grid !important; width: 38px !important; height: 38px !important; place-items: center !important; border-radius: 12px !important; background: #edf8ff !important; color: #0873d1 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-copy { display: grid !important; gap: 3px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-copy strong { font-size: 1rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-copy small { color: #647c98 !important; font-size: .78rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-action { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #0a4fa9 !important; font-size: .78rem !important; font-weight: 800 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-action .material-symbols-outlined { transition: transform .18s ease !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-panel[open] .campaign-insights-summary-action .material-symbols-outlined { transform: rotate(180deg) !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-content { padding: 0 18px 18px !important; border-top: 1px solid #e5edf5 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar { display: flex !important; align-items: end !important; justify-content: space-between !important; gap: 16px !important; padding: 16px 0 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar > div { display: grid !important; gap: 3px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar strong { color: #0a2d64 !important; font-size: .9rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar label { display: grid !important; gap: 4px !important; color: #637b96 !important; font-size: .7rem !important; font-weight: 800 !important; text-transform: uppercase !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar select { min-width: 176px !important; min-height: 36px !important; padding: 7px 28px 7px 10px !important; border: 1px solid #cbddeb !important; border-radius: 9px !important; background: #fff !important; color: #0a2d64 !important; font: inherit !important; text-transform: none !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-grid { display: grid !important; grid-template-columns: minmax(0,1.55fr) minmax(260px,.9fr) !important; gap: 14px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-trend-card, body[data-current-view="campaigns"] .portal-shell .campaign-behavior-card { min-width: 0 !important; padding: 16px !important; border: 1px solid #e0eaf3 !important; border-radius: 13px !important; background: #fbfdff !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-card-head { display: flex !important; align-items: start !important; justify-content: space-between !important; gap: 12px !important; margin-bottom: 12px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-card-head strong { display: block !important; color: #0a2d64 !important; font-size: .9rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-card-head small { display: block !important; margin-top: 3px !important; color: #6e829a !important; font-size: .74rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-trend-svg { display: block !important; width: 100% !important; height: 190px !important; overflow: visible !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-trend-empty { display: grid !important; min-height: 190px !important; place-items: center !important; padding: 20px !important; border: 1px dashed #c9dae9 !important; border-radius: 10px !important; color: #667e99 !important; font-size: .82rem !important; line-height: 1.45 !important; text-align: center !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-list { display: grid !important; gap: 13px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-row { display: grid !important; grid-template-columns: minmax(0,1fr) auto !important; gap: 5px 10px !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-row > span { color: #526d8d !important; font-size: .78rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-row > strong { color: #0a2d64 !important; font-size: .8rem !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-track { grid-column: 1 / -1 !important; height: 7px !important; overflow: hidden !important; border-radius: 999px !important; background: #e5edf5 !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-behavior-track i { display: block !important; height: 100% !important; border-radius: inherit !important; background: linear-gradient(90deg,#0b55c7,#07c9f6) !important; }
+    body[data-current-view="campaigns"] .portal-shell .campaign-insights-note { margin: 12px 0 0 !important; color: #71859c !important; font-size: .73rem !important; line-height: 1.4 !important; }
+    @media (max-width: 760px) {
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-panel > summary { grid-template-columns: auto minmax(0,1fr) !important; padding: 14px !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-summary-action { grid-column: 2 !important; justify-self: start !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-content { padding: 0 14px 14px !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar { align-items: stretch !important; flex-direction: column !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar select { width: 100% !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-insights-grid { grid-template-columns: 1fr !important; }
+    }
   `;
 }
 
@@ -11717,6 +11778,82 @@ function renderCampaignCommandKpis() {
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>
   `).join("");
+  renderCampaignInsights();
+}
+
+function renderCampaignInsights() {
+  if (!campaignInsightsBody) return;
+  const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
+  const periodValue = campaignInsightsPeriod?.value || "30";
+  const periodDays = periodValue === "all" ? null : Math.max(1, Number(periodValue) || 30);
+  const rawSnapshots = Array.isArray(state.selectedReport?.sales_snapshots) ? state.selectedReport.sales_snapshots : [];
+  const datedSnapshots = rawSnapshots
+    .map((snapshot) => ({
+      ...snapshot,
+      timestamp: new Date(snapshot.end_date || snapshot.start_date || snapshot.created_at || 0).getTime(),
+    }))
+    .filter((snapshot) => Number.isFinite(snapshot.timestamp) && snapshot.timestamp > 0)
+    .sort((a, b) => a.timestamp - b.timestamp);
+  const latestSnapshot = datedSnapshots[datedSnapshots.length - 1]?.timestamp || 0;
+  const snapshots = periodDays && latestSnapshot
+    ? datedSnapshots.filter((snapshot) => snapshot.timestamp >= latestSnapshot - ((periodDays - 1) * 86400000))
+    : datedSnapshots;
+  const leads = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.total_leads), 0);
+  const tickets = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.total_qr_generated), 0);
+  const redemptions = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.total_qr_redeemed), 0);
+  const sales = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0);
+  const active = campaigns.filter((campaign) => campaign.status === "ACTIVE").length;
+  const behaviors = [
+    ["Lead a ticket", tickets ? safeRate(tickets, leads) : 0, `${tickets.toLocaleString("es-CO")} tickets emitidos`],
+    ["Ticket a redención", redemptions ? safeRate(redemptions, tickets) : 0, `${redemptions.toLocaleString("es-CO")} beneficios usados`],
+    ["Lead a venta", sales ? safeRate(sales, leads) : 0, `${sales.toLocaleString("es-CO")} ventas atribuidas`],
+    ["Campañas activas", campaigns.length ? safeRate(active, campaigns.length) : 0, `${active} de ${campaigns.length || 0} en curso`],
+  ];
+  const chartWidth = 560;
+  const chartHeight = 190;
+  const padding = { top: 20, right: 14, bottom: 34, left: 14 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const values = snapshots.map((snapshot) => toNumber(snapshot.total_sales_amount));
+  const maxValue = Math.max(...values, 1);
+  const points = snapshots.map((snapshot, index) => {
+    const x = snapshots.length === 1
+      ? padding.left + (plotWidth / 2)
+      : padding.left + ((index / (snapshots.length - 1)) * plotWidth);
+    const y = padding.top + (plotHeight - ((toNumber(snapshot.total_sales_amount) / maxValue) * plotHeight));
+    return { ...snapshot, x, y };
+  });
+  const labels = points.filter((_, index) => points.length <= 4 || index === 0 || index === points.length - 1 || index % Math.ceil(points.length / 4) === 0);
+  const trendMarkup = points.length
+    ? `<svg class="campaign-trend-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" role="img" aria-label="Tendencia de revenue por fecha">
+        <defs><linearGradient id="campaignTrendFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#0bc9f6" stop-opacity=".25"/><stop offset="100%" stop-color="#0bc9f6" stop-opacity="0"/></linearGradient></defs>
+        <line x1="${padding.left}" y1="${padding.top + plotHeight}" x2="${chartWidth - padding.right}" y2="${padding.top + plotHeight}" stroke="#dbe7f1" stroke-width="1" />
+        <path d="M ${points.map((point) => `${point.x} ${point.y}`).join(" L ")}" fill="none" stroke="#0a4fa9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M ${points[0].x} ${padding.top + plotHeight} L ${points.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${points[points.length - 1].x} ${padding.top + plotHeight} Z" fill="url(#campaignTrendFill)" />
+        ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="#ffffff" stroke="#07bfe9" stroke-width="3"><title>${escapeHtml(`${formatDateShort(point.end_date || point.start_date)}: ${money(point.total_sales_amount)}`)}</title></circle>`).join("")}
+        ${labels.map((point) => `<text x="${point.x}" y="${chartHeight - 9}" text-anchor="middle" fill="#71859c" font-size="11">${escapeHtml(formatDateShort(point.end_date || point.start_date))}</text>`).join("")}
+      </svg>`
+    : `<div class="campaign-trend-empty">Aún no hay cortes de venta por fecha para esta campaña. Cuando registres una venta o un snapshot, aquí verás su evolución en el tiempo.</div>`;
+  const selectedName = state.selectedCampaign?.name ? `de ${state.selectedCampaign.name}` : "del negocio";
+  campaignInsightsBody.innerHTML = `
+    <div class="campaign-insights-grid">
+      <section class="campaign-trend-card">
+        <div class="campaign-insights-card-head"><div><strong>Revenue por fecha</strong><small>${escapeHtml(selectedName)} · ${snapshots.length ? `${snapshots.length} corte(s) disponible(s)` : "Sin cortes disponibles"}</small></div>${snapshots.length ? `<strong>${escapeHtml(money(values.reduce((sum, value) => sum + value, 0)))}</strong>` : ""}</div>
+        ${trendMarkup}
+      </section>
+      <section class="campaign-behavior-card">
+        <div class="campaign-insights-card-head"><div><strong>Comportamiento del embudo</strong><small>Conversión observada en campañas</small></div></div>
+        <div class="campaign-behavior-list">
+          ${behaviors.map(([label, value, meta]) => `<div class="campaign-behavior-row"><span>${escapeHtml(label)}</span><strong>${Number(value).toFixed(1)}%</strong><div class="campaign-behavior-track"><i style="width:${Math.max(0, Math.min(100, Number(value) || 0))}%"></i></div><small>${escapeHtml(meta)}</small></div>`).join("")}
+        </div>
+      </section>
+    </div>
+    <p class="campaign-insights-note">El gráfico usa los cortes registrados de la campaña seleccionada. El comportamiento reúne los resultados reales de las campañas disponibles.</p>
+  `;
+  if (campaignInsightsPeriod && !campaignInsightsPeriod.dataset.bound) {
+    campaignInsightsPeriod.dataset.bound = "true";
+    campaignInsightsPeriod.addEventListener("change", renderCampaignInsights);
+  }
 }
 
 function renderSnapshotComparisonChart(snapshots) {
@@ -11809,6 +11946,7 @@ async function selectCampaign(campaignId) {
     state.selectedSales = salesData.sales || [];
     state.selectedCampaignAffiliates = [];
 
+    renderCampaignInsights();
     renderCampaignView();
     renderCampaignAssociationInputs();
     renderLeadsView();
@@ -24135,6 +24273,7 @@ function renderNoCampaignState() {
   hideFeedback();
   campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
   renderCampaignCommandKpis();
+  renderCampaignInsights();
   campaignBreadcrumb.textContent = "Sin campaña seleccionada";
   campaignHeroTitle.textContent = "Campañas y QR";
   campaignHeroSubtitle.textContent = "Crea campañas, conecta QR y mide leads, redenciones, revenue y ROI.";

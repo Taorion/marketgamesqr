@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=campaign-cost-builder-20260726-v226">
+  <link rel="stylesheet" href="css/styles.css?v=campaign-insights-20260726-v227">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
 </head>
 <body data-current-view="rms-machine">
@@ -3660,6 +3660,27 @@
             </section>
 
             <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
+
+            <details class="campaign-insights-panel" id="campaignInsightsPanel" data-campaign-tab-panel="analysis">
+              <summary>
+                <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+                <span class="campaign-insights-summary-copy"><strong>Análisis de rendimiento</strong><small>Fechas, tendencia y comportamiento comercial</small></span>
+                <span class="campaign-insights-summary-action">Ver gráficas <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></span>
+              </summary>
+              <div class="campaign-insights-content">
+                <div class="campaign-insights-toolbar">
+                  <div><span class="mono-label">Periodo</span><strong>Lectura de la campaña seleccionada</strong></div>
+                  <label>Mostrar
+                    <select id="campaignInsightsPeriod" aria-label="Periodo de análisis de campaña">
+                      <option value="30">Últimos 30 días</option>
+                      <option value="90">Últimos 90 días</option>
+                      <option value="all">Todo el historial</option>
+                    </select>
+                  </label>
+                </div>
+                <div id="campaignInsightsBody" aria-live="polite"></div>
+              </div>
+            </details>
 
             <section class="surface-card campaign-roi-summary-card" data-campaign-tab-panel="analysis">
               <div class="table-card-head">
@@ -7338,7 +7359,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=campaign-cost-builder-20260726-v226" defer></script>
+  <script src="js/app.js?v=campaign-insights-20260726-v227" defer></script>
 </body>
 </html>
 
