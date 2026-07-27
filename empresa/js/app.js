@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-tools-v167";
+const APP_VERSION = "empresa-20260727-activation-global-modal-v168";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -11937,7 +11937,9 @@ function openCampaignInterstitial(campaign = state.selectedCampaign) {
     modal.className = "modal-shell hidden";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
-    document.body.appendChild(modal);
+    // Keep the interstitial at the top of the portal shell.  It must not be
+    // constrained by the activations panel that owns the form itself.
+    (document.querySelector(".portal-shell") || document.body).appendChild(modal);
   }
   modal.innerHTML = `
     <div class="modal-card campaign-interstitial-card">
@@ -14344,9 +14346,9 @@ function gamingCenterScrollTo(selector = "", options = {}) {
 }
 
 function ensureGamingActivationBuilderModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
-  const builderCard = view?.querySelector(".gaming-activation-builder-card");
-  if (!view || !builderCard) return null;
-  let modal = view.querySelector("#gamingActivationBuilderModal");
+  const builderCard = document.querySelector(".gaming-activation-builder-card") || view?.querySelector(".gaming-activation-builder-card");
+  if (!builderCard) return null;
+  let modal = document.getElementById("gamingActivationBuilderModal");
   if (!modal) {
     modal = document.createElement("div");
     modal.className = "modal-shell hidden gaming-activation-builder-modal";
@@ -14367,7 +14369,13 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
         <div class="gaming-activation-builder-modal-body" data-gaming-activation-builder-body></div>
       </article>
     `;
-    view.appendChild(modal);
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal || event.target.closest("[data-close-gaming-activation-builder]")) {
+        event.preventDefault();
+        closeGamingActivationBuilderModal();
+      }
+    });
   }
   const body = modal.querySelector("[data-gaming-activation-builder-body]");
   if (body && builderCard.parentElement !== body) body.appendChild(builderCard);

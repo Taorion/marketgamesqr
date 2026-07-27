@@ -13,6 +13,126 @@
   --portal-fluid-shadow: 0 22px 56px rgba(19, 76, 128, .10);
 }
 
+/* Activations v168 -----------------------------------------------------------
+ * The list owns its header action; the creation workflow is a true portal
+ * interstitial, never a child of the scrolling activations area. */
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  padding: 0 0 28px !important;
+  background: transparent !important;
+}
+
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > [data-gaming-center-action="create-activation"] {
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2200 !important;
+  display: grid !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: clamp(18px, 3vw, 46px) !important;
+  overflow: hidden !important;
+  background: rgba(6, 25, 59, .62) !important;
+  backdrop-filter: blur(12px) saturate(.9) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+  width: min(1120px, calc(100vw - 36px)) !important;
+  max-height: min(92dvh, 960px) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(205, 224, 244, .92) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 34px 90px rgba(1, 25, 67, .34) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: clamp(20px, 2.8vw, 32px) clamp(22px, 3.5vw, 42px) !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .86) !important;
+  background: linear-gradient(115deg, #f5fbff, #ffffff 72%) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
+  margin: 4px 0 6px !important;
+  color: #052a6b !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
+  max-width: 68ch !important;
+  margin: 0 !important;
+  color: #526f90 !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+  min-height: 0 !important;
+  overflow: auto !important;
+  padding: clamp(20px, 3vw, 40px) !important;
+  background: #ffffff !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-card {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-card > :is(.table-card-head, .gaming-activation-command-strip, .interactive-activation-nav, .interactive-catalog-note, .gaming-activation-recipes) {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > [data-gaming-center-action="create-activation"] {
+    width: 100% !important;
+  }
+
+  html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
+    padding: 10px !important;
+  }
+
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+    width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 16px !important;
+  }
+
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head,
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+    padding: 18px !important;
+  }
+}
+
 /* A wide, quiet reading lane.  Components are allowed to stack naturally. */
 html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .app-main,
 html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
