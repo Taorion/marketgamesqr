@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-admin-user-menu-v150";
+const APP_VERSION = "empresa-20260727-dashboard-activity-list-v151";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -10729,10 +10729,14 @@ function renderDashboardBuilder() {
   dashboardWidgetLibrary.innerHTML = DASHBOARD_WIDGET_CATALOG.map((widget) => {
     const active = layout.includes(widget.id);
     return `
-      <button class="dashboard-library-item ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}">
+      <button class="dashboard-library-item ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}" aria-pressed="${active ? "true" : "false"}">
         <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(widget.icon)}</span>
-        <span><strong>${escapeHtml(widget.title)}</strong><small>${escapeHtml(widget.category)}</small></span>
-        <em><span class="material-symbols-outlined" aria-hidden="true">${active ? "check" : "add"}</span>${active ? "En tablero" : "Añadir"}</em>
+        <span class="dashboard-library-copy">
+          <small class="dashboard-library-category">${escapeHtml(widget.category)}</small>
+          <strong>${escapeHtml(widget.title)}</strong>
+          <small>${escapeHtml(widget.description)}</small>
+        </span>
+        <span class="dashboard-library-action"><span class="material-symbols-outlined" aria-hidden="true">${active ? "check" : "add"}</span>${active ? "En tablero" : "Agregar"}</span>
       </button>
     `;
   }).join("");
