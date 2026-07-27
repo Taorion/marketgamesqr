@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-tutorial-stations-20260727-v147">
+  <link rel="stylesheet" href="css/styles.css?v=sidebar-sections-20260727-v148">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-runtime-20260725-v205">
 </head>
 <body data-current-view="rms-machine">
@@ -228,15 +228,40 @@
               <span class="material-symbols-outlined">qr_code_scanner</span>
               <span><strong>Validador QR</strong><small>Redimir y confirmar tickets</small></span>
             </button>
+            <button class="nav-item" data-view="branches" type="button">
+              <span class="material-symbols-outlined">storefront</span>
+              <span><strong>Sedes</strong><small>Puntos físicos y operación</small></span>
+            </button>
             </div>
           </section>
 
           <section class="sidebar-nav-section" data-sidebar-section="optimize" aria-labelledby="sidebar-section-optimize">
             <button class="nav-group-toggle" id="sidebar-section-optimize" data-sidebar-group-toggle="optimize" type="button" aria-expanded="false" aria-controls="sidebar-section-optimize-panel">
-              <span>GOS</span>
+              <span>Optimiza</span>
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
             <div class="sidebar-nav-section-panel" id="sidebar-section-optimize-panel">
+            <button class="nav-item" data-view="redemptions" type="button">
+              <span class="material-symbols-outlined">redeem</span>
+              <span><strong>Redenciones</strong><small>Historial de beneficios</small></span>
+            </button>
+            <button class="nav-item" data-view="affiliates" type="button">
+              <span class="material-symbols-outlined">card_membership</span>
+              <span><strong>Afiliados</strong><small>Puntos, compras y carnet</small></span>
+            </button>
+            <button class="nav-item" data-view="missions" type="button">
+              <span class="material-symbols-outlined">emoji_events</span>
+              <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
+            </button>
+            </div>
+          </section>
+
+          <section class="sidebar-nav-section" data-sidebar-section="gos" aria-labelledby="sidebar-section-gos">
+            <button class="nav-group-toggle" id="sidebar-section-gos" data-sidebar-group-toggle="gos" type="button" aria-expanded="false" aria-controls="sidebar-section-gos-panel">
+              <span>GOS</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sidebar-nav-section-panel" id="sidebar-section-gos-panel">
             <button class="nav-item" data-view="dashboard" type="button">
               <span class="material-symbols-outlined">dashboard</span>
               <span><strong>Centro de Revenue</strong><small>Lectura ejecutiva RMS</small></span>
@@ -253,31 +278,15 @@
               <span class="material-symbols-outlined">campaign</span>
               <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
             </button>
-            <button class="nav-item" data-view="redemptions" type="button">
-              <span class="material-symbols-outlined">redeem</span>
-              <span><strong>Redenciones</strong><small>Historial de beneficios</small></span>
-            </button>
-            <button class="nav-item" data-view="affiliates" type="button">
-              <span class="material-symbols-outlined">card_membership</span>
-              <span><strong>Afiliados</strong><small>Puntos, compras y carnet</small></span>
-            </button>
-            <button class="nav-item" data-view="branches" type="button">
-              <span class="material-symbols-outlined">storefront</span>
-              <span><strong>Sedes</strong><small>Puntos físicos y operación</small></span>
-            </button>
-            <button class="nav-item" data-view="missions" type="button">
-              <span class="material-symbols-outlined">emoji_events</span>
-              <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
-            </button>
             </div>
           </section>
 
-          <section class="sidebar-nav-section sidebar-nav-section-gos" data-sidebar-section="gos" aria-labelledby="sidebar-section-gos">
-            <button class="nav-group-toggle" id="sidebar-section-gos" data-sidebar-group-toggle="gos" type="button" aria-expanded="false" aria-controls="sidebar-section-gos-panel">
+          <section class="sidebar-nav-section sidebar-nav-section-admin" data-sidebar-section="admin" aria-labelledby="sidebar-section-admin">
+            <button class="nav-group-toggle" id="sidebar-section-admin" data-sidebar-group-toggle="admin" type="button" aria-expanded="false" aria-controls="sidebar-section-admin-panel">
               <span>Admin</span>
               <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
             </button>
-            <div class="sidebar-nav-section-panel" id="sidebar-section-gos-panel">
+            <div class="sidebar-nav-section-panel" id="sidebar-section-admin-panel">
             <button class="nav-item" data-view="account" data-account-anchor="accountProfileOverview" type="button">
               <span class="material-symbols-outlined">manage_accounts</span>
               <span><strong>Cuenta</strong><small>Perfil, empresa y plan</small></span>
@@ -7299,7 +7308,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=rms-tutorial-stations-20260727-v147" defer></script>
+  <script src="js/app.js?v=sidebar-sections-20260727-v148" defer></script>
 </body>
 </html>
 

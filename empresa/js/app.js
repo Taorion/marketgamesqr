@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-tutorial-stations-v147";
+const APP_VERSION = "empresa-20260727-sidebar-sections-v148";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1222,7 +1222,7 @@ const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const sidebarNavSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
 const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-group-toggle]"));
 const sidebarSectionByView = Object.freeze({
-  campaigns: "optimize",
+  campaigns: "gos",
   "strategic-qr": "offer",
   "smart-catalogs": "offer",
   inventory: "offer",
@@ -1232,13 +1232,13 @@ const sidebarSectionByView = Object.freeze({
   validator: "operate",
   redemptions: "optimize",
   affiliates: "optimize",
-  dashboard: "optimize",
-  channels: "optimize",
-  competition: "optimize",
-  branches: "optimize",
+  dashboard: "gos",
+  channels: "gos",
+  competition: "gos",
+  branches: "operate",
   missions: "optimize",
-  account: "gos",
-  admin: "gos",
+  account: "admin",
+  admin: "admin",
 });
 navButtons.forEach((button) => {
   const copy = button.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");

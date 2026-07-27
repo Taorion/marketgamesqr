@@ -57162,7 +57162,8 @@ html body .portal-shell .sidebar-nav-section {
   border-bottom: 1px solid var(--sidebar-section-line) !important;
 }
 
-html body .portal-shell .sidebar-nav-section-gos {
+html body .portal-shell .sidebar-nav-section-gos,
+html body .portal-shell .sidebar-nav-section-admin {
   margin-top: auto !important;
   padding-bottom: 0 !important;
   border-bottom: 0 !important;
