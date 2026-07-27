@@ -61679,7 +61679,7 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-context {
 /* Ficha de contacto v231: un intersticial claro para decidir y operar sin salir del directorio. */
 html body.lead-detail-open { overflow: hidden !important; }
 
-html body .portal-shell #leadDetailModal.lead-detail-workspace:not(.hidden) {
+html body #leadDetailModal.lead-detail-workspace:not(.hidden) {
   position: fixed !important;
   inset: 0 !important;
   z-index: 10000 !important;
@@ -61691,7 +61691,7 @@ html body .portal-shell #leadDetailModal.lead-detail-workspace:not(.hidden) {
   overflow: hidden !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
+html body #leadDetailModal .lead-detail-interstitial-card {
   width: min(940px, 100%) !important;
   max-height: min(860px, calc(100dvh - 24px)) !important;
   display: grid !important;
@@ -61701,11 +61701,12 @@ html body .portal-shell #leadDetailModal .lead-detail-interstitial-card {
   border: 1px solid rgba(170, 205, 235, .85) !important;
   border-radius: 18px !important;
   background: #ffffff !important;
+  color: #071832 !important;
   box-shadow: 0 32px 96px rgba(1, 25, 66, .38) !important;
   overflow: hidden !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-workspace-head {
+html body #leadDetailModal .lead-workspace-head {
   position: static !important;
   display: flex !important;
   align-items: flex-start !important;
@@ -61716,33 +61717,53 @@ html body .portal-shell #leadDetailModal .lead-workspace-head {
   background: #ffffff !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-workspace-head p {
+html body #leadDetailModal .lead-workspace-head p {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-profile-header {
+html body #leadDetailModal .lead-workspace-head h3 {
+  margin: 2px 0 4px !important;
+  color: #071832 !important;
+}
+
+html body #leadDetailModal .lead-detail-close-button {
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 auto !important;
+  border-color: #d8e5f2 !important;
+  background: #f6fbff !important;
+  color: #092f70 !important;
+}
+
+html body #leadDetailModal .lead-profile-header {
   grid-template-columns: minmax(0, 1.12fr) minmax(250px, .7fr) !important;
   gap: 20px !important;
   margin: 0 24px !important;
   padding: 0 0 16px !important;
   border-bottom: 1px solid #e2ebf4 !important;
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  color: #071832 !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-status-row {
+html body #leadDetailModal .lead-status-row {
   min-height: 26px !important;
   align-items: center !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-status-row .pill:not(:first-of-type) { display: none !important; }
+html body #leadDetailModal .lead-status-row .pill:not(:first-of-type) { display: none !important; }
 
-html body .portal-shell #leadDetailModal .lead-profile-header h4 {
+html body #leadDetailModal .lead-profile-header h4 {
   margin: 8px 0 5px !important;
   font-size: clamp(1.4rem, 2.4vw, 2rem) !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-profile-header p {
+html body #leadDetailModal .lead-profile-header p {
   display: -webkit-box !important;
   overflow: hidden !important;
   -webkit-box-orient: vertical !important;
@@ -61751,29 +61772,46 @@ html body .portal-shell #leadDetailModal .lead-profile-header p {
   font-size: .84rem !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-contact-strip {
+html body #leadDetailModal .lead-contact-strip {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 8px !important;
   margin-top: 12px !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-contact-strip span {
+html body #leadDetailModal .lead-contact-strip span {
   min-width: 0 !important;
   padding: 9px 10px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   font-size: .73rem !important;
+  border-color: #dce8f3 !important;
+  background: #f7fbff !important;
+  color: #5b718c !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-decision-panel { gap: 8px !important; }
-html body .portal-shell #leadDetailModal .lead-health-card { padding: 12px !important; }
-html body .portal-shell #leadDetailModal .lead-health-card strong { font-size: 1.45rem !important; }
-html body .portal-shell #leadDetailModal .lead-header-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important; }
-html body .portal-shell #leadDetailModal .lead-header-metrics span { min-width: 0 !important; padding: 8px !important; font-size: .66rem !important; }
-html body .portal-shell #leadDetailModal .lead-header-metrics strong { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .82rem !important; }
+html body #leadDetailModal .lead-contact-strip strong { color: #31537b !important; }
 
-html body .portal-shell #leadDetailModal .lead-next-step {
+html body #leadDetailModal .lead-decision-panel { gap: 8px !important; }
+html body #leadDetailModal .lead-health-card {
+  padding: 12px !important;
+  border-color: #dce8f3 !important;
+  background: #f7fbff !important;
+  color: #092f70 !important;
+}
+html body #leadDetailModal .lead-health-card strong { font-size: 1.45rem !important; }
+html body #leadDetailModal .lead-header-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important; }
+html body #leadDetailModal .lead-header-metrics span {
+  min-width: 0 !important;
+  padding: 8px !important;
+  font-size: .66rem !important;
+  border-color: #dce8f3 !important;
+  background: #f7fbff !important;
+  color: #5b718c !important;
+}
+html body #leadDetailModal .lead-header-metrics strong { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .82rem !important; }
+
+html body #leadDetailModal .lead-next-step {
   display: grid !important;
   gap: 3px !important;
   padding: 11px 12px !important;
@@ -61782,10 +61820,10 @@ html body .portal-shell #leadDetailModal .lead-next-step {
   background: #effaff !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-next-step strong { color: #092f70 !important; font-size: .84rem !important; }
-html body .portal-shell #leadDetailModal .lead-next-step small { color: #56718f !important; font-size: .74rem !important; line-height: 1.35 !important; }
+html body #leadDetailModal .lead-next-step strong { color: #092f70 !important; font-size: .84rem !important; }
+html body #leadDetailModal .lead-next-step small { color: #56718f !important; font-size: .74rem !important; line-height: 1.35 !important; }
 
-html body .portal-shell #leadDetailModal .lead-quick-actions {
+html body #leadDetailModal .lead-quick-actions {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
@@ -61794,7 +61832,7 @@ html body .portal-shell #leadDetailModal .lead-quick-actions {
   overflow: visible !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-tabs {
+html body #leadDetailModal .lead-tabs {
   display: flex !important;
   flex-wrap: nowrap !important;
   gap: 4px !important;
@@ -61803,22 +61841,36 @@ html body .portal-shell #leadDetailModal .lead-tabs {
   overflow-x: auto !important;
 }
 
-html body .portal-shell #leadDetailModal .lead-tab-panel {
+html body #leadDetailModal .lead-tabs .segment-tab {
+  min-height: 36px !important;
+  color: #4b6685 !important;
+}
+
+html body #leadDetailModal .lead-tabs .segment-tab.active {
+  border-color: #006eff !important;
+  background: #e9f7ff !important;
+  color: #073b84 !important;
+}
+
+html body #leadDetailModal .lead-tab-panel {
   min-height: 0 !important;
   margin: 0 !important;
   padding: 14px 24px 24px !important;
   overflow: auto !important;
   overscroll-behavior: contain !important;
+  border-top: 1px solid #e2ebf4 !important;
+  background: #f8fbff !important;
+  color: #071832 !important;
 }
 
 @media (max-width: 760px) {
-  html body .portal-shell #leadDetailModal.lead-detail-workspace:not(.hidden) { padding: 8px !important; }
-  html body .portal-shell #leadDetailModal .lead-detail-interstitial-card { max-height: calc(100dvh - 16px) !important; border-radius: 14px !important; }
-  html body .portal-shell #leadDetailModal .lead-workspace-head { padding: 16px 16px 12px !important; }
-  html body .portal-shell #leadDetailModal .lead-workspace-head p { white-space: normal !important; }
-  html body .portal-shell #leadDetailModal .lead-profile-header { grid-template-columns: 1fr !important; margin: 0 16px !important; }
-  html body .portal-shell #leadDetailModal .lead-contact-strip { grid-template-columns: 1fr !important; }
-  html body .portal-shell #leadDetailModal .lead-quick-actions,
-  html body .portal-shell #leadDetailModal .lead-tabs { margin-right: 16px !important; margin-left: 16px !important; }
-  html body .portal-shell #leadDetailModal .lead-tab-panel { padding: 14px 16px 20px !important; }
+  html body #leadDetailModal.lead-detail-workspace:not(.hidden) { padding: 8px !important; }
+  html body #leadDetailModal .lead-detail-interstitial-card { max-height: calc(100dvh - 16px) !important; border-radius: 14px !important; }
+  html body #leadDetailModal .lead-workspace-head { padding: 16px 16px 12px !important; }
+  html body #leadDetailModal .lead-workspace-head p { white-space: normal !important; }
+  html body #leadDetailModal .lead-profile-header { grid-template-columns: 1fr !important; margin: 0 16px !important; }
+  html body #leadDetailModal .lead-contact-strip { grid-template-columns: 1fr !important; }
+  html body #leadDetailModal .lead-quick-actions,
+  html body #leadDetailModal .lead-tabs { margin-right: 16px !important; margin-left: 16px !important; }
+  html body #leadDetailModal .lead-tab-panel { padding: 14px 16px 20px !important; }
 }

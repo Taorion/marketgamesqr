@@ -31572,7 +31572,9 @@ function mountContactCenterLayout() {
   appendIfFound(manualPanel, document.getElementById("manualContactsDirectoryCard"));
   appendIfFound(manualPanel, manualLeadForm?.closest("article"));
 
-  appendIfFound(contactCenterShell, leadDetailModal);
+  // La ficha debe vivir en el body: así el fixed cubre toda la aplicación y no
+  // queda limitado por el shell desplazable del directorio.
+  appendIfFound(document.body, leadDetailModal);
   appendIfFound(contactCenterShell, leadActivationModal);
 
   state.contactCenterMounted = true;
