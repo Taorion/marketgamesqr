@@ -38116,9 +38116,7 @@ function renderRmsTutorial() {
   rmsTutorialSteps.innerHTML = RMS_TUTORIAL_STEPS.map((item, itemIndex) => `
     <button class="rms-tutorial-step ${itemIndex === index ? "is-active" : ""}" type="button" data-rms-tutorial-step="${itemIndex}" aria-pressed="${itemIndex === index ? "true" : "false"}">
       <span class="rms-tutorial-step-number">${String(itemIndex + 1).padStart(2, "0")}</span>
-      <i class="material-symbols-outlined" aria-hidden="true">${escapeHtml(item.icon)}</i>
       <strong>${escapeHtml(item.title)}</strong>
-      <small>${escapeHtml(item.subtitle)}</small>
     </button>
   `).join("");
 
@@ -38137,17 +38135,17 @@ function renderRmsTutorial() {
     </div>
     <div class="rms-tutorial-flow">
       <article>
-        <span>Entrada</span>
+        <span>Qué entra</span>
         <strong>${escapeHtml(step.input)}</strong>
       </article>
       <i class="material-symbols-outlined" aria-hidden="true">arrow_forward</i>
       <article>
-        <span>Operación</span>
+        <span>Qué haces</span>
         <strong>${escapeHtml(step.operation)}</strong>
       </article>
       <i class="material-symbols-outlined" aria-hidden="true">arrow_forward</i>
       <article>
-        <span>Salida</span>
+        <span>Resultado</span>
         <strong>${escapeHtml(step.output)}</strong>
       </article>
     </div>

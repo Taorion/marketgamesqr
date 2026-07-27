@@ -62992,3 +62992,221 @@ body[data-current-view="redemptions"] .redemption-result-cell small {
   body[data-current-view="redemptions"] .view-section[data-view="redemptions"] > .sales-create-panel .table-wrap { overflow-x: auto !important; }
   body[data-current-view="redemptions"] #campaignRedemptionsTable { min-width: 700px !important; }
 }
+
+/* RMS tutorial v248: one clear route, then one readable station at a time. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial {
+  display: none !important;
+  gap: 20px !important;
+  padding: clamp(20px, 2.5vw, 30px) !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  box-shadow: 0 18px 42px rgba(5, 42, 107, 0.08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial.is-open {
+  display: grid !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-head {
+  grid-template-columns: minmax(0, 1fr) 190px !important;
+  align-items: center !important;
+  gap: 20px !important;
+  padding: 0 0 18px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-head h3 {
+  max-width: 640px !important;
+  margin-top: 7px !important;
+  font-size: clamp(1.4rem, 2vw, 1.85rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-head p {
+  max-width: 660px !important;
+  margin-top: 7px !important;
+  font-size: 0.94rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-progress {
+  padding: 13px 14px !important;
+  border-radius: 14px !important;
+  background: #f5faff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-steps {
+  display: flex !important;
+  gap: 9px !important;
+  align-items: stretch !important;
+  overflow-x: auto !important;
+  padding: 1px 1px 9px !important;
+  scrollbar-color: #0b66d8 #e8f1fa !important;
+  scrollbar-width: thin !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-steps::before {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step {
+  flex: 0 0 154px !important;
+  min-height: 62px !important;
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  grid-template-rows: 1fr !important;
+  gap: 9px !important;
+  align-items: center !important;
+  padding: 10px !important;
+  border-color: #d9e7f5 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step > span {
+  grid-row: auto !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 9px !important;
+  background: #eef6ff !important;
+  color: #0b66d8 !important;
+  font-size: 0.72rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step strong {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  font-size: 0.8rem !important;
+  line-height: 1.2 !important;
+  overflow-wrap: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step:hover,
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step:focus-visible {
+  transform: none !important;
+  border-color: #9fc5ec !important;
+  background: #f8fbff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step.is-active {
+  border-color: #0b66d8 !important;
+  background: #eef7ff !important;
+  box-shadow: inset 0 0 0 1px #0b66d8 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-panel {
+  min-height: 0 !important;
+  padding: clamp(18px, 2.2vw, 26px) !important;
+  border: 1px solid #dbe8f4 !important;
+  border-radius: 18px !important;
+  background: #fbfdff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-stage-chip {
+  width: max-content !important;
+  margin: 0 0 12px !important;
+  padding: 6px 10px !important;
+  border-radius: 999px !important;
+  background: #eef6ff !important;
+  color: #0a57bd !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-panel-head {
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  gap: 13px !important;
+  align-items: start !important;
+  padding-bottom: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-icon {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  font-size: 1.35rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-panel-head h4 {
+  margin: 4px 0 5px !important;
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-panel-head p {
+  max-width: 760px !important;
+  font-size: 0.93rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 11px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow > i {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow article,
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow article:nth-of-type(2),
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow article:nth-of-type(3) {
+  min-height: 0 !important;
+  padding: 15px !important;
+  border: 1px solid #dbe8f4 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow article span {
+  margin-bottom: 7px !important;
+  color: #5a7391 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow article strong {
+  color: #0b2d62 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.42 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #e3edf7 !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-machine-tutorial-progress {
+    width: 100% !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-step {
+    flex-basis: 146px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-flow {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsMachineTutorial .rms-tutorial-actions > * {
+    flex: 1 1 100% !important;
+  }
+}
