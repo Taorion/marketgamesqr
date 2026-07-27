@@ -1,0 +1,322 @@
+/*
+ * Fluid canvas
+ * A portal-wide visual system: hierarchy comes from rhythm, typography and
+ * subtle light instead of permanent boxes around every piece of information.
+ */
+
+:root {
+  --portal-fluid-ink: #082b67;
+  --portal-fluid-muted: #52739e;
+  --portal-fluid-line: rgba(93, 154, 202, .18);
+  --portal-fluid-wash: rgba(231, 247, 255, .72);
+  --portal-fluid-hover: rgba(0, 174, 239, .10);
+  --portal-fluid-shadow: 0 22px 56px rgba(19, 76, 128, .10);
+}
+
+/* A wide, quiet reading lane.  Components are allowed to stack naturally. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .app-main,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-inline: clamp(20px, 4vw, 76px) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(1460px, 100%) !important;
+  max-width: 1460px !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  gap: clamp(42px, 6vw, 88px) !important;
+  padding: clamp(30px, 5vw, 76px) 0 120px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :where(section, article, div) {
+  min-width: 0;
+}
+
+/* The page title is the single deliberate surface.  Everything below reads
+ * like a calm document, not a stack of independently bordered windows. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px 42px !important;
+  margin: 0 !important;
+  padding: clamp(28px, 4vw, 48px) !important;
+  border: 0 !important;
+  border-radius: 30px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(235, 249, 255, .80)) !important;
+  box-shadow: var(--portal-fluid-shadow) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head > * {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head :is(h1, h2) {
+  color: var(--portal-fluid-ink) !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head p {
+  max-width: 66ch !important;
+  color: var(--portal-fluid-muted) !important;
+}
+
+/* Remove permanent framing from content groups.  A controlled vertical rhythm
+ * now separates groups, including panels that used to be nested twice. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .chart-card, .lead-directory-card, .affiliate-list-panel, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .lead-agenda-card, .rms-stage-slider-shell, .rms-station-workspace, .rms-station-clean-shell, .gaming-activation-list-card, .campaign-library-shell, .inventory-command-panel, .channel-analytics-layout, .ticket-module-card, .ticket-center-panel, .reward-pass-panel, .branch-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.charts-grid, .dashboard-charts, .campaign-grid, .channel-analytics-layout, .inventory-layout, .account-layout, .affiliate-layout, .sales-layout, .revenue-workspace-grid, .lead-directory-layout, .branch-layout, .dashboard-builder-layout, .validator-grid, .reward-pass-layout, .season-layout) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: clamp(36px, 5vw, 72px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Headings, filters and action strips share one unobtrusive baseline instead
+ * of each receiving their own rounded outline. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head, .quiet-zone-control-head) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 18px 28px !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-toolbar, .table-filters, .directory-filters, .lead-directory-filters, .gaming-published-toolbar, .inventory-filter-card, .channel-filters, .filter-row, .rms-board-tools) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: end !important;
+  gap: 12px 16px !important;
+  margin: 0 !important;
+  padding: 0 0 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+/* Tables own a single horizontal lane.  They never widen the portal and no
+ * longer sit inside a second, visibly outlined card. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  overscroll-behavior-inline: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-fluid-line), inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 760px !important;
+  table-layout: auto !important;
+  border: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table:has(th:nth-child(7)),
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(7)) {
+  min-width: 980px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table:has(th:nth-child(9)),
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(9)) {
+  min-width: 1180px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table :is(th, td) {
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 18px clamp(14px, 1.65vw, 28px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #16355f !important;
+  vertical-align: top !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  box-shadow: inset 0 -1px 0 rgba(126, 168, 201, .16) !important;
+  transition: background-color .2s ease, color .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table thead th {
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+  background: linear-gradient(90deg, rgba(231, 247, 255, .88), rgba(255, 255, 255, .28)) !important;
+  color: #31506f !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+  box-shadow: inset 0 -1px 0 rgba(82, 151, 196, .34) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr {
+  transition: background-color .2s ease, transform .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr:hover td,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr.active td {
+  background: linear-gradient(90deg, rgba(0, 184, 255, .105), rgba(239, 251, 255, .44) 72%, transparent) !important;
+}
+
+/* Lists read as spacious rows.  The hover is feedback, not a permanent box. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-quick-list, .contact-directory-list, .lead-directory-list, .affiliate-top-list, .lead-agenda-list, .mission-active-list) {
+  display: grid !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-item, .contact-directory-card-row, .affiliate-top-row, .lead-agenda-item, .mission-active-card) {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: clamp(20px, 3vw, 32px) clamp(4px, 1.5vw, 20px) !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(126, 168, 201, .16) !important;
+  transform: translateY(0) !important;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-item:hover, .campaign-item.active, .contact-directory-card-row:hover, .contact-directory-card-row:focus-visible, .affiliate-top-row:hover, .affiliate-top-row.active, .lead-agenda-item:hover, .mission-active-card:hover) {
+  background: linear-gradient(100deg, rgba(0, 184, 255, .12), rgba(244, 253, 255, .78) 72%, transparent) !important;
+  box-shadow: 0 14px 30px rgba(26, 105, 156, .08), inset 3px 0 0 #00b8ff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Metrics stay legible as a light rhythm, without becoming a wall of tiles. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.kpi-grid, .metrics-grid, .dashboard-kpi-grid, .campaign-item-metrics, .overview-kpis) {
+  gap: clamp(18px, 3vw, 32px) !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.kpi-card, .metric-card, .dashboard-kpi, .overview-kpi) {
+  min-width: 0 !important;
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+/* Controls keep their existing blue language but use a lighter, more tactile
+ * secondary state. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ghost-button, .quiet-zone-toggle, .compact.ghost-button) {
+  border-color: transparent !important;
+  background: rgba(244, 251, 255, .68) !important;
+  box-shadow: inset 0 0 0 1px rgba(111, 167, 207, .24) !important;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ghost-button, .quiet-zone-toggle, .compact.ghost-button):hover {
+  background: linear-gradient(135deg, rgba(230, 248, 255, .96), rgba(255, 255, 255, .92)) !important;
+  box-shadow: 0 10px 22px rgba(30, 111, 162, .12), inset 0 0 0 1px rgba(0, 184, 255, .42) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.solid-button, .primary-button) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #0758d7, #0068e8 58%, #00a8ef) !important;
+  box-shadow: 0 12px 24px rgba(0, 89, 202, .20) !important;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.solid-button, .primary-button):hover {
+  filter: saturate(1.06) brightness(1.03) !important;
+  box-shadow: 0 16px 30px rgba(0, 89, 202, .27) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Fix every nested panel that previously reserved a rigid half-column, such
+ * as the capture module shown in the report. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ticket-center-panel, .ticket-module-card, .lead-capture-detail, .activation-share-panel, .dashboard-widget-library, .dashboard-canvas-head) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-inline: 0 !important;
+}
+
+@media (max-width: 900px) {
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+    padding-inline: 20px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+    gap: 36px !important;
+    padding-top: 30px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+    align-items: flex-start !important;
+    padding: 26px !important;
+    border-radius: 24px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+    padding-inline: 14px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+    gap: 30px !important;
+    padding-bottom: 72px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+    padding: 22px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table,
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table {
+    min-width: 700px !important;
+  }
+}
