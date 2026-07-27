@@ -403,3 +403,257 @@ html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article 
   html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article { grid-template-columns: 38px minmax(0, 1fr) !important; gap: 0 13px !important; }
   html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article > .material-symbols-outlined { width: 38px !important; height: 38px !important; }
 }
+
+/* The portal clean layer uses an ID-strength reset. Match it here so Revenue can stay open. */
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell :is(.view-head, .dashboard-builder-shell, .dashboard-builder-head, .dashboard-widget-library, .dashboard-canvas, .revenue-workspace, .revenue-workspace-head, .next-best-action-card, .revenue-objective-card, .revenue-onboarding, .portal-module-map) {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] > .view-head {
+  margin: 0 !important;
+  padding: 0 0 clamp(28px, 4vw, 46px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #cfe0ef !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .gaming-core-entry {
+  padding: 17px 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #d7e5f1 !important;
+  border-bottom: 1px solid #d7e5f1 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+  display: grid !important;
+  gap: clamp(42px, 6vw, 76px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 22px !important;
+  padding: 0 0 30px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d7e5f1 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px 26px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button.active {
+  min-height: 42px !important;
+  padding: 9px 0 !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #587393 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button.active {
+  border-bottom-color: #0caee4 !important;
+  color: #082d63 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(44px, 6vw, 78px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-canvas {
+  width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-top: 1px solid #d7e5f1 !important;
+  border-bottom: 1px solid #d7e5f1 !important;
+  background: transparent !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item:hover,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item.is-active {
+  display: grid !important;
+  grid-template-columns: 46px minmax(0, 1fr) max-content !important;
+  align-items: center !important;
+  column-gap: 18px !important;
+  min-height: 92px !important;
+  margin: 0 !important;
+  padding: 18px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e2ecf5 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item > .material-symbols-outlined {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 50% !important;
+  background: #edf7ff !important;
+  color: #0756c7 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-library-action,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions .ghost-button,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-path-step button,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-map-grid article .ghost-button {
+  padding: 7px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #9bcbe5 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-canvas {
+  display: grid !important;
+  gap: 28px !important;
+  padding: clamp(34px, 5vw, 64px) 0 0 !important;
+  border-top: 1px solid #bcd8e9 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 28px !important;
+  padding: 0 0 25px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dce8f2 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell :is(.dashboard-widget-card, .dashboard-widget-card.chart, .dashboard-widget-card.table, .dashboard-builder-empty) {
+  grid-column: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: clamp(28px, 4vw, 48px) 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dce8f2 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+  display: grid !important;
+  gap: clamp(42px, 6vw, 76px) !important;
+  padding: clamp(48px, 8vw, 96px) 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #bcd8e9 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  width: 100% !important;
+  border: 0 !important;
+  border-top: 1px solid #dce8f2 !important;
+  border-bottom: 1px solid #dce8f2 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip > * {
+  padding: 22px clamp(12px, 2vw, 24px) !important;
+  border: 0 !important;
+  border-right: 1px solid #dce8f2 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-main-grid,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-objective-grid,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-path-guide,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-onboarding,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-map-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell :is(.next-best-action-card, .revenue-objective-card) {
+  padding: 0 0 34px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dce8f2 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-onboarding > :is(div, article, button) {
+  min-height: 62px !important;
+  margin: 0 !important;
+  padding: 18px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e1ecf4 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-path-guide { border-top: 1px solid #dce8f2 !important; border-bottom: 1px solid #dce8f2 !important; }
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-path-step { min-width: 0 !important; padding: 24px 0 !important; border: 0 !important; border-bottom: 1px solid #e1ecf4 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-module-map { display: grid !important; gap: 28px !important; padding: 0 !important; border: 0 !important; }
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-map-grid { border-top: 1px solid #dce8f2 !important; }
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-map-grid article { display: grid !important; grid-template-columns: 44px minmax(0, 1fr) !important; gap: 0 18px !important; min-height: 0 !important; padding: 26px 0 !important; border: 0 !important; border-bottom: 1px solid #e1ecf4 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+
+@media (max-width: 760px) {
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head,
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace-head { grid-template-columns: minmax(0, 1fr) !important; align-items: start !important; gap: 20px !important; }
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip { grid-template-columns: minmax(0, 1fr) !important; }
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip > * { border-right: 0 !important; border-bottom: 1px solid #e1ecf4 !important; }
+}
+
+@media (max-width: 560px) {
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item,
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item:hover,
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item.is-active { grid-template-columns: 42px minmax(0, 1fr) !important; align-items: start !important; gap: 10px 14px !important; min-height: 0 !important; }
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-library-action { grid-column: 2 !important; justify-self: start !important; }
+}
