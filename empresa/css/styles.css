@@ -61605,3 +61605,73 @@ html body .campaign-quick-cost-note {
 
   html body .campaign-quick-cost-row > strong { min-height: auto !important; }
 }
+
+/* Directorio de leads v228: la lista decide y abre; el detalle completo vive en la ficha. */
+html body[data-current-view="leads"] .portal-shell .lead-directory-card,
+html body[data-current-view="leads"] .portal-shell .contact-directory-visual-board,
+html body[data-current-view="leads"] .portal-shell .contact-directory-list {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr) auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 14px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head {
+  padding: 0 0 10px !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+  padding: 15px 0 !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-name,
+html body[data-current-view="leads"] .portal-shell .contact-directory-name > span,
+html body[data-current-view="leads"] .portal-shell .contact-directory-main {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-main small {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-context {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-list-head {
+    display: none !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-main {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  html body[data-current-view="leads"] .portal-shell .contact-directory-main,
+  html body[data-current-view="leads"] .portal-shell .contact-directory-open {
+    grid-column: auto !important;
+  }
+}

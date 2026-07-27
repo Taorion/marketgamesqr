@@ -29547,8 +29547,6 @@ function leadDirectoryFilteredResult(rows = [], audience = leadDirectoryAudience
 function leadDirectoryCardMarkup(item = {}, segment = "lead") {
   const isCustomer = segment === "customer" || leadDirectoryIsCustomer(item);
   const badges = leadBadges(item).slice(0, 2);
-  const activationCount = leadDirectoryActivationCount(item);
-  const station = leadDirectoryStationInfo(item);
   const sales = leadDirectorySalesSummary(item);
   const primarySignal = isCustomer
     ? sales.label
@@ -29571,12 +29569,6 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
       <div class="contact-directory-main">
         <strong>${escapeHtml(primarySignal)}</strong>
         <small>${escapeHtml(secondarySignal)}</small>
-      </div>
-      <div class="contact-directory-context">
-        <span>
-          <strong>${escapeHtml(station.short || "Sin estación")}</strong>
-          <small>${activationCount.toLocaleString("es-CO")} activaciones · ${escapeHtml(isCustomer ? money(item.total_spent || item.sales_total || 0) : leadTicketInventoryText(item))}</small>
-        </span>
       </div>
       <span class="contact-directory-open">Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
     </article>
@@ -29658,8 +29650,7 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
     </section>
     <div class="contact-directory-list-head" aria-hidden="true">
       <span>Contacto</span>
-      <span>Señal comercial</span>
-      <span>Estado</span>
+      <span>Oportunidad</span>
       <span></span>
     </div>
     <div class="contact-directory-list contact-directory-unified-list">
