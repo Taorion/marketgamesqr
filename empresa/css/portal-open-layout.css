@@ -285,11 +285,25 @@ html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) 
   table-layout: auto !important;
 }
 
+/* Match the earlier table wrapper specificity so these rules win in every module. */
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table {
+  min-width: 720px !important;
+  table-layout: auto !important;
+}
+
 html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table:has(th:nth-child(7)) {
   min-width: 980px !important;
 }
 
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(7)) {
+  min-width: 980px !important;
+}
+
 html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table:has(th:nth-child(9)) {
+  min-width: 1160px !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(9)) {
   min-width: 1160px !important;
 }
 
