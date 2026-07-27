@@ -61814,10 +61814,13 @@ html body #leadDetailModal .lead-header-metrics strong { overflow: hidden !impor
 html body #leadDetailModal .lead-next-step {
   display: grid !important;
   gap: 3px !important;
+  width: 100% !important;
   padding: 11px 12px !important;
+  text-align: left !important;
   border-left: 3px solid #08c9f5 !important;
   border-radius: 10px !important;
   background: #effaff !important;
+  cursor: pointer !important;
 }
 
 html body #leadDetailModal .lead-next-step strong { color: #092f70 !important; font-size: .84rem !important; }
@@ -61833,23 +61836,37 @@ html body #leadDetailModal .lead-quick-actions {
 }
 
 html body #leadDetailModal .lead-tabs {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  gap: 4px !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 8px !important;
   margin: 0 24px !important;
   padding: 0 0 10px !important;
-  overflow-x: auto !important;
+  overflow: visible !important;
 }
 
 html body #leadDetailModal .lead-tabs .segment-tab {
-  min-height: 36px !important;
+  display: inline-flex !important;
+  flex: 1 1 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #dce8f3 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
   color: #4b6685 !important;
+  font-size: .74rem !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
 }
 
 html body #leadDetailModal .lead-tabs .segment-tab.active {
   border-color: #006eff !important;
   background: #e9f7ff !important;
   color: #073b84 !important;
+  box-shadow: inset 0 -2px 0 #006eff !important;
 }
 
 html body #leadDetailModal .lead-tab-panel {
@@ -61872,5 +61889,6 @@ html body #leadDetailModal .lead-tab-panel {
   html body #leadDetailModal .lead-contact-strip { grid-template-columns: 1fr !important; }
   html body #leadDetailModal .lead-quick-actions,
   html body #leadDetailModal .lead-tabs { margin-right: 16px !important; margin-left: 16px !important; }
+  html body #leadDetailModal .lead-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
   html body #leadDetailModal .lead-tab-panel { padding: 14px 16px 20px !important; }
 }

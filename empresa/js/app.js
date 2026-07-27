@@ -32599,11 +32599,11 @@ function renderLeadDetailHeader(detail) {
         <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
         <span><strong>${groupedTickets.active.length}</strong>Activos sin redimir</span>
       </div>
-      <div class="lead-next-step">
+      <button class="lead-next-step" type="button" data-lead-fast-action="${escapeHtml(nextAction.preset || "")}">
         <span class="mono-label">Siguiente paso</span>
         <strong>${escapeHtml(nextAction.title)}</strong>
         <small>${escapeHtml(nextAction.detail)}</small>
-      </div>
+      </button>
     </div>
   `;
   leadDetailHeader.querySelector("[data-edit-manual-lead]")?.addEventListener("click", () => {
@@ -32883,15 +32883,6 @@ function renderLeadTab(detail) {
           <strong>Riesgos y bloqueos</strong>
           ${(analysis.risks.length ? analysis.risks : ["Sin riesgos fuertes detectados."]).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
         </article>
-      </section>
-      <section class="lead-action-grid">
-        ${analysis.nextActions.map((item) => `
-          <button class="lead-action-card is-${escapeHtml(item.tone)}" type="button" data-lead-fast-action="${escapeHtml(item.preset)}">
-            <span class="mono-label">Siguiente accion</span>
-            <strong>${escapeHtml(item.title)}</strong>
-            <p>${escapeHtml(item.detail)}</p>
-          </button>
-        `).join("")}
       </section>
       <article class="lead-insight-box">
         <strong>Ruta RMS del lead</strong>
