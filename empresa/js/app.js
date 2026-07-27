@@ -682,6 +682,8 @@ const redemptionInsightTitle = document.getElementById("redemptionInsightTitle")
 const redemptionKpiGrid = document.getElementById("redemptionKpiGrid");
 const redemptionCardGrid = document.getElementById("redemptionCardGrid");
 const redemptionStatusFilter = document.getElementById("redemptionStatusFilter");
+const redemptionSearchInput = document.getElementById("redemptionSearchInput");
+const redemptionListCount = document.getElementById("redemptionListCount");
 const redemptionOpenValidatorButton = document.getElementById("redemptionOpenValidatorButton");
 const redemptionRegisterSaleButton = document.getElementById("redemptionRegisterSaleButton");
 const redemptionOpenValidatorInlineButton = document.getElementById("redemptionOpenValidatorInlineButton");
@@ -36342,14 +36344,27 @@ function renderRedemptionsView() {
     ["player_name", "reward_name", "branch_name", "validator_name", "document_id", "phone", "email", "origin_label", "status"],
     ["redeemed_at", "created_at"]
   );
-  const rows = filteredRedemptionsForUx(allRows);
+  const redemptionSearch = String(redemptionSearchInput?.value || "").trim().toLowerCase();
+  const rows = filteredRedemptionsForUx(allRows).filter((item) => !redemptionSearch || [
+    item.player_name,
+    item.reward_name,
+    item.branch_name,
+    item.validator_name,
+    item.qr_code_id,
+    item.phone,
+    item.document_id,
+    item.email,
+  ].join(" ").toLowerCase().includes(redemptionSearch));
   renderRedemptionKpis(rows, allRows);
+  if (redemptionListCount) redemptionListCount.textContent = `${rows.length} de ${allRows.length} ticket${allRows.length === 1 ? "" : "s"}`;
   if (redemptionCardGrid && !redemptionCardGrid.hidden) renderRedemptionCards(rows);
 
   campaignRedemptionsTable.innerHTML = rows.map((item) => {
     const contactMeta = [item.phone, item.email, item.document_id].filter(Boolean).join(" · ") || "Sin datos de contacto";
     const saleLabel = item.sale_amount ? money(item.sale_amount) : "Sin venta";
-    const saleMeta = item.product_name ? `<span class="table-secondary">${escapeHtml(item.product_name)}</span>` : "";
+    const resultMeta = item.is_redeemed
+      ? `Redimido ${item.redeemed_at ? formatDate(item.redeemed_at) : ""}`
+      : `Emitido ${item.created_at ? formatDate(item.created_at) : ""}`;
     return `
       <tr class="redemption-simple-row">
         <td>
@@ -36360,14 +36375,11 @@ function renderRedemptionsView() {
         </td>
         <td><strong>${escapeHtml(item.reward_name || "Ticket")}</strong><span class="table-secondary">${escapeHtml(item.qr_code_id || "")}</span></td>
         <td><span class="status-chip ${redemptionStatusClass(item)}">${escapeHtml(redemptionStatusText(item))}</span></td>
-        <td>${escapeHtml(item.created_at ? formatDate(item.created_at) : "-")}</td>
-        <td>${item.redeemed_at ? escapeHtml(formatDate(item.redeemed_at)) : "No redimido"}</td>
-        <td><strong>${escapeHtml(saleLabel)}</strong>${saleMeta}</td>
-        <td>${escapeHtml(item.origin_label || item.branch_name || "-")}<span class="table-secondary">${escapeHtml(item.validator_name || item.branch_name || "")}</span></td>
-        <td>${item.player_id ? "Click en lead" : "Sin contacto"}</td>
+        <td><span class="redemption-result-cell"><strong>${escapeHtml(saleLabel)}</strong><small>${escapeHtml(resultMeta)}</small></span></td>
+        <td>${item.player_id ? `<button class="ghost-button compact" type="button" data-open-redemption-lead="${escapeHtml(item.key)}">Abrir</button>` : "-"}</td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="8">Sin tickets o redenciones para los filtros actuales.</td></tr>';
+  }).join("") || '<tr><td colspan="5">Sin tickets o redenciones para los filtros actuales.</td></tr>';
   campaignRedemptionsTable.querySelectorAll("[data-open-redemption-lead]").forEach((button) => {
     button.addEventListener("click", () => openRedemptionLeadDetail(button.dataset.openRedemptionLead));
   });
@@ -43273,6 +43285,7 @@ redemptionStatusFilter?.addEventListener("change", () => {
   state.redemptionStatusFilter = redemptionStatusFilter.value || "all";
   renderRedemptionsView();
 });
+redemptionSearchInput?.addEventListener("input", renderRedemptionsView);
 [redemptionOpenValidatorButton, redemptionOpenValidatorInlineButton].forEach((button) => {
   button?.addEventListener("click", () => setView("validator"));
 });

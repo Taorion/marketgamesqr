@@ -4871,7 +4871,7 @@
               <div>
                 <span class="mono-label">Validaciones y uso real</span>
                 <h2>Redenciones</h2>
-                <p>Tabla simple para revisar todos los tickets emitidos a leads: redimidos, no redimidos, venta asociada y detalle del contacto.</p>
+                <p>Consulta el estado de cada ticket y abre el contacto cuando necesites revisar el detalle.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="redemptionOpenValidatorButton" type="button" hidden>Validar QR</button>
@@ -4882,24 +4882,11 @@
             </div>
 
             <section class="redemption-command-center">
-              <article class="surface-card redemption-explain-card">
-                <span class="mono-label">Lectura de tickets</span>
-                <h3>Quién tiene ticket y qué pasó con ese beneficio</h3>
-                <p>La tabla cruza tickets emitidos, leads asociados, redenciones y ventas. Haz clic sobre el lead para abrir su ficha completa en un intersticial scrolleable.</p>
-                <div class="redemption-step-list">
-                  <article><span>1</span><div><strong>Emitido</strong><small>El lead recibió o reclamó un ticket.</small></div></article>
-                  <article><span>2</span><div><strong>Redimido / no redimido</strong><small>El estado muestra si el beneficio ya fue usado.</small></div></article>
-                  <article><span>3</span><div><strong>Venta</strong><small>Permite ver si ese ticket ya terminó en revenue.</small></div></article>
-                </div>
-              </article>
               <article class="surface-card redemption-control-card">
-                <div>
-                  <span class="mono-label">Filtro simple</span>
-                  <h3>Estado del ticket</h3>
-                  <p>No hay acciones operativas aquí. Solo lectura, análisis y detalle del contacto.</p>
-                </div>
                 <div class="redemption-control-row">
-                  <label><span>Ver</span><select id="redemptionStatusFilter"><option value="all">Todos los tickets</option><option value="redeemed">Redimidos</option><option value="not_redeemed">No redimidos</option><option value="pending_sale">Redimidos sin venta</option><option value="with_sale">Con venta atribuida</option></select></label>
+                  <label class="redemption-search-field"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="redemptionSearchInput" type="search" placeholder="Buscar contacto, beneficio, sede o ticket"></label>
+                  <label><span>Estado</span><select id="redemptionStatusFilter"><option value="all">Todos los tickets</option><option value="redeemed">Redimidos</option><option value="not_redeemed">No redimidos</option><option value="pending_sale">Redimidos sin venta</option><option value="with_sale">Con venta atribuida</option></select></label>
+                  <span class="table-secondary" id="redemptionListCount" aria-live="polite"></span>
                   <div class="redemption-action-row" hidden>
                     <button class="solid-button compact" type="button" id="redemptionOpenValidatorInlineButton">Validar nuevo QR</button>
                     <button class="ghost-button compact" type="button" id="redemptionRegisterSaleInlineButton">Conectar venta</button>
@@ -4919,22 +4906,19 @@
             <article class="surface-card data-table-card sales-create-panel">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">Tabla de tickets y leads</span>
-                  <h3>Resultado de tickets emitidos</h3>
+                  <span class="mono-label">Tickets emitidos</span>
+                  <h3>Estado y resultado</h3>
                 </div>
               </div>
               <div class="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Lead / contacto</th>
-                      <th>Ticket / beneficio</th>
+                      <th>Contacto</th>
+                      <th>Beneficio</th>
                       <th>Estado</th>
-                      <th>Emitido</th>
-                      <th>Redimido</th>
-                      <th>Venta</th>
-                      <th>Origen</th>
-                      <th>Detalle</th>
+                      <th>Resultado</th>
+                      <th aria-label="Abrir detalle"></th>
                     </tr>
                   </thead>
                   <tbody id="campaignRedemptionsTable"></tbody>

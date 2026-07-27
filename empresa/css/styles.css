@@ -62879,3 +62879,116 @@ body[data-current-view="branches"] .branch-detail-actions { display: flex; flex-
   body[data-current-view="branches"] .view-section[data-view="branches"] > .data-table-card:last-of-type .table-wrap { overflow-x: auto !important; }
   body[data-current-view="branches"] #branchTable { min-width: 690px !important; }
 }
+
+/* Redenciones v247: filtros primero, lista breve y detalle solo al abrir un contacto. */
+body[data-current-view="redemptions"] .redemption-command-center {
+  display: block !important;
+  margin: 14px 0 !important;
+}
+
+body[data-current-view="redemptions"] .redemption-explain-card {
+  display: none !important;
+}
+
+body[data-current-view="redemptions"] .redemption-control-card {
+  padding: 12px 16px !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="redemptions"] .redemption-control-row {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, .55fr) auto !important;
+  align-items: end !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+body[data-current-view="redemptions"] .redemption-search-field {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 42px !important;
+  padding: 0 12px !important;
+  border: 1px solid #d6e3ef !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+
+body[data-current-view="redemptions"] .redemption-search-field input {
+  width: 100% !important;
+  min-height: 40px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+}
+
+body[data-current-view="redemptions"] .redemption-control-row > label:not(.redemption-search-field) {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+body[data-current-view="redemptions"] .redemption-control-row select {
+  min-height: 42px !important;
+  border-radius: 10px !important;
+}
+
+body[data-current-view="redemptions"] .redemption-control-row > .table-secondary {
+  padding: 0 0 11px !important;
+  white-space: nowrap;
+}
+
+body[data-current-view="redemptions"] .view-section[data-view="redemptions"] > .sales-create-panel .table-wrap {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body[data-current-view="redemptions"] #campaignRedemptionsTable {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+}
+
+body[data-current-view="redemptions"] #campaignRedemptionsTable th,
+body[data-current-view="redemptions"] #campaignRedemptionsTable td {
+  white-space: normal !important;
+  vertical-align: middle !important;
+}
+
+body[data-current-view="redemptions"] #campaignRedemptionsTable th:nth-child(1),
+body[data-current-view="redemptions"] #campaignRedemptionsTable td:nth-child(1) { width: 29%; }
+body[data-current-view="redemptions"] #campaignRedemptionsTable th:nth-child(2),
+body[data-current-view="redemptions"] #campaignRedemptionsTable td:nth-child(2) { width: 24%; }
+body[data-current-view="redemptions"] #campaignRedemptionsTable th:nth-child(3),
+body[data-current-view="redemptions"] #campaignRedemptionsTable td:nth-child(3) { width: 17%; }
+body[data-current-view="redemptions"] #campaignRedemptionsTable th:nth-child(4),
+body[data-current-view="redemptions"] #campaignRedemptionsTable td:nth-child(4) { width: 20%; }
+body[data-current-view="redemptions"] #campaignRedemptionsTable th:nth-child(5),
+body[data-current-view="redemptions"] #campaignRedemptionsTable td:nth-child(5) { width: 10%; }
+
+body[data-current-view="redemptions"] .redemption-lead-link,
+body[data-current-view="redemptions"] .redemption-result-cell {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+body[data-current-view="redemptions"] .redemption-lead-link strong,
+body[data-current-view="redemptions"] .redemption-result-cell strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-current-view="redemptions"] .redemption-result-cell small {
+  color: #5d7695;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  body[data-current-view="redemptions"] .redemption-control-row { grid-template-columns: 1fr !important; }
+  body[data-current-view="redemptions"] .redemption-control-row > .table-secondary { padding: 0 !important; }
+  body[data-current-view="redemptions"] .view-section[data-view="redemptions"] > .sales-create-panel .table-wrap { overflow-x: auto !important; }
+  body[data-current-view="redemptions"] #campaignRedemptionsTable { min-width: 700px !important; }
+}
