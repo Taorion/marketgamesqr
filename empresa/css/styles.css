@@ -62424,3 +62424,86 @@ html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-
   html body > #affiliateCreatePanel.is-modal-open .affiliate-form,
   html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns: 1fr !important; }
 }
+
+/* Revenue dashboard v241: one clear workspace, a compact block picker and readable cards. */
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
+  max-width: 1180px !important;
+  margin-inline: auto !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+  gap: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 20px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head h3 { font-size: clamp(1.35rem, 2vw, 1.8rem) !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+  justify-content: flex-start !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: minmax(190px, .34fr) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 20px !important;
+  max-height: none !important;
+  padding: 18px 20px !important;
+  overflow: visible !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library > div:first-child { min-width: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library h4 { margin-bottom: 4px !important; font-size: 1.1rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library p { font-size: .86rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+  gap: 8px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item {
+  min-height: 56px !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item .material-symbols-outlined { width: 28px !important; height: 28px !important; font-size: 1rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item strong { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .82rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item small { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: .68rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-item em { display: none !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas { gap: 14px !important; padding: 20px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head h3 { font-size: clamp(1.3rem, 2vw, 1.7rem) !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions { justify-content: flex-start !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { grid-column: auto !important; min-height: 210px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-top h4 { overflow-wrap: anywhere !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions { gap: 8px !important; }
+@media (max-width: 880px) {
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library { grid-template-columns: 1fr !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid { grid-template-columns: 1fr !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { grid-column: auto !important; }
+}
+@media (max-width: 560px) {
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list { grid-template-columns: 1fr 1fr !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs { width: 100% !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button { flex: 1 1 auto !important; padding-inline: 10px !important; }
+}
