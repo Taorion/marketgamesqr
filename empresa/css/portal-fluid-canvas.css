@@ -320,3 +320,342 @@ html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-s
     min-width: 700px !important;
   }
 }
+
+/* Affiliate detail interstitial ------------------------------------------------
+ * The selected-affiliate view is a focused work surface, not a collection of
+ * nested cards.  Identity, account state and the sale action now have a clear
+ * order even when the form becomes long.
+ */
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperationBackdrop {
+  background: rgba(4, 30, 71, .48) !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+  display: grid !important;
+  grid-template-columns: minmax(240px, .62fr) minmax(0, 1.38fr) !important;
+  grid-template-areas:
+    "head head"
+    "card summary"
+    "meta summary"
+    "actions actions" !important;
+  column-gap: clamp(28px, 4vw, 58px) !important;
+  row-gap: 14px !important;
+  align-content: start !important;
+  width: min(1120px, calc(100vw - 48px)) !important;
+  max-width: calc(100vw - 48px) !important;
+  max-height: min(900px, calc(100dvh - 48px)) !important;
+  margin: 0 !important;
+  padding: clamp(26px, 4vw, 52px) !important;
+  overflow: auto !important;
+  border: 0 !important;
+  border-radius: 32px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .99), rgba(242, 250, 255, .96)) !important;
+  box-shadow: 0 36px 100px rgba(2, 28, 72, .34) !important;
+  color: #082b67 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head {
+  grid-area: head !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  margin: 0 0 12px !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head .mono-label {
+  color: #0875d1 !important;
+  font-size: .7rem !important;
+  letter-spacing: .11em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #082b67 !important;
+  font-size: clamp(1.55rem, 2.8vw, 2.35rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton {
+  flex: 0 0 auto !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(231, 247, 255, .88) !important;
+  color: #0a579f !important;
+  box-shadow: inset 0 0 0 1px rgba(91, 158, 209, .22) !important;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton:hover {
+  transform: rotate(4deg) scale(1.04) !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(16, 90, 149, .14), inset 0 0 0 1px rgba(0, 184, 255, .4) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap {
+  grid-area: card !important;
+  display: grid !important;
+  place-items: center !important;
+  width: min(100%, 340px) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 1.18 / 1 !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: radial-gradient(circle at 24% 16%, rgba(0, 184, 255, .18), transparent 48%), linear-gradient(145deg, #ecf8ff, #f8fcff) !important;
+  box-shadow: 0 18px 38px rgba(36, 117, 168, .12) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 10px 16px rgba(3, 59, 130, .16)) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > #affiliateCardMeta {
+  grid-area: meta !important;
+  width: min(100%, 340px) !important;
+  margin: 4px 0 0 !important;
+  padding: 0 4px !important;
+  color: #5a7798 !important;
+  font-size: .78rem !important;
+  line-height: 1.45 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary {
+  grid-area: summary !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 26px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 22px !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-kicker,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance :is(span, small) {
+  display: block !important;
+  color: #6080a2 !important;
+  font-size: .71rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  line-height: 1.35 !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head strong {
+  display: block !important;
+  margin-top: 6px !important;
+  color: #082b67 !important;
+  font-size: clamp(1.3rem, 2.2vw, 1.85rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.035em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+  min-width: 132px !important;
+  text-align: right !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance strong {
+  color: #0068df !important;
+  font-size: clamp(1.65rem, 3vw, 2.3rem) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 20px clamp(18px, 3vw, 34px) !important;
+  margin: 0 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid div {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dt {
+  margin: 0 !important;
+  color: #6884a1 !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dd {
+  margin: 5px 0 0 !important;
+  color: #123b6b !important;
+  font-size: .86rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* The lower area is intentionally an operation section, separated only by
+ * space and a soft divider rather than a second card. */
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 22px clamp(20px, 3vw, 36px) !important;
+  align-items: end !important;
+  min-width: 0 !important;
+  margin-top: clamp(18px, 3vw, 34px) !important;
+  padding: clamp(26px, 4vw, 38px) 0 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(label, .affiliate-purchase-summary, .affiliate-purchase-builder) {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label > span,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator span {
+  color: #5f7d9d !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select) {
+  min-height: 48px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(100, 150, 190, .36) !important;
+  color: #082b67 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select):focus {
+  outline: 0 !important;
+  box-shadow: inset 0 -2px 0 #00b8ff !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label small {
+  color: #6984a0 !important;
+  font-size: .76rem !important;
+  line-height: 1.42 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px 24px !important;
+  grid-column: 1 / -1 !important;
+  padding: 18px 0 !important;
+  box-shadow: inset 0 1px 0 rgba(99, 151, 194, .16), inset 0 -1px 0 rgba(99, 151, 194, .16) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator strong {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #0068df !important;
+  font-size: 1.55rem !important;
+  line-height: 1.1 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator small,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-card-actions :is(.span-2, .span-3) {
+  grid-column: 1 / -1 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateAddPointsButton {
+  grid-column: 1 / -1 !important;
+  justify-self: start !important;
+  min-width: min(100%, 290px) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-purchase-builder-head {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 14px 24px !important;
+  padding-bottom: 16px !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .16) !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "head"
+      "summary"
+      "card"
+      "meta"
+      "actions" !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 24px 20px !important;
+    border-radius: 24px !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > :is(.affiliate-card-preview-wrap, #affiliateCardMeta) {
+    width: min(100%, 360px) !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid,
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+    text-align: left !important;
+  }
+}
