@@ -14100,7 +14100,7 @@ function activationPerformanceRate(item = {}) {
 
 function ensureGamingActivationDetailModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
   if (!view) return null;
-  let modal = view.querySelector("#gamingActivationDetailModal");
+  let modal = document.getElementById("gamingActivationDetailModal");
   if (modal) return modal;
   modal = document.createElement("div");
   modal.className = "modal-shell hidden gaming-activation-detail-modal";
@@ -14121,7 +14121,13 @@ function ensureGamingActivationDetailModal(view = document.querySelector('.view-
       <div class="gaming-activation-detail-body" id="gamingActivationDetailBody"></div>
     </article>
   `;
-  view.appendChild(modal);
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-close-gaming-activation-detail]")) {
+      event.preventDefault();
+      closeGamingActivationDetail();
+    }
+  });
   return modal;
 }
 
@@ -22930,13 +22936,11 @@ function renderTriviaLaunchers() {
           </div>
         </td>
         <td>
-          <div class="activation-number-cell"><strong>${escapeHtml(attemptsCount)}</strong><span>Leads</span></div>
-        </td>
-        <td>
-          <div class="activation-number-cell"><strong>${escapeHtml(winnersCount)}</strong><span>Tickets</span></div>
-        </td>
-        <td>
-          <div class="activation-number-cell"><strong>${escapeHtml(rate)}%</strong><span>Rendimiento</span></div>
+          <div class="activation-outcome-cell">
+            <span><strong>${escapeHtml(attemptsCount)}</strong> leads</span>
+            <span><strong>${escapeHtml(winnersCount)}</strong> tickets</span>
+            <span><strong>${escapeHtml(rate)}%</strong> rendimiento</span>
+          </div>
         </td>
         <td>
           <div class="activation-campaign-cell">
@@ -22944,12 +22948,7 @@ function renderTriviaLaunchers() {
             <small>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</small>
           </div>
         </td>
-        <td>
-          <div class="activation-table-actions">
-            <button class="ghost-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
-            <button class="ghost-button danger-button" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
-          </div>
-        </td>
+        <td><button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Ver detalle</button></td>
       </tr>
     `;
     }).join("")
@@ -22957,6 +22956,12 @@ function renderTriviaLaunchers() {
 
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {
+      if (row.matches("button")) {
+        event.preventDefault();
+        event.stopPropagation();
+        openGamingActivationDetail(row.dataset.openActivationDetail);
+        return;
+      }
       if (event.target.closest("button, a, input, select, textarea")) return;
       event.preventDefault();
       openGamingActivationDetail(row.dataset.openActivationDetail);
