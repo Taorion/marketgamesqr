@@ -29591,6 +29591,7 @@ function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
     else directoryCard.prepend(board);
   }
   const allRows = Array.isArray(rows) ? rows : [];
+  syncLeadDirectoryAudienceTabs(allRows);
   const customers = allRows.filter(leadDirectoryIsCustomer);
   const leads = allRows.filter(leadDirectoryHasCommercialPotential);
   const audience = leadDirectoryAudience();
@@ -32310,7 +32311,6 @@ function renderLeadsView() {
   if (leadFeedRetention) {
     leadFeedRetention.textContent = `Retención ${state.contactFeedRetention?.label || "según plan"}`;
   }
-  renderLeadCrmTable();
   renderContactDirectoryCards(crmRows);
   renderManualContactsDirectory();
   renderLeadAgenda();
