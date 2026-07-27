@@ -63613,3 +63613,114 @@ html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.ta
     align-items: flex-start !important;
   }
 }
+
+/* Revenue dashboard v153: the activity picker is one calm, full-width vertical list. */
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library > div:first-child {
+  width: 100% !important;
+  max-width: 720px !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  border-top: 1px solid #dce8f4 !important;
+  border-bottom: 1px solid #dce8f4 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item:hover,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) max-content !important;
+  align-items: center !important;
+  column-gap: 14px !important;
+  width: 100% !important;
+  min-height: 82px !important;
+  margin: 0 !important;
+  padding: 13px 4px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e4edf6 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item:last-child {
+  border-bottom: 0 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item > .material-symbols-outlined {
+  width: 40px !important;
+  height: 40px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: #edf5ff !important;
+  color: #0756c7 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-copy {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-copy strong,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-copy small {
+  display: block !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-action {
+  display: inline-flex !important;
+  grid-column: auto !important;
+  align-items: center !important;
+  justify-self: end !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item,
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item:hover,
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    align-items: start !important;
+    row-gap: 8px !important;
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item > .material-symbols-outlined {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-action {
+    grid-column: 2 !important;
+    justify-self: start !important;
+  }
+}
