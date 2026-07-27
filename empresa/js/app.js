@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-portal-composition-v165";
+const APP_VERSION = "empresa-20260727-affiliate-points-v166";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -28485,7 +28485,8 @@ function updateAffiliatePurchaseTotals() {
   const productSummary = namedItems.length
     ? namedItems.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 170)
     : "";
-  const points = affiliateReferralPointsEstimate(total);
+  const pointsDetail = affiliateReferralPointsEstimateDetail(total);
+  const points = pointsDetail.points;
   if (affiliatePurchaseAmountInput && productsTotal > 0 && document.activeElement !== affiliatePurchaseAmountInput) {
     affiliatePurchaseAmountInput.value = String(productsTotal || "");
   }
