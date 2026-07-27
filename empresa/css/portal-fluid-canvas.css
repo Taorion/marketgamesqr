@@ -25,6 +25,29 @@ html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qo
   background: transparent !important;
 }
 
+/* Portal canvas v169 ---------------------------------------------------------
+ * `content-shell` is structural only.  It gives the portal a calm reading
+ * lane, but it must never look like another nested panel behind the content. */
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  isolation: auto !important;
+}
+
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell::before,
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell > .view-section.active {
+  margin-inline: auto !important;
+}
+
 html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > div {
   flex: 1 1 auto !important;
   min-width: 0 !important;
