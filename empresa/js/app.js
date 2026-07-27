@@ -5474,6 +5474,63 @@ function ensureAccountAdminUxStyles() {
     }
   `;
   document.head.appendChild(style);
+  style.textContent += `
+    .view-section[data-view="reward-passes"] .reward-pass-kpis,
+    .view-section[data-view="reward-passes"] .reward-pass-chart-grid,
+    .view-section[data-view="reward-passes"] .reward-pass-detail-card { display: none !important; }
+    .reward-pass-list-card { margin-top: 1rem; overflow: visible !important; }
+    .reward-pass-list-card .table-card-head { align-items: center; gap: 1rem; }
+    .reward-pass-list-card .table-wrap { overflow: visible !important; }
+    .reward-pass-list-card table { width: 100% !important; min-width: 0 !important; table-layout: fixed; }
+    .reward-pass-list-card th:nth-child(1) { width: 17%; }
+    .reward-pass-list-card th:nth-child(2), .reward-pass-list-card th:nth-child(3) { width: 22%; }
+    .reward-pass-list-card th:nth-child(4) { width: 14%; }
+    .reward-pass-list-card th:nth-child(5) { width: 13%; }
+    .reward-pass-list-card th:nth-child(6) { width: 12%; }
+    .reward-pass-list-card td { overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .reward-pass-list-card td:nth-child(2), .reward-pass-list-card td:nth-child(3) { white-space: nowrap; }
+    .reward-pass-list-card .reward-pass-table-main { min-width: 0; }
+    .reward-pass-list-card .reward-pass-table-contact { display: none; }
+    .reward-pass-detail-modal { z-index: 2147483646; padding: clamp(12px, 4vw, 42px) !important; }
+    .reward-pass-detail-modal-card { width: min(760px, calc(100vw - 24px)) !important; max-height: calc(100dvh - 24px); overflow: auto; }
+    .reward-pass-detail-head { padding-bottom: 1rem; border-bottom: 1px solid #dbeafe; }
+    .reward-pass-detail-head h3 { margin: .2rem 0; font-size: clamp(1.45rem, 3vw, 2rem); }
+    .reward-pass-detail-head p { margin: 0; color: #526b8e; }
+    .reward-pass-detail-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin: 1.15rem 0; }
+    .reward-pass-detail-summary > div, .reward-pass-detail-people section { padding: .9rem; border: 1px solid #dbeafe; border-radius: 14px; background: #f8fbff; }
+    .reward-pass-detail-summary span, .reward-pass-detail-people .mono-label { display: block; margin-bottom: .35rem; color: #58749b; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .reward-pass-detail-summary strong { font-size: 1.1rem; color: #062d76; }
+    .reward-pass-detail-people { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .reward-pass-detail-people strong { display: block; color: #102c63; }
+    .reward-pass-detail-people p { margin: .45rem 0 0; color: #526b8e; font-size: .86rem; overflow-wrap: anywhere; }
+    .reward-pass-reveal-status { display: flex; gap: .75rem; align-items: flex-start; padding: 1rem; margin-top: .9rem; border-left: 3px solid #00bfe5; background: #effbff; border-radius: 10px; }
+    .reward-pass-reveal-status.is-pending { border-left-color: #e5a000; background: #fffaf0; }
+    .reward-pass-reveal-status > .material-symbols-outlined { color: #0877c9; }
+    .reward-pass-reveal-status.is-pending > .material-symbols-outlined { color: #b7791f; }
+    .reward-pass-reveal-status strong, .reward-pass-reveal-status p { display: block; margin: 0; }
+    .reward-pass-reveal-status p { margin-top: .25rem; color: #506b91; }
+    .reward-pass-detail-actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dbeafe; }
+    .reward-pass-detail-actions .solid-button { display: inline-flex; align-items: center; gap: .4rem; text-decoration: none; }
+    @media (max-width: 700px) {
+      .reward-pass-list-card .table-card-head { align-items: stretch; flex-direction: column; }
+      .reward-pass-list-card .inline-selects, .reward-pass-list-card select { width: 100%; }
+      .reward-pass-list-card table, .reward-pass-list-card thead, .reward-pass-list-card tbody, .reward-pass-list-card tr, .reward-pass-list-card th, .reward-pass-list-card td { display: block; width: 100% !important; }
+      .reward-pass-list-card thead { position: absolute; width: 1px !important; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .reward-pass-list-card tr { padding: .8rem 0; border-bottom: 1px solid #dbeafe; }
+      .reward-pass-list-card td { display: flex; justify-content: space-between; gap: .75rem; padding: .3rem 0; white-space: normal !important; text-align: right; }
+      .reward-pass-list-card td::before { content: attr(data-label); color: #59759d; font-size: .75rem; font-weight: 800; text-align: left; text-transform: uppercase; }
+      .reward-pass-list-card td:nth-child(1)::before { content: "Giftcard"; }
+      .reward-pass-list-card td:nth-child(2)::before { content: "Comprador"; }
+      .reward-pass-list-card td:nth-child(3)::before { content: "Beneficiario"; }
+      .reward-pass-list-card td:nth-child(4)::before { content: "Saldo"; }
+      .reward-pass-list-card td:nth-child(5)::before { content: "Estado"; }
+      .reward-pass-list-card td:nth-child(6)::before { content: ""; }
+      .reward-pass-list-card .reward-pass-table-actions { justify-content: flex-end; }
+      .reward-pass-detail-summary, .reward-pass-detail-people { grid-template-columns: 1fr; }
+      .reward-pass-detail-actions { align-items: stretch; flex-direction: column-reverse; }
+      .reward-pass-detail-actions > * { width: 100%; justify-content: center; text-align: center; }
+    }
+  `;
 }
 
 function renderAccountView() {
@@ -34397,6 +34454,7 @@ function rewardPassStatusClass(status) {
 const REWARD_PASS_BACKEND_STATUS_FILTERS = new Set(["active", "pending_claim", "partially_redeemed", "fully_redeemed", "expired", "cancelled", "extended"]);
 
 function ensureRewardPassUxStyles() {
+  ensureAccountAdminUxStyles();
   if (document.getElementById("rewardPassUxStylesV73")) return;
   const style = document.createElement("style");
   style.id = "rewardPassUxStylesV73";
@@ -34488,6 +34546,7 @@ function ensureRewardPassUxStyles() {
 
 function openRewardPassCreateModal() {
   if (!rewardPassCreateModal) return;
+  if (rewardPassCreateModal.parentElement !== document.body) document.body.appendChild(rewardPassCreateModal);
   setRewardPassDefaults();
   renderRewardPassContext();
   renderRewardPassPreview(null);
@@ -34678,9 +34737,7 @@ function renderRewardPassCharts(rows = filteredRewardPassRows()) {
 function renderRewardPassTable() {
   if (!rewardPassTable) return;
   const rows = filteredRewardPassRows();
-  renderRewardPassCharts(rows);
   rewardPassTable.innerHTML = rows.map((item) => {
-    const usedValue = rewardPassUsedValue(item);
     return `
     <tr class="${item.id === state.selectedRewardPassId ? "active" : ""}">
       <td>
@@ -34691,20 +34748,16 @@ function renderRewardPassTable() {
       </td>
       <td><strong>${escapeHtml(item.buyer_name || "-")}</strong><div class="reward-pass-table-contact">${escapeHtml(rewardPassBuyerContact(item))}</div></td>
       <td><strong>${escapeHtml(item.beneficiary_name || "-")}</strong><div class="reward-pass-table-contact">${escapeHtml([item.beneficiary_phone, item.beneficiary_email, item.beneficiary_document].filter(Boolean).join(" · ") || "Puede activarlo después")}</div></td>
-      <td>${escapeHtml(money(item.initial_value_cop || 0))}</td>
-      <td>${escapeHtml(usedValue ? money(usedValue) : "$0")}</td>
       <td>${escapeHtml(money(item.current_balance_cop || 0))}</td>
       <td><span class="status-chip ${rewardPassStatusClass(item.status)}">${escapeHtml(rewardPassStatusLabel(item.status))}</span></td>
-      <td>${escapeHtml(formatDateShort(item.issued_at))}</td>
-      <td>${escapeHtml(formatDateShort(item.expires_at))}</td>
       <td>
         <div class="reward-pass-table-actions">
-          <button class="ghost-button compact" type="button" data-rp-view="${escapeHtml(item.id)}">Detalle</button>
+          <button class="ghost-button compact" type="button" data-rp-view="${escapeHtml(item.id)}">Ver</button>
         </div>
       </td>
     </tr>
   `;
-  }).join("") || '<tr><td colspan="10">Todavia no hay Reward Pass emitidos.</td></tr>';
+  }).join("") || '<tr><td colspan="6">Todavía no hay giftcards emitidas.</td></tr>';
 
   rewardPassTable.querySelectorAll("[data-rp-view]").forEach((button) => {
     button.addEventListener("click", () => selectRewardPass(button.dataset.rpView));
@@ -34776,6 +34829,65 @@ function renderRewardPassDetail() {
   renderRewardPassPreview(pass);
 }
 
+function ensureRewardPassDetailModal() {
+  let modal = document.getElementById("rewardPassDetailModal");
+  if (modal) return modal;
+  modal = document.createElement("section");
+  modal.id = "rewardPassDetailModal";
+  modal.className = "modal-shell hidden reward-pass-detail-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "rewardPassDetailModalTitle");
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-rp-detail-close]")) modal.classList.add("hidden");
+  });
+  return modal;
+}
+
+function renderRewardPassDetailModal() {
+  const pass = state.selectedRewardPass;
+  if (!pass) return;
+  const modal = ensureRewardPassDetailModal();
+  const hasClaim = pass.status !== "pending_claim" && Boolean(pass.beneficiary_name && pass.beneficiary_document);
+  const reminderPhone = String(pass.beneficiary_phone || pass.buyer_phone || "").replace(/\D/g, "");
+  const reminderTarget = pass.beneficiary_name || pass.buyer_name || "la persona beneficiaria";
+  const reminderText = hasClaim
+    ? `Hola ${reminderTarget}, te recordamos que tu giftcard ${pass.public_code} tiene un saldo disponible de ${money(pass.current_balance_cop || 0)}. Puedes usarla antes del ${formatDateShort(pass.expires_at)}.`
+    : `Hola ${reminderTarget}, tu giftcard ${pass.public_code} está pendiente de activación. Completa los datos del beneficiario para revelar y usar el valor: ${pass.public_url || ""}`;
+  const whatsappUrl = reminderPhone ? `https://wa.me/${reminderPhone}?text=${encodeURIComponent(reminderText)}` : "";
+  modal.innerHTML = `
+    <article class="modal-card reward-pass-detail-modal-card">
+      <div class="modal-head reward-pass-detail-head">
+        <div>
+          <span class="mono-label">Giftcard emitida</span>
+          <h3 id="rewardPassDetailModalTitle">${escapeHtml(pass.public_code)}</h3>
+          <p>${escapeHtml(pass.campaign_name || "Sin campaña asociada")}</p>
+        </div>
+        <button class="icon-button" type="button" data-rp-detail-close aria-label="Cerrar detalle"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="reward-pass-detail-summary">
+        <div><span>Saldo disponible</span><strong>${escapeHtml(money(pass.current_balance_cop || 0))}</strong></div>
+        <div><span>Estado</span><strong><span class="status-chip ${rewardPassStatusClass(pass.status)}">${escapeHtml(rewardPassStatusLabel(pass.status))}</span></strong></div>
+        <div><span>Vence</span><strong>${escapeHtml(formatDateShort(pass.expires_at))}</strong></div>
+      </div>
+      <div class="reward-pass-detail-people">
+        <section><span class="mono-label">Comprador</span><strong>${escapeHtml(pass.buyer_name || "Sin registrar")}</strong><p>${escapeHtml([pass.buyer_document, pass.buyer_phone, pass.buyer_email].filter(Boolean).join(" · ") || "Sin datos adicionales")}</p></section>
+        <section><span class="mono-label">Beneficiario</span><strong>${escapeHtml(pass.beneficiary_name || "Pendiente de registro")}</strong><p>${escapeHtml([pass.beneficiary_document, pass.beneficiary_phone, pass.beneficiary_email].filter(Boolean).join(" · ") || "Completará sus datos al activar la giftcard")}</p></section>
+      </div>
+      <section class="reward-pass-reveal-status ${hasClaim ? "is-revealed" : "is-pending"}">
+        <span class="material-symbols-outlined" aria-hidden="true">${hasClaim ? "verified" : "lock"}</span>
+        <div><strong>${hasClaim ? "Valor revelado" : "Valor pendiente de revelar"}</strong><p>${hasClaim ? "El beneficiario completó sus datos; la giftcard puede utilizarse según su vigencia." : "El valor solo se revela cuando el beneficiario completa el formulario con sus datos."}</p></div>
+      </section>
+      <div class="modal-actions reward-pass-detail-actions">
+        <button class="ghost-button" type="button" data-rp-detail-close>Cerrar</button>
+        ${whatsappUrl ? `<a class="solid-button" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">chat</span> Recordar por WhatsApp</a>` : '<span class="table-secondary">Agrega un celular para enviar recordatorios por WhatsApp.</span>'}
+      </div>
+    </article>
+  `;
+  modal.classList.remove("hidden");
+}
+
 async function selectRewardPass(id) {
   if (!id) return;
   const scopeKey = businessScopeKey();
@@ -34787,6 +34899,7 @@ async function selectRewardPass(id) {
     state.selectedRewardPass = data.reward_pass;
     renderRewardPassTable();
     renderRewardPassDetail();
+    renderRewardPassDetailModal();
     showFeedback("Detalle de Reward Pass cargado.");
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey) || state.selectedRewardPassId !== id) return;
@@ -34806,19 +34919,12 @@ async function renderRewardPassesView() {
     }
     const passesLoaded = await loadRewardPasses();
     if (passesLoaded === false || !isCurrentBusinessScope(scopeKey)) return;
-    renderRewardPassMetrics();
     renderRewardPassTable();
-    const selected = state.rewardPasses.find((item) => item.id === state.selectedRewardPassId);
-    if (selected) {
-      await selectRewardPass(selected.id);
-      if (!isCurrentBusinessScope(scopeKey)) return;
-    } else {
-      state.selectedRewardPass = null;
-      renderRewardPassDetail();
-    }
+    state.selectedRewardPass = null;
+    state.selectedRewardPassId = null;
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey)) return;
-    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="10">${escapeHtml(error.message)}</td></tr>`;
+    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -43895,6 +44001,11 @@ refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
 rewardPassOpenCreateButton?.addEventListener("click", openRewardPassCreateModal);
 rewardPassCreateCloseButton?.addEventListener("click", closeRewardPassCreateModal);
 rewardPassCreateCancelButton?.addEventListener("click", closeRewardPassCreateModal);
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  closeRewardPassCreateModal();
+  document.getElementById("rewardPassDetailModal")?.classList.add("hidden");
+});
 refreshLeadCaptureButton?.addEventListener("click", async () => {
   await loadLeadCaptureActivations({ force: true });
   renderLeadCaptureTable();

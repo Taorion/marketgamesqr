@@ -6309,18 +6309,15 @@
           <section class="view-section" data-view="reward-passes">
             <div class="view-head">
               <div>
-                <span class="mono-label">Gift Card Digital PRO</span>
-                <h2>Reward Pass PRO</h2>
-                <p>Visualiza giftcards compradas, compradores, beneficiarios, valores, uso, saldo disponible y vencimientos.</p>
+                <span class="mono-label">Giftcards</span>
+                <h2>Giftcards emitidas</h2>
+                <p>Consulta el estado y saldo de cada giftcard. Abre el detalle solo cuando necesites revisar a quién pertenece o enviar un recordatorio.</p>
               </div>
               <div class="view-head-actions">
                 <button class="solid-button" id="rewardPassOpenCreateButton" type="button">Crear giftcard</button>
                 <button class="ghost-button" id="refreshRewardPassesButton" type="button">Actualizar</button>
               </div>
             </div>
-
-            <section class="kpi-grid reward-pass-kpis" id="rewardPassKpiGrid"></section>
-            <section class="reward-pass-chart-grid" id="rewardPassChartGrid" aria-label="Gráficos de Reward Pass"></section>
 
             <section class="modal-shell hidden" id="rewardPassCreateModal" role="dialog" aria-modal="true" aria-labelledby="rewardPassCreateModalTitle">
               <article class="modal-card reward-pass-create-modal-card">
@@ -6448,9 +6445,12 @@
               </article>
             </section>
 
-            <article class="surface-card data-table-card">
+            <article class="surface-card data-table-card reward-pass-list-card" data-quiet-zone-ignore>
               <div class="table-card-head">
-                <span class="mono-label">Reward Passes emitidos</span>
+                <div>
+                  <span class="mono-label">Listado</span>
+                  <strong>Giftcards emitidas</strong>
+                </div>
                 <div class="inline-selects">
                   <select id="rewardPassStatusFilter">
                     <option value="">Todos</option>
@@ -6473,12 +6473,8 @@
                       <th>Codigo</th>
                       <th>Comprador</th>
                       <th>Beneficiario</th>
-                      <th>Valor comprado</th>
-                      <th>Usado</th>
                       <th>Saldo</th>
                       <th>Estado</th>
-                      <th>Emision</th>
-                      <th>Vence</th>
                       <th>Detalle</th>
                     </tr>
                   </thead>
@@ -6487,7 +6483,7 @@
               </div>
             </article>
 
-            <article class="surface-card reward-pass-detail-card" id="rewardPassDetailCard">
+            <article class="surface-card reward-pass-detail-card hidden" id="rewardPassDetailCard" aria-hidden="true">
               <div class="table-card-head">
                 <span class="mono-label">Detalle</span>
                 <strong id="rewardPassDetailTitle">Sin Reward Pass seleccionado</strong>
