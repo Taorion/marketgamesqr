@@ -231,3 +231,94 @@ body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD) .portal-shell .view-section.a
     border-left: 0 !important;
   }
 }
+
+/*
+ * Second pass: use the actual page width.  The prior system accumulated
+ * horizontal padding at app, content and card level, leaving data in a narrow
+ * strip.  The portal now reads as one spacious vertical workspace.
+ */
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .app-main {
+  padding-inline: clamp(18px, 3vw, 46px) !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .content-shell {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: clamp(28px, 4vw, 56px) 0 88px !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 0 96px !important;
+  gap: clamp(38px, 5vw, 72px) !important;
+}
+
+/* One reading lane: cards no longer repeat their own containers and borders. */
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .chart-card, .lead-directory-card, .affiliate-list-panel, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .lead-agenda-card, .rms-stage-slider-shell, .rms-station-workspace, .rms-station-clean-shell, .gaming-activation-list-card, .campaign-library-shell, .inventory-command-panel, .channel-analytics-layout):not(.modal-card) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.charts-grid, .dashboard-charts, .campaign-grid, .channel-analytics-layout, .inventory-layout, .account-layout, .affiliate-layout, .sales-layout, .revenue-workspace-grid, .lead-directory-layout, .branch-layout) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(32px, 5vw, 64px) !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.data-table-card, .table-card, .lead-directory-card, .affiliate-list-panel, .gaming-activation-list-card, .campaign-library-shell, .inventory-command-panel) {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Data keeps its natural column width and scrolls only inside its own lane. */
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  margin-inline: 0 !important;
+  padding-block: 2px !important;
+  border-color: #c8ddea !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table {
+  min-width: 720px !important;
+  table-layout: auto !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table:has(th:nth-child(7)) {
+  min-width: 980px !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table:has(th:nth-child(9)) {
+  min-width: 1160px !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table :is(th, td) {
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table th:first-child,
+html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table td:first-child {
+  padding-left: clamp(14px, 2vw, 26px) !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .app-main {
+    padding-inline: 16px !important;
+  }
+
+  html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .content-shell {
+    padding-top: 28px !important;
+  }
+
+  html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active {
+    gap: 30px !important;
+    padding-bottom: 64px !important;
+  }
+
+  html body:not(#qoriOpenLayoutA#qoriOpenLayoutB#qoriOpenLayoutC#qoriOpenLayoutD) .portal-shell .view-section.active table {
+    min-width: 680px !important;
+  }
+}
