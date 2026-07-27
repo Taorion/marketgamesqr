@@ -62507,3 +62507,43 @@ html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions
   html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs { width: 100% !important; }
   html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button { flex: 1 1 auto !important; padding-inline: 10px !important; }
 }
+
+/* Channels ROI v242: compact table and a true independent create-channel modal. */
+html body[data-current-view="channels"] .portal-shell #acquisitionChannelDetailPanel { display: none !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card .table-wrap { overflow: visible !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card table { width: 100% !important; min-width: 0 !important; table-layout: fixed !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(1) { width: 22% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(n+2):nth-child(-n+6) { width: 11% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(7) { width: 12% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(8) { width: 14% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card td { overflow: hidden !important; text-overflow: ellipsis !important; vertical-align: middle !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:first-child { white-space: nowrap !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card .channel-row-actions { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
+html body > #acquisitionChannelFormPanel:not(.is-channel-modal-open) { display: none !important; }
+html body > #acquisitionChannelFormPanel.is-channel-modal-open {
+  position: fixed !important;
+  z-index: 1101 !important;
+  top: 50% !important;
+  left: 50% !important;
+  display: block !important;
+  width: min(780px, calc(100vw - 32px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+  margin: 0 !important;
+  padding: 22px !important;
+  overflow: auto !important;
+  border: 1px solid #cfe0f2 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 30px 80px rgba(2, 20, 51, .30) !important;
+  transform: translate(-50%, -50%) !important;
+}
+html body > #acquisitionChannelFormPanel.is-channel-modal-open .table-card-head { padding-bottom: 14px !important; border-bottom: 1px solid #e3edf6 !important; }
+html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form :is(input, select, textarea) { width: 100% !important; min-height: 44px !important; border-radius: 10px !important; }
+html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form textarea { min-height: 110px !important; }
+@media (max-width: 720px) {
+  html body[data-current-view="channels"] .portal-shell .channel-list-card .table-wrap { overflow-x: auto !important; }
+  html body[data-current-view="channels"] .portal-shell .channel-list-card table { min-width: 680px !important; }
+  html body > #acquisitionChannelFormPanel.is-channel-modal-open { width: calc(100vw - 20px) !important; max-height: calc(100dvh - 20px) !important; padding: 16px !important; }
+  html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form { grid-template-columns: 1fr !important; }
+}

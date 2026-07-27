@@ -36503,6 +36503,7 @@ function acquisitionChannelsViewSection() {
 }
 
 function openAcquisitionChannelModal() {
+  if (acquisitionChannelFormPanel?.parentElement !== document.body) document.body.appendChild(acquisitionChannelFormPanel);
   acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
   acquisitionChannelFormPanel?.classList.add("is-channel-modal-open");
 }
@@ -37268,33 +37269,16 @@ function renderAcquisitionChannelsView() {
   acquisitionChannelTable.innerHTML = channels.map((channel) => {
     const metrics = channel.metrics || {};
     const isDetected = !channel.id || channel.status === "DETECTED";
-    const topCampaign = topChannelCampaign(channel);
     const investment = Number(metrics.investment || channel.period_budget || 0);
     const revenue = Number(metrics.revenue || 0);
-    const effortRows = channelEffortsForChannel(channel);
-    const strategyText = channel.notes || topCampaign?.campaign_name || effortRows[0]?.objective || "Sin estrategia cargada";
     return `
       <tr>
         <td>
           <strong>${escapeHtml(channel.name || "Sin canal")}</strong>
           <br><span class="table-secondary">${escapeHtml(channel.platform || channel.slug || "Canal comercial")}</span>
         </td>
-        <td>
-          <span class="channel-strategy-cell">
-            <strong>${escapeHtml(acquisitionChannelTypeLabel(channel.channel_type))}</strong>
-            <small>${escapeHtml(strategyText)}</small>
-          </span>
-        </td>
-        <td>
-          <span class="channel-related-chipline">
-            <span>${escapeHtml(Number(metrics.qr_generated || 0).toLocaleString("es-CO"))} tickets</span>
-            <span>${escapeHtml(Number(metrics.redemptions || 0).toLocaleString("es-CO"))} redimidos</span>
-            <span>${escapeHtml(effortRows.length.toLocaleString("es-CO"))} atracciones</span>
-          </span>
-        </td>
         <td>${escapeHtml(money(investment))}</td>
         <td>${escapeHtml(metrics.leads || 0)}</td>
-        <td>${escapeHtml(metrics.redemptions || 0)}</td>
         <td>${escapeHtml(metrics.sales || 0)}</td>
         <td>${escapeHtml(money(revenue))}</td>
         <td>
@@ -37313,7 +37297,7 @@ function renderAcquisitionChannelsView() {
         </td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="11">Crea tu primer canal o registra ventas con canal específico para detectarlos automáticamente.</td></tr>';
+  }).join("") || '<tr><td colspan="8">Crea tu primer canal o registra ventas con canal específico para detectarlos automáticamente.</td></tr>';
 
   if (acquisitionChannelMatrixTable) {
     const matrix = (state.acquisitionChannelMatrix || []).slice()
