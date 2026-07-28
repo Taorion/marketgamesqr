@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-activation-flow-v176";
+const APP_VERSION = "empresa-20260728-activation-builder-fix-v177";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14531,6 +14531,63 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
       if (event.target === modal || event.target.closest("[data-close-gaming-activation-builder]")) {
         event.preventDefault();
         closeGamingActivationBuilderModal();
+        return;
+      }
+      const recipe = event.target.closest("[data-gaming-activation-recipe]")?.dataset.gamingActivationRecipe;
+      if (recipe) {
+        event.preventDefault();
+        applyGamingActivationRecipe(recipe);
+        return;
+      }
+      const wizardStepButton = event.target.closest("[data-gaming-wizard-step]");
+      if (wizardStepButton) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(wizardStepButton.dataset.gamingWizardStep || 0));
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-previous]")) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) - 1, { validate: false });
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-next]")) {
+        event.preventDefault();
+        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
+        return;
+      }
+      if (event.target.closest("[data-gaming-wizard-publish]")) {
+        event.preventDefault();
+        if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+        return;
+      }
+      const categoryButton = event.target.closest("[data-gaming-activation-category]");
+      if (categoryButton) {
+        state.gamingActivationCategory = categoryButton.dataset.gamingActivationCategory || "all";
+        updateGamingActivationCatalog();
+        return;
+      }
+      if (event.target.closest("[data-activation-type]")) {
+        window.setTimeout(() => {
+          updateGamingActivationCatalog();
+          updateGamingBuilderProgress();
+        }, 0);
+      }
+    });
+    modal.addEventListener("input", (event) => {
+      if (event.target.matches("[data-gaming-activation-search]")) {
+        state.gamingActivationSearch = event.target.value || "";
+        updateGamingActivationCatalog();
+        return;
+      }
+      if (event.target.closest("#triviaLauncherForm")) {
+        updateGamingBuilderProgress();
+        if (Number(state.gamingActivationWizardStep || 0) === 4) renderGamingActivationReview();
+      }
+    });
+    modal.addEventListener("change", (event) => {
+      if (event.target.closest("#triviaLauncherForm")) {
+        updateGamingBuilderProgress();
+        if (Number(state.gamingActivationWizardStep || 0) === 4) renderGamingActivationReview();
       }
     });
   }
