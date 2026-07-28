@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-activation-builder-catalog-fix-v181";
+const APP_VERSION = "empresa-20260728-activation-flow-v184";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14615,6 +14615,8 @@ function openGamingActivationBuilderModal(options = {}) {
   if (options.reset !== false) state.gamingActivationWizardStep = 0;
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
+  const body = modal.querySelector(".gaming-activation-builder-modal-body");
+  if (body) body.scrollTop = 0;
   updateGamingActivationWizard();
   updateGamingBuilderProgress();
   window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-builder]")?.focus({ preventScroll: true }), 40);
@@ -14783,7 +14785,8 @@ function gamingActivationCategoryForType(type = "") {
 }
 
 function updateGamingActivationCatalog() {
-  if (!activationTypePicker) return;
+  const root = triviaLauncherForm;
+  if (!activationTypePicker || !root) return;
   const query = String(state.gamingActivationSearch || "").trim().toLowerCase();
   const category = state.gamingActivationCategory || "recommended";
   let visible = 0;
@@ -14798,39 +14801,48 @@ function updateGamingActivationCatalog() {
     button.classList.toggle("is-current-outside-filter", active && !categoryMatches && !query);
     if (matches) visible += 1;
   });
-  document.querySelectorAll("[data-gaming-activation-category]").forEach((button) => {
+  root.querySelectorAll("[data-gaming-activation-category]").forEach((button) => {
     const active = button.dataset.gamingActivationCategory === category;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
-  const count = document.querySelector("[data-gaming-activation-count]");
+  const count = root.querySelector("[data-gaming-activation-count]");
   if (count) count.textContent = `${visible} de ${buttons.length} dinámicas visibles`;
-  document.querySelector("[data-gaming-activation-empty]")?.classList.toggle("hidden", visible > 0);
+  root.querySelector("[data-gaming-activation-empty]")?.classList.toggle("hidden", visible > 0);
   const selected = buttons.find((button) => button.dataset.activationType === activationTypeInput?.value) || buttons[0];
   const selectedName = selected?.querySelector("strong")?.textContent?.trim() || activationTypeLabel(activationTypeInput?.value || "TRIVIA");
   const selectedDescription = selected?.querySelector("small")?.textContent?.trim() || "Configuración lista para completar";
-  const selectedLabel = document.querySelector("[data-gaming-selected-activation]");
+  const selectedLabel = root.querySelector("[data-gaming-selected-activation]");
   if (selectedLabel) {
     selectedLabel.innerHTML = `<div><small>Dinámica seleccionada · ${escapeHtml(gamingActivationCategoryForType(activationTypeInput?.value || "TRIVIA"))}</small><strong>${escapeHtml(selectedName)}</strong></div><span>${escapeHtml(selectedDescription)}</span>`;
   }
 }
 
+function isRelevantGamingActivationField(field) {
+  return Boolean(
+    field
+    && !field.disabled
+    && field.type !== "hidden"
+    && !field.closest(".hidden")
+  );
+}
+
 function updateGamingBuilderProgress() {
   if (!triviaLauncherForm) return;
-  const requiredFields = Array.from(triviaLauncherForm.querySelectorAll("input[required], select[required], textarea[required]"))
-    .filter((field) => !field.disabled && field.type !== "hidden" && !field.closest(".hidden"));
+  const step = Number(state.gamingActivationWizardStep || 0);
+  const requiredFields = gamingActivationRequiredFieldsForStep(step);
   const completed = requiredFields.filter((field) => {
     if (["checkbox", "radio"].includes(field.type)) return field.checked;
     return String(field.value || "").trim().length > 0;
   }).length;
   const percentage = requiredFields.length ? Math.round((completed / requiredFields.length) * 100) : 0;
   const missing = Math.max(0, requiredFields.length - completed);
-  const fill = document.querySelector("[data-gaming-builder-progress-fill]");
+  const fill = triviaLauncherForm.parentElement?.querySelector("[data-gaming-builder-progress-fill]");
   if (fill) fill.style.width = `${percentage}%`;
-  const value = document.querySelector("[data-gaming-builder-progress-value]");
-  if (value) value.textContent = `${percentage}% completo`;
-  const detail = document.querySelector("[data-gaming-builder-progress-detail]");
-  if (detail) detail.textContent = missing ? `${missing} campo${missing === 1 ? "" : "s"} obligatorio${missing === 1 ? "" : "s"} pendiente${missing === 1 ? "" : "s"}` : "Configuración esencial lista para publicar";
+  const value = triviaLauncherForm.parentElement?.querySelector("[data-gaming-builder-progress-value]");
+  if (value) value.textContent = requiredFields.length ? `${completed} de ${requiredFields.length} datos` : "Paso sin datos obligatorios";
+  const detail = triviaLauncherForm.parentElement?.querySelector("[data-gaming-builder-progress-detail]");
+  if (detail) detail.textContent = missing ? `Completa ${missing} dato${missing === 1 ? "" : "s"} esencial${missing === 1 ? "" : "es"} de este paso` : "Este paso está listo";
 }
 
 function gamingActivationWizardSections() {
@@ -14847,7 +14859,7 @@ function gamingActivationWizardSections() {
 function gamingActivationRequiredFieldsForStep(step = 0) {
   const sections = gamingActivationWizardSections()[step] || [];
   return sections.flatMap((section) => Array.from(section.querySelectorAll("input[required], select[required], textarea[required]")))
-    .filter((field) => !field.disabled && field.type !== "hidden" && !field.closest(".hidden"));
+    .filter(isRelevantGamingActivationField);
 }
 
 function validateGamingActivationWizardStep(step = 0) {
@@ -14878,7 +14890,7 @@ function validateGamingActivationWizard() {
 }
 
 function renderGamingActivationReview() {
-  const review = document.querySelector("[data-gaming-activation-review]");
+  const review = triviaLauncherForm?.querySelector("[data-gaming-activation-review]");
   if (!review) return;
   const type = activationTypeInput?.value || "TRIVIA";
   const selectedTypeButton = activationTypePicker?.querySelector(`[data-activation-type="${type}"]`);
@@ -14921,21 +14933,23 @@ function updateGamingActivationWizard() {
     section.classList.toggle("is-gaming-wizard-hidden", !active);
     section.setAttribute("aria-hidden", String(!active));
   }));
-  document.querySelectorAll("[data-gaming-wizard-step]").forEach((button) => {
+  const builderRoot = triviaLauncherForm.parentElement || triviaLauncherForm;
+  builderRoot.querySelectorAll("[data-gaming-wizard-step]").forEach((button) => {
     const buttonStep = Number(button.dataset.gamingWizardStep || 0);
     const active = buttonStep === step;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-current", active ? "step" : "false");
     button.setAttribute("aria-pressed", String(active));
   });
-  const previousButton = document.querySelector("[data-gaming-wizard-previous]");
+  const previousButton = builderRoot.querySelector("[data-gaming-wizard-previous]");
   if (previousButton) previousButton.disabled = step === 0;
-  const nextButton = document.querySelector("[data-gaming-wizard-next]");
+  const nextButton = builderRoot.querySelector("[data-gaming-wizard-next]");
   nextButton?.classList.toggle("hidden", step === sections.length - 1);
   if (nextButton) nextButton.textContent = step === sections.length - 2 ? "Revisar activación →" : "Continuar →";
-  document.querySelector("[data-gaming-wizard-publish]")?.classList.toggle("hidden", step !== sections.length - 1);
-  const stepLabel = document.querySelector("[data-gaming-wizard-current]");
+  builderRoot.querySelector("[data-gaming-wizard-publish]")?.classList.toggle("hidden", step !== sections.length - 1);
+  const stepLabel = builderRoot.querySelector("[data-gaming-wizard-current]");
   if (stepLabel) stepLabel.textContent = `Paso ${step + 1} de ${sections.length}`;
+  builderRoot.querySelector(".gaming-activation-recipes")?.classList.toggle("hidden", step !== 0);
   if (step === sections.length - 1) renderGamingActivationReview();
   updateGamingBuilderProgress();
 }
@@ -14947,7 +14961,9 @@ function goToGamingActivationWizardStep(nextStep = 0, options = {}) {
   if (options.validate !== false && targetStep > currentStep && !validateGamingActivationWizardStep(currentStep)) return false;
   state.gamingActivationWizardStep = targetStep;
   updateGamingActivationWizard();
-  gamingCenterScrollTo(".gaming-builder-assistant");
+  const modalBody = document.querySelector("#gamingActivationBuilderModal .gaming-activation-builder-modal-body");
+  if (modalBody) modalBody.scrollTo({ top: 0, behavior: "smooth" });
+  else gamingCenterScrollTo(".gaming-builder-assistant");
   return true;
 }
 
@@ -15131,6 +15147,12 @@ function ensureGamingCenterUx() {
   // junto al formulario, no en la vista de fondo; de otro modo cada refresco
   // volvía a insertar buscadores, categorías y el resumen de la dinámica.
   const activationBuilderRoot = triviaLauncherForm || activationTypePicker?.closest("form");
+  Array.from(document.querySelectorAll(".gaming-activation-catalog-tools"))
+    .filter((element) => !activationBuilderRoot?.contains(element))
+    .forEach((element) => element.remove());
+  Array.from(document.querySelectorAll("[data-gaming-selected-activation]"))
+    .filter((element) => !activationBuilderRoot?.contains(element))
+    .forEach((element) => element.remove());
   const existingCatalogTools = Array.from(activationBuilderRoot?.querySelectorAll(".gaming-activation-catalog-tools") || []);
   const existingSelectedActivation = Array.from(activationBuilderRoot?.querySelectorAll("[data-gaming-selected-activation]") || []);
   existingCatalogTools.slice(1).forEach((element) => element.remove());
@@ -15152,6 +15174,10 @@ function ensureGamingCenterUx() {
     `);
     activationTypePicker.insertAdjacentHTML("afterend", '<div class="full gaming-selected-activation" data-gaming-selected-activation aria-live="polite"></div>');
   }
+  const catalogTools = activationBuilderRoot?.querySelector(".gaming-activation-catalog-tools");
+  const selectedActivation = activationBuilderRoot?.querySelector("[data-gaming-selected-activation]");
+  if (activationTypePicker && catalogTools) activationTypePicker.before(catalogTools);
+  if (activationTypePicker && selectedActivation) activationTypePicker.after(selectedActivation);
   const publishedCard = view.querySelector(".gaming-activation-list-card");
   if (publishedCard && !publishedCard.querySelector(".gaming-published-toolbar")) {
     publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("beforeend", `
@@ -24187,10 +24213,7 @@ async function archivePreviousLauncherActivation(previousId, nextId) {
 
 async function submitTriviaLauncher(event) {
   event.preventDefault();
-  if (!triviaLauncherForm.reportValidity()) {
-    setInlineMessage(triviaLauncherMessage, "Revisa los campos marcados antes de lanzar la activación.", "error");
-    return;
-  }
+  if (!validateGamingActivationWizard()) return;
   const activationPayload = validateTriviaLauncherForm();
   if (!activationPayload) return;
   const type = currentActivationType();
