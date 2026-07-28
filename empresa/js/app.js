@@ -879,6 +879,12 @@ const activationShareTitle = document.getElementById("activationShareTitle");
 const activationShareSearchInput = document.getElementById("activationShareSearchInput");
 const activationShareSearchButton = document.getElementById("activationShareSearchButton");
 const activationShareLeadList = document.getElementById("activationShareLeadList");
+const activationShareContactMode = document.getElementById("activationShareContactMode");
+const activationSharePhoneMode = document.getElementById("activationSharePhoneMode");
+const activationShareContactPanel = document.getElementById("activationShareContactPanel");
+const activationShareManualPanel = document.getElementById("activationShareManualPanel");
+const activationShareManualName = document.getElementById("activationShareManualName");
+const activationShareManualPhone = document.getElementById("activationShareManualPhone");
 const activationShareSelectedContact = document.getElementById("activationShareSelectedContact");
 const activationShareMessagePreview = document.getElementById("activationShareMessagePreview");
 const activationShareMessage = document.getElementById("activationShareMessage");
@@ -2482,6 +2488,9 @@ let state = {
   activationShareId: null,
   activationShareLeads: [],
   activationShareSelectedKey: "",
+  activationShareRecipientMode: "contact",
+  activationShareManualName: "",
+  activationShareManualPhone: "",
   activationShareLoading: false,
   affiliatesLoaded: false,
   affiliatePointRules: null,
@@ -3579,6 +3588,9 @@ function resetBusinessScopedState(options = {}) {
   state.activationShareId = null;
   state.activationShareLeads = [];
   state.activationShareSelectedKey = "";
+  state.activationShareRecipientMode = "contact";
+  state.activationShareManualName = "";
+  state.activationShareManualPhone = "";
   state.activationShareLoading = false;
   state.affiliatesLoaded = false;
   state.affiliateRewardRules = [];
@@ -14697,7 +14709,7 @@ function openGamingActivationDetail(id = "") {
       </section>
       <footer class="gaming-activation-detail-actions">
         <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url || "")}">Copiar link</button>
-        <button class="ghost-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar a lead</button>
+        <button class="solid-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar ticket</button>
         <button class="solid-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar activación</button>
       </footer>
     `;
@@ -23753,9 +23765,31 @@ function activationShareContactLine(lead = {}) {
   ].filter(Boolean).join(" | ");
 }
 
-function activationShareWhatsAppUrl(activation, lead) {
-  const phone = whatsappPhoneFromInput(lead?.phone || lead?.whatsapp || lead?.mobile || "");
-  const message = activationInviteMessage(activation, lead || {});
+function activationShareRecipient() {
+  if (state.activationShareRecipientMode === "manual") {
+    return {
+      name: String(state.activationShareManualName || "").trim() || "tu",
+      phone: String(state.activationShareManualPhone || "").trim(),
+      source_type: "MANUAL",
+    };
+  }
+  return selectedActivationShareLead();
+}
+
+function activationPostSaleMessage(activation = {}, recipient = {}) {
+  const template = activationInviteTemplate(activation);
+  const hasCustomTemplate = template && template !== defaultActivationInviteTemplate(activation);
+  if (hasCustomTemplate) return activationInviteMessage(activation, recipient);
+  const link = activation.public_url || "{link}";
+  const business = activation.business?.name || activationBusinessName();
+  const name = recipient.name || recipient.full_name || recipient.customer_name || "";
+  const greeting = name ? `Hola ${name},` : "Hola,";
+  return `${greeting}\nGracias por tu compra en ${business}. Llevate tambien este ticket: ${link}`;
+}
+
+function activationShareWhatsAppUrl(activation, recipient) {
+  const phone = whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || "");
+  const message = activationPostSaleMessage(activation, recipient || {});
   return phone
     ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -23765,10 +23799,20 @@ function renderActivationShareModal() {
   const activation = activationById(state.activationShareId);
   const leads = state.activationShareLeads || [];
   const selectedLead = selectedActivationShareLead();
+  const recipient = activationShareRecipient();
+  const isManual = state.activationShareRecipientMode === "manual";
   if (activationShareTitle) {
-    activationShareTitle.textContent = activation ? `Enviar ${activation.title || "activacion"}` : "Enviar por WhatsApp";
+    activationShareTitle.textContent = activation ? `Enviar ticket: ${activation.title || "activacion"}` : "Enviar ticket por WhatsApp";
   }
-  if (activationShareLeadList) {
+  activationShareContactMode?.classList.toggle("is-active", !isManual);
+  activationShareContactMode?.setAttribute("aria-selected", String(!isManual));
+  activationSharePhoneMode?.classList.toggle("is-active", isManual);
+  activationSharePhoneMode?.setAttribute("aria-selected", String(isManual));
+  activationShareContactPanel?.classList.toggle("hidden", isManual);
+  activationShareManualPanel?.classList.toggle("hidden", !isManual);
+  if (activationShareManualName) activationShareManualName.value = state.activationShareManualName;
+  if (activationShareManualPhone) activationShareManualPhone.value = state.activationShareManualPhone;
+  if (activationShareLeadList && !isManual) {
     if (state.activationShareLoading) {
       activationShareLeadList.innerHTML = '<div class="empty-state compact">Cargando leads...</div>';
     } else {
@@ -23795,19 +23839,19 @@ function renderActivationShareModal() {
       });
     });
   }
-  const preview = activation ? activationInviteMessage(activation, selectedLead || {}) : "";
+  const preview = activation ? activationPostSaleMessage(activation, recipient || {}) : "";
   if (activationShareMessagePreview) activationShareMessagePreview.value = preview;
   if (activationShareSelectedContact) {
-    activationShareSelectedContact.innerHTML = selectedLead
-      ? `<strong>${escapeHtml(selectedLead.name || "Lead sin nombre")}</strong><small>${escapeHtml(activationShareContactLine(selectedLead))}</small>`
-      : "<strong>Selecciona un lead</strong><small>El mensaje se abrira con el telefono del contacto elegido.</small>";
+    activationShareSelectedContact.innerHTML = recipient
+      ? `<strong>${escapeHtml(recipient.name || "Contacto sin nombre")}</strong><small>${escapeHtml(isManual ? `WhatsApp: ${recipient.phone || "sin numero"}` : activationShareContactLine(recipient))}</small>`
+      : "<strong>Selecciona un contacto</strong><small>O escribe el WhatsApp del comprador para enviarlo desde caja.</small>";
   }
-  const hasPhone = Boolean(whatsappPhoneFromInput(selectedLead?.phone || selectedLead?.whatsapp || selectedLead?.mobile || ""));
-  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activation || !selectedLead || !hasPhone;
+  const hasPhone = Boolean(whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || ""));
+  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activation || !recipient || !hasPhone;
   setFormMessage(
     activationShareMessage,
-    selectedLead && !hasPhone ? "Este lead no tiene telefono. Puedes copiar el mensaje, pero WhatsApp necesita un numero." : "",
-    selectedLead && !hasPhone ? "error" : ""
+    recipient && !hasPhone ? "WhatsApp necesita un numero valido para abrir el envio." : "",
+    recipient && !hasPhone ? "error" : ""
   );
 }
 
@@ -23834,13 +23878,26 @@ async function loadActivationShareLeads(search = "") {
   }
 }
 
+function setActivationShareRecipientMode(mode = "contact") {
+  state.activationShareRecipientMode = mode === "manual" ? "manual" : "contact";
+  renderActivationShareModal();
+  if (state.activationShareRecipientMode === "manual") {
+    window.setTimeout(() => activationShareManualPhone?.focus(), 0);
+  }
+}
+
 async function openActivationShareModal(id) {
   const activation = activationById(id);
   if (!activation) return;
   state.activationShareId = id;
   state.activationShareLeads = state.leadCrmRows || [];
   state.activationShareSelectedKey = "";
+  state.activationShareRecipientMode = "contact";
+  state.activationShareManualName = "";
+  state.activationShareManualPhone = "";
   if (activationShareSearchInput) activationShareSearchInput.value = "";
+  if (activationShareContactMode) activationShareContactMode.onclick = () => setActivationShareRecipientMode("contact");
+  if (activationSharePhoneMode) activationSharePhoneMode.onclick = () => setActivationShareRecipientMode("manual");
   activationShareModal?.classList.remove("hidden");
   renderActivationShareModal();
   await loadActivationShareLeads("");
@@ -23856,21 +23913,21 @@ async function searchActivationShareLeads() {
 
 function openActivationShareWhatsApp() {
   const activation = activationById(state.activationShareId);
-  const lead = selectedActivationShareLead();
-  if (!activation || !lead) return;
-  const phone = whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || "");
+  const recipient = activationShareRecipient();
+  if (!activation || !recipient) return;
+  const phone = whatsappPhoneFromInput(recipient.phone || recipient.whatsapp || recipient.mobile || "");
   if (!phone) {
     setFormMessage(activationShareMessage, "Este lead no tiene telefono para abrir WhatsApp.", "error");
     return;
   }
-  window.open(activationShareWhatsAppUrl(activation, lead), "_blank", "noopener");
+  window.open(activationShareWhatsAppUrl(activation, recipient), "_blank", "noopener");
 }
 
 async function copyActivationShareMessage() {
   const activation = activationById(state.activationShareId);
-  const lead = selectedActivationShareLead();
+  const recipient = activationShareRecipient();
   if (!activation) return;
-  const message = activationInviteMessage(activation, lead || {});
+  const message = activationPostSaleMessage(activation, recipient || {});
   try {
     await navigator.clipboard?.writeText(message);
     showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
@@ -43998,12 +44055,30 @@ activationShareSearchInput?.addEventListener("keydown", (event) => {
   event.preventDefault();
   searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));
 });
+activationShareContactMode?.addEventListener("click", () => setActivationShareRecipientMode("contact"));
+activationSharePhoneMode?.addEventListener("click", () => setActivationShareRecipientMode("manual"));
+activationShareManualName?.addEventListener("input", () => {
+  state.activationShareManualName = activationShareManualName.value;
+  renderActivationShareModal();
+});
+activationShareManualPhone?.addEventListener("input", () => {
+  state.activationShareManualPhone = activationShareManualPhone.value;
+  renderActivationShareModal();
+});
 activationShareOpenWhatsAppButton?.addEventListener("click", openActivationShareWhatsApp);
 activationShareCopyMessageButton?.addEventListener("click", () => {
   copyActivationShareMessage().catch((error) => showFeedback(error.message, "error"));
 });
 activationShareCloseButton?.addEventListener("click", closeActivationShareModal);
 activationShareModal?.addEventListener("click", (event) => {
+  if (event.target.closest("#activationShareContactMode")) {
+    setActivationShareRecipientMode("contact");
+    return;
+  }
+  if (event.target.closest("#activationSharePhoneMode")) {
+    setActivationShareRecipientMode("manual");
+    return;
+  }
   if (event.target === activationShareModal) closeActivationShareModal();
 });
 activationTypePicker?.querySelectorAll("[data-activation-type]").forEach((button) => {

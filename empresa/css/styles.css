@@ -61843,6 +61843,120 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-context {
   }
 }
 
+/* Post-sale tickets: one prepared activation, one quick WhatsApp handoff. */
+html body .portal-shell #activationShareModal .activation-share-intro {
+  margin: 0;
+  padding: 0 28px 18px;
+  color: #53677f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+html body .portal-shell #activationShareModal .activation-share-mode {
+  display: flex;
+  gap: 8px;
+  padding: 0 28px 18px;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.1);
+}
+
+html body .portal-shell #activationShareModal .activation-share-mode button {
+  min-height: 34px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #53677f;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+html body .portal-shell #activationShareModal .activation-share-mode button + button {
+  margin-left: 18px;
+}
+
+html body .portal-shell #activationShareModal .activation-share-mode button:hover,
+html body .portal-shell #activationShareModal .activation-share-mode button.is-active {
+  color: #0759d6;
+}
+
+html body .portal-shell #activationShareModal .activation-share-mode button.is-active {
+  border-bottom-color: #00a5de;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual {
+  display: grid;
+  gap: 14px;
+  padding: 4px 0 0;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual.hidden {
+  display: none;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual-kicker {
+  color: #0759d6;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual h4,
+html body .portal-shell #activationShareModal .activation-share-manual p {
+  margin: 0;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual h4 {
+  color: #052a6b;
+  font-size: 1.05rem;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual p,
+html body .portal-shell #activationShareModal .activation-share-manual small {
+  color: #53677f;
+  font-size: 0.83rem;
+  line-height: 1.48;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual label {
+  display: grid;
+  gap: 7px;
+  color: #53677f;
+  font-size: 0.78rem;
+  font-weight: 740;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual input {
+  min-height: 43px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.2);
+  border-radius: 0;
+  background: transparent;
+  color: #052a6b;
+  box-shadow: none;
+}
+
+html body .portal-shell #activationShareModal .activation-share-manual input:focus {
+  border-bottom-color: #00a5de;
+  outline: 0;
+}
+
+@media (max-width: 760px) {
+  html body .portal-shell #activationShareModal .activation-share-intro,
+  html body .portal-shell #activationShareModal .activation-share-mode {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  html body .portal-shell #activationShareModal .activation-share-mode button + button {
+    margin-left: 12px;
+  }
+}
+
 /* Revenue dashboard v155: open editorial flow, generous rhythm and no nested-card maze. */
 html body .portal-shell .view-section.active[data-view="dashboard"] {
   width: min(1240px, 100%) !important;
