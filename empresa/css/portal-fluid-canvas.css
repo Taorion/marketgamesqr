@@ -1332,9 +1332,9 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   margin: 0 !important;
   overflow: hidden !important;
   border: 0 !important;
-  border-radius: 24px !important;
-  background: linear-gradient(150deg, #ffffff 0%, #fbfdff 64%, #eef9ff 100%) !important;
-  box-shadow: 0 32px 100px rgba(0, 22, 60, .38) !important;
+  border-radius: 30px !important;
+  background: linear-gradient(150deg, #ffffff 0%, #fbfdff 66%, #f0faff 100%) !important;
+  box-shadow: 0 26px 76px rgba(0, 31, 80, .26), 0 2px 0 rgba(255, 255, 255, .8) inset !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
@@ -1342,15 +1342,16 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   align-items: flex-start !important;
   justify-content: space-between !important;
   gap: 24px !important;
-  padding: clamp(24px, 3vw, 38px) clamp(24px, 4vw, 52px) 22px !important;
+  padding: clamp(26px, 3.4vw, 42px) clamp(26px, 4.6vw, 58px) 24px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: linear-gradient(100deg, #073f9b, #0758d7 55%, #008fd8) !important;
-  color: #ffffff !important;
+  background: linear-gradient(125deg, #f8fcff 0%, #edf9ff 58%, #e5f7ff 100%) !important;
+  color: #062d73 !important;
+  box-shadow: inset 0 -1px 0 rgba(13, 105, 182, .14), inset 0 -3px 0 rgba(0, 173, 239, .55) !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head :is(h3, p, .mono-label) {
-  color: #ffffff !important;
+  color: #062d73 !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
@@ -1364,8 +1365,9 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
   max-width: 66ch !important;
   margin: 0 !important;
-  opacity: .84 !important;
-  line-height: 1.48 !important;
+  color: #527092 !important;
+  opacity: 1 !important;
+  line-height: 1.55 !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button {
@@ -1373,11 +1375,18 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   width: 42px !important;
   height: 42px !important;
   margin: 0 !important;
-  border: 1px solid rgba(255, 255, 255, .28) !important;
+  border: 1px solid rgba(0, 109, 189, .18) !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, .12) !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, .72) !important;
+  color: #0758d7 !important;
+  box-shadow: 0 8px 22px rgba(0, 77, 160, .09) !important;
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button:hover {
+  transform: translateY(-1px) !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 26px rgba(0, 77, 160, .14) !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
@@ -1415,13 +1424,13 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   display: grid !important;
   grid-template-columns: minmax(180px, .7fr) minmax(0, 1.7fr) auto !important;
   align-items: center !important;
-  gap: 22px !important;
+  gap: 26px !important;
   margin: 0 !important;
-  padding: 18px clamp(24px, 4vw, 52px) !important;
+  padding: 17px clamp(26px, 4.6vw, 58px) !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: rgba(255, 255, 255, .94) !important;
-  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .20), 0 8px 18px rgba(25, 82, 132, .06) !important;
+  background: rgba(250, 253, 255, .94) !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .2), 0 12px 26px rgba(25, 82, 132, .06) !important;
   backdrop-filter: blur(12px) !important;
 }
 
@@ -1429,10 +1438,15 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   min-width: 0 !important;
 }
 
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy strong {
+  color: #073f9b !important;
+  letter-spacing: -.02em !important;
+}
+
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 6px !important;
   min-width: 0 !important;
   overflow-x: auto !important;
   scrollbar-width: none !important;
@@ -1444,28 +1458,29 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button {
   flex: 0 0 auto !important;
-  min-height: 34px !important;
-  padding: 0 11px !important;
+  min-height: 36px !important;
+  padding: 0 13px !important;
   border: 0 !important;
   border-radius: 999px !important;
   background: transparent !important;
-  color: #5b7794 !important;
+  color: #607b98 !important;
   box-shadow: none !important;
-  font-size: .76rem !important;
+  font-size: .78rem !important;
   font-weight: 800 !important;
 }
 
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button.is-active,
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button:hover {
-  background: rgba(0, 173, 239, .12) !important;
+  background: linear-gradient(135deg, rgba(0, 169, 236, .15), rgba(14, 92, 214, .1)) !important;
   color: #0758d7 !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 139, 221, .12) !important;
 }
 
 /* One generous work surface per step, separated by a line rather than cards. */
 html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
   width: min(100% - clamp(36px, 8vw, 112px), 980px) !important;
   margin: 0 auto !important;
-  padding: clamp(30px, 5vw, 56px) 0 !important;
+  padding: clamp(34px, 5.5vw, 64px) 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -1607,11 +1622,11 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   gap: 16px !important;
   width: 100% !important;
   margin: 0 !important;
-  padding: 18px clamp(24px, 4vw, 52px) !important;
+  padding: 17px clamp(26px, 4.6vw, 58px) !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: rgba(255, 255, 255, .96) !important;
-  box-shadow: 0 -8px 22px rgba(25, 82, 132, .08), inset 0 1px 0 rgba(92, 143, 186, .20) !important;
+  background: rgba(251, 254, 255, .97) !important;
+  box-shadow: 0 -10px 28px rgba(25, 82, 132, .08), inset 0 1px 0 rgba(92, 143, 186, .20) !important;
   backdrop-filter: blur(12px) !important;
 }
 
