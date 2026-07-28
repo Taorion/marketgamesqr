@@ -29256,6 +29256,7 @@ async function deleteSelectedAffiliate(affiliateId, affiliateName = "afiliado") 
     if (state.selectedAffiliateId === affiliateId) {
       state.selectedAffiliateId = state.affiliates[0]?.id || null;
       state.selectedAffiliate = null;
+      closeAffiliateOperationModal();
     }
     await renderAffiliatesView();
     showFeedback(`Afiliado "${name}" eliminado.`);
@@ -34731,6 +34732,7 @@ async function renderAffiliatesView() {
           <div class="affiliate-row-actions">
             <button class="ghost-button compact" type="button" data-affiliate-edit="${escapeHtml(item.id)}">Editar</button>
             <button class="solid-button compact" type="button" data-affiliate-select="${escapeHtml(item.id)}">Compra</button>
+            <button class="ghost-button compact danger-button" type="button" data-affiliate-delete="${escapeHtml(item.id)}" data-affiliate-name="${escapeHtml(item.full_name || "Afiliado")}">Eliminar</button>
           </div>
         </td>
       </tr>
@@ -34761,6 +34763,12 @@ async function renderAffiliatesView() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       openAffiliateCreateModal({ affiliateId: button.dataset.affiliateEdit });
+    });
+  });
+  affiliateTable.querySelectorAll("[data-affiliate-delete]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteSelectedAffiliate(button.dataset.affiliateDelete, button.dataset.affiliateName || "afiliado");
     });
   });
   if (!selected) {
