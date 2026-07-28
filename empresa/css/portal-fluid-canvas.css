@@ -2245,3 +2245,130 @@ html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-ce
     margin-left: 0 !important;
   }
 }
+
+/* RMS v172 ------------------------------------------------------------------
+ * The factory console is a working surface, not a form squeezed into a card.
+ * Explicit gutters keep every control clear of its section edge. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: clamp(26px, 3.5vw, 52px) !important;
+  padding: clamp(26px, 4vw, 58px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+  order: 1 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 38px) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, rgba(245, 252, 255, .72), rgba(255, 255, 255, .18)) !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell {
+  order: 2 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(22px, 3vw, 38px) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools > .rms-board-tools-title {
+  margin: 0 0 22px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions {
+  margin: 0 0 22px !important;
+  padding: 0 0 22px !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.35fr) minmax(180px, 1fr) minmax(150px, .75fr) auto !important;
+  gap: clamp(14px, 1.8vw, 24px) !important;
+  align-items: end !important;
+  margin: 0 !important;
+  padding: 0 0 26px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar > label {
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar :is(input, select) {
+  min-height: 46px !important;
+  margin-top: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) minmax(175px, .78fr) auto auto auto !important;
+  gap: clamp(12px, 1.7vw, 22px) !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 24px 0 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar > div {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar strong {
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+  min-height: 0 !important;
+  padding: 0 0 20px !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+    padding: 22px 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > :is(.rms-board-tools, .rms-stage-slider-shell) {
+    padding: 22px 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
