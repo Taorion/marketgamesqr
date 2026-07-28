@@ -28874,9 +28874,11 @@ function renderAffiliatePurchaseItems() {
           next[index].is_open_product = false;
           next[index].sku = product.sku || null;
           next[index].barcode = product.barcode || null;
-          if (!Number(next[index].unit_price || 0)) next[index].unit_price = Number(product.unit_price || 0);
+          // El precio de un producto registrado siempre es su precio vigente.
+          // Sin esto, al cambiar el selector se conservaba el valor del producto anterior.
+          next[index].unit_price = Number(product.unit_price || 0);
           const unitInput = row?.querySelector('[data-affiliate-purchase-field="unit_price"]');
-          if (unitInput && !Number(unitInput.value || 0)) unitInput.value = String(next[index].unit_price || 0);
+          if (unitInput) unitInput.value = String(next[index].unit_price || 0);
         } else {
           next[index].inventory_product_id = null;
           next[index].sku = null;
