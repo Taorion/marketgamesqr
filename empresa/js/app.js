@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-affiliate-create-v185";
+const APP_VERSION = "empresa-20260728-affiliate-create-v186";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -431,6 +431,14 @@ const affiliateDocumentInput = document.getElementById("affiliateDocumentInput")
 const affiliatePhoneInput = document.getElementById("affiliatePhoneInput");
 const affiliateEmailInput = document.getElementById("affiliateEmailInput");
 const affiliatePhotoInput = document.getElementById("affiliatePhotoInput");
+const affiliatePhotoClearButton = document.getElementById("affiliatePhotoClearButton");
+const affiliateCompanyInput = document.getElementById("affiliateCompanyInput");
+const affiliatePositionInput = document.getElementById("affiliatePositionInput");
+const affiliateCityInput = document.getElementById("affiliateCityInput");
+const affiliateProfileDetailsToggle = document.getElementById("affiliateProfileDetailsToggle");
+const affiliateProfileDetailsPanel = document.getElementById("affiliateProfileDetailsPanel");
+const affiliateCustomFieldsList = document.getElementById("affiliateCustomFieldsList");
+const affiliateAddCustomFieldButton = document.getElementById("affiliateAddCustomFieldButton");
 const affiliateNotesInput = document.getElementById("affiliateNotesInput");
 const affiliateCreateMessage = document.getElementById("affiliateCreateMessage");
 const affiliateFinderInput = document.getElementById("affiliateFinderInput");
@@ -27802,9 +27810,10 @@ function syncAffiliateFormChrome() {
 function resetAffiliateForm(options = {}) {
   affiliateCreateForm?.reset();
   affiliateCapturedPhotoDataUrl = "";
+  affiliatePhotoExplicitlyCleared = false;
   if (affiliatePhotoInput) affiliatePhotoInput.value = "";
-  stopAffiliateCamera();
   syncAffiliatePhotoPreview("");
+  setAffiliateProfileDetails({}, []);
   if (!options.preserveMode) state.affiliateEditingId = null;
   syncAffiliateFormChrome();
   if (affiliateCreateMessage) affiliateCreateMessage.textContent = "";
@@ -27824,8 +27833,11 @@ function fillAffiliateForm(affiliate) {
   affiliateEmailInput.value = affiliate?.email || "";
   affiliateNotesInput.value = affiliate?.notes || "";
   affiliateCapturedPhotoDataUrl = affiliatePhotoSource(affiliate) || "";
+  affiliatePhotoExplicitlyCleared = false;
   if (affiliatePhotoInput) affiliatePhotoInput.value = "";
   syncAffiliatePhotoPreview(affiliateCapturedPhotoDataUrl);
+  const profile = affiliate?.card_metadata?.profile || {};
+  setAffiliateProfileDetails(profile, profile.custom_fields || []);
   syncAffiliateFormChrome();
 }
 
@@ -28164,125 +28176,19 @@ async function renderAffiliateCardPreview(affiliate) {
   }
 }
 
-let affiliateCameraStream = null;
 let affiliateCapturedPhotoDataUrl = "";
 let affiliatePhotoUiReady = false;
-
-function getAffiliatePhotoField() {
-  return affiliatePhotoInput?.closest("label") || affiliatePhotoInput?.closest(".field-group") || null;
-}
-
-function stopAffiliateCamera() {
-  if (affiliateCameraStream) {
-    affiliateCameraStream.getTracks().forEach((track) => track.stop());
-    affiliateCameraStream = null;
-  }
-  const video = document.getElementById("affiliateCameraPreview");
-  if (video) {
-    video.srcObject = null;
-  }
-}
-
-function syncAffiliateStepper() {
-  const hasIdentity = Boolean(affiliateFullNameInput?.value.trim());
-  const hasPhoto = Boolean(affiliateCapturedPhotoDataUrl || affiliatePhotoInput?.files?.[0]);
-  const steps = affiliateCreatePanel?.querySelectorAll(".affiliate-step") || [];
-  steps.forEach((step, index) => {
-    step.classList.toggle("is-active", (index === 0 && !hasIdentity) || (index === 1 && hasIdentity && !hasPhoto) || (index === 2 && hasIdentity && hasPhoto));
-    step.classList.toggle("is-complete", (index === 0 && hasIdentity) || (index === 1 && hasPhoto));
-  });
-}
+let affiliateCustomProfileFields = [];
+let affiliatePhotoExplicitlyCleared = false;
 
 function syncAffiliatePhotoPreview(dataUrl) {
   const preview = document.getElementById("affiliatePhotoPreview");
-  const video = document.getElementById("affiliateCameraPreview");
-  const placeholder = document.getElementById("affiliatePhotoPlaceholder");
-  const captureButton = document.getElementById("affiliateCapturePhotoButton");
-  const retakeButton = document.getElementById("affiliateRetakePhotoButton");
-  const startButton = document.getElementById("affiliateStartCameraButton");
-  const uploadButton = document.getElementById("affiliateUploadPhotoButton");
-  const capturePanel = document.querySelector(".affiliate-photo-capture");
-  const submitButton = affiliateCreateForm?.querySelector('button[type="submit"]');
   const hasPhoto = Boolean(dataUrl);
-  const hasCamera = Boolean(affiliateCameraStream);
   if (preview) {
     preview.src = dataUrl || "";
     preview.hidden = !hasPhoto;
   }
-  if (video) {
-    video.hidden = hasPhoto || !hasCamera;
-  }
-  if (placeholder) {
-    placeholder.hidden = hasPhoto || hasCamera;
-  }
-  capturePanel?.classList.toggle("is-live", hasCamera && !hasPhoto);
-  capturePanel?.classList.toggle("has-photo", hasPhoto);
-  if (captureButton) {
-    captureButton.disabled = !hasCamera || hasPhoto;
-    captureButton.classList.toggle("is-primary-action", hasCamera && !hasPhoto);
-  }
-  if (retakeButton) {
-    retakeButton.disabled = !hasPhoto && !hasCamera;
-  }
-  if (startButton) startButton.textContent = hasCamera ? "Camara activa" : "Abrir camara";
-  if (uploadButton) uploadButton.textContent = hasPhoto ? "Cambiar foto" : "Subir foto";
-  if (submitButton) {
-    submitButton.textContent = state.affiliateEditingId ? "Guardar cambios" : "Crear afiliado";
-  }
-  syncAffiliateStepper();
-}
-
-async function openAffiliateCamera() {
-  const startButton = document.getElementById("affiliateStartCameraButton");
-  const captureButton = document.getElementById("affiliateCapturePhotoButton");
-  const video = document.getElementById("affiliateCameraPreview");
-  if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) {
-    setFormMessage(affiliateCreateMessage, "La camara requiere HTTPS o localhost.", "error");
-    return;
-  }
-  try {
-    stopAffiliateCamera();
-    affiliateCapturedPhotoDataUrl = "";
-    affiliatePhotoInput.value = "";
-    if (startButton) startButton.disabled = true;
-    if (captureButton) captureButton.disabled = true;
-    syncAffiliatePhotoPreview("");
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false,
-    });
-    affiliateCameraStream = stream;
-    if (video) {
-      video.srcObject = stream;
-      await video.play();
-      video.hidden = false;
-    }
-    if (startButton) startButton.disabled = false;
-    if (captureButton) captureButton.disabled = false;
-    syncAffiliatePhotoPreview("");
-    setFormMessage(affiliateCreateMessage, "Ajusta el rostro y toma la foto.", "success");
-  } catch (error) {
-    if (startButton) startButton.disabled = false;
-    setFormMessage(affiliateCreateMessage, error?.message || "No se pudo abrir la camara.", "error");
-  }
-}
-
-async function captureAffiliatePhoto() {
-  const video = document.getElementById("affiliateCameraPreview");
-  const canvas = document.createElement("canvas");
-  if (!video || !video.videoWidth || !video.videoHeight) {
-    setFormMessage(affiliateCreateMessage, "Primero abre la camara.", "error");
-    return;
-  }
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const context = canvas.getContext("2d");
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  affiliateCapturedPhotoDataUrl = await normalizeAffiliatePhotoDataUrl(canvas.toDataURL("image/jpeg", 0.92));
-  affiliatePhotoInput.value = "";
-  stopAffiliateCamera();
-  syncAffiliatePhotoPreview(affiliateCapturedPhotoDataUrl);
-  setFormMessage(affiliateCreateMessage, "Foto lista. Ya puedes crear el afiliado.", "success");
+  affiliatePhotoClearButton?.toggleAttribute("hidden", !hasPhoto);
 }
 
 async function readAffiliatePhotoFile(file) {
@@ -28294,76 +28200,76 @@ async function readAffiliatePhotoFile(file) {
   return normalized;
 }
 
+function normalizeAffiliateCustomProfileFields(fields = []) {
+  return (Array.isArray(fields) ? fields : [])
+    .map((field) => ({
+      label: String(field?.label || "").trim().slice(0, 80),
+      value: String(field?.value || "").trim().slice(0, 240),
+    }))
+    .filter((field) => field.label || field.value);
+}
+
+function setAffiliateProfileDetails(profile = {}, customFields = []) {
+  if (affiliateCompanyInput) affiliateCompanyInput.value = profile.company || "";
+  if (affiliatePositionInput) affiliatePositionInput.value = profile.position || "";
+  if (affiliateCityInput) affiliateCityInput.value = profile.city || "";
+  affiliateCustomProfileFields = normalizeAffiliateCustomProfileFields(customFields);
+  const hasDetails = Boolean(profile.company || profile.position || profile.city || affiliateCustomProfileFields.length);
+  affiliateProfileDetailsPanel?.classList.toggle("hidden", !hasDetails);
+  affiliateProfileDetailsToggle?.setAttribute("aria-expanded", String(hasDetails));
+  if (affiliateProfileDetailsToggle) affiliateProfileDetailsToggle.textContent = hasDetails ? "Ocultar datos" : "Agregar datos";
+  renderAffiliateCustomProfileFields();
+}
+
+function renderAffiliateCustomProfileFields() {
+  if (!affiliateCustomFieldsList) return;
+  affiliateCustomFieldsList.replaceChildren();
+  affiliateCustomProfileFields.forEach((field, index) => {
+    const row = document.createElement("div");
+    row.className = "affiliate-custom-field-row";
+    const labelInput = document.createElement("input");
+    labelInput.type = "text";
+    labelInput.maxLength = 80;
+    labelInput.placeholder = "Dato (ej: Cumpleaños)";
+    labelInput.value = field.label;
+    labelInput.setAttribute("aria-label", "Nombre del dato adicional");
+    labelInput.addEventListener("input", () => { affiliateCustomProfileFields[index].label = labelInput.value; });
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.maxLength = 240;
+    valueInput.placeholder = "Valor";
+    valueInput.value = field.value;
+    valueInput.setAttribute("aria-label", "Valor del dato adicional");
+    valueInput.addEventListener("input", () => { affiliateCustomProfileFields[index].value = valueInput.value; });
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "ghost-button compact";
+    removeButton.textContent = "Quitar";
+    removeButton.addEventListener("click", () => {
+      affiliateCustomProfileFields.splice(index, 1);
+      renderAffiliateCustomProfileFields();
+    });
+    row.append(labelInput, valueInput, removeButton);
+    affiliateCustomFieldsList.appendChild(row);
+  });
+}
+
 function setupAffiliatePhotoCaptureUi() {
-  const field = getAffiliatePhotoField();
-  if (!field || affiliatePhotoUiReady) return;
-  field.classList.add("affiliate-original-photo-field");
-  affiliatePhotoInput?.classList.add("affiliate-file-input");
-
-  const stepper = document.createElement("div");
-  stepper.className = "affiliate-stepper";
-  stepper.setAttribute("aria-label", "Flujo de afiliado");
-  stepper.innerHTML = `
-    <div class="affiliate-step is-active">
-      <span class="affiliate-step-number">1</span>
-      <div><strong>Datos</strong><p>Nombre, documento y contacto.</p></div>
-    </div>
-    <div class="affiliate-step">
-      <span class="affiliate-step-number">2</span>
-      <div><strong>Foto</strong><p>Toma o sube una foto clara.</p></div>
-    </div>
-    <div class="affiliate-step">
-      <span class="affiliate-step-number">3</span>
-      <div><strong>Ticket permanente</strong><p>Se crea el carnet listo para enviar.</p></div>
-    </div>`;
-  field.parentElement?.insertBefore(stepper, field);
-
-  const capturePanel = document.createElement("div");
-  capturePanel.className = "affiliate-photo-capture";
-  capturePanel.innerHTML = `
-    <div id="affiliatePhotoPlaceholder" class="affiliate-photo-placeholder">
-      <span class="material-symbols-outlined">photo_camera</span>
-      <strong>Foto presencial del afiliado</strong>
-      <p>Abre la camara, toma la foto y genera el carnet en el negocio.</p>
-    </div>
-    <video id="affiliateCameraPreview" class="affiliate-camera-preview" playsinline muted hidden></video>
-    <img id="affiliatePhotoPreview" class="affiliate-photo-preview" alt="Vista previa de la foto del afiliado" hidden>`;
-  field.parentElement?.insertBefore(capturePanel, field);
-
-  const actions = document.createElement("div");
-  actions.className = "affiliate-photo-actions";
-  actions.innerHTML = `
-    <button class="ghost-button" id="affiliateStartCameraButton" type="button">Abrir camara</button>
-    <button class="ghost-button" id="affiliateCapturePhotoButton" type="button" disabled>Tomar foto</button>
-    <button class="ghost-button" id="affiliateUploadPhotoButton" type="button">Subir foto</button>
-    <button class="ghost-button" id="affiliateRetakePhotoButton" type="button" disabled>Repetir</button>`;
-  field.parentElement?.insertBefore(actions, field);
-
-  const footnote = document.createElement("p");
-  footnote.className = "section-footnote";
-  footnote.textContent = "El ticket se genera una sola vez y queda ligado al afiliado para siempre.";
-  field.parentElement?.insertBefore(footnote, field.nextSibling);
-
+  if (affiliatePhotoUiReady) return;
   affiliatePhotoUiReady = true;
-
-  document.getElementById("affiliateStartCameraButton")?.addEventListener("click", openAffiliateCamera);
-  document.getElementById("affiliateCapturePhotoButton")?.addEventListener("click", captureAffiliatePhoto);
-  document.getElementById("affiliateUploadPhotoButton")?.addEventListener("click", () => affiliatePhotoInput?.click());
-  document.getElementById("affiliateRetakePhotoButton")?.addEventListener("click", async () => {
+  affiliatePhotoClearButton?.addEventListener("click", () => {
     affiliateCapturedPhotoDataUrl = "";
-    affiliatePhotoInput.value = "";
-    stopAffiliateCamera();
+    affiliatePhotoExplicitlyCleared = true;
+    if (affiliatePhotoInput) affiliatePhotoInput.value = "";
     syncAffiliatePhotoPreview("");
-    setFormMessage(affiliateCreateMessage, "Foto eliminada. Abre la camara o sube otra foto.", "success");
   });
   affiliatePhotoInput?.addEventListener("change", async () => {
     try {
       const file = affiliatePhotoInput.files?.[0];
       affiliateCapturedPhotoDataUrl = file ? await readAffiliatePhotoFile(file) : "";
+      affiliatePhotoExplicitlyCleared = false;
       if (affiliateCapturedPhotoDataUrl) {
-        stopAffiliateCamera();
         syncAffiliatePhotoPreview(affiliateCapturedPhotoDataUrl);
-        setFormMessage(affiliateCreateMessage, "Foto cargada. Ya puedes crear el afiliado.", "success");
       } else {
         syncAffiliatePhotoPreview("");
       }
@@ -28374,10 +28280,17 @@ function setupAffiliatePhotoCaptureUi() {
       setFormMessage(affiliateCreateMessage, error.message || "No se pudo cargar la foto.", "error");
     }
   });
-  [affiliateFullNameInput, affiliateDocumentInput, affiliatePhoneInput, affiliateEmailInput].forEach((input) => {
-    input?.addEventListener("input", syncAffiliateStepper);
+  affiliateProfileDetailsToggle?.addEventListener("click", () => {
+    const willOpen = affiliateProfileDetailsPanel?.classList.contains("hidden");
+    affiliateProfileDetailsPanel?.classList.toggle("hidden", !willOpen);
+    affiliateProfileDetailsToggle.setAttribute("aria-expanded", String(willOpen));
+    affiliateProfileDetailsToggle.textContent = willOpen ? "Ocultar datos" : "Agregar datos";
   });
-  syncAffiliatePhotoPreview("");
+  affiliateAddCustomFieldButton?.addEventListener("click", () => {
+    affiliateCustomProfileFields.push({ label: "", value: "" });
+    renderAffiliateCustomProfileFields();
+    affiliateCustomFieldsList?.querySelector(".affiliate-custom-field-row:last-child input")?.focus();
+  });
 }
 
 async function submitAffiliateForm(event) {
@@ -28399,9 +28312,16 @@ async function submitAffiliateForm(event) {
       phone: affiliatePhoneInput.value.trim() || null,
       email: affiliateEmailInput.value.trim() || null,
       photo_data_url: uploadedPhotoDataUrl || null,
+      clear_photo: affiliatePhotoExplicitlyCleared,
       notes: affiliateNotesInput.value.trim() || null,
       card_metadata: {
         source: "portal",
+        profile: {
+          company: affiliateCompanyInput?.value.trim() || "",
+          position: affiliatePositionInput?.value.trim() || "",
+          city: affiliateCityInput?.value.trim() || "",
+          custom_fields: normalizeAffiliateCustomProfileFields(affiliateCustomProfileFields),
+        },
       },
     };
 

@@ -63652,6 +63652,105 @@ html body > #affiliateCreatePanel.is-modal-open .affiliate-reset-button { color:
   html body > #affiliateCreatePanel.is-modal-open .modal-button-row > button { flex: 1 1 auto; }
 }
 
+/* Affiliate create v186: file-first photo and optional commercial context. */
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-flow {
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  align-items: center;
+  gap: 14px !important;
+  padding: 22px 0 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-copy strong,
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-head strong {
+  color: #082f70 !important;
+  font-size: 1rem;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-copy p,
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-head p {
+  margin: 0 !important;
+  color: #607898 !important;
+  font-size: .84rem !important;
+  line-height: 1.45 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-flow > .affiliate-file-picker {
+  display: grid !important;
+  gap: 6px;
+  color: #123b76 !important;
+  font-size: .78rem;
+  font-weight: 750;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-file-picker input[type="file"] {
+  width: min(200px, 100%) !important;
+  min-height: 40px !important;
+  padding: 7px !important;
+  font-size: .76rem;
+  background: #fff !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-preview {
+  width: 54px !important;
+  height: 54px !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  object-fit: cover !important;
+  box-shadow: 0 8px 18px rgba(4, 66, 145, .14) !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-clear { white-space: nowrap; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details {
+  display: grid;
+  gap: 14px;
+  padding: 20px 0 2px;
+  border-top: 1px solid #e6eef6;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-head > div { display: grid; gap: 4px; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-body > label {
+  display: grid;
+  gap: 7px;
+  color: #193f76;
+  font-size: .82rem;
+  font-weight: 750;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-custom-fields {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-custom-field-row {
+  display: grid;
+  grid-template-columns: minmax(140px, .7fr) minmax(0, 1.3fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-add-custom-field {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0c56a8 !important;
+}
+@media (max-width: 720px) {
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-flow,
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-body,
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-custom-field-row { grid-template-columns: 1fr !important; }
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details-head { align-items: flex-start; flex-direction: column; }
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-preview { justify-self: start; }
+}
+
 /* Revenue dashboard v241: one clear workspace, a compact block picker and readable cards. */
 html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
   max-width: 1180px !important;

@@ -162,9 +162,9 @@ async function updateAffiliate(businessId, affiliateId, user, body) {
          document_id = $4,
          phone = $5,
          email = $6,
-         photo_data_url = coalesce($7, photo_data_url),
-         notes = $8,
-         card_metadata = coalesce(card_metadata, '{}'::jsonb) || coalesce($9::jsonb, '{}'::jsonb),
+         photo_data_url = case when coalesce($8, false) then null else coalesce($7, photo_data_url) end,
+         notes = $9,
+         card_metadata = coalesce(card_metadata, '{}'::jsonb) || coalesce($10::jsonb, '{}'::jsonb),
          updated_at = now()
      where business_id = $1 and id = $2
      returning id`,
@@ -176,6 +176,7 @@ async function updateAffiliate(businessId, affiliateId, user, body) {
       body.phone || null,
       body.email || null,
       body.photo_data_url || null,
+      Boolean(body.clear_photo),
       body.notes || null,
       body.card_metadata || {},
     ]

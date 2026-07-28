@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=post-sale-ticket-20260728-v156">
+  <link rel="stylesheet" href="css/styles.css?v=affiliate-create-20260728-v186">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-builder-fix-20260728-v206">
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
@@ -6709,10 +6709,46 @@
                     <input id="affiliateEmailInput" type="email" autocomplete="email" maxlength="160" required>
                   </label>
                   <section class="affiliate-photo-flow span-2" aria-label="Foto opcional para el carnet">
-                    <label>
-                      <span>Foto para el carnet <em>Opcional</em></span>
+                    <div class="affiliate-photo-copy">
+                      <span class="mono-label">Foto opcional</span>
+                      <strong>Personaliza el carnet digital</strong>
+                      <p>Sube una imagen desde tu dispositivo si quieres identificar mejor al afiliado.</p>
+                    </div>
+                    <label class="affiliate-file-picker">
+                      <span>Elegir imagen</span>
                       <input id="affiliatePhotoInput" type="file" accept="image/png,image/jpeg,image/webp">
                     </label>
+                    <img id="affiliatePhotoPreview" class="affiliate-photo-preview" alt="Vista previa de la foto del afiliado" hidden>
+                    <button class="ghost-button compact affiliate-photo-clear" id="affiliatePhotoClearButton" type="button" hidden>Quitar foto</button>
+                  </section>
+                  <section class="affiliate-profile-details span-2" aria-label="Datos comerciales opcionales">
+                    <div class="affiliate-profile-details-head">
+                      <div>
+                        <span class="mono-label">Información opcional</span>
+                        <strong>Contexto comercial</strong>
+                        <p>Agrega solo lo que sirva para reconocer y atender mejor a esta persona.</p>
+                      </div>
+                      <button class="ghost-button compact" id="affiliateProfileDetailsToggle" type="button" aria-expanded="false">Agregar datos</button>
+                    </div>
+                    <div class="affiliate-profile-details-body hidden" id="affiliateProfileDetailsPanel">
+                      <label>
+                        <span>Empresa</span>
+                        <input id="affiliateCompanyInput" type="text" autocomplete="organization" maxlength="160" placeholder="Ej: Empresa donde trabaja">
+                      </label>
+                      <label>
+                        <span>Cargo</span>
+                        <input id="affiliatePositionInput" type="text" autocomplete="organization-title" maxlength="160" placeholder="Ej: Gerente comercial">
+                      </label>
+                      <label>
+                        <span>Ciudad</span>
+                        <input id="affiliateCityInput" type="text" autocomplete="address-level2" maxlength="100" placeholder="Ej: Bogotá">
+                      </label>
+                      <div class="affiliate-custom-fields" id="affiliateCustomFieldsList"></div>
+                      <button class="ghost-button compact affiliate-add-custom-field" id="affiliateAddCustomFieldButton" type="button">
+                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                        Agregar otro dato
+                      </button>
+                    </div>
                   </section>
                   <label class="span-2">
                     <span>Intereses y notas</span>
@@ -7338,7 +7374,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=affiliate-create-20260728-v185" defer></script>
+    <script src="js/app.js?v=affiliate-create-20260728-v186" defer></script>
 </body>
 </html>
 
