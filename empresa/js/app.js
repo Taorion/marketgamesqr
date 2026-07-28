@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-breathing-room-v174";
+const APP_VERSION = "empresa-20260727-rms-breathing-room-v175";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40009,6 +40009,7 @@ function rmsCollectorPrimaryBriefMarkup(rows = [], outputEligibleRows = [], risk
 function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStationWorkspace) return;
   ensureRmsStationUxStyles();
+  enforceRmsFactorySpacing();
   const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
   consoleShell?.classList.toggle("is-station-mode", Boolean(state.rmsStationScreenOpen));
   if (!stages.length || !state.rmsStationScreenOpen) {
@@ -42351,6 +42352,51 @@ function syncMissionPeriodControls() {
     button.classList.toggle("solid-button", active);
     button.classList.toggle("ghost-button", !active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function enforceRmsFactorySpacing() {
+  const consoleShell = document.querySelector(
+    "#workspace.app-shell .content-shell > .view-section.active[data-view=\"rms-machine\"] > .rms-factory-console"
+  );
+  if (!consoleShell) return;
+
+  const compact = window.matchMedia?.("(max-width: 680px)").matches;
+  const medium = window.matchMedia?.("(max-width: 1180px)").matches;
+  const outerPadding = compact ? "22px 18px" : "clamp(32px, 4vw, 60px)";
+  const sectionPadding = compact ? "22px 0" : "clamp(28px, 3.2vw, 44px) 0";
+
+  consoleShell.style.setProperty("display", "flex", "important");
+  consoleShell.style.setProperty("flex-direction", "column", "important");
+  consoleShell.style.setProperty("gap", compact ? "28px" : "clamp(32px, 4vw, 56px)", "important");
+  consoleShell.style.setProperty("padding", outerPadding, "important");
+  consoleShell.style.setProperty("box-sizing", "border-box", "important");
+
+  const boardTools = consoleShell.querySelector(":scope > .rms-board-tools");
+  if (boardTools) {
+    boardTools.style.setProperty("padding", sectionPadding, "important");
+    boardTools.style.setProperty("margin", "0", "important");
+    boardTools.style.setProperty("box-sizing", "border-box", "important");
+  }
+
+  const stageSlider = consoleShell.querySelector(":scope > .rms-stage-slider-shell");
+  if (stageSlider) {
+    stageSlider.style.setProperty("padding", sectionPadding, "important");
+    stageSlider.style.setProperty("margin", "0", "important");
+    stageSlider.style.setProperty("box-sizing", "border-box", "important");
+  }
+
+  const operatorToolbar = boardTools?.querySelector(".rms-operator-toolbar");
+  const bulkToolbar = boardTools?.querySelector(".rms-bulk-toolbar");
+  [operatorToolbar, bulkToolbar].filter(Boolean).forEach((toolbar) => {
+    toolbar.style.setProperty("display", "grid", "important");
+    toolbar.style.setProperty(
+      "grid-template-columns",
+      compact ? "minmax(0, 1fr)" : medium ? "repeat(2, minmax(0, 1fr))" : "minmax(220px, 1fr) minmax(175px, .78fr) auto auto auto",
+      "important"
+    );
+    toolbar.style.setProperty("gap", compact ? "12px" : "clamp(14px, 1.8vw, 24px)", "important");
+    toolbar.style.setProperty("padding", compact ? "20px 0 0" : "28px 0 0", "important");
   });
 }
 
