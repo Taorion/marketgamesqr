@@ -532,6 +532,7 @@ const accountUsersTable = document.getElementById("accountUsersTable");
 const refreshAccountUsersButton = document.getElementById("refreshAccountUsersButton");
 const resetAffiliateFormButton = document.getElementById("resetAffiliateFormButton");
 const affiliateCardTitle = document.getElementById("affiliateCardTitle");
+const affiliateDeleteSelectedButton = document.getElementById("affiliateDeleteSelectedButton");
 const affiliateCardPreviewWrap = document.getElementById("affiliateCardPreviewWrap");
 const affiliateCardPreview = document.getElementById("affiliateCardPreview");
 const affiliateCardMeta = document.getElementById("affiliateCardMeta");
@@ -29158,11 +29159,11 @@ async function generateSelectedAffiliateReferralQr() {
 async function deleteSelectedAffiliate(affiliateId, affiliateName = "afiliado") {
   if (!affiliateId || !session?.user?.business_id) return;
   const name = affiliateName || "afiliado";
-  const firstConfirm = window.confirm(`Vas a eliminar el afiliado "${name}". Esta acción elimina también su historial de puntos. Deseas continuar?`);
+  const firstConfirm = window.confirm(`Vas a eliminar el afiliado "${name}". Esta acción elimina también su historial de puntos. ¿Deseas continuar?`);
   if (!firstConfirm) return;
-  const typed = window.prompt('Para reconfirmar, escribe ELIMINAR en mayusculas.');
+  const typed = window.prompt('Para reconfirmar, escribe ELIMINAR en mayúsculas.');
   if (typed !== "ELIMINAR") {
-    showFeedback("Eliminacion cancelada: la reconfirmacion no coincide.", "error");
+    showFeedback("Eliminación cancelada: la reconfirmación no coincide.", "error");
     return;
   }
 
@@ -34628,6 +34629,11 @@ async function renderAffiliatesView() {
     state.selectedAffiliateId = selected.id;
   }
   state.selectedAffiliate = selected;
+  if (affiliateDeleteSelectedButton) {
+    affiliateDeleteSelectedButton.disabled = !selected?.id;
+    affiliateDeleteSelectedButton.dataset.affiliateDelete = selected?.id || "";
+    affiliateDeleteSelectedButton.dataset.affiliateName = selected?.full_name || "";
+  }
   renderAffiliateCommandStrip();
   renderAffiliatePurchaseCampaignOptions();
   renderAffiliateRewardRules();
@@ -44816,6 +44822,11 @@ affiliatePurchaseAddItemButton?.addEventListener("click", () => {
 affiliatePurchaseAmountInput?.addEventListener("input", updateAffiliatePurchaseTotals);
 affiliateAddPointsButton?.addEventListener("click", awardSelectedAffiliatePoints);
 affiliateOperationCloseButton?.addEventListener("click", closeAffiliateOperationModal);
+affiliateDeleteSelectedButton?.addEventListener("click", () => {
+  const selected = state.selectedAffiliate || (state.affiliates || []).find((item) => String(item.id) === String(state.selectedAffiliateId || ""));
+  if (!selected?.id) return;
+  deleteSelectedAffiliate(selected.id, selected.full_name || "afiliado");
+});
 affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);

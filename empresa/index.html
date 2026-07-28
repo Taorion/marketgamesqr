@@ -6772,7 +6772,13 @@
                     <span class="mono-label">Afiliado seleccionado</span>
                     <strong id="affiliateCardTitle">Sin afiliado seleccionado</strong>
                   </div>
-                  <button class="icon-button" id="affiliateOperationCloseButton" type="button" aria-label="Cerrar asignación de puntos"><span class="material-symbols-outlined">close</span></button>
+                  <div class="affiliate-operation-head-actions">
+                    <button class="ghost-button compact danger-button" id="affiliateDeleteSelectedButton" type="button" disabled>
+                      <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                      Eliminar afiliado
+                    </button>
+                    <button class="icon-button" id="affiliateOperationCloseButton" type="button" aria-label="Cerrar asignación de puntos"><span class="material-symbols-outlined">close</span></button>
+                  </div>
                 </div>
                 <div class="affiliate-card-preview-wrap is-empty" id="affiliateCardPreviewWrap">
                   <img id="affiliateCardPreview" alt="Carnet afiliado">
@@ -6955,6 +6961,10 @@
                   </div>
                   <button class="solid-button compact" id="affiliateListCreateButton" type="button">Agregar afiliado</button>
                 </div>
+                <p class="affiliate-list-removal-guide">
+                  <span class="material-symbols-outlined" aria-hidden="true">delete_outline</span>
+                  Abre un afiliado para editarlo o eliminarlo. La eliminación siempre pide confirmación.
+                </p>
                 <div class="affiliate-list-toolbar" aria-label="Buscar y filtrar afiliados">
                   <label class="affiliate-list-search">
                     <span class="material-symbols-outlined" aria-hidden="true">search</span>

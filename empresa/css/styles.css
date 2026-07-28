@@ -63761,11 +63761,48 @@ html body > #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap { 
 html body > #affiliateOperatePanel.is-modal-open .affiliate-card-preview-wrap img { display: block !important; width: 100% !important; height: auto !important; object-fit: contain !important; }
 html body > #affiliateOperatePanel.is-modal-open .affiliate-selected-summary { margin: 10px 0 !important; }
 html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+html body > #affiliateOperatePanel.is-modal-open .affiliate-operation-head-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin-left: auto !important;
+}
+html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton {
+  color: #a93737 !important;
+  border-color: rgba(169, 55, 55, .28) !important;
+}
+html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton:not(:disabled):hover {
+  color: #fff !important;
+  border-color: #b73535 !important;
+  background: #b73535 !important;
+}
+html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton:disabled {
+  cursor: not-allowed !important;
+  opacity: .45 !important;
+}
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-removal-guide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 16px;
+  padding: 0 2px;
+  color: #58708e;
+  font-size: .84rem;
+  line-height: 1.4;
+}
+html body[data-current-view="affiliates"] .portal-shell .affiliate-list-removal-guide .material-symbols-outlined {
+  color: #a93737;
+  font-size: 1.05rem;
+}
 @media (max-width: 720px) {
   html body > #affiliateCreatePanel.is-modal-open,
   html body > #affiliateOperatePanel.is-modal-open { width: calc(100vw - 20px) !important; max-width: calc(100vw - 20px) !important; max-height: calc(100dvh - 20px) !important; padding: 16px !important; }
   html body > #affiliateCreatePanel.is-modal-open .affiliate-form,
   html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns: 1fr !important; }
+  html body > #affiliateOperatePanel.is-modal-open .table-card-head { align-items: flex-start !important; }
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-operation-head-actions { gap: 6px !important; }
+  html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton { font-size: .78rem !important; }
 }
 
 /* Affiliate create modal v185: spacious, independent and calm registration flow. */
