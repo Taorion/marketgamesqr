@@ -803,6 +803,89 @@ html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriA
   }
 }
 
+/* Smart Catalog v170: catalog administration stays focused in the page while
+ * creation and editing use a dedicated, global workspace. */
+html body > #smartCatalogProductModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10050 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(12px, 3vw, 38px) !important;
+  overflow: hidden !important;
+  background: rgba(4, 27, 68, .62) !important;
+  backdrop-filter: blur(12px) saturate(.92) !important;
+}
+
+html body > #smartCatalogProductModal .smart-catalog-product-modal-card {
+  width: min(1080px, 100%) !important;
+  max-height: calc(100dvh - 24px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  border: 1px solid rgba(204, 224, 243, .92) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 34px 92px rgba(1, 25, 66, .38) !important;
+  overflow: hidden !important;
+}
+
+html body > #smartCatalogProductModal .modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: clamp(22px, 3vw, 34px) clamp(22px, 4vw, 44px) 18px !important;
+  border-bottom: 1px solid rgba(210, 226, 240, .9) !important;
+  background: linear-gradient(112deg, #f4fbff, #ffffff 70%) !important;
+}
+
+html body > #smartCatalogProductModal .modal-head h3 {
+  margin: 4px 0 6px !important;
+  color: #052b6c !important;
+}
+
+html body > #smartCatalogProductModal .modal-head p {
+  max-width: 68ch !important;
+  margin: 0 !important;
+  color: #56728f !important;
+}
+
+html body > #smartCatalogProductModal .smart-catalog-form {
+  min-height: 0 !important;
+  padding: clamp(22px, 3.5vw, 40px) clamp(22px, 4vw, 44px) clamp(26px, 4vw, 46px) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card tbody tr {
+  cursor: default !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(5) {
+  white-space: normal !important;
+}
+
+@media (max-width: 760px) {
+  html body > #smartCatalogProductModal.modal-shell:not(.hidden) {
+    padding: 8px !important;
+  }
+
+  html body > #smartCatalogProductModal .smart-catalog-product-modal-card {
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 15px !important;
+  }
+
+  html body > #smartCatalogProductModal .modal-head,
+  html body > #smartCatalogProductModal .smart-catalog-form {
+    padding-right: 16px !important;
+    padding-left: 16px !important;
+  }
+}
+
 /* RMS tools v167 -------------------------------------------------------------
  * Search and batch work are a top-level workflow, never a side tab. */
 html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {

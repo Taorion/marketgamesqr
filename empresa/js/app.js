@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-transparent-canvas-v169";
+const APP_VERSION = "empresa-20260727-catalog-operating-flow-v170";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -9654,13 +9654,16 @@ function renderSmartCatalogDashboard() {
 function renderSmartCatalogPublishPanel() {
   const catalog = smartCatalogSelectedCatalog();
   const url = smartCatalogPublicUrl(catalog);
+  const published = catalog?.status === "ACTIVE";
   if (smartCatalogPublicLink) {
     smartCatalogPublicLink.textContent = catalog
-      ? `${catalog.title} · ${url}`
+      ? (published
+        ? `${catalog.title} · ${url}`
+        : `${catalog.title} · publica el catálogo para activar su enlace`)
       : "Selecciona o crea un catálogo activo.";
   }
-  if (smartCatalogCopyLinkButton) smartCatalogCopyLinkButton.disabled = !url;
-  if (smartCatalogOpenPublicButton) smartCatalogOpenPublicButton.disabled = !url;
+  if (smartCatalogCopyLinkButton) smartCatalogCopyLinkButton.disabled = !url || !published;
+  if (smartCatalogOpenPublicButton) smartCatalogOpenPublicButton.disabled = !url || !published;
 }
 
 function renderSmartCatalogTables() {
@@ -9668,6 +9671,8 @@ function renderSmartCatalogTables() {
   if (smartCatalogTable) {
     smartCatalogTable.innerHTML = catalogs.length ? catalogs.map((catalog) => {
       const active = catalog.id === state.smartCatalogSelectedCatalogId;
+      const publishAction = catalog.status === "ACTIVE" ? "Pausar" : "Publicar";
+      const publishStatus = catalog.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
       return `
         <tr class="${active ? "is-selected-row" : ""}">
           <td><strong>${escapeHtml(catalog.title)}</strong><small>${escapeHtml(catalog.public_url || catalog.slug || "")}</small></td>
@@ -9675,8 +9680,10 @@ function renderSmartCatalogTables() {
           <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
           <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
           <td>
-            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Usar</button>
-            <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Copiar</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Abrir</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-edit="${escapeHtml(catalog.id)}">Editar</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-status="${escapeHtml(catalog.id)}" data-smart-catalog-next-status="${publishStatus}">${publishAction}</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Link</button>
           </td>
         </tr>
       `;
@@ -9696,6 +9703,7 @@ function renderSmartCatalogTables() {
         <td>${product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
         <td><span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span></td>
         <td>
+          <button class="ghost-button compact" type="button" data-smart-product-edit="${escapeHtml(product.id)}">Editar</button>
           <button class="ghost-button compact" type="button" data-smart-product-feature="${escapeHtml(product.id)}">${product.is_featured ? "Quitar destaque" : "Destacar"}</button>
           <button class="ghost-button compact" type="button" data-smart-product-hide="${escapeHtml(product.id)}">${product.stock_status === "HIDDEN" ? "Mostrar" : "Ocultar"}</button>
         </td>
@@ -10031,12 +10039,117 @@ function ensureSmartCatalogCreateModal() {
 function openSmartCatalogCreateModal() {
   const modal = ensureSmartCatalogCreateModal();
   if (!modal) return;
+  delete smartCatalogForm.dataset.editingCatalogId;
+  smartCatalogForm.reset();
+  const statusField = smartCatalogForm.querySelector('[name="status"]');
+  if (statusField) statusField.value = "DRAFT";
+  const title = modal.querySelector("#smartCatalogCreateModalTitle");
+  const copy = modal.querySelector(".modal-head p");
+  if (title) title.textContent = "Crea una vitrina pública";
+  if (copy) copy.textContent = "Define tu marca y WhatsApp. Podrás publicar la vitrina cuando la oferta esté lista.";
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm?.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
 
 function closeSmartCatalogCreateModal() {
   document.getElementById("smartCatalogCreateModal")?.classList.add("hidden");
+}
+
+function openSmartCatalogEditModal(catalogId) {
+  const catalog = (state.smartCatalogs || []).find((item) => item.id === catalogId);
+  if (!catalog) return;
+  const modal = ensureSmartCatalogCreateModal();
+  if (!modal || !smartCatalogForm) return;
+  smartCatalogForm.reset();
+  smartCatalogForm.dataset.editingCatalogId = catalog.id;
+  ["title", "description", "brand_name", "whatsapp_number", "default_cta_label", "theme_color", "linked_campaign_id", "status"].forEach((name) => {
+    const field = smartCatalogForm.querySelector(`[name="${name}"]`);
+    if (field) field.value = catalog[name] ?? "";
+  });
+  const title = modal.querySelector("#smartCatalogCreateModalTitle");
+  const copy = modal.querySelector(".modal-head p");
+  if (title) title.textContent = "Edita la vitrina";
+  if (copy) copy.textContent = "Actualiza la marca, WhatsApp y publicación sin perder tus productos ni tus consultas.";
+  modal.classList.remove("hidden");
+  window.setTimeout(() => smartCatalogForm.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
+}
+
+function ensureSmartCatalogProductModal() {
+  if (!smartCatalogProductForm) return null;
+  let modal = document.getElementById("smartCatalogProductModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden smart-catalog-product-modal";
+  modal.id = "smartCatalogProductModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "smartCatalogProductModalTitle");
+  modal.innerHTML = `
+    <article class="modal-card smart-catalog-product-modal-card" role="document">
+      <div class="modal-head">
+        <div>
+          <span class="mono-label">OFERTA DEL CATÁLOGO</span>
+          <h3 id="smartCatalogProductModalTitle">Agregar producto o servicio</h3>
+          <p>Conecta un producto existente o crea una oferta especial para esta vitrina.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-smart-catalog-product aria-label="Cerrar edición de producto"><span class="material-symbols-outlined">close</span></button>
+      </div>
+    </article>
+  `;
+  modal.querySelector(".smart-catalog-product-modal-card")?.appendChild(smartCatalogProductForm);
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-close-smart-catalog-product]")) {
+      event.preventDefault();
+      closeSmartCatalogProductModal();
+    }
+  });
+  return modal;
+}
+
+function closeSmartCatalogProductModal() {
+  document.getElementById("smartCatalogProductModal")?.classList.add("hidden");
+}
+
+function openSmartCatalogProductModal(options = {}) {
+  const catalogId = options.catalogId || state.smartCatalogSelectedCatalogId;
+  if (!catalogId) {
+    openSmartCatalogCreateModal();
+    showFeedback("Primero crea la vitrina donde se publicará la oferta.", "info", { title: "Catálogos Qori" });
+    return;
+  }
+  const modal = ensureSmartCatalogProductModal();
+  if (!modal || !smartCatalogProductForm) return;
+  const product = options.product || null;
+  smartCatalogProductForm.reset();
+  if (product) {
+    smartCatalogProductForm.dataset.editingProductId = product.id;
+    ["inventory_product_id", "name", "short_description", "category", "product_type", "price", "compare_at_price", "image_url", "cta_label", "stock_status", "whatsapp_message_template"].forEach((name) => {
+      const field = smartCatalogProductForm.querySelector(`[name="${name}"]`);
+      if (field) field.value = product[name] ?? "";
+    });
+    const benefits = smartCatalogProductForm.querySelector('[name="benefits_text"]');
+    const tags = smartCatalogProductForm.querySelector('[name="tags_text"]');
+    const seasonName = smartCatalogProductForm.querySelector('[name="season_name"]');
+    const seasonalBenefit = smartCatalogProductForm.querySelector('[name="seasonal_benefit"]');
+    if (benefits) benefits.value = smartCatalogProductBenefits(product).join("\n");
+    if (tags) tags.value = Array.isArray(product.tags) ? product.tags.join(", ") : "";
+    if (seasonName) seasonName.value = product.metadata?.season_name || "";
+    if (seasonalBenefit) seasonalBenefit.value = product.metadata?.seasonal_benefit || "";
+    const featured = smartCatalogProductForm.querySelector('[name="is_featured"]');
+    if (featured) featured.checked = Boolean(product.is_featured);
+  } else {
+    delete smartCatalogProductForm.dataset.editingProductId;
+  }
+  smartCatalogProductCatalogSelect.value = catalogId;
+  const title = modal.querySelector("#smartCatalogProductModalTitle");
+  const copy = modal.querySelector(".modal-head p");
+  const submit = smartCatalogProductForm.querySelector('button[type="submit"]');
+  if (title) title.textContent = product ? "Edita la oferta" : "Agregar producto o servicio";
+  if (copy) copy.textContent = product ? "Actualiza precio, disponibilidad y mensaje de WhatsApp sin borrar sus resultados." : "Elige un producto registrado o crea una oferta nueva para la vitrina seleccionada.";
+  if (submit) submit.textContent = product ? "Guardar cambios" : "Agregar al catálogo";
+  modal.classList.remove("hidden");
+  window.setTimeout(() => smartCatalogProductForm.querySelector('[name="name"]')?.focus({ preventScroll: true }), 40);
 }
 
 function normalizeSmartCatalogWorkspace() {
@@ -10055,7 +10168,18 @@ function normalizeSmartCatalogWorkspace() {
     button.addEventListener("click", openSmartCatalogCreateModal);
     head.appendChild(button);
   }
+  const productHead = smartCatalogProductTable?.closest(".smart-catalog-table-card")?.querySelector(":scope > .table-card-head");
+  if (productHead && !productHead.querySelector("[data-open-smart-catalog-product]")) {
+    const button = document.createElement("button");
+    button.className = "solid-button compact";
+    button.type = "button";
+    button.dataset.openSmartCatalogProduct = "true";
+    button.textContent = "Agregar producto";
+    button.addEventListener("click", () => openSmartCatalogProductModal());
+    productHead.appendChild(button);
+  }
   ensureSmartCatalogCreateModal();
+  ensureSmartCatalogProductModal();
 }
 
 async function refreshSmartCatalogs(options = {}) {
@@ -10068,20 +10192,22 @@ async function refreshSmartCatalogs(options = {}) {
 async function submitSmartCatalog(event) {
   event.preventDefault();
   if (!smartCatalogForm) return;
-  setInlineMessage(smartCatalogMessage, "Creando catálogo accionable...", "info");
+  const editingCatalogId = smartCatalogForm.dataset.editingCatalogId || "";
+  setInlineMessage(smartCatalogMessage, editingCatalogId ? "Guardando cambios del catálogo..." : "Creando catálogo accionable...", "info");
   try {
     const payload = smartCatalogFormPayload(smartCatalogForm);
-    const data = await api("/api/business/catalogs", {
-      method: "POST",
+    const data = await api(editingCatalogId ? `/api/business/catalogs/${encodeURIComponent(editingCatalogId)}` : "/api/business/catalogs", {
+      method: editingCatalogId ? "PATCH" : "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     smartCatalogForm.reset();
-    setInlineMessage(smartCatalogMessage, "Catálogo creado. Agrega productos y comparte el link público.", "success");
+    delete smartCatalogForm.dataset.editingCatalogId;
+    setInlineMessage(smartCatalogMessage, editingCatalogId ? "Catálogo actualizado." : "Catálogo creado. Agrega productos y comparte el link público.", "success");
     await refreshSmartCatalogs({ quiet: true });
     closeSmartCatalogCreateModal();
-    setSmartCatalogTab("products");
+    setSmartCatalogTab(editingCatalogId ? "catalogs" : "products");
   } catch (error) {
     setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear el catálogo.", "error");
   }
@@ -10090,6 +10216,7 @@ async function submitSmartCatalog(event) {
 async function submitSmartCatalogProduct(event) {
   event.preventDefault();
   if (!smartCatalogProductForm) return;
+  const editingProductId = smartCatalogProductForm.dataset.editingProductId || "";
   const payload = smartCatalogFormPayload(smartCatalogProductForm);
   prepareSmartCatalogProductPayload(payload);
   const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
@@ -10100,19 +10227,24 @@ async function submitSmartCatalogProduct(event) {
   payload.price = payload.price === null ? null : Number(payload.price || 0);
   payload.is_featured = smartCatalogProductForm.querySelector('[name="is_featured"]')?.checked || false;
   delete payload.catalog_id;
-  setInlineMessage(smartCatalogProductMessage, "Agregando producto al catálogo...", "info");
+  setInlineMessage(smartCatalogProductMessage, editingProductId ? "Guardando cambios de la oferta..." : "Agregando producto al catálogo...", "info");
   try {
-    await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}/products`, {
-      method: "POST",
+    await api(editingProductId
+      ? `/api/business/catalogs/${encodeURIComponent(catalogId)}/products/${encodeURIComponent(editingProductId)}`
+      : `/api/business/catalogs/${encodeURIComponent(catalogId)}/products`, {
+      method: editingProductId ? "PATCH" : "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
     smartCatalogProductForm.reset();
+    delete smartCatalogProductForm.dataset.editingProductId;
     smartCatalogProductCatalogSelect.value = catalogId;
     await loadSmartCatalogDetail(catalogId, { quiet: true });
     state.smartCatalogLoaded = false;
     await loadSmartCatalogData({ force: true });
-    setInlineMessage(smartCatalogProductMessage, "Producto agregado. La landing pública ya puede mostrarlo.", "success");
+    setInlineMessage(smartCatalogProductMessage, editingProductId ? "Oferta actualizada." : "Producto agregado. La landing pública ya puede mostrarlo.", "success");
+    closeSmartCatalogProductModal();
+    setSmartCatalogTab("products");
     renderSmartCatalogView();
   } catch (error) {
     setInlineMessage(smartCatalogProductMessage, error.message || "No se pudo agregar el producto.", "error");
@@ -10123,6 +10255,10 @@ async function copySmartCatalogLink(catalogId = "") {
   const catalog = catalogId
     ? (state.smartCatalogs || []).find((item) => item.id === catalogId)
     : smartCatalogSelectedCatalog();
+  if (catalog?.status !== "ACTIVE") {
+    showFeedback("Publica el catálogo antes de compartir su enlace.", "info", { title: "Catálogos Qori" });
+    return;
+  }
   const url = smartCatalogPublicUrl(catalog);
   if (!url) return;
   try {
@@ -10130,6 +10266,22 @@ async function copySmartCatalogLink(catalogId = "") {
     showFeedback("Link público copiado.", "success", { title: "Catálogos Qori" });
   } catch {
     window.prompt("Link público del catálogo", url);
+  }
+}
+
+async function updateSmartCatalogStatus(catalogId, status) {
+  if (!catalogId || !status) return;
+  const label = status === "ACTIVE" ? "publicado" : "pausado";
+  try {
+    await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    await refreshSmartCatalogs({ quiet: true });
+    showFeedback(`Catálogo ${label}. Puedes cambiar este estado cuando quieras.`, "success", { title: "Catálogos Qori" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar la publicación.", "error", { title: "Catálogos Qori" });
   }
 }
 
@@ -10158,7 +10310,12 @@ async function smartCatalogIntentAction(intentId, action) {
           priority: "HIGH",
         }),
       });
-      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Qori" });
+      await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ status: "CONTACTED" }),
+      });
+      showFeedback("Tarea creada y consulta marcada como contactada.", "success", { title: "Catálogos Qori" });
     }
     if (action === "won") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
@@ -44286,6 +44443,7 @@ activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 smartCatalogTabButtons.forEach((button) => {
   button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
 });
+document.getElementById("smartCatalogCreateButton")?.addEventListener("click", openSmartCatalogCreateModal);
 smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Qori" })));
 smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
   try {
@@ -44330,10 +44488,11 @@ document.getElementById("workspace")?.addEventListener("click", async (event) =>
     return;
   }
   if (jump) {
-    setSmartCatalogTab(jump.dataset.smartCatalogJump || "catalogs");
     if (jump.dataset.smartCatalogJump === "products") {
-      smartCatalogProductForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openSmartCatalogProductModal();
+      return;
     }
+    setSmartCatalogTab(jump.dataset.smartCatalogJump || "catalogs");
     return;
   }
   if (copy) {
@@ -44348,18 +44507,35 @@ document.getElementById("workspace")?.addEventListener("click", async (event) =>
 smartCatalogTable?.addEventListener("click", async (event) => {
   const selectButton = event.target.closest("[data-smart-catalog-select]");
   const copyButton = event.target.closest("[data-smart-catalog-copy]");
+  const editButton = event.target.closest("[data-smart-catalog-edit]");
+  const statusButton = event.target.closest("[data-smart-catalog-status]");
   if (selectButton) {
     await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
     renderSmartCatalogView();
+    return;
   }
   if (copyButton) {
     await copySmartCatalogLink(copyButton.dataset.smartCatalogCopy);
+    return;
+  }
+  if (editButton) {
+    openSmartCatalogEditModal(editButton.dataset.smartCatalogEdit);
+    return;
+  }
+  if (statusButton) {
+    await updateSmartCatalogStatus(statusButton.dataset.smartCatalogStatus, statusButton.dataset.smartCatalogNextStatus);
   }
 });
 smartCatalogProductTable?.addEventListener("click", async (event) => {
   const featureButton = event.target.closest("[data-smart-product-feature]");
   const hideButton = event.target.closest("[data-smart-product-hide]");
+  const editButton = event.target.closest("[data-smart-product-edit]");
   try {
+    if (editButton) {
+      const product = (state.smartCatalogProducts || []).find((item) => item.id === editButton.dataset.smartProductEdit);
+      openSmartCatalogProductModal({ product });
+      return;
+    }
     if (featureButton) {
       const product = (state.smartCatalogProducts || []).find((item) => item.id === featureButton.dataset.smartProductFeature);
       await updateSmartCatalogProduct(featureButton.dataset.smartProductFeature, { is_featured: !product?.is_featured });

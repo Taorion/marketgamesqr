@@ -401,7 +401,7 @@ async function listProducts(businessId, catalogId) {
      from smart_catalog_products p
      left join smart_catalog_events e on e.product_id = p.id
      left join smart_catalog_order_intents i on i.product_id = p.id
-     where p.business_id = $1 and p.catalog_id = $2 and p.stock_status <> 'HIDDEN'
+     where p.business_id = $1 and p.catalog_id = $2
      group by p.id
      order by p.display_order asc, p.is_featured desc, p.updated_at desc`,
     [businessId, catalogId]
