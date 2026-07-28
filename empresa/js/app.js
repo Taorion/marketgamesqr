@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-breathing-room-v173";
+const APP_VERSION = "empresa-20260727-rms-breathing-room-v174";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -39801,6 +39801,54 @@ function ensureRmsStationUxStyles() {
       background: linear-gradient(105deg, rgba(245, 252, 255, .72), rgba(255, 255, 255, .18)) !important;
     }
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell { order: 2 !important; }
+  `);
+  rules.push(`
+    /* The RMS canvas is intentionally given a stronger local scope: other
+       portal modules add generic surface resets after this stylesheet. */
+    #workspace.app-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: clamp(26px, 3.5vw, 52px) !important;
+      padding: clamp(26px, 4vw, 58px) !important;
+    }
+    #workspace.app-shell .rms-factory-console > .rms-board-tools {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: clamp(24px, 3vw, 38px) !important;
+      border-top: 1px solid var(--portal-fluid-line) !important;
+      border-bottom: 1px solid var(--portal-fluid-line) !important;
+    }
+    #workspace.app-shell .rms-factory-console > .rms-stage-slider-shell {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: clamp(22px, 3vw, 38px) !important;
+      border-top: 1px solid var(--portal-fluid-line) !important;
+    }
+    #workspace.app-shell .rms-board-tools .rms-operator-toolbar {
+      display: grid !important;
+      grid-template-columns: minmax(220px, 1.35fr) minmax(180px, 1fr) minmax(150px, .75fr) auto !important;
+      gap: clamp(14px, 1.8vw, 24px) !important;
+      margin: 0 !important;
+      padding: 0 0 26px !important;
+      border-bottom: 1px solid var(--portal-fluid-line) !important;
+    }
+    #workspace.app-shell .rms-board-tools .rms-bulk-toolbar {
+      display: grid !important;
+      grid-template-columns: minmax(220px, 1fr) minmax(175px, .78fr) auto auto auto !important;
+      gap: clamp(12px, 1.7vw, 22px) !important;
+      margin: 0 !important;
+      padding: 24px 0 0 !important;
+    }
+    @media (max-width: 1180px) {
+      #workspace.app-shell .rms-board-tools .rms-operator-toolbar,
+      #workspace.app-shell .rms-board-tools .rms-bulk-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 680px) {
+      #workspace.app-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console { padding: 22px 18px !important; }
+      #workspace.app-shell .rms-factory-console > :is(.rms-board-tools, .rms-stage-slider-shell) { padding: 22px 0 !important; }
+      #workspace.app-shell .rms-board-tools .rms-operator-toolbar,
+      #workspace.app-shell .rms-board-tools .rms-bulk-toolbar { grid-template-columns: minmax(0, 1fr) !important; }
+    }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
