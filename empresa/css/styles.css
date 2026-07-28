@@ -61949,7 +61949,223 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table
   min-width: 168px !important;
 }
 
+/* RMS: los controles de calidad son tableros auxiliares, no estaciones. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  margin: 26px 0 10px !important;
+  padding: 20px 0 !important;
+  border-top: 1px solid rgba(5, 42, 107, .12) !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access:empty {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+  display: grid !important;
+  grid-template-columns: 64px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 12px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card img {
+  width: 64px !important;
+  height: 64px !important;
+  object-fit: cover !important;
+  border-radius: 14px !important;
+  background: #f1f9ff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > div {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card small {
+  display: block !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card small {
+  margin-top: 4px !important;
+  color: #56718f !important;
+  line-height: 1.42 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card .rms-quality-control-count {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #53708e !important;
+  font-size: .76rem !important;
+  font-style: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card .rms-quality-control-count strong {
+  color: #0756c7 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table-wrap {
+  margin-top: 18px !important;
+  overflow-x: auto !important;
+  scrollbar-color: #89b9d8 transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table {
+  width: 100% !important;
+  min-width: 900px !important;
+  table-layout: auto !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tbody tr,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tbody td {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tbody td {
+  padding: 14px 16px !important;
+  vertical-align: top !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table tbody tr + tr td {
+  border-top: 1px solid rgba(5, 42, 107, .09) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-product,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+  min-width: 290px !important;
+  background: rgba(234, 248, 255, .72) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean label {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean label span {
+  color: #0756c7 !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .035em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean select,
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean .open-product-input {
+  min-height: 38px !important;
+  padding: 8px 10px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean .rms-product-classifier-meta {
+  display: grid !important;
+  gap: 2px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean .rms-product-classifier-meta strong {
+  color: #0a3478 !important;
+  font-size: .84rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean .rms-product-classifier-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-more summary {
+  color: #456483 !important;
+  cursor: pointer !important;
+  font-size: .78rem !important;
+  font-weight: 760 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-more > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding-top: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status {
+  display: grid !important;
+  gap: 2px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status strong {
+  color: #0b397f !important;
+  font-size: .88rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status.is-sent strong {
+  color: #08724f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery small {
+  color: #58718d !important;
+  font-size: .74rem !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-controls select {
+  min-width: 106px !important;
+  min-height: 36px !important;
+  padding: 7px 8px !important;
+  background: #fff !important;
+}
+
 @media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card img {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card button {
+    grid-column: 2 !important;
+    justify-self: start !important;
+  }
+
   html body[data-current-view="rms-machine"] .portal-shell .rms-lean-quality-guide {
     grid-template-columns: 38px minmax(0, 1fr) !important;
     padding: 14px !important;

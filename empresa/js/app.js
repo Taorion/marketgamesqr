@@ -99,6 +99,7 @@ const rmsStageSliderNext = document.getElementById("rmsStageSliderNext");
 const rmsStageSliderProgress = document.getElementById("rmsStageSliderProgress");
 const rmsStageSliderRange = document.getElementById("rmsStageSliderRange");
 const rmsStationWorkspace = document.getElementById("rmsStationWorkspace");
+const rmsQualityControlAccess = document.getElementById("rmsQualityControlAccess");
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
 const rmsMachineRefreshButton = document.getElementById("rmsMachineRefreshButton");
@@ -2370,6 +2371,7 @@ let state = {
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
   rmsProductClassificationDraft: {},
+  rmsQualityControlKey: "",
   rmsStationPhase: "recoleccion",
   rmsStationScreenOpen: false,
   rmsStationSearch: "",
@@ -37096,11 +37098,11 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
     short_label: "Activación 1",
     storageLabel: "Almacena leads clasificados para activar",
     operation: {
-      name: "Preprocesar",
-      primaryAction: "Definir estado comercial y prioridad",
-      materialLabel: "Temperatura, urgencia, ticket y siguiente paso",
-      buttonLabel: "Preprocesar",
-      nextPhase: "preprocesamiento",
+      name: "Activar",
+      primaryAction: "Enviar una oferta por WhatsApp o email",
+      materialLabel: "Activación, estrategia, oferta y nota de envío",
+      buttonLabel: "Enviar oferta",
+      nextPhase: "procesamiento",
     },
   },
   {
@@ -37165,7 +37167,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Ensamblar cierre comercial",
       materialLabel: "Propuesta, factura, link de pago o cuenta de cobro",
       buttonLabel: "Cerrar",
-      nextPhase: "revenue_generado",
+      nextPhase: "postventa",
     },
   },
   {
@@ -37905,6 +37907,132 @@ function openBranchFormModal() {
   branchFormPanel?.classList.add("is-branch-modal-open");
 }
 
+const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
+
+function rmsPrimaryFactoryStages(data = {}) {
+  return rmsFactoryStages(data).filter((stage) => !RMS_QUALITY_CONTROL_KEYS.includes(stage.key));
+}
+
+function rmsQualityControlStages(data = {}) {
+  return rmsFactoryStages(data).filter((stage) => RMS_QUALITY_CONTROL_KEYS.includes(stage.key));
+}
+
+function rmsPrimaryStationNextPhase(stage = {}, stages = []) {
+  const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
+  const nextKey = stage.key === "clasificacion"
+    ? "procesamiento"
+    : stage.key === "cierre"
+      ? "postventa"
+      : operation.nextPhase;
+  return stages.find((candidate) => candidate.key === nextKey) || null;
+}
+
+const RMS_QUALITY_CONTROL_CONFIG = {
+  preprocesamiento: {
+    title: "Control de calidad 1",
+    subtitle: "Seguimiento desde Recolectar hasta Activación 1",
+    description: "Consulta el estado, la calidad, el producto y la oferta de cada lead sin detener el flujo comercial.",
+    phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
+  },
+  revenue_generado: {
+    title: "Control de calidad 2",
+    subtitle: "Seguimiento desde Evaluación hasta venta atribuida",
+    description: "Revisa avance comercial, riesgos, negociación y cierres atribuidos como tablero auxiliar.",
+    phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
+  },
+};
+
+function rmsQualityControlConfig(key = "") {
+  return RMS_QUALITY_CONTROL_CONFIG[key] || null;
+}
+
+function renderRmsQualityControlAccess(data = {}, opportunities = []) {
+  if (!rmsQualityControlAccess) return;
+  const qualityStages = rmsQualityControlStages(data);
+  rmsQualityControlAccess.innerHTML = qualityStages.map((stage) => {
+    const config = rmsQualityControlConfig(stage.key);
+    if (!config) return "";
+    const visual = rmsStationVisualMeta(stage.key);
+    const count = opportunities.filter((item) => config.phases.includes(item.stage)).length;
+    const legacy = opportunities.filter((item) => item.stage === stage.key).length;
+    return `
+      <article class="rms-quality-control-card" data-rms-open-quality-control="${escapeHtml(stage.key)}">
+        <img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async">
+        <div>
+          <span class="mono-label">Tablero auxiliar</span>
+          <strong>${escapeHtml(config.title)}</strong>
+          <small>${escapeHtml(config.subtitle)}</small>
+          <em class="rms-quality-control-count"><strong>${count.toLocaleString("es-CO")}</strong> leads observados${legacy ? ` · ${legacy.toLocaleString("es-CO")} en revisión` : ""}</em>
+        </div>
+        <button class="ghost-button compact" type="button" data-rms-open-quality-control="${escapeHtml(stage.key)}">Abrir tablero</button>
+      </article>
+    `;
+  }).join("");
+  rmsQualityControlAccess.querySelectorAll("[data-rms-open-quality-control]").forEach((control) => {
+    control.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openRmsQualityControl(control.dataset.rmsOpenQualityControl || "");
+    });
+  });
+}
+
+function openRmsQualityControl(key = "") {
+  const config = rmsQualityControlConfig(key);
+  if (!config) return;
+  state.rmsQualityControlKey = key;
+  state.rmsStationScreenOpen = true;
+  state.rmsStationSearch = "";
+  renderRmsStationOnly();
+  rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderRmsQualityControlDashboard(key = "") {
+  const config = rmsQualityControlConfig(key);
+  if (!config || !rmsStationWorkspace) return;
+  const data = state.rmsMachine || {};
+  const allStages = rmsFactoryStages(data);
+  const controlStage = allStages.find((stage) => stage.key === key) || {};
+  const visual = rmsStationVisualMeta(key);
+  const rows = (data.opportunities || []).filter((item) => config.phases.includes(item.stage));
+  const stageName = (phase) => allStages.find((stage) => stage.key === phase)?.short_label || phase || "-";
+  const phaseCounts = config.phases.map((phase) => ({ phase, count: rows.filter((item) => item.stage === phase).length })).filter((entry) => entry.count);
+  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
+  consoleShell?.classList.add("is-station-mode");
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <section class="rms-quality-dashboard" aria-label="${escapeHtml(config.title)}">
+      <header class="rms-quality-dashboard-head">
+        <button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button>
+        <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
+        <div>
+          <span class="mono-label">Tablero paralelo · no mueve leads</span>
+          <h3>${escapeHtml(config.title)}</h3>
+          <p>${escapeHtml(config.description)}</p>
+        </div>
+      </header>
+      <div class="rms-quality-dashboard-summary">
+        <span><strong>${rows.length.toLocaleString("es-CO")}</strong> leads observados</span>
+        ${phaseCounts.map((entry) => `<span><strong>${entry.count.toLocaleString("es-CO")}</strong> ${escapeHtml(stageName(entry.phase))}</span>`).join("") || "<span>Sin leads en este tramo.</span>"}
+      </div>
+      <div class="rms-quality-dashboard-list">
+        ${rows.map((item) => `
+          <button type="button" class="rms-quality-dashboard-row" data-rms-inspect="${escapeHtml(item.id)}">
+            <span><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto")}</small></span>
+            <span><b>Estación actual</b>${escapeHtml(stageName(item.stage))}</span>
+            <span><b>Calidad</b>${escapeHtml(rmsLeadQualityLabel(item))}</span>
+            <span><b>Oferta / producto</b>${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span>
+            <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          </button>
+        `).join("") || '<p class="empty-state compact">Todavía no hay leads en este tramo de control.</p>'}
+      </div>
+    </section>
+  `;
+  bindRmsMachineActions(rmsStationWorkspace);
+  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+}
+
 function closeBranchFormModal() {
   branchFormPanel?.classList.remove("is-branch-modal-open");
   branchesViewSection()?.classList.remove("branch-modal-open");
@@ -38291,7 +38419,7 @@ async function loadRmsMachineData(options = {}) {
     state.rmsMachineScope = data?.scope || (stationPhase ? { mode: "station", phase: stationPhase, lite: true } : { mode: "machine", phase: "", lite: false });
     rebuildRmsOpportunityIndex(data?.opportunities || []);
     state.rmsMachineLoaded = true;
-    renderRmsMachineFilterOptions(rmsFactoryStages(data));
+    renderRmsMachineFilterOptions(rmsPrimaryFactoryStages(data));
     return data;
   } finally {
     state.rmsMachineLoading = false;
@@ -38299,8 +38427,8 @@ async function loadRmsMachineData(options = {}) {
 }
 
 function renderRmsMachineLoading() {
-  renderRmsMachineFilterOptions(rmsFactoryStages());
-  renderRmsStageBoard(rmsFactoryStages(), [], true);
+  renderRmsMachineFilterOptions(rmsPrimaryFactoryStages());
+  renderRmsStageBoard(rmsPrimaryFactoryStages(), [], true);
   renderRmsBulkToolbar();
   if (rmsDailyQueue) {
     rmsDailyQueue.innerHTML = `
@@ -38577,7 +38705,7 @@ function focusRmsTutorial() {
 
 function renderRmsMachineView() {
   const data = state.rmsMachine || {};
-  const stages = rmsFactoryStages(data);
+  const stages = rmsPrimaryFactoryStages(data);
   const allOpportunities = data.opportunities || [];
   const opportunities = rmsVisibleOpportunities(allOpportunities);
   const metrics = data.metrics || {};
@@ -38605,6 +38733,7 @@ function renderRmsMachineView() {
   renderRmsAlerts(data.alerts || []);
   renderRmsDailyQueue(rmsDailySectionsFromOpportunities(opportunities));
   renderRmsMachineFilterOptions(stages);
+  renderRmsQualityControlAccess(data, allOpportunities);
   try {
     renderRmsStationWorkspace(stages, allOpportunities, isEmpty);
   } catch (error) {
@@ -38631,8 +38760,10 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
     stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
   } else if (stage.key === "curaduria") {
     stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
+  } else if (stage.key === "clasificacion") {
+    stationControl = `<td class="rms-lean-station-activation">${rmsActivationDeliveryMarkup(item)}</td>`;
   }
-  const qualityFirst = stage.key === "alimentacion";
+  const controlFirst = ["alimentacion", "curaduria", "clasificacion"].includes(stage.key);
   return `
     <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
       <td>
@@ -38644,7 +38775,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
         <strong>${escapeHtml(item.name || "Contacto")}</strong>
         <small>${escapeHtml(contact)}</small>
       </td>
-      ${qualityFirst ? stationControl : ""}
+      ${controlFirst ? stationControl : ""}
       <td>
         <span>${escapeHtml(origin)}</span>
         <small>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</small>
@@ -38653,7 +38784,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.stage_label || stage.label || "")}</small>
       </td>
-      ${qualityFirst ? "" : stationControl}
+      ${controlFirst ? "" : stationControl}
       <td>
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
         <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
@@ -38664,7 +38795,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
 
 function renderRmsStationLeanOnly() {
   const data = state.rmsMachine || {};
-  const stages = rmsFactoryStages(data);
+  const stages = rmsPrimaryFactoryStages(data);
   const allOpportunities = data.opportunities || [];
   const metrics = data.metrics || {};
   const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
@@ -38672,7 +38803,7 @@ function renderRmsStationLeanOnly() {
   const phase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "recoleccion";
   const stageIndex = Math.max(0, stages.findIndex((item) => item.key === phase));
   const stage = stages[stageIndex] || stages[0] || { key: phase, label: "Estación RMS", operation: {} };
-  const nextPhase = rmsStationNextPhase(stage, stages);
+  const nextPhase = rmsPrimaryStationNextPhase(stage, stages);
   const rows = rmsStationRows(phase, allOpportunities);
   const display = rmsStationDisplayRows(rows, phase);
   const renderedRows = display.visibleRows;
@@ -38681,12 +38812,21 @@ function renderRmsStationLeanOnly() {
   const visual = rmsStationVisualMeta(phase);
   const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
   const isCurationStation = phase === "alimentacion";
+  const isClassifierStation = phase === "curaduria";
+  const isActivationStation = phase === "clasificacion";
   const pendingQualityCount = isCurationStation
     ? rows.filter((item) => !rmsLeadQualityValue(item)).length
     : 0;
+  const pendingProductCount = isClassifierStation
+    ? rows.filter((item) => !rmsHasConfirmedProductClassification(item)).length
+    : 0;
   const stationTableHeadMarkup = isCurationStation
     ? `<th>Lead</th><th class="rms-lean-quality-heading">Asigna calidad</th><th>Origen</th><th>Interés</th>`
-    : `<th>Lead</th><th>Origen</th><th>Interés</th><th>${escapeHtml(stationControlLabel)}</th>`;
+    : isClassifierStation
+      ? `<th>Lead</th><th class="rms-lean-quality-heading">Clasifica producto o servicio</th><th>Origen</th><th>Interés</th>`
+      : isActivationStation
+        ? `<th>Lead</th><th class="rms-lean-quality-heading">Oferta y envío</th><th>Origen</th><th>Interés</th>`
+      : `<th>Lead</th><th>Origen</th><th>Interés</th><th>${escapeHtml(stationControlLabel)}</th>`;
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -38732,6 +38872,26 @@ function renderRmsStationLeanOnly() {
             <small>Elige Alta, Media o Baja antes de enviarlo al Clasificador. La calidad define el orden de trabajo.</small>
           </div>
           <span class="rms-lean-quality-guide-count"><strong>${pendingQualityCount.toLocaleString("es-CO")}</strong> pendiente${pendingQualityCount === 1 ? "" : "s"}</span>
+        </section>
+      ` : ""}
+      ${isClassifierStation ? `
+        <section class="rms-lean-quality-guide rms-lean-product-guide" aria-label="Prioridad de Clasificador">
+          <span class="material-symbols-outlined" aria-hidden="true">category</span>
+          <div>
+            <strong>Primero, asigna el producto o servicio ideal</strong>
+            <small>Confirma la clasificación antes de enviar el lead a Activación 1. Esta decisión define la oferta.</small>
+          </div>
+          <span class="rms-lean-quality-guide-count"><strong>${pendingProductCount.toLocaleString("es-CO")}</strong> por clasificar</span>
+        </section>
+      ` : ""}
+      ${isActivationStation ? `
+        <section class="rms-lean-quality-guide rms-lean-activation-guide" aria-label="Prioridad de Activación 1">
+          <span class="material-symbols-outlined" aria-hidden="true">send</span>
+          <div>
+            <strong>Envía una oferta clara y registra qué se compartió</strong>
+            <small>Elige WhatsApp o email. Cuando la oferta quede registrada, el lead podrá avanzar directamente a Evaluación.</small>
+          </div>
+          <span class="rms-lean-quality-guide-count"><strong>${rows.filter((item) => !rmsActivationDelivery(item).sentAt).length.toLocaleString("es-CO")}</strong> pendientes</span>
         </section>
       ` : ""}
       <div class="rms-lean-station-tools">
@@ -38791,6 +38951,10 @@ function renderRmsStationLeanOnly() {
 
 function renderRmsStationOnly() {
   try {
+    if (state.rmsQualityControlKey) {
+      renderRmsQualityControlDashboard(state.rmsQualityControlKey);
+      return;
+    }
     renderRmsStationLeanOnly();
   } catch (error) {
     console.error("RMS station simple render failed", error);
@@ -38985,8 +39149,7 @@ function rmsStageEmptyMarkup(stage = {}) {
 }
 
 function rmsStationNextPhase(stage = {}, stages = []) {
-  const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
-  return stages.find((candidate) => candidate.key === operation.nextPhase) || null;
+  return rmsPrimaryStationNextPhase(stage, stages);
 }
 
 function rmsStationRows(phase = "", opportunities = []) {
@@ -39097,23 +39260,29 @@ function rmsProductClassificationMarkup(item = {}) {
   const selected = rmsClassifiedProductValue(item);
   const openValue = selected === OPEN_PRODUCT_VALUE ? rmsClassifiedProductName(item) : "";
   const confidence = Math.round(Number(item.classification_confidence || 0) * 100);
+  const classifiedName = rmsClassifiedProductName(item);
   return `
-    <div class="rms-product-classifier" data-rms-product-classifier="${escapeHtml(item.id)}">
+    <div class="rms-product-classifier rms-product-classifier-lean" data-rms-product-classifier="${escapeHtml(item.id)}">
       <label>
-        <span>Producto / servicio interno</span>
-        <select data-rms-product-select="${escapeHtml(item.id)}" data-product-select data-placeholder="Sin producto clasificado" data-open-label="Crear o escribir producto nuevo">
+        <span>Producto o servicio</span>
+        <select data-rms-product-select="${escapeHtml(item.id)}" data-product-select data-placeholder="Selecciona el producto" data-open-label="Crear o escribir producto nuevo">
           ${inventoryProductSelectOptions(selected, { placeholder: "Sin producto clasificado", openLabel: "Crear o escribir producto nuevo" })}
         </select>
       </label>
       <input class="open-product-input ${selected === OPEN_PRODUCT_VALUE ? "" : "hidden"}" data-rms-product-open="${escapeHtml(item.id)}" type="text" maxlength="180" value="${escapeHtml(openValue)}" placeholder="Nombre del producto o servicio nuevo">
       <div class="rms-product-classifier-meta">
-        <span>${escapeHtml(rmsClassificationSourceLabel(item))}</span>
-        ${confidence ? `<small>${confidence}% de coincidencia</small>` : "<small>Requiere edición interna</small>"}
+        <strong>${escapeHtml(classifiedName || "Pendiente de clasificar")}</strong>
+        <small>${escapeHtml(rmsClassificationSourceLabel(item))}${confidence ? ` · ${confidence}% de coincidencia` : ""}</small>
       </div>
       <div class="rms-product-classifier-actions">
-        <button class="ghost-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar</button>
-        <button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>
-        <button class="ghost-button compact danger-button" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>
+        <button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Confirmar</button>
+        <details class="rms-product-classifier-more">
+          <summary>Más opciones</summary>
+          <div>
+            <button class="ghost-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>
+            <button class="ghost-button compact danger-button" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>
+          </div>
+        </details>
       </div>
     </div>
   `;
@@ -40094,7 +40263,7 @@ function updateRmsStationCommandDock(root = rmsStationWorkspace) {
   if (!root || !state.rmsStationPhase) return;
   const rows = rmsStationRows(state.rmsStationPhase, state.rmsMachine?.opportunities || []);
   const selectedRows = rmsStationSelectedRows(state.rmsStationPhase, rows);
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   const currentStage = stages.find((item) => item.key === state.rmsStationPhase) || stages[0];
   const nextPhase = rmsStationNextPhase(currentStage, stages);
   root.querySelectorAll("[data-rms-station-selected-count]").forEach((node) => {
@@ -40335,6 +40504,7 @@ function rmsCollectorReadiness(item = {}) {
 function rmsStationOutputEligibleRows(phase = "", rows = []) {
   if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
   if (phase === "curaduria") return (rows || []).filter((item) => rmsHasConfirmedProductClassification(item));
+  if (phase === "clasificacion") return (rows || []).filter((item) => Boolean(rmsActivationDelivery(item).sentAt));
   if (phase !== "recoleccion") return rows || [];
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
@@ -40349,6 +40519,10 @@ function rmsStationOutputItemSummary(phase = "", item = {}) {
     return `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}`;
   }
   if (phase === "curaduria") return `${rmsClassifiedProductName(item) || "Sin producto"} · ${rmsClassificationSourceLabel(item)}`;
+  if (phase === "clasificacion") {
+    const delivery = rmsActivationDelivery(item);
+    return delivery.sentAt ? `${delivery.offer} · enviada por ${delivery.channel === "email" ? "email" : "WhatsApp"}` : "Oferta pendiente de envío";
+  }
   return `${item.next_action?.title || item.raw_recommended_action || "Listo para avanzar"} · ${item.priority_label || "Prioridad media"}`;
 }
 
@@ -40360,12 +40534,16 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
     : phase === "alimentacion"
       ? "lead(s) curado(s)"
     : phase === "curaduria"
-        ? "lead(s) clasificado(s)"
+      ? "lead(s) clasificado(s)"
+      : phase === "clasificacion"
+        ? "oferta(s) enviada(s)"
         : "lead(s) seleccionado(s)";
   const emptyText = phase === "alimentacion"
     ? "Asigna calidad alta, media o baja para poner leads en la salida hacia Clasificador."
     : phase === "curaduria"
       ? "Guarda o confirma la clasificación por producto y selecciona los leads que ya pueden avanzar."
+      : phase === "clasificacion"
+        ? "Envía y registra la oferta por WhatsApp o email antes de pasar el lead a Evaluación."
       : phase === "recoleccion"
         ? "Selecciona en la entrada los leads que sí cumplen el mínimo para pasar a Curaduría."
         : "Selecciona los leads que deben avanzar a la siguiente estación.";
@@ -40683,18 +40861,22 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
         action: "Atrae y recolecta oportunidades",
         detail: "Registra datos de contacto y el interés inicial para alimentar el embudo comercial.",
       },
-      curaduria: {
-        action: "Filtra y prioriza oportunidades",
-        detail: "Revisa calidad, datos y necesidad; deja listos los leads con mayor potencial para el siguiente paso.",
-      },
       alimentacion: {
+        action: "Filtra y prioriza oportunidades",
+        detail: "Asigna la calidad del lead y deja visible por qué merece avanzar al Clasificador.",
+      },
+      curaduria: {
         action: "Asigna el producto o servicio ideal",
         detail: "Relaciona cada oportunidad con la oferta más relevante antes de activar la conversación comercial.",
+      },
+      clasificacion: {
+        action: "Envía una oferta por WhatsApp o email",
+        detail: "Registra la oferta, la estrategia y el canal de entrega antes de pasar el lead a Evaluación.",
       },
     }[stage.key] || { action: operation.primaryAction || operationName, detail: "Organiza los leads y define el siguiente movimiento comercial." };
     const stationAction = stationCopy.action;
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
-    const nextPhase = rmsFactoryStages(state.rmsMachine || {}).find((candidate) => candidate.key === operation.nextPhase);
+    const nextPhase = rmsPrimaryStationNextPhase(stage, stages);
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
     const visual = rmsStationVisualMeta(stage.key);
     return `
@@ -40965,6 +41147,15 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-clear-classification]").forEach((button) => {
     button.addEventListener("click", () => handleRmsClearClassification(button.dataset.rmsClearClassification || ""));
   });
+  root.querySelectorAll("[data-rms-send-activation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSendActivation || "");
+      const activationId = button.dataset.rmsSendActivation || "";
+      const channel = Array.from(root.querySelectorAll("[data-rms-activation-channel]"))
+        .find((node) => node.dataset.rmsActivationChannel === activationId)?.value || "";
+      if (item) sendRmsActivationOffer(item, channel);
+    });
+  });
   root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => toggleRmsSelection(checkbox.dataset.rmsSelect, checkbox.checked));
   });
@@ -41023,7 +41214,7 @@ function renderRmsStationInstantShell(phase = "", stages = []) {
 
 function openRmsStation(phase = "", options = {}) {
   if (!phase) return;
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   const targetStage = stages.find((item) => item.key === phase);
   if (!targetStage) {
     resetRmsStationMode();
@@ -41040,6 +41231,7 @@ function openRmsStation(phase = "", options = {}) {
     state.rmsStationViewMode = "all";
   }
   state.rmsStationPhase = phase;
+  state.rmsQualityControlKey = "";
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
@@ -41083,6 +41275,7 @@ function openRmsStation(phase = "", options = {}) {
 
 function closeRmsStation() {
   const wasStationScope = state.rmsMachineScope?.mode === "station";
+  state.rmsQualityControlKey = "";
   resetRmsStationMode();
   if (wasStationScope) {
     state.rmsMachineLoaded = false;
@@ -41100,7 +41293,7 @@ document.addEventListener("keydown", (event) => {
   const tagName = String(event.target?.tagName || "").toLowerCase();
   if (["input", "select", "textarea"].includes(tagName) || event.target?.isContentEditable || event.target?.closest?.('.modal-backdrop, .modal-overlay, [role="dialog"]') || event.altKey || event.ctrlKey || event.metaKey) return;
   if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   const currentIndex = stages.findIndex((item) => item.key === state.rmsStationPhase);
   if (currentIndex < 0) return;
   const targetIndex = event.key === "ArrowLeft" ? currentIndex - 1 : currentIndex + 1;
@@ -41129,7 +41322,7 @@ function rmsOpportunityById(id = "") {
 
 function bindRmsStationOutputAction(container = rmsStationWorkspace) {
   const phase = state.rmsStationPhase || "";
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   const stage = stages.find((item) => item.key === phase) || {};
   const rows = rmsStationRows(phase, state.rmsMachine?.opportunities || []);
   const nextPhase = rmsStationNextPhase(stage, stages);
@@ -41139,7 +41332,9 @@ function bindRmsStationOutputAction(container = rmsStationWorkspace) {
       if (!selectedRows.length || !nextPhase) {
         const message = phase === "alimentacion"
           ? "Primero cualifica leads con calidad alta, media o baja."
-          : "Primero chulea los leads hábiles en la entrada.";
+          : phase === "clasificacion"
+            ? "Primero envía y registra la oferta por WhatsApp o email antes de pasar a Evaluación."
+            : "Primero chulea los leads hábiles en la entrada.";
         showFeedback(message, "info", { title: stage.label || "Estación RMS" });
         return;
       }
@@ -41152,7 +41347,7 @@ function bindRmsStationOutputAction(container = rmsStationWorkspace) {
 
 function updateRmsStationOutputPreview() {
   if (!state.rmsStationScreenOpen || !state.rmsStationPhase) return;
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   const stage = stages.find((item) => item.key === state.rmsStationPhase);
   if (!stage) return;
   const rows = rmsStationRows(stage.key, state.rmsMachine?.opportunities || []);
@@ -41373,7 +41568,7 @@ function selectRmsPhaseForBulk(phase = "") {
   const phaseRows = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase);
   const eligibleRows = rmsStationOutputEligibleRows(phase, phaseRows);
   const ids = eligibleRows.map((item) => item.id);
-  const stage = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
+  const stage = rmsPrimaryFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
   const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
   if (!phaseRows.length) {
     handleRmsEmptyStationOperation(phase, stage, operation);
@@ -41384,7 +41579,9 @@ function selectRmsPhaseForBulk(phase = "") {
       ? "La salida de Curaduría exige calidad alta, media o baja. Cualifica al menos un lead antes de enviarlo a Clasificador."
       : phase === "curaduria"
         ? "La salida de Clasificador exige producto o servicio confirmado. Usa el selector de inventario, guarda el nombre sugerido o crea el producto."
-        : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
+        : phase === "clasificacion"
+          ? "La salida de Activación 1 exige una oferta registrada por WhatsApp o email antes de pasar a Evaluación."
+          : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
@@ -41486,6 +41683,70 @@ function openRmsWhatsApp(item = {}) {
     "Te puedo ayudar por este medio para avanzar con el siguiente paso.",
   ].filter(Boolean).join("\n\n");
   window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+}
+
+async function sendRmsActivationOffer(item = {}, channel = "") {
+  if (!item?.source_id) return;
+  const delivery = rmsActivationDelivery(item);
+  const targetChannel = channel || delivery.channel || (item.phone ? "whatsapp" : "email");
+  if (targetChannel === "whatsapp" && !item.phone) {
+    showFeedback("Este lead no tiene WhatsApp. Selecciona email o completa el teléfono.", "info", { title: "Activación 1" });
+    return;
+  }
+  if (targetChannel === "email" && !item.email) {
+    showFeedback("Este lead no tiene email. Selecciona WhatsApp o completa el correo.", "info", { title: "Activación 1" });
+    return;
+  }
+  const offer = rmsClassifiedProductName(item) || item.product_interest || "nuestra oferta comercial";
+  const strategy = item.campaign_name || item.coverage_type || "oferta personalizada";
+  const note = `Oferta ${offer} · Estrategia: ${strategy}`;
+  const message = [
+    `Hola ${item.first_name || item.name || ""}`.trim(),
+    `Tenemos una oferta para ti: ${offer}.`,
+    `Estrategia: ${strategy}.`,
+    "Si quieres, te acompaño por este medio para aprovecharla.",
+  ].filter(Boolean).join("\n\n");
+  try {
+    showFeedback("Registrando envío de oferta...", "loading", { title: "Activación 1", timeout: 0 });
+    await api("/api/business/rms-machine/lead/phase", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        to_phase: item.stage,
+        priority: rmsPriorityCode(item),
+        recommended_action: "Evaluar respuesta a la oferta enviada",
+        last_operation: "activation_offer_sent",
+        last_material_sent: offer,
+        revenue_potential: Number(item.revenue_potential || 0),
+        reason: `Oferta enviada por ${targetChannel === "email" ? "email" : "WhatsApp"}: ${offer}.`,
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "activation_offer_delivery",
+          from_phase: item.stage || "clasificacion",
+          activation_offer_sent_at: new Date().toISOString(),
+          activation_delivery_channel: targetChannel,
+          activation_offer_name: offer,
+          activation_offer_note: note,
+          activation_strategy: strategy,
+        },
+      }),
+    });
+    if (targetChannel === "whatsapp") {
+      const phone = whatsappPhoneFromInput(item.phone);
+      window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+    } else {
+      window.open(`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent("Una oferta para ti")}&body=${encodeURIComponent(message)}`, "_blank", "noopener");
+    }
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Oferta registrada. Ya puedes enviar este lead a Evaluación.", "success", { title: "Activación 1" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo registrar el envío de la oferta.", "error", { title: "Activación 1" });
+  }
 }
 
 async function createRmsAgendaTaskFromOpportunity(item = {}) {
@@ -41602,6 +41863,10 @@ async function moveSelectedRmsPhase() {
         showFeedback("Todos los leads de Clasificador necesitan producto o servicio antes de avanzar.", "info", { title: "Clasificador" });
         continue;
       }
+      if (item.stage === "clasificacion" && !rmsActivationDelivery(item).sentAt) {
+        showFeedback("Todos los leads de Activación 1 necesitan una oferta enviada antes de pasar a Evaluación.", "info", { title: "Activación 1" });
+        continue;
+      }
       await api("/api/business/rms-machine/lead/phase", {
         method: "PATCH",
         headers: authHeaders(),
@@ -41638,7 +41903,7 @@ async function moveSelectedRmsPhase() {
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     if (movedCount > 0 && state.rmsStationScreenOpen) {
-      const stages = rmsFactoryStages(state.rmsMachine || {});
+      const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
       const fromIndex = stages.findIndex((item) => item.key === fromPhase);
       const targetIndex = stages.findIndex((item) => item.key === toPhase);
       state.rmsStationNavigationDirection = targetIndex >= 0 && fromIndex >= 0 && targetIndex < fromIndex ? "backward" : "forward";
@@ -41649,7 +41914,7 @@ async function moveSelectedRmsPhase() {
       if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = toPhase;
     }
     renderRmsMachineView();
-    const destination = rmsFactoryStages(state.rmsMachine || {}).find((item) => item.key === toPhase);
+    const destination = rmsPrimaryFactoryStages(state.rmsMachine || {}).find((item) => item.key === toPhase);
     const resultMessage = movedCount > 0
       ? `${movedCount.toLocaleString("es-CO")} lead${movedCount === 1 ? "" : "s"} enviado${movedCount === 1 ? "" : "s"}. Ahora estás en ${destination?.label || "la siguiente estación"}.`
       : "No se movieron leads; revisa los criterios de salida.";
@@ -41682,6 +41947,10 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
   }
   if (item.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     showFeedback("Clasifica este lead por producto o servicio interno antes de enviarlo.", "info", { title: "Clasificador" });
+    return;
+  }
+  if (item.stage === "clasificacion" && !rmsActivationDelivery(item).sentAt) {
+    showFeedback("Envía y registra una oferta por WhatsApp o email antes de pasar el lead a Evaluación.", "info", { title: "Activación 1" });
     return;
   }
   try {
@@ -41723,7 +41992,7 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[item.id];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
-    const stations = rmsFactoryStages(state.rmsMachine || {});
+    const stations = rmsPrimaryFactoryStages(state.rmsMachine || {});
     const fromIndex = stations.findIndex((station) => station.key === item.stage);
     const targetIndex = stations.findIndex((station) => station.key === toPhase);
     state.rmsStationNavigationDirection = targetIndex >= 0 && fromIndex >= 0 && targetIndex < fromIndex ? "backward" : "forward";
@@ -41748,7 +42017,7 @@ function renderRmsLeadInspector() {
     return;
   }
   rmsLeadInspector.classList.remove("hidden");
-  const stages = rmsFactoryStages(state.rmsMachine || {});
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   rmsLeadInspector.innerHTML = `
     <div class="rms-inspector-head">
       <div>
@@ -42477,6 +42746,37 @@ function syncMissionPeriodControls() {
     button.classList.toggle("ghost-button", !active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
+}
+
+function rmsActivationDelivery(item = {}) {
+  const metadata = item.state_metadata || item.metadata || item.rms_metadata || {};
+  return {
+    sentAt: item.activation_offer_sent_at || metadata.activation_offer_sent_at || "",
+    channel: item.activation_delivery_channel || metadata.activation_delivery_channel || (item.phone ? "whatsapp" : "email"),
+    offer: item.activation_offer_name || metadata.activation_offer_name || rmsClassifiedProductName(item) || item.product_interest || "Oferta comercial",
+    note: item.activation_offer_note || metadata.activation_offer_note || "",
+  };
+}
+
+function rmsActivationDeliveryMarkup(item = {}) {
+  const delivery = rmsActivationDelivery(item);
+  const sent = Boolean(delivery.sentAt);
+  return `
+    <div class="rms-activation-delivery" data-rms-activation-delivery="${escapeHtml(item.id)}">
+      <div class="rms-activation-delivery-status ${sent ? "is-sent" : "is-pending"}">
+        <strong>${sent ? "Oferta registrada" : "Oferta pendiente"}</strong>
+        <small>${sent ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} · ${formatDate(delivery.sentAt)}` : "Envía la oferta antes de Evaluación"}</small>
+      </div>
+      <div class="rms-activation-delivery-controls">
+        <select data-rms-activation-channel="${escapeHtml(item.id)}" aria-label="Canal de envío para ${escapeHtml(item.name || "lead")}">
+          <option value="whatsapp" ${delivery.channel === "whatsapp" ? "selected" : ""} ${item.phone ? "" : "disabled"}>WhatsApp</option>
+          <option value="email" ${delivery.channel === "email" ? "selected" : ""} ${item.email ? "" : "disabled"}>Email</option>
+        </select>
+        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-send-activation="${escapeHtml(item.id)}">${sent ? "Reenviar" : "Enviar oferta"}</button>
+      </div>
+      <small class="rms-activation-delivery-offer">${escapeHtml(delivery.offer)}${delivery.note ? ` · ${escapeHtml(delivery.note)}` : ""}</small>
+    </div>
+  `;
 }
 
 function enforceRmsFactorySpacing() {
