@@ -235,7 +235,8 @@ html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qo
 html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 2200 !important;
+  /* Este flujo debe cubrir también la cabecera y el contenido de fondo. */
+  z-index: 12000 !important;
   display: grid !important;
   width: 100vw !important;
   height: 100dvh !important;
@@ -248,7 +249,7 @@ html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
 }
 
 html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
-  width: min(1120px, calc(100vw - 36px)) !important;
+  width: min(1040px, calc(100vw - 48px)) !important;
   max-height: min(92dvh, 960px) !important;
   display: grid !important;
   grid-template-rows: auto minmax(0, 1fr) !important;
