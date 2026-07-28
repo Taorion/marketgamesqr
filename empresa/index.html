@@ -6680,10 +6680,18 @@
                   <div>
                     <span class="mono-label" id="affiliateCreateModeLabel">Nuevo afiliado</span>
                     <strong id="affiliateCreateTitle">Registrar afiliado</strong>
+                    <p class="affiliate-create-head-copy">Crea su perfil y deja listo el carnet digital para futuras compras y beneficios.</p>
                   </div>
                   <button class="icon-button" id="affiliateCreateCloseButton" type="button" aria-label="Cerrar formulario de afiliado"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <form class="modal-form affiliate-form" id="affiliateCreateForm">
+                  <div class="affiliate-form-guide span-2">
+                    <span class="affiliate-form-step">01</span>
+                    <div>
+                      <strong>Identifica al afiliado</strong>
+                      <p>Registra sus datos para reconocerlo y enviarle beneficios sin confusiones.</p>
+                    </div>
+                  </div>
                   <label>
                     <span>Nombre completo</span>
                     <input id="affiliateFullNameInput" type="text" autocomplete="name" minlength="3" maxlength="160" required>
@@ -6700,6 +6708,12 @@
                     <span>Email</span>
                     <input id="affiliateEmailInput" type="email" autocomplete="email" maxlength="160" required>
                   </label>
+                  <section class="affiliate-photo-flow span-2" aria-label="Foto opcional para el carnet">
+                    <label>
+                      <span>Foto para el carnet <em>Opcional</em></span>
+                      <input id="affiliatePhotoInput" type="file" accept="image/png,image/jpeg,image/webp">
+                    </label>
+                  </section>
                   <label class="span-2">
                     <span>Intereses y notas</span>
                     <textarea id="affiliateNotesInput" rows="3" placeholder="Ej: cafe, motos, beneficios VIP, cumpleanos, preferencias de compra"></textarea>
@@ -6709,7 +6723,7 @@
                     <div class="modal-button-row">
                       <button class="solid-button" id="affiliateCreateSubmitButton" type="submit">Crear afiliado</button>
                       <button class="ghost-button" type="button" id="affiliateCreateCancelButton">Cancelar</button>
-                      <button class="ghost-button" type="button" id="resetAffiliateFormButton">Limpiar</button>
+                      <button class="ghost-button affiliate-reset-button" type="button" id="resetAffiliateFormButton">Limpiar campos</button>
                     </div>
                   </div>
                 </form>
@@ -7324,7 +7338,7 @@
     </div>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=activation-flow-20260728-v184" defer></script>
+    <script src="js/app.js?v=affiliate-create-20260728-v185" defer></script>
 </body>
 </html>
 

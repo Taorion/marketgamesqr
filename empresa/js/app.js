@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-activation-flow-v184";
+const APP_VERSION = "empresa-20260728-affiliate-create-v185";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -27841,12 +27841,20 @@ function openAffiliateCreateModal(options = {}) {
     resetAffiliateForm();
   }
   affiliateViewSection()?.classList.add("affiliate-modal-open");
+  ensureAffiliateCreateBackdrop().classList.add("is-open");
   affiliateCreatePanel?.classList.add("is-modal-open");
-  window.requestAnimationFrame(() => affiliateFullNameInput?.focus());
+  affiliateCreatePanel?.setAttribute("role", "dialog");
+  affiliateCreatePanel?.setAttribute("aria-modal", "true");
+  window.requestAnimationFrame(() => {
+    if (affiliateCreatePanel) affiliateCreatePanel.scrollTop = 0;
+    affiliateFullNameInput?.focus();
+  });
 }
 
 function closeAffiliateCreateModal(options = {}) {
   affiliateCreatePanel?.classList.remove("is-modal-open");
+  affiliateCreatePanel?.removeAttribute("aria-modal");
+  document.getElementById("affiliateCreateBackdrop")?.classList.remove("is-open");
   if (!document.getElementById("affiliateOperatePanel")?.classList.contains("is-modal-open")) {
     affiliateViewSection()?.classList.remove("affiliate-modal-open");
   }
@@ -28178,7 +28186,7 @@ function stopAffiliateCamera() {
 function syncAffiliateStepper() {
   const hasIdentity = Boolean(affiliateFullNameInput?.value.trim());
   const hasPhoto = Boolean(affiliateCapturedPhotoDataUrl || affiliatePhotoInput?.files?.[0]);
-  const steps = document.querySelectorAll(".affiliate-step");
+  const steps = affiliateCreatePanel?.querySelectorAll(".affiliate-step") || [];
   steps.forEach((step, index) => {
     step.classList.toggle("is-active", (index === 0 && !hasIdentity) || (index === 1 && hasIdentity && !hasPhoto) || (index === 2 && hasIdentity && hasPhoto));
     step.classList.toggle("is-complete", (index === 0 && hasIdentity) || (index === 1 && hasPhoto));
@@ -28375,7 +28383,11 @@ function setupAffiliatePhotoCaptureUi() {
 async function submitAffiliateForm(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
+  if (!affiliateCreateForm?.reportValidity()) return;
   const editingId = state.affiliateEditingId;
+  const submitButton = affiliateCreateSubmitButton;
+  if (submitButton?.disabled) return;
+  if (submitButton) submitButton.disabled = true;
   affiliateCreateMessage.textContent = editingId ? "Guardando afiliado..." : "Creando afiliado...";
 
   try {
@@ -28423,6 +28435,8 @@ async function submitAffiliateForm(event) {
     showFeedback(editingId ? "Afiliado actualizado correctamente." : "Afiliado creado correctamente.");
   } catch (error) {
     affiliateCreateMessage.textContent = error.message;
+  } finally {
+    if (submitButton) submitButton.disabled = false;
   }
 }
 
@@ -34372,6 +34386,19 @@ function ensureAffiliateOperationBackdrop() {
   backdrop.className = "affiliate-operation-backdrop";
   backdrop.addEventListener("click", (event) => {
     if (event.target === backdrop) closeAffiliateOperationModal();
+  });
+  document.body.appendChild(backdrop);
+  return backdrop;
+}
+
+function ensureAffiliateCreateBackdrop() {
+  let backdrop = document.getElementById("affiliateCreateBackdrop");
+  if (backdrop) return backdrop;
+  backdrop = document.createElement("div");
+  backdrop.id = "affiliateCreateBackdrop";
+  backdrop.className = "affiliate-operation-backdrop affiliate-create-backdrop";
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) closeAffiliateCreateModal();
   });
   document.body.appendChild(backdrop);
   return backdrop;

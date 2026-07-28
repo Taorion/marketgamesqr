@@ -63429,6 +63429,229 @@ html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-
   html body > #affiliateOperatePanel.is-modal-open .affiliate-card-actions { grid-template-columns: 1fr !important; }
 }
 
+/* Affiliate create modal v185: spacious, independent and calm registration flow. */
+html body > #affiliateCreateBackdrop.is-open {
+  display: block !important;
+  background: rgba(3, 23, 57, .54) !important;
+  backdrop-filter: blur(8px) saturate(.9) !important;
+}
+html body > #affiliateCreatePanel.is-modal-open {
+  z-index: 1102 !important;
+  width: min(760px, calc(100vw - 48px)) !important;
+  max-height: min(820px, calc(100dvh - 40px)) !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  box-shadow: 0 36px 100px rgba(1, 22, 57, .34) !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .table-card-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  padding: 28px 32px 22px !important;
+  border: 0 !important;
+  background: linear-gradient(130deg, #e9f8ff 0%, #f8fcff 58%, #e5f7ff 100%) !important;
+  box-shadow: 0 1px 0 rgba(0, 191, 229, .42) !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .table-card-head > div { display: grid; gap: 6px; min-width: 0; }
+html body > #affiliateCreatePanel.is-modal-open #affiliateCreateTitle {
+  font-size: clamp(1.42rem, 2vw, 1.8rem) !important;
+  line-height: 1.1 !important;
+  color: #052a6b !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-create-head-copy {
+  max-width: 540px;
+  margin: 0 !important;
+  color: #506a8d !important;
+  font-size: .92rem !important;
+  line-height: 1.5 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .icon-button {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, .78) !important;
+  border-color: rgba(5, 42, 107, .14) !important;
+  color: #0c56a8 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  padding: 4px 32px 28px !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form > :where(.affiliate-form-guide, .affiliate-photo-flow, .modal-actions, .span-2) {
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form-guide {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 24px 0 2px;
+  border-bottom: 1px solid #e6eef6;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form-guide > div { display: grid; gap: 4px; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form-guide strong {
+  color: #072d6f !important;
+  font-size: 1rem;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form-guide p {
+  margin: 0 !important;
+  color: #607898 !important;
+  font-size: .85rem !important;
+  line-height: 1.45 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form-step {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0b57bd, #14bfe5);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form > label {
+  display: grid;
+  gap: 7px;
+  min-width: 0 !important;
+  color: #193f76 !important;
+  font-size: .82rem;
+  font-weight: 750;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form input,
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form textarea {
+  min-height: 48px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #cfdeee !important;
+  border-radius: 12px !important;
+  background: #fbfdff !important;
+  color: #062b68 !important;
+  box-shadow: none !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form textarea {
+  min-height: 88px !important;
+  resize: vertical;
+  line-height: 1.5;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-form :is(input, textarea):focus {
+  border-color: #18bfe5 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 4px rgba(24, 191, 229, .12) !important;
+  outline: 0;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-flow {
+  display: grid;
+  gap: 12px;
+  padding: 22px 0 20px !important;
+  border-top: 1px solid #e6eef6;
+  border-bottom: 1px solid #e6eef6;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-flow > label { display: none !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-stepper {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 0 4px !important;
+  padding: 0 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step {
+  min-width: 0;
+  display: grid !important;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step + .affiliate-step {
+  border-left: 1px solid #e2ebf4 !important;
+  padding-left: 12px !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step-number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #eaf3ff !important;
+  color: #0d5ebd !important;
+  font-size: .72rem;
+  font-weight: 800;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step.is-active .affiliate-step-number,
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step.is-complete .affiliate-step-number {
+  background: linear-gradient(135deg, #0b57bd, #14bfe5) !important;
+  color: #fff !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step strong { display: block; color: #173b72 !important; font-size: .78rem; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-step p { display: none; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-capture {
+  min-height: 180px !important;
+  border: 1px dashed #b8d3ec !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #f8fcff, #effaff) !important;
+  box-shadow: none !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .affiliate-camera-preview,
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-preview { height: 220px !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-placeholder { min-height: 180px !important; padding: 22px !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-placeholder .material-symbols-outlined { width: 44px; height: 44px; font-size: 23px; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-placeholder strong { color: #123b76 !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-placeholder p,
+html body > #affiliateCreatePanel.is-modal-open .section-footnote { color: #617897 !important; font-size: .82rem !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-actions { display: flex !important; flex-wrap: wrap; gap: 8px !important; margin-top: 12px; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-actions .ghost-button {
+  min-height: 40px;
+  padding-inline: 12px;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #0b4e9e !important;
+  border-color: #c9ddf0 !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .section-footnote { margin: 0 !important; }
+html body > #affiliateCreatePanel.is-modal-open .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 !important;
+  padding: 20px 0 2px !important;
+  border: 0 !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.82), #fff 32%) !important;
+}
+html body > #affiliateCreatePanel.is-modal-open .error-line { margin: 0 !important; min-width: 0; }
+html body > #affiliateCreatePanel.is-modal-open .modal-button-row { display: flex !important; flex-wrap: wrap; justify-content: flex-end !important; gap: 9px !important; }
+html body > #affiliateCreatePanel.is-modal-open .modal-button-row .solid-button { min-height: 46px; padding-inline: 18px; border-radius: 12px !important; box-shadow: 0 12px 24px rgba(3, 83, 184, .2) !important; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-reset-button { color: #667e9c !important; border-color: transparent !important; background: transparent !important; }
+@media (max-width: 720px) {
+  html body > #affiliateCreatePanel.is-modal-open { width: calc(100vw - 20px) !important; max-height: calc(100dvh - 20px) !important; border-radius: 18px !important; }
+  html body > #affiliateCreatePanel.is-modal-open .table-card-head { padding: 22px 20px 18px !important; }
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-form { grid-template-columns: 1fr !important; padding: 0 20px 20px !important; }
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-stepper { grid-template-columns: 1fr !important; }
+  html body > #affiliateCreatePanel.is-modal-open .affiliate-step + .affiliate-step { border-left: 0 !important; border-top: 1px solid #e2ebf4 !important; padding: 10px 0 0 !important; }
+  html body > #affiliateCreatePanel.is-modal-open .modal-actions { align-items: stretch; flex-direction: column; }
+  html body > #affiliateCreatePanel.is-modal-open .modal-button-row { justify-content: stretch !important; }
+  html body > #affiliateCreatePanel.is-modal-open .modal-button-row > button { flex: 1 1 auto; }
+}
+
 /* Revenue dashboard v241: one clear workspace, a compact block picker and readable cards. */
 html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
   max-width: 1180px !important;
