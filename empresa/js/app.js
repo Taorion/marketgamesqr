@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-breathing-room-v175";
+const APP_VERSION = "empresa-20260728-activation-flow-v176";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -14961,7 +14961,7 @@ function ensureGamingCenterUx() {
   if (!view || !menu) return;
   state.ticketCenterTab = "trivia";
   ensureGamingCenterUxStyles();
-  if (!view.querySelector(".gaming-center-command-center")) {
+  if (!view.querySelector(".gaming-center-command-center") && !view.querySelector(":scope > .view-head")) {
     const gamingViewHead = view.querySelector(":scope > .view-head");
     (gamingViewHead || strategicQrKpiGrid)?.insertAdjacentHTML("afterend", `
       <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
@@ -20004,6 +20004,12 @@ function renderInventoryView() {
       }
     });
   });
+  const triviaPanel = view.querySelector('.ticket-center-panel[data-ticket-panel="trivia"]');
+  const primaryActivationList = triviaPanel?.querySelector(".gaming-activation-list-card");
+  const triviaContext = triviaPanel?.querySelector(":scope > .gaming-center-panel-context");
+  if (triviaPanel && primaryActivationList && primaryActivationList.previousElementSibling !== triviaContext) {
+    triviaPanel.insertBefore(primaryActivationList, triviaContext?.nextElementSibling || triviaPanel.firstElementChild);
+  }
   inventoryTable.querySelectorAll("[data-inventory-detail]").forEach((button) => {
     button.addEventListener("click", () => openInventoryProductDetail(button.dataset.inventoryDetail));
   });
