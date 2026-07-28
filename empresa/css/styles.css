@@ -63699,6 +63699,9 @@ html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-preview {
   box-shadow: 0 8px 18px rgba(4, 66, 145, .14) !important;
 }
 html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-clear { white-space: nowrap; }
+html body > #affiliateCreatePanel.is-modal-open .affiliate-photo-clear[hidden] {
+  display: none !important;
+}
 html body > #affiliateCreatePanel.is-modal-open .affiliate-profile-details {
   display: grid;
   gap: 14px;
