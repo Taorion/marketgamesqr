@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-activation-builder-polish-v180";
+const APP_VERSION = "empresa-20260728-activation-builder-catalog-fix-v181";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -15115,7 +15115,15 @@ function ensureGamingCenterUx() {
       </footer>
     `);
   }
-  if (activationTypePicker && !view.querySelector(".gaming-activation-catalog-tools")) {
+  // El constructor se traslada al modal al abrirse. La comprobación debe vivir
+  // junto al formulario, no en la vista de fondo; de otro modo cada refresco
+  // volvía a insertar buscadores, categorías y el resumen de la dinámica.
+  const activationBuilderRoot = triviaLauncherForm || activationTypePicker?.closest("form");
+  const existingCatalogTools = Array.from(activationBuilderRoot?.querySelectorAll(".gaming-activation-catalog-tools") || []);
+  const existingSelectedActivation = Array.from(activationBuilderRoot?.querySelectorAll("[data-gaming-selected-activation]") || []);
+  existingCatalogTools.slice(1).forEach((element) => element.remove());
+  existingSelectedActivation.slice(1).forEach((element) => element.remove());
+  if (activationTypePicker && !activationBuilderRoot?.querySelector(".gaming-activation-catalog-tools")) {
     activationTypePicker.insertAdjacentHTML("beforebegin", `
       <section class="full gaming-activation-catalog-tools" aria-label="Explorar catálogo de activaciones">
         <label class="gaming-activation-search"><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-activation-search placeholder="Buscar trivia, ruleta, encuesta, juego..." aria-label="Buscar dinámica"></label>
