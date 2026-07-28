@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-rms-breathing-room-v172";
+const APP_VERSION = "empresa-20260727-rms-breathing-room-v173";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -39476,7 +39476,7 @@ function ensureRmsStationUxStyles() {
   `);
   rules.push(`
     html body[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] { align-content: start !important; gap: 12px !important; padding: 10px 12px 16px !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console { gap: 12px !important; margin: 0 !important; padding: 0 !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console { gap: clamp(26px, 3.5vw, 52px) !important; margin: 0 !important; padding: clamp(26px, 4vw, 58px) !important; }
     html body[data-current-view="rms-machine"] .portal-shell .view-section[data-view="rms-machine"] > .rms-machine-head.rms-machine-commandbar { width: 100% !important; min-height: 64px !important; height: 64px !important; max-height: 64px !important; display: flex !important; grid-template-columns: none !important; grid-template-rows: none !important; align-content: center !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 8px 10px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy { min-width: 0 !important; display: flex !important; align-items: center !important; gap: 10px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-machine-head-copy > div { min-width: 0 !important; display: grid !important; gap: 2px !important; }
@@ -39484,7 +39484,7 @@ function ensureRmsStationUxStyles() {
     html body[data-current-view="rms-machine"] .portal-shell .rms-machine-commandbar .rms-more-actions { width: 40px !important; min-width: 40px !important; max-width: 40px !important; flex: 0 0 40px !important; position: relative !important; inset: auto !important; order: 3 !important; margin: 0 !important; transform: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell { width: 100% !important; min-width: 0 !important; display: grid !important; gap: 9px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console.is-station-mode > .rms-stage-slider-shell { display: none !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 72px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 16px !important; padding: 10px 2px 12px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 72px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 16px !important; padding: 0 0 20px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title { min-width: 0 !important; display: flex !important; align-items: center !important; gap: 12px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 46px !important; height: 46px !important; flex: 0 0 46px !important; display: grid !important; place-items: center !important; border-radius: 14px !important; background: #0759d6 !important; color: #fff !important; font-size: 25px !important; box-shadow: 0 9px 20px rgba(5, 42, 107, .2) !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > div { min-width: 0 !important; display: grid !important; gap: 2px !important; }
@@ -39788,15 +39788,17 @@ function ensureRmsStationUxStyles() {
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
       display: flex !important;
       flex-direction: column !important;
-      gap: 14px !important;
+      gap: clamp(26px, 3.5vw, 52px) !important;
     }
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-station-workspace { order: 0 !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
       order: 1 !important;
+      width: 100% !important;
       margin: 0 !important;
-      padding: 0 0 12px !important;
-      border-top: 0 !important;
-      border-bottom: 1px solid #dce8f4 !important;
+      padding: clamp(24px, 3vw, 38px) !important;
+      border-top: 1px solid var(--portal-fluid-line) !important;
+      border-bottom: 1px solid var(--portal-fluid-line) !important;
+      background: linear-gradient(105deg, rgba(245, 252, 255, .72), rgba(255, 255, 255, .18)) !important;
     }
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell { order: 2 !important; }
   `);
