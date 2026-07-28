@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260727-catalog-operating-flow-v170";
+const APP_VERSION = "empresa-20260727-activation-list-flow-v171";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -23515,9 +23515,9 @@ function renderTriviaLaunchers() {
             <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
             <div class="activation-meta-line">
               <span>${escapeHtml(activationTypeLabel(item.activation_type))}</span>
-              <span>Creada ${escapeHtml(formatDate(item.created_at))}</span>
+              <span>${escapeHtml(item.campaign_name || "Sin campaña")}</span>
             </div>
-            <small>${escapeHtml(activationParticipantPolicyLabel(item))}</small>
+            <small>Creada ${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(activationParticipantPolicyLabel(item))}</small>
           </div>
         </td>
         <td>
@@ -23528,22 +23528,15 @@ function renderTriviaLaunchers() {
         </td>
         <td>
           <div class="activation-outcome-cell">
-            <span><strong>${escapeHtml(attemptsCount)}</strong> leads</span>
-            <span><strong>${escapeHtml(winnersCount)}</strong> tickets</span>
-            <span><strong>${escapeHtml(rate)}%</strong> rendimiento</span>
+            <strong>${escapeHtml(attemptsCount)} leads · ${escapeHtml(winnersCount)} tickets</strong>
+            <small>${escapeHtml(rate)}% de conversión</small>
           </div>
         </td>
-        <td>
-          <div class="activation-campaign-cell">
-            <strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong>
-            <small>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</small>
-          </div>
-        </td>
-        <td><button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Ver detalle</button></td>
+        <td><button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button></td>
       </tr>
     `;
     }).join("")
-    : '<tr><td colspan="7" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
+    : '<tr><td colspan="4" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
 
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {

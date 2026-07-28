@@ -13,6 +13,178 @@
   --portal-fluid-shadow: 0 22px 56px rgba(19, 76, 128, .10);
 }
 
+/* Activations v171 -----------------------------------------------------------
+ * The initial surface is intentionally only a calm operational list.  Creation,
+ * editing, sharing and performance stay available, but live in focused
+ * interstitial flows instead of competing for attention in the first view. */
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 42px) 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  padding: 0 0 clamp(18px, 2.3vw, 30px) !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head h3 {
+  margin: 4px 0 6px !important;
+  font-size: clamp(1.35rem, 2vw, 1.8rem) !important;
+  letter-spacing: -.028em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-card-subtitle {
+  max-width: 68ch !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 clamp(20px, 2.5vw, 34px) !important;
+  padding: 0 0 clamp(18px, 2vw, 26px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label {
+  flex: 1 1 min(360px, 100%) !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select {
+  flex: 0 1 200px !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  width: 100% !important;
+  min-width: 700px !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td {
+  padding: 18px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  background: transparent !important;
+  vertical-align: middle !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th {
+  padding-top: 0 !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .69rem !important;
+  letter-spacing: .04em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:first-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:first-child {
+  width: 48% !important;
+  padding-left: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(2) { width: 18% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3) { width: 24% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:last-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:last-child {
+  width: 10% !important;
+  padding-right: 0 !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row {
+  cursor: pointer !important;
+  transition: background-color .18s ease, transform .18s ease !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:focus-visible {
+  background: linear-gradient(90deg, rgba(238, 250, 255, .9), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell small {
+  color: var(--portal-fluid-muted) !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: .92rem !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+    align-items: stretch !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain !important;
+    scrollbar-gutter: stable !important;
+  }
+}
+
 /* Activations v168 -----------------------------------------------------------
  * The list owns its header action; the creation workflow is a true portal
  * interstitial, never a child of the scrolling activations area. */
@@ -1903,5 +2075,173 @@ html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositio
   ) {
     padding-inline: 0 !important;
     box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+  }
+}
+
+/* Activations v171 finale: these rules are deliberately last because older
+ * portal layers still describe the former wide activation dashboard. */
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 42px) 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  padding: 0 0 clamp(18px, 2.3vw, 30px) !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head h3 {
+  margin: 4px 0 6px !important;
+  font-size: clamp(1.35rem, 2vw, 1.8rem) !important;
+  letter-spacing: -.028em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 clamp(20px, 2.5vw, 34px) !important;
+  padding: 0 0 clamp(18px, 2vw, 26px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label {
+  display: grid !important;
+  flex: 1 1 min(360px, 100%) !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select {
+  flex: 0 1 200px !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  width: 100% !important;
+  min-width: 700px !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td {
+  padding: 18px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  vertical-align: middle !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th {
+  padding-top: 0 !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .69rem !important;
+  letter-spacing: .04em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:first-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:first-child {
+  width: 48% !important;
+  padding-left: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(2) { width: 18% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3) { width: 24% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:last-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:last-child {
+  width: 10% !important;
+  padding-right: 0 !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row {
+  cursor: pointer !important;
+  transition: background-color .18s ease !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:focus-visible {
+  background: linear-gradient(90deg, rgba(238, 250, 255, .9), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell small {
+  color: var(--portal-fluid-muted) !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: .92rem !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
   }
 }
