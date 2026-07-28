@@ -35955,6 +35955,34 @@ function ensureAffiliatesUxStyles() {
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
     }
+    .view-section[data-view="affiliates"] #affiliateTable .affiliate-table-main {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      outline: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      cursor: pointer !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateTable .affiliate-table-main strong {
+      color: #092f70 !important;
+      text-decoration: none !important;
+      transition: color .18s ease, text-decoration-color .18s ease !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateTable .affiliate-table-main small {
+      color: #6380a0 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateTable .affiliate-table-main:hover strong,
+    .view-section[data-view="affiliates"] #affiliateTable .affiliate-table-main:focus-visible strong {
+      color: #0759d6 !important;
+      text-decoration: underline !important;
+      text-decoration-color: rgba(0, 191, 229, .68) !important;
+      text-underline-offset: 4px !important;
+    }
     .view-section[data-view="affiliates"] .affiliate-row-actions {
       display: grid !important;
       grid-template-columns: repeat(2, minmax(74px, 1fr)) !important;
