@@ -38632,6 +38632,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   } else if (stage.key === "curaduria") {
     stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
   }
+  const qualityFirst = stage.key === "alimentacion";
   return `
     <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
       <td>
@@ -38643,6 +38644,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
         <strong>${escapeHtml(item.name || "Contacto")}</strong>
         <small>${escapeHtml(contact)}</small>
       </td>
+      ${qualityFirst ? stationControl : ""}
       <td>
         <span>${escapeHtml(origin)}</span>
         <small>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</small>
@@ -38651,7 +38653,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.stage_label || stage.label || "")}</small>
       </td>
-      ${stationControl}
+      ${qualityFirst ? "" : stationControl}
       <td>
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
         <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
@@ -38678,6 +38680,13 @@ function renderRmsStationLeanOnly() {
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const visual = rmsStationVisualMeta(phase);
   const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
+  const isCurationStation = phase === "alimentacion";
+  const pendingQualityCount = isCurationStation
+    ? rows.filter((item) => !rmsLeadQualityValue(item)).length
+    : 0;
+  const stationTableHeadMarkup = isCurationStation
+    ? `<th>Lead</th><th class="rms-lean-quality-heading">Asigna calidad</th><th>Origen</th><th>Interés</th>`
+    : `<th>Lead</th><th>Origen</th><th>Interés</th><th>${escapeHtml(stationControlLabel)}</th>`;
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -38715,6 +38724,16 @@ function renderRmsStationLeanOnly() {
           <button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")} <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
         </div>
       </header>
+      ${isCurationStation ? `
+        <section class="rms-lean-quality-guide" aria-label="Prioridad de Curaduría">
+          <span class="material-symbols-outlined" aria-hidden="true">grade</span>
+          <div>
+            <strong>Primero, asigna la calidad del lead</strong>
+            <small>Elige Alta, Media o Baja antes de enviarlo al Clasificador. La calidad define el orden de trabajo.</small>
+          </div>
+          <span class="rms-lean-quality-guide-count"><strong>${pendingQualityCount.toLocaleString("es-CO")}</strong> pendiente${pendingQualityCount === 1 ? "" : "s"}</span>
+        </section>
+      ` : ""}
       <div class="rms-lean-station-tools">
         <label>
           <span class="material-symbols-outlined" aria-hidden="true">search</span>
@@ -38730,10 +38749,7 @@ function renderRmsStationLeanOnly() {
           <thead>
             <tr>
               <th class="rms-lean-selection-heading" aria-label="Seleccionar"></th>
-              <th>Lead</th>
-              <th>Origen</th>
-              <th>Interés</th>
-              <th>${escapeHtml(stationControlLabel)}</th>
+              ${stationTableHeadMarkup}
               <th>Acciones</th>
             </tr>
           </thead>
