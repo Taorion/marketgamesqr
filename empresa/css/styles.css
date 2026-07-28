@@ -65010,6 +65010,38 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   }
 }
 
+/* Final cascade: preserve the activation gradient while keeping its white copy legible. */
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  background: linear-gradient(118deg, #063b97 0%, #075fd1 54%, #08a6df 100%) !important;
+  border-bottom-color: rgba(187, 241, 255, .78) !important;
+}
+
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head h3,
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head p,
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head .mono-label {
+  color: #fff !important;
+  text-shadow: 0 1px 1px rgba(1, 33, 88, .22) !important;
+}
+
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head .mono-label {
+  padding: 7px 12px !important;
+  border: 1px solid rgba(255, 255, 255, .58) !important;
+  border-radius: 999px !important;
+  background: rgba(2, 42, 107, .32) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .17) !important;
+}
+
+#gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button {
+  border-color: rgba(255, 255, 255, .62) !important;
+  color: #fff !important;
+  background: rgba(2, 42, 107, .22) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main > .material-symbols-outlined,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main > .material-symbols-outlined {
+  color: #fff !important;
+}
+
 /* Activation builder: one quiet, guided flow inside the independent overlay. */
 #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
   width: min(1120px, calc(100vw - 48px)) !important;
