@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-affiliate-create-v186";
+const APP_VERSION = "empresa-20260728-station-focus-v187";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -39156,8 +39156,7 @@ function renderRmsStationLeanOnly() {
   }
   renderRmsMachineFilterOptions(stages);
   if (!rmsStationWorkspace) return;
-  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
-  consoleShell?.classList.add("is-station-mode");
+  syncRmsStationShellMode(true);
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
   rmsStationWorkspace.innerHTML = `
@@ -39270,6 +39269,7 @@ function renderRmsStationLeanOnly() {
 
 function renderRmsStationOnly() {
   try {
+    syncRmsStationShellMode(true);
     if (state.rmsQualityControlKey) {
       renderRmsQualityControlDashboard(state.rmsQualityControlKey);
       return;
@@ -40622,8 +40622,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   if (!rmsStationWorkspace) return;
   ensureRmsStationUxStyles();
   enforceRmsFactorySpacing();
-  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
-  consoleShell?.classList.toggle("is-station-mode", Boolean(state.rmsStationScreenOpen));
+  syncRmsStationShellMode(Boolean(state.rmsStationScreenOpen));
   if (!stages.length || !state.rmsStationScreenOpen) {
     rmsStationWorkspace.innerHTML = "";
     rmsStationWorkspace.classList.add("hidden");
@@ -40908,6 +40907,29 @@ function resetRmsStationMode() {
     state.rmsMachineScope = { mode: "machine", phase: "", lite: false };
   }
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  syncRmsStationShellMode(false);
+}
+
+function syncRmsStationShellMode(isStationMode = Boolean(state.rmsStationScreenOpen)) {
+  const consoleShell = rmsStationWorkspace?.closest(".rms-factory-console");
+  if (!consoleShell) return;
+
+  consoleShell.classList.toggle("is-station-mode", isStationMode);
+  const overviewSections = [
+    consoleShell.querySelector(":scope > .rms-stage-slider-shell"),
+    consoleShell.querySelector(":scope > .rms-board-tools"),
+  ].filter(Boolean);
+
+  overviewSections.forEach((section) => {
+    section.toggleAttribute("hidden", isStationMode);
+    section.toggleAttribute("inert", isStationMode);
+    section.setAttribute("aria-hidden", isStationMode ? "true" : "false");
+    if (isStationMode) {
+      section.style.setProperty("display", "none", "important");
+    } else {
+      section.style.removeProperty("display");
+    }
+  });
 }
 
 function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, operation = {}) {
@@ -41553,6 +41575,7 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsQualityControlKey = "";
   state.rmsMachineFilters.phase = phase;
   state.rmsStationScreenOpen = true;
+  syncRmsStationShellMode(true);
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
   state.rmsStationListDeferred = false;
   if (state.rmsStationFastRenderTimer) {
