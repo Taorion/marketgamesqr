@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
-  <link rel="stylesheet" href="css/communications-flow.css?v=20260728-v1">
+  <link rel="stylesheet" href="css/communications-flow.css?v=20260729-media-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -7443,10 +7443,26 @@
         <section class="communication-social-fields hidden">
           <label><span>Descripción para redes</span><textarea id="communicationSocialCopyInput" rows="6" placeholder="Escribe el texto de publicación, llamado a la acción y hashtags."></textarea></label>
         </section>
-        <div class="communication-composer-grid communication-media-fields">
-          <label><span>URL de imagen</span><input id="communicationImageInput" type="url" placeholder="https://..."></label>
-          <label><span>Enlace de acción</span><input id="communicationActionUrlInput" type="url" placeholder="https://..."></label>
-        </div>
+        <section class="communication-media-section" aria-labelledby="communicationMediaTitle">
+          <div class="communication-media-section-head">
+            <div>
+              <span class="mono-label">Imagen principal y adjuntos</span>
+              <strong id="communicationMediaTitle">Prepara las imágenes de tu comunicación</strong>
+              <small>En email se adjuntan y la primera se muestra dentro del mensaje. En redes quedan listas para descargar y publicar.</small>
+            </div>
+          </div>
+          <div class="communication-media-controls">
+            <label class="communication-media-upload-control">
+              <input id="communicationImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              <span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>
+              <span><strong>Subir imágenes</strong><small>JPG, PNG, WEBP o GIF · hasta 3 archivos de 3 MB</small></span>
+            </label>
+            <label class="communication-media-url-control"><span>O usa una URL de imagen</span><input id="communicationImageInput" type="url" placeholder="https://..."></label>
+            <label class="communication-action-url-control"><span>Enlace de acción</span><input id="communicationActionUrlInput" type="url" placeholder="https://..."></label>
+          </div>
+          <input id="communicationMediaAssetsInput" type="hidden" value="[]">
+          <div class="communication-media-preview-list" id="communicationMediaPreview" aria-live="polite"></div>
+        </section>
         <div class="communication-composer-preview" id="communicationComposerPreview"></div>
         <footer class="modal-actions">
           <p class="error-line" id="communicationComposerMessage"></p>
@@ -7457,7 +7473,7 @@
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
     <script src="js/app.js?v=lead-rms-journey-20260728-v189" defer></script>
-    <script src="js/communications.js?v=20260728-v1" defer></script>
+    <script src="js/communications.js?v=20260729-media-v1" defer></script>
 </body>
 </html>
 

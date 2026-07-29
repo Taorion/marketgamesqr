@@ -8,7 +8,15 @@ function businessIdFor(req) {
   return req.user.business_id;
 }
 
+const imageDataUrl = z.string().regex(/^data:image\/(png|jpe?g|webp|gif);base64,[a-z0-9+/=\s]+$/i, "La imagen subida no tiene un formato válido.").max(4_200_000, "Cada imagen puede pesar hasta 3 MB.");
 const optionalUrl = z.string().trim().url().optional().nullable().or(z.literal(""));
+const optionalImageSource = z.union([optionalUrl, imageDataUrl]).optional().nullable();
+const mediaAssetSchema = z.object({
+  source: z.union([z.string().trim().url(), imageDataUrl]),
+  name: z.string().trim().min(1).max(160).optional(),
+  type: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(),
+  size: z.number().int().positive().max(3 * 1024 * 1024).optional(),
+});
 const communicationBaseSchema = z.object({
   title: z.string().trim().min(3).max(180),
   communication_type: z.enum(["EMAIL", "SOCIAL", "MIXED"]).default("EMAIL"),
@@ -19,10 +27,15 @@ const communicationBaseSchema = z.object({
   subject: z.string().trim().max(220).optional().nullable(),
   email_body: z.string().trim().max(12000).optional().nullable(),
   social_copy: z.string().trim().max(5000).optional().nullable(),
-  image_url: optionalUrl,
+  image_url: optionalImageSource,
   action_url: optionalUrl,
   audience_filters: z.record(z.string(), z.unknown()).optional().default({}),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
+}).superRefine((body, ctx) => {
+  const media = body.metadata?.media_assets;
+  if (media === undefined) return;
+  const parsed = z.array(mediaAssetSchema).max(3, "Puedes adjuntar hasta 3 imágenes por comunicación.").safeParse(media);
+  if (!parsed.success) parsed.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ["metadata", "media_assets", ...issue.path] }));
 });
 const communicationSchema = communicationBaseSchema.superRefine((body, ctx) => {
   if (["EMAIL", "MIXED"].includes(body.communication_type) && (!body.subject || !body.email_body)) {

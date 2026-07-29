@@ -20,8 +20,36 @@ function personalize(value, contact) {
     .replace(/{{\s*interes\s*}}/gi, contact.top_interest || "nuestra oferta");
 }
 
-function buildEmailMarkup({ title, body, imageUrl, actionUrl }) {
-  const image = imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}" style="display:block;width:100%;max-width:560px;border-radius:18px;margin:0 auto 24px;" />` : "";
+function normalizeMediaAssets(communication) {
+  const saved = Array.isArray(communication?.metadata?.media_assets) ? communication.metadata.media_assets : [];
+  const unique = [];
+  const seen = new Set();
+  [...saved, communication?.image_url ? { source: communication.image_url } : null].filter(Boolean).forEach((asset) => {
+    const source = String(asset?.source || "").trim();
+    if (!source || seen.has(source)) return;
+    seen.add(source);
+    unique.push({ source, name: String(asset?.name || "").trim(), type: String(asset?.type || "").trim() });
+  });
+  return unique.slice(0, 3);
+}
+
+function imageExtension(type = "") {
+  return ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" }[type] || "png");
+}
+
+function makeEmailAttachments(assets = []) {
+  return assets.map((asset, index) => {
+    const cid = index === 0 ? "communication-image" : undefined;
+    const source = String(asset.source || "");
+    const match = source.match(/^data:(image\/(?:png|jpe?g|webp|gif));base64,([a-z0-9+/=\s]+)$/i);
+    const filename = asset.name || `comunicacion-${index + 1}.${imageExtension(match?.[1] || asset.type)}`;
+    if (match) return { content: match[2].replace(/\s/g, ""), filename, content_id: cid, content_type: match[1] };
+    return { path: source, filename, ...(cid ? { content_id: cid } : {}) };
+  });
+}
+
+function buildEmailMarkup({ title, body, hasInlineImage, actionUrl }) {
+  const image = hasInlineImage ? `<img src="cid:communication-image" alt="${escapeHtml(title)}" style="display:block;width:100%;max-width:560px;border-radius:18px;margin:0 auto 24px;" />` : "";
   const action = actionUrl ? `<p style="margin:28px 0 0"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;background:#0759d6;color:#fff;padding:13px 20px;border-radius:12px;text-decoration:none;font-weight:700">Ver información</a></p>` : "";
   return `<!doctype html><html><body style="margin:0;background:#f4f9fc;color:#052a6b;font-family:Arial,sans-serif"><main style="max-width:620px;margin:24px auto;background:#fff;padding:36px;border-radius:22px">${image}<h1 style="margin:0 0 16px;font-size:26px;line-height:1.15;color:#052a6b">${escapeHtml(title)}</h1><div style="font-size:16px;line-height:1.6;color:#294b5e">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>${action}</main></body></html>`;
 }
@@ -189,12 +217,15 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     }
     const subject = personalize(communication.subject, contact);
     const message = personalize(communication.email_body, contact);
+    const mediaAssets = normalizeMediaAssets(communication);
+    const attachments = makeEmailAttachments(mediaAssets);
     try {
       const provider = await sendBusinessCommunicationEmail({
         to: contact.email,
         subject,
         text: message,
-        html: buildEmailMarkup({ title: subject, body: message, imageUrl: communication.image_url, actionUrl: communication.action_url }),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: communication.action_url }),
+        attachments,
       });
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });
       await logLeadCommunication({ businessId, contact, communication, status: 'SENT', message, userId });

@@ -14,7 +14,7 @@ function deliveryError(message) {
   return error;
 }
 
-async function sendBusinessCommunicationEmail({ to, subject, text, html, replyTo }) {
+async function sendBusinessCommunicationEmail({ to, subject, text, html, replyTo, attachments = [] }) {
   if (!env.resendApiKey) {
     throw serviceUnavailable("El envío masivo por email requiere configurar RESEND_API_KEY y un remitente verificado.");
   }
@@ -32,6 +32,7 @@ async function sendBusinessCommunicationEmail({ to, subject, text, html, replyTo
       subject,
       text,
       html,
+      ...(attachments.length ? { attachments } : {}),
       tags: [{ name: "module", value: "business-communications" }],
     }),
   });
