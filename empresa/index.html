@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
   <link rel="stylesheet" href="css/communications-flow.css?v=20260729-recipient-checks-v3">
+  <link rel="stylesheet" href="css/revenue-center.css?v=20260729-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -363,7 +364,7 @@
 
           <section class="view-section dashboard-builder-mode" data-view="dashboard" hidden>
             <div class="view-head dashboard-revenue-head">
-              <div>
+              <div class="dashboard-revenue-copy">
                 <h2>Centro de Revenue</h2>
                 <p>Dashboard visual para leer números, gráficas y tablas. Agrega bloques, ciérralos cuando no los necesites y exporta CSV para análisis.</p>
               </div>
@@ -392,10 +393,10 @@
 
             <section class="dashboard-builder-shell" id="dashboardBuilderShell">
               <div class="dashboard-builder-head">
-                <div>
-                  <span class="mono-label">Centro simple + bloques</span>
-                  <h3>Construye tu tablero con números, gráficas y tablas</h3>
-                  <p>Elige un perfil preconfigurado o arma tu vista. Cada bloque se puede cerrar, mover y exportar en CSV.</p>
+                <div class="dashboard-builder-intro">
+                  <span class="mono-label">Lectura personalizable</span>
+                  <h3>Elige la vista que necesitas hoy</h3>
+                  <p>Empieza con un perfil y agrega solo los análisis que te ayuden a tomar una decisión.</p>
                 </div>
                 <div class="dashboard-profile-tabs" id="dashboardProfileTabs" aria-label="Perfiles de dashboard">
                   <button type="button" data-dashboard-profile="marketing">Marketing</button>
@@ -408,7 +409,7 @@
 
               <div class="dashboard-builder-layout" data-quiet-zone-ignore>
                 <aside class="dashboard-widget-library" aria-label="Bloques disponibles para el dashboard">
-                  <div>
+                  <div class="dashboard-library-heading">
                     <span class="mono-label">Actividades disponibles</span>
                     <h4>Elige qué quieres revisar</h4>
                     <p>Agrega una métrica, gráfica o tabla a la vez. Puedes quitarla cuando ya no la necesites.</p>

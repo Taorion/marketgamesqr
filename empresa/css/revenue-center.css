@@ -1,0 +1,157 @@
+/* Centro de Revenue: una lectura editorial y aireada, separada de los estilos globales. */
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
+  width: min(100%, 1240px) !important;
+  margin-inline: auto !important;
+  padding: clamp(28px, 4vw, 64px) clamp(20px, 4vw, 56px) 80px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, .7fr) !important;
+  align-items: end !important;
+  gap: clamp(28px, 6vw, 92px) !important;
+  margin: 0 !important;
+  padding: 0 0 clamp(26px, 4vw, 42px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(117, 157, 190, .36) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-copy { max-width: 720px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-copy h2 {
+  max-width: 560px !important; margin: 0 !important; color: #082d63 !important;
+  font-size: clamp(2.2rem, 5vw, 4.25rem) !important; line-height: .96 !important; letter-spacing: -.065em !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-copy p {
+  max-width: 650px !important; margin: 16px 0 0 !important; color: #58718f !important;
+  font-size: clamp(1rem, 1.45vw, 1.12rem) !important; line-height: 1.62 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics {
+  display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(18px, 3vw, 36px) !important; width: 100% !important; max-width: none !important;
+  padding: 0 !important; border: 0 !important; background: transparent !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item {
+  display: grid !important; gap: 7px !important; min-width: 0 !important; padding: 0 0 15px !important;
+  border: 0 !important; border-bottom: 2px solid rgba(20, 178, 225, .36) !important;
+  background: linear-gradient(100deg, rgba(14, 165, 233, .08), rgba(255,255,255,0) 82%) !important;
+  box-shadow: none !important; transition: border-color .2s ease, transform .2s ease, background .2s ease !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item:hover {
+  border-bottom-color: #0ea5e9 !important; background: linear-gradient(100deg, rgba(14, 165, 233, .15), rgba(255,255,255,0) 82%) !important;
+  transform: translateY(-2px) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item .mono-label { color: #4e6b8d !important; font-size: .72rem !important; font-weight: 800 !important; letter-spacing: .095em !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item strong { min-width: 0 !important; color: #072c64 !important; font-size: clamp(1.75rem, 3vw, 2.75rem) !important; line-height: 1 !important; letter-spacing: -.055em !important; font-variant-numeric: tabular-nums !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item small { min-width: 0 !important; color: #617b9c !important; font-size: .78rem !important; line-height: 1.45 !important; overflow-wrap: anywhere !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+  display: grid !important; gap: clamp(34px, 5vw, 68px) !important; margin: clamp(34px, 6vw, 72px) 0 0 !important;
+  padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 22px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-intro { max-width: 740px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-intro h3 { margin: 6px 0 8px !important; color: #082d63 !important; font-size: clamp(1.6rem, 3vw, 2.45rem) !important; line-height: 1.08 !important; letter-spacing: -.045em !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-intro p { max-width: 700px !important; margin: 0 !important; color: #58718f !important; font-size: 1rem !important; line-height: 1.58 !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+  display: flex !important; flex-wrap: wrap !important; align-items: center !important; width: 100% !important;
+  gap: 8px 20px !important; margin: 0 !important; padding: 0 0 15px !important;
+  border: 0 !important; border-bottom: 1px solid rgba(119, 158, 190, .3) !important; border-radius: 0 !important; background: transparent !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button.active {
+  min-height: 0 !important; padding: 8px 0 !important; border: 0 !important; border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important; background: transparent !important; box-shadow: none !important; color: #5a7393 !important;
+  font-size: .92rem !important; font-weight: 750 !important; transition: color .18s ease, border-color .18s ease !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button:hover,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs button.active { border-bottom-color: #11b6df !important; color: #083578 !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: clamp(42px, 6vw, 76px) !important; margin: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 18px !important; width: 100% !important;
+  max-width: none !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+  background: transparent !important; box-shadow: none !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-heading { max-width: 670px !important; margin: 0 !important; padding: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library h4 { margin: 5px 0 6px !important; color: #082d63 !important; font-size: 1.22rem !important; letter-spacing: -.02em !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library p { max-width: 650px !important; margin: 0 !important; color: #5c7696 !important; font-size: .92rem !important; line-height: 1.52 !important; }
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary {
+  display: flex !important; flex-direction: column !important; width: 100% !important; max-height: none !important; margin: 0 !important;
+  padding: 0 !important; overflow: visible !important; border: 0 !important; border-top: 1px solid rgba(125, 164, 194, .32) !important;
+  border-radius: 0 !important; background: transparent !important;
+}
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item,
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item:hover,
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item.is-active {
+  display: grid !important; grid-template-columns: 46px minmax(0, 1fr) max-content !important; align-items: center !important;
+  column-gap: 18px !important; min-height: 92px !important; margin: 0 !important; padding: 17px 4px !important;
+  overflow: visible !important; border: 0 !important; border-bottom: 1px solid rgba(125, 164, 194, .22) !important;
+  border-radius: 0 !important; background: transparent !important; box-shadow: none !important; transform: none !important; text-align: left !important;
+  transition: background .18s ease, padding-left .18s ease !important;
+}
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item:hover { padding-left: 12px !important; background: linear-gradient(90deg, rgba(202, 241, 255, .68), rgba(255,255,255,0)) !important; }
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item.is-active { background: linear-gradient(90deg, rgba(202, 241, 255, .9), rgba(255,255,255,0) 72%) !important; }
+html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item > .material-symbols-outlined {
+  display: grid !important; width: 46px !important; height: 46px !important; place-items: center !important; border: 0 !important;
+  border-radius: 50% !important; background: linear-gradient(145deg, #0b52bd, #12bde2) !important; color: #fff !important;
+  font-size: 20px !important; box-shadow: 0 9px 20px rgba(14, 117, 208, .18) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy { display: grid !important; gap: 4px !important; min-width: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy strong { color: #0b316b !important; font-size: 1rem !important; line-height: 1.25 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy small { max-width: 72ch !important; color: #607b9d !important; font-size: .84rem !important; line-height: 1.44 !important; white-space: normal !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-category { color: #168eb5 !important; font-size: .68rem !important; font-weight: 800 !important; letter-spacing: .08em !important; text-transform: uppercase !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-library-action { display: inline-flex !important; align-items: center !important; gap: 5px !important; justify-self: end !important; padding: 8px 0 !important; border: 0 !important; border-bottom: 1px solid #15a9d0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; color: #0751ae !important; font-size: .8rem !important; font-weight: 800 !important; white-space: nowrap !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas { display: grid !important; gap: clamp(25px, 4vw, 42px) !important; margin: 0 !important; padding: clamp(30px, 4vw, 54px) 0 0 !important; border: 0 !important; border-top: 1px solid rgba(117, 157, 190, .38) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: end !important; gap: 22px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head h3 { margin: 6px 0 8px !important; color: #082d63 !important; font-size: clamp(1.55rem, 3vw, 2.35rem) !important; line-height: 1.08 !important; letter-spacing: -.045em !important; overflow-wrap: normal !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head p { max-width: 650px !important; margin: 0 !important; color: #5b7696 !important; font-size: .96rem !important; line-height: 1.54 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions { display: flex !important; flex-wrap: wrap !important; justify-content: flex-end !important; gap: 10px 18px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions .ghost-button { min-height: 0 !important; padding: 8px 0 !important; border: 0 !important; border-bottom: 1px solid #a9cbe2 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; color: #0a4da6 !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: clamp(28px, 4vw, 54px) clamp(24px, 4vw, 48px) !important; min-width: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { display: grid !important; align-content: start !important; gap: 11px !important; min-width: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 0 25px !important; border: 0 !important; border-bottom: 1px solid rgba(125, 164, 194, .33) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { grid-column: 1 / -1 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-top { display: grid !important; grid-template-columns: 42px minmax(0, 1fr) auto !important; gap: 12px !important; align-items: center !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-icon { display: grid !important; width: 42px !important; height: 42px !important; place-items: center !important; border-radius: 50% !important; background: rgba(16, 185, 228, .12) !important; color: #0757be !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-top h4 { margin: 2px 0 0 !important; color: #0a316b !important; font-size: 1.08rem !important; line-height: 1.24 !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-value { color: #062b65 !important; font-size: clamp(1.85rem, 3.2vw, 2.65rem) !important; line-height: 1 !important; letter-spacing: -.055em !important; font-variant-numeric: tabular-nums !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-meta,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-body { min-width: 0 !important; color: #5e7898 !important; line-height: 1.52 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions { display: flex !important; flex-wrap: wrap !important; gap: 8px 13px !important; margin-top: 4px !important; padding: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions .ghost-button,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-actions .icon-button { min-height: 0 !important; padding: 7px 0 !important; border: 0 !important; border-bottom: 1px solid #b8d0e4 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table-wrap { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; padding-bottom: 6px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table { width: 100% !important; min-width: 620px !important; border-collapse: collapse !important; background: transparent !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table th,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table td { padding: 13px 14px !important; border: 0 !important; border-bottom: 1px solid rgba(125, 164, 194, .22) !important; text-align: left !important; vertical-align: middle !important; white-space: normal !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table th { color: #446484 !important; font-size: .7rem !important; letter-spacing: .075em !important; text-transform: uppercase !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-roi-table td { color: #183c70 !important; font-size: .9rem !important; }
+
+@media (max-width: 860px) {
+  html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head { grid-template-columns: minmax(0, 1fr) !important; align-items: start !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics { max-width: 620px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions { justify-content: flex-start !important; }
+}
+@media (max-width: 640px) {
+  html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] { padding-inline: 18px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item,
+  html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item:hover,
+  html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item.is-active { grid-template-columns: 40px minmax(0, 1fr) !important; gap: 13px !important; min-height: 0 !important; padding-block: 15px !important; }
+  html body[data-current-view="dashboard"] .portal-shell #dashboardWidgetLibrary .dashboard-library-item > .material-symbols-outlined { width: 40px !important; height: 40px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-library-action { grid-column: 2 !important; justify-self: start !important; }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.chart,
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card.table { grid-column: auto !important; }
+}
