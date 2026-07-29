@@ -118,15 +118,80 @@ function salesUnionSql() {
     select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
            payment_method, product_or_service as product_name, null::text as acquisition_source,
            null::text as acquisition_channel, null::uuid as referred_affiliate_id,
-           sale_confirmed_by_user_id as seller_user_id
+           sale_confirmed_by_user_id as seller_user_id,
+           coalesce(player_id::text, qr_code_id::text, id::text) as customer_key
     from attributed_sales
     union all
     select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
            null::text as payment_method, product_name, acquisition_source,
-           acquisition_channel, referred_affiliate_id, seller_user_id
+           acquisition_channel, referred_affiliate_id, seller_user_id,
+           coalesce(
+             nullif(customer_document_id, ''),
+             nullif(customer_phone, ''),
+             nullif(lower(customer_email), ''),
+             id::text
+           ) as customer_key
     from business_sales
     where qr_code_id is null
   `;
+}
+
+async function getBusinessEconomics(businessId) {
+  const [salesResult, investmentsResult] = await Promise.all([
+    query(
+      `with sales as (${salesUnionSql()})
+       select
+         coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+         count(*)::int as sales_count,
+         count(distinct customer_key)::int as customers
+       from sales
+       where business_id = $1`,
+      [businessId]
+    ),
+    query(
+      `select
+         coalesce((
+           select sum(c.budget_total)
+           from campaigns c
+           where c.business_id = $1
+             and c.status <> 'ARCHIVED'
+         ), 0)::numeric(14, 2) as campaign_investment,
+         coalesce((
+           select sum(ch.period_budget)
+           from business_acquisition_channels ch
+           where ch.business_id = $1
+             and ch.status <> 'ARCHIVED'
+         ), 0)::numeric(14, 2) as channel_investment,
+         coalesce((
+           select sum(e.budget_amount)
+           from business_acquisition_channel_efforts e
+           where e.business_id = $1
+             and e.status <> 'ARCHIVED'
+         ), 0)::numeric(14, 2) as effort_investment`,
+      [businessId]
+    ),
+  ]);
+
+  const sales = salesResult.rows[0] || {};
+  const investments = investmentsResult.rows[0] || {};
+  const campaignInvestment = number(investments.campaign_investment);
+  const channelInvestment = number(investments.channel_investment);
+  const effortInvestment = number(investments.effort_investment);
+  const investment = campaignInvestment + channelInvestment + effortInvestment;
+  const revenue = number(sales.revenue);
+  const customers = number(sales.customers);
+
+  return {
+    revenue,
+    sales_count: number(sales.sales_count),
+    customers,
+    investment,
+    campaign_investment: campaignInvestment,
+    channel_investment: channelInvestment,
+    effort_investment: effortInvestment,
+    roi: safeRoi(revenue, investment),
+    cac: safeDivide(investment, customers),
+  };
 }
 
 function scopedWhere(params, businessId, filters, config = {}) {
@@ -1213,11 +1278,12 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
     return { ...cached, cache: { hit: true, ttl_seconds: ANALYTICS_CACHE_TTL_MS / 1000 } };
   }
 
-  const [options, current, previousRaw, charts] = await Promise.all([
+  const [options, current, previousRaw, charts, businessEconomics] = await Promise.all([
     getOptions(businessId),
     getTotals(businessId, filters, "current"),
     getTotals(businessId, filters, "previous"),
     getSeriesAndCharts(businessId, filters),
+    getBusinessEconomics(businessId),
   ]);
   const previous = filters.comparePrevious ? previousRaw : current;
 
@@ -1238,6 +1304,7 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
     kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary),
     totals: current,
     previous_totals: previous,
+    business_economics: businessEconomics,
     funnel: buildFunnel(current),
     revenue_score: score,
     timeline: charts.timeline,

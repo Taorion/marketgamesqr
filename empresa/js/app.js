@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-lead-rms-journey-v189";
+const APP_VERSION = "empresa-20260729-revenue-economics-v190";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -70,6 +70,10 @@ const revenuePulseStrip = document.getElementById("revenuePulseStrip");
 const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
+const dashboardBusinessRoiValue = document.getElementById("dashboardBusinessRoiValue");
+const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMeta");
+const dashboardBusinessCacValue = document.getElementById("dashboardBusinessCacValue");
+const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMeta");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
 const dashboardWidgetGrid = document.getElementById("dashboardWidgetGrid");
@@ -11175,7 +11179,35 @@ function openDashboardBuilderRoute(route = "dashboard") {
   setView(route || "dashboard");
 }
 
+function businessRoiLabel(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  return `${(Number(value) * 100).toLocaleString("es-CO", { maximumFractionDigits: 1 })}%`;
+}
+
+function renderDashboardBusinessEconomics() {
+  const economics = state.commandCenter?.business_economics;
+  const investment = Number(economics?.investment || 0);
+  const revenue = Number(economics?.revenue || 0);
+  const customers = Number(economics?.customers || 0);
+  const roiAvailable = investment > 0 && economics?.roi !== null && economics?.roi !== undefined;
+  const cacAvailable = investment > 0 && customers > 0 && economics?.cac !== null && economics?.cac !== undefined;
+
+  if (dashboardBusinessRoiValue) dashboardBusinessRoiValue.textContent = roiAvailable ? businessRoiLabel(economics.roi) : "—";
+  if (dashboardBusinessCacValue) dashboardBusinessCacValue.textContent = cacAvailable ? money(economics.cac) : "—";
+  if (dashboardBusinessRoiMeta) {
+    dashboardBusinessRoiMeta.textContent = investment > 0
+      ? `${money(investment)} registrados · ${money(revenue)} atribuidos`
+      : "Registra inversión en campañas, canales o esfuerzos";
+  }
+  if (dashboardBusinessCacMeta) {
+    dashboardBusinessCacMeta.textContent = customers > 0
+      ? `${customers.toLocaleString("es-CO")} clientes con compra atribuida`
+      : "Aún no hay clientes convertidos para calcularlo";
+  }
+}
+
 function renderDashboardBuilder() {
+  renderDashboardBusinessEconomics();
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   ensureRevenueCenterUxStyles();
   if (revenueWorkspace) {

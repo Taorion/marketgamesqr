@@ -63155,6 +63155,96 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   box-shadow: none !important;
 }
 
+/* Revenue headline economics: primary signals without adding nested cards. */
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, auto) !important;
+  align-items: end !important;
+  column-gap: clamp(30px, 5vw, 76px) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head > .dashboard-business-economics {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(145px, 1fr)) !important;
+  gap: 0 !important;
+  width: min(100%, 420px) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  align-self: stretch !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: end !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  padding: 4px clamp(16px, 2vw, 30px) 4px !important;
+  border-left: 1px solid rgba(5, 42, 107, 0.13) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item .mono-label {
+  color: #58708c !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.07em !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item strong {
+  color: #052a6b !important;
+  font-size: clamp(1.45rem, 2.1vw, 2rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item small {
+  display: block !important;
+  min-width: 0 !important;
+  color: #617795 !important;
+  font-size: 0.74rem !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item {
+  border-color: rgba(115, 215, 238, 0.24) !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item .mono-label,
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item small {
+  color: #c7def3 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item strong {
+  color: #ffffff !important;
+}
+
+@media (max-width: 860px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    row-gap: 28px !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head > .dashboard-business-economics {
+    width: 100% !important;
+    max-width: 520px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head.dashboard-revenue-head > .dashboard-business-economics {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item {
+    padding: 14px 0 0 !important;
+    border-top: 1px solid rgba(5, 42, 107, 0.13) !important;
+    border-left: 0 !important;
+  }
+}
+
 html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-canvas {
   display: grid !important;
   gap: 28px !important;

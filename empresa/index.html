@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-quality-contrast-20260728-v189">
+  <link rel="stylesheet" href="css/styles.css?v=revenue-economics-20260729-v190">
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=lead-rms-journey-20260728-v208">
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
@@ -362,10 +362,22 @@
           </div>
 
           <section class="view-section dashboard-builder-mode" data-view="dashboard" hidden>
-            <div class="view-head">
+            <div class="view-head dashboard-revenue-head">
               <div>
                 <h2>Centro de Revenue</h2>
                 <p>Dashboard visual para leer números, gráficas y tablas. Agrega bloques, ciérralos cuando no los necesites y exporta CSV para análisis.</p>
+              </div>
+              <div class="dashboard-business-economics" aria-label="Indicadores principales del negocio">
+                <div class="dashboard-business-economics-item">
+                  <span class="mono-label">ROI del negocio</span>
+                  <strong id="dashboardBusinessRoiValue">—</strong>
+                  <small id="dashboardBusinessRoiMeta">Cargando retorno real…</small>
+                </div>
+                <div class="dashboard-business-economics-item">
+                  <span class="mono-label">CAC promedio</span>
+                  <strong id="dashboardBusinessCacValue">—</strong>
+                  <small id="dashboardBusinessCacMeta">Cargando costo de adquisición…</small>
+                </div>
               </div>
             </div>
 
@@ -7485,7 +7497,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=channels-overlay-20260729-v1" defer></script>
+    <script src="js/app.js?v=revenue-economics-20260729-v190" defer></script>
     <script src="js/communications.js?v=communications-composer-v2-20260729" defer></script>
 </body>
 </html>
