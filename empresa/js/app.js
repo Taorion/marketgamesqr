@@ -6705,7 +6705,7 @@ async function loadWorkspace() {
     state.smartCatalogProducts = [];
     state.smartCatalogIntents = [];
     state.smartCatalogSelectedCatalogId = "";
-    state.smartCatalogTab = "dashboard";
+    state.smartCatalogTab = "catalogs";
     state.smartCatalogLoaded = false;
     state.smartCatalogLoading = false;
     state.ticketCenterLoadedAt = {};
@@ -9634,6 +9634,219 @@ function ensureSmartCatalogUxStyles() {
   document.head.appendChild(style);
 }
 
+function ensureSmartCatalogSimplifiedStyles() {
+  if (document.getElementById("smartCatalogSimpleStylesV70")) return;
+  const style = document.createElement("style");
+  style.id = "smartCatalogSimpleStylesV70";
+  style.textContent = `
+    .view-section[data-view="smart-catalogs"] {
+      display: grid;
+      gap: clamp(1.65rem, 3vw, 2.8rem);
+      max-width: 1180px;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-head {
+      margin: 0;
+      padding: clamp(1.45rem, 3vw, 2.5rem) 0 1.5rem;
+      border: 0;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.12);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-head p {
+      max-width: 690px;
+      margin-bottom: 0;
+    }
+    .view-section[data-view="smart-catalogs"] .head-actions {
+      gap: 0.65rem;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-hero,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-kpis,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-workbench {
+      display: none !important;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs {
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.12);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs button {
+      min-height: 42px;
+      padding: 0 0 0.7rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: var(--muted-text);
+      font-weight: 760;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs button:hover {
+      color: #0759d6;
+      transform: none;
+      box-shadow: inset 0 -2px 0 rgba(0, 191, 242, 0.42);
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-tabs button.active {
+      color: #0759d6;
+      background: transparent;
+      box-shadow: inset 0 -3px 0 #00bff2;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-panels,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-panel,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-split {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-panel[hidden] {
+      display: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card .table-card-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0 0 1.1rem;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.13);
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card h3 {
+      margin: 0.18rem 0 0;
+      font-size: clamp(1.35rem, 2.3vw, 1.8rem);
+      letter-spacing: -0.025em;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-list-intro {
+      max-width: 680px;
+      margin: 0.45rem 0 0;
+      color: var(--muted-text);
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card .table-wrap {
+      margin-top: 0.7rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      overflow-x: auto;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card table {
+      min-width: 760px;
+      border-collapse: collapse;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card th {
+      padding: 0.85rem 0.75rem;
+      border: 0;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.11);
+      background: transparent;
+      color: #547092;
+      font-size: 0.72rem;
+      letter-spacing: 0.045em;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card td {
+      padding: 1.05rem 0.75rem;
+      border: 0;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.1);
+      background: transparent;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card tbody tr {
+      transition: background 160ms ease;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card tbody tr:hover,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card tbody tr.is-selected-row {
+      background: linear-gradient(90deg, rgba(0, 191, 242, 0.09), transparent 72%);
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card td:first-child,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card th:first-child {
+      padding-left: 0.25rem;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card td:last-child,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card th:last-child {
+      padding-right: 0.25rem;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card td small {
+      display: block;
+      max-width: 260px;
+      margin-top: 0.23rem;
+      overflow: hidden;
+      color: var(--muted-text);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card .ghost-button.compact,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-table-card .solid-button.compact {
+      min-height: 34px;
+      margin: 0.15rem 0.25rem 0.15rem 0;
+      padding-inline: 0.65rem;
+      border-radius: 10px;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-panel[data-smart-catalog-panel="dashboard"] .smart-catalog-dashboard-grid {
+      display: grid;
+      max-width: 780px;
+      gap: 0;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-step {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      column-gap: 1rem;
+      align-items: start;
+      padding: 1.25rem 0;
+      border: 0;
+      border-bottom: 1px solid rgba(5, 42, 107, 0.12);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-step span {
+      grid-row: span 2;
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0759d6, #00bff2);
+      color: #fff;
+      font-weight: 850;
+      font-size: 0.78rem;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-step strong,
+    .view-section[data-view="smart-catalogs"] .smart-catalog-step p {
+      grid-column: 2;
+    }
+    .view-section[data-view="smart-catalogs"] .smart-catalog-step p {
+      margin: 0.22rem 0 0;
+      color: var(--muted-text);
+    }
+    @media (max-width: 720px) {
+      .view-section[data-view="smart-catalogs"] { gap: 1.5rem; }
+      .view-section[data-view="smart-catalogs"] .smart-catalog-head { padding-top: 1.25rem; }
+      .view-section[data-view="smart-catalogs"] .head-actions { width: 100%; }
+      .view-section[data-view="smart-catalogs"] .head-actions .solid-button,
+      .view-section[data-view="smart-catalogs"] .head-actions .ghost-button { flex: 1 1 160px; justify-content: center; }
+      .view-section[data-view="smart-catalogs"] .smart-catalog-tabs { gap: 0.95rem; }
+      .view-section[data-view="smart-catalogs"] .smart-catalog-table-card table { min-width: 680px; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderSmartCatalogCampaignOptions() {
   if (!smartCatalogCampaignSelect) return;
   const selected = smartCatalogCampaignSelect.value;
@@ -9703,7 +9916,7 @@ function renderSmartCatalogTables() {
           <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
           <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
           <td>
-            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Abrir</button>
+            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Gestionar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-edit="${escapeHtml(catalog.id)}">Editar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-status="${escapeHtml(catalog.id)}" data-smart-catalog-next-status="${publishStatus}">${publishAction}</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Link</button>
@@ -9964,6 +10177,8 @@ function renderSmartCatalogWorkbench() {
 
 function renderSmartCatalogView() {
   ensureSmartCatalogUxStyles();
+  ensureSmartCatalogSimplifiedStyles();
+  document.getElementById("smartCatalogWorkbench")?.remove();
   normalizeSmartCatalogWorkspace();
   renderSmartCatalogCampaignOptions();
   renderSmartCatalogCatalogOptions();
@@ -9975,11 +10190,7 @@ function renderSmartCatalogView() {
     panel.classList.toggle("active", active);
     panel.hidden = !active;
   });
-  renderSmartCatalogDashboard();
-  renderSmartCatalogPublishPanel();
   renderSmartCatalogTables();
-  renderSmartCatalogTopProducts();
-  renderSmartCatalogWorkbench();
 }
 
 async function loadSmartCatalogData(options = {}) {
@@ -45081,7 +45292,7 @@ smartCatalogTable?.addEventListener("click", async (event) => {
   const statusButton = event.target.closest("[data-smart-catalog-status]");
   if (selectButton) {
     await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
-    renderSmartCatalogView();
+    setSmartCatalogTab("products");
     return;
   }
   if (copyButton) {
