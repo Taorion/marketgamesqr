@@ -110,8 +110,8 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 async function listBusinessCommunications(businessId) {
   const result = await query(
     `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name,
-       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as sent_count, coalesce(rc.failed_count, 0)::int as failed_count,
-       coalesce(rc.skipped_count, 0)::int as skipped_count
+       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.failed_count, 0)::int as recipients_failed,
+       coalesce(rc.skipped_count, 0)::int as recipients_skipped
      from business_communications bc
      left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
      left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id

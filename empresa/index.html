@@ -7426,55 +7426,68 @@
         <button class="icon-button" type="button" data-close-communication-composer aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
       </header>
       <form class="communication-composer-form" id="communicationComposerForm">
-        <div class="communication-type-switch" role="group" aria-label="Tipo de comunicación">
-          <label><input type="radio" name="communicationType" value="EMAIL" checked> Email</label>
-          <label><input type="radio" name="communicationType" value="SOCIAL"> Redes</label>
-          <label><input type="radio" name="communicationType" value="MIXED"> Email y redes</label>
-        </div>
-        <div class="communication-composer-grid">
-          <label><span>Nombre interno</span><input id="communicationTitleInput" required maxlength="180" placeholder="Ej. Oferta de agosto para clientes frecuentes"></label>
-          <label><span>Campaña</span><select id="communicationCampaignInput"><option value="">Sin campaña</option></select></label>
-          <label><span>Canal</span><select id="communicationChannelInput"><option value="">Sin canal</option></select></label>
-          <label><span>Activación</span><select id="communicationActivationInput"><option value="">Sin activación</option></select></label>
-        </div>
-        <section class="communication-email-fields">
-          <label><span>Asunto del email</span><input id="communicationSubjectInput" maxlength="220" placeholder="Un beneficio para ti, {{nombre}}"></label>
-          <label><span>Mensaje</span><textarea id="communicationEmailBodyInput" rows="7" placeholder="Hola {{nombre}}, tenemos una oferta para ti..."></textarea></label>
-        </section>
-        <section class="communication-social-fields hidden">
-          <label><span>Descripción para redes</span><textarea id="communicationSocialCopyInput" rows="6" placeholder="Escribe el texto de publicación, llamado a la acción y hashtags."></textarea></label>
-        </section>
-        <section class="communication-media-section" aria-labelledby="communicationMediaTitle">
-          <div class="communication-media-section-head">
-            <div>
-              <span class="mono-label">Imagen principal y adjuntos</span>
-              <strong id="communicationMediaTitle">Prepara las imágenes de tu comunicación</strong>
-              <small>En email se adjuntan y la primera se muestra dentro del mensaje. En redes quedan listas para descargar y publicar.</small>
+        <div class="communication-composer-scroll">
+          <section class="communication-composer-section communication-composer-foundation">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">01</span><div><span class="mono-label">Pieza y propósito</span><strong>¿Cómo quieres comunicar?</strong><small>Escoge el canal, conecta el esfuerzo comercial y escribe una pieza reutilizable.</small></div></div>
+            <div class="communication-type-switch" role="group" aria-label="Tipo de comunicación">
+              <label><input type="radio" name="communicationType" value="EMAIL" checked> Email</label>
+              <label><input type="radio" name="communicationType" value="SOCIAL"> Redes</label>
+              <label><input type="radio" name="communicationType" value="MIXED"> Email y redes</label>
             </div>
-          </div>
-          <div class="communication-media-controls">
-            <label class="communication-media-upload-control">
-              <input id="communicationImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-              <span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>
-              <span><strong>Subir imágenes</strong><small>JPG, PNG, WEBP o GIF · hasta 3 archivos de 3 MB</small></span>
-            </label>
-            <label class="communication-media-url-control"><span>O usa una URL de imagen</span><input id="communicationImageInput" type="url" placeholder="https://..."></label>
-            <label class="communication-action-url-control"><span>Enlace de acción</span><input id="communicationActionUrlInput" type="url" placeholder="https://..."></label>
-          </div>
-          <input id="communicationMediaAssetsInput" type="hidden" value="[]">
-          <div class="communication-media-preview-list" id="communicationMediaPreview" aria-live="polite"></div>
-        </section>
-        <div class="communication-composer-preview" id="communicationComposerPreview"></div>
+            <div class="communication-composer-grid">
+              <label class="communication-title-field"><span>Nombre interno</span><input id="communicationTitleInput" required maxlength="180" placeholder="Ej. Oferta de agosto para clientes frecuentes"></label>
+              <label><span>Campaña</span><select id="communicationCampaignInput"><option value="">Sin campaña</option></select></label>
+              <label><span>Canal</span><select id="communicationChannelInput"><option value="">Sin canal</option></select></label>
+              <label><span>Activación</span><select id="communicationActivationInput"><option value="">Sin activación</option></select></label>
+            </div>
+          </section>
+          <section class="communication-composer-section communication-email-fields">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Mensaje de email</span><strong>Escribe lo que recibirá cada contacto</strong><small>Puedes usar <b>{{nombre}}</b> para personalizar el saludo.</small></div></div>
+            <label><span>Asunto del email</span><input id="communicationSubjectInput" maxlength="220" placeholder="Un beneficio para ti, {{nombre}}"></label>
+            <label><span>Mensaje</span><textarea id="communicationEmailBodyInput" rows="7" placeholder="Hola {{nombre}}, tenemos una oferta para ti..."></textarea></label>
+          </section>
+          <section class="communication-composer-section communication-social-fields hidden">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Texto para publicar</span><strong>Prepara la versión para redes</strong><small>Incluye tu llamado a la acción, etiquetas y el enlace de destino.</small></div></div>
+            <label><span>Descripción para redes</span><textarea id="communicationSocialCopyInput" rows="6" placeholder="Escribe el texto de publicación, llamado a la acción y hashtags."></textarea></label>
+          </section>
+          <section class="communication-composer-section communication-media-section" aria-labelledby="communicationMediaTitle">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">03</span><div><span class="mono-label">Imagen y enlace</span><strong id="communicationMediaTitle">Añade el material que acompañará tu mensaje</strong><small>La primera imagen se muestra dentro del email. En redes puedes descargar todas las piezas para publicarlas.</small></div></div>
+            <div class="communication-media-controls">
+              <label class="communication-media-upload-control">
+                <input id="communicationImageUploadInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+                <span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>
+                <span><strong>Subir imágenes</strong><small>JPG, PNG, WEBP o GIF · hasta 3 archivos de 3 MB</small></span>
+              </label>
+              <label class="communication-media-url-control"><span>O usa una URL de imagen</span><input id="communicationImageInput" type="url" placeholder="https://..."></label>
+              <label class="communication-action-url-control"><span>Enlace de acción</span><input id="communicationActionUrlInput" type="url" placeholder="https://..."></label>
+            </div>
+            <input id="communicationMediaAssetsInput" type="hidden" value="[]">
+            <div class="communication-media-preview-list" id="communicationMediaPreview" aria-live="polite"></div>
+          </section>
+          <section class="communication-composer-section communication-composer-audience" id="communicationComposerAudience" aria-labelledby="communicationComposerAudienceTitle">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">04</span><div><span class="mono-label">Audiencia de email</span><strong id="communicationComposerAudienceTitle">Elige quién recibirá esta comunicación</strong><small>Filtra primero y selecciona solo los contactos a los que quieres escribir. Este paso se oculta para una publicación exclusiva de redes.</small></div></div>
+            <div class="communication-composer-audience-filters">
+              <label><span>Buscar</span><input id="communicationComposerAudienceSearch" type="search" placeholder="Nombre, email o teléfono"></label>
+              <label><span>Interés</span><input id="communicationComposerAudienceInterest" type="search" placeholder="Producto o servicio"></label>
+              <label><span>Compras</span><select id="communicationComposerAudiencePurchases"><option value="">Todas</option><option value="true">Con compras</option><option value="false">Sin compras</option></select></label>
+              <button class="ghost-button compact" type="button" data-load-composer-audience>Buscar contactos</button>
+            </div>
+            <div class="communication-composer-audience-status"><span id="communicationComposerAudienceCount">Carga contactos para empezar.</span><button class="text-button" type="button" data-composer-select-audience>Seleccionar resultados</button></div>
+            <div class="communication-composer-audience-list" id="communicationComposerAudienceList" aria-live="polite"></div>
+            <label class="communication-composer-consent"><input id="communicationComposerConsentInput" type="checkbox"> Confirmo que estas personas aceptaron recibir comunicaciones comerciales.</label>
+          </section>
+          <div class="communication-composer-preview" id="communicationComposerPreview"></div>
+        </div>
         <footer class="modal-actions">
           <p class="error-line" id="communicationComposerMessage"></p>
-          <div class="modal-button-row"><button class="ghost-button" type="button" data-close-communication-composer>Cancelar</button><button class="solid-button" id="communicationComposerSaveButton" type="submit">Guardar comunicación</button></div>
+          <div class="modal-button-row"><button class="ghost-button" type="button" data-close-communication-composer>Cancelar</button><button class="ghost-button" id="communicationComposerSaveButton" data-communication-save-action="DRAFT" type="submit">Guardar borrador</button><button class="solid-button" id="communicationComposerSaveAndSendButton" data-communication-save-action="SEND" type="submit">Guardar y enviar</button></div>
         </footer>
       </form>
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
     <script src="js/app.js?v=channels-overlay-20260729-v1" defer></script>
-    <script src="js/communications.js?v=communications-ops-20260729-v1" defer></script>
+    <script src="js/communications.js?v=communications-composer-v2-20260729" defer></script>
 </body>
 </html>
 
