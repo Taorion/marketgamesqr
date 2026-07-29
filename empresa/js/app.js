@@ -32561,7 +32561,6 @@ function mountContactCenterLayout() {
   if (!overviewPanel || !directoryPanel || !ticketsPanel || !agendaPanel || !capturesPanel || !manualPanel || !salesPanel) return;
 
   appendIfFound(overviewPanel, leadFeedKpiGrid);
-  appendIfFound(overviewPanel, contactActionFeed);
   appendIfFound(overviewPanel, leadAttentionBoard);
 
   appendIfFound(directoryPanel, document.getElementById("leadDirectoryAudienceTabs"));
@@ -33262,8 +33261,6 @@ function renderLeadsView() {
     bindCollapsibleKpiState(leadFeedKpiGrid, "leadFeedMetricsOpen");
   }
   renderContactCenterSummary(crmRows);
-  const activeDirectoryRows = leadDirectorySegmentRows(crmRows);
-  renderContactActionFeed(activeDirectoryRows, []);
   renderLeadTicketInventoryBoard(crmRows);
   if (leadAttentionBoard) {
     const customerPanel = `
@@ -44991,7 +44988,6 @@ document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => 
     syncLeadDirectoryAudienceTabs(state.leadCrmRows || []);
     renderLeadCrmTable();
     renderContactDirectoryCards(state.leadCrmRows || []);
-    renderContactActionFeed(leadDirectorySegmentRows(state.leadCrmRows || []), []);
     renderLegacyLeadTables(state.contactFeed || [], state.leadCrmRows || []);
     refreshLeadCrm({ quiet: true }).catch((error) => showFeedback(error.message, "error"));
   });
