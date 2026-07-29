@@ -60934,6 +60934,27 @@ html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > 
 html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button :is(.material-symbols-outlined,small) { display:none !important; }
 html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button.active,
 html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs > button[aria-selected="true"] { border-color:#0759d6 !important; color:#052a6b !important; box-shadow:none !important; }
+
+/* Directorio: Clientes y Leads siempre ocupan el ancho real de su sección. */
+html body .portal-shell #leadDirectoryAudienceTabs {
+  width: 100% !important;
+  max-width: none !important;
+  align-self: stretch !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+html body .portal-shell #leadDirectoryAudienceTabs > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-self: stretch !important;
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell #leadDirectoryAudienceTabs {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
 html body[data-current-view="leads"] .portal-shell .contact-directory-hero {
   display:flex !important;
   align-items:flex-end !important;
