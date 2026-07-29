@@ -37275,6 +37275,7 @@ function acquisitionChannelsViewSection() {
 
 function openAcquisitionChannelModal() {
   if (acquisitionChannelFormPanel?.parentElement !== document.body) document.body.appendChild(acquisitionChannelFormPanel);
+  document.body.classList.add("channel-operation-modal-open");
   acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
   acquisitionChannelFormPanel?.classList.add("is-channel-modal-open");
 }
@@ -37282,11 +37283,14 @@ function openAcquisitionChannelModal() {
 function closeAcquisitionChannelModal() {
   acquisitionChannelFormPanel?.classList.remove("is-channel-modal-open");
   if (!channelEffortFormPanel?.classList.contains("is-channel-modal-open")) {
+    document.body.classList.remove("channel-operation-modal-open");
     acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
   }
 }
 
 function openChannelEffortModal() {
+  if (channelEffortFormPanel?.parentElement !== document.body) document.body.appendChild(channelEffortFormPanel);
+  document.body.classList.add("channel-operation-modal-open");
   acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
   channelEffortFormPanel?.classList.add("is-channel-modal-open");
 }
@@ -37294,6 +37298,7 @@ function openChannelEffortModal() {
 function closeChannelEffortModal() {
   channelEffortFormPanel?.classList.remove("is-channel-modal-open");
   if (!acquisitionChannelFormPanel?.classList.contains("is-channel-modal-open")) {
+    document.body.classList.remove("channel-operation-modal-open");
     acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
   }
 }

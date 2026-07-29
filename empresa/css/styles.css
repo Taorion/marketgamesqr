@@ -64246,6 +64246,13 @@ html body > #acquisitionChannelFormPanel.is-channel-modal-open .table-card-head 
 html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
 html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form :is(input, select, textarea) { width: 100% !important; min-height: 44px !important; border-radius: 10px !important; }
 html body > #acquisitionChannelFormPanel.is-channel-modal-open .channel-form textarea { min-height: 110px !important; }
+/* Channel operations are independent overlays: the dashboard remains a reading surface. */
+body.channel-operation-modal-open::before { content:""; position:fixed; inset:0; z-index:1900; background:rgba(6,28,69,.48); backdrop-filter:blur(6px); }
+html body > :is(#acquisitionChannelFormPanel,#channelEffortFormPanel).is-channel-modal-open { display:block !important; position:fixed !important; z-index:1901 !important; left:50% !important; top:4vh !important; transform:translateX(-50%) !important; width:min(920px,calc(100vw - 32px)) !important; max-height:88vh !important; overflow:auto !important; padding:28px !important; background:linear-gradient(145deg,#ffffff,#f4fbff) !important; border:1px solid rgba(110,186,227,.45) !important; border-radius:24px !important; box-shadow:0 28px 75px rgba(4,38,96,.32) !important; }
+html body > #channelEffortFormPanel:not(.is-channel-modal-open) { display:none !important; }
+html body > #channelEffortFormPanel.is-channel-modal-open .channel-effort-form { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:14px !important; }
+html body > #channelEffortFormPanel.is-channel-modal-open .channel-effort-form :is(input,select,textarea) { width:100% !important; min-height:44px !important; }
+@media (max-width:720px) { html body > :is(#acquisitionChannelFormPanel,#channelEffortFormPanel).is-channel-modal-open { top:10px !important; width:calc(100vw - 20px) !important; max-height:calc(100dvh - 20px) !important; padding:18px !important; border-radius:20px !important; } html body > #channelEffortFormPanel.is-channel-modal-open .channel-effort-form { grid-template-columns:1fr !important; } }
 @media (max-width: 720px) {
   html body[data-current-view="channels"] .portal-shell .channel-list-card .table-wrap { overflow-x: auto !important; }
   html body[data-current-view="channels"] .portal-shell .channel-list-card table { min-width: 680px !important; }
