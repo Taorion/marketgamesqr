@@ -61843,6 +61843,468 @@ html body[data-current-view="leads"] .portal-shell .contact-directory-context {
   }
 }
 
+/* RMS quality controls: auxiliary review boards with an open, editorial layout. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
+  display: block !important;
+  margin: 36px 0 18px !important;
+  padding: 28px 0 8px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(5, 42, 107, .12) !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  padding: 0 0 22px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro h3,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro p {
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro h3 {
+  margin-top: 7px !important;
+  color: #082d70 !important;
+  font-size: clamp(1.25rem, 2vw, 1.65rem) !important;
+  letter-spacing: -.035em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro p {
+  max-width: 680px !important;
+  margin-top: 8px !important;
+  color: #52708e !important;
+  line-height: 1.55 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro > small {
+  flex: 0 0 auto !important;
+  padding-bottom: 3px !important;
+  color: #087cc1 !important;
+  font-size: .78rem !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-list {
+  display: grid !important;
+  gap: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+  display: grid !important;
+  grid-template-columns: 82px minmax(0, 1fr) minmax(105px, auto) auto !important;
+  align-items: center !important;
+  gap: 22px !important;
+  min-height: 124px !important;
+  padding: 22px 2px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(5, 42, 107, .1) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: background .2s ease, padding .2s ease !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card:last-child {
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card:hover {
+  padding-inline: 14px !important;
+  background: linear-gradient(90deg, rgba(231, 249, 255, .72), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+  display: grid !important;
+  place-items: center !important;
+  width: 82px !important;
+  height: 82px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  background: linear-gradient(145deg, #0b4aa8, #16bce0) !important;
+  box-shadow: 0 14px 28px rgba(8, 76, 154, .16) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > p {
+  display: block !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > strong {
+  margin-top: 5px !important;
+  color: #092e72 !important;
+  font-size: 1.05rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > small {
+  margin-top: 3px !important;
+  color: #1d67ae !important;
+  font-size: .8rem !important;
+  font-weight: 730 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > p {
+  max-width: 650px !important;
+  margin-top: 8px !important;
+  color: #58738e !important;
+  font-size: .83rem !important;
+  line-height: 1.43 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route span {
+  color: #47708f !important;
+  font-size: .7rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route span + span::before {
+  margin-right: 5px !important;
+  color: #0b9bd3 !important;
+  content: "→" !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+  display: grid !important;
+  min-width: 112px !important;
+  gap: 1px !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric strong {
+  color: #0756c7 !important;
+  font-size: 1.6rem !important;
+  line-height: 1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric span,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric small {
+  color: #63809c !important;
+  font-size: .7rem !important;
+  font-style: normal !important;
+  font-weight: 680 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard {
+  display: grid !important;
+  gap: 0 !important;
+  width: 100% !important;
+  padding: clamp(22px, 4vw, 46px) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) 116px !important;
+  align-items: center !important;
+  gap: 22px !important;
+  padding-bottom: 28px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head > div h3,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head > div p {
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head > div h3 {
+  margin-top: 7px !important;
+  color: #062b70 !important;
+  font-size: clamp(1.45rem, 2.8vw, 2.15rem) !important;
+  letter-spacing: -.045em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head > div p {
+  max-width: 650px !important;
+  margin-top: 8px !important;
+  color: #54728f !important;
+  line-height: 1.52 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head figure {
+  width: 116px !important;
+  height: 116px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  background: #edfaff !important;
+  box-shadow: 0 16px 35px rgba(10, 80, 150, .14) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head figure img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context {
+  display: grid !important;
+  grid-template-columns: minmax(220px, .9fr) minmax(0, 1.6fr) !important;
+  gap: clamp(24px, 5vw, 68px) !important;
+  padding: 28px 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context > div > strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context > div > p {
+  display: block !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context > div > strong {
+  margin-top: 7px !important;
+  color: #093276 !important;
+  font-size: 1rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context > div > p {
+  margin-top: 7px !important;
+  color: #56728e !important;
+  font-size: .84rem !important;
+  line-height: 1.48 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-summary {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-content: start !important;
+  gap: 18px 28px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-summary > div {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 88px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-summary dt {
+  color: #69839d !important;
+  font-size: .67rem !important;
+  font-weight: 760 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-summary dd {
+  margin: 0 !important;
+  color: #0756c7 !important;
+  font-size: 1.45rem !important;
+  font-weight: 820 !important;
+  line-height: 1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-list {
+  display: grid !important;
+  gap: 0 !important;
+  padding-top: 10px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-list-head,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row {
+  display: grid !important;
+  grid-template-columns: minmax(190px, 1.25fr) minmax(120px, .75fr) minmax(105px, .5fr) minmax(160px, 1fr) 28px !important;
+  gap: 20px !important;
+  align-items: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-list-head {
+  padding: 13px 8px !important;
+  color: #66819c !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row {
+  width: 100% !important;
+  min-height: 84px !important;
+  padding: 16px 8px !important;
+  color: #0a326f !important;
+  text-align: left !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(5, 42, 107, .1) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: background .18s ease, padding .18s ease !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row:hover {
+  padding-inline: 18px !important;
+  background: linear-gradient(90deg, rgba(230, 249, 255, .8), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > b {
+  display: block !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > strong {
+  color: #083277 !important;
+  font-size: .93rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > b {
+  margin-top: 3px !important;
+  color: #5b7691 !important;
+  font-size: .72rem !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > span > b {
+  color: #0b65b7 !important;
+  font-size: .65rem !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > .material-symbols-outlined {
+  color: #078dca !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+    grid-template-columns: 72px minmax(0, 1fr) auto !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 19px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+    grid-column: 2 / -1 !important;
+    justify-self: start !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head figure {
+    grid-row: 1 / span 2 !important;
+    grid-column: 2 !important;
+    justify-self: end !important;
+    width: 92px !important;
+    height: 92px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head > div {
+    grid-column: 1 / -1 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-context {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+    grid-template-columns: 62px minmax(0, 1fr) !important;
+    gap: 15px !important;
+    padding-block: 20px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+    width: 62px !important;
+    height: 62px !important;
+    border-radius: 17px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+    grid-column: 2 !important;
+    text-align: left !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+    grid-column: 2 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard {
+    padding: 22px 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head {
+    gap: 14px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-head figure {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 20px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-list-head {
+    display: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row {
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+    min-height: 0 !important;
+    padding: 18px 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-row > .material-symbols-outlined {
+    display: none !important;
+  }
+}
+
 /* RMS quality priority and activation header contrast v188. */
 #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
   background: linear-gradient(118deg, #063b97 0%, #075fd1 54%, #08a6df 100%) !important;

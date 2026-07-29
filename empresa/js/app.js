@@ -30332,12 +30332,12 @@ const LEAD_DIRECTORY_RMS_STATIONS = {
   alimentacion: { label: "Estación 02 · Curaduría", short: "02 Curaduría" },
   curaduria: { label: "Estación 03 · Clasificador", short: "03 Clasificador" },
   clasificacion: { label: "Estación 04 · Activación 1", short: "04 Activación 1" },
-  preprocesamiento: { label: "Estación 05 · Control de calidad 1", short: "05 Control calidad 1" },
+  preprocesamiento: { label: "Tablero auxiliar · Control de calidad 1", short: "Control calidad 1" },
   procesamiento: { label: "Estación 06 · Evaluación", short: "06 Evaluación" },
   control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
   accion_correctiva: { label: "Estación 08 · Negociación", short: "08 Negociación" },
   cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
-  revenue_generado: { label: "Estación 10 · Control de calidad 2", short: "10 Control calidad 2" },
+  revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
   postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
   inteligencia: { label: "Estación 12 · Inteligencia RMS", short: "12 Inteligencia" },
 };
@@ -33627,12 +33627,12 @@ const LEAD_RMS_CONVERSION_PATH = [
   { key: "alimentacion", label: "Curaduría", progress: 22 },
   { key: "curaduria", label: "Clasificador", progress: 35 },
   { key: "clasificacion", label: "Activación 1", progress: 48 },
-  { key: "preprocesamiento", label: "Control de calidad 1", progress: 56, auxiliary: true },
+  { key: "preprocesamiento", label: "Revisión auxiliar 1", progress: 56, auxiliary: true },
   { key: "procesamiento", label: "Evaluación", progress: 68 },
   { key: "control_anti_fuga", label: "Riesgos de fuga", progress: 76 },
   { key: "accion_correctiva", label: "Negociación", progress: 84 },
   { key: "cierre", label: "Ventas atribuidas", progress: 94 },
-  { key: "revenue_generado", label: "Control de calidad 2", progress: 97, auxiliary: true },
+  { key: "revenue_generado", label: "Revisión auxiliar 2", progress: 97, auxiliary: true },
   { key: "postventa", label: "Activación 2", progress: 100 },
   { key: "inteligencia", label: "Inteligencia RMS", progress: 100 },
 ];
@@ -33652,7 +33652,9 @@ function leadRmsJourneyModel(detail = {}) {
   const currentDetail = events[0]?.event_description || rms.last_material_sent || (phase
     ? `El lead está en ${phase.label}.`
     : "Aún no ha ingresado al flujo de la fábrica.");
-  const nextPhase = phaseIndex >= 0 ? LEAD_RMS_CONVERSION_PATH[phaseIndex + 1] : LEAD_RMS_CONVERSION_PATH[0];
+  const nextPhase = phaseIndex >= 0
+    ? LEAD_RMS_CONVERSION_PATH.slice(phaseIndex + 1).find((candidate) => !candidate.auxiliary)
+    : LEAD_RMS_CONVERSION_PATH[0];
   return {
     active,
     phase,
@@ -38369,14 +38371,16 @@ const RMS_QUALITY_CONTROL_CONFIG = {
   preprocesamiento: {
     title: "Control de calidad 1",
     subtitle: "Seguimiento desde Recolectar hasta Activación 1",
-    description: "Consulta el estado, la calidad, el producto y la oferta de cada lead sin detener el flujo comercial.",
+    description: "Lee el recorrido inicial de cada oportunidad: calidad, producto, activación y siguiente paso, sin detener la operación.",
     phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
+    focus: "Detecta información incompleta antes de que el lead entre a Evaluación.",
   },
   revenue_generado: {
     title: "Control de calidad 2",
     subtitle: "Seguimiento desde Evaluación hasta venta atribuida",
-    description: "Revisa avance comercial, riesgos, negociación y cierres atribuidos como tablero auxiliar.",
+    description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
     phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
+    focus: "Confirma que cada venta tenga una trazabilidad comercial clara antes de pasar a postventa.",
   },
 };
 
@@ -38387,25 +38391,49 @@ function rmsQualityControlConfig(key = "") {
 function renderRmsQualityControlAccess(data = {}, opportunities = []) {
   if (!rmsQualityControlAccess) return;
   const qualityStages = rmsQualityControlStages(data);
-  rmsQualityControlAccess.innerHTML = qualityStages.map((stage) => {
+  if (!qualityStages.length) {
+    rmsQualityControlAccess.innerHTML = "";
+    return;
+  }
+  const allStages = rmsFactoryStages(data);
+  rmsQualityControlAccess.innerHTML = `
+    <header class="rms-quality-control-intro">
+      <div>
+        <span class="mono-label">Tableros auxiliares</span>
+        <h3>Control de calidad del flujo RMS</h3>
+        <p>Consulta el recorrido completo del lead sin sumarlo a las estaciones ni interrumpir su avance.</p>
+      </div>
+      <small>Lectura y diagnóstico continuo</small>
+    </header>
+    <div class="rms-quality-control-list">
+      ${qualityStages.map((stage) => {
     const config = rmsQualityControlConfig(stage.key);
     if (!config) return "";
     const visual = rmsStationVisualMeta(stage.key);
     const count = opportunities.filter((item) => config.phases.includes(item.stage)).length;
     const legacy = opportunities.filter((item) => item.stage === stage.key).length;
+    const route = config.phases
+      .map((phase) => allStages.find((item) => item.key === phase)?.short_label)
+      .filter(Boolean);
     return `
       <article class="rms-quality-control-card" data-rms-open-quality-control="${escapeHtml(stage.key)}">
-        <img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async">
-        <div>
-          <span class="mono-label">Tablero auxiliar</span>
+        <figure><img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async"></figure>
+        <div class="rms-quality-control-copy">
+          <span class="mono-label">Tablero auxiliar ${stage.key === "preprocesamiento" ? "01" : "02"}</span>
           <strong>${escapeHtml(config.title)}</strong>
           <small>${escapeHtml(config.subtitle)}</small>
-          <em class="rms-quality-control-count"><strong>${count.toLocaleString("es-CO")}</strong> leads observados${legacy ? ` · ${legacy.toLocaleString("es-CO")} en revisión` : ""}</em>
+          <p>${escapeHtml(config.focus || "")}</p>
+          <div class="rms-quality-control-route" aria-label="Tramo observado">
+            ${route.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}
+          </div>
         </div>
+        <div class="rms-quality-control-metric"><strong>${count.toLocaleString("es-CO")}</strong><span>leads observados</span>${legacy ? `<small>${legacy.toLocaleString("es-CO")} en revisión</small>` : ""}</div>
         <button class="ghost-button compact" type="button" data-rms-open-quality-control="${escapeHtml(stage.key)}">Abrir tablero</button>
       </article>
     `;
-  }).join("");
+      }).join("")}
+    </div>
+  `;
   rmsQualityControlAccess.querySelectorAll("[data-rms-open-quality-control]").forEach((control) => {
     control.addEventListener("click", (event) => {
       event.preventDefault();
@@ -38443,28 +38471,36 @@ function renderRmsQualityControlDashboard(key = "") {
     <section class="rms-quality-dashboard" aria-label="${escapeHtml(config.title)}">
       <header class="rms-quality-dashboard-head">
         <button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button>
-        <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
         <div>
-          <span class="mono-label">Tablero paralelo · no mueve leads</span>
+          <span class="mono-label">Tablero auxiliar · no mueve leads</span>
           <h3>${escapeHtml(config.title)}</h3>
           <p>${escapeHtml(config.description)}</p>
         </div>
+        <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
       </header>
-      <div class="rms-quality-dashboard-summary">
-        <span><strong>${rows.length.toLocaleString("es-CO")}</strong> leads observados</span>
-        ${phaseCounts.map((entry) => `<span><strong>${entry.count.toLocaleString("es-CO")}</strong> ${escapeHtml(stageName(entry.phase))}</span>`).join("") || "<span>Sin leads en este tramo.</span>"}
-      </div>
-      <div class="rms-quality-dashboard-list">
+      <section class="rms-quality-dashboard-context">
+        <div>
+          <span class="mono-label">Alcance de la revisión</span>
+          <strong>${escapeHtml(config.subtitle)}</strong>
+          <p>${escapeHtml(config.focus || "")}</p>
+        </div>
+        <dl class="rms-quality-dashboard-summary">
+          <div><dt>Leads observados</dt><dd>${rows.length.toLocaleString("es-CO")}</dd></div>
+          ${phaseCounts.map((entry) => `<div><dt>${escapeHtml(stageName(entry.phase))}</dt><dd>${entry.count.toLocaleString("es-CO")}</dd></div>`).join("") || "<div><dt>Estado</dt><dd>Sin leads</dd></div>"}
+        </dl>
+      </section>
+      <section class="rms-quality-dashboard-list" aria-label="Leads en revisión">
+        <div class="rms-quality-dashboard-list-head"><span>Lead y contacto</span><span>Ubicación</span><span>Calidad</span><span>Oferta o producto</span><span aria-hidden="true"></span></div>
         ${rows.map((item) => `
           <button type="button" class="rms-quality-dashboard-row" data-rms-inspect="${escapeHtml(item.id)}">
             <span><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto")}</small></span>
             <span><b>Estación actual</b>${escapeHtml(stageName(item.stage))}</span>
             <span><b>Calidad</b>${escapeHtml(rmsLeadQualityLabel(item))}</span>
-            <span><b>Oferta / producto</b>${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span>
+            <span><b>Oferta o producto</b>${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span>
             <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
           </button>
         `).join("") || '<p class="empty-state compact">Todavía no hay leads en este tramo de control.</p>'}
-      </div>
+      </section>
     </section>
   `;
   bindRmsMachineActions(rmsStationWorkspace);
@@ -38931,7 +38967,7 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Leads con producto o servicio asignado.",
     operation: "Define estado comercial, temperatura, prioridad, responsable y siguiente paso de la primera activación.",
-    output: "Oportunidad activada y preparada para Control de calidad 1.",
+    output: "Oportunidad activada y lista para Evaluación.",
     operatorHint: "Esta estación organiza la primera acción comercial antes de invertir más esfuerzo en el lead.",
   },
   {
@@ -38996,7 +39032,7 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Clientes con intención clara, propuesta, factura, link de pago o cuenta de cobro.",
     operation: "Ensambla el cierre comercial y deja la venta vinculada a su fuente, campaña, ticket o acción.",
-    output: "Venta atribuida y lista para Control de calidad 2.",
+    output: "Venta atribuida y lista para Activación 2.",
     operatorHint: "Cerrar no es solo cobrar: es dejar evidencia de qué produjo el revenue.",
   },
   {
@@ -39038,7 +39074,7 @@ const RMS_TUTORIAL_STEPS = [
     output: "Aprendizajes accionables para alimentar mejor la siguiente ronda de Leads recolectados.",
     operatorHint: "La máquina se vuelve más eficiente cuando el aprendizaje vuelve al inicio del ciclo.",
   },
-];
+].filter((step) => !RMS_QUALITY_CONTROL_KEYS.includes(step.key));
 
 function renderRmsTutorial() {
   if (!rmsTutorialSteps || !rmsTutorialPanel) return;
