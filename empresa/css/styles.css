@@ -53670,14 +53670,7 @@ html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-cont
 
 html body[data-current-view="leads"] .portal-shell #leadDirectoryCommand,
 html body[data-current-view="leads"] .portal-shell #manualContactsDirectoryCard,
-html body[data-current-view="leads"] .portal-shell #manualLeadCard,
-html body[data-current-view="leads"] .portal-shell #leadFeedCard,
-html body[data-current-view="leads"] .portal-shell #campaignLeadsCard {
-  display: none !important;
-}
-
-/* El feed y la tabla auxiliar de campañas no son contenido de Agenda. */
-.legacy-contact-data-cache {
+html body[data-current-view="leads"] .portal-shell #manualLeadCard {
   display: none !important;
 }
 

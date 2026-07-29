@@ -14166,7 +14166,8 @@ function renderLeadsView() {
   }
 
   const rows = filterRows(state.selectedLeads || [], ["name", "document_id", "phone", "email", "qr_status", "reward_name", "lead_source"]);
-  campaignLeadsTable.innerHTML = rows.map((item) => `
+  if (campaignLeadsTable) {
+    campaignLeadsTable.innerHTML = rows.map((item) => `
     <tr>
       <td>${escapeHtml(item.name || "-")}</td>
       <td>${escapeHtml(item.lead_source || "-")}</td>
@@ -14178,10 +14179,11 @@ function renderLeadsView() {
       <td>${escapeHtml(item.reward_name || "-")}</td>
       <td>${item.qr_code_id ? `<button class="ghost-button" type="button" data-download-lead-qr="${escapeHtml(item.qr_code_id)}">Ticket</button>` : "-"}</td>
     </tr>
-  `).join("") || '<tr><td colspan="9">Sin leads para esta campaña.</td></tr>';
-  campaignLeadsTable.querySelectorAll("[data-download-lead-qr]").forEach((button) => {
-    button.addEventListener("click", () => downloadActiveLeadQr(button.dataset.downloadLeadQr));
-  });
+    `).join("") || '<tr><td colspan="9">Sin leads para esta campaña.</td></tr>';
+    campaignLeadsTable.querySelectorAll("[data-download-lead-qr]").forEach((button) => {
+      button.addEventListener("click", () => downloadActiveLeadQr(button.dataset.downloadLeadQr));
+    });
+  }
 }
 
 function renderRedemptionsView() {
@@ -25440,7 +25442,7 @@ function renderNoCampaignState() {
   funnelStack.innerHTML = "";
   recentRedemptionsTable.innerHTML = '<tr><td colspan="4">Sin redenciones.</td></tr>';
   recentLeadsTable.innerHTML = '<tr><td colspan="4">Sin leads.</td></tr>';
-  campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
+  if (campaignLeadsTable) campaignLeadsTable.innerHTML = '<tr><td colspan="9">Sin leads.</td></tr>';
   campaignRedemptionsTable.innerHTML = '<tr><td colspan="6">Sin redenciones.</td></tr>';
   campaignSalesTable.innerHTML = '<tr><td colspan="7">Sin ventas.</td></tr>';
   branchTable.innerHTML = '<tr><td colspan="9">Sin sedes registradas ni actividad por sucursal.</td></tr>';
