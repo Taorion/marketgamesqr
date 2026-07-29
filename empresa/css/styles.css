@@ -53676,6 +53676,11 @@ html body[data-current-view="leads"] .portal-shell #campaignLeadsCard {
   display: none !important;
 }
 
+/* El feed y la tabla auxiliar de campañas no son contenido de Agenda. */
+.legacy-contact-data-cache {
+  display: none !important;
+}
+
 html body[data-current-view="leads"] .portal-shell #leadDirectoryAudienceTabs {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(150px, 1fr)) !important;

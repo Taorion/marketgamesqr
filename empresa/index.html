@@ -4804,53 +4804,12 @@
                 <button class="solid-button" id="manualLeadSubmitButton" type="submit">Guardar prospecto</button>
               </form>
             </article>
-            <article class="surface-card data-table-card hidden" id="leadFeedCard" hidden>
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Feed comercial</span>
-                  <h3>Leads, compradores y contactos retenidos por plan</h3>
-                </div>
-                <span class="pill muted" id="leadFeedRetention">Retención sin cargar</span>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Contacto</th>
-                      <th>Origen</th>
-                      <th>Campaña / asunto</th>
-                      <th>Estado</th>
-                      <th>Compra</th>
-                      <th>Accion sugerida</th>
-                    </tr>
-                  </thead>
-                  <tbody id="leadFeedTable"></tbody>
-                </table>
-              </div>
-            </article>
-            <article class="surface-card data-table-card hidden" id="campaignLeadsCard" hidden>
-              <div class="table-card-head">
-                <span class="mono-label">Leads de la campaña</span>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Origen</th>
-                      <th>Intereses</th>
-                      <th>Siguiente acción</th>
-                      <th>Cédula</th>
-                      <th>Teléfono</th>
-                      <th>Tickets</th>
-                      <th>Premio / contacto</th>
-                      <th>Accion</th>
-                    </tr>
-                  </thead>
-                  <tbody id="campaignLeadsTable"></tbody>
-                </table>
-              </div>
-            </article>
+            <!-- Datos internos usados por otros flujos; no pertenecen a Agenda. -->
+            <section class="legacy-contact-data-cache" aria-hidden="true" hidden>
+              <span id="leadFeedRetention"></span>
+              <table><tbody id="leadFeedTable"></tbody></table>
+              <table><tbody id="campaignLeadsTable"></tbody></table>
+            </section>
             <article class="surface-card lead-detail-workspace hidden" id="leadDetailModal" role="dialog" aria-modal="true" aria-labelledby="leadDetailTitle">
               <div class="lead-detail-interstitial-card" role="document">
                 <div class="lead-workspace-head">
