@@ -5,6 +5,7 @@ const progressLabel = document.getElementById("progressLabel");
 const progressPercent = document.getElementById("progressPercent");
 const progressBar = document.getElementById("progressBar");
 const businessName = document.getElementById("businessName");
+const activationBusinessLogo = document.getElementById("activationBusinessLogo");
 const activationTitle = document.getElementById("activationTitle");
 const activationDescription = document.getElementById("activationDescription");
 const participantForm = document.getElementById("participantForm");
@@ -373,7 +374,19 @@ function isPremium(activation) {
 
 function renderActivation(activation) {
   currentActivation = activation;
-  businessName.textContent = activation.business?.name || "Qori RMS";
+  const business = activation.business || {};
+  const businessLabel = business.name || "Qori RMS";
+  const logoUrl = String(business.logo_url || "").trim();
+  businessName.textContent = businessLabel;
+  if (activationBusinessLogo) {
+    activationBusinessLogo.src = logoUrl || "/img/Logotipo%20Qori%20VF.png";
+    activationBusinessLogo.alt = logoUrl ? `Logo de ${businessLabel}` : "Logo Qori";
+    activationBusinessLogo.onerror = () => {
+      activationBusinessLogo.onerror = null;
+      activationBusinessLogo.src = "/img/Logotipo%20Qori%20VF.png";
+      activationBusinessLogo.alt = "Logo Qori";
+    };
+  }
   activationTitle.textContent = activation.title;
   activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
     ? "Registra tus datos, responde el formulario y raspa la superficie para descubrir el premio."

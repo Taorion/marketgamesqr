@@ -460,6 +460,7 @@ function normalizeCaptureConfig(config = {}) {
 function publicActivation(row, questions = [], scoreRules = [], touchZones = []) {
   const mapped = mapActivation(row);
   const scratchWin = row.activation_type === "SCRATCH_WIN";
+  const brand = brandStyle(row.business_settings || {});
   return {
     ...mapped,
     ...(scratchWin ? {
@@ -470,6 +471,9 @@ function publicActivation(row, questions = [], scoreRules = [], touchZones = [])
       id: row.company_id,
       name: row.business_name,
       slug: row.business_slug,
+      logo_url: brand.logoUrl || null,
+      primary_color: brand.primary,
+      secondary_color: brand.secondary,
     },
     questions: questions.map((question) => ({
       id: question.id,
@@ -943,7 +947,7 @@ async function listDeletedInteractiveActivations(businessId) {
 
 async function getPublicInteractiveActivation(slug) {
   const activationResult = await query(
-    `select a.*, b.name as business_name, b.slug as business_slug
+    `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings
      from interactive_activations a
      join businesses b on b.id = a.company_id
      where a.public_slug = $1 and b.is_active = true`,
