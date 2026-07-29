@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
+  <link rel="stylesheet" href="css/communications-flow.css?v=20260728-v1">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -193,6 +194,10 @@
             <button class="nav-item nav-item-core" data-view="strategic-qr" type="button">
               <span class="material-symbols-outlined">bolt</span>
               <span><strong>Activaciones</strong><small>Experiencias, links y tickets</small></span>
+            </button>
+            <button class="nav-item" data-view="communications" type="button">
+              <span class="material-symbols-outlined">campaign</span>
+              <span><strong>Comunicaciones</strong><small>Email y publicaciones</small></span>
             </button>
             <button class="nav-item" data-view="smart-catalogs" type="button">
               <span class="material-symbols-outlined">storefront</span>
@@ -1687,6 +1692,55 @@
                   </table>
                 </div>
               </article>
+            </section>
+          </section>
+
+          <section class="view-section" data-view="communications">
+            <div class="view-head communication-view-head">
+              <div>
+                <span class="mono-label">Comunicaciones</span>
+                <h2>Comunica tu oferta</h2>
+                <p>Crea una pieza, conéctala a una campaña, canal o activación y llévala a los contactos correctos.</p>
+              </div>
+              <button class="solid-button" type="button" data-open-communication-composer>
+                <span class="material-symbols-outlined" aria-hidden="true">add</span> Nueva comunicación
+              </button>
+            </div>
+
+            <section class="communication-workspace" aria-label="Centro de comunicaciones">
+              <div class="communication-workspace-intro">
+                <span class="material-symbols-outlined" aria-hidden="true">outgoing_mail</span>
+                <div>
+                  <strong>Del mensaje a la acción</strong>
+                  <p>Selecciona una comunicación para ver su alcance. Las piezas por email se envían únicamente a contactos con autorización.</p>
+                </div>
+              </div>
+              <div class="communication-library" id="businessCommunicationsList" aria-live="polite"></div>
+            </section>
+
+            <section class="communication-audience-section" aria-label="Audiencia de comunicaciones">
+              <div class="communication-section-heading">
+                <div>
+                  <span class="mono-label">Audiencia</span>
+                  <h3>Elige a quién comunicar</h3>
+                  <p>Filtra por interés, ciudad, canal, campaña, compras o puntaje. El rango de edad aparecerá cuando el contacto tenga fecha de nacimiento registrada.</p>
+                </div>
+                <div class="communication-audience-summary" id="communicationAudienceSummary">Carga contactos para empezar.</div>
+              </div>
+              <form class="communication-audience-filters" id="communicationAudienceFilters">
+                <label><span>Buscar</span><input id="communicationAudienceSearch" type="search" placeholder="Nombre, email o teléfono"></label>
+                <label><span>Interés</span><input id="communicationAudienceInterest" type="search" placeholder="Producto o servicio"></label>
+                <label><span>Ciudad</span><input id="communicationAudienceCity" type="search" placeholder="Ej. Bogotá"></label>
+                <label><span>Compras</span><select id="communicationAudiencePurchases"><option value="">Todas</option><option value="true">Con compras</option><option value="false">Sin compras</option></select></label>
+                <label><span>Puntaje mínimo</span><input id="communicationAudienceScore" type="number" min="0" placeholder="0"></label>
+                <button class="solid-button" type="submit">Aplicar filtros</button>
+              </form>
+              <div class="communication-audience-actions">
+                <button class="ghost-button compact" type="button" data-communication-select-loaded>Seleccionar resultados cargados</button>
+                <span id="communicationSelectionSummary">0 contactos seleccionados</span>
+              </div>
+              <div class="communication-audience-list" id="communicationAudienceList"></div>
+              <div class="communication-send-bar" id="communicationSendBar"></div>
             </section>
           </section>
 
@@ -7360,8 +7414,50 @@
       </form>
     </div>
   </div>
+  <div class="modal-shell hidden" id="communicationComposerModal" role="dialog" aria-modal="true" aria-labelledby="communicationComposerTitle">
+    <article class="modal-card communication-composer-modal">
+      <header class="communication-composer-head">
+        <div>
+          <span class="mono-label">Nueva comunicación</span>
+          <h3 id="communicationComposerTitle">Crea un mensaje listo para enviar</h3>
+          <p>Una sola pieza puede servir para email, redes o ambos canales.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-communication-composer aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <form class="communication-composer-form" id="communicationComposerForm">
+        <div class="communication-type-switch" role="group" aria-label="Tipo de comunicación">
+          <label><input type="radio" name="communicationType" value="EMAIL" checked> Email</label>
+          <label><input type="radio" name="communicationType" value="SOCIAL"> Redes</label>
+          <label><input type="radio" name="communicationType" value="MIXED"> Email y redes</label>
+        </div>
+        <div class="communication-composer-grid">
+          <label><span>Nombre interno</span><input id="communicationTitleInput" required maxlength="180" placeholder="Ej. Oferta de agosto para clientes frecuentes"></label>
+          <label><span>Campaña</span><select id="communicationCampaignInput"><option value="">Sin campaña</option></select></label>
+          <label><span>Canal</span><select id="communicationChannelInput"><option value="">Sin canal</option></select></label>
+          <label><span>Activación</span><select id="communicationActivationInput"><option value="">Sin activación</option></select></label>
+        </div>
+        <section class="communication-email-fields">
+          <label><span>Asunto del email</span><input id="communicationSubjectInput" maxlength="220" placeholder="Un beneficio para ti, {{nombre}}"></label>
+          <label><span>Mensaje</span><textarea id="communicationEmailBodyInput" rows="7" placeholder="Hola {{nombre}}, tenemos una oferta para ti..."></textarea></label>
+        </section>
+        <section class="communication-social-fields hidden">
+          <label><span>Descripción para redes</span><textarea id="communicationSocialCopyInput" rows="6" placeholder="Escribe el texto de publicación, llamado a la acción y hashtags."></textarea></label>
+        </section>
+        <div class="communication-composer-grid communication-media-fields">
+          <label><span>URL de imagen</span><input id="communicationImageInput" type="url" placeholder="https://..."></label>
+          <label><span>Enlace de acción</span><input id="communicationActionUrlInput" type="url" placeholder="https://..."></label>
+        </div>
+        <div class="communication-composer-preview" id="communicationComposerPreview"></div>
+        <footer class="modal-actions">
+          <p class="error-line" id="communicationComposerMessage"></p>
+          <div class="modal-button-row"><button class="ghost-button" type="button" data-close-communication-composer>Cancelar</button><button class="solid-button" type="submit">Guardar comunicación</button></div>
+        </footer>
+      </form>
+    </article>
+  </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
     <script src="js/app.js?v=lead-rms-journey-20260728-v189" defer></script>
+    <script src="js/communications.js?v=20260728-v1" defer></script>
 </body>
 </html>
 

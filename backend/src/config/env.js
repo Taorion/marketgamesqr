@@ -43,6 +43,7 @@ const env = {
   productCampaignId: process.env.PRODUCT_CAMPAIGN_ID || null,
   contactRecipientEmail: process.env.CONTACT_RECIPIENT_EMAIL || "contacto@marketgamesqr.com",
   contactMailFrom: process.env.CONTACT_MAIL_FROM || "Sales Machine <no-reply@marketgamesqr.com>",
+  marketingMailFrom: process.env.MARKETING_MAIL_FROM || process.env.CONTACT_MAIL_FROM || "Sales Machine <no-reply@marketgamesqr.com>",
   resendApiKey: process.env.RESEND_API_KEY || "",
   smtpHost: process.env.SMTP_HOST || "",
   smtpPort: Number(process.env.SMTP_PORT || 587),

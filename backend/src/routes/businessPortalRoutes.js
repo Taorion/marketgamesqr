@@ -124,6 +124,13 @@ const {
   rewardsPending: gamificationRewardsPending,
   seasons: gamificationSeasons,
 } = require("../controllers/gamificationMissionController");
+const {
+  audience: communicationAudience,
+  create: createCommunication,
+  list: listCommunications,
+  patch: patchCommunication,
+  send: sendCommunication,
+} = require("../controllers/businessCommunicationController");
 
 const router = express.Router();
 
@@ -189,6 +196,11 @@ router.post("/leads/:leadId/purchases", addPurchase);
 router.post("/leads/:leadId/activations", sendActivation);
 
 router.use(requirePortalAccess);
+router.get("/communications/audience", shortBusinessCache, communicationAudience);
+router.get("/communications", standardBusinessCache, listCommunications);
+router.post("/communications", createCommunication);
+router.patch("/communications/:id", patchCommunication);
+router.post("/communications/:id/send", sendCommunication);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", heavyBusinessCache, commandCenterAnalytics);
 router.get("/branches", standardBusinessCache, listBranches);

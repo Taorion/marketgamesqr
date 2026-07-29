@@ -6,7 +6,7 @@ const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
-const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr"]);
+const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr", "communications"]);
 const RMS_STATION_RENDER_INITIAL_LIMIT = 6;
 const RMS_STATION_RENDER_INCREMENT = 8;
 const workspace = document.getElementById("workspace");
@@ -1240,6 +1240,7 @@ const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-
 const sidebarSectionByView = Object.freeze({
   campaigns: "gos",
   "strategic-qr": "offer",
+  communications: "offer",
   "smart-catalogs": "offer",
   inventory: "offer",
   "reward-passes": "offer",
@@ -2316,6 +2317,15 @@ let state = {
   businessUsers: [],
   campaignGroups: null,
   campaigns: [],
+  communications: [],
+  communicationsLoaded: false,
+  communicationsLoading: false,
+  communicationAudience: [],
+  communicationAudienceTotal: 0,
+  communicationAudienceCapped: false,
+  communicationAudienceFilters: { search: "", interest: "", city: "", has_purchases: "", score_min: "" },
+  communicationSelectedRefs: [],
+  selectedCommunicationId: "",
   adminCampaigns: [],
   affiliates: [],
   rewardPasses: [],
@@ -3503,6 +3513,12 @@ function resetBusinessScopedState(options = {}) {
   state.businessUsers = [];
   state.campaignGroups = null;
   state.campaigns = [];
+  state.communications = [];
+  state.communicationsLoaded = false;
+  state.communicationAudience = [];
+  state.communicationAudienceTotal = 0;
+  state.communicationSelectedRefs = [];
+  state.selectedCommunicationId = "";
   state.adminCampaigns = [];
   state.affiliates = [];
   state.rewardPasses = [];
@@ -6173,6 +6189,17 @@ function setView(view) {
     renderStrategicQrView();
     loadTicketCenterForCurrentTab({ quiet: !state.strategicQrLoaded }).catch((error) => {
       showFeedback(error.message, "error", { title: "No se pudo cargar Gaming Center" });
+    });
+  }
+  if (view === "communications") {
+    renderCommunicationsView();
+    Promise.all([
+      loadBusinessCommunications({ quiet: true }),
+      loadCommunicationAudience({ quiet: true }),
+      loadAcquisitionChannels({ quiet: true }),
+      loadStrategicQrData({ groups: ["activations"], quiet: true }),
+    ]).then(() => renderCommunicationsView()).catch((error) => {
+      showFeedback(error.message || "No se pudieron cargar las comunicaciones.", "error", { title: "Comunicaciones" });
     });
   }
   if (view === "validator") {
