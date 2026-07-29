@@ -1029,6 +1029,8 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     affiliates,
     rewardPasses,
     events,
+    rmsState,
+    rmsEvents,
   ] = await Promise.all([
     query(
       `select bs.*, c.name as campaign_name, br.name as branch_name, u.full_name as seller_name,
@@ -1285,6 +1287,25 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
        limit 160`,
       sourceParams
     ),
+    query(
+      `select rms_phase, priority, recommended_action, last_operation, last_material_sent,
+              revenue_potential, metadata, created_at, updated_at
+       from rms_lead_state
+       where business_id = $1 and source_type = $2 and source_id = $3
+       order by updated_at desc
+       limit 1`,
+      [lead.business_id, lead.source_type || "PLAYER", lead.id]
+    ),
+    query(
+      `select event_type, event_title, event_description, rms_phase, operation_key,
+              material_type, metadata, created_at
+       from rms_machine_events
+       where business_id = $1
+         and (($2::uuid is not null and lead_id = $2) or (source_type = $3 and source_id = $4))
+       order by created_at desc
+       limit 8`,
+      sourceParams
+    ),
   ]);
 
   const purchaseRows = purchases.rows;
@@ -1382,6 +1403,10 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     affiliate: affiliates.rows[0] || null,
     communications: communicationRows,
     notes: noteRows,
+    rms: {
+      ...(rmsState.rows[0] || {}),
+      events: rmsEvents.rows,
+    },
     timeline: buildTimeline({ lead: detailLead, purchases: purchaseRows, tickets: ticketRows, games: gameRows, activations: activationRows, communications: communicationRows, notes: noteRows, events: events.rows }),
   };
 }

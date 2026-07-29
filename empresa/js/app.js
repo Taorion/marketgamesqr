@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-activation-share-modal-v188";
+const APP_VERSION = "empresa-20260728-lead-rms-journey-v189";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -33565,6 +33565,7 @@ function renderLeadDetailHeader(detail) {
         <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
         <span><strong>Campaña</strong>${escapeHtml(lead.campaign_name || "-")}</span>
       </div>
+      ${renderLeadRmsJourney(detail)}
     </div>
     <div class="lead-decision-panel">
       <article class="lead-health-card">
@@ -33592,6 +33593,79 @@ function renderLeadDetailHeader(detail) {
   leadDetailHeader.querySelector("[data-add-lead-contact]")?.addEventListener("click", () => {
     addLeadToManualContacts({ id: lead.id, source_type: lead.source_type || "PLAYER" });
   });
+}
+
+const LEAD_RMS_CONVERSION_PATH = [
+  { key: "recoleccion", label: "Recolectar", progress: 10 },
+  { key: "alimentacion", label: "Curaduría", progress: 22 },
+  { key: "curaduria", label: "Clasificador", progress: 35 },
+  { key: "clasificacion", label: "Activación 1", progress: 48 },
+  { key: "preprocesamiento", label: "Control de calidad 1", progress: 56, auxiliary: true },
+  { key: "procesamiento", label: "Evaluación", progress: 68 },
+  { key: "control_anti_fuga", label: "Riesgos de fuga", progress: 76 },
+  { key: "accion_correctiva", label: "Negociación", progress: 84 },
+  { key: "cierre", label: "Ventas atribuidas", progress: 94 },
+  { key: "revenue_generado", label: "Control de calidad 2", progress: 97, auxiliary: true },
+  { key: "postventa", label: "Activación 2", progress: 100 },
+  { key: "inteligencia", label: "Inteligencia RMS", progress: 100 },
+];
+
+function leadRmsJourneyModel(detail = {}) {
+  const lead = detail.lead || {};
+  const summary = detail.summary || {};
+  const rms = detail.rms || {};
+  const phaseKey = String(rms.rms_phase || lead.rms_phase || "").trim().toLowerCase();
+  const phaseIndex = LEAD_RMS_CONVERSION_PATH.findIndex((item) => item.key === phaseKey);
+  const phase = phaseIndex >= 0 ? LEAD_RMS_CONVERSION_PATH[phaseIndex] : null;
+  const events = Array.isArray(rms.events) ? rms.events : [];
+  const hasPurchase = Number(summary.purchase_count || 0) > 0 || Number(summary.total_spent || 0) > 0;
+  const active = Boolean(phase);
+  const progress = hasPurchase ? 100 : (phase?.progress || 0);
+  const currentOperation = rms.last_operation || rms.recommended_action || events[0]?.event_title || "Pendiente de asignar una operación";
+  const currentDetail = events[0]?.event_description || rms.last_material_sent || (phase
+    ? `El lead está en ${phase.label}.`
+    : "Aún no ha ingresado al flujo de la fábrica.");
+  const nextPhase = phaseIndex >= 0 ? LEAD_RMS_CONVERSION_PATH[phaseIndex + 1] : LEAD_RMS_CONVERSION_PATH[0];
+  return {
+    active,
+    phase,
+    events,
+    progress,
+    currentOperation,
+    currentDetail,
+    nextLabel: hasPurchase ? "Compra registrada" : (nextPhase?.label || "Venta atribuida"),
+    status: hasPurchase ? "Convertido" : (active ? "Operando en fábrica" : "Sin operar en fábrica"),
+  };
+}
+
+function renderLeadRmsJourney(detail = {}) {
+  const rms = leadRmsJourneyModel(detail);
+  const recentEvents = rms.events.slice(0, 2);
+  return `
+    <section class="lead-rms-journey ${rms.active ? "is-active" : "is-idle"}" aria-label="Estado del lead en la fábrica RMS">
+      <div class="lead-rms-journey-head">
+        <div>
+          <span class="mono-label">Fábrica RMS</span>
+          <strong>${escapeHtml(rms.status)}</strong>
+          <small>${escapeHtml(rms.phase?.label || "Este contacto no tiene una estación RMS asignada.")}</small>
+        </div>
+        <span class="lead-rms-progress-value">${rms.progress}% hacia conversión</span>
+      </div>
+      <div class="lead-rms-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${rms.progress}" aria-label="Avance hacia conversión">
+        <span style="width:${rms.progress}%"></span>
+      </div>
+      <div class="lead-rms-journey-details">
+        <span><b>Ahora</b>${escapeHtml(rms.currentOperation)}</span>
+        <span><b>Después</b>${escapeHtml(rms.nextLabel)}</span>
+      </div>
+      <p class="lead-rms-current-detail">${escapeHtml(rms.currentDetail)}</p>
+      ${recentEvents.length ? `
+        <div class="lead-rms-activity" aria-label="Actividad reciente en la fábrica">
+          ${recentEvents.map((event) => `<span>${escapeHtml(event.event_title || event.event_type || "Movimiento RMS")} · ${formatDate(event.created_at)}</span>`).join("")}
+        </div>
+      ` : ""}
+    </section>
+  `;
 }
 
 async function updateManualLeadFromForm(event) {
