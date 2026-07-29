@@ -17,7 +17,7 @@ const mediaAssetSchema = z.object({
   type: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(),
   size: z.number().int().positive().max(3 * 1024 * 1024).optional(),
 });
-const communicationBaseSchema = z.object({
+const communicationFieldsSchema = z.object({
   title: z.string().trim().min(3).max(180),
   communication_type: z.enum(["EMAIL", "SOCIAL", "MIXED"]).default("EMAIL"),
   status: z.enum(["DRAFT", "READY", "SENT", "ARCHIVED"]).default("DRAFT"),
@@ -31,13 +31,16 @@ const communicationBaseSchema = z.object({
   action_url: optionalUrl,
   audience_filters: z.record(z.string(), z.unknown()).optional().default({}),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
-}).superRefine((body, ctx) => {
+});
+
+function validateCommunicationMedia(body, ctx) {
   const media = body.metadata?.media_assets;
   if (media === undefined) return;
   const parsed = z.array(mediaAssetSchema).max(3, "Puedes adjuntar hasta 3 imágenes por comunicación.").safeParse(media);
   if (!parsed.success) parsed.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ["metadata", "media_assets", ...issue.path] }));
-});
-const communicationSchema = communicationBaseSchema.superRefine((body, ctx) => {
+}
+const communicationSchema = communicationFieldsSchema.superRefine((body, ctx) => {
+  validateCommunicationMedia(body, ctx);
   if (["EMAIL", "MIXED"].includes(body.communication_type) && (!body.subject || !body.email_body)) {
     ctx.addIssue({ code: "custom", path: ["subject"], message: "El email necesita asunto y mensaje." });
   }
@@ -45,7 +48,10 @@ const communicationSchema = communicationBaseSchema.superRefine((body, ctx) => {
     ctx.addIssue({ code: "custom", path: ["social_copy"], message: "La publicación necesita una descripción." });
   }
 });
-const communicationPatchSchema = communicationBaseSchema.partial().refine((body) => Object.keys(body).length > 0, "No hay cambios para guardar.");
+const communicationPatchSchema = communicationFieldsSchema.partial().superRefine((body, ctx) => {
+  if (Object.keys(body).length === 0) ctx.addIssue({ code: "custom", message: "No hay cambios para guardar." });
+  validateCommunicationMedia(body, ctx);
+});
 const recipientSchema = z.object({ source_id: z.string().uuid(), source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).optional() });
 const sendSchema = z.object({ recipients: z.array(recipientSchema).min(1).max(120), consent_confirmed: z.literal(true) });
 
