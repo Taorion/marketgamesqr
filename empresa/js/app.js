@@ -6006,7 +6006,11 @@ function setView(view) {
         `;
       }
     }
-    loadDashboardData({ quiet: true }).then(renderDashboard).catch((error) => {
+    Promise.all([
+      loadDashboardData({ quiet: true }),
+      loadAcquisitionChannels({ quiet: true }),
+      loadChannelEfforts({ quiet: true }),
+    ]).then(renderDashboard).catch((error) => {
       showFeedback(error.message || "No se pudo cargar el Centro de Revenue.", "error", { title: "Dashboard" });
     });
     if (!state.missionsLoaded) {
@@ -10724,6 +10728,65 @@ function dashboardBuilderTopChannels() {
   return channelRows.filter((row) => row.revenue || row.investment).sort((a, b) => b.revenue - a.revenue).slice(0, 4);
 }
 
+function dashboardCommercialEconomics() {
+  const summary = state.summary || {};
+  const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
+  const channels = Array.isArray(state.acquisitionChannels) ? state.acquisitionChannels : [];
+  const efforts = Array.isArray(state.acquisitionChannelEfforts) ? state.acquisitionChannelEfforts : [];
+  const campaignTotals = campaigns.length
+    ? campaigns.reduce((acc, campaign) => {
+      acc.investment += toNumber(campaign.budget_total || campaign.investment || campaign.cost_total);
+      acc.revenue += toNumber(campaign.attributed_revenue || campaign.observed_revenue);
+      acc.customers += toNumber(campaign.direct_sales_count || campaign.attributed_sales_count);
+      return acc;
+    }, { investment: 0, revenue: 0, customers: 0 })
+    : {
+      investment: toNumber(summary.total_investment),
+      revenue: toNumber(summary.attributed_revenue || summary.observed_revenue),
+      customers: toNumber(summary.direct_sales_count || summary.observed_sales_count),
+    };
+
+  // A detailed effort is the source of truth for its channel. Its spend must
+  // not be counted again through the channel's period budget.
+  const effortChannelIds = new Set(efforts.map((effort) => String(effort.channel_id || "")).filter(Boolean));
+  const standaloneEfforts = efforts.filter((effort) => !effort.campaign_id);
+  const standaloneChannels = channels.filter((channel) => {
+    const hasCampaign = Array.isArray(channel.campaign_breakdown) && channel.campaign_breakdown.length > 0;
+    return !hasCampaign && !effortChannelIds.has(String(channel.id || ""));
+  });
+  const standaloneEffortTotals = standaloneEfforts.reduce((acc, effort) => {
+    const metrics = effort.metrics || {};
+    acc.investment += toNumber(metrics.investment || effort.budget_amount);
+    acc.revenue += toNumber(metrics.revenue);
+    acc.customers += toNumber(metrics.unique_customers || metrics.sales);
+    return acc;
+  }, { investment: 0, revenue: 0, customers: 0 });
+  const standaloneChannelTotals = standaloneChannels.reduce((acc, channel) => {
+    const metrics = channel.metrics || {};
+    acc.investment += toNumber(metrics.investment || channel.period_budget);
+    acc.revenue += toNumber(metrics.revenue);
+    acc.customers += toNumber(metrics.sales);
+    return acc;
+  }, { investment: 0, revenue: 0, customers: 0 });
+  const investment = campaignTotals.investment + standaloneEffortTotals.investment + standaloneChannelTotals.investment;
+  const revenue = campaignTotals.revenue + standaloneEffortTotals.revenue + standaloneChannelTotals.revenue;
+  const customers = campaignTotals.customers + standaloneEffortTotals.customers + standaloneChannelTotals.customers;
+  const addedSources = [
+    standaloneEffortTotals.investment ? `${standaloneEfforts.length} esfuerzo(s) sin campaña` : "",
+    standaloneChannelTotals.investment ? `${standaloneChannels.length} canal(es) independientes` : "",
+  ].filter(Boolean);
+  return {
+    investment,
+    revenue,
+    customers,
+    roi: investment ? (revenue - investment) / investment : null,
+    cac: customers ? investment / customers : null,
+    sourceLabel: addedSources.length
+      ? `Campañas + ${addedSources.join(" + ")}`
+      : "Campañas con inversión registrada",
+  };
+}
+
 function getDashboardBuilderNextAction(stats) {
   if (!stats.totalLeads) {
     return { title: "Crear entrada de clientes", meta: "Primero alimenta el sistema", body: "Crea una campaña, QR, dinámica o importa contactos para empezar a medir.", cta: "Crear acción de revenue", route: "campaigns" };
@@ -11251,11 +11314,15 @@ function renderDashboard() {
   const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
   const avgTicket = observedSalesCount ? observedRevenue / observedSalesCount : 0;
   const topAcquisitionSource = [...acquisitionSources].sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))[0];
-  const roiLabel = ratioLabel(summary.observed_roi ?? summary.estimated_roi);
+  const commercialEconomics = dashboardCommercialEconomics();
+  const roiLabel = ratioLabel(commercialEconomics.roi ?? summary.observed_roi ?? summary.estimated_roi);
+  const cacLabel = commercialEconomics.cac === null ? "-" : money(commercialEconomics.cac);
   const strategicClaimRate = dashboard.derived?.strategic_claim_rate || summary.strategic_claim_rate || 0;
   const strategicRedemptionRate = dashboard.derived?.strategic_redemption_rate || summary.strategic_redemption_rate || 0;
   const postSaleRedemptionRate = dashboard.derived?.post_sale_redemption_rate || summary.post_sale_redemption_rate || 0;
   const items = [
+    ["ROI promedio", roiLabel, `${money(commercialEconomics.revenue)} atribuido`, "highlight", "ROI ponderado: compara el revenue de ventas atribuidas contra la inversión registrada en campañas, canales y esfuerzos independientes."],
+    ["CAC promedio", cacLabel, `${commercialEconomics.customers} cliente(s) con venta atribuida`, "highlight", "Costo de adquisición ponderado: inversión comercial total dividida entre clientes con compra atribuida. Registra la inversión de cada esfuerzo para que el dato sea útil."],
     ["Listas para lanzar", summary.ready_for_client_setup, `${summary.scheduled_campaigns || 0} programadas`, "", "Campañas que ya estan estructuradas y pendientes de configuración final o fecha de arranque."],
     ["Campañas activas", summary.active_campaigns, `${state.campaigns.length || 0} registradas`, "", "Campañas actualmente en ejecución y generando interacciones medibles."],
     ["Leads capturados", summary.total_leads, `${summary.redemption_rate || 0}% termina redimiendo`, "", "Personas identificadas que dejaron datos válidos en formularios, juegos o landings."],
@@ -12292,6 +12359,11 @@ function campaignListCardMarkup(campaign = {}) {
         </div>
         <p>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
         <small class="campaign-item-channel">${escapeHtml(channel || "Canal sin definir")}</small>
+      </div>
+      <div class="campaign-item-metrics" aria-label="Economía de la campaña">
+        <span>Inversión<strong>${escapeHtml(money(toNumber(campaign.budget_total || campaign.investment)))}</strong></span>
+        <span>CAC<strong>${escapeHtml(campaign.cost_per_acquired_customer === null || campaign.cost_per_acquired_customer === undefined ? "-" : money(campaign.cost_per_acquired_customer))}</strong></span>
+        <span>ROI<strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></span>
       </div>
       <div class="campaign-item-actions">
         <button class="ghost-button compact" type="button" data-campaign-select="${escapeHtml(campaign.id)}">Ver</button>
@@ -37546,6 +37618,7 @@ function renderChannelEffortsView() {
         <td>${escapeHtml(metrics.rebuy_sales || 0)}</td>
         <td>${escapeHtml(metrics.referral_sales || 0)}</td>
         <td><strong>${escapeHtml(money(revenue))}</strong></td>
+        <td><strong>${escapeHtml(metrics.cac === null || metrics.cac === undefined ? "-" : money(metrics.cac))}</strong></td>
         <td>
           <strong>${escapeHtml(channelRoiLabel(roi))}</strong>
           <br><span class="table-secondary">${escapeHtml(roiDecisionLabel(roi, revenue, investment))}</span>
@@ -37866,6 +37939,7 @@ function renderAcquisitionChannelsView() {
         <td>${escapeHtml(metrics.leads || 0)}</td>
         <td>${escapeHtml(metrics.sales || 0)}</td>
         <td>${escapeHtml(money(revenue))}</td>
+        <td>${escapeHtml(metrics.cac === null || metrics.cac === undefined ? "-" : money(metrics.cac))}</td>
         <td>
           <strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong>
           <br><span class="table-secondary">${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</span>

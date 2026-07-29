@@ -3083,6 +3083,7 @@ async function metricsForChannelEffort(businessId, effort = {}) {
     sales,
     revenue,
     investment,
+    cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
     net_revenue: Number((revenue - investment).toFixed(2)),
     roi: safeRoi(revenue, investment),
     conversion_rate: Number(activity.leads || 0) > 0 ? Number(((sales / Number(activity.leads || 0)) * 100).toFixed(1)) : 0,
@@ -3141,16 +3142,22 @@ async function listAcquisitionChannelEfforts(req, res, next) {
       acc.investment += Number(effort.metrics?.investment || 0);
       acc.leads += Number(effort.metrics?.leads || 0);
       acc.sales += Number(effort.metrics?.sales || 0);
+      acc.unique_customers += Number(effort.metrics?.unique_customers || 0);
       acc.revenue += Number(effort.metrics?.revenue || 0);
       acc.rebuy_sales += Number(effort.metrics?.rebuy_sales || 0);
       acc.referral_sales += Number(effort.metrics?.referral_sales || 0);
       return acc;
-    }, { efforts: 0, investment: 0, leads: 0, sales: 0, revenue: 0, rebuy_sales: 0, referral_sales: 0 });
+    }, { efforts: 0, investment: 0, leads: 0, sales: 0, unique_customers: 0, revenue: 0, rebuy_sales: 0, referral_sales: 0 });
     res.json({
       efforts,
       totals: {
         ...totals,
         roi: safeRoi(totals.revenue, totals.investment),
+        cac: totals.unique_customers > 0
+          ? Number((totals.investment / totals.unique_customers).toFixed(2))
+          : totals.sales > 0
+            ? Number((totals.investment / totals.sales).toFixed(2))
+            : null,
         net_revenue: Number((totals.revenue - totals.investment).toFixed(2)),
       },
     });
