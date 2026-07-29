@@ -22,6 +22,76 @@
 .communication-contact-row { display: grid; grid-template-columns: auto 38px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 15px 4px; border-bottom: 1px solid rgba(15, 79, 152, .11); cursor: pointer; transition: background .18s ease, padding .18s ease; }.communication-contact-row:hover,.communication-contact-row.is-selected { padding-inline: 12px; background: linear-gradient(90deg, rgba(12,191,236,.10), transparent); }.communication-contact-row input { accent-color: #0b63e9; }.communication-contact-avatar { display:grid; place-items:center; width:38px;height:38px;border-radius:50%; color:#fff;background:linear-gradient(145deg,#0a45ae,#05bceb); font-weight:800; }.communication-contact-copy { min-width:0; }.communication-contact-copy strong,.communication-contact-copy small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.communication-contact-copy strong { color:#062a6b; }.communication-contact-copy small,.communication-contact-metrics small { color:#66809e; margin-top:3px; }.communication-contact-metrics { display:grid; text-align:right; }.communication-contact-metrics strong { color:#062a6b; }
 .communication-send-bar { display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin-top:20px; padding:18px 0; border-top:1px solid rgba(15,79,152,.14); border-bottom:1px solid rgba(15,79,152,.14); }.communication-send-bar > .material-symbols-outlined { color:#08a8de; }.communication-send-bar > div { flex:1 1 240px; }.communication-send-bar strong,.communication-send-bar p { display:block; margin:0; }.communication-send-bar strong { color:#062a6b; }.communication-send-bar p { color:#607a9b; margin-top:3px; }.communication-consent { max-width:280px; color:#5b7390; font-size:.84rem; }
 .communication-empty-state { display:grid; justify-items:start; gap:8px; padding:24px 0; color:#597493; }.communication-empty-state .material-symbols-outlined { color:#09b8ee; font-size:28px; }.communication-empty-state strong { color:#062a6b; }.communication-empty-state p { margin:0; }.communication-empty-state.compact { padding:20px 0; }
+
+/* The communications hub is intentionally open, not a stack of nested cards.
+   Generous insets establish a readable work area while the dividers keep the
+   flow connected from message to audience. */
+.view-section.active[data-view="communications"] {
+  display: grid;
+  gap: clamp(34px, 4.8vw, 64px);
+  padding-block: clamp(12px, 2vw, 28px) clamp(40px, 6vw, 84px);
+}
+[data-view="communications"] .communication-view-head {
+  margin: 0;
+  padding-inline: clamp(22px, 4vw, 58px);
+}
+[data-view="communications"] .communication-workspace,
+[data-view="communications"] .communication-audience-section {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+  padding-inline: clamp(22px, 4vw, 58px);
+}
+[data-view="communications"] .communication-workspace {
+  gap: clamp(22px, 3vw, 38px);
+  padding-top: clamp(26px, 4vw, 48px);
+  padding-bottom: clamp(30px, 4.5vw, 58px);
+  border-top: 1px solid rgba(15, 79, 152, .12);
+  border-bottom: 1px solid rgba(15, 79, 152, .12);
+}
+[data-view="communications"] .communication-workspace-intro {
+  max-width: 820px;
+  padding-block: 0;
+  border: 0;
+}
+[data-view="communications"] .communication-library {
+  display: grid;
+  gap: 12px;
+}
+[data-view="communications"] .communication-audience-section {
+  padding-top: clamp(8px, 1.5vw, 18px);
+  border-top: 0;
+}
+[data-view="communications"] .communication-section-heading {
+  margin-bottom: clamp(20px, 2.5vw, 32px);
+}
+[data-view="communications"] .communication-audience-filters {
+  padding-block: clamp(20px, 2.6vw, 30px);
+}
+[data-view="communications"] .communication-audience-actions {
+  padding-block: 18px;
+}
+[data-view="communications"] .communication-audience-list {
+  margin-top: 2px;
+}
+[data-view="communications"] .communication-send-bar {
+  margin-top: clamp(24px, 3vw, 36px);
+  padding-block: clamp(20px, 2.6vw, 30px);
+}
+@media (max-width: 820px) {
+  .view-section.active[data-view="communications"] {
+    gap: 30px;
+    padding-bottom: 48px;
+  }
+  [data-view="communications"] .communication-view-head,
+  [data-view="communications"] .communication-workspace,
+  [data-view="communications"] .communication-audience-section {
+    padding-inline: 20px;
+  }
+  [data-view="communications"] .communication-workspace {
+    padding-top: 28px;
+    padding-bottom: 34px;
+  }
+}
 .communication-composer { width:min(860px, calc(100vw - 32px)); max-height:min(86vh, 900px); overflow:auto; padding:0; }.communication-composer > header { padding:30px 34px 22px; background:linear-gradient(130deg,#073b9c,#08aee0); color:#fff; }.communication-composer > header h2 { margin:6px 0 0; color:#fff; letter-spacing:-.045em; }.communication-composer > header .mono-label,.communication-composer > header p { color:rgba(255,255,255,.82); }.communication-composer-form { display:grid; gap:20px; padding:28px 34px 32px; }.communication-composer-form label { display:grid; gap:7px; color:#506b8d; font-size:.82rem; font-weight:800; }.communication-composer-form input,.communication-composer-form select,.communication-composer-form textarea { width:100%; }.communication-type-picker { display:flex; flex-wrap:wrap; gap:10px; }.communication-type-picker label { display:flex; align-items:center; gap:8px; padding:9px 13px; border-radius:999px; background:#f1f8fd; color:#174575; cursor:pointer; }.communication-composer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }.communication-media-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }.communication-composer-preview { min-height:72px; display:grid; place-items:center; border-radius:16px; background:linear-gradient(135deg,#edf9ff,#f8fcff); color:#527294; font-size:.9rem; }.communication-composer .modal-actions { margin-top:2px; padding-top:18px; border-top:1px solid rgba(15,79,152,.13); }
 @media (max-width: 820px) { .communication-library-head,.communication-audience-head,.communication-section-heading { align-items:start; flex-direction:column; }.communication-filter-form,.communication-audience-filters,.communication-composer-grid,.communication-media-fields { grid-template-columns:1fr; }.communication-filter-submit { width:100%; }.communication-send-bar { align-items:flex-start; flex-direction:column; }.communication-send-bar .solid-button { width:100%; }.communication-contact-row { grid-template-columns:auto 34px minmax(0,1fr); }.communication-contact-metrics { display:none; }.communication-composer { width:calc(100vw - 18px); }.communication-composer > header,.communication-composer-form { padding-inline:20px; } }
 @media (max-width: 820px) { .communication-selected-summary { grid-template-columns:1fr; }.communication-selected-actions { justify-content:flex-start; } }
