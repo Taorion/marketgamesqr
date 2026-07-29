@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260728-station-focus-v187";
+const APP_VERSION = "empresa-20260728-activation-share-modal-v188";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -24206,9 +24206,19 @@ function setActivationShareRecipientMode(mode = "contact") {
   }
 }
 
+function promoteActivationShareModal() {
+  if (!activationShareModal || !document.body) return;
+  if (activationShareModal.parentElement !== document.body) {
+    document.body.appendChild(activationShareModal);
+  }
+  activationShareModal.classList.add("activation-share-global-modal");
+}
+
 async function openActivationShareModal(id) {
   const activation = activationById(id);
   if (!activation) return;
+  closeGamingActivationDetail();
+  promoteActivationShareModal();
   state.activationShareId = id;
   state.activationShareLeads = state.leadCrmRows || [];
   state.activationShareSelectedKey = "";
@@ -24219,12 +24229,14 @@ async function openActivationShareModal(id) {
   if (activationShareContactMode) activationShareContactMode.onclick = () => setActivationShareRecipientMode("contact");
   if (activationSharePhoneMode) activationSharePhoneMode.onclick = () => setActivationShareRecipientMode("manual");
   activationShareModal?.classList.remove("hidden");
+  document.body.classList.add("has-activation-share-modal");
   renderActivationShareModal();
   await loadActivationShareLeads("");
 }
 
 function closeActivationShareModal() {
   activationShareModal?.classList.add("hidden");
+  document.body.classList.remove("has-activation-share-modal");
 }
 
 async function searchActivationShareLeads() {
@@ -24241,6 +24253,7 @@ function openActivationShareWhatsApp() {
     return;
   }
   window.open(activationShareWhatsAppUrl(activation, recipient), "_blank", "noopener");
+  closeActivationShareModal();
 }
 
 async function copyActivationShareMessage() {
