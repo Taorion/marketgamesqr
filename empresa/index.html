@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
-  <link rel="stylesheet" href="css/communications-flow.css?v=20260729-workspace-spacing-v2">
+  <link rel="stylesheet" href="css/communications-flow.css?v=20260729-recipient-checks-v3">
 </head>
 <body data-current-view="rms-machine">
   <main class="portal-shell">
@@ -1749,8 +1749,9 @@
                 <button class="solid-button" type="submit">Aplicar filtros</button>
               </form>
               <div class="communication-audience-actions">
-                <button class="ghost-button compact" type="button" data-communication-select-loaded>Seleccionar resultados cargados</button>
-                <span id="communicationSelectionSummary">0 contactos seleccionados</span>
+                <button class="ghost-button compact" type="button" data-communication-select-loaded>Seleccionar contactos con email</button>
+                <button class="text-button" type="button" data-communication-clear-selection>Limpiar selección</button>
+                <span id="communicationSelectionSummary">0 contactos con email seleccionados</span>
               </div>
               <div class="communication-audience-list" id="communicationAudienceList"></div>
               <div class="communication-send-bar" id="communicationSendBar"></div>
@@ -7483,7 +7484,7 @@
               <label><span>Compras</span><select id="communicationComposerAudiencePurchases"><option value="">Todas</option><option value="true">Con compras</option><option value="false">Sin compras</option></select></label>
               <button class="ghost-button compact" type="button" data-load-composer-audience>Buscar contactos</button>
             </div>
-            <div class="communication-composer-audience-status"><span id="communicationComposerAudienceCount">Carga contactos para empezar.</span><button class="text-button" type="button" data-composer-select-audience>Seleccionar resultados</button></div>
+            <div class="communication-composer-audience-status"><span id="communicationComposerAudienceCount">Carga contactos para empezar.</span><div><button class="text-button" type="button" data-composer-select-audience>Seleccionar contactos con email</button><button class="text-button" type="button" data-composer-clear-audience>Limpiar</button></div></div>
             <div class="communication-composer-audience-list" id="communicationComposerAudienceList" aria-live="polite"></div>
             <label class="communication-composer-consent"><input id="communicationComposerConsentInput" type="checkbox"> Confirmo que estas personas aceptaron recibir comunicaciones comerciales.</label>
           </section>
@@ -7498,7 +7499,7 @@
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
     <script src="js/app.js?v=revenue-economics-20260729-v190" defer></script>
-    <script src="js/communications.js?v=communications-composer-v2-20260729" defer></script>
+    <script src="js/communications.js?v=communications-recipient-checks-v3-20260729" defer></script>
 </body>
 </html>
 

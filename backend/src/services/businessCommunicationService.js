@@ -200,13 +200,28 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   const communication = found.rows[0];
   if (!['EMAIL', 'MIXED'].includes(communication.communication_type)) throw badRequest("Esta comunicación no está configurada para email.");
   if (!communication.subject || !communication.email_body) throw badRequest("Completa asunto y mensaje antes de enviar.");
-  const sourceIds = [...new Set((recipientRefs || []).map((item) => String(item?.source_id || "")).filter(Boolean))];
+  const requestedRecipients = [];
+  const requestedKeys = new Set();
+  for (const item of recipientRefs || []) {
+    const sourceId = String(item?.source_id || "").trim();
+    const sourceType = String(item?.source_type || "").trim().toUpperCase();
+    if (!sourceId) continue;
+    const key = `${sourceType}:${sourceId}`;
+    if (requestedKeys.has(key)) continue;
+    requestedKeys.add(key);
+    requestedRecipients.push({ source_id: sourceId, source_type: sourceType });
+  }
+  const sourceIds = [...new Set(requestedRecipients.map((item) => item.source_id))];
   if (!sourceIds.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
   if (sourceIds.length > 120) throw badRequest("Envía máximo 120 contactos por lote para mantener el control del envío.");
   const audience = await listAudience(businessId, { source_ids: sourceIds });
   const byId = new Map(audience.contacts.map((contact) => [contact.source_id, contact]));
-  const selected = sourceIds.map((sourceId) => byId.get(sourceId)).filter(Boolean);
+  const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
+  const selected = requestedRecipients.map((recipient) => (
+    recipient.source_type ? byTypedId.get(`${recipient.source_type}:${recipient.source_id}`) : byId.get(recipient.source_id)
+  )).filter(Boolean);
   if (!selected.length) throw badRequest("No encontramos contactos válidos para este envío.");
+  if (selected.length !== requestedRecipients.length) throw badRequest("Uno o más contactos ya no están disponibles para este envío.");
 
   const results = { attempted: selected.length, sent: 0, failed: 0, skipped: 0 };
   for (const contact of selected) {

@@ -16,9 +16,20 @@
   };
   const uploadedMedia = () => readJson(mediaInput()?.value);
   const setUploadedMedia = (items) => { const input = mediaInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_MEDIA_FILES)); renderMediaPreview(); };
+  const hasEmail = (contact) => Boolean(String(contact?.email || "").trim());
   const selectedRecipients = () => {
     const selected = new Set(state.communicationSelectedRefs || []);
-    return (state.communicationAudience || []).filter((contact) => selected.has(refKey(contact)));
+    return (state.communicationAudience || []).filter((contact) => selected.has(refKey(contact)) && hasEmail(contact));
+  };
+  const emailReadyContacts = () => (state.communicationAudience || []).filter(hasEmail);
+  const setAudienceSelection = (mode = "email") => {
+    const current = new Set(state.communicationSelectedRefs || []);
+    if (mode === "clear") {
+      state.communicationSelectedRefs = [];
+      return;
+    }
+    emailReadyContacts().forEach((contact) => current.add(refKey(contact)));
+    state.communicationSelectedRefs = Array.from(current);
   };
   const mediaFor = (item) => {
     const saved = Array.isArray(item?.metadata?.media_assets) ? item.metadata.media_assets : [];
@@ -44,14 +55,19 @@
   }
 
   async function loadAudience() {
+    state.communicationAudienceLoading = true;
     const query = new URLSearchParams();
     Object.entries(state.communicationAudienceFilters || {}).forEach(([key, value]) => { if (String(value || "").trim()) query.set(key, String(value).trim()); });
-    const data = await api(`/api/business/communications/audience${query.toString() ? `?${query}` : ""}`, { headers: authHeaders() });
-    state.communicationAudience = data.contacts || [];
-    state.communicationAudienceTotal = Number(data.total || state.communicationAudience.length);
-    state.communicationAudienceCapped = Boolean(data.capped);
-    const shown = new Set(state.communicationAudience.map(refKey));
-    state.communicationSelectedRefs = (state.communicationSelectedRefs || []).filter((id) => shown.has(id));
+    try {
+      const data = await api(`/api/business/communications/audience${query.toString() ? `?${query}` : ""}`, { headers: authHeaders() });
+      state.communicationAudience = data.contacts || [];
+      state.communicationAudienceTotal = Number(data.total || state.communicationAudience.length);
+      state.communicationAudienceCapped = Boolean(data.capped);
+      const shown = new Set(state.communicationAudience.map(refKey));
+      state.communicationSelectedRefs = (state.communicationSelectedRefs || []).filter((id) => shown.has(id));
+    } finally {
+      state.communicationAudienceLoading = false;
+    }
   }
 
   function renderOptions() {
@@ -80,8 +96,22 @@
     if (!list || !count) return;
     const selected = new Set(state.communicationSelectedRefs || []);
     const contacts = state.communicationAudience || [];
-    count.textContent = contacts.length ? `${selected.size} de ${contacts.length} contacto${contacts.length === 1 ? "" : "s"} seleccionado${contacts.length === 1 ? "" : "s"}${state.communicationAudienceCapped ? " · resultados limitados a 120" : ""}` : "Usa los filtros para encontrar contactos.";
-    list.innerHTML = contacts.length ? contacts.map((contact) => `<label class="communication-composer-contact ${selected.has(refKey(contact)) ? "is-selected" : ""}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selected.has(refKey(contact)) ? "checked" : ""}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.email || contact.phone || "Sin medio de contacto")} · ${esc(contact.interest || "Sin interés registrado")}</small></span></label>`).join("") : '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">group</span><span>Los contactos filtrados aparecerán aquí.</span></div>';
+    const ready = emailReadyContacts();
+    const recipients = selectedRecipients();
+    count.textContent = state.communicationAudienceLoading
+      ? "Cargando contactos…"
+      : contacts.length
+        ? `${recipients.length} seleccionado${recipients.length === 1 ? "" : "s"} de ${ready.length} con email${state.communicationAudienceCapped ? " · primeros 120 resultados" : ""}`
+        : "Usa los filtros para encontrar contactos.";
+    list.innerHTML = state.communicationAudienceLoading
+      ? '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">hourglass_top</span><span>Cargando contactos disponibles…</span></div>'
+      : contacts.length
+        ? contacts.map((contact) => {
+          const deliverable = hasEmail(contact);
+          const selectedContact = selected.has(refKey(contact));
+          return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span></label>`;
+        }).join("")
+        : '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">group</span><span>No encontramos contactos para estos filtros.</span></div>';
   }
 
   function hydrateComposerAudienceFilters() {
@@ -126,10 +156,21 @@
       return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(typeLabel(item.communication_type))} · ${esc(statusLabel(item.status))}</span><strong>${esc(item.title)}</strong><p>${esc(item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
     const selected = new Set(state.communicationSelectedRefs || []);
-    summary.textContent = `${state.communicationAudienceTotal || state.communicationAudience.length} contactos${state.communicationAudienceCapped ? " · se muestran los primeros 120" : ""}`;
-    audience.innerHTML = state.communicationAudience.length ? state.communicationAudience.map((contact) => `<label class="communication-contact-row ${selected.has(refKey(contact)) ? "is-selected" : ""}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selected.has(refKey(contact)) ? "checked" : ""}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.email || "Sin email")} · ${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-metrics"><strong>${Number(contact.purchase_count || 0)}</strong><small>compras</small></span></label>`).join("") : '<div class="communication-empty-state compact"><strong>No encontramos contactos con estos filtros.</strong><p>Prueba removiendo un filtro.</p></div>';
+    const ready = emailReadyContacts();
+    summary.textContent = state.communicationAudienceLoading
+      ? "Cargando contactos…"
+      : `${state.communicationAudienceTotal || state.communicationAudience.length} contactos · ${ready.length} con email${state.communicationAudienceCapped ? " · se muestran los primeros 120" : ""}`;
+    audience.innerHTML = state.communicationAudienceLoading
+      ? '<div class="communication-empty-state compact"><span class="material-symbols-outlined">hourglass_top</span><strong>Cargando contactos disponibles…</strong></div>'
+      : state.communicationAudience.length
+        ? state.communicationAudience.map((contact) => {
+          const deliverable = hasEmail(contact);
+          const selectedContact = selected.has(refKey(contact));
+          return `<label class="communication-contact-row ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span><span class="communication-contact-metrics"><strong>${Number(contact.purchase_count || 0)}</strong><small>compras</small></span></label>`;
+        }).join("")
+        : '<div class="communication-empty-state compact"><strong>No encontramos contactos con estos filtros.</strong><p>Prueba removiendo un filtro.</p></div>';
     const recipients = selectedRecipients();
-    selectedSummary.textContent = `${recipients.length} seleccionado${recipients.length === 1 ? "" : "s"}`;
+    selectedSummary.textContent = `${recipients.length} con email seleccionado${recipients.length === 1 ? "" : "s"}`;
     const active = communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
     if (!active) { sendBar.innerHTML = '<span class="material-symbols-outlined">touch_app</span><p>Elige una comunicación para preparar su envío.</p>'; return; }
     const media = mediaFor(active);
@@ -220,25 +261,26 @@
         showFeedback(`Envío finalizado: ${sent.results?.sent || 0} enviados, ${sent.results?.failed || 0} fallidos y ${sent.results?.skipped || 0} sin email.`, "success", { title: "Comunicación enviada" });
       }
       state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = data.communication?.id || state.selectedCommunicationId;
+      if (action === "SEND") state.communicationSelectedRefs = [];
       state.editingCommunicationId = null; composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); render();
       if (action !== "SEND") showFeedback(editingId ? "La comunicación quedó actualizada." : "La comunicación quedó guardada. Puedes volver a abrirla para enviar o publicar.", "success", { title: editingId ? "Comunicación actualizada" : "Comunicación creada" });
     } catch (error) { message.textContent = error.message || "No se pudo guardar la comunicación."; }
   }
 
   document.addEventListener("click", async (event) => {
-    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]");
-    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { if (!state.communicationAudience.length) await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
+    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
-    if (selectComposerAudience) { state.communicationSelectedRefs = (state.communicationAudience || []).map(refKey); render(); renderComposerAudience(); return; }
+    if (selectComposerAudience || all) { setAudienceSelection(); render(); renderComposerAudience(); return; }
+    if (clearComposerAudience || clearSelection) { setAudienceSelection("clear"); render(); renderComposerAudience(); return; }
     if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback("La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
     if (removeMedia) { const media = uploadedMedia(); media.splice(Number(removeMedia.dataset.removeCommunicationMedia), 1); setUploadedMedia(media); renderComposerPreview(); return; }
     if (clearUrl) { const input = document.getElementById("communicationImageInput"); if (input) input.value = ""; toggleComposer(); return; }
     if (pick) { state.selectedCommunicationId = pick.dataset.communicationSelect; render(); return; }
-    if (all) { state.communicationSelectedRefs = state.communicationAudience.map(refKey); render(); renderComposerAudience(); return; }
     if (download) { const item = state.communications.find((row) => String(row.id) === String(download.dataset.downloadCommunicationMedia)); downloadMedia(item); return; }
     if (copy) { const item = state.communications.find((row) => String(row.id) === String(copy.dataset.copyCommunicationSocial)); const content = [item?.social_copy, item?.action_url].filter(Boolean).join("\n\n"); try { await navigator.clipboard.writeText(content); showFeedback("Publicación copiada.", "success", { title: "Texto copiado" }); } catch { window.prompt("Copia esta publicación", content); } return; }
-    if (send) { const recipients = selectedRecipients(); if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } try { showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); showFeedback(`Envío finalizado: ${data.results?.sent || 0} enviados, ${data.results?.failed || 0} fallidos y ${data.results?.skipped || 0} sin email.`, "success", { title: "Comunicación enviada" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } }
+    if (send) { const recipients = selectedRecipients(); if (!recipients.length) { showFeedback("Selecciona al menos un contacto que tenga email.", "info", { title: "Destinatarios" }); return; } if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } try { showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationSelectedRefs = []; state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); const results = data.results || {}; const feedbackType = Number(results.sent || 0) ? "success" : "error"; showFeedback(`Envío finalizado: ${results.sent || 0} enviados, ${results.failed || 0} fallidos.`, feedbackType, { title: Number(results.sent || 0) ? "Comunicación enviada" : "No se enviaron correos" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } }
   });
 
   document.addEventListener("change", (event) => {
