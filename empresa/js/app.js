@@ -38487,16 +38487,40 @@ function renderRmsQualityControlDashboard(key = "") {
         </dl>
       </section>
       <section class="rms-quality-dashboard-list" aria-label="Leads en revisión">
-        <div class="rms-quality-dashboard-list-head"><span>Lead y contacto</span><span>Ubicación</span><span>Calidad</span><span>Oferta o producto</span><span aria-hidden="true"></span></div>
-        ${rows.map((item) => `
-          <button type="button" class="rms-quality-dashboard-row" data-rms-inspect="${escapeHtml(item.id)}">
-            <span><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto")}</small></span>
-            <span><b>Estación actual</b>${escapeHtml(stageName(item.stage))}</span>
-            <span><b>Calidad</b>${escapeHtml(rmsLeadQualityLabel(item))}</span>
-            <span><b>Oferta o producto</b>${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span>
-            <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-          </button>
-        `).join("") || '<p class="empty-state compact">Todavía no hay leads en este tramo de control.</p>'}
+        <div class="rms-quality-dashboard-table-wrap">
+          <table class="rms-quality-dashboard-table">
+            <thead>
+              <tr>
+                <th scope="col">Lead y contacto</th>
+                <th scope="col">Estación actual</th>
+                <th scope="col">Calidad</th>
+                <th scope="col">Oferta o producto</th>
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((item) => `
+                <tr>
+                  <td data-label="Lead y contacto">
+                    <button class="rms-quality-lead-cell" type="button" data-rms-inspect="${escapeHtml(item.id)}">
+                      <strong>${escapeHtml(item.name || "Contacto")}</strong>
+                      <small>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto")}</small>
+                    </button>
+                  </td>
+                  <td data-label="Estación actual"><span class="rms-quality-table-value">${escapeHtml(stageName(item.stage))}</span></td>
+                  <td data-label="Calidad"><span class="rms-quality-status">${escapeHtml(rmsLeadQualityLabel(item))}</span></td>
+                  <td data-label="Oferta o producto"><span class="rms-quality-table-value">${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span></td>
+                  <td class="rms-quality-table-action">
+                    <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}" aria-label="Abrir ficha de ${escapeHtml(item.name || "lead")}">
+                      <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+                      <span>Ver</span>
+                    </button>
+                  </td>
+                </tr>
+              `).join("") || '<tr><td colspan="5"><p class="empty-state compact">Todavía no hay leads en este tramo de control.</p></td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </section>
     </section>
   `;
