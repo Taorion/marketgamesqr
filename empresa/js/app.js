@@ -38986,6 +38986,9 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     description: "Lee el recorrido inicial de cada oportunidad: calidad, producto, activación y siguiente paso, sin detener la operación.",
     phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
     focus: "Detecta información incompleta antes de que el lead entre a Evaluación.",
+    checkpoint: "Puerta 1 · antes de Evaluación",
+    controls: "Datos, calidad, oferta y primera activación",
+    decision: "¿El lead está listo para ser evaluado?",
   },
   revenue_generado: {
     title: "Control de calidad 2",
@@ -38993,6 +38996,9 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
     phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
     focus: "Confirma que cada venta tenga una trazabilidad comercial clara antes de pasar a postventa.",
+    checkpoint: "Puerta 2 · antes de Postventa",
+    controls: "Valor, fuente, producto y evidencia de venta",
+    decision: "¿La venta puede pasar a postventa con trazabilidad?",
   },
 };
 
@@ -39025,6 +39031,11 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > strong { margin-top:7px!important; color:#092e70!important; font-size:1.18rem!important; line-height:1.18!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > small { margin-top:5px!important; color:#17669f!important; font-size:.76rem!important; font-weight:760!important; line-height:1.35!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > p { max-width:54ch!important; margin:11px 0 0!important; color:#58738e!important; font-size:.83rem!important; line-height:1.45!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:8px!important; width:100%!important; margin-top:14px!important; text-align:left!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition > div { min-width:0!important; padding:10px!important; border:1px solid rgba(14,81,148,.1)!important; border-radius:10px!important; background:#f7fbfe!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition span, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition strong { display:block!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition span { color:#36769f!important; font-size:.61rem!important; font-weight:800!important; letter-spacing:.05em!important; text-transform:uppercase!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition strong { margin-top:4px!important; color:#123d78!important; font-size:.73rem!important; line-height:1.32!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route { display:flex!important; justify-content:center!important; flex-wrap:wrap!important; gap:6px!important; margin-top:14px!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span { min-height:25px!important; padding:5px 8px!important; border:1px solid rgba(14,81,148,.12)!important; border-radius:999px!important; background:#f6fbff!important; color:#4d708e!important; font-size:.64rem!important; font-weight:740!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span + span::before { content:none!important; }
@@ -39073,10 +39084,14 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
         <div class="rms-quality-control-card-main">
         <figure><img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async"></figure>
         <div class="rms-quality-control-copy">
-          <span class="mono-label">Tablero auxiliar ${stage.key === "preprocesamiento" ? "01" : "02"}</span>
+          <span class="mono-label">${escapeHtml(config.checkpoint || `Tablero auxiliar ${stage.key === "preprocesamiento" ? "01" : "02"}`)}</span>
           <strong>${escapeHtml(config.title)}</strong>
           <small>${escapeHtml(config.subtitle)}</small>
           <p>${escapeHtml(config.focus || "")}</p>
+          <div class="rms-quality-control-definition" aria-label="Función del control">
+            <div><span>Qué controla</span><strong>${escapeHtml(config.controls || "")}</strong></div>
+            <div><span>Decisión</span><strong>${escapeHtml(config.decision || "")}</strong></div>
+          </div>
           <div class="rms-quality-control-route" aria-label="Tramo observado">
             ${route.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}
           </div>
