@@ -3069,6 +3069,7 @@ function isAdmin() {
 
 function hideFeedback() {
   window.clearTimeout(state.feedbackTimer);
+  if (!actionFeedback) return;
   actionFeedback.classList.add("hidden");
   actionFeedback.className = "action-feedback hidden";
   actionFeedback.innerHTML = "";
@@ -3143,6 +3144,7 @@ function togglePortalTheme() {
 
 function showFeedback(message, kind = "success", options = {}) {
   window.clearTimeout(state.feedbackTimer);
+  if (!actionFeedback) return;
   const title = options.title || (
     kind === "error"
       ? "No se pudo completar"
@@ -3167,14 +3169,14 @@ function showFeedback(message, kind = "success", options = {}) {
 
 function showBusyOverlay(title, message) {
   state.busyDepth += 1;
-  busyOverlayTitle.textContent = title || "Procesando";
-  busyOverlayMessage.textContent = message || "Estamos sincronizando la información.";
-  busyOverlay.classList.remove("hidden");
+  if (busyOverlayTitle) busyOverlayTitle.textContent = title || "Procesando";
+  if (busyOverlayMessage) busyOverlayMessage.textContent = message || "Estamos sincronizando la información.";
+  if (busyOverlay) busyOverlay.classList.remove("hidden");
 }
 
 function hideBusyOverlay(force = false) {
   state.busyDepth = force ? 0 : Math.max(0, state.busyDepth - 1);
-  if (!state.busyDepth) {
+  if (!state.busyDepth && busyOverlay) {
     busyOverlay.classList.add("hidden");
   }
 }
@@ -25447,6 +25449,24 @@ async function startValidatorScanner() {
 }
 
 function renderNoCampaignState() {
+  const campaignSurfaceTargets = [
+    campaignList, campaignBreadcrumb, campaignHeroTitle, campaignHeroSubtitle,
+    editCampaignButton, markReadyCampaignButton, campaignInsightText,
+    campaignObjectiveValue, campaignDurationValue, campaignStatusValue,
+    campaignBudgetValue, campaignBudgetMeta, campaignBudgetBar,
+    campaignRoiValue, campaignRoiDelta, launchSetupTitle, launchSetupStatus,
+    launchSetupCopy, launchSetupForm, launchChannelGrid, campaignAssetsGrid,
+    campaignSnapshotsTable, campaignKpiGrid, funnelStack, recentRedemptionsTable,
+    recentLeadsTable, campaignRedemptionsTable, campaignSalesTable, branchTable,
+    branchPerformanceTable, geoBranchBoard, dashboardInsightTitle,
+    dashboardNarrativeTitle, dashboardNarrativeText, dashboardFunnelHelp,
+    dashboardHealthText, cacTrendNote, campaignAnalysisTitle, campaignAnalysisText,
+    campaignEconomicsText, campaignActionText, adminCampaignTable, salesKpiGrid,
+    branchKpiGrid, adminPanelMessage, rangeButton, businessTrendChart,
+    cacTrendChart, hourlyOperationsChart, weekdayPerformanceChart, qrStatusChart,
+    campaignPerformanceChart, rewardMixChart, paymentMethodChart,
+  ];
+  if (campaignSurfaceTargets.some((target) => !target)) return;
   hideFeedback();
   campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
   renderCampaignCommandKpis();
