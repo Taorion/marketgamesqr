@@ -30672,14 +30672,20 @@ function leadDirectoryCardMarkup(item = {}, segment = "lead") {
 function renderContactDirectoryCards(rows = state.leadCrmRows || []) {
   const directoryCard = document.querySelector(".lead-directory-card");
   if (!directoryCard) return;
+  const audienceTabs = document.getElementById("leadDirectoryAudienceTabs");
   let board = document.getElementById("contactDirectoryVisualBoard");
   if (!board) {
     board = document.createElement("section");
     board.id = "contactDirectoryVisualBoard";
     board.className = "contact-directory-visual-board";
-    const head = directoryCard.querySelector(".table-card-head");
-    if (head?.nextSibling) directoryCard.insertBefore(board, head.nextSibling);
-    else directoryCard.prepend(board);
+    // Las pestañas y los resultados son una sola superficie de trabajo. Insertar
+    // el tablero inmediatamente después evita que el encabezado heredado deje
+    // una franja vacía entre el selector de audiencia y los datos.
+    if (audienceTabs?.parentElement === directoryCard) {
+      directoryCard.insertBefore(board, audienceTabs.nextSibling);
+    } else {
+      directoryCard.prepend(board);
+    }
   }
   const allRows = Array.isArray(rows) ? rows : [];
   syncLeadDirectoryAudienceTabs(allRows);
@@ -30845,6 +30851,36 @@ function ensureLeadDirectoryTableUxStyles() {
     body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { display: grid; grid-template-columns: 1fr; gap: .42rem; align-content: center; min-width: 156px; }
     body[data-current-view="leads"] .portal-shell .lead-directory-action-stack button { min-height: 36px; width: 100%; justify-content: center; border-radius: 13px; font-size: .78rem; white-space: nowrap; }
     body[data-current-view="leads"] .portal-shell .lead-directory-empty { padding: 1rem; border: 1px dashed rgba(15,23,42,.18); border-radius: 22px; background: rgba(255,255,255,.9); color: rgba(71,85,105,.9); text-align: center; }
+    /* El selector y el directorio forman un único flujo de ancho completo.
+       Nunca reservamos una columna lateral cuando todavía no hay resultados. */
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory,
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory > .lead-directory-card,
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory .lead-directory-audience-tabs {
+      width: 100% !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      max-width: none !important;
+      box-sizing: border-box !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory > .lead-directory-card {
+      display: block !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory {
+      display: block !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory > .lead-directory-card > .table-card-head {
+      display: none !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory #contactDirectoryVisualBoard:empty {
+      display: none !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory .lead-directory-audience-tabs {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    body[data-current-view="leads"] .portal-shell #contactPanelDirectory .lead-directory-audience-tabs > button {
+      width: 100% !important;
+      min-width: 0 !important;
+    }
     @media (max-width: 1180px) { body[data-current-view="leads"] .portal-shell .lead-directory-card-row { grid-template-columns: minmax(260px,1fr) minmax(210px,.8fr) minmax(230px,1fr); } body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { grid-column: 1 / -1; grid-template-columns: repeat(4,minmax(0,1fr)); } }
     @media (max-width: 760px) { body[data-current-view="leads"] .portal-shell .lead-directory-audience-tabs, body[data-current-view="leads"] .portal-shell .lead-directory-card-row, body[data-current-view="leads"] .portal-shell .lead-directory-action-stack { grid-template-columns: 1fr; } body[data-current-view="leads"] .portal-shell .lead-directory-table { min-width: 760px; } }
   `;
@@ -32649,8 +32685,13 @@ function mountContactCenterLayout() {
   appendIfFound(overviewPanel, leadFeedKpiGrid);
   appendIfFound(overviewPanel, leadAttentionBoard);
 
-  appendIfFound(directoryPanel, document.getElementById("leadDirectoryAudienceTabs"));
-  appendIfFound(directoryPanel, document.querySelector(".lead-directory-card"));
+  const directoryCard = document.querySelector(".lead-directory-card");
+  const audienceTabs = document.getElementById("leadDirectoryAudienceTabs");
+  // El selector de Clientes/Leads pertenece al directorio; antes se movía al
+  // panel padre y dejaba una columna vacía a su derecha. Se conserva junto a
+  // la lista para que ambos ocupen el mismo ancho.
+  appendIfFound(directoryCard, audienceTabs);
+  appendIfFound(directoryPanel, directoryCard);
 
   appendIfFound(ticketsPanel, leadTicketInventoryBoard);
 
