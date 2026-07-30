@@ -74,6 +74,7 @@ const dashboardBusinessRoiValue = document.getElementById("dashboardBusinessRoiV
 const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMeta");
 const dashboardBusinessCacValue = document.getElementById("dashboardBusinessCacValue");
 const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMeta");
+const dashboardWorkspaceTabs = document.getElementById("dashboardWorkspaceTabs");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
 const dashboardWidgetGrid = document.getElementById("dashboardWidgetGrid");
@@ -2271,6 +2272,7 @@ let state = {
   currentView: PORTAL_DEFAULT_VIEW,
   accountScreen: "profile",
   dashboardBuilderProfile: "marketing",
+  dashboardWorkspaceTab: "summary",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
   ticketCenterTab: "trivia",
@@ -10620,6 +10622,30 @@ async function smartCatalogIntentAction(intentId, action) {
 const DASHBOARD_BUILDER_STORAGE_KEY = "marketgames_dashboard_builder_v2";
 const DASHBOARD_BUILDER_PROFILE_KEY = "marketgames_dashboard_profile_v1";
 const DASHBOARD_BUILDER_EXPANDED_KEY = "marketgames_dashboard_advanced_v1";
+const DASHBOARD_WORKSPACE_TAB_KEY = "marketgames_dashboard_workspace_tab_v1";
+
+const DASHBOARD_WORKSPACE_TABS = {
+  summary: {
+    title: "Resumen ejecutivo",
+    description: "Los indicadores principales para entender cómo va el negocio sin recorrer todo el tablero.",
+    profile: "executive",
+  },
+  analysis: {
+    title: "Análisis de rendimiento",
+    description: "Compara el comportamiento de campañas, canales, fuentes y conversión.",
+    profile: "marketing",
+  },
+  tables: {
+    title: "Datos y reportes",
+    description: "Consulta las tablas exportables cuando necesites profundizar en la información.",
+    profile: "commercial",
+  },
+  customize: {
+    title: "Mi tablero",
+    description: "Arma una vista propia. Agrega, quita o reordena solamente los bloques que usarás.",
+    profile: "custom",
+  },
+};
 
 const DASHBOARD_BUILDER_PROFILES = {
   marketing: {
@@ -11206,8 +11232,38 @@ function renderDashboardBusinessEconomics() {
   }
 }
 
+function getDashboardWorkspaceTab() {
+  try {
+    const stored = window.localStorage.getItem(DASHBOARD_WORKSPACE_TAB_KEY) || state.dashboardWorkspaceTab || "summary";
+    return DASHBOARD_WORKSPACE_TABS[stored] ? stored : "summary";
+  } catch {
+    return DASHBOARD_WORKSPACE_TABS[state.dashboardWorkspaceTab] ? state.dashboardWorkspaceTab : "summary";
+  }
+}
+
+function setDashboardWorkspaceTab(tab) {
+  state.dashboardWorkspaceTab = DASHBOARD_WORKSPACE_TABS[tab] ? tab : "summary";
+  try {
+    window.localStorage.setItem(DASHBOARD_WORKSPACE_TAB_KEY, state.dashboardWorkspaceTab);
+  } catch {
+    // El contenido continúa disponible aunque el navegador bloquee localStorage.
+  }
+}
+
+function dashboardWidgetsForWorkspaceTab(layout, tab) {
+  const widgets = (layout || []).map((id) => DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === id)).filter(Boolean);
+  if (tab === "customize") return widgets;
+  if (tab === "analysis") return widgets.filter((widget) => widget.category === "Gráfico");
+  if (tab === "tables") return widgets.filter((widget) => widget.category === "Tabla");
+
+  const preferred = ["revenue", "avg_ticket", "sales", "leads", "revenue_funnel", "redemption_rate"];
+  const summary = preferred.map((id) => widgets.find((widget) => widget.id === id)).filter(Boolean);
+  return summary.length ? summary.slice(0, 5) : widgets.slice(0, 4);
+}
+
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
+  state.dashboardBuilderExpanded = false;
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   ensureRevenueCenterUxStyles();
   if (revenueWorkspace) {
@@ -11215,30 +11271,36 @@ function renderDashboardBuilder() {
     revenueWorkspace.classList.add("hidden");
   }
   state.dashboardBuilderProfile = getDashboardProfile();
-  try {
-    state.dashboardBuilderExpanded = window.localStorage.getItem(DASHBOARD_BUILDER_EXPANDED_KEY) === "1";
-  } catch {
-    state.dashboardBuilderExpanded = Boolean(state.dashboardBuilderExpanded);
-  }
+  state.dashboardWorkspaceTab = getDashboardWorkspaceTab();
+  const workspaceTab = state.dashboardWorkspaceTab;
+  const workspace = DASHBOARD_WORKSPACE_TABS[workspaceTab] || DASHBOARD_WORKSPACE_TABS.summary;
   const dashboardSection = document.querySelector('.view-section[data-view="dashboard"]');
-  dashboardSection?.classList.toggle("dashboard-builder-mode", !state.dashboardBuilderExpanded);
-  dashboardSection?.classList.toggle("dashboard-advanced-active", state.dashboardBuilderExpanded);
-  dashboardAdvancedToggleButton?.classList.toggle("active", state.dashboardBuilderExpanded);
+  dashboardSection?.classList.add("dashboard-builder-mode");
+  dashboardSection?.classList.remove("dashboard-advanced-active");
+  dashboardBuilderShell.dataset.workspaceTab = workspaceTab;
+  dashboardAdvancedToggleButton?.classList.toggle("active", workspaceTab === "analysis");
   if (dashboardAdvancedToggleButton) {
     dashboardAdvancedToggleButton.innerHTML = `
-      <span class="material-symbols-outlined" aria-hidden="true">${state.dashboardBuilderExpanded ? "dashboard_customize" : "analytics"}</span>
-      ${state.dashboardBuilderExpanded ? "Ocultar dashboard avanzado" : "Ver dashboard avanzado"}
+      <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+      Ver análisis
     `;
   }
   const profile = DASHBOARD_BUILDER_PROFILES[state.dashboardBuilderProfile] || DASHBOARD_BUILDER_PROFILES.marketing;
   const layout = getDashboardBuilderLayout(state.dashboardBuilderProfile);
+  const visibleWidgets = dashboardWidgetsForWorkspaceTab(layout, workspaceTab);
   const stats = getDashboardBuilderStats();
-  if (dashboardProfileLabel) dashboardProfileLabel.textContent = profile.label;
-  if (dashboardProfileTitle) dashboardProfileTitle.textContent = profile.title;
-  if (dashboardProfileDescription) dashboardProfileDescription.textContent = profile.description;
+  if (dashboardProfileLabel) dashboardProfileLabel.textContent = `${workspaceTab === "customize" ? "Vista personal" : "Centro de Revenue"} · ${profile.label}`;
+  if (dashboardProfileTitle) dashboardProfileTitle.textContent = workspace.title;
+  if (dashboardProfileDescription) dashboardProfileDescription.textContent = workspace.description;
+  dashboardWorkspaceTabs?.querySelectorAll("[data-dashboard-workspace-tab]").forEach((button) => {
+    const active = button.dataset.dashboardWorkspaceTab === workspaceTab;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
   dashboardProfileTabs?.querySelectorAll("[data-dashboard-profile]").forEach((button) => {
     button.classList.toggle("active", button.dataset.dashboardProfile === state.dashboardBuilderProfile);
   });
+  dashboardWidgetLibrary.closest(".dashboard-widget-library")?.toggleAttribute("hidden", workspaceTab !== "customize");
   dashboardWidgetLibrary.innerHTML = DASHBOARD_WIDGET_CATALOG.map((widget) => {
     const active = layout.includes(widget.id);
     return `
@@ -11253,9 +11315,7 @@ function renderDashboardBuilder() {
       </button>
     `;
   }).join("");
-  dashboardWidgetGrid.innerHTML = layout.map((id, index) => {
-    const widget = DASHBOARD_WIDGET_CATALOG.find((item) => item.id === id);
-    if (!widget) return "";
+  dashboardWidgetGrid.innerHTML = visibleWidgets.map((widget, index) => {
     const rendered = renderDashboardWidget(widget, stats);
     return `
       <article class="dashboard-widget-card ${escapeHtml(rendered.tone || "")}" draggable="true" data-dashboard-widget="${escapeHtml(widget.id)}">
@@ -11273,7 +11333,7 @@ function renderDashboardBuilder() {
             CSV
           </button>
           <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} title="Mover a la izquierda"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
-          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === layout.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === visibleWidgets.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
         </div>
       </article>
     `;
@@ -11327,17 +11387,9 @@ function reorderDashboardWidget(sourceId, targetId) {
 }
 
 function toggleDashboardAdvancedView() {
-  state.dashboardBuilderExpanded = !state.dashboardBuilderExpanded;
-  try {
-    window.localStorage.setItem(DASHBOARD_BUILDER_EXPANDED_KEY, state.dashboardBuilderExpanded ? "1" : "0");
-  } catch {
-    // Ignore storage failures.
-  }
-  if (state.dashboardBuilderExpanded) {
-    renderDashboard();
-    return;
-  }
+  setDashboardWorkspaceTab("analysis");
   renderDashboardBuilder();
+  dashboardBuilderShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderDashboard() {
@@ -44238,6 +44290,15 @@ logoutButton.addEventListener("click", () => {
 });
 refreshButton.addEventListener("click", loadWorkspace);
 globalRevenueActionButton?.addEventListener("click", openRmsCollectorModal);
+dashboardWorkspaceTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-dashboard-workspace-tab]");
+  if (!button) return;
+  const tab = button.dataset.dashboardWorkspaceTab || "summary";
+  const workspaceTab = DASHBOARD_WORKSPACE_TABS[tab] || DASHBOARD_WORKSPACE_TABS.summary;
+  setDashboardWorkspaceTab(tab);
+  setDashboardProfile(workspaceTab.profile);
+  renderDashboardBuilder();
+});
 dashboardProfileTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-profile]");
   if (!button) return;

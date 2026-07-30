@@ -394,17 +394,29 @@
             <section class="dashboard-builder-shell" id="dashboardBuilderShell">
               <div class="dashboard-builder-head">
                 <div class="dashboard-builder-intro">
-                  <span class="mono-label">Lectura personalizable</span>
-                  <h3>Elige la vista que necesitas hoy</h3>
-                  <p>Empieza con un perfil y agrega solo los análisis que te ayuden a tomar una decisión.</p>
+                  <span class="mono-label">Centro de lectura</span>
+                  <h3>Consulta una cosa a la vez</h3>
+                  <p>Separamos el resumen, los análisis y los datos para que el tablero sea claro y no una página interminable.</p>
                 </div>
-                <div class="dashboard-profile-tabs" id="dashboardProfileTabs" aria-label="Perfiles de dashboard">
-                  <button type="button" data-dashboard-profile="marketing">Marketing</button>
-                  <button type="button" data-dashboard-profile="commercial">Comercial</button>
-                  <button type="button" data-dashboard-profile="tickets">Tickets</button>
-                  <button type="button" data-dashboard-profile="executive">Ejecutivo</button>
-                  <button type="button" data-dashboard-profile="custom">Personalizado</button>
-                </div>
+              </div>
+
+              <div class="dashboard-workspace-tabs" id="dashboardWorkspaceTabs" role="tablist" aria-label="Secciones del Centro de Revenue">
+                <button type="button" role="tab" aria-selected="true" data-dashboard-workspace-tab="summary">
+                  <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span>
+                  Resumen
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-dashboard-workspace-tab="analysis">
+                  <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                  Análisis
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-dashboard-workspace-tab="tables">
+                  <span class="material-symbols-outlined" aria-hidden="true">table_chart</span>
+                  Datos
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-dashboard-workspace-tab="customize">
+                  <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                  Mi tablero
+                </button>
               </div>
 
               <div class="dashboard-builder-layout" data-quiet-zone-ignore>
@@ -424,10 +436,16 @@
                       <h3 id="dashboardProfileTitle">Centro de Comando Revenue Marketing</h3>
                       <p id="dashboardProfileDescription">Métricas, gráficos y tablas exportables sin acciones operativas encima.</p>
                     </div>
+                    <div class="dashboard-profile-tabs" id="dashboardProfileTabs" aria-label="Enfoque de datos">
+                      <button type="button" data-dashboard-profile="marketing">Marketing</button>
+                      <button type="button" data-dashboard-profile="commercial">Comercial</button>
+                      <button type="button" data-dashboard-profile="tickets">Tickets</button>
+                      <button type="button" data-dashboard-profile="executive">Ejecutivo</button>
+                    </div>
                     <div class="dashboard-canvas-actions">
                       <button class="ghost-button" id="dashboardAdvancedToggleButton" type="button">
                         <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
-                        Ver dashboard avanzado
+                        Ver análisis
                       </button>
                       <button class="ghost-button" id="dashboardResetProfileButton" type="button">
                         <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>

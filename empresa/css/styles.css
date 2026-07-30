@@ -66608,6 +66608,196 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   }
 }
 
+/* Revenue center: focused tabs instead of a single endless dashboard. */
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell {
+  gap: clamp(20px, 2.8vw, 32px) !important;
+  padding: clamp(20px, 3vw, 36px) !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell > .dashboard-builder-head {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  padding: 0 0 2px;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.16);
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #527097;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs button:hover,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs button.active {
+  border-bottom-color: #00bfe5;
+  background: linear-gradient(180deg, rgba(0, 191, 229, 0.1), transparent);
+  color: #052a6b;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-builder-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(22px, 3vw, 36px) !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-canvas {
+  position: static !important;
+  max-height: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library[hidden] {
+  display: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell:not([data-workspace-tab="customize"]) [data-dashboard-remove-widget],
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell:not([data-workspace-tab="customize"]) [data-dashboard-move-widget] {
+  display: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library {
+  gap: 18px;
+  padding-bottom: 26px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.14) !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-heading {
+  max-width: 720px;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list {
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  border-top: 1px solid rgba(5, 42, 107, 0.12);
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item:hover,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library-list .dashboard-library-item.is-active {
+  min-height: 76px !important;
+  padding: 14px 4px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.1) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-canvas-head {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  padding-bottom: 20px !important;
+  border-bottom-color: rgba(5, 42, 107, 0.16) !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-profile-tabs {
+  display: flex !important;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 4px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-profile-tabs button,
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-profile-tabs button.active {
+  flex: 1 1 128px;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #527097 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-profile-tabs button.active {
+  border-bottom-color: #00bfe5 !important;
+  color: #052a6b !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-canvas-actions {
+  width: 100%;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-grid {
+  gap: clamp(18px, 2.2vw, 28px) !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell[data-workspace-tab="summary"] .dashboard-widget-card.chart,
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell[data-workspace-tab="tables"] .dashboard-widget-card.table {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell[data-workspace-tab="analysis"] .dashboard-widget-card.chart {
+  grid-column: span 6 !important;
+}
+
+@media (max-width: 780px) {
+  html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell {
+    padding: 20px !important;
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell[data-workspace-tab="analysis"] .dashboard-widget-card.chart {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  html body .portal-shell .view-section.active[data-view="dashboard"] #dashboardBuilderShell {
+    padding: 18px 14px !important;
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs button {
+    min-height: 48px;
+    font-size: 0.86rem;
+  }
+
+  html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-workspace-tabs .material-symbols-outlined {
+    font-size: 19px;
+  }
+}
+
 /* Final cascade: preserve the activation gradient while keeping its white copy legible. */
 #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
   background: linear-gradient(118deg, #063b97 0%, #075fd1 54%, #08a6df 100%) !important;
