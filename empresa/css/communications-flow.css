@@ -194,3 +194,16 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
   #communicationComposerModal .communication-composer-contact { grid-template-columns:auto 34px minmax(0,1fr); }
   #communicationComposerModal .communication-contact-delivery { display:none; }
 }
+
+/* The gradient header is intentionally high-contrast: its copy is part of the action cue. */
+#communicationComposerModal .communication-composer-head > div,
+#communicationComposerModal .communication-composer-head > div .mono-label,
+#communicationComposerModal .communication-composer-head > div h3,
+#communicationComposerModal .communication-composer-head > div p {
+  color: #fff !important;
+  text-shadow: 0 1px 1px rgba(2, 22, 67, .24);
+}
+
+#communicationComposerModal .communication-composer-head > div .mono-label {
+  color: rgba(255, 255, 255, .94) !important;
+}

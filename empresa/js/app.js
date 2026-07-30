@@ -8713,9 +8713,7 @@ function ensureRevenueCenterUxStyles() {
   const style = document.createElement("style");
   style.id = "revenueCenterUxStylesV75";
   style.textContent = `
-    body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry,
-    body[data-current-view="dashboard"] .portal-shell .revenue-workspace,
-    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace {
+    body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry {
       display: none !important;
     }
     body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
@@ -9036,6 +9034,51 @@ function ensureRevenueCenterUxStyles() {
   document.head.appendChild(style);
 }
 
+function ensureRevenueCenterWorkspacePolish() {
+  if (document.getElementById("revenueCenterWorkspacePolishV77")) return;
+  const style = document.createElement("style");
+  style.id = "revenueCenterWorkspacePolishV77";
+  style.textContent = `
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[hidden] { display: none !important; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace:not([hidden]) { display: grid !important; }
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > .revenue-workspace { display: grid !important; }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="summary"] .dashboard-builder-layout,
+    body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="map"] .dashboard-builder-layout { display: none !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace { gap: clamp(1.75rem, 3vw, 3rem) !important; padding: clamp(1.5rem, 3.6vw, 3.25rem) !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head { padding: clamp(1.4rem, 3vw, 2.5rem) !important; border: 0 !important; border-bottom: 1px solid rgba(117,157,190,.34) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head > div { padding-right: clamp(.25rem, 2vw, 1.5rem); }
+    body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head .solid-button { margin-right: clamp(.35rem, 2vw, 1.75rem) !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-main-grid { grid-template-columns: 1fr !important; gap: clamp(1.75rem, 3vw, 2.75rem) !important; margin: 0 !important; }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card { padding: clamp(1.4rem, 3vw, 2.5rem) !important; margin: 0 !important; border: 0 !important; border-top: 1px solid rgba(117,157,190,.28) !important; border-bottom: 1px solid rgba(117,157,190,.28) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card p { max-width: 68ch; margin: .65rem 0 1.35rem !important; line-height: 1.6; }
+    body[data-current-view="dashboard"] .portal-shell .next-best-action-card .solid-button { align-self: start; margin-left: clamp(.35rem, 1.75vw, 1.25rem) !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-card { margin-top: clamp(.35rem, 1vw, 1rem) !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid { grid-template-columns: 1fr !important; gap: 0 !important; border-top: 1px solid rgba(117,157,190,.26); }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button { min-height: 58px; padding: 1rem 0 !important; border: 0 !important; border-bottom: 1px solid rgba(117,157,190,.26) !important; border-radius: 0 !important; background: transparent !important; }
+    body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button:hover { transform: none !important; background: rgba(235,247,255,.72) !important; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="summary"] .portal-module-map { display: none !important; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] > :not(.portal-module-map) { display: none !important; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-module-map { display: grid !important; gap: clamp(1rem, 2.5vw, 2rem); padding: clamp(1.25rem, 3vw, 2.5rem); border: 0; border-top: 1px solid rgba(117,157,190,.3); border-bottom: 1px solid rgba(117,157,190,.3); border-radius: 0; background: transparent; box-shadow: none; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid { display: grid !important; grid-template-columns: 1fr !important; gap: 0 !important; border-top: 1px solid rgba(117,157,190,.25); }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article { display: grid !important; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1.35rem 0; border: 0; border-bottom: 1px solid rgba(117,157,190,.25); border-radius: 0; background: transparent; box-shadow: none; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article > .material-symbols-outlined { grid-column: 1; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article > div { grid-column: 2; }
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article > .portal-map-links { grid-column: 3; justify-content: flex-end; }
+    @media (max-width: 760px) {
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace { padding: 1.25rem !important; }
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head { grid-template-columns: 1fr !important; padding: 1.25rem 0 !important; }
+      body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head .solid-button { width: 100%; margin-right: 0 !important; }
+      body[data-current-view="dashboard"] .portal-shell .next-best-action-card,
+      body[data-current-view="dashboard"] .portal-shell .revenue-objective-card { padding: 1.25rem 0 !important; }
+      body[data-current-view="dashboard"] .portal-shell .next-best-action-card .solid-button { width: calc(100% - .35rem); margin-left: .35rem !important; }
+      body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article { grid-template-columns: 40px minmax(0,1fr) !important; }
+      body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-map-grid > article > .portal-map-links { grid-column: 2; justify-content: flex-start; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function ensureRevenueCenterLayoutGuard() {
   if (document.getElementById("revenueCenterLayoutGuardV76")) return;
   const style = document.createElement("style");
@@ -9044,7 +9087,7 @@ function ensureRevenueCenterLayoutGuard() {
     /* El Centro de Revenue muestra una sola superficie a la vez.
        Los módulos heredados permanecen disponibles en el código, pero no deben
        quedar renderizados detrás del tablero tabulado. */
-    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > :not(.dashboard-revenue-head, .portal-gaming-entry, .dashboard-builder-shell) {
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > :not(.dashboard-revenue-head, .portal-gaming-entry, .dashboard-builder-shell, .revenue-workspace) {
       display: none !important;
     }
     body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] [hidden],
@@ -9058,7 +9101,7 @@ function ensureRevenueCenterLayoutGuard() {
     }
     body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
       display: grid !important;
-      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
       width: 100% !important;
       min-width: 0 !important;
       gap: clamp(8px, 1.4vw, 16px) !important;
@@ -10824,14 +10867,19 @@ const DASHBOARD_WORKSPACE_TABS = {
     profile: "executive",
   },
   analysis: {
-    title: "Análisis de rendimiento",
-    description: "Compara el comportamiento de campañas, canales, fuentes y conversión.",
+    title: "Costos y análisis",
+    description: "Compara CAC, ROI, campañas, canales, fuentes y conversión.",
     profile: "marketing",
   },
   tables: {
     title: "Datos y reportes",
     description: "Consulta las tablas exportables cuando necesites profundizar en la información.",
     profile: "commercial",
+  },
+  map: {
+    title: "Mapa del portal",
+    description: "Ubica cada herramienta por etapa sin alargar el resumen operativo.",
+    profile: "executive",
   },
   customize: {
     title: "Mi tablero",
@@ -10874,6 +10922,7 @@ const DASHBOARD_BUILDER_PROFILES = {
 };
 
 const DASHBOARD_WIDGET_CATALOG = [
+  { id: "cac", title: "CAC promedio", category: "Gráfico", icon: "ads_click", route: "channels", description: "Costo promedio de captar un cliente a partir de inversión y ventas atribuidas." },
   { id: "revenue", title: "Revenue real", category: "Número", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
   { id: "sales", title: "Ventas registradas", category: "Número", icon: "point_of_sale", route: "sales", description: "Cantidad de ventas observadas en el periodo." },
   { id: "avg_ticket", title: "Ticket promedio", category: "Número", icon: "receipt_long", route: "sales", description: "Promedio de ingreso por venta registrada." },
@@ -11362,6 +11411,13 @@ function exportDashboardWidget(widgetId) {
 
 function renderDashboardWidget(widget, stats) {
   if (widget.id === "revenue") return { value: money(stats.observedRevenue), meta: `${stats.salesCount} ventas registradas`, body: `Ticket promedio: ${money(stats.avgTicket)}.`, tone: "money" };
+  if (widget.id === "cac") {
+    const economics = state.commandCenter?.business_economics;
+    const investment = Number(economics?.investment || 0);
+    const customers = Number(economics?.customers || 0);
+    const value = investment > 0 && customers > 0 ? investment / customers : null;
+    return { value: value === null ? "—" : money(value), meta: `${customers.toLocaleString("es-CO")} cliente(s) con compra atribuida`, body: investment > 0 ? `${money(investment)} de inversión comercial registrada.` : "Registra inversión en campañas, canales o esfuerzos para calcularlo.", tone: "chart" };
+  }
   if (widget.id === "avg_ticket") return { value: money(stats.avgTicket), meta: `${stats.salesCount} ventas registradas`, body: "Úsalo para comparar CAC, inversión y revenue por canal.", tone: "money" };
   if (widget.id === "revenue_funnel") return { value: `${stats.totalLeads} leads`, meta: "Captura a venta registrada", body: dashboardBuilderFunnel(stats), tone: "chart" };
   if (widget.id === "sales") return { value: stats.salesCount, meta: "ventas observadas", body: `${money(stats.observedRevenue)} revenue medido.`, tone: "neutral" };
@@ -11446,7 +11502,13 @@ function setDashboardWorkspaceTab(tab) {
 function dashboardWidgetsForWorkspaceTab(layout, tab) {
   const widgets = (layout || []).map((id) => DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === id)).filter(Boolean);
   if (tab === "customize") return widgets;
-  if (tab === "analysis") return widgets.filter((widget) => widget.category === "Gráfico");
+  if (tab === "analysis") {
+    const analysisWidgets = widgets.filter((widget) => widget.category === "Gráfico");
+    const cacWidget = DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === "cac");
+    return cacWidget && !analysisWidgets.some((widget) => widget.id === "cac")
+      ? [cacWidget, ...analysisWidgets]
+      : analysisWidgets;
+  }
   if (tab === "tables") return widgets.filter((widget) => widget.category === "Tabla");
 
   const preferred = ["revenue", "avg_ticket", "sales", "leads", "revenue_funnel", "redemption_rate"];
@@ -11459,11 +11521,8 @@ function renderDashboardBuilder() {
   state.dashboardBuilderExpanded = false;
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   ensureRevenueCenterUxStyles();
+  ensureRevenueCenterWorkspacePolish();
   ensureRevenueCenterLayoutGuard();
-  if (revenueWorkspace) {
-    revenueWorkspace.hidden = true;
-    revenueWorkspace.classList.add("hidden");
-  }
   state.dashboardBuilderProfile = getDashboardProfile();
   state.dashboardWorkspaceTab = getDashboardWorkspaceTab();
   const workspaceTab = state.dashboardWorkspaceTab;
@@ -11472,6 +11531,14 @@ function renderDashboardBuilder() {
   dashboardSection?.classList.add("dashboard-builder-mode");
   dashboardSection?.classList.remove("dashboard-advanced-active");
   dashboardBuilderShell.dataset.workspaceTab = workspaceTab;
+  dashboardSection?.setAttribute("data-revenue-workspace-tab", workspaceTab);
+  const showRevenueWorkspace = workspaceTab === "summary" || workspaceTab === "map";
+  if (revenueWorkspace) {
+    revenueWorkspace.hidden = !showRevenueWorkspace;
+    revenueWorkspace.classList.toggle("hidden", !showRevenueWorkspace);
+    revenueWorkspace.dataset.workspaceTab = workspaceTab;
+    if (showRevenueWorkspace) renderRevenueWorkspace();
+  }
   dashboardAdvancedToggleButton?.classList.toggle("active", workspaceTab === "analysis");
   if (dashboardAdvancedToggleButton) {
     dashboardAdvancedToggleButton.innerHTML = `
@@ -11588,10 +11655,6 @@ function toggleDashboardAdvancedView() {
 
 function renderDashboard() {
   renderDashboardBuilder();
-  if (revenueWorkspace) {
-    revenueWorkspace.hidden = true;
-    revenueWorkspace.classList.add("hidden");
-  }
   if (!state.dashboardBuilderExpanded) return;
   renderCommandCenter();
   const summary = state.summary || {};
