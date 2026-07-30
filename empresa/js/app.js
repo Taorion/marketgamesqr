@@ -9054,13 +9054,12 @@ function ensureRevenueCenterUxStyles() {
 }
 
 function ensureRevenueCenterWorkspacePolish() {
-  if (document.getElementById("revenueCenterWorkspacePolishV77")) return;
+  if (document.getElementById("revenueCenterWorkspacePolishV78")) return;
   const style = document.createElement("style");
-  style.id = "revenueCenterWorkspacePolishV77";
+  style.id = "revenueCenterWorkspacePolishV78";
   style.textContent = `
     body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[hidden] { display: none !important; }
     body[data-current-view="dashboard"] .portal-shell #revenueWorkspace:not([hidden]) { display: grid !important; }
-    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > .revenue-workspace { display: grid !important; }
     body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="summary"] .dashboard-builder-layout,
     body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="map"] .dashboard-builder-layout { display: none !important; }
     body[data-current-view="dashboard"] .portal-shell .revenue-workspace { gap: clamp(1.75rem, 3vw, 3rem) !important; padding: clamp(1.5rem, 3.6vw, 3.25rem) !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
@@ -9076,6 +9075,12 @@ function ensureRevenueCenterWorkspacePolish() {
     body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid { grid-template-columns: 1fr !important; gap: 0 !important; border-top: 1px solid rgba(117,157,190,.26); }
     body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button { min-height: 58px; padding: 1rem 0 !important; border: 0 !important; border-bottom: 1px solid rgba(117,157,190,.26) !important; border-radius: 0 !important; background: transparent !important; }
     body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button:hover { transform: none !important; background: rgba(235,247,255,.72) !important; }
+    /* El resumen es una vista corta: pulso, siguiente acción y nada más.
+       El mapa vive en su propia pestaña; las rutas y objetivos siguen
+       disponibles desde sus módulos, sin alargar el Centro de Revenue. */
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="summary"] .revenue-objective-card,
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="summary"] .revenue-path-guide,
+    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="summary"] .revenue-onboarding,
     body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="summary"] .portal-module-map { display: none !important; }
     body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] > :not(.portal-module-map) { display: none !important; }
     body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-workspace-tab="map"] .portal-module-map { display: grid !important; gap: clamp(1rem, 2.5vw, 2rem); padding: clamp(1.25rem, 3vw, 2.5rem); border: 0; border-top: 1px solid rgba(117,157,190,.3); border-bottom: 1px solid rgba(117,157,190,.3); border-radius: 0; background: transparent; box-shadow: none; }
