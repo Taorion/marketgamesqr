@@ -38981,24 +38981,24 @@ function rmsPrimaryStationNextPhase(stage = {}, stages = []) {
 
 const RMS_QUALITY_CONTROL_CONFIG = {
   preprocesamiento: {
-    title: "Control de calidad 1",
-    subtitle: "Seguimiento desde Recolectar hasta Activación 1",
+    title: "Lead listo para Evaluación",
+    subtitle: "Control 1 · validación previa a Evaluación",
     description: "Lee el recorrido inicial de cada oportunidad: calidad, producto, activación y siguiente paso, sin detener la operación.",
     phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
-    focus: "Detecta información incompleta antes de que el lead entre a Evaluación.",
-    checkpoint: "Puerta 1 · antes de Evaluación",
-    controls: "Datos, calidad, oferta y primera activación",
-    decision: "¿El lead está listo para ser evaluado?",
+    focus: "Verifica que el lead tenga contacto, calidad, oferta y primera activación antes de enviarlo a Evaluación.",
+    checkpoint: "Control 1 · datos y activación",
+    controls: "Contacto, calidad, oferta y primera activación",
+    decision: "Salida: lead listo para Evaluación",
   },
   revenue_generado: {
-    title: "Control de calidad 2",
-    subtitle: "Seguimiento desde Evaluación hasta venta atribuida",
+    title: "Venta lista para Postventa",
+    subtitle: "Control 2 · validación previa a Postventa",
     description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
     phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
-    focus: "Confirma que cada venta tenga una trazabilidad comercial clara antes de pasar a postventa.",
-    checkpoint: "Puerta 2 · antes de Postventa",
+    focus: "Verifica que la venta tenga valor, fuente, producto y evidencia antes de enviarla a Postventa.",
+    checkpoint: "Control 2 · venta y trazabilidad",
     controls: "Valor, fuente, producto y evidencia de venta",
-    decision: "¿La venta puede pasar a postventa con trazabilidad?",
+    decision: "Salida: venta trazable lista para Postventa",
   },
 };
 
@@ -39089,8 +39089,8 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
           <small>${escapeHtml(config.subtitle)}</small>
           <p>${escapeHtml(config.focus || "")}</p>
           <div class="rms-quality-control-definition" aria-label="Función del control">
-            <div><span>Qué controla</span><strong>${escapeHtml(config.controls || "")}</strong></div>
-            <div><span>Decisión</span><strong>${escapeHtml(config.decision || "")}</strong></div>
+            <div><span>Revisa</span><strong>${escapeHtml(config.controls || "")}</strong></div>
+            <div><span>Salida</span><strong>${escapeHtml(config.decision || "")}</strong></div>
           </div>
           <div class="rms-quality-control-route" aria-label="Tramo observado">
             ${route.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}
