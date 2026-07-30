@@ -4333,6 +4333,25 @@ function datetimeLocalValue(date = new Date()) {
   return local.toISOString().slice(0, 16);
 }
 
+function agendaScheduledDate(value = "") {
+  const date = parseLocalDateValue(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function agendaScheduledDateIso(value = "") {
+  const date = agendaScheduledDate(value);
+  return date ? date.toISOString() : "";
+}
+
+function formatAgendaScheduledDate(value = "") {
+  const date = agendaScheduledDate(value);
+  if (!date) return "la fecha acordada";
+  return date.toLocaleString("es-CO", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+}
+
 function startOfLocalDay(date = new Date()) {
   const value = parseLocalDateValue(date);
   value.setHours(0, 0, 0, 0);
@@ -31820,7 +31839,7 @@ function agendaMeetingPlatformLabel(value = "") {
   }[String(value || "").toUpperCase()] || "";
 }
 
-function agendaMeetingPayloadFromFields(data = null) {
+function agendaMeetingPayloadFromFields(data = null, reminderValue = "") {
   const read = (name, fallback = "") => {
     if (data) return String(data.get(name) || fallback).trim();
     const input = {
@@ -31837,6 +31856,9 @@ function agendaMeetingPayloadFromFields(data = null) {
   const platform = read("meeting_platform").toUpperCase();
   const url = read("meeting_url");
   const address = read("meeting_address");
+  const scheduledValue = data
+    ? String(data.get("reminder_at") || reminderValue || "").trim()
+    : String(reminderValue || leadAgendaReminderInput?.value || "").trim();
   const isMeeting = activityType === "MEETING" || Boolean(mode || platform || url || address);
   return {
     agenda_activity_type: isMeeting ? "MEETING" : "TASK",
@@ -31844,14 +31866,15 @@ function agendaMeetingPayloadFromFields(data = null) {
     meeting_platform: isMeeting ? platform : "",
     meeting_url: isMeeting ? url : "",
     meeting_address: isMeeting ? address : "",
+    meeting_scheduled_at: isMeeting ? agendaScheduledDateIso(scheduledValue) : "",
   };
 }
 
-function agendaOperationalPayloadFromFields(data = null) {
+function agendaOperationalPayloadFromFields(data = null, reminderValue = "") {
   const scope = String(data ? data.get("agenda_scope") || "GENERAL" : leadAgendaScopeInput?.value || "GENERAL").toUpperCase();
   const campaign = scope === "GENERAL" ? null : selectedAgendaCampaignFromData(data);
   return {
-    ...agendaMeetingPayloadFromFields(data),
+    ...agendaMeetingPayloadFromFields(data, reminderValue),
     agenda_scope: scope,
     agenda_scope_label: agendaScopeLabel(scope),
     campaign_id: campaign?.id || "",
@@ -31879,7 +31902,8 @@ function agendaMeetingWhatsAppMessage(item = {}) {
   const metadata = agendaMetadata(item);
   const greeting = item.lead_name ? `Hola ${item.lead_name}` : "Hola";
   const business = activationBusinessName();
-  const date = agendaSentenceText(formatDate(item.reminder_at));
+  const scheduledAt = metadata.meeting_scheduled_at || item.reminder_at;
+  const date = agendaSentenceText(formatAgendaScheduledDate(scheduledAt));
   const mode = agendaMeetingModeLabel(metadata.meeting_mode);
   const platform = agendaMeetingPlatformLabel(metadata.meeting_platform);
   const meetingDetails = [
@@ -32552,12 +32576,12 @@ async function updateAgendaItemFromForm(event, noteId) {
       next_action: nextAction,
       note,
       note_type: data.get("note_type") || "commercial",
-      reminder_at: new Date(reminderValue).toISOString(),
+      reminder_at: agendaScheduledDateIso(reminderValue),
       agenda_status: data.get("agenda_status") || "OPEN",
       agenda_priority: data.get("agenda_priority") || "MEDIUM",
       progress_percent: progress,
       checklist: agendaChecklistItems(data.get("checklist")),
-      metadata: agendaOperationalPayloadFromFields(data),
+      metadata: agendaOperationalPayloadFromFields(data, reminderValue),
     }, "Tarea editada.");
   } catch (error) {
     showFeedback(error.message || "No se pudo editar la tarea.", "error");
@@ -32711,11 +32735,11 @@ async function createAgendaItemFromForm(event) {
         note: noteDetail || nextAction,
         note_type: "follow_up",
         next_action: nextAction,
-        reminder_at: new Date(reminderValue).toISOString(),
+        reminder_at: agendaScheduledDateIso(reminderValue),
         agenda_priority: leadAgendaPriorityInput?.value || "MEDIUM",
         progress_percent: progress,
         checklist: agendaChecklistItems(leadAgendaChecklistInput?.value || ""),
-        metadata: agendaOperationalPayloadFromFields(),
+        metadata: agendaOperationalPayloadFromFields(null, reminderValue),
       }),
     });
     if (result?.item?.id) {
