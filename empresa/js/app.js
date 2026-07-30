@@ -32616,7 +32616,27 @@ function mountContactCenterLayout() {
   // La entrega de ticket debe vivir fuera del directorio para no quedar recortada.
   appendIfFound(document.body, leadActivationModal);
 
+  keepAgendaFocusedOnTasks();
+
   state.contactCenterMounted = true;
+}
+
+// Agenda solo debe contener trabajo programado. Estas dos tablas pertenecen a
+// sus flujos de origen (Directorio y Campañas) y, si una versión anterior del
+// markup las deja dentro de Agenda, duplican información y vuelven la pantalla
+// inmanejable. Se retiran únicamente cuando están anidadas en Agenda.
+function keepAgendaFocusedOnTasks() {
+  const agendaPanel = document.querySelector('[data-contact-center-panel="agenda"]');
+  if (!agendaPanel) return;
+
+  [
+    document.getElementById("leadFeedCard"),
+    document.getElementById("campaignLeadsCard"),
+    leadFeedTable?.closest("article"),
+    campaignLeadsTable?.closest("article"),
+  ].filter(Boolean).forEach((card) => {
+    if (agendaPanel.contains(card)) card.remove();
+  });
 }
 
 function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
@@ -33356,6 +33376,7 @@ function renderLeadsView() {
   renderLeadCaptureTable();
   if (state.contactCenterTab === "sales") renderSalesView();
   renderLegacyLeadTables(feedRows, crmRows);
+  keepAgendaFocusedOnTasks();
   setContactCenterTab(state.contactCenterTab);
 }
 
