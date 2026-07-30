@@ -76,7 +76,7 @@
     const channel = document.getElementById("communicationChannelInput");
     const activation = document.getElementById("communicationActivationInput");
     if (campaign) campaign.innerHTML = '<option value="">Sin campaña</option>' + options(state.campaigns, (item) => item.name || item.title || "Campaña");
-    if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => item.name || item.channel_name || "Canal");
+    if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => [item.name || item.channel_name || "Canal", item.platform].filter(Boolean).join(" · "));
     if (activation) activation.innerHTML = '<option value="">Sin activación</option>' + options(state.triviaLaunchers, (item) => item.title || "Activación");
   }
 
@@ -122,6 +122,24 @@
       communicationComposerAudiencePurchases: filters.has_purchases || "",
     };
     Object.entries(fields).forEach(([id, value]) => { const field = document.getElementById(id); if (field) field.value = value; });
+  }
+
+  async function prepareComposerRelations() {
+    if (typeof loadAcquisitionChannels === "function") {
+      await loadAcquisitionChannels({ force: true, quiet: true });
+    }
+  }
+
+  function positionComposerAudience() {
+    const form = document.getElementById("communicationComposerForm");
+    const foundation = form?.querySelector(".communication-composer-foundation");
+    const audience = document.getElementById("communicationComposerAudience");
+    if (!form || !foundation || !audience || foundation.nextElementSibling === audience) return;
+    foundation.insertAdjacentElement("afterend", audience);
+    const audienceStep = audience.querySelector(".communication-composer-step");
+    if (audienceStep) audienceStep.textContent = "02";
+    form.querySelectorAll(".communication-email-fields .communication-composer-step, .communication-social-fields .communication-composer-step").forEach((step) => { step.textContent = "03"; });
+    form.querySelectorAll(".communication-media-section .communication-composer-step").forEach((step) => { step.textContent = "04"; });
   }
 
   async function refreshComposerAudience() {
@@ -186,6 +204,7 @@
   }
 
   function toggleComposer() {
+    positionComposerAudience();
     const type = document.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
     document.querySelectorAll(".communication-email-fields").forEach((node) => node.classList.toggle("hidden", type === "SOCIAL"));
     document.querySelectorAll(".communication-social-fields").forEach((node) => node.classList.toggle("hidden", type === "EMAIL"));
@@ -269,6 +288,7 @@
 
   document.addEventListener("click", async (event) => {
     const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
