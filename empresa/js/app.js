@@ -2989,6 +2989,7 @@ function clearSession(options = {}) {
   clearBusinessScopedStorage(session?.user?.business_id || "", { all: true });
   resetBusinessScopedState({ session: null });
   session = null;
+  setPortalAuthenticationState(false);
   closeFeatureUpgradeInterstitial();
   hideFeedback();
   hideBusyOverlay(true);
@@ -6252,8 +6253,21 @@ function closePortalMenu() {
   workspace?.classList.remove("sidebar-open");
 }
 
+function setPortalAuthenticationState(logged) {
+  document.body.dataset.authState = logged ? "authenticated" : "guest";
+  if (loginPanel) {
+    loginPanel.setAttribute("aria-hidden", String(logged));
+    loginPanel.inert = logged;
+  }
+  if (workspace) {
+    workspace.setAttribute("aria-hidden", String(!logged));
+    workspace.inert = !logged;
+  }
+}
+
 function renderShell() {
   const logged = Boolean(session?.token);
+  setPortalAuthenticationState(logged);
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
