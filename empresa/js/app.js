@@ -9036,6 +9036,183 @@ function ensureRevenueCenterUxStyles() {
   document.head.appendChild(style);
 }
 
+function ensureRevenueCenterLayoutGuard() {
+  if (document.getElementById("revenueCenterLayoutGuardV76")) return;
+  const style = document.createElement("style");
+  style.id = "revenueCenterLayoutGuardV76";
+  style.textContent = `
+    /* El Centro de Revenue muestra una sola superficie a la vez.
+       Los módulos heredados permanecen disponibles en el código, pero no deben
+       quedar renderizados detrás del tablero tabulado. */
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > :not(.dashboard-revenue-head, .portal-gaming-entry, .dashboard-builder-shell) {
+      display: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] [hidden],
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library[hidden] {
+      display: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+      width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      gap: clamp(8px, 1.4vw, 16px) !important;
+      padding: 0 0 16px !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(117, 157, 190, .32) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button,
+    body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+      display: inline-flex !important;
+      min-width: 0 !important;
+      min-height: 44px !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      padding: 10px 8px !important;
+      border: 0 !important;
+      border-bottom: 2px solid transparent !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #5a7393 !important;
+      white-space: nowrap !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button:hover,
+    body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+      color: #083578 !important;
+      border-bottom-color: #11b6df !important;
+      background: linear-gradient(180deg, rgba(202, 241, 255, .48), rgba(255,255,255,0)) !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 0 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      align-items: start !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head {
+      display: block !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas,
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head,
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+      width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: clamp(1.75rem, 4vw, 3.5rem) !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: clamp(1.75rem, 4vw, 3.5rem) 0 0 !important;
+      border: 0 !important;
+      border-top: 1px solid rgba(14, 70, 146, .14) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      grid-template-areas:
+        "copy actions"
+        "profiles profiles" !important;
+      align-items: end !important;
+      gap: clamp(1rem, 3vw, 2rem) !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 0 clamp(1.5rem, 3vw, 2.25rem) !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(14, 70, 146, .14) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head > div:first-child {
+      grid-area: copy !important;
+      min-width: 0 !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+      grid-area: profiles !important;
+      grid-column: 1 / -1 !important;
+      order: initial !important;
+      width: min(100%, 46rem) !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions {
+      grid-area: actions !important;
+      justify-content: flex-end !important;
+      align-self: center !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: clamp(1.25rem, 3vw, 2.5rem) !important;
+      align-items: start !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card {
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 0 clamp(1.25rem, 2vw, 1.75rem) !important;
+      border: 0 !important;
+      border-bottom: 1px solid rgba(14, 70, 146, .14) !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
+        display: flex !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x proximity !important;
+        padding-bottom: 12px !important;
+      }
+      body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button,
+      body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+        scroll-snap-align: start !important;
+      }
+      body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head,
+      body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head {
+        grid-template-areas:
+          "copy"
+          "actions"
+          "profiles" !important;
+      }
+      body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-actions {
+        justify-content: flex-start !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderRevenuePulseStrip(summary = {}, dashboard = {}, path = []) {
   if (!revenuePulseStrip) return;
   const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
@@ -11282,6 +11459,7 @@ function renderDashboardBuilder() {
   state.dashboardBuilderExpanded = false;
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   ensureRevenueCenterUxStyles();
+  ensureRevenueCenterLayoutGuard();
   if (revenueWorkspace) {
     revenueWorkspace.hidden = true;
     revenueWorkspace.classList.add("hidden");
