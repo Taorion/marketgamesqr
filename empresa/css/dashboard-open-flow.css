@@ -657,3 +657,64 @@ body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view
   body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list .dashboard-library-item.is-active { grid-template-columns: 42px minmax(0, 1fr) !important; align-items: start !important; gap: 10px 14px !important; min-height: 0 !important; }
   body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-library-action { grid-column: 2 !important; justify-self: start !important; }
 }
+
+/*
+ * Revenue is a reading workspace, not a sheet of edge-to-edge widgets.
+ * Keep one shared interior gutter for every view of the dashboard so headings,
+ * tabs and long-form analysis never collide with the shell edge.
+ */
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+  --qori-revenue-gutter: clamp(24px, 4vw, 56px);
+  width: min(100%, 1240px) !important;
+  margin-inline: auto !important;
+  padding: clamp(28px, 4vw, 52px) var(--qori-revenue-gutter) clamp(42px, 6vw, 78px) !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-head {
+  margin: 0 !important;
+  padding: 0 0 clamp(28px, 4vw, 44px) !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-profile-tabs {
+  padding: 0 0 clamp(8px, 1.5vw, 16px) !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+  width: 100% !important;
+  margin: clamp(28px, 5vw, 58px) 0 0 !important;
+  padding: clamp(20px, 3vw, 36px) 0 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace[hidden] {
+  display: none !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+  align-items: start !important;
+  padding: 0 0 clamp(26px, 4vw, 40px) !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+  margin: 0 !important;
+}
+
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-main-grid,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-objective-grid,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-path-guide,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-onboarding,
+body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .portal-module-map {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 760px) {
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+    --qori-revenue-gutter: clamp(18px, 5vw, 28px);
+    padding-block: 24px 48px !important;
+  }
+
+  body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+    margin-top: 28px !important;
+    padding-top: 20px !important;
+  }
+}
