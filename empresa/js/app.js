@@ -32624,51 +32624,145 @@ function ensureLeadAgendaCreateModalStyles() {
   const style = document.createElement("style");
   style.id = "leadAgendaCreateModalStyles";
   style.textContent = `
-    #leadAgendaCreateModal .lead-agenda-create-modal-card {
-      width: min(960px, calc(100vw - 32px));
-      max-height: calc(100vh - 42px);
-      overflow: auto;
+    html body > #leadAgendaCreateModal {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 1400 !important;
+      display: grid !important;
+      place-items: center !important;
+      box-sizing: border-box;
+      width: 100vw !important;
+      min-height: 100dvh !important;
+      height: 100dvh !important;
+      margin: 0 !important;
+      padding: clamp(12px, 3vw, 32px) !important;
+      overflow: hidden !important;
+      background: rgba(2, 19, 50, 0.58) !important;
+      backdrop-filter: blur(8px) saturate(0.88);
     }
-    #leadAgendaCreateModal .modal-head {
+    html body > #leadAgendaCreateModal.hidden {
+      display: none !important;
+    }
+    html body.lead-agenda-modal-open {
+      overflow: hidden !important;
+    }
+    html body > #leadAgendaCreateModal .lead-agenda-create-modal-card {
+      display: flex !important;
+      flex-direction: column !important;
+      width: min(960px, 100%) !important;
+      max-width: 100% !important;
+      height: min(860px, calc(100dvh - 24px)) !important;
+      max-height: calc(100dvh - 24px) !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border-radius: 24px !important;
+      background: #fff !important;
+      box-shadow: 0 28px 72px rgba(2, 19, 50, 0.32) !important;
+    }
+    html body > #leadAgendaCreateModal .modal-head {
+      display: flex !important;
+      flex: 0 0 auto;
       align-items: flex-start;
+      justify-content: space-between;
       gap: 1rem;
-      margin-bottom: 0.85rem;
+      margin: 0 !important;
+      padding: clamp(20px, 3vw, 30px) clamp(20px, 4vw, 38px) 18px !important;
+      border-bottom: 1px solid rgba(135, 206, 235, 0.42);
+      background: linear-gradient(120deg, #063c97 0%, #075ed7 52%, #13bce5 100%);
     }
-    #leadAgendaCreateModal .modal-head h3 {
+    html body > #leadAgendaCreateModal .modal-head h3 {
       margin: 0.15rem 0 0.2rem;
       font-size: clamp(1.35rem, 2.3vw, 2rem);
+      color: #fff;
     }
-    #leadAgendaCreateModal .modal-head p {
+    html body > #leadAgendaCreateModal .modal-head p,
+    html body > #leadAgendaCreateModal .modal-head .mono-label {
       margin: 0;
-      color: var(--muted-text);
+      color: rgba(255, 255, 255, 0.9);
       max-width: 650px;
     }
-    #leadAgendaCreateModal .lead-agenda-form-head {
-      margin-bottom: 0.85rem;
-      padding: 0.85rem;
-      border-radius: 18px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(15, 23, 42, 0.04);
+    html body > #leadAgendaCreateModal .modal-head .icon-button {
+      flex: 0 0 auto;
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.14);
     }
-    #leadAgendaCreateModal .lead-agenda-create-form {
+    html body > #leadAgendaCreateModal .lead-agenda-form-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 380px);
+      align-items: center;
+      gap: 1rem 2rem;
+      flex: 0 0 auto;
+      margin: 0 !important;
+      padding: 16px clamp(20px, 4vw, 38px) !important;
+      border: 0;
+      border-bottom: 1px solid #dce8f4;
+      border-radius: 0;
+      background: #f7fbff;
+    }
+    html body > #leadAgendaCreateModal .lead-agenda-form-head small {
+      margin: 0;
+      color: #54708e;
+    }
+    html body > #leadAgendaCreateModal .lead-agenda-create-form {
+      flex: 1 1 auto;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.8rem;
+      align-content: start;
+      gap: 1rem;
+      margin: 0 !important;
+      padding: 22px clamp(20px, 4vw, 38px) 32px !important;
+      background: #fff;
     }
-    #leadAgendaCreateModal .lead-agenda-create-form label {
+    html body > #leadAgendaCreateModal .lead-agenda-create-form label {
       min-width: 0;
     }
-    #leadAgendaCreateModal .lead-agenda-create-form .span-2,
-    #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+    html body > #leadAgendaCreateModal .lead-agenda-create-form .span-2,
+    html body > #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
       grid-column: 1 / -1;
     }
-    #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+    html body > #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
       min-height: 48px;
       justify-content: center;
+      margin-top: 0.4rem;
+      box-shadow: 0 10px 22px rgba(7, 94, 215, 0.24);
     }
     @media (max-width: 760px) {
-      #leadAgendaCreateModal .lead-agenda-create-form {
+      html body > #leadAgendaCreateModal {
+        padding: 8px !important;
+      }
+      html body > #leadAgendaCreateModal .lead-agenda-create-modal-card {
+        height: calc(100dvh - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+        border-radius: 18px !important;
+      }
+      html body > #leadAgendaCreateModal .modal-head {
+        padding: 20px 18px 14px !important;
+      }
+      html body > #leadAgendaCreateModal .lead-agenda-form-head {
         grid-template-columns: 1fr;
+        gap: 0.4rem;
+        padding: 12px 18px !important;
+      }
+      html body > #leadAgendaCreateModal .lead-agenda-create-form {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        padding: 16px 18px 26px !important;
+      }
+      html body > #leadAgendaCreateModal .lead-agenda-create-form .span-2 {
+        grid-column: auto;
+      }
+      html body > #leadAgendaCreateModal .lead-agenda-create-form button[type="submit"] {
+        width: 100%;
       }
     }
   `;
@@ -32685,9 +32779,13 @@ function setDefaultLeadAgendaReminderIfEmpty() {
 function openLeadAgendaCreateModal(options = {}) {
   if (!leadAgendaCreateModal) return;
   ensureLeadAgendaCreateModalStyles();
+  if (leadAgendaCreateModal.parentElement !== document.body) {
+    document.body.appendChild(leadAgendaCreateModal);
+  }
   renderLeadAgendaLeadOptions();
   renderLeadAgendaCampaignOptions();
   setDefaultLeadAgendaReminderIfEmpty();
+  document.body.classList.add("lead-agenda-modal-open");
   leadAgendaCreateModal.classList.remove("hidden");
   leadAgendaCreateModal.removeAttribute("aria-hidden");
   const focusTarget = options.focusTarget || leadAgendaActionInput || leadAgendaScopeInput;
@@ -32700,6 +32798,7 @@ function closeLeadAgendaCreateModal() {
   if (!leadAgendaCreateModal) return;
   leadAgendaCreateModal.classList.add("hidden");
   leadAgendaCreateModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("lead-agenda-modal-open");
   leadAgendaOpenCreateButton?.focus?.({ preventScroll: true });
 }
 
