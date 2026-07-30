@@ -39000,8 +39000,49 @@ function rmsQualityControlConfig(key = "") {
   return RMS_QUALITY_CONTROL_CONFIG[key] || null;
 }
 
+function ensureRmsQualityControlArchitecture() {
+  if (document.getElementById("rmsQualityControlArchitectureV2")) return;
+  const style = document.createElement("style");
+  style.id = "rmsQualityControlArchitectureV2";
+  style.textContent = `
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess { display:block!important; margin:48px 0 24px!important; padding:clamp(24px,3vw,38px)!important; border:1px solid rgba(14,81,148,.16)!important; border-radius:28px!important; background:linear-gradient(145deg,#f8fcff,#eef9ff)!important; box-shadow:0 18px 42px rgba(20,82,138,.08)!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess:empty { display:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro { display:grid!important; justify-items:center!important; gap:12px!important; margin:0 0 30px!important; padding:0!important; text-align:center!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro > div { display:grid!important; justify-items:center!important; gap:7px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro h3, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro p { margin:0!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro h3 { max-width:none!important; color:#082e70!important; font-size:clamp(1.45rem,2.6vw,2rem)!important; line-height:1.08!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro p { max-width:62ch!important; color:#54728f!important; line-height:1.5!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro > small { display:inline-flex!important; align-items:center!important; gap:8px!important; padding:8px 12px!important; border:1px solid rgba(8,123,192,.18)!important; border-radius:999px!important; background:rgba(255,255,255,.82)!important; color:#236286!important; font-size:.7rem!important; font-weight:800!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro > small::before { width:7px!important; height:7px!important; border-radius:50%!important; background:#16ad78!important; box-shadow:0 0 0 4px rgba(22,173,120,.13)!important; content:""!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:20px!important; max-width:1120px!important; margin:0 auto!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card { display:grid!important; min-width:0!important; overflow:hidden!important; border:1px solid rgba(14,81,148,.15)!important; border-radius:22px!important; background:#fff!important; box-shadow:0 8px 24px rgba(17,76,133,.06)!important; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card:hover { transform:translateY(-3px)!important; border-color:rgba(8,123,192,.38)!important; box-shadow:0 16px 34px rgba(17,76,133,.12)!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-main { display:grid!important; min-width:0!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { width:100%!important; height:156px!important; margin:0!important; overflow:hidden!important; border:0!important; border-radius:0!important; background:#e9f7ff!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure img { display:block!important; width:100%!important; height:100%!important; object-fit:cover!important; object-position:center 42%!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy { display:grid!important; justify-items:center!important; min-width:0!important; padding:21px 24px 18px!important; text-align:center!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > strong, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > small, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > p { display:block!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > strong { margin-top:7px!important; color:#092e70!important; font-size:1.18rem!important; line-height:1.18!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > small { margin-top:5px!important; color:#17669f!important; font-size:.76rem!important; font-weight:760!important; line-height:1.35!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > p { max-width:54ch!important; margin:11px 0 0!important; color:#58738e!important; font-size:.83rem!important; line-height:1.45!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route { display:flex!important; justify-content:center!important; flex-wrap:wrap!important; gap:6px!important; margin-top:14px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span { min-height:25px!important; padding:5px 8px!important; border:1px solid rgba(14,81,148,.12)!important; border-radius:999px!important; background:#f6fbff!important; color:#4d708e!important; font-size:.64rem!important; font-weight:740!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span + span::before { content:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span:last-child { border-color:rgba(8,123,192,.25)!important; background:#e4f7ff!important; color:#075e9b!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { display:flex!important; align-items:center!important; justify-content:space-between!important; gap:16px!important; padding:16px 22px!important; border-top:1px solid rgba(14,81,148,.1)!important; background:#fbfdff!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric { display:grid!important; min-width:0!important; gap:1px!important; text-align:left!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric strong { color:#075ec0!important; font-size:1.45rem!important; line-height:1!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric span, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric small { color:#63809c!important; font-size:.68rem!important; font-weight:700!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { flex:0 0 auto!important; min-height:36px!important; padding:8px 12px!important; border-color:rgba(8,123,192,.28)!important; border-radius:10px!important; color:#075ca8!important; font-size:.75rem!important; font-weight:800!important; }
+    @media (max-width:820px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { grid-template-columns:minmax(0,1fr)!important; max-width:640px!important; } }
+    @media (max-width:560px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess { margin-top:30px!important; padding:22px 14px!important; border-radius:22px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { height:120px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy { padding:18px 16px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { padding:14px 16px!important; } }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderRmsQualityControlAccess(data = {}, opportunities = []) {
   if (!rmsQualityControlAccess) return;
+  ensureRmsQualityControlArchitecture();
   const qualityStages = rmsQualityControlStages(data);
   if (!qualityStages.length) {
     rmsQualityControlAccess.innerHTML = "";
@@ -39029,6 +39070,7 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
       .filter(Boolean);
     return `
       <article class="rms-quality-control-card" data-rms-open-quality-control="${escapeHtml(stage.key)}">
+        <div class="rms-quality-control-card-main">
         <figure><img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async"></figure>
         <div class="rms-quality-control-copy">
           <span class="mono-label">Tablero auxiliar ${stage.key === "preprocesamiento" ? "01" : "02"}</span>
@@ -39039,8 +39081,11 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
             ${route.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}
           </div>
         </div>
+        </div>
+        <footer class="rms-quality-control-card-footer">
         <div class="rms-quality-control-metric"><strong>${count.toLocaleString("es-CO")}</strong><span>leads observados</span>${legacy ? `<small>${legacy.toLocaleString("es-CO")} en revisión</small>` : ""}</div>
         <button class="ghost-button compact" type="button" data-rms-open-quality-control="${escapeHtml(stage.key)}">Abrir tablero</button>
+        </footer>
       </article>
     `;
       }).join("")}
