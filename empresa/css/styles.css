@@ -64399,6 +64399,19 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-ca
   }
 }
 
+/* RMS quality boards: two equivalent boards on desktop, one intentional column on small screens. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  max-width: 1120px !important;
+}
+
+@media (max-width: 840px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-width: 680px !important;
+  }
+}
+
 /* Revenue dashboard v155: open editorial flow, generous rhythm and no nested-card maze. */
 html body .portal-shell .view-section.active[data-view="dashboard"] {
   width: min(1240px, 100%) !important;
