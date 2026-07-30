@@ -63799,6 +63799,184 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-ca
   }
 }
 
+/* RMS quality boards: one clear vertical reading path, never a side-by-side station layout. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
+  margin: 52px 0 24px !important;
+  padding: clamp(22px, 3vw, 36px) !important;
+  border-radius: 30px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: center !important;
+  gap: 13px !important;
+  padding-bottom: 30px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro > div {
+  display: grid !important;
+  justify-items: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro h3 {
+  max-width: none !important;
+  margin-top: 9px !important;
+  font-size: clamp(1.45rem, 2.4vw, 1.95rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro p {
+  max-width: 58ch !important;
+  margin-inline: auto !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro > small {
+  justify-self: center !important;
+  margin-top: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-list {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 20px !important;
+  max-width: 880px !important;
+  margin: 0 auto !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: 142px auto auto !important;
+  column-gap: 18px !important;
+  row-gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, .92) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card:hover {
+  padding-inline: 0 !important;
+  transform: translateY(-3px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  height: 142px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(8, 123, 192, .14) !important;
+  border-radius: 21px 21px 0 0 !important;
+  background: #eaf8ff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 42% !important;
+  border-radius: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  justify-items: center !important;
+  min-width: 0 !important;
+  padding: 21px 26px 18px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy .mono-label {
+  color: #227aae !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > strong {
+  margin-top: 7px !important;
+  font-size: clamp(1.1rem, 1.7vw, 1.28rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > small {
+  max-width: 62ch !important;
+  margin-top: 5px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > p {
+  min-height: 0 !important;
+  max-width: 67ch !important;
+  margin-top: 11px !important;
+  font-size: .84rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route {
+  justify-content: center !important;
+  max-width: 720px !important;
+  margin-top: 15px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route span {
+  min-height: 26px !important;
+  padding: 5px 9px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+  display: grid !important;
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  align-self: stretch !important;
+  align-content: center !important;
+  padding: 17px 26px 21px !important;
+  border-top: 1px solid rgba(15, 77, 143, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+  grid-column: 2 !important;
+  grid-row: 3 !important;
+  align-self: center !important;
+  margin: 0 26px 0 0 !important;
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
+    margin-top: 32px !important;
+    padding: 24px 14px !important;
+    border-radius: 22px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+    grid-template-rows: 112px auto auto !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+    height: 112px !important;
+    border-radius: 17px 17px 0 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy {
+    padding: 18px 16px 16px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route {
+    gap: 5px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route span {
+    font-size: .61rem !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+    padding: 15px 16px 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+    margin-right: 16px !important;
+  }
+}
+
 /* Post-sale tickets: one prepared activation, one quick WhatsApp handoff. */
 /* RMS quality-control composition: last override for the legacy station styles above. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-access {
@@ -64077,6 +64255,147 @@ html body .portal-shell #activationShareModal .activation-share-manual input:foc
 
   html body .portal-shell #activationShareModal .activation-share-mode button + button {
     margin-left: 12px;
+  }
+}
+
+/* RMS quality boards: final vertical reading path. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: center !important;
+  gap: 13px !important;
+  padding-bottom: 30px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro > div {
+  display: grid !important;
+  justify-items: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro h3 {
+  max-width: none !important;
+  margin-top: 9px !important;
+  font-size: clamp(1.45rem, 2.4vw, 1.95rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro p {
+  max-width: 58ch !important;
+  margin-inline: auto !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-intro > small {
+  justify-self: center !important;
+  margin-top: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-list {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 20px !important;
+  max-width: 880px !important;
+  margin: 0 auto !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: 142px auto auto !important;
+  column-gap: 18px !important;
+  row-gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, .92) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card:hover {
+  padding-inline: 0 !important;
+  transform: translateY(-3px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  height: 142px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(8, 123, 192, .14) !important;
+  border-radius: 21px 21px 0 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 42% !important;
+  border-radius: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  justify-items: center !important;
+  padding: 21px 26px 18px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > strong {
+  margin-top: 7px !important;
+  font-size: clamp(1.1rem, 1.7vw, 1.28rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy > p {
+  min-height: 0 !important;
+  max-width: 67ch !important;
+  margin-top: 11px !important;
+  font-size: .84rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-route {
+  justify-content: center !important;
+  max-width: 720px !important;
+  margin-top: 15px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+  display: grid !important;
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  align-self: stretch !important;
+  align-content: center !important;
+  padding: 17px 26px 21px !important;
+  border-top: 1px solid rgba(15, 77, 143, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+  grid-column: 2 !important;
+  grid-row: 3 !important;
+  align-self: center !important;
+  margin: 0 26px 0 0 !important;
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card {
+    grid-template-rows: 112px auto auto !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card figure {
+    height: 112px !important;
+    border-radius: 17px 17px 0 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-copy {
+    padding: 18px 16px 16px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-metric {
+    padding: 15px 16px 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-control-card > button {
+    margin-right: 16px !important;
   }
 }
 
