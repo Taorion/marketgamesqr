@@ -34701,6 +34701,9 @@ function setLeadDetailTab(tabName = "general", options = {}) {
   if (options.render !== false && state.selectedLeadDetail) {
     renderLeadTab(state.selectedLeadDetail);
   }
+  if (options.resetScroll !== false && leadDetailContent) {
+    leadDetailContent.scrollTop = 0;
+  }
 }
 
 async function reloadSelectedLeadDetail(options = {}) {
