@@ -38987,6 +38987,8 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
     focus: "Verifica que el lead tenga contacto, calidad, oferta y primera activación antes de enviarlo a Evaluación.",
     checkpoint: "Control 1 · datos y activación",
+    banner: "CONTROL DE CALIDAD 1",
+    explainer: "Sirve para impedir que un lead incompleto entre a Evaluación.",
     controls: "Contacto, calidad, oferta y primera activación",
     decision: "Salida: lead listo para Evaluación",
   },
@@ -38997,6 +38999,8 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
     focus: "Verifica que la venta tenga valor, fuente, producto y evidencia antes de enviarla a Postventa.",
     checkpoint: "Control 2 · venta y trazabilidad",
+    banner: "CONTROL DE CALIDAD 2",
+    explainer: "Sirve para impedir que una venta sin soporte pase a Postventa.",
     controls: "Valor, fuente, producto y evidencia de venta",
     decision: "Salida: venta trazable lista para Postventa",
   },
@@ -39022,6 +39026,8 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro > small::before { width:7px!important; height:7px!important; border-radius:50%!important; background:#16ad78!important; box-shadow:0 0 0 4px rgba(22,173,120,.13)!important; content:""!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:20px!important; max-width:1120px!important; margin:0 auto!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card { display:grid!important; min-width:0!important; overflow:hidden!important; border:1px solid rgba(14,81,148,.15)!important; border-radius:22px!important; background:#fff!important; box-shadow:0 8px 24px rgba(17,76,133,.06)!important; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-sign { display:block!important; padding:11px 18px!important; background:#082e70!important; color:#fff!important; font-size:.75rem!important; font-weight:850!important; letter-spacing:.09em!important; text-align:center!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card[data-rms-open-quality-control="revenue_generado"] .rms-quality-control-sign { background:#0879ac!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card:hover { transform:translateY(-3px)!important; border-color:rgba(8,123,192,.38)!important; box-shadow:0 16px 34px rgba(17,76,133,.12)!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-main { display:grid!important; min-width:0!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { width:100%!important; height:156px!important; margin:0!important; overflow:hidden!important; border:0!important; border-radius:0!important; background:#e9f7ff!important; }
@@ -39031,6 +39037,7 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > strong { margin-top:7px!important; color:#092e70!important; font-size:1.18rem!important; line-height:1.18!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > small { margin-top:5px!important; color:#17669f!important; font-size:.76rem!important; font-weight:760!important; line-height:1.35!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > p { max-width:54ch!important; margin:11px 0 0!important; color:#58738e!important; font-size:.83rem!important; line-height:1.45!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-explainer { max-width:54ch!important; margin:13px 0 0!important; padding:10px 12px!important; border-radius:10px!important; background:#e8f7ff!important; color:#075e9b!important; font-size:.8rem!important; font-weight:780!important; line-height:1.4!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:8px!important; width:100%!important; margin-top:14px!important; text-align:left!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition > div { min-width:0!important; padding:10px!important; border:1px solid rgba(14,81,148,.1)!important; border-radius:10px!important; background:#f7fbfe!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition span, body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition strong { display:block!important; }
@@ -39081,6 +39088,7 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
       .filter(Boolean);
     return `
       <article class="rms-quality-control-card" data-rms-open-quality-control="${escapeHtml(stage.key)}">
+        <div class="rms-quality-control-sign">${escapeHtml(config.banner || config.title || "CONTROL DE CALIDAD")}</div>
         <div class="rms-quality-control-card-main">
         <figure><img src="${escapeHtml(visual.image || "")}" alt="" loading="lazy" decoding="async"></figure>
         <div class="rms-quality-control-copy">
@@ -39088,6 +39096,7 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
           <strong>${escapeHtml(config.title)}</strong>
           <small>${escapeHtml(config.subtitle)}</small>
           <p>${escapeHtml(config.focus || "")}</p>
+          <p class="rms-quality-control-explainer">${escapeHtml(config.explainer || "")}</p>
           <div class="rms-quality-control-definition" aria-label="Función del control">
             <div><span>Revisa</span><strong>${escapeHtml(config.controls || "")}</strong></div>
             <div><span>Salida</span><strong>${escapeHtml(config.decision || "")}</strong></div>
