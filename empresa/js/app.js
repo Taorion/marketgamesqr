@@ -11562,6 +11562,47 @@ function renderDashboardBuilder() {
     revenueWorkspace.classList.toggle("hidden", !showRevenueWorkspace);
     revenueWorkspace.dataset.workspaceTab = workspaceTab;
     if (showRevenueWorkspace) renderRevenueWorkspace();
+
+    // El Centro de Revenue no es un documento largo: cada pestaña expone una
+    // sola superficie. Se aplica en línea porque hojas heredadas del tablero
+    // usan `display: grid !important` y antes reabrían secciones ocultas.
+    const setSurfaceVisibility = (element, visible) => {
+      if (!element) return;
+      element.hidden = !visible;
+      if (visible) {
+        element.style.removeProperty("display");
+      } else {
+        element.style.setProperty("display", "none", "important");
+      }
+    };
+    const revenueHead = revenueWorkspace.querySelector(".revenue-workspace-head");
+    const revenuePulse = revenueWorkspace.querySelector("#revenuePulseStrip");
+    const revenueMain = revenueWorkspace.querySelector(".revenue-main-grid");
+    const revenueRoute = revenueWorkspace.querySelector(".revenue-path-guide");
+    const revenueOnboardingPanel = revenueWorkspace.querySelector(".revenue-onboarding");
+    const revenueMap = revenueWorkspace.querySelector(".portal-module-map");
+    const isSummaryWorkspace = workspaceTab === "summary";
+    const isMapWorkspace = workspaceTab === "map";
+
+    setSurfaceVisibility(revenueHead, isSummaryWorkspace);
+    setSurfaceVisibility(revenuePulse, isSummaryWorkspace);
+    setSurfaceVisibility(revenueMain, isSummaryWorkspace);
+    setSurfaceVisibility(revenueRoute, false);
+    setSurfaceVisibility(revenueOnboardingPanel, false);
+    setSurfaceVisibility(revenueMap, isMapWorkspace);
+    revenueMain?.querySelectorAll(":scope > *").forEach((surface) => {
+      setSurfaceVisibility(surface, isSummaryWorkspace && surface.id === "nextBestActionCard");
+    });
+  }
+  const dashboardLayout = dashboardBuilderShell.querySelector(".dashboard-builder-layout");
+  if (dashboardLayout) {
+    const showDashboardLayout = ["analysis", "tables", "customize"].includes(workspaceTab);
+    dashboardLayout.hidden = !showDashboardLayout;
+    if (showDashboardLayout) {
+      dashboardLayout.style.removeProperty("display");
+    } else {
+      dashboardLayout.style.setProperty("display", "none", "important");
+    }
   }
   dashboardAdvancedToggleButton?.classList.toggle("active", workspaceTab === "analysis");
   if (dashboardAdvancedToggleButton) {
