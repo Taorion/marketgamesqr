@@ -65,3 +65,39 @@
 #workspace.app-shell #rmsMachineTutorial {
   display: none !important;
 }
+
+/* Contact profile: navigation first, then the selected tab's complete view. */
+html body .portal-shell #leadDetailModal .lead-tabs {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+  background: #fff !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-profile-header {
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 12px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-quick-actions {
+  margin-top: 0 !important;
+  padding: 0 0 10px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel.is-general-tab {
+  border-top: 1px solid rgba(5, 42, 107, .08) !important;
+  padding-top: 14px !important;
+}
+
+html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-actions)[hidden] {
+  display: none !important;
+}

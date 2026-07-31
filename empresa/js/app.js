@@ -34826,10 +34826,25 @@ function bindLeadDetailPanelActions() {
   });
 }
 
+function arrangeLeadDetailWorkspace(tab = state.selectedLeadTab || "general") {
+  if (!leadDetailHeader || !leadDetailTabs || !leadDetailContent) return;
+  const card = leadDetailHeader.parentElement;
+  const quickActions = card?.querySelector(".lead-quick-actions");
+  if (!card) return;
+  // Las pestañas son la navegación de la ficha: siempre van antes del contenido.
+  card.insertBefore(leadDetailTabs, leadDetailHeader);
+  if (quickActions) card.insertBefore(quickActions, leadDetailContent);
+  const isGeneral = tab === "general";
+  leadDetailHeader.toggleAttribute("hidden", !isGeneral);
+  quickActions?.toggleAttribute("hidden", !isGeneral);
+  leadDetailContent.classList.toggle("is-general-tab", isGeneral);
+}
+
 function setLeadDetailTab(tabName = "general", options = {}) {
   const requestedTab = String(tabName || "general");
   const nextTab = requestedTab === "affiliate" ? "general" : requestedTab;
   state.selectedLeadTab = nextTab;
+  arrangeLeadDetailWorkspace(nextTab);
   if (leadDetailModal) {
     leadDetailModal.classList.toggle("is-lead-general-view", nextTab === "general");
     leadDetailModal.dataset.leadDetailTab = nextTab;
