@@ -812,7 +812,6 @@
                   <span><i class="is-clear" aria-hidden="true"></i>Sin pendientes</span>
                   <span class="rms-stage-slider-hint"><span class="material-symbols-outlined" aria-hidden="true">swipe</span>Mantén presionado y arrastra</span>
                 </div>
-                <section class="rms-quality-control-access" id="rmsQualityControlAccess" aria-label="Tableros auxiliares de control de calidad"></section>
                 <div class="rms-stage-board" id="rmsStageBoard" tabindex="0" aria-label="Desliza horizontalmente para recorrer las estaciones"></div>
                 <div class="rms-stage-slider-progress" aria-hidden="true"><span id="rmsStageSliderProgress"></span></div>
               </section>
@@ -831,6 +830,8 @@
                   <button class="ghost-button" id="rmsMachineHowButton" type="button">Ver tutorial</button>
                   <button class="ghost-button" id="rmsMachineOpenAgendaButton" type="button">Abrir agenda</button>
                 </div>
+                <details class="rms-machine-filter-disclosure">
+                  <summary><span class="material-symbols-outlined" aria-hidden="true">filter_list</span> Filtros de búsqueda</summary>
                 <section class="rms-operator-toolbar">
                   <label>
                     <span>Buscar lead</span>
@@ -853,6 +854,7 @@
                   </label>
                   <button class="solid-button" id="rmsMachineFilterButton" type="button">Aplicar filtros</button>
                 </section>
+                </details>
                 <div class="rms-bulk-toolbar" id="rmsBulkToolbar">
                   <div>
                     <span class="mono-label">Operación masiva</span>
@@ -867,6 +869,7 @@
                   <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
                 </div>
               </section>
+              <section class="rms-quality-control-access" id="rmsQualityControlAccess" aria-label="Tableros auxiliares de control de calidad"></section>
             </section>
 
             <section class="rms-machine-hero">
@@ -7477,7 +7480,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=rms-quality-control-cards-20260731-v200" defer></script>
+    <script src="js/app.js?v=rms-machine-order-20260731-v201" defer></script>
     <script src="js/communications.js?v=communications-recipient-checks-v4-20260730" defer></script>
 </body>
 </html>

@@ -39072,6 +39072,13 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric,
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric * { min-width:10rem!important; writing-mode:horizontal-tb!important; text-orientation:mixed!important; word-break:normal!important; overflow-wrap:normal!important; white-space:normal!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric span { white-space:nowrap!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure { margin:0 0 18px!important; border:1px solid rgba(14,81,148,.14)!important; border-radius:14px!important; background:#fff!important; overflow:hidden!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure > summary { display:flex!important; align-items:center!important; gap:9px!important; min-height:48px!important; padding:12px 16px!important; color:#082e70!important; font-size:.82rem!important; font-weight:800!important; cursor:pointer!important; list-style:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure > summary::-webkit-details-marker { display:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure > summary::after { margin-left:auto!important; color:#39739b!important; content:"Desplegar"!important; font-size:.7rem!important; font-weight:750!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure[open] > summary { border-bottom:1px solid rgba(14,81,148,.1)!important; background:#f7fbff!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure[open] > summary::after { content:"Ocultar"!important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-disclosure .rms-operator-toolbar { margin:0!important; padding:14px 16px!important; }
     @media (max-width:720px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition { grid-template-columns:minmax(0,1fr)!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { grid-template-columns:minmax(0,1fr)!important; gap:12px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:100%!important; min-height:42px!important; } }
     @media (max-width:560px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess { margin-top:30px!important; padding:22px 14px!important; border-radius:22px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { height:120px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy { padding:18px 16px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { padding:14px 16px!important; } }
   `;
@@ -39902,6 +39909,20 @@ function focusRmsTutorial() {
   showFeedback("Sigue el tutorial paso a paso para entender cómo la Máquina RMS fabrica ventas.", "info", { title: "Tutorial RMS" });
 }
 
+function arrangeRmsMachineOverview() {
+  const consoleShell = rmsStationWorkspace?.closest(".rms-factory-console");
+  if (!consoleShell) return;
+  const filters = consoleShell.querySelector(":scope > .rms-board-tools");
+  const stations = consoleShell.querySelector(":scope > .rms-stage-slider-shell");
+  const controls = document.getElementById("rmsQualityControlAccess");
+  if (filters && stations && filters.previousElementSibling !== rmsStationWorkspace) {
+    consoleShell.insertBefore(filters, stations);
+  }
+  if (controls && stations && controls.previousElementSibling !== stations) {
+    stations.insertAdjacentElement("afterend", controls);
+  }
+}
+
 function renderRmsMachineView() {
   const data = state.rmsMachine || {};
   const stages = rmsPrimaryFactoryStages(data);
@@ -39910,6 +39931,7 @@ function renderRmsMachineView() {
   const metrics = data.metrics || {};
   const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
   const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
+  arrangeRmsMachineOverview();
   if (state.rmsStationScreenOpen) {
     renderRmsStationOnly();
     return;
@@ -41798,6 +41820,7 @@ function syncRmsStationShellMode(isStationMode = Boolean(state.rmsStationScreenO
   const overviewSections = [
     consoleShell.querySelector(":scope > .rms-stage-slider-shell"),
     consoleShell.querySelector(":scope > .rms-board-tools"),
+    consoleShell.querySelector(":scope > .rms-quality-control-access"),
   ].filter(Boolean);
 
   overviewSections.forEach((section) => {
