@@ -43312,21 +43312,46 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
   }
 }
 
+function ensureRmsLeadInspectorModal() {
+  if (document.getElementById("rmsLeadInspectorModalStyle")) return;
+  const style = document.createElement("style");
+  style.id = "rmsLeadInspectorModalStyle";
+  style.textContent = `
+    body.rms-inspector-modal-open { overflow:hidden!important; }
+    #rmsLeadInspector:not(.hidden) { position:fixed!important; inset:0!important; z-index:1300!important; display:grid!important; place-items:center!important; box-sizing:border-box!important; width:100vw!important; max-width:none!important; height:100dvh!important; max-height:none!important; margin:0!important; padding:clamp(16px,4vw,48px)!important; border:0!important; border-radius:0!important; background:rgba(5,28,55,.56)!important; box-shadow:none!important; overflow:auto!important; }
+    #rmsLeadInspector .rms-inspector-modal-backdrop { position:absolute!important; inset:0!important; width:100%!important; height:100%!important; margin:0!important; padding:0!important; border:0!important; border-radius:0!important; background:transparent!important; cursor:default!important; }
+    #rmsLeadInspector .rms-inspector-modal-card { position:relative!important; z-index:1!important; display:grid!important; gap:18px!important; width:min(760px,100%)!important; max-height:calc(100dvh - clamp(32px,8vw,96px))!important; padding:clamp(20px,3vw,32px)!important; border:1px solid rgba(255,255,255,.55)!important; border-radius:20px!important; background:#fff!important; box-shadow:0 28px 80px rgba(2,19,40,.34)!important; overflow:auto!important; }
+    #rmsLeadInspector .rms-inspector-head { margin:0!important; padding-bottom:14px!important; border-bottom:1px solid #e3ebf2!important; }
+    #rmsLeadInspector .rms-inspector-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+    #rmsLeadInspector .rms-inspector-actions { margin:0!important; }
+    @media (max-width:620px) { #rmsLeadInspector:not(.hidden) { padding:12px!important; } #rmsLeadInspector .rms-inspector-modal-card { width:100%!important; max-height:calc(100dvh - 24px)!important; padding:18px!important; border-radius:16px!important; } #rmsLeadInspector .rms-inspector-grid { grid-template-columns:minmax(0,1fr)!important; } #rmsLeadInspector .rms-inspector-actions { grid-template-columns:minmax(0,1fr)!important; } }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderRmsLeadInspector() {
   if (!rmsLeadInspector) return;
   const item = rmsOpportunityById(state.rmsMachineInspectorId);
   if (!item) {
+    document.body.classList.remove("rms-inspector-modal-open");
     rmsLeadInspector.classList.add("hidden");
     rmsLeadInspector.innerHTML = "";
     return;
   }
+  ensureRmsLeadInspectorModal();
+  document.body.classList.add("rms-inspector-modal-open");
+  rmsLeadInspector.setAttribute("role", "dialog");
+  rmsLeadInspector.setAttribute("aria-modal", "true");
+  rmsLeadInspector.setAttribute("aria-labelledby", "rmsLeadInspectorTitle");
   rmsLeadInspector.classList.remove("hidden");
   const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
   rmsLeadInspector.innerHTML = `
+    <button class="rms-inspector-modal-backdrop" type="button" data-rms-close-inspector aria-label="Cerrar ficha"></button>
+    <section class="rms-inspector-modal-card" tabindex="-1">
     <div class="rms-inspector-head">
       <div>
         <span class="mono-label">Panel operativo</span>
-        <h3>${escapeHtml(item.name || "Contacto")}</h3>
+        <h3 id="rmsLeadInspectorTitle">${escapeHtml(item.name || "Contacto")}</h3>
         <p>${escapeHtml(item.stage_label || "")} · ${escapeHtml(item.why_now || "")}</p>
       </div>
       <button class="icon-button" type="button" data-rms-close-inspector title="Cerrar"><span class="material-symbols-outlined">close</span></button>
@@ -43356,12 +43381,19 @@ function renderRmsLeadInspector() {
         ${stages.map((stage) => `<option value="${escapeHtml(stage.key)}" ${stage.key === item.stage ? "selected" : ""}>${escapeHtml(stage.label)}</option>`).join("")}
       </select>
     </label>
+    </section>
   `;
   bindRmsMachineActions(rmsLeadInspector);
-  rmsLeadInspector.querySelector("[data-rms-close-inspector]")?.addEventListener("click", () => {
+  rmsLeadInspector.querySelectorAll("[data-rms-close-inspector]").forEach((control) => control.addEventListener("click", () => {
     state.rmsMachineInspectorId = "";
     renderRmsLeadInspector();
-  });
+  }));
+  rmsLeadInspector.onkeydown = (event) => {
+    if (event.key !== "Escape") return;
+    state.rmsMachineInspectorId = "";
+    renderRmsLeadInspector();
+  };
+  requestAnimationFrame(() => rmsLeadInspector.querySelector(".rms-inspector-modal-card")?.focus());
   rmsLeadInspector.querySelector("[data-rms-inspector-action]")?.addEventListener("click", () => executeRmsOperation(item, { createTask: true }));
   rmsLeadInspector.querySelector("[data-rms-inspector-move]")?.addEventListener("change", async (event) => {
     state.rmsMachineSelectedIds = [item.id];
