@@ -1,0 +1,62 @@
+/*
+ * Portal text safety
+ * Rounded decoration belongs to media, never to the reading surface.  Several
+ * legacy modules used overflow/clip-path on their outer card, which can bite
+ * labels and the first or last table value at the curved edge.
+ */
+#workspace.app-shell .view-section.active :is(
+  section[class],
+  article[class],
+  aside[class]
+):not(.modal-shell):not(.modal-card):not(.rms-inspector-modal-card):not(.communication-composer-modal):not(.login-screen):not(.sidebar) {
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* Preserve intentional clipping only where the content is media, not copy. */
+#workspace.app-shell .view-section.active :is(
+  figure,
+  .media-frame,
+  .image-frame,
+  .card-media,
+  .rms-station-entry-media,
+  .communication-media-preview-item
+) {
+  overflow: hidden !important;
+}
+
+/* Every reading block may shrink and wrap inside its own safe area. */
+#workspace.app-shell .view-section.active :is(
+  h1, h2, h3, h4, h5, p, strong, small, span, label, button, a
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Data lanes retain horizontal scrolling, but never trim a first or last value. */
+#workspace.app-shell .view-section.active :is(
+  .table-wrap,
+  .table-scroll,
+  .data-table-scroll,
+  .table-responsive,
+  .compact-table,
+  .rms-station-lead-table-wrap,
+  .rms-lean-station-table-wrap,
+  .agenda-table-wrap
+) {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  clip-path: none !important;
+  border-radius: 0 !important;
+}
+
+#workspace.app-shell .view-section.active table :is(th, td):first-child {
+  padding-left: clamp(14px, 1.8vw, 26px) !important;
+}
+
+#workspace.app-shell .view-section.active table :is(th, td):last-child {
+  padding-right: clamp(14px, 1.8vw, 26px) !important;
+}
