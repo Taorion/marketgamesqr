@@ -11556,6 +11556,17 @@ function renderDashboardBuilder() {
   dashboardSection?.classList.remove("dashboard-advanced-active");
   dashboardBuilderShell.dataset.workspaceTab = workspaceTab;
   dashboardSection?.setAttribute("data-revenue-workspace-tab", workspaceTab);
+  const widgetLibrary = dashboardBuilderShell.querySelector(".dashboard-widget-library");
+  const dashboardCanvas = dashboardBuilderShell.querySelector(".dashboard-canvas");
+  const showWidgetLibrary = workspaceTab === "customize";
+  if (widgetLibrary) {
+    widgetLibrary.hidden = !showWidgetLibrary;
+    widgetLibrary.style.setProperty("display", showWidgetLibrary ? "grid" : "none", "important");
+  }
+  if (dashboardCanvas) {
+    dashboardCanvas.hidden = ["summary", "map"].includes(workspaceTab);
+    dashboardCanvas.style.setProperty("display", ["summary", "map"].includes(workspaceTab) ? "none" : "grid", "important");
+  }
   const showRevenueWorkspace = workspaceTab === "summary" || workspaceTab === "map";
   if (revenueWorkspace) {
     revenueWorkspace.hidden = !showRevenueWorkspace;
