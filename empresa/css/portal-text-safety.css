@@ -101,6 +101,29 @@ html body .portal-shell #leadDetailModal .lead-tab-panel[hidden] {
   display: none !important;
 }
 
+html body .portal-shell #leadDetailModal .lead-notes-workspace {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-notes-workspace .lead-note-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px) auto !important;
+  gap: 10px !important;
+  align-items: end !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-notes-workspace textarea {
+  min-height: 108px !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 700px) {
+  html body .portal-shell #leadDetailModal .lead-notes-workspace .lead-note-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-actions)[hidden] {
   display: none !important;
 }

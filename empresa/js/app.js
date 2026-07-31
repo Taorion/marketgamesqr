@@ -276,6 +276,7 @@ const leadDetailTabs = document.getElementById("leadDetailTabs");
 const leadDetailContent = document.getElementById("leadDetailContent");
 const leadEditManualButton = document.getElementById("leadEditManualButton");
 const leadSendActivationButton = document.getElementById("leadSendActivationButton");
+const leadCreateTaskButton = document.getElementById("leadCreateTaskButton");
 const leadSendBenefitButton = document.getElementById("leadSendBenefitButton");
 const leadCreateNoteButton = document.getElementById("leadCreateNoteButton");
 const leadCopyLastLinkButton = document.getElementById("leadCopyLastLinkButton");
@@ -34463,7 +34464,7 @@ function renderLeadDetailAgenda(detail = {}) {
           <strong>${openRows.length.toLocaleString("es-CO")} pendiente(s)</strong>
           <small>${doneRows.length.toLocaleString("es-CO")} hecha(s) · ${overdueRows.length.toLocaleString("es-CO")} vencida(s)</small>
         </div>
-        <button class="ghost-button" type="button" data-lead-fast-action="NOTE">Crear seguimiento</button>
+        <button class="ghost-button" type="button" data-lead-create-task>Crear tarea</button>
       </div>
       <div class="lead-agenda-list">
         ${rows.length ? rows.map((item) => agendaCardMarkup(item)).join("") : '<div class="empty-state compact">Este cliente no tiene tareas agendadas.</div>'}
@@ -34696,30 +34697,33 @@ function renderLeadTab(detail) {
     `), "Sin comunicaciones registradas."),
     tasks: () => renderLeadDetailAgenda(detail),
     notes: () => `
-      <form class="lead-note-form" id="leadNoteForm">
-        <textarea id="leadNoteInput" rows="3" maxlength="3000" placeholder="Escribe una nota interna"></textarea>
-        <select id="leadNoteTypeInput">
-          <option value="commercial">Comercial</option>
-          <option value="follow_up">Seguimiento</option>
-          <option value="vip">VIP</option>
-          <option value="support">Soporte</option>
-          <option value="observation">Observacion</option>
-        </select>
-        <input id="leadNoteNextActionInput" type="text" maxlength="500" placeholder="Proxima accion sugerida">
-        <input id="leadNoteReminderInput" type="datetime-local" aria-label="Fecha y hora de recordatorio">
-        <button class="solid-button" type="submit">Guardar nota</button>
-      </form>
-      ${leadDetailAgendaRows(detail).length ? `
-        <section class="lead-client-agenda-inline">
-          <strong>${leadDetailAgendaRows(detail).length.toLocaleString("es-CO")} tarea(s) agendada(s)</strong>
-          <button class="ghost-button" type="button" data-open-lead-tasks>Ver tareas del cliente</button>
-        </section>
-      ` : ""}
-      ${detailList((detail.notes || []).filter((item) => !item.reminder_at).map((item) => `
-        <strong>${escapeHtml(item.note_type || "Nota")}</strong>
-        <span>${escapeHtml(item.note)}</span>
-        <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)} ${item.next_action ? `· ${escapeHtml(item.next_action)}` : ""}</small>
-      `), "Sin notas internas.")}
+      <section class="lead-notes-workspace" aria-label="Notas internas del contacto">
+        <div class="lead-client-agenda-head">
+          <div>
+            <span class="mono-label">Memoria del cliente</span>
+            <strong>Notas internas</strong>
+            <small>Detalles libres, contexto, preferencias e ideas. No crea una tarea ni un recordatorio.</small>
+          </div>
+        </div>
+        <form class="lead-note-form" id="leadNoteForm">
+          <textarea id="leadNoteInput" rows="4" maxlength="3000" placeholder="Ej: Prefiere contacto por WhatsApp después de las 5 p. m.; le interesan planes familiares; mencionó una necesidad específica..."></textarea>
+          <select id="leadNoteTypeInput" aria-label="Tipo de nota">
+            <option value="observation">Observación</option>
+            <option value="commercial">Contexto comercial</option>
+            <option value="preference">Preferencia</option>
+            <option value="idea">Idea u oportunidad</option>
+            <option value="vip">Atención VIP</option>
+          </select>
+          <button class="solid-button" type="submit">Guardar nota</button>
+        </form>
+        <div class="lead-notes-list">
+          ${detailList((detail.notes || []).filter((item) => !item.reminder_at).map((item) => `
+            <strong>${escapeHtml(item.note_type || "Nota")}</strong>
+            <span>${escapeHtml(item.note)}</span>
+            <small>${escapeHtml(item.author_name || "Equipo")} · ${formatDate(item.created_at)}</small>
+          `), "Aún no hay notas internas para este contacto.")}
+        </div>
+      </section>
     `,
     timeline: () => `<div class="lead-timeline">${(detail.timeline || []).map((item) => `
       <article class="lead-timeline-item">
@@ -34802,6 +34806,9 @@ function bindLeadDetailPanelActions() {
     button.addEventListener("click", () => deleteLeadInterestFromDetail(button.dataset.deleteInterest));
   });
   document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
+  leadDetailContent?.querySelectorAll("[data-lead-create-task]").forEach((button) => {
+    button.addEventListener("click", openLeadTaskFromDetail);
+  });
   document.getElementById("leadPurchaseForm")?.addEventListener("submit", createLeadPurchaseFromForm);
   document.getElementById("manualLeadEditForm")?.addEventListener("submit", updateManualLeadFromForm);
   document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
@@ -34983,28 +34990,15 @@ async function createLeadNoteFromForm(event) {
   if (!state.selectedLeadRef) return;
   const note = String(document.getElementById("leadNoteInput")?.value || "").trim();
   if (!note) return;
-  const reminderValue = document.getElementById("leadNoteReminderInput")?.value || "";
-  const result = await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
+  await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/notes`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
       source_type: state.selectedLeadRef.source_type || "PLAYER",
       note,
       note_type: document.getElementById("leadNoteTypeInput")?.value || "commercial",
-      next_action: String(document.getElementById("leadNoteNextActionInput")?.value || "").trim() || null,
-      reminder_at: reminderValue ? new Date(reminderValue).toISOString() : null,
     }),
   });
-  if (result?.note?.reminder_at) {
-    const createdItem = agendaItemFromCreatedNote(result.note, state.selectedLeadRef);
-    state.leadAgenda = [
-      createdItem,
-      ...(state.leadAgenda || []).filter((item) => String(item.id) !== String(createdItem.id)),
-    ];
-    state.leadAgendaLoaded = true;
-    renderLeadAgenda();
-    await refreshLeadAgendaAfterMutation({ anchorDate: result.note.reminder_at, status: "OPEN" });
-  }
   await reloadSelectedLeadDetail({ keepTab: true });
 }
 
@@ -35327,6 +35321,13 @@ async function openAffiliateForPoints(affiliateId) {
 
 function affiliateViewSection() {
   return document.querySelector('.view-section[data-view="affiliates"]');
+}
+
+function openLeadTaskFromDetail() {
+  if (!state.selectedLeadRef) return;
+  setLeadDetailTab("tasks", { scrollTab: true });
+  openLeadAgendaCreateModal({ focusTarget: leadAgendaActionInput });
+  if (leadAgendaScopeInput) leadAgendaScopeInput.value = "CONTACT";
 }
 
 function ensureAffiliateOperationBackdrop() {
@@ -46030,6 +46031,7 @@ leadEditManualButton?.addEventListener("click", () => {
   document.getElementById("manualLeadEditNameInput")?.focus();
 });
 leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
+leadCreateTaskButton?.addEventListener("click", openLeadTaskFromDetail);
 leadSendBenefitButton?.addEventListener("click", () => {
   const ticket = firstActiveLeadTicket();
   if (ticket?.id) {
