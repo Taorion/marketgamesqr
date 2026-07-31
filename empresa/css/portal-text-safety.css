@@ -101,3 +101,41 @@ html body .portal-shell #leadDetailModal .lead-tab-panel.is-general-tab {
 html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-actions)[hidden] {
   display: none !important;
 }
+
+/* Directorio comercial: Clientes y Leads comparten todo el ancho disponible. */
+#workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 760px) {
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    min-height: 60px !important;
+    padding: 9px !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button > .material-symbols-outlined {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
