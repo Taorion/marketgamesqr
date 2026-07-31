@@ -39957,6 +39957,135 @@ function handleRmsTutorialAction(action = "", phase = "") {
   }
 }
 
+const RMS_ACTIVE_ONBOARDING_STEPS = [
+  {
+    target: "#rmsMachinePhaseFilter",
+    event: "change",
+    title: "Elige dónde vas a trabajar",
+    copy: "Abre este filtro y selecciona la estación de entrada. Para empezar, usa Leads recolectados.",
+  },
+  {
+    target: "#rmsMachineFilterButton",
+    event: "click",
+    title: "Muestra la estación elegida",
+    copy: "Aplica el filtro. La Máquina deja a la vista solo el tramo que vas a operar.",
+  },
+  {
+    target: '[data-rms-open-station="recoleccion"]',
+    event: "click",
+    title: "Entra a la primera estación",
+    copy: "Haz clic en la estación de Leads recolectados. Allí recibes la materia prima comercial antes de clasificarla.",
+  },
+  {
+    target: "#rmsStationWorkspace",
+    title: "Ya estás dentro de la operación",
+    copy: "Aquí trabajas el lead y lo envías a la siguiente estación cuando esté listo. Usa Nuevo lead cuando necesites alimentar la máquina.",
+  },
+];
+
+function ensureRmsActiveOnboarding() {
+  if (document.getElementById("rmsActiveOnboardingStyle")) return;
+  const style = document.createElement("style");
+  style.id = "rmsActiveOnboardingStyle";
+  style.textContent = `
+    #rmsMachineTutorial { display:none!important; }
+    .rms-active-onboarding-overlay { position:fixed!important; inset:0!important; z-index:1200!important; background:rgba(3,22,45,.68)!important; }
+    .rms-active-onboarding-focus { position:relative!important; z-index:1202!important; outline:3px solid #17c6f3!important; outline-offset:6px!important; border-radius:12px!important; box-shadow:0 0 0 9999px rgba(3,22,45,.0),0 0 0 7px rgba(23,198,243,.18),0 18px 42px rgba(0,0,0,.28)!important; }
+    .rms-active-onboarding-callout { position:fixed!important; z-index:1203!important; width:min(360px,calc(100vw - 32px))!important; padding:18px!important; border:1px solid rgba(255,255,255,.5)!important; border-radius:16px!important; background:#fff!important; box-shadow:0 24px 70px rgba(0,0,0,.35)!important; color:#062d67!important; }
+    .rms-active-onboarding-callout .mono-label { color:#1682b5!important; }
+    .rms-active-onboarding-callout h3 { margin:5px 0 7px!important; color:#062d67!important; font-size:1.05rem!important; line-height:1.2!important; }
+    .rms-active-onboarding-callout p { margin:0!important; color:#526e89!important; font-size:.82rem!important; line-height:1.5!important; }
+    .rms-active-onboarding-progress { display:flex!important; align-items:center!important; justify-content:space-between!important; gap:12px!important; margin-top:14px!important; padding-top:12px!important; border-top:1px solid #e5edf3!important; color:#5b7791!important; font-size:.72rem!important; font-weight:800!important; }
+    .rms-active-onboarding-actions { display:flex!important; gap:8px!important; margin-top:12px!important; }
+    .rms-active-onboarding-actions button { min-height:36px!important; }
+    .rms-active-onboarding-actions .rms-active-onboarding-skip { margin-left:auto!important; }
+    @media (max-width:620px) { .rms-active-onboarding-focus { outline-offset:3px!important; } .rms-active-onboarding-callout { padding:16px!important; } }
+  `;
+  document.head.appendChild(style);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.rmsActiveOnboardingOpen) closeRmsActiveOnboarding();
+  });
+}
+
+function closeRmsActiveOnboarding() {
+  state.rmsActiveOnboardingOpen = false;
+  document.querySelectorAll(".rms-active-onboarding-focus").forEach((node) => node.classList.remove("rms-active-onboarding-focus"));
+  document.getElementById("rmsActiveOnboardingOverlay")?.remove();
+  document.getElementById("rmsActiveOnboardingCallout")?.remove();
+}
+
+function renderRmsActiveOnboarding() {
+  if (!state.rmsActiveOnboardingOpen) return;
+  ensureRmsActiveOnboarding();
+  const index = Math.max(0, Math.min(Number(state.rmsActiveOnboardingStep || 0), RMS_ACTIVE_ONBOARDING_STEPS.length - 1));
+  const step = RMS_ACTIVE_ONBOARDING_STEPS[index];
+  const target = document.querySelector(step.target);
+  if (!target) {
+    window.setTimeout(renderRmsActiveOnboarding, 120);
+    return;
+  }
+  document.querySelectorAll(".rms-active-onboarding-focus").forEach((node) => node.classList.remove("rms-active-onboarding-focus"));
+  target.classList.add("rms-active-onboarding-focus");
+  target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+
+  let overlay = document.getElementById("rmsActiveOnboardingOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "rmsActiveOnboardingOverlay";
+    overlay.className = "rms-active-onboarding-overlay";
+    overlay.addEventListener("click", () => {});
+    document.body.appendChild(overlay);
+  }
+  let callout = document.getElementById("rmsActiveOnboardingCallout");
+  if (!callout) {
+    callout = document.createElement("aside");
+    callout.id = "rmsActiveOnboardingCallout";
+    callout.className = "rms-active-onboarding-callout";
+    callout.setAttribute("role", "dialog");
+    callout.setAttribute("aria-live", "polite");
+    document.body.appendChild(callout);
+  }
+  callout.innerHTML = `
+    <span class="mono-label">Aprendizaje activo · ${String(index + 1).padStart(2, "0")}/${String(RMS_ACTIVE_ONBOARDING_STEPS.length).padStart(2, "0")}</span>
+    <h3>${escapeHtml(step.title)}</h3>
+    <p>${escapeHtml(step.copy)}</p>
+    <div class="rms-active-onboarding-progress"><span>Haz clic en el elemento iluminado</span><strong>${index + 1} de ${RMS_ACTIVE_ONBOARDING_STEPS.length}</strong></div>
+    <div class="rms-active-onboarding-actions">
+      ${step.event ? `<button class="ghost-button compact" type="button" data-rms-active-tutorial-next>Continuar sin acción</button>` : `<button class="solid-button compact" type="button" data-rms-active-tutorial-finish>Terminar tutorial</button>`}
+      <button class="text-button rms-active-onboarding-skip" type="button" data-rms-active-tutorial-close>Salir</button>
+    </div>
+  `;
+  const placeCallout = () => {
+    const rect = target.getBoundingClientRect();
+    const width = Math.min(360, window.innerWidth - 32);
+    const left = Math.max(16, Math.min(window.innerWidth - width - 16, rect.left));
+    const estimatedHeight = callout.offsetHeight || 190;
+    const top = rect.bottom + 16 + estimatedHeight < window.innerHeight ? rect.bottom + 16 : Math.max(16, rect.top - estimatedHeight - 16);
+    callout.style.left = `${left}px`;
+    callout.style.top = `${top}px`;
+  };
+  requestAnimationFrame(placeCallout);
+  const advance = () => {
+    state.rmsActiveOnboardingStep = index + 1;
+    if (state.rmsActiveOnboardingStep >= RMS_ACTIVE_ONBOARDING_STEPS.length) {
+      closeRmsActiveOnboarding();
+      return;
+    }
+    window.setTimeout(renderRmsActiveOnboarding, 180);
+  };
+  if (step.event) target.addEventListener(step.event, advance, { once: true });
+  callout.querySelector("[data-rms-active-tutorial-next]")?.addEventListener("click", advance);
+  callout.querySelector("[data-rms-active-tutorial-finish]")?.addEventListener("click", closeRmsActiveOnboarding);
+  callout.querySelector("[data-rms-active-tutorial-close]")?.addEventListener("click", closeRmsActiveOnboarding);
+}
+
+function startRmsActiveOnboarding() {
+  state.rmsActiveOnboardingOpen = true;
+  state.rmsActiveOnboardingStep = 0;
+  document.querySelector(".rms-machine-filter-disclosure")?.setAttribute("open", "");
+  window.setTimeout(renderRmsActiveOnboarding, 120);
+}
+
 function focusRmsTutorial() {
   setView("rms-machine");
   state.rmsStationScreenOpen = false;
@@ -39964,10 +40093,7 @@ function focusRmsTutorial() {
   state.rmsMachineFilters.phase = "";
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
   renderRmsMachineView();
-  const tutorial = document.getElementById("rmsMachineTutorial");
-  tutorial?.classList.add("is-open");
-  tutorial?.scrollIntoView({ behavior: "smooth", block: "start" });
-  showFeedback("Sigue el tutorial paso a paso para entender cómo la Máquina RMS fabrica ventas.", "info", { title: "Tutorial RMS" });
+  startRmsActiveOnboarding();
 }
 
 function arrangeRmsMachineOverview() {

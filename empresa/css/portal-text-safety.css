@@ -60,3 +60,8 @@
 #workspace.app-shell .view-section.active table :is(th, td):last-child {
   padding-right: clamp(14px, 1.8vw, 26px) !important;
 }
+
+/* The old station directory is replaced by the active, spotlight-based guide. */
+#workspace.app-shell #rmsMachineTutorial {
+  display: none !important;
+}
