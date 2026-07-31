@@ -106,6 +106,10 @@ html body .portal-shell #leadDetailModal .lead-notes-workspace {
   gap: 16px !important;
 }
 
+html body .portal-shell #leadDetailModal .lead-affiliate-points-metric {
+  color: #0759d6 !important;
+}
+
 html body .portal-shell #leadDetailModal .lead-notes-workspace .lead-note-form {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 200px) auto !important;

@@ -34178,12 +34178,15 @@ function renderLeadDetailHeader(detail) {
   }
   if (!leadDetailHeader) return;
   const nextAction = analysis.nextActions?.[0] || { title: "Revisar ficha", detail: "Consulta sus datos y decide el siguiente contacto." };
+  const affiliate = detail.affiliate || null;
+  const affiliatePoints = toNumber(affiliate?.points_total ?? affiliate?.ledger_points ?? 0);
   leadDetailHeader.innerHTML = `
     <div class="lead-identity-block">
       <div class="lead-status-row">
         <span class="status-chip ${commercialChipClass(lead.commercial_status)}">${escapeHtml(lead.commercial_status_label || lead.commercial_status || "Nuevo")}</span>
         <span class="pill muted">${escapeHtml(analysis.stage)}</span>
         ${pendingAgendaRows.length ? `<span class="pill muted">${pendingAgendaRows.length.toLocaleString("es-CO")} tarea(s) pendiente(s)</span>` : ""}
+        ${affiliate ? `<span class="pill muted">Afiliado · ${affiliatePoints.toLocaleString("es-CO")} puntos</span>` : ""}
         ${lead.source_type === "MANUAL" ? `<button class="ghost-button" type="button" data-edit-manual-lead>Editar datos</button>` : ""}
       </div>
       <h4>${escapeHtml(lead.name || "Lead")}</h4>
@@ -34206,6 +34209,7 @@ function renderLeadDetailHeader(detail) {
         <span><strong>${Number(summary.score_total || 0).toLocaleString("es-CO")}</strong>Score</span>
         <span><strong>${money(summary.total_spent || 0)}</strong>Total comprado</span>
         <span><strong>${groupedTickets.active.length}</strong>Activos sin redimir</span>
+        ${affiliate ? `<span class="lead-affiliate-points-metric"><strong>${affiliatePoints.toLocaleString("es-CO")}</strong>Puntos acumulados</span>` : ""}
       </div>
       <button class="lead-next-step" type="button" data-lead-fast-action="${escapeHtml(nextAction.preset || "")}">
         <span class="mono-label">Siguiente paso</span>
@@ -34687,7 +34691,7 @@ function renderLeadTab(detail) {
     affiliate: () => detail.affiliate ? detailList([
       `<strong>Codigo de afiliado</strong><span>${escapeHtml(detail.affiliate.qr_token || "-")}</span>`,
       `<strong>Estado</strong><span>${escapeHtml(detail.affiliate.status || "-")}</span>`,
-      `<strong>Puntos acumulados</strong><span>${Number(detail.affiliate.points_total || 0).toLocaleString("es-CO")}</span>`,
+      `<strong>Puntos acumulados</strong><span>${toNumber(detail.affiliate.points_total ?? detail.affiliate.ledger_points ?? 0).toLocaleString("es-CO")}</span>`,
       `<strong>Carnet digital</strong><span>${detail.affiliate.qr_token ? `<a href="/carnet-afiliado/${escapeHtml(detail.affiliate.qr_token)}" target="_blank" rel="noreferrer">Abrir carnet</a>` : "-"}</span>`,
     ]) : '<div class="empty-state compact">Este lead aun no es afiliado.<br><button class="ghost-button" type="button" id="leadInviteAffiliateButton">Enviar invitacion de afiliacion</button></div>',
     communications: () => detailList((detail.communications || []).map((item) => `
