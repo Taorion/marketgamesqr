@@ -39915,6 +39915,9 @@ function arrangeRmsMachineOverview() {
   const filters = consoleShell.querySelector(":scope > .rms-board-tools");
   const stations = consoleShell.querySelector(":scope > .rms-stage-slider-shell");
   const controls = document.getElementById("rmsQualityControlAccess");
+  filters?.style.setProperty("order", "1", "important");
+  stations?.style.setProperty("order", "2", "important");
+  controls?.style.setProperty("order", "3", "important");
   if (filters && stations && filters.previousElementSibling !== rmsStationWorkspace) {
     consoleShell.insertBefore(filters, stations);
   }
@@ -41315,6 +41318,7 @@ function ensureRmsStationUxStyles() {
       background: linear-gradient(105deg, rgba(245, 252, 255, .72), rgba(255, 255, 255, .18)) !important;
     }
     body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell { order: 2 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-quality-control-access { order: 3 !important; width: 100% !important; }
   `);
   rules.push(`
     /* The RMS canvas is intentionally given a stronger local scope: other
