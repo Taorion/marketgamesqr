@@ -417,3 +417,19 @@ html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[
 html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="tables"] .dashboard-widget-card.table {
   grid-column: 1 / -1 !important;
 }
+
+/* Respiración exterior: el Centro de Revenue no debe tocar el borde del portal. */
+html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
+  width: min(calc(100% - 72px), 1320px) !important;
+  margin-inline: auto !important;
+  padding-inline: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
+    width: calc(100% - 32px) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+}
