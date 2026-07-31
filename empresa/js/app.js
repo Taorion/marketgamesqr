@@ -34536,22 +34536,9 @@ function renderLeadTab(detail) {
   `).join("")}</section>`;
 
   const renderers = {
-    general: () => `
-      <section class="lead-general-overview">
-        <div class="lead-general-overview-copy">
-          <span class="mono-label">Vista general</span>
-          <h4>Panorama comercial</h4>
-          <p>Consulta la prioridad, el avance en la fábrica y la siguiente acción antes de revisar el detalle.</p>
-        </div>
-        ${metricCards([
-          ["Etapa RMS", analysis.stage, `Avance ${Number(summary.conversion_probability || 0).toFixed(0)}% hacia conversión`],
-          ["Prioridad", `${Number(summary.priority_score || lead.priority_score || 0)}/100`, lead.commercial_status_label || "Sin etiqueta comercial"],
-          ["Compras", summary.purchase_count || 0, money(summary.total_spent || 0)],
-          ["Tickets activos", groupedTickets.active.length, "Listos para enviar o recordar"],
-        ])}
-        ${renderLeadDetailPendingAgendaSnapshot(detail)}
-      </section>
-    `,
+    // La ficha comercial de la parte superior es la pestaña General. No se
+    // duplica debajo en un resumen reducido que deja un espacio sin utilidad.
+    general: () => "",
     summary: () => `
       ${renderLeadDetailRelatedSalesSnapshot(detail)}
       ${renderLeadDetailPendingAgendaSnapshot(detail)}
@@ -34848,6 +34835,7 @@ function arrangeLeadDetailWorkspace(tab = state.selectedLeadTab || "general") {
   const isGeneral = tab === "general";
   leadDetailHeader.toggleAttribute("hidden", !isGeneral);
   quickActions?.toggleAttribute("hidden", !isGeneral);
+  leadDetailContent.toggleAttribute("hidden", isGeneral);
   leadDetailContent.classList.toggle("is-general-tab", isGeneral);
 }
 

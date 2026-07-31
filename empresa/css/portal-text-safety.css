@@ -94,8 +94,11 @@ html body .portal-shell #leadDetailModal .lead-tab-panel {
 }
 
 html body .portal-shell #leadDetailModal .lead-tab-panel.is-general-tab {
-  border-top: 1px solid rgba(5, 42, 107, .08) !important;
-  padding-top: 14px !important;
+  display: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel[hidden] {
+  display: none !important;
 }
 
 html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-actions)[hidden] {
