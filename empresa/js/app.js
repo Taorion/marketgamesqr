@@ -39136,6 +39136,12 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:auto!important; min-height:34px!important; padding:7px 10px!important; font-size:.68rem!important; }
     @media (max-width:800px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { grid-template-columns:minmax(0,1fr)!important; max-width:640px!important; } }
     @media (max-width:520px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { grid-template-columns:minmax(0,1fr)!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:100%!important; } }
+
+    /* Sin imagen, la ficha vuelve a una sola columna; se elimina la retícula editorial que dejaba huecos vacíos. */
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card { grid-template-columns:minmax(0,1fr)!important; grid-template-rows:auto auto auto!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card > .rms-quality-control-sign,
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card > .rms-quality-control-card-main,
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card > .rms-quality-control-card-footer { grid-column:1 / -1!important; grid-row:auto!important; width:100%!important; }
   `;
   document.head.appendChild(style);
 }
