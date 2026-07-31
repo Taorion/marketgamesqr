@@ -39108,6 +39108,34 @@ function ensureRmsQualityControlArchitecture() {
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric strong { font-size:1.2rem!important; }
     body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { min-height:38px!important; padding:8px 14px!important; border-color:#97bdd8!important; background:#fff!important; }
     @media (max-width:760px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-main { grid-template-columns:minmax(0,1fr)!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { height:150px!important; min-height:0!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition { grid-template-columns:minmax(0,1fr)!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { grid-template-columns:minmax(0,1fr)!important; gap:10px!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:100%!important; } }
+
+    /* Vista compacta: los controles son puertas operativas, no paneles editoriales. */
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess { margin-top:24px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro { margin-bottom:10px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro p,
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-intro > small { display:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card { border-radius:14px!important; box-shadow:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-sign { padding:7px 13px!important; font-size:.62rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-main { display:block!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card figure { display:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy { padding:14px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > strong { margin-top:4px!important; font-size:.98rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > small { margin-top:3px!important; font-size:.68rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-copy > p { display:none!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition { grid-template-columns:minmax(0,1fr)!important; gap:6px!important; margin-top:10px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition > div { display:grid!important; grid-template-columns:52px minmax(0,1fr)!important; align-items:baseline!important; gap:7px!important; padding:7px 8px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-definition strong { margin:0!important; font-size:.69rem!important; line-height:1.3!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route { gap:5px!important; margin-top:9px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-route span { padding:3px 6px!important; font-size:.57rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { grid-template-columns:minmax(0,1fr) auto!important; min-height:0!important; padding:10px 13px!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric,
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric * { min-width:0!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric strong { font-size:1.05rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-metric span { font-size:.62rem!important; }
+    body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:auto!important; min-height:34px!important; padding:7px 10px!important; font-size:.68rem!important; }
+    @media (max-width:800px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-list { grid-template-columns:minmax(0,1fr)!important; max-width:640px!important; } }
+    @media (max-width:520px) { body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer { grid-template-columns:minmax(0,1fr)!important; } body[data-current-view="rms-machine"] .portal-shell #rmsQualityControlAccess .rms-quality-control-card-footer > button { width:100%!important; } }
   `;
   document.head.appendChild(style);
 }
