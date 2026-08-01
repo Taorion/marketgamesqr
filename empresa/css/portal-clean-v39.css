@@ -9273,6 +9273,47 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
   html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card { padding: 13px !important; }
 }
 
+/* Prevent the Activation 1 column from shrinking into vertical letters. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table th.rms-lean-quality-heading,
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+  width: 420px !important;
+  min-width: 420px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status > div {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card :is(.rms-activation-delivery-eyebrow, .rms-activation-delivery-status strong, .rms-activation-delivery-status small) {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table th.rms-lean-quality-heading,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+    width: 390px !important;
+    min-width: 390px !important;
+  }
+}
+
 @media (max-width: 760px) {
   html body > #activationShareModal.activation-share-global-modal:not(.hidden) {
     place-items: stretch !important;
