@@ -9126,6 +9126,153 @@ html body > #activationShareModal #activationShareOpenWhatsAppButton {
   min-height: 46px !important;
 }
 
+/* Activation 1 staging: a proposal must read as an operation, not a squeezed table cell. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-activation-guide {
+  margin: 18px 0 4px !important;
+  padding: 18px 20px !important;
+  border: 1px solid rgba(11, 99, 246, .17) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #eff8ff 0%, #fff 72%) !important;
+  box-shadow: 0 10px 24px rgba(15, 76, 132, .055) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-activation-guide > .material-symbols-outlined {
+  background: #0b63f6 !important;
+  color: #fff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table:has(.rms-activation-delivery-card) {
+  min-width: 1160px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+  min-width: 390px !important;
+  padding: 14px !important;
+  background: #f3f9ff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card {
+  display: grid !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  padding: 15px !important;
+  border: 1px solid rgba(11, 99, 246, .15) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(12, 65, 111, .055) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card.is-sent {
+  border-color: rgba(12, 131, 86, .24) !important;
+  background: linear-gradient(135deg, #f2fcf7, #fff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-head,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status > div { min-width: 0 !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-icon {
+  display: inline-grid !important;
+  flex: 0 0 auto !important;
+  width: 38px !important;
+  height: 38px !important;
+  place-items: center !important;
+  border-radius: 11px !important;
+  background: #e8f4ff !important;
+  color: #075bd9 !important;
+  font-size: 1.16rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card.is-sent .rms-activation-delivery-icon { background: #e8f8ef !important; color: #08764c !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-eyebrow,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls label > span {
+  display: block !important;
+  color: #5d7288 !important;
+  font-size: .67rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .06em !important;
+  line-height: 1.25 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-status strong {
+  display: block !important;
+  margin-top: 2px !important;
+  color: #0b3156 !important;
+  font-size: .92rem !important;
+  line-height: 1.22 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card :is(.rms-activation-delivery-status small, .rms-activation-delivery-note) {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #62778d !important;
+  font-size: .74rem !important;
+  line-height: 1.4 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-state {
+  flex: 0 0 auto !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  background: #fff5df !important;
+  color: #87520b !important;
+  font-size: .66rem !important;
+  font-weight: 850 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card.is-sent .rms-activation-delivery-state { background: #e6f7ee !important; color: #08764c !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-offer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  padding: 8px 10px !important;
+  border-radius: 9px !important;
+  background: #f5f9fd !important;
+  color: #244865 !important;
+  font-size: .78rem !important;
+  font-weight: 760 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-offer .material-symbols-outlined { color: #0b63f6 !important; font-size: 1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-offer > span:last-child { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls { align-items: end !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls label { display: grid !important; flex: 1 1 142px !important; min-width: 0 !important; gap: 5px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls select { width: 100% !important; min-width: 0 !important; min-height: 40px !important; border-color: rgba(11, 99, 246, .18) !important; border-radius: 9px !important; background: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls button { display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important; min-height: 40px !important; padding-inline: 12px !important; white-space: nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls button .material-symbols-outlined { font-size: 1rem !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls :is(select, button):focus-visible { outline: 3px solid rgba(11, 99, 246, .35) !important; outline-offset: 2px !important; }
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell :is(.rms-lean-activation-guide, .rms-activation-delivery-card) { border-color: rgba(182, 226, 255, .18) !important; background: #071a31 !important; box-shadow: none !important; }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation { background: #06162b !important; }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card :is(strong, .rms-activation-delivery-offer) { color: #edf9ff !important; }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-offer { background: #0c2644 !important; }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card .rms-activation-delivery-controls select { border-color: rgba(182, 226, 255, .22) !important; background: #0b2340 !important; color: #edf9ff !important; }
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-activation-guide { align-items: flex-start !important; padding: 15px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table:has(.rms-activation-delivery-card) { min-width: 920px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation { min-width: 350px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card { padding: 13px !important; }
+}
+
 @media (max-width: 760px) {
   html body > #activationShareModal.activation-share-global-modal:not(.hidden) {
     place-items: stretch !important;

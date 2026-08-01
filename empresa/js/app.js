@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260729-revenue-economics-v190";
+const APP_VERSION = "empresa-20260801-activation1-staging-visual-v209";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40191,7 +40191,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   } else if (stage.key === "curaduria") {
     stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
   } else if (stage.key === "clasificacion") {
-    stationControl = `<td class="rms-lean-station-activation">${rmsActivationDeliveryMarkup(item)}</td>`;
+    stationControl = `<td class="rms-lean-station-activation">${rmsActivationDeliveryCardMarkup(item)}</td>`;
   }
   const controlFirst = ["alimentacion", "curaduria", "clasificacion"].includes(stage.key);
   return `
@@ -44263,6 +44263,43 @@ function rmsActivationDeliveryMarkup(item = {}) {
       </div>
       <small class="rms-activation-delivery-offer">${escapeHtml(delivery.offer)}${delivery.note ? ` · ${escapeHtml(delivery.note)}` : ""}</small>
     </div>
+  `;
+}
+
+function rmsActivationDeliveryCardMarkup(item = {}) {
+  const delivery = rmsActivationDelivery(item);
+  const sent = Boolean(delivery.sentAt);
+  const channelLabel = delivery.channel === "email" ? "Email" : "WhatsApp";
+  const offer = delivery.offer || "Oferta comercial";
+  return `
+    <article class="rms-activation-delivery rms-activation-delivery-card ${sent ? "is-sent" : "is-pending"}" data-rms-activation-delivery="${escapeHtml(item.id)}">
+      <header class="rms-activation-delivery-head">
+        <div class="rms-activation-delivery-status ${sent ? "is-sent" : "is-pending"}">
+          <span class="rms-activation-delivery-icon material-symbols-outlined" aria-hidden="true">${sent ? "task_alt" : "outgoing_mail"}</span>
+          <div>
+            <span class="rms-activation-delivery-eyebrow">Activacion comercial</span>
+            <strong>${sent ? "Propuesta registrada" : "Propuesta por preparar"}</strong>
+            <small>${sent ? `${channelLabel} · ${formatDate(delivery.sentAt)}` : "Define el canal y comparte una propuesta antes de Evaluacion."}</small>
+          </div>
+        </div>
+        <span class="rms-activation-delivery-state">${sent ? "Listo para evaluar" : "Pendiente"}</span>
+      </header>
+      <div class="rms-activation-delivery-offer" title="${escapeHtml(offer)}">
+        <span class="material-symbols-outlined" aria-hidden="true">sell</span>
+        <span>${escapeHtml(offer)}</span>
+      </div>
+      <div class="rms-activation-delivery-controls">
+        <label>
+          <span>Canal de entrega</span>
+          <select data-rms-activation-channel="${escapeHtml(item.id)}" aria-label="Canal de envio para ${escapeHtml(item.name || "lead")}">
+            <option value="whatsapp" ${delivery.channel === "whatsapp" ? "selected" : ""} ${item.phone ? "" : "disabled"}>WhatsApp</option>
+            <option value="email" ${delivery.channel === "email" ? "selected" : ""} ${item.email ? "" : "disabled"}>Email</option>
+          </select>
+        </label>
+        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-send-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">${sent ? "send" : "rocket_launch"}</span>${sent ? "Reenviar" : "Enviar propuesta"}</button>
+      </div>
+      ${delivery.note ? `<small class="rms-activation-delivery-note">Registro: ${escapeHtml(delivery.note)}</small>` : ""}
+    </article>
   `;
 }
 
