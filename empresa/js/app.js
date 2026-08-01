@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260801-activation1-contact-console-v211";
+const APP_VERSION = "empresa-20260801-activation1-full-width-workspace-v212";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40223,6 +40223,42 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   `;
 }
 
+function rmsActivationStationCardMarkup(item = {}) {
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
+  const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "Sin interés declarado";
+  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+  const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
+  return `
+    <article class="rms-activation-work-item ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}">
+      <aside class="rms-activation-work-lead">
+        <label class="rms-activation-work-select">
+          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
+          <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
+          <span>${selected ? "Listo para Evaluación" : "Seleccionar al completar"}</span>
+        </label>
+        <div class="rms-activation-work-person">
+          <span class="material-symbols-outlined" aria-hidden="true">person</span>
+          <div><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></div>
+        </div>
+        <dl class="rms-activation-work-facts">
+          <div><dt>Oferta</dt><dd>${escapeHtml(rmsActivationDelivery(item).offer)}</dd></div>
+          <div><dt>Interés</dt><dd title="${escapeHtml(interest)}">${escapeHtml(interest)}</dd></div>
+          <div><dt>Origen</dt><dd title="${escapeHtml(origin)}">${escapeHtml(origin)}</dd></div>
+          <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
+        </dl>
+        <div class="rms-activation-work-actions">
+          <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
+          <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
+        </div>
+      </aside>
+      <div class="rms-activation-work-console">
+        ${rmsActivationDeliveryCardMarkup(item)}
+      </div>
+    </article>
+  `;
+}
+
 function renderRmsStationLeanOnly() {
   const data = state.rmsMachine || {};
   const stages = rmsPrimaryFactoryStages(data);
@@ -40333,6 +40369,11 @@ function renderRmsStationLeanOnly() {
         </select>
         <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
       </div>
+      ${isActivationStation ? `
+        <div class="rms-activation-work-list" aria-label="Consolas de contacto y seguimiento">
+          ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
+        </div>
+      ` : `
       <div class="rms-lean-station-table-wrap">
         <table class="rms-lean-station-table">
           <thead>
@@ -40347,6 +40388,7 @@ function renderRmsStationLeanOnly() {
           </tbody>
         </table>
       </div>
+      `}
       <footer class="rms-lean-station-foot">
         <span>Mostrando ${renderedRows.length.toLocaleString("es-CO")} de ${display.matchingRows.length.toLocaleString("es-CO")}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar` : ""}</span>
         ${display.hiddenCount ? `<button class="ghost-button compact" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
