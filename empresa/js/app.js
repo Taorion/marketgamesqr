@@ -1,7 +1,7 @@
-﻿const SESSION_KEY = "qr_business_portal_session_v1";
+const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260724-qori-stitch-portal-redesign-v144";
+const APP_VERSION = "empresa-20260801-rms-activation-followup-v150";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -42,7 +42,7 @@ const themeSwitchLabel = document.getElementById("themeSwitchLabel");
 const logoutButton = document.getElementById("logoutButton");
 const profileName = document.getElementById("profileName");
 const profileAvatar = document.getElementById("profileAvatar");
-const THEME_KEY = "marketgames_portal_theme";
+const THEME_KEY = "qori_portal_theme";
 const businessKpiGrid = document.getElementById("businessKpiGrid");
 const campaignKpiGrid = document.getElementById("campaignKpiGrid");
 const salesKpiGrid = document.getElementById("salesKpiGrid");
@@ -172,7 +172,7 @@ const missionRewardsInput = document.getElementById("missionRewardsInput");
 const missionCreateAgendaInput = document.getElementById("missionCreateAgendaInput");
 const missionWizardMessage = document.getElementById("missionWizardMessage");
 const smartCatalogRefreshButton = document.getElementById("smartCatalogRefreshButton");
-const smartCatalogSeedDoctorAngieButton = document.getElementById("smartCatalogSeedDoctorAngieButton");
+const smartCatalogSeedQoriButton = document.getElementById("smartCatalogSeedQoriButton");
 const smartCatalogDashboardGrid = document.getElementById("smartCatalogDashboardGrid");
 const smartCatalogPublicLink = document.getElementById("smartCatalogPublicLink");
 const smartCatalogCopyLinkButton = document.getElementById("smartCatalogCopyLinkButton");
@@ -1300,8 +1300,8 @@ const snapshotNotesInput = document.getElementById("snapshotNotesInput");
 const snapshotModalMessage = document.getElementById("snapshotModalMessage");
 const routeParams = new URLSearchParams(window.location.search);
 const PORTAL_DEFAULT_VIEW = "rms-machine";
-const LIGHT_MODE_KEY = "marketgames_portal_light_mode";
-const QUIET_ZONE_STORAGE_KEY = "marketgames_portal_quiet_zones_v1";
+const LIGHT_MODE_KEY = "qori_portal_light_mode";
+const QUIET_ZONE_STORAGE_KEY = "qori_portal_quiet_zones_v1";
 const QUIET_ZONE_SELECTOR = [
   ".view-section.active > section",
   ".view-section.active > article",
@@ -1955,9 +1955,9 @@ function clearBusinessScopedStorage(businessId = "", options = {}) {
   const id = String(businessId || "").trim();
   const clearAll = options.all === true || !id;
   removeLocalStorageByPredicate((key) => {
-    if (key === "marketgames:campaign-strategy-wizard:draft") return true;
-    if (key.startsWith("marketgames:strategy-wizard:draft:")) return clearAll || key === `marketgames:strategy-wizard:draft:${id}`;
-    if (key.startsWith("marketgames:campaign-cost:")) return clearAll || key.startsWith(`marketgames:campaign-cost:${id}:`);
+    if (key === "qori:campaign-strategy-wizard:draft") return true;
+    if (key.startsWith("qori:strategy-wizard:draft:")) return clearAll || key === `qori:strategy-wizard:draft:${id}`;
+    if (key.startsWith("qori:campaign-cost:")) return clearAll || key.startsWith(`qori:campaign-cost:${id}:`);
     return false;
   });
 }
@@ -1968,20 +1968,20 @@ function isPortalStorageKey(key) {
     || key === APP_VERSION_KEY
     || key === APP_UPDATE_NOTICE_KEY
     || key === THEME_KEY
-    || key === "marketgames_portal_light_mode"
+    || key === "qori_portal_light_mode"
     || key.startsWith("qr_business_portal_")
     || key.startsWith("universal_qr_validator_")
-    || key.startsWith("market_games_admin_")
-    || key.startsWith("marketgames_portal_")
-    || key.startsWith("marketgames:campaign-")
-    || key.startsWith("marketgames:strategy-")
-    || key.startsWith("marketgames:campaign-cost:");
+    || key.startsWith("Qori_admin_")
+    || key.startsWith("qori_portal_")
+    || key.startsWith("qori:campaign-")
+    || key.startsWith("qori:strategy-")
+    || key.startsWith("qori:campaign-cost:");
 }
 
 function isPortalCacheKey(key) {
   const value = String(key || "").toLowerCase();
-  return value.includes("marketgames")
-    || value.includes("market-games")
+  return value.includes("qori")
+    || value.includes("qori")
     || value.includes("qr_business")
     || value.includes("empresa")
     || value.includes("portal");
@@ -2000,7 +2000,7 @@ function clearPortalCacheStorage() {
 
 function clearPortalBrowserStorage(options = {}) {
   const preservePreferences = options.preservePreferences !== false;
-  const preserved = new Set(preservePreferences ? [THEME_KEY, "marketgames_portal_light_mode"] : []);
+  const preserved = new Set(preservePreferences ? [THEME_KEY, "qori_portal_light_mode"] : []);
   removeLocalStorageByPredicate((key) => isPortalStorageKey(key) && !preserved.has(key));
   removeSessionStorageByPredicate((key) => isPortalStorageKey(key) && !preserved.has(key));
   clearPortalCacheStorage();
@@ -2149,7 +2149,7 @@ function assertActiveSession() {
 }
 
 function isAdmin() {
-  return ["ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+  return ["ADMIN", "ADMIN_Qori"].includes(session?.user?.role);
 }
 
 function hideFeedback() {
@@ -4453,11 +4453,11 @@ function renderCommercialDeal() {
 }
 
 function isBusinessOwnerUser() {
-  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_Qori"].includes(session?.user?.role);
 }
 
 function canDeactivateBusinessUsers() {
-  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_Qori"].includes(session?.user?.role);
 }
 
 function canManageCampaigns() {
@@ -4828,7 +4828,7 @@ function setView(view) {
   const previousView = state.currentView;
   if (view === "admin" && !isAdmin()) {
     const fallbackView = state.selectedCampaign ? "campaigns" : "dashboard";
-    showFeedback("Ese módulo es interno de Sales Machine. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
+    showFeedback("Ese módulo es interno de Qori. La gestión de tus campañas esta en el portal del negocio.", "info", { title: "Módulo interno" });
     if (view !== fallbackView) setView(fallbackView);
     return;
   }
@@ -4942,7 +4942,7 @@ function setView(view) {
   }
   if (view === "missions") {
     loadGamificationDashboard({ quiet: true }).then(renderMissionsView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Misiones Sales Machine.", "error", { title: "Misiones Sales Machine" });
+      showFeedback(error.message || "No se pudo cargar Misiones Qori.", "error", { title: "Misiones Qori" });
       renderMissionsView();
     });
   }
@@ -4957,7 +4957,7 @@ function setView(view) {
       renderInventoryProductOptions();
     }
     loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Catálogos Sales Machine.", "error", { title: "Catálogos Sales Machine" });
+      showFeedback(error.message || "No se pudo cargar Catálogos Qori.", "error", { title: "Catálogos Qori" });
       renderSmartCatalogView();
     });
   }
@@ -6468,7 +6468,7 @@ function renderCommandCenter() {
     <div class="command-center">
       <section class="command-hero">
         <div>
-          <span class="mono-label">Sales Machine RMS</span>
+          <span class="mono-label">Qori RMS</span>
           <h2>Centro de comando de revenue marketing</h2>
           <p>Lectura ejecutiva de campañas, canales, tickets, redenciones, ventas, sucursales y revenue real.</p>
           <div class="command-hero-actions">
@@ -7563,9 +7563,7 @@ function ensureRevenueCenterUxStyles() {
   const style = document.createElement("style");
   style.id = "revenueCenterUxStylesV75";
   style.textContent = `
-    body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry,
-    body[data-current-view="dashboard"] .portal-shell .revenue-workspace,
-    body[data-current-view="dashboard"] .portal-shell #revenueWorkspace {
+    body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry {
       display: none !important;
     }
     body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
@@ -8600,9 +8598,12 @@ function renderSmartCatalogTables() {
           <td><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
           <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
           <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
-          <td>
-            <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Usar</button>
-            <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Copiar</button>
+          <td class="smart-catalog-table-actions-cell">
+            <div class="smart-catalog-table-actions" role="group" aria-label="Acciones para ${escapeHtml(catalog.title || "este catálogo")}">
+              <button class="solid-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Gestionar</button>
+              <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Copiar link</button>
+              <button class="ghost-button compact smart-catalog-delete-button" type="button" data-smart-catalog-delete="${escapeHtml(catalog.id)}">Eliminar</button>
+            </div>
           </td>
         </tr>
       `;
@@ -8857,7 +8858,7 @@ async function loadSmartCatalogDetail(catalogId, options = {}) {
   state.smartCatalogs = (state.smartCatalogs || []).map((catalog) => (
     catalog.id === data.catalog?.id ? { ...catalog, ...data.catalog } : catalog
   ));
-  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Sales Machine" });
+  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Qori" });
 }
 
 function setSmartCatalogTab(tab) {
@@ -8869,7 +8870,7 @@ async function refreshSmartCatalogs(options = {}) {
   state.smartCatalogLoaded = false;
   await loadSmartCatalogData({ force: true });
   renderSmartCatalogView();
-  if (!options.quiet) showFeedback("Catálogos Sales Machine actualizado.", "success", { title: "Sales Machine Smart Catalog" });
+  if (!options.quiet) showFeedback("Catálogos Qori actualizado.", "success", { title: "Qori Smart Catalog" });
 }
 
 async function submitSmartCatalog(event) {
@@ -8933,9 +8934,33 @@ async function copySmartCatalogLink(catalogId = "") {
   if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
-    showFeedback("Link público copiado.", "success", { title: "Catálogos Sales Machine" });
+    showFeedback("Link público copiado.", "success", { title: "Catálogos Qori" });
   } catch {
     window.prompt("Link público del catálogo", url);
+  }
+}
+
+async function archiveSmartCatalog(catalogId) {
+  const catalog = (state.smartCatalogs || []).find((item) => item.id === catalogId);
+  if (!catalog) return;
+  const title = catalog.title || "este catálogo";
+  const confirmed = window.confirm(`¿Eliminar "${title}"? El link público quedará inactivo. Conservaremos su historial para trazabilidad.`);
+  if (!confirmed) return;
+
+  try {
+    await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (state.smartCatalogSelectedCatalogId === catalogId) {
+      state.smartCatalogSelectedCatalogId = "";
+      state.smartCatalogProducts = [];
+      state.smartCatalogIntents = [];
+    }
+    await refreshSmartCatalogs({ quiet: true });
+    showFeedback(`Catálogo "${title}" eliminado de la vitrina.`, "success", { title: "Catálogos Qori" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el catálogo.", "error", { title: "Catálogos Qori" });
   }
 }
 
@@ -8964,7 +8989,7 @@ async function smartCatalogIntentAction(intentId, action) {
           priority: "HIGH",
         }),
       });
-      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Sales Machine" });
+      showFeedback("Tarea creada en agenda comercial.", "success", { title: "Catálogos Qori" });
     }
     if (action === "won") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
@@ -8973,10 +8998,10 @@ async function smartCatalogIntentAction(intentId, action) {
         body: JSON.stringify({
           sale_amount: intent?.sale_amount || intent?.product_price || 0,
           currency: intent?.sale_currency || intent?.product_currency || "COP",
-          notes: "Venta marcada desde Catálogos Sales Machine.",
+          notes: "Venta marcada desde Catálogos Qori.",
         }),
       });
-      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Sales Machine" });
+      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Qori" });
     }
     if (action === "ticket") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/send-post-sale-ticket`, {
@@ -8989,17 +9014,17 @@ async function smartCatalogIntentAction(intentId, action) {
           benefit_type: "CUSTOM",
         }),
       });
-      showFeedback("Ticket postventa generado.", "success", { title: "Postventa Sales Machine" });
+      showFeedback("Ticket postventa generado.", "success", { title: "Postventa Qori" });
     }
     await refreshSmartCatalogs({ quiet: true });
   } catch (error) {
-    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Sales Machine" });
+    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Qori" });
   }
 }
 
-const DASHBOARD_BUILDER_STORAGE_KEY = "marketgames_dashboard_builder_v2";
-const DASHBOARD_BUILDER_PROFILE_KEY = "marketgames_dashboard_profile_v1";
-const DASHBOARD_BUILDER_EXPANDED_KEY = "marketgames_dashboard_advanced_v1";
+const DASHBOARD_BUILDER_STORAGE_KEY = "qori_dashboard_builder_v2";
+const DASHBOARD_BUILDER_PROFILE_KEY = "qori_dashboard_profile_v1";
+const DASHBOARD_BUILDER_EXPANDED_KEY = "qori_dashboard_advanced_v1";
 
 const DASHBOARD_BUILDER_PROFILES = {
   marketing: {
@@ -10219,7 +10244,7 @@ function normalizeCampaignCostCalculator(value = {}, campaign = state.selectedCa
 
 function campaignCostStorageKey(campaignId = state.selectedCampaignId) {
   const businessId = session?.user?.business_id || state.loadedBusinessId || "business";
-  return `marketgames:campaign-cost:${businessId}:${campaignId || "draft"}`;
+  return `qori:campaign-cost:${businessId}:${campaignId || "draft"}`;
 }
 
 function loadCampaignCostCalculator(campaign = state.selectedCampaign || {}) {
@@ -11279,7 +11304,7 @@ function renderCampaignView() {
               : `<strong>${escapeHtml(value)}</strong>`}
         </article>
       `).join("")
-    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Sales Machine aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
+    : '<article class="asset-card"><strong>Sin assets cargados</strong><span>Qori aún no ha publicado enlaces o materiales para esta campaña.</span></article>';
   renderCampaignRelationsPanel();
 
   const snapshots = state.selectedReport?.sales_snapshots || [];
@@ -22362,7 +22387,7 @@ function renderNoCampaignState() {
   renderAdminView();
   adminPanelMessage.textContent = isAdmin()
     ? "Este usuario puede crear y editar campañas desde el modal del portal y también operar `/admin`."
-    : "Usa el panel `/admin` para la operación interna de Sales Machine.";
+    : "Usa el panel `/admin` para la operación interna de Qori.";
   rangeButton.textContent = state.rangeDays ? `Últimos ${state.rangeDays} días` : "Todo el historial";
   drawDualLineChart(businessTrendChart, [], [], "count", ["Leads", "Redenciones"], [NEON_CHART.cyan, NEON_CHART.magenta]);
   drawSimpleLineChart(cacTrendChart, [], NEON_CHART.yellow, "Costo por lead");
@@ -22382,10 +22407,10 @@ function renderNoCampaignState() {
   setCampaignSectionTab(state.campaignSectionTab || "analysis");
 }
 
-const STRATEGY_WIZARD_DRAFT_KEY = "marketgames:campaign-strategy-wizard:draft";
+const STRATEGY_WIZARD_DRAFT_KEY = "qori:campaign-strategy-wizard:draft";
 function strategyWizardDraftKey() {
   const businessId = session?.user?.business_id || state.loadedBusinessId || "anonymous";
-  return `marketgames:strategy-wizard:draft:${businessId}`;
+  return `qori:strategy-wizard:draft:${businessId}`;
 }
 const STRATEGY_WIZARD_OPTIONS = {
   sectors: ["Restaurante", "Retail", "Moda", "Belleza", "Salud", "Educación", "Servicios profesionales", "Eventos", "Turismo", "Tecnología", "Agencia de marketing", "Centro comercial", "Marca de consumo", "Otro"],
@@ -22436,7 +22461,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "objective", label: "Qué quieres lograr", type: "single", optionsKey: "objectives" },
   ] },
   { id: "massification", kicker: "Paso 3", title: "Estrategia de Masificación", help: "Una campaña poderosa atrae varias personas, captura datos, entrega valor, filtra interés y activa seguimiento comercial.", fields: [
-    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. Sales Machine captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
+    { key: "massHelp", type: "note", text: "No pienses primero en contactar personas una por una. Piensa en una excusa de valor que pueda atraer muchas personas al mismo tiempo: un curso, un ebook, un beneficio, un juego, un evento, una activación, un diagnóstico, una giftcard, una trivia, una ruleta, una batalla naval o una campaña de referidos. Qori captura, filtra y mide los leads para que luego atiendas solo a los más interesados." },
     { key: "acquisitionMode", label: "Modo de atracción", type: "single", optionsKey: "acquisitionModes" },
     { key: "leadMagnet", label: "Excusa de valor", type: "single", optionsKey: "leadMagnets" },
     { key: "targetPublic", label: "Público a atraer", type: "single", optionsKey: "targetPublics" },
@@ -22490,7 +22515,7 @@ const STRATEGY_WIZARD_STEPS = [
     { key: "hasDigitalAsset", label: "Incluye activo descargable", type: "single", options: ["Sí", "No"] },
     { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://..." },
   ] },
-  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Sales Machine usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
+  { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Qori usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
     { key: "maxParticipants", label: "Participaciones máximas", type: "number", placeholder: "300" },
     { key: "participationFrequency", label: "Frecuencia", type: "single", options: ["Una vez por persona", "Varias veces", "Una vez por día", "Por compra"] },
     { key: "ticketLogic", label: "Cuándo se genera ticket", type: "multi", optionsKey: "ticketTypes" },
@@ -22668,7 +22693,7 @@ function strategyObjectiveText(answers = state.strategyWizardAnswers || {}) {
 
 function strategyCampaignName(answers = state.strategyWizardAnswers || {}) {
   if (answers.campaignName) return answers.campaignName;
-  const brand = answers.businessName || "Sales Machine";
+  const brand = answers.businessName || "Qori";
   const objective = normalizeInventoryLookup(answers.objective || "");
   const prefix = objective.includes("recompra") ? "Reto de Recompra" : objective.includes("refer") ? "Reto de Referidos" : objective.includes("lead") ? "Captura Relámpago" : "Campaña Gamificada";
   return `${prefix} ${brand}`.trim();
@@ -22710,7 +22735,7 @@ function strategyScoreRecommendation(score, answers = state.strategyWizardAnswer
 }
 
 function strategyUrls(slug = strategySlug()) {
-  const base = "https://www.marketgamesqr.com";
+  const base = "http://localhost:3000";
   return {
     landing_url: `${base}/campana/${slug}`,
     validator_url: `${base}/validar/${slug}`,
@@ -23932,7 +23957,7 @@ async function shareTicketQrFile({ filename, dataUrl, text }) {
   const file = new File([blob], filenameForDataUrl(filename, dataUrl), { type: blob.type || "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
-      title: "Ticket QR Sales Machine",
+      title: "Ticket QR Qori",
       text,
       files: [file],
     });
@@ -27083,17 +27108,17 @@ function leadDirectorySalesSummary(item = {}) {
 
 const LEAD_DIRECTORY_RMS_STATIONS = {
   recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
-  alimentacion: { label: "Estación 02 · Alimentar", short: "02 Alimentar" },
-  curaduria: { label: "Estación 03 · Curados", short: "03 Curados" },
-  clasificacion: { label: "Estación 04 · Clasificar", short: "04 Clasificar" },
-  preprocesamiento: { label: "Estación 05 · Gamificar", short: "05 Gamificar" },
-  procesamiento: { label: "Estación 06 · Procesar", short: "06 Procesar" },
-  control_anti_fuga: { label: "Estación 07 · Controlar", short: "07 Controlar" },
-  accion_correctiva: { label: "Estación 08 · Corregir", short: "08 Corregir" },
-  cierre: { label: "Estación 09 · Cerrar", short: "09 Cerrar" },
-  revenue_generado: { label: "Estación 10 · Revenue", short: "10 Revenue" },
-  postventa: { label: "Estación 11 · Postventa", short: "11 Postventa" },
-  inteligencia: { label: "Estación 12 · Optimizar", short: "12 Optimizar" },
+  alimentacion: { label: "Estación 02 · Curaduría", short: "02 Curaduría" },
+  curaduria: { label: "Estación 03 · Clasificador", short: "03 Clasificador" },
+  clasificacion: { label: "Estación 04 · Activación 1", short: "04 Activación 1" },
+  preprocesamiento: { label: "Estación 05 · Control de calidad 1", short: "05 Control calidad 1" },
+  procesamiento: { label: "Estación 06 · Evaluación", short: "06 Evaluación" },
+  control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
+  accion_correctiva: { label: "Estación 08 · Negociación", short: "08 Negociación" },
+  cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
+  revenue_generado: { label: "Estación 10 · Control de calidad 2", short: "10 Control calidad 2" },
+  postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
+  inteligencia: { label: "Estación 12 · Inteligencia RMS", short: "12 Inteligencia" },
 };
 
 function leadDirectoryStationInfo(item = {}) {
@@ -31868,7 +31893,7 @@ function renderRewardPassContext() {
   const cost = toNumber(context.reward_pass_ticket_cost || 1);
   const balance = toNumber(context.ticket_balance || context.qr_balance || 0);
   if (rewardPassTicketContext) {
-    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Sales Machine. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }
 
@@ -31910,7 +31935,7 @@ function renderRewardPassMetrics() {
     ["Valor redimido", money(metrics.total_redeemed_cop || 0), `${toNumber(metrics.redemption_count || 0)} redenciones`],
     ["Saldo pendiente", money(metrics.pending_balance_cop || 0), `${toNumber(metrics.partially_redeemed_count || 0)} parciales`],
     ["Saldo vencido", money(metrics.expired_balance_cop || 0), `${toNumber(metrics.expired_count || 0)} vencidos`],
-    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico Sales Machine"],
+    ["Tickets consumidos", toNumber(metrics.tickets_consumed || 0), "Derecho tecnologico Qori"],
   ];
   if (rewardPassKpiGrid) {
     rewardPassKpiGrid.innerHTML = cards.map(([label, value, meta]) => `
@@ -32293,7 +32318,7 @@ async function buildRewardPassImageDataUrl(pass) {
   ctx.font = "500 22px Inter, sans-serif";
   const pending = pass.status === "pending_claim";
   ctx.fillText(pending ? "Escanea este QR para reclamar y activar el QR definitivo redimible en caja." : "Presenta este QR junto con tu documento de identidad en el negocio emisor.", 94, 608);
-  ctx.fillText("Administrado por Sales Machine QR Portal.", 94, 642);
+  ctx.fillText("Administrado por Qori QR Portal.", 94, 642);
   if (pass.qr_image_data_url) {
     const qrImage = await new Promise((resolve, reject) => {
       const img = new Image();
@@ -33488,30 +33513,33 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "recoleccion",
     label: "Leads recolectados",
+    short_label: "Recolectar",
     storageLabel: "Almacena leads capturados",
     operation: {
-      name: "Embudo",
+      name: "Recolectar",
       primaryAction: "Seleccionar leads procesables",
       materialLabel: "Contacto, origen, interes y permiso para avanzar",
-      buttonLabel: "Pasar por embudo",
+      buttonLabel: "Enviar a Alimentar",
       nextPhase: "alimentacion",
     },
   },
   {
     key: "alimentacion",
     label: "Curaduría",
-    storageLabel: "Almacena leads listos para curar",
+    short_label: "Curaduría",
+    storageLabel: "Almacena leads listos para calidad",
     operation: {
-      name: "Curar",
+      name: "Alimentar",
       primaryAction: "Asignar calidad del lead",
       materialLabel: "Probabilidad, rapidez y recursos necesarios",
-      buttonLabel: "Curar calidad",
+      buttonLabel: "Enviar a Curados",
       nextPhase: "curaduria",
     },
   },
   {
     key: "curaduria",
     label: "Clasificador",
+    short_label: "Clasificador",
     storageLabel: "Almacena leads curados para clasificar",
     operation: {
       name: "Clasificacion",
@@ -33524,6 +33552,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "clasificacion",
     label: "Activación 1",
+    short_label: "Activación 1",
     storageLabel: "Almacena leads clasificados para activar",
     operation: {
       name: "Preprocesar",
@@ -33536,6 +33565,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "preprocesamiento",
     label: "Control de calidad 1",
+    short_label: "Control calidad 1",
     storageLabel: "Almacena oportunidades activadas para validar",
     operation: {
       name: "Gamificar",
@@ -33548,6 +33578,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "procesamiento",
     label: "Evaluación",
+    short_label: "Evaluación",
     storageLabel: "Almacena oportunidades accionadas para evaluar",
     operation: {
       name: "Accionar",
@@ -33560,6 +33591,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "control_anti_fuga",
     label: "Riesgos de fuga",
+    short_label: "Riesgos de fuga",
     storageLabel: "Almacena oportunidades con posible atasco",
     operation: {
       name: "Controlar fuga",
@@ -33572,6 +33604,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "accion_correctiva",
     label: "Negociación",
+    short_label: "Negociación",
     storageLabel: "Almacena oportunidades recuperables para negociar",
     operation: {
       name: "Recuperar",
@@ -33584,6 +33617,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "cierre",
     label: "Ventas atribuidas",
+    short_label: "Ventas atribuidas",
     storageLabel: "Almacena ventas listas para atribuir",
     operation: {
       name: "Cerrar",
@@ -33596,6 +33630,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "revenue_generado",
     label: "Control de calidad 2",
+    short_label: "Control calidad 2",
     storageLabel: "Almacena ventas atribuidas para validar",
     operation: {
       name: "Atribuir revenue",
@@ -33608,6 +33643,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "postventa",
     label: "Activación 2",
+    short_label: "Activación 2",
     storageLabel: "Almacena clientes compradores para reactivar",
     operation: {
       name: "Fidelizar",
@@ -33620,6 +33656,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "inteligencia",
     label: "Inteligencia RMS",
+    short_label: "Inteligencia",
     storageLabel: "Almacena senales para optimizar la fabrica",
     operation: {
       name: "Optimizar",
@@ -33646,6 +33683,7 @@ function rmsFactoryStages(data = {}) {
       ...blueprint,
       ...stage,
       label: blueprint.label || stage.label,
+      short_label: blueprint.short_label || stage.short_label || blueprint.label || stage.label,
       storageLabel: blueprint.storageLabel || stage.storageLabel,
       operation: mergedOperation,
     };
@@ -34748,54 +34786,54 @@ const RMS_TUTORIAL_STEPS = [
     action: "collector",
     input: "Leads de activaciones, QR, campañas, formularios, WhatsApp, eventos o carga manual.",
     operation: "Operacion Embudo: seleccionar solo los leads con contacto, origen e interes minimo para procesarlos.",
-    output: "Leads seleccionados para entrar a Curaduría. Lo no procesable se queda en recolectados hasta completar datos.",
+    output: "Leads seleccionados para entrar a Alimentar. Lo no procesable se queda en recolectados hasta completar datos.",
     operatorHint: "Esta estacion no convence: guarda materia prima y permite escoger que si merece avanzar.",
   },
   {
     key: "funnel-gate",
     phase: "alimentacion",
     icon: "filter_alt",
-    title: "Curar los leads seleccionados",
-    subtitle: "Curaduría",
-    actionLabel: "Ver Curaduría",
+    title: "Alimentar los leads seleccionados",
+    subtitle: "Alimentar",
+    actionLabel: "Ver Alimentar",
     action: "station",
     input: "Leads que salieron del embudo inicial desde Leads recolectados.",
     operation: "Operacion Curar: asignar calidad alta, media o baja segun probabilidad, rapidez y recursos necesarios para convertir.",
-    output: "Leads con calidad asignada listos para almacenarse en Clasificador.",
+    output: "Leads con calidad asignada listos para almacenarse en Curados.",
     operatorHint: "La calidad no es producto: es probabilidad, velocidad y costo operativo para convertir.",
   },
   {
     key: "curation",
     phase: "curaduria",
     icon: "fact_check",
-    title: "Clasificar los leads curados",
-    subtitle: "Clasificador",
-    actionLabel: "Ver Clasificador",
+    title: "Revisar leads curados",
+    subtitle: "Curados",
+    actionLabel: "Ver Curados",
     action: "station",
     input: "Leads que ya tienen calidad asignada en Curaduría.",
-    operation: "Operacion Clasificacion: asignar producto, servicio o linea interna que se va a ofrecer al lead.",
-    output: "Lead clasificado contra inventario, listo para Activación 1.",
-    operatorHint: "Clasificador no mide calidad; asigna la oferta interna que se va a trabajar.",
+    operation: "Operacion Curados: revisar calidad heredada, dato defendible, contacto, origen e interes.",
+    output: "Lead curado y listo para Clasificar.",
+    operatorHint: "Curados no asigna producto; confirma que el dato tiene sentido antes de enviarlo a Clasificar.",
   },
   {
     key: "classification",
     phase: "clasificacion",
     icon: "category",
-    title: "Activar los clasificados",
-    subtitle: "Activación 1",
-    actionLabel: "Ver Activación 1",
+    title: "Clasificar por producto",
+    subtitle: "Clasificar",
+    actionLabel: "Ver Clasificar",
     action: "station",
-    input: "Leads curados con producto o servicio asignado.",
-    operation: "Operacion Preprocesar: ordenar prioridad, estado, temperatura y siguiente paso antes de activar ganchos.",
-    output: "Lead activado y listo para Control de calidad 1.",
-    operatorHint: "Activación 1 convierte clasificación en una acción inicial medible.",
+    input: "Leads curados que necesitan producto o servicio asignado.",
+    operation: "Operacion Clasificar: asignar el producto con el que se va a contactar al lead.",
+    output: "Lead clasificado por producto y listo para Gamificar.",
+    operatorHint: "Clasificar convierte el interés en una oferta concreta antes de gamificar.",
   },
   {
     key: "anti-leak",
     phase: "preprocesamiento",
     icon: "sports_esports",
     title: "Validar la activación inicial",
-    subtitle: "Control de calidad 1",
+    subtitle: "Gamificar",
     actionLabel: "Crear gancho",
     action: "missions",
     input: "Lead activado que debe validarse antes de avanzar.",
@@ -34988,7 +35026,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   let stationControl = `<td class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
   if (stage.key === "alimentacion") {
     stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
-  } else if (["curaduria", "clasificacion"].includes(stage.key)) {
+  } else if (stage.key === "curaduria") {
     stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
   }
   return `
@@ -35036,7 +35074,7 @@ function renderRmsStationLeanOnly() {
   const selectedRows = rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const visual = rmsStationVisualMeta(phase);
-  const stationControlLabel = ["curaduria", "clasificacion"].includes(phase) ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
+  const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -35302,17 +35340,17 @@ function renderRmsDailyQueue(sections = []) {
 function rmsStageEmptyMarkup(stage = {}) {
   const map = {
     recoleccion: ["Sin leads recolectados.", "Esta estacion almacena leads capturados. La operacion Embudo selecciona cuales son procesables.", "Ingresar lead", "collector"],
-    alimentacion: ["Sin leads en Curaduría.", "Esta estacion almacena leads filtrados. La operacion Curar asigna calidad alta, media o baja.", "Cargar leads", "contacts-manual"],
-    curaduria: ["Sin leads en Clasificador.", "Esta estacion almacena leads curados. La operacion Clasificacion asigna producto o servicio interno.", "Ver contactos", "contacts-manual"],
-    clasificacion: ["Sin Activación 1.", "Esta estacion almacena leads con oferta asignada. La primera activación ordena prioridad y siguiente paso.", "Ver leads", "contacts-manual"],
-    preprocesamiento: ["Sin Control de calidad 1.", "Esta estacion valida la primera activación antes de pasar a evaluación.", "Crear ticket", "reward-passes"],
-    procesamiento: ["Sin Evaluación.", "Esta estacion almacena oportunidades accionadas para revisar respuesta y siguiente paso.", "Ver leads", "contacts-manual"],
+    alimentacion: ["Sin leads en Alimentar.", "Esta estacion almacena leads filtrados. La operacion Alimentar asigna calidad alta, media o baja.", "Cargar leads", "contacts-manual"],
+    curaduria: ["Sin leads en Curados.", "Esta estacion almacena leads con calidad heredada y dato defendible antes de clasificar producto.", "Ver contactos", "contacts-manual"],
+    clasificacion: ["Sin leads en Clasificar.", "Esta estacion asigna producto o servicio interno antes de Gamificar.", "Ver leads", "contacts-manual"],
+    preprocesamiento: ["Sin leads en Gamificar.", "Esta estacion prepara ticket, beneficio o dinámica anti-fuga.", "Crear ticket", "reward-passes"],
+    procesamiento: ["Sin leads en Evaluación.", "Esta estacion almacena oportunidades accionadas para revisar respuesta y siguiente paso.", "Ver leads", "contacts-manual"],
     control_anti_fuga: ["Sin riesgos de fuga.", "Esta estacion almacena oportunidades con posible atasco para corregir antes de perderlas.", "Ver leads", "contacts-manual"],
-    accion_correctiva: ["Sin Negociación.", "Esta estacion almacena oportunidades que necesitan negociación, condición o último beneficio.", "Ver leads", "contacts-manual"],
-    cierre: ["Sin Ventas atribuidas.", "Esta estacion almacena cierres para registrar la fuente real del revenue.", "Registrar venta", "sales"],
-    revenue_generado: ["Sin Control de calidad 2.", "Esta estacion valida ventas atribuidas antes de pasar a Activación 2.", "Ver ventas", "sales"],
-    postventa: ["Sin Activación 2.", "Esta estacion almacena clientes despues de comprar para garantia, encuesta, recompra o referido.", "Activar recompra", "reward-passes"],
-    inteligencia: ["Sin Inteligencia RMS.", "Esta estacion almacena senales para entender que produjo revenue o fuga.", "Ver leads", "contacts-manual"],
+    accion_correctiva: ["Sin leads en Corregir.", "Esta estacion almacena oportunidades que necesitan negociación, condición o último beneficio.", "Ver leads", "contacts-manual"],
+    cierre: ["Sin leads en Cerrar.", "Esta estacion almacena cierres para registrar la fuente real del revenue.", "Registrar venta", "sales"],
+    revenue_generado: ["Sin Revenue.", "Esta estacion valida ventas atribuidas antes de pasar a Postventa.", "Ver ventas", "sales"],
+    postventa: ["Sin Postventa.", "Esta estacion almacena clientes despues de comprar para garantia, encuesta, recompra o referido.", "Activar recompra", "reward-passes"],
+    inteligencia: ["Sin Optimizar.", "Esta estacion almacena senales para entender que produjo revenue o fuga.", "Ver leads", "contacts-manual"],
   };
   const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
   return `
@@ -35404,6 +35442,24 @@ function rmsClassifiedProductName(item = {}) {
   const selected = rmsClassifiedProductValue(item);
   const product = findInventoryProduct(selected);
   return product?.name || item.classified_product_name || item.product_interest || "";
+}
+
+function rmsHasConfirmedProductClassification(item = {}) {
+  const draft = rmsClassifiedProductDraft(item);
+  if (draft?.product_select && draft.product_select !== OPEN_PRODUCT_VALUE) return true;
+  if (draft?.open_product_name) return true;
+  if (item.classified_product_id) return true;
+  const source = String(item.classification_source || "").toLowerCase();
+  if (item.classification_is_manual) return true;
+  return [
+    "auto_activation_product",
+    "auto_inventory_match",
+    "manual_curados",
+    "manual_inventory",
+    "manual_open_product",
+    "station_output_inventory",
+    "station_output_open_interest",
+  ].includes(source);
 }
 
 function rmsClassificationSourceLabel(item = {}) {
@@ -35551,7 +35607,7 @@ function rmsStationFocusConsoleMarkup(phase = "", rows = [], nextPhase = null) {
         <div class="rms-station-focus-copy">
           <span class="mono-label">Compuerta del embudo</span>
           <h4>La salida no depende de chulear al azar: exige una probabilidad explícita.</h4>
-          <p>${escapeHtml(qualified ? `${qualified.toLocaleString("es-CO")} lead(s) ya pueden pasar a ${nextPhase?.label || "Clasificador"}.` : "Selecciona calidad alta, media o baja para convertir entrada cruda en salida operable.")}</p>
+          <p>${escapeHtml(qualified ? `${qualified.toLocaleString("es-CO")} lead(s) ya pueden pasar a ${nextPhase?.label || "Curados"}.` : "Selecciona calidad alta, media o baja para convertir entrada cruda en salida operable.")}</p>
         </div>
         <div class="rms-funnel-quality-board">
           ${qualityCounts.map((quality) => {
@@ -35605,6 +35661,93 @@ function rmsStationFocusConsoleMarkup(phase = "", rows = [], nextPhase = null) {
   return "";
 }
 
+function rmsQualityControlConsoleMarkup(phase = "", rows = [], nextPhase = null) {
+  const isInitialControl = phase === "preprocesamiento";
+  const isRevenueControl = phase === "revenue_generado";
+  if (!isInitialControl && !isRevenueControl) return "";
+
+  const hasContact = (item) => Boolean(item.phone || item.email);
+  const hasTraceability = (item) => Boolean(item.campaign_name || item.activation_name || item.channel || item.source_label || item.source_detail || item.entry_summary);
+  const hasNextStep = (item) => Boolean(item.next_action?.title || item.next_action || item.recommended_action || item.raw_recommended_action || item.last_operation);
+  const hasCoverage = (item) => Boolean(item.active_tickets || item.coverage_type || item.campaign_name || item.activation_name);
+  const hasRevenueRecord = (item) => Boolean(
+    item.revenue || item.revenue_amount || item.sale_amount || item.amount || item.transaction_amount ||
+    item.sale_id || item.invoice_id || item.payment_id || item.redemption_id || item.purchase_id || item.order_id
+  );
+  const checks = isInitialControl
+    ? [
+      { label: "Contacto útil", icon: "contact_page", test: hasContact, hint: "Teléfono o correo disponible" },
+      { label: "Cobertura", icon: "confirmation_number", test: hasCoverage, hint: "Ticket, campaña o activación" },
+      { label: "Origen trazable", icon: "account_tree", test: hasTraceability, hint: "Fuente identificable" },
+      { label: "Siguiente paso", icon: "event_available", test: hasNextStep, hint: "Acción comercial definida" },
+    ]
+    : [
+      { label: "Cliente identificable", icon: "person_check", test: hasContact, hint: "Contacto asociado a la venta" },
+      { label: "Origen atribuible", icon: "account_tree", test: hasTraceability, hint: "Campaña, canal o activación" },
+      { label: "Registro de valor", icon: "payments", test: hasRevenueRecord, hint: "Venta, pago, factura o redención" },
+      { label: "Continuidad", icon: "autorenew", test: hasNextStep, hint: "Siguiente acción de Activación 2" },
+    ];
+  const checkStats = checks.map((check) => ({ ...check, count: rows.filter(check.test).length }));
+  const ready = rows.filter((item) => checks.every((check) => check.test(item))).length;
+  const pending = Math.max(0, rows.length - ready);
+  const title = isInitialControl ? "Control de calidad 1" : "Control de calidad 2";
+  const subtitle = isInitialControl ? "Validación antes de evaluación" : "Auditoría antes de postventa";
+  const help = isInitialControl
+    ? "Confirma que cada activación tenga contexto suficiente antes de invertir más operación comercial."
+    : "Comprueba que el revenue conserve cliente, origen, valor y continuidad para que sea realmente atribuible.";
+  const readyMessage = ready
+    ? `${ready.toLocaleString("es-CO")} registro(s) tienen todas las señales de control.`
+    : "Aún no hay registros con todas las señales de control.";
+  return `
+    <section class="rms-quality-control-console ${isInitialControl ? "is-initial" : "is-revenue"}" aria-label="${escapeHtml(title)}">
+      <header class="rms-quality-control-intro">
+        <div class="rms-quality-control-title">
+          <span class="material-symbols-outlined" aria-hidden="true">${isInitialControl ? "verified_user" : "fact_check"}</span>
+          <div>
+            <span class="mono-label">${escapeHtml(subtitle)}</span>
+            <h4>${escapeHtml(title)}</h4>
+          </div>
+        </div>
+        <p>${escapeHtml(help)}</p>
+      </header>
+      <section class="rms-quality-control-status" aria-label="Estado de la auditoría">
+        <span class="rms-quality-control-section-label">Estado de la puerta</span>
+        <div class="rms-quality-control-meter">
+        <article class="is-ready">
+          <span>Listos para avanzar</span>
+          <strong>${ready.toLocaleString("es-CO")}</strong>
+          <small>${escapeHtml(readyMessage)}</small>
+        </article>
+        <article class="is-pending">
+          <span>Requieren revisión</span>
+          <strong>${pending.toLocaleString("es-CO")}</strong>
+          <small>Completa las señales antes de enviarlos a ${escapeHtml(nextPhase?.short_label || nextPhase?.label || "la siguiente estación")}.</small>
+        </article>
+        </div>
+      </section>
+      <section class="rms-quality-control-signal-group" aria-label="Señales que revisa el control">
+        <div class="rms-quality-control-signal-heading">
+          <span class="rms-quality-control-section-label">Señales que revisa</span>
+          <small>Un lead solo avanza cuando cumple las cuatro condiciones.</small>
+        </div>
+        <div class="rms-quality-control-checks">
+          ${checkStats.map((check) => {
+            const percent = rows.length ? Math.round((check.count / rows.length) * 100) : 0;
+            return `
+              <article>
+                <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(check.icon)}</span>
+                <div><strong>${escapeHtml(check.label)}</strong><small>${escapeHtml(check.hint)}</small></div>
+                <b>${check.count.toLocaleString("es-CO")}</b>
+                <i style="--quality-check-fill:${percent}%" aria-hidden="true"></i>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    </section>
+  `;
+}
+
 function rmsStationVisualMeta(phase = "") {
   const map = {
     recoleccion: {
@@ -35614,7 +35757,7 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads recolectados",
       input: "Personas capturadas por vitrina, QR, activaciones, formularios, referidos, WhatsApp o carga manual.",
       output: "Solo leads procesables seleccionados para entrar a Curaduría.",
-      focus: "Guardar materia prima comercial y ejecutar la operacion Embudo: decidir que leads si se pueden procesar.",
+      focus: "Guardar materia prima comercial y decidir que leads si pueden entrar al flujo.",
       checklist: ["Contacto minimo", "Origen de captura", "Interes inicial", "Permiso o contexto", "Seleccion para salida"],
     },
     alimentacion: {
@@ -35624,7 +35767,7 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads para curar",
       input: "Leads que fueron seleccionados desde Leads recolectados.",
       output: "Leads con calidad alta, media o baja listos para almacenarse en Clasificador.",
-      focus: "Ejecutar la operacion Curar: estimar probabilidad, rapidez y recursos necesarios para convertir.",
+      focus: "Curar la maquina con una calidad clara: alta, media o baja.",
       checklist: ["Dato suficiente", "Senal de interes", "Calidad alta/media/baja", "Razon de calidad", "Salida a Clasificador"],
     },
     curaduria: {
@@ -35634,8 +35777,8 @@ function rmsStationVisualMeta(phase = "") {
       visualLabel: "Inventario: leads curados para clasificar",
       input: "Leads que Curaduría ya califico como baja, media o alta calidad.",
       output: "Leads con producto o servicio interno asignado para Activación 1.",
-      focus: "Ejecutar la operacion Clasificacion: amarrar cada lead a lo que la empresa puede ofrecer.",
-      checklist: ["Calidad heredada de Curaduría", "Producto del inventario", "Interes declarado", "Crear producto faltante", "Clasificacion editable"],
+      focus: "Asignar el producto con el que se va a contactar al lead. Si viene de una activación con producto, queda clasificado automaticamente.",
+      checklist: ["Calidad heredada", "Producto del inventario", "Interes declarado", "Crear producto faltante", "Salida a Activación 1"],
     },
     clasificacion: {
       icon: "account_tree",
@@ -35643,9 +35786,9 @@ function rmsStationVisualMeta(phase = "") {
       screenTitle: "Estacion de almacenamiento: Activación 1",
       visualLabel: "Inventario: primera activación",
       input: "Leads curados con oferta interna asignada.",
-      output: "Lead activado con estado, temperatura, prioridad y siguiente paso.",
-      focus: "Ejecutar la primera activación: preparar el lead para control de calidad y avance comercial.",
-      checklist: ["Estado comercial", "Temperatura", "Prioridad", "Primera activación", "Responsable"],
+      output: "Propuesta documentada y enviada; el lead pasa a Evaluación para esperar su respuesta.",
+      focus: "Decidir qué se envía, con qué precio o beneficio, registrar cómo se atendió y dejar la respuesta pendiente en Evaluación.",
+      checklist: ["Material enviado", "Productos y precio", "Beneficio o ticket", "Nota de atención", "Salida a Evaluación"],
     },
     preprocesamiento: {
       icon: "stadia_controller",
@@ -35662,16 +35805,16 @@ function rmsStationVisualMeta(phase = "") {
       tone: "conversion",
       screenTitle: "Estacion de almacenamiento: Evaluación",
       visualLabel: "Inventario: oportunidades evaluadas",
-      input: "Leads protegidos con interés activo.",
-      output: "Cliente evaluado con propuesta, catálogo, ticket, cotización o factura enviada.",
-      focus: "Evaluar la respuesta y decidir si pasa a negociación, corrección o cierre.",
-      checklist: ["Propuesta", "Catálogo", "Ticket", "Cotización", "Respuesta del lead"],
+      input: "Leads con una Activación 1 ya documentada y una propuesta enviada.",
+      output: "Respuesta del cliente evaluada y decisión comercial definida.",
+      focus: "Esperar, registrar y evaluar la respuesta del lead; decidir si pasa a negociación, corrección o cierre.",
+      checklist: ["Propuesta enviada", "Fecha de envío", "Respuesta del lead", "Objeción o interés", "Decisión siguiente"],
     },
     control_anti_fuga: {
       icon: "monitor_heart",
       tone: "control",
-      screenTitle: "Detectar fuga, bloqueo o atasco",
-      visualLabel: "Control de calidad comercial",
+      screenTitle: "Estacion de almacenamiento: Controlar",
+      visualLabel: "Control anti-fuga",
       input: "Oportunidades operadas que pueden enfriarse.",
       output: "Riesgo detectado y tarea correctiva definida.",
       focus: "Encontrar tickets por vencer, clientes sin tarea o cierres sin seguimiento.",
@@ -35680,8 +35823,8 @@ function rmsStationVisualMeta(phase = "") {
     accion_correctiva: {
       icon: "build_circle",
       tone: "recovery",
-      screenTitle: "Estacion de almacenamiento: Negociación",
-      visualLabel: "Inventario: oportunidades negociables",
+      screenTitle: "Estacion de almacenamiento: Corregir",
+      visualLabel: "Inventario: oportunidades por corregir",
       input: "Leads atascados, fríos o en riesgo.",
       output: "Cliente negociado, movido, pospuesto o marcado como perdido.",
       focus: "Negociar condiciones, resolver objeciones y preparar el paso a venta atribuida.",
@@ -35690,8 +35833,8 @@ function rmsStationVisualMeta(phase = "") {
     cierre: {
       icon: "payments",
       tone: "closing",
-      screenTitle: "Estacion de almacenamiento: Ventas atribuidas",
-      visualLabel: "Inventario: cierres atribuidos",
+      screenTitle: "Estacion de almacenamiento: Cerrar",
+      visualLabel: "Inventario: cierres comerciales",
       input: "Clientes con intención y condiciones claras.",
       output: "Venta atribuida a fuente, campaña, ticket, vendedor o acción.",
       focus: "Registrar la venta y dejar claro qué acción produjo revenue.",
@@ -35700,8 +35843,8 @@ function rmsStationVisualMeta(phase = "") {
     revenue_generado: {
       icon: "query_stats",
       tone: "revenue",
-      screenTitle: "Estacion de almacenamiento: Control de calidad 2",
-      visualLabel: "Inventario: ventas por validar",
+      screenTitle: "Estacion de almacenamiento: Revenue",
+      visualLabel: "Inventario: revenue generado",
       input: "Ventas atribuidas, redenciones, recompras o suscripciones.",
       output: "Revenue validado y listo para Activación 2.",
       focus: "Validar que la venta atribuida tenga valor, fuente, producto y siguiente acción de Activación 2.",
@@ -35710,8 +35853,8 @@ function rmsStationVisualMeta(phase = "") {
     postventa: {
       icon: "redeem",
       tone: "postsale",
-      screenTitle: "Estacion de almacenamiento: Activación 2",
-      visualLabel: "Inventario: Activación 2",
+      screenTitle: "Estacion de almacenamiento: Postventa",
+      visualLabel: "Inventario: clientes en postventa",
       input: "Clientes convertidos que no deben enfriarse después de pagar.",
       output: "Cliente con agradecimiento, reward, garantía, encuesta o ticket de próxima compra.",
       focus: "Ejecutar la segunda activación para recompra, satisfacción, referido o retención.",
@@ -35720,7 +35863,7 @@ function rmsStationVisualMeta(phase = "") {
     inteligencia: {
       icon: "psychology",
       tone: "intelligence",
-      screenTitle: "Estacion de almacenamiento: Inteligencia RMS",
+      screenTitle: "Estacion de almacenamiento: Optimizar",
       visualLabel: "Inventario: aprendizaje RMS",
       input: "Datos de campañas, ganchos, vendedores, tickets, fugas y ventas.",
       output: "Aprendizaje para alimentar mejor el siguiente ciclo.",
@@ -36278,7 +36421,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     : phase === "alimentacion"
       ? "Seleccionar cualificados"
       : phase === "curaduria"
-        ? "Seleccionar clasificados"
+        ? "Seleccionar curados"
+        : phase === "clasificacion"
+          ? "Seleccionar clasificados"
         : "Seleccionar salida";
   const commandActionsMarkup = isCollectorStation
     ? `
@@ -36328,7 +36473,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
             <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
-          <span class="rms-station-build-badge">Qori v137 anti-bloqueo</span>
+          <span class="rms-station-build-badge">Flujo guiado</span>
           <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
         </div>
         ${rows.length ? rmsStationInputOutputMarkup(rows, stage, nextPhase, operation) : rmsStationEmptyScreenMarkup(stage, operation)}
@@ -36444,7 +36589,8 @@ function rmsCollectorReadiness(item = {}) {
 
 function rmsStationOutputEligibleRows(phase = "", rows = []) {
   if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
-  if (phase === "curaduria") return (rows || []).filter((item) => Boolean(rmsClassifiedProductName(item)));
+  if (phase === "curaduria") return (rows || []).filter((item) => rmsHasConfirmedProductClassification(item));
+  if (phase === "clasificacion") return (rows || []).filter((item) => Boolean(item.state_metadata?.activation_one?.sent_at));
   if (phase !== "recoleccion") return rows || [];
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
@@ -36459,6 +36605,9 @@ function rmsStationOutputItemSummary(phase = "", item = {}) {
     return `${quality?.label || "Sin calidad"} · ${quality?.detail || "Pendiente"}`;
   }
   if (phase === "curaduria") return `${rmsClassifiedProductName(item) || "Sin producto"} · ${rmsClassificationSourceLabel(item)}`;
+  if (phase === "clasificacion") return item.state_metadata?.activation_one?.sent_at
+    ? `Activación enviada · ${item.state_metadata.activation_one.material_labels?.join(", ") || "Propuesta registrada"}`
+    : "Pendiente de definir y enviar propuesta";
   return `${item.next_action?.title || item.raw_recommended_action || "Listo para avanzar"} · ${item.priority_label || "Prioridad media"}`;
 }
 
@@ -36469,13 +36618,17 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
     ? "lead(s) procesable(s)"
     : phase === "alimentacion"
       ? "lead(s) curado(s)"
-      : phase === "curaduria"
-        ? "lead(s) clasificado(s)"
-        : "lead(s) seleccionado(s)";
+    : phase === "curaduria"
+      ? "lead(s) clasificado(s)"
+        : phase === "clasificacion"
+          ? "lead(s) con activación registrada"
+          : "lead(s) seleccionado(s)";
   const emptyText = phase === "alimentacion"
     ? "Asigna calidad alta, media o baja para poner leads en la salida hacia Clasificador."
     : phase === "curaduria"
       ? "Guarda o confirma la clasificación por producto y selecciona los leads que ya pueden avanzar."
+      : phase === "clasificacion"
+        ? "Abre cada lead, decide los materiales, registra la atención y envíalo a Evaluación."
       : phase === "recoleccion"
         ? "Selecciona en la entrada los leads que sí cumplen el mínimo para pasar a Curaduría."
         : "Selecciona los leads que deben avanzar a la siguiente estación.";
@@ -36564,6 +36717,7 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
         </div>
         <small class="rms-station-visible-summary" aria-live="polite">Mostrando <strong data-rms-station-visible-count>${renderedRows.length}</strong> de ${display.matchingRows.length}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar para mantener rápida la estación` : ""}</small>
       </div>
+      ${rmsQualityControlConsoleMarkup(stage.key || "", rows, nextPhase)}
       ${rmsStationToolbarMarkup(rows, stage)}
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
       ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
@@ -36611,6 +36765,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const quality = rmsLeadQualityLabel(item);
   const curationAudit = rmsCurationAudit(item);
   const qualityValue = rmsLeadQualityValue(item);
+  const evaluationResponse = item.state_metadata?.activation_one_response || null;
   const statusMarkup = stage.key === "alimentacion"
     ? `${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida de Curaduría` : "Selecciona calidad para enviarlo a salida")}</small>`
     : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? curationAudit.label : classification)}</span>
@@ -36621,6 +36776,10 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
     ? `<div class="rms-station-inline-action">${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida` : "Define calidad")}</small></div>`
     : stage.key === "curaduria"
       ? `<div class="rms-station-inline-action"><span>${escapeHtml(rmsClassifiedProductName(item) || "Producto pendiente")}</span><small>${escapeHtml(rmsClassificationSourceLabel(item))}</small></div>`
+      : stage.key === "clasificacion"
+        ? `<div class="rms-station-inline-action rms-activation1-row-action ${item.state_metadata?.activation_one?.sent_at ? "is-complete" : ""}"><span>${escapeHtml(item.state_metadata?.activation_one?.sent_at ? "Activación registrada" : "Definir propuesta")}</span><small>${escapeHtml(item.state_metadata?.activation_one?.sent_at ? `Listo para Evaluación · ${item.state_metadata.activation_one.material_labels?.join(", ") || "material enviado"}` : "Abre el contacto para decidir qué enviar")}</small></div>`
+      : stage.key === "procesamiento"
+        ? `<div class="rms-station-inline-action rms-evaluation-row-action ${evaluationResponse?.status ? "is-answered" : ""}"><span>${escapeHtml(evaluationResponse?.label ? `Respuesta: ${evaluationResponse.label}` : "Esperando respuesta")}</span><small>${escapeHtml(evaluationResponse?.received_at ? `Registrada ${formatDate(evaluationResponse.received_at)}` : "Registra la respuesta para detener seguimientos")}</small></div>`
       : `<div class="rms-station-inline-action"><span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : classification)}</span><small>${escapeHtml(stage.key === "recoleccion" ? readiness.detail : `Score ${Number(item.priority_score || 0).toLocaleString("es-CO")} · Riesgo ${Number(item.risk_score || 0).toLocaleString("es-CO")}`)}</small></div>`;
   return `
     <article class="rms-station-lead-row is-${escapeHtml(stage.key || "station")} ${qualityValue ? `quality-${escapeHtml(qualityValue.toLowerCase())}` : "quality-pending"} ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" role="button" tabindex="0">
@@ -36642,6 +36801,7 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
       </div>
       ${stationActionMarkup}
       <div class="rms-station-row-actions">
+        ${stage.key === "procesamiento" ? `<button class="rms-station-row-operate" type="button" data-rms-evaluation-response="${escapeHtml(item.id)}" aria-label="Registrar respuesta de ${escapeHtml(item.name || "lead")}"><span class="material-symbols-outlined" aria-hidden="true">forum</span></button>` : ""}
         <button class="rms-station-row-detail" type="button" data-rms-review-capture="${escapeHtml(item.id)}" aria-label="Abrir detalle de ${escapeHtml(item.name || "lead")}">
           <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
         </button>
@@ -37060,6 +37220,14 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-phase-operation]").forEach((button) => {
     button.addEventListener("click", () => selectRmsPhaseForBulk(button.dataset.rmsPhaseOperation));
   });
+  root.querySelectorAll("[data-rms-evaluation-response]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const item = rmsOpportunityById(button.dataset.rmsEvaluationResponse);
+      if (item) openRmsEvaluationResponse(item);
+    });
+  });
 }
 
 function renderRmsStationInstantShell(phase = "", stages = []) {
@@ -37090,7 +37258,7 @@ function renderRmsStationInstantShell(phase = "", stages = []) {
         <div>
           <span class="mono-label">Estación abierta</span>
           <strong>${escapeHtml(stage.operation?.primaryAction || stage.operation?.name || "Operar")}</strong>
-          <small>Qori v137 modo anti-bloqueo: primero abre, luego sincroniza.</small>
+          <small>Cargando las oportunidades de esta estación.</small>
         </div>
       </section>
       <section class="rms-station-clean-shell rms-station-input-lane" aria-live="polite">
@@ -37287,13 +37455,13 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
       to_phase: item.stage || "curaduria",
       priority: rmsPriorityCode(item),
       recommended_action: options.clear ? "Clasificación de producto pendiente" : `Lead clasificado para ${nextDraft.product_name}`,
-      last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_curados",
+      last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_clasificar",
       last_material_sent: options.clear ? null : (nextDraft.inventory_product_id || nextDraft.product_name),
       revenue_potential: Number(item.revenue_potential || 0),
       reason: options.clear ? "Clasificación interna eliminada desde Clasificador." : `Clasificación interna en Clasificador: ${nextDraft.product_name}.`,
       metadata: {
         source_module: "rms_machine",
-        source_flow: "curados_product_classification",
+        source_flow: "clasificador_product_classification",
         from_phase: item.stage || "curaduria",
         rms_opportunity_id: item.id || null,
         lead_quality: rmsLeadQualityValue(item) || item.state_metadata?.lead_quality || null,
@@ -37314,6 +37482,8 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
 function rmsProductClassificationMetadata(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
   const selectedProduct = draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id);
+  const source = String(item.classification_source || "").toLowerCase();
+  if (!draft && !item.classified_product_id && source === "interest_without_inventory_match") return {};
   const productName = draft?.open_product_name || selectedProduct?.name || item.classified_product_name || item.product_interest || "";
   return productName ? {
     classified_product_id: selectedProduct?.id || item.classified_product_id || null,
@@ -37424,7 +37594,7 @@ function toggleRmsSelection(id = "", selected = false) {
     showFeedback("Primero selecciona calidad alta, media o baja para poner este lead en salida.", "info", { title: "Curaduría" });
     return;
   }
-  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsClassifiedProductName(item)) {
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
     if (checkbox) checkbox.checked = false;
     showFeedback("Primero clasifica este lead por producto o servicio interno.", "info", { title: "Clasificador" });
@@ -37470,8 +37640,8 @@ function selectRmsPhaseForBulk(phase = "") {
     const message = phase === "alimentacion"
       ? "La salida de Curaduría exige calidad alta, media o baja. Cualifica al menos un lead antes de enviarlo a Clasificador."
       : phase === "curaduria"
-        ? "La salida de Clasificador exige producto o servicio clasificado. Usa el selector de inventario o crea el producto."
-        : "La salida de Leads recolectados exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
+        ? "La salida de Clasificador exige producto o servicio confirmado. Usa el selector de inventario, guarda el nombre sugerido o crea el producto."
+        : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
@@ -37508,7 +37678,7 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
     },
     preprocesamiento: () => {
       setView("missions");
-      showFeedback("Prepara Control de calidad 1 con ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
+      showFeedback("Prepara Gamificar con ticket, trivia, recompensa, reward pass o beneficio anti-fuga.", "info", { title });
     },
     procesamiento: () => {
       setContactCenterTab("directory");
@@ -37612,6 +37782,10 @@ async function createRmsAgendaTaskFromOpportunity(item = {}) {
 
 async function executeRmsOperation(item = {}, options = {}) {
   if (!item?.source_id) return;
+  if (item.stage === "clasificacion") {
+    await openRmsActivation1Decision(item);
+    return;
+  }
   try {
     showFeedback("Ejecutando operación RMS...", "loading", { title: "Máquina RMS", timeout: 0 });
     const result = await api("/api/business/rms-machine/action", {
@@ -37685,8 +37859,12 @@ async function moveSelectedRmsPhase() {
         showFeedback("Todos los leads de Curaduría necesitan calidad alta, media o baja antes de pasar a Clasificador.", "info", { title: "Curaduría" });
         continue;
       }
-      if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+      if (item.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
         showFeedback("Todos los leads de Clasificador necesitan producto o servicio antes de avanzar.", "info", { title: "Clasificador" });
+        continue;
+      }
+      if (item.stage === "clasificacion" && !item.state_metadata?.activation_one?.sent_at) {
+        showFeedback("En Activación 1 debes abrir el lead, registrar la propuesta y la atención antes de enviarlo a Evaluación.", "info", { title: "Activación 1" });
         continue;
       }
       await api("/api/business/rms-machine/lead/phase", {
@@ -37699,13 +37877,13 @@ async function moveSelectedRmsPhase() {
           to_phase: toPhase,
           priority: qualityOption?.priority || (item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM"),
           recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || "",
-          last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : undefined,
+          last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "classifier_product_classified" : undefined,
           last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || undefined,
           revenue_potential: Number(item.revenue_potential || 0),
           reason: qualityOption ? `Lead cualificado en Curaduría como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead clasificado para ${productClassification.classified_product_name}.` : "Movimiento manual desde Mapa Operativo RMS",
           metadata: {
             source_module: "rms_machine",
-            source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_output",
+            source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "classifier_product_output" : "station_output",
             from_phase: item.stage,
             ...(qualityOption ? {
               lead_quality: qualityOption.value,
@@ -37767,8 +37945,12 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     showFeedback("Selecciona calidad alta, media o baja antes de enviar este lead a Clasificador.", "info", { title: "Curaduría" });
     return;
   }
-  if (item.stage === "curaduria" && !productClassification.classified_product_name) {
+  if (item.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     showFeedback("Clasifica este lead por producto o servicio interno antes de enviarlo.", "info", { title: "Clasificador" });
+    return;
+  }
+  if (item.stage === "clasificacion" && !item.state_metadata?.activation_one?.sent_at) {
+    showFeedback("Registra primero la propuesta, los materiales y la atención desde Activación 1.", "info", { title: "Activación 1" });
     return;
   }
   try {
@@ -37783,13 +37965,13 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
         to_phase: toPhase,
         priority: qualityOption?.priority || rmsPriorityCode(item),
         recommended_action: qualityOption ? `Curar lead de ${qualityOption.label.toLowerCase()}` : productClassification.classified_product_name ? `Clasificado para ${productClassification.classified_product_name}` : item.next_action?.title || item.raw_recommended_action || "",
-        last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "curados_product_classified" : options.last_operation || `move_to_${toPhase}`,
+        last_operation: qualityOption ? "funnel_quality_classified" : productClassification.classified_product_name ? "classifier_product_classified" : options.last_operation || `move_to_${toPhase}`,
         last_material_sent: qualityOption?.value || productClassification.classified_product_id || productClassification.classified_product_name || item.coverage_type || "",
         revenue_potential: Number(item.revenue_potential || 0),
         reason: qualityOption ? `Lead cualificado en Curaduría como ${qualityOption.label}.` : productClassification.classified_product_name ? `Lead clasificado para ${productClassification.classified_product_name}.` : options.reason || "Avance operativo desde pantalla de estación RMS.",
         metadata: {
           source_module: "rms_machine",
-          source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "curados_product_output" : "station_workspace",
+          source_flow: qualityOption ? "funnel_quality_output" : productClassification.classified_product_name ? "classifier_product_output" : "station_workspace",
           from_phase: item.stage || null,
           rms_opportunity_id: item.id || null,
           campaign_id: item.campaign_id || null,
@@ -37861,6 +38043,7 @@ function renderRmsLeadInspector() {
     </section>
     <div class="rms-inspector-actions">
       <button class="solid-button" type="button" data-rms-inspector-action="${escapeHtml(item.id)}">Ejecutar operación</button>
+      ${item.stage === "procesamiento" ? `<button class="ghost-button" type="button" data-rms-evaluation-response="${escapeHtml(item.id)}">Registrar respuesta</button>` : ""}
       <button class="ghost-button" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
       <button class="ghost-button" type="button" data-rms-detail="${escapeHtml(item.id)}">Abrir ficha completa</button>
     </div>
@@ -37966,6 +38149,7 @@ function ensureRmsCaptureReviewModal() {
       <div class="rms-capture-review-body" id="rmsCaptureReviewBody"><div class="empty-state compact">Cargando respuestas...</div></div>
       <footer class="rms-capture-review-actions">
         <button class="ghost-button" type="button" data-rms-capture-review-close>Volver a la estación</button>
+        <button class="solid-button hidden" type="button" id="rmsCaptureOpenActivation1"><span class="material-symbols-outlined">send</span> Definir propuesta y activar</button>
         <button class="solid-button" type="button" id="rmsCaptureOpenFullLead">Abrir ficha comercial completa</button>
       </footer>
     </article>
@@ -37979,6 +38163,346 @@ function ensureRmsCaptureReviewModal() {
 
 function closeRmsCaptureReview() {
   document.getElementById("rmsCaptureReviewModal")?.classList.add("hidden");
+}
+
+function rmsActivation1Type(activation = {}) {
+  return String(activation.activation_type || "").includes("TRIVIA") ? "TRIVIA" : "MICROGAME";
+}
+
+function rmsActivation1Choices() {
+  return (state.triviaLaunchers || []).filter((activation) => (
+    String(activation.status || "").toLowerCase() === "active" && activation.public_url
+  ));
+}
+
+function ensureRmsActivation1Modal() {
+  let modal = document.getElementById("rmsActivation1Modal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden";
+  modal.id = "rmsActivation1Modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "rmsActivation1Title");
+  modal.innerHTML = `
+    <article class="modal-card rms-activation1-modal-card">
+      <header class="rms-activation1-head">
+        <div><span class="mono-label">Activación 1 · decisión comercial</span><h3 id="rmsActivation1Title">Elegir activación</h3><p id="rmsActivation1Subtitle">Carga el contexto del contacto antes de enviar.</p></div>
+        <button class="icon-button" type="button" data-rms-activation1-close aria-label="Cerrar activación"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <div class="rms-activation1-body" id="rmsActivation1Body"><div class="empty-state compact">Cargando contacto y activaciones disponibles...</div></div>
+    </article>
+  `;
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-rms-activation1-close]")) modal.classList.add("hidden");
+  });
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function rmsActivation1ContactSummary(item = {}, detail = {}) {
+  const lead = detail.lead || {};
+  const interest = item.product_interest || item.top_interest || lead.top_interest || "Interés por confirmar";
+  const product = item.product_name || item.classified_product_name || item.product_interest || "Sin producto asignado";
+  return [
+    ["Contacto", lead.phone || item.phone || lead.email || item.email || "Sin dato de contacto"],
+    ["Interés", interest],
+    ["Producto", product],
+    ["Prioridad", item.priority_label || item.care_priority_label || "Media"],
+  ];
+}
+
+function renderRmsActivation1LegacyDecision(item = {}, detail = {}, selectedId = "") {
+  const modal = ensureRmsActivation1Modal();
+  const body = document.getElementById("rmsActivation1Body");
+  const lead = detail.lead || {};
+  const choices = rmsActivation1Choices();
+  const selected = choices.find((activation) => String(activation.id) === String(selectedId)) || choices[0] || null;
+  const title = document.getElementById("rmsActivation1Title");
+  const subtitle = document.getElementById("rmsActivation1Subtitle");
+  if (title) title.textContent = lead.name || item.name || "Contacto sin nombre";
+  if (subtitle) subtitle.textContent = "Revisa el contacto, elige una activación publicada y envíala por WhatsApp con registro en la ficha.";
+  if (!body) return;
+  const message = selected ? activationInviteMessage(selected, lead.name ? lead : item) : "";
+  body.innerHTML = `
+    <section class="rms-activation1-contact">
+      <div class="rms-activation1-avatar">${escapeHtml((lead.name || item.name || "C").trim().slice(0, 1).toUpperCase())}</div>
+      <div><strong>${escapeHtml(lead.name || item.name || "Contacto")}</strong><small>${escapeHtml(item.campaign_name || lead.campaign_name || "Sin campaña asociada")}</small></div>
+      <dl>${rmsActivation1ContactSummary(item, detail).map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>
+    </section>
+    <section class="rms-activation1-layout">
+      <div class="rms-activation1-catalog">
+        <div class="rms-activation1-section-head"><div><span class="mono-label">Catálogo disponible</span><h4>¿Qué activación le enviarás?</h4></div><small>${choices.length} activa(s)</small></div>
+        <div class="rms-activation1-choice-grid">
+          ${choices.map((activation) => `<button class="rms-activation1-choice ${String(activation.id) === String(selected?.id) ? "is-selected" : ""}" type="button" data-rms-activation1-choice="${escapeHtml(activation.id)}" aria-pressed="${String(activation.id) === String(selected?.id)}"><span class="material-symbols-outlined">${String(activation.activation_type || "").includes("TRIVIA") ? "quiz" : "sports_esports"}</span><span><strong>${escapeHtml(activation.title || "Activación")}</strong><small>${escapeHtml(activation.activation_label || activation.activation_type || "Experiencia interactiva")}</small><em>${escapeHtml(activation.campaign_name || "Sin campaña")}</em></span></button>`).join("") || `<div class="rms-activation1-empty"><span class="material-symbols-outlined">campaign</span><strong>No hay activaciones activas para enviar.</strong><small>Publica una desde Gaming Center y vuelve a esta estación.</small></div>`}
+        </div>
+      </div>
+      <aside class="rms-activation1-preview">
+        <span class="mono-label">Decisión seleccionada</span>
+        <strong>${escapeHtml(selected?.title || "Selecciona una activación")}</strong>
+        <small>${escapeHtml(selected?.description || "Elige una experiencia publicada para preparar el mensaje.")}</small>
+        <label><span>Mensaje que se abrirá en WhatsApp</span><textarea readonly rows="7">${escapeHtml(message)}</textarea></label>
+        <div class="rms-activation1-actions">
+          <button class="ghost-button" type="button" data-rms-activation1-copy ${selected ? "" : "disabled"}>Copiar mensaje</button>
+          <button class="solid-button" type="button" data-rms-activation1-send ${selected && (lead.phone || item.phone) ? "" : "disabled"}>Registrar y abrir WhatsApp <span class="material-symbols-outlined">send</span></button>
+        </div>
+        ${selected && !(lead.phone || item.phone) ? `<p class="form-message error">Este contacto no tiene teléfono para WhatsApp.</p>` : ""}
+      </aside>
+    </section>
+  `;
+  body.querySelectorAll("[data-rms-activation1-choice]").forEach((button) => button.addEventListener("click", () => renderRmsActivation1Decision(item, detail, button.dataset.rmsActivation1Choice || "")));
+  body.querySelector("[data-rms-activation1-copy]")?.addEventListener("click", async () => {
+    await navigator.clipboard?.writeText(message);
+    showFeedback("Mensaje de activación copiado.", "success", { title: "Activación 1" });
+  });
+  body.querySelector("[data-rms-activation1-send]")?.addEventListener("click", async (event) => {
+    if (!selected) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    const whatsappWindow = window.open("", "_blank");
+    if (whatsappWindow) whatsappWindow.opener = null;
+    try {
+      const result = await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}/activations`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          source_type: item.source_type || "PLAYER",
+          interactive_activation_id: selected.id,
+          activation_type: rmsActivation1Type(selected),
+          name: selected.title || "Activación RMS",
+          campaign_id: selected.campaign_id || null,
+          description: selected.description || null,
+          benefit_type: "CUSTOM",
+          benefit_value: {},
+          channel: "whatsapp",
+          message,
+          metadata: { source: "rms_activation_1", rms_phase: "clasificacion" },
+        }),
+      });
+      const phone = whatsappPhoneFromInput(lead.phone || item.phone || "");
+      const whatsappUrl = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`;
+      if (whatsappWindow) {
+        whatsappWindow.location.href = whatsappUrl;
+      } else {
+        await navigator.clipboard?.writeText(message);
+        showFeedback("La activación quedó registrada. Copiamos el mensaje porque el navegador bloqueó la nueva pestaña.", "info", { title: "Activación 1" });
+      }
+      modal.classList.add("hidden");
+      state.leadCrmLoaded = false;
+      await Promise.all([refreshLeadCrm({ quiet: true, keepOffset: true }), loadRmsMachineData({ force: true, quiet: true })]);
+      renderRmsMachineView();
+      showFeedback(`Activación registrada para ${lead.name || item.name || "el contacto"}.`, "success", { title: "Activación 1" });
+      return result;
+    } catch (error) {
+      whatsappWindow?.close();
+      showFeedback(error.message || "No se pudo registrar la activación.", "error", { title: "Activación 1" });
+      button.disabled = false;
+    }
+  });
+}
+
+function rmsActivation1CatalogChoices() {
+  return (state.smartCatalogs || []).filter((catalog) => smartCatalogPublicUrl(catalog));
+}
+
+function rmsActivation1Message({ lead = {}, item = {}, materials = [], products = [], catalogUrl = "", benefitSummary = "", interactive = null, proposalSummary = "" } = {}) {
+  const name = lead.name || item.name || "Hola";
+  const parts = [proposalSummary || `Hola ${name}, tenemos una propuesta preparada para ti.`];
+  if (materials.includes("products") && products.length) parts.push(`Productos: ${products.map((product) => `${product.name}${product.price === null ? "" : ` (${money(product.price)})`}`).join(", ")}.`);
+  if (materials.includes("catalog") && catalogUrl) parts.push(`Catálogo: ${catalogUrl}`);
+  if (materials.some((material) => material === "benefit" || material === "ticket") && benefitSummary) parts.push(`Beneficio: ${benefitSummary}`);
+  if (materials.includes("interactive") && interactive?.public_url) parts.push(`${interactive.title || "Activación"}: ${interactive.public_url}`);
+  return parts.join("\n\n");
+}
+
+function renderRmsActivation1Decision(item = {}, detail = {}) {
+  const modal = ensureRmsActivation1Modal();
+  const body = document.getElementById("rmsActivation1Body");
+  const lead = detail.lead || {};
+  const choices = rmsActivation1Choices();
+  const catalogs = rmsActivation1CatalogChoices();
+  const products = activeInventoryProducts().slice(0, 18);
+  const classifiedProduct = String(item.classified_product_id || "");
+  const defaultProducts = products.filter((product) => String(product.id) === classifiedProduct || String(product.name || "").toLowerCase() === String(item.classified_product_name || item.product_interest || "").toLowerCase());
+  const defaultMaterials = defaultProducts.length ? ["products"] : [];
+  const initialMessage = rmsActivation1Message({ lead, item, materials: defaultMaterials, products: defaultProducts });
+  const title = document.getElementById("rmsActivation1Title");
+  const subtitle = document.getElementById("rmsActivation1Subtitle");
+  if (title) title.textContent = lead.name || item.name || "Contacto sin nombre";
+  if (subtitle) subtitle.textContent = "Define la propuesta, deja evidencia de la atención y envía el lead a Evaluación solo cuando todo esté registrado.";
+  if (!body) return;
+  body.innerHTML = `
+    <section class="rms-activation1-contact">
+      <div class="rms-activation1-avatar">${escapeHtml((lead.name || item.name || "C").trim().slice(0, 1).toUpperCase())}</div>
+      <div><strong>${escapeHtml(lead.name || item.name || "Contacto")}</strong><small>${escapeHtml(item.campaign_name || lead.campaign_name || "Sin campaña asociada")}</small></div>
+      <dl>${rmsActivation1ContactSummary(item, detail).map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>
+    </section>
+    <form class="rms-activation1-form" data-rms-activation1-form>
+      <section class="rms-activation1-material-panel">
+        <div class="rms-activation1-section-head"><div><span class="mono-label">01 · material a enviar</span><h4>¿Qué recibirá este lead?</h4></div><small>Selecciona uno o varios</small></div>
+        <div class="rms-activation1-material-grid">
+          ${[["catalog", "Catálogo", "menú o portafolio publicado", "menu_book"], ["products", "Productos con precio", "oferta concreta desde inventario", "sell"], ["benefit", "Beneficio", "descuento, bonus o condición", "redeem"], ["ticket", "Ticket", "cupón o pase comercial", "confirmation_number"], ["interactive", "Activación", "experiencia publicada para participar", "sports_esports"]].map(([value, label, copy, icon]) => `<label class="rms-activation1-material ${defaultMaterials.includes(value) ? "is-checked" : ""}"><input type="checkbox" value="${value}" data-rms-activation1-material ${defaultMaterials.includes(value) ? "checked" : ""}><span class="material-symbols-outlined">${icon}</span><span><strong>${label}</strong><small>${copy}</small></span></label>`).join("")}
+        </div>
+      </section>
+      <section class="rms-activation1-decision-grid">
+        <div class="rms-activation1-detail-panel">
+          <div class="rms-activation1-section-head"><div><span class="mono-label">02 · propuesta comercial</span><h4>Oferta y materiales reales</h4></div></div>
+          <div class="rms-activation1-fields">
+            <label><span>Catálogo a compartir</span><select data-rms-activation1-catalog><option value="">No enviar catálogo</option>${catalogs.map((catalog) => `<option value="${escapeHtml(smartCatalogPublicUrl(catalog))}">${escapeHtml(catalog.name || catalog.title || "Catálogo Qori")}</option>`).join("")}</select></label>
+            <label><span>Canal de atención</span><select data-rms-activation1-channel><option>WhatsApp</option><option>Llamada</option><option>Email</option><option>Presencial</option><option>Otro</option></select></label>
+            <div class="rms-activation1-product-select"><span>Productos con precio</span><div>${products.map((product) => `<label><input type="checkbox" value="${escapeHtml(product.id)}" data-rms-activation1-product ${defaultProducts.some((selected) => String(selected.id) === String(product.id)) ? "checked" : ""}><span>${escapeHtml(product.name || "Producto")}</span><strong>${escapeHtml(money(product.unit_price || product.price || 0))}</strong></label>`).join("") || `<small>No hay productos activos; puedes explicar la oferta en la propuesta.</small>`}</div></div>
+            <label class="span-2"><span>Beneficio o ticket enviado</span><input type="text" maxlength="1200" data-rms-activation1-benefit placeholder="Ej.: 15% de descuento hasta el viernes o ticket de experiencia"></label>
+            <label class="span-2"><span>Activación interactiva (opcional)</span><select data-rms-activation1-interactive><option value="">No enviar activación interactiva</option>${choices.map((activation) => `<option value="${escapeHtml(activation.id)}">${escapeHtml(activation.title || "Activación")} · ${escapeHtml(activation.campaign_name || "Sin campaña")}</option>`).join("")}</select></label>
+            <label class="span-2"><span>Propuesta enviada <b>obligatorio</b></span><textarea rows="3" maxlength="3000" required data-rms-activation1-proposal placeholder="Explica qué se le propuso, condiciones, precio o siguiente valor para el lead."></textarea></label>
+            <label class="span-2"><span>Cómo se atendió y qué se envió <b>obligatorio</b></span><textarea rows="3" maxlength="3000" required data-rms-activation1-attention placeholder="Deja la nota interna: contexto de conversación, material enviado, objeciones y compromiso."></textarea></label>
+          </div>
+        </div>
+        <aside class="rms-activation1-preview">
+          <span class="mono-label">03 · trazabilidad y salida</span>
+          <strong>Se registrará una nota en la ficha</strong>
+          <small>La nota guarda materiales, precios, propuesta, beneficio/ticket y atención. Después el lead se mueve a Evaluación para esperar su respuesta.</small>
+          <label><span>Mensaje para el canal</span><textarea rows="8" maxlength="5000" data-rms-activation1-message>${escapeHtml(initialMessage)}</textarea></label>
+          <button class="ghost-button compact" type="button" data-rms-activation1-refresh>Actualizar mensaje</button>
+          <p class="rms-activation1-validation" data-rms-activation1-validation></p>
+          <div class="rms-activation1-actions"><button class="solid-button" type="submit" data-rms-activation1-submit>Registrar activación y enviar a Evaluación <span class="material-symbols-outlined">arrow_forward</span></button></div>
+        </aside>
+      </section>
+    </form>
+  `;
+  const form = body.querySelector("[data-rms-activation1-form]");
+  const readForm = () => {
+    const materials = Array.from(form.querySelectorAll("[data-rms-activation1-material]:checked")).map((input) => input.value);
+    const selectedProducts = Array.from(form.querySelectorAll("[data-rms-activation1-product]:checked")).map((input) => products.find((product) => String(product.id) === String(input.value))).filter(Boolean).map((product) => ({ id: product.id, name: product.name, price: Number(product.unit_price || product.price || 0), currency: product.currency || "COP" }));
+    const interactive = choices.find((activation) => String(activation.id) === String(form.querySelector("[data-rms-activation1-interactive]")?.value || "")) || null;
+    return { materials, products: selectedProducts, catalogUrl: form.querySelector("[data-rms-activation1-catalog]")?.value || "", benefitSummary: form.querySelector("[data-rms-activation1-benefit]")?.value.trim() || "", interactive, proposalSummary: form.querySelector("[data-rms-activation1-proposal]")?.value.trim() || "", attentionNote: form.querySelector("[data-rms-activation1-attention]")?.value.trim() || "", channel: form.querySelector("[data-rms-activation1-channel]")?.value || "WhatsApp", message: form.querySelector("[data-rms-activation1-message]")?.value.trim() || "" };
+  };
+  form.querySelectorAll("[data-rms-activation1-material]").forEach((input) => input.addEventListener("change", () => input.closest(".rms-activation1-material")?.classList.toggle("is-checked", input.checked)));
+  form.querySelectorAll("[data-rms-activation1-product]").forEach((input) => input.addEventListener("change", () => {
+    if (!input.checked) return;
+    const material = form.querySelector('[data-rms-activation1-material][value="products"]');
+    if (material && !material.checked) {
+      material.checked = true;
+      material.closest(".rms-activation1-material")?.classList.add("is-checked");
+    }
+  }));
+  form.querySelector("[data-rms-activation1-refresh]")?.addEventListener("click", () => {
+    const value = readForm();
+    form.querySelector("[data-rms-activation1-message]").value = rmsActivation1Message({ lead, item, ...value });
+  });
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const value = readForm();
+    const validation = form.querySelector("[data-rms-activation1-validation]");
+    const fail = (text) => { validation.textContent = text; validation.className = "rms-activation1-validation error"; };
+    if (!value.materials.length) return fail("Selecciona al menos un material para enviar.");
+    if (value.materials.includes("catalog") && !value.catalogUrl) return fail("Elige el catálogo que se compartirá.");
+    if (value.materials.includes("products") && !value.products.length) return fail("Selecciona al menos un producto con precio.");
+    if ((value.materials.includes("benefit") || value.materials.includes("ticket")) && !value.benefitSummary) return fail("Describe el beneficio o ticket enviado.");
+    if (value.materials.includes("interactive") && !value.interactive) return fail("Elige la activación interactiva que se enviará.");
+    if (!value.proposalSummary || !value.attentionNote) return fail("Completa la propuesta y la nota de atención.");
+    const submit = form.querySelector("[data-rms-activation1-submit]");
+    submit.disabled = true;
+    const phone = whatsappPhoneFromInput(lead.phone || item.phone || "");
+    const whatsappWindow = value.channel === "WhatsApp" && phone ? window.open("", "_blank") : null;
+    if (whatsappWindow) whatsappWindow.opener = null;
+    try {
+      if (value.interactive) {
+        await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}/activations`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: item.source_type || "PLAYER", interactive_activation_id: value.interactive.id, activation_type: rmsActivation1Type(value.interactive), name: value.interactive.title || "Activación RMS", campaign_id: value.interactive.campaign_id || null, description: value.interactive.description || null, benefit_type: "CUSTOM", benefit_value: {}, channel: value.channel.toLowerCase(), message: value.message, metadata: { source: "rms_activation_1", rms_phase: "clasificacion" } }) });
+      }
+      await api("/api/business/rms-machine/activation-one", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", materials: value.materials, products: value.products, catalog_url: value.catalogUrl || null, benefit_summary: value.benefitSummary || null, proposal_summary: value.proposalSummary, attention_note: value.attentionNote, channel: value.channel, message: value.message || rmsActivation1Message({ lead, item, ...value }), interactive_activation_id: value.interactive?.id || null }) });
+      if (whatsappWindow) whatsappWindow.location.href = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(value.message || rmsActivation1Message({ lead, item, ...value }))}`;
+      modal.classList.add("hidden");
+      state.leadCrmLoaded = false;
+      await Promise.all([refreshLeadCrm({ quiet: true, keepOffset: true }), loadRmsMachineData({ force: true, quiet: true })]);
+      renderRmsMachineView();
+      showFeedback(`${lead.name || item.name || "El lead"} quedó en Evaluación esperando respuesta.`, "success", { title: "Activación 1" });
+    } catch (error) {
+      whatsappWindow?.close();
+      fail(error.message || "No se pudo registrar la Activación 1.");
+      submit.disabled = false;
+    }
+  });
+}
+
+async function openRmsActivation1Decision(item = {}, detail = null) {
+  const modal = ensureRmsActivation1Modal();
+  modal.classList.remove("hidden");
+  const body = document.getElementById("rmsActivation1Body");
+  if (body) body.innerHTML = '<div class="empty-state compact">Cargando contacto y activaciones disponibles...</div>';
+  try {
+    const [leadDetail, activations] = await Promise.all([
+      detail || api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() }),
+      apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [] }),
+      loadInventoryProducts({ quiet: true }),
+      loadSmartCatalogData({ quiet: true }),
+    ]);
+    state.triviaLaunchers = activations.activations || activations.trivias || [];
+    renderRmsActivation1Decision(item, leadDetail || {}, "");
+  } catch (error) {
+    if (body) body.innerHTML = `<div class="rms-activation1-empty"><strong>No se pudo cargar esta decisión.</strong><small>${escapeHtml(error.message || "Intenta nuevamente.")}</small></div>`;
+  }
+}
+
+function ensureRmsEvaluationResponseModal() {
+  let modal = document.getElementById("rmsEvaluationResponseModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.className = "modal-shell hidden";
+  modal.id = "rmsEvaluationResponseModal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.innerHTML = `
+    <article class="modal-card rms-evaluation-response-card">
+      <header class="rms-evaluation-response-head"><div><span class="mono-label">Evaluación · respuesta del lead</span><h3 id="rmsEvaluationResponseTitle">Registrar respuesta</h3><p>La respuesta detiene los seguimientos pendientes y deja evidencia en la ficha.</p></div><button class="icon-button" type="button" data-rms-evaluation-close aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button></header>
+      <form class="rms-evaluation-response-form" id="rmsEvaluationResponseForm">
+        <label><span>Respuesta recibida</span><select name="response_status"><option value="INTERESTED">Interesado</option><option value="PRICE_QUESTION">Pregunta por precio</option><option value="NEEDS_TIME">Necesita tiempo</option><option value="MEETING_BOOKED">Reunión agendada</option><option value="NOT_INTERESTED">No interesado</option><option value="NO_RESPONSE">Sin respuesta</option></select></label>
+        <label><span>Qué dijo el lead y qué se acordó</span><textarea name="response_note" rows="5" maxlength="3000" required placeholder="Ej.: Revisó el catálogo, pregunta por disponibilidad y solicita llamada mañana a las 10:00."></textarea></label>
+        <p class="rms-evaluation-response-message" data-rms-evaluation-message></p>
+        <footer><button class="ghost-button" type="button" data-rms-evaluation-close>Cancelar</button><button class="solid-button" type="submit">Guardar respuesta <span class="material-symbols-outlined">check</span></button></footer>
+      </form>
+    </article>
+  `;
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-rms-evaluation-close]")) modal.classList.add("hidden");
+  });
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function openRmsEvaluationResponse(item = {}) {
+  const modal = ensureRmsEvaluationResponseModal();
+  const form = modal.querySelector("#rmsEvaluationResponseForm");
+  const title = modal.querySelector("#rmsEvaluationResponseTitle");
+  const message = modal.querySelector("[data-rms-evaluation-message]");
+  if (!form || !message) return;
+  if (title) title.textContent = item.name || "Registrar respuesta";
+  form.reset();
+  const existing = item.state_metadata?.activation_one_response || {};
+  form.elements.response_status.value = existing.status || "INTERESTED";
+  form.elements.response_note.value = existing.note || "";
+  message.textContent = existing.status ? `Última respuesta: ${existing.label || existing.status}. Al guardar se actualizará el registro.` : "Al registrar una respuesta, Qori cancela los seguimientos automáticos que todavía estén pendientes.";
+  modal.classList.remove("hidden");
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    message.textContent = "Guardando respuesta y actualizando seguimientos...";
+    try {
+      const responseStatus = form.elements.response_status.value;
+      const responseNote = form.elements.response_note.value.trim();
+      const result = await api("/api/business/rms-machine/evaluation-response", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", response_status: responseStatus, response_note: responseNote }) });
+      modal.classList.add("hidden");
+      state.rmsMachineLoaded = false;
+      state.leadCrmLoaded = false;
+      await Promise.all([loadRmsMachineData({ force: true, quiet: true }), refreshLeadCrm({ quiet: true, keepOffset: true })]);
+      renderRmsMachineView();
+      showFeedback(`Respuesta registrada. ${Number(result.cancelled_followups || 0)} seguimiento(s) pendiente(s) actualizado(s).`, "success", { title: "Evaluación" });
+    } catch (error) {
+      message.textContent = error.message || "No se pudo guardar la respuesta.";
+      message.className = "rms-evaluation-response-message error";
+      submit.disabled = false;
+    }
+  };
 }
 
 function rmsCaptureResponseText(value) {
@@ -38190,6 +38714,11 @@ async function openRmsCaptureReview(item = {}) {
   if (subtitle) subtitle.textContent = "Consultando datos, respuestas y contexto comercial...";
   if (body) body.innerHTML = '<div class="empty-state compact">Cargando respuestas del beneficiario...</div>';
   const fullLeadButton = document.getElementById("rmsCaptureOpenFullLead");
+  const activationButton = document.getElementById("rmsCaptureOpenActivation1");
+  activationButton?.classList.toggle("hidden", item.stage !== "clasificacion");
+  if (activationButton && item.stage === "clasificacion") {
+    activationButton.onclick = () => openRmsActivation1Decision(item);
+  }
   if (fullLeadButton) {
     fullLeadButton.onclick = () => {
       closeRmsCaptureReview();
@@ -38199,6 +38728,9 @@ async function openRmsCaptureReview(item = {}) {
   try {
     const detail = await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() });
     renderRmsCaptureReview(detail, item);
+    if (activationButton) {
+      activationButton.onclick = () => openRmsActivation1Decision(item, detail);
+    }
   } catch (error) {
     if (body) body.innerHTML = `<div class="rms-capture-review-empty"><strong>No se pudieron cargar las respuestas.</strong><p>${escapeHtml(error.message || "Intenta nuevamente.")}</p></div>`;
   }
@@ -38642,7 +39174,7 @@ function renderMissionActiveList(seasons = []) {
       <div class="mission-active-head">
         <div>
           <span class="mono-label">${escapeHtml(missionRankingLabel(season))}</span>
-          <h4>${escapeHtml(season.name || "Dinámica Sales Machine")}</h4>
+          <h4>${escapeHtml(season.name || "Dinámica Qori")}</h4>
           <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
         </div>
         <span class="status-chip ${missionStatusClass(season.status)}">${escapeHtml(missionStatusLabel(season.status))}</span>
@@ -38825,7 +39357,7 @@ function renderMissionRewards(rewards = []) {
     <article class="mission-reward-card">
       <div>
         <strong>${escapeHtml(reward.reward_name || "Recompensa")}</strong>
-        <small>${escapeHtml(reward.season_name || "Misión Sales Machine")}</small>
+        <small>${escapeHtml(reward.season_name || "Misión Qori")}</small>
       </div>
       <button class="ghost-button" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Marcar entregado</button>
     </article>
@@ -38945,10 +39477,10 @@ async function submitMissionWizard(event) {
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
     closeMissionWizard();
-    showFeedback("Dinámica Sales Machine creada y conectada con el portal.", "success", { title: "Misiones Sales Machine" });
+    showFeedback("Dinámica Qori creada y conectada con el portal.", "success", { title: "Misiones Qori" });
   } catch (error) {
     if (missionWizardMessage) missionWizardMessage.textContent = error.message || "No se pudo crear la dinámica.";
-    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Sales Machine" });
+    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Qori" });
   }
 }
 
@@ -38961,7 +39493,7 @@ async function createMissionAgendaTasks(seasonId, options = {}) {
       body: JSON.stringify({ season_id: seasonId }),
     });
     state.leadAgendaLoaded = false;
-    if (!options.quiet) showFeedback("Tareas de Misiones Sales Machine creadas en la agenda.", "success", { title: "Agenda" });
+    if (!options.quiet) showFeedback("Tareas de Misiones Qori creadas en la agenda.", "success", { title: "Agenda" });
   } catch (error) {
     if (!options.quiet) showFeedback(error.message || "No se pudieron crear las tareas.", "error", { title: "Agenda" });
   }
@@ -38977,9 +39509,9 @@ async function deliverMissionReward(rewardId) {
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
-    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Sales Machine" });
+    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Sales Machine" });
+    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Qori" });
   }
 }
 
@@ -40183,6 +40715,10 @@ document.addEventListener("keydown", (event) => {
     closeRmsCaptureReview();
     return;
   }
+  if (event.key === "Escape" && !document.getElementById("rmsActivation1Modal")?.classList.contains("hidden")) {
+    document.getElementById("rmsActivation1Modal")?.classList.add("hidden");
+    return;
+  }
   if (event.key === "Escape" && state.chartFocus.open) {
     closeChartFocusMode();
     return;
@@ -40543,11 +41079,11 @@ activationFormBuilder?.addEventListener("input", syncActivationFormBuilder);
 smartCatalogTabButtons.forEach((button) => {
   button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
 });
-smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Sales Machine" })));
-smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
+smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Qori" })));
+smartCatalogSeedQoriButton?.addEventListener("click", async () => {
   try {
-    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos Sales Machine", timeout: 0 });
-    const data = await api("/api/business/catalogs/templates/doctor-angie", {
+    showFeedback("Creando ejemplo Productos de Qori...", "loading", { title: "Catálogos Qori", timeout: 0 });
+    const data = await api("/api/business/catalogs/templates/Qori", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({}),
@@ -40555,9 +41091,9 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     await refreshSmartCatalogs({ quiet: true });
     setSmartCatalogTab("products");
-    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos Sales Machine" });
+    showFeedback("Ejemplo creado. Personaliza productos, marca y WhatsApp antes de publicar.", "success", { title: "Catálogos Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Sales Machine" });
+    showFeedback(error.message || "No se pudo crear el ejemplo.", "error", { title: "Catálogos Qori" });
   }
 });
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);
@@ -40605,12 +41141,18 @@ document.getElementById("workspace")?.addEventListener("click", async (event) =>
 smartCatalogTable?.addEventListener("click", async (event) => {
   const selectButton = event.target.closest("[data-smart-catalog-select]");
   const copyButton = event.target.closest("[data-smart-catalog-copy]");
+  const deleteButton = event.target.closest("[data-smart-catalog-delete]");
   if (selectButton) {
     await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
     renderSmartCatalogView();
+    return;
   }
   if (copyButton) {
     await copySmartCatalogLink(copyButton.dataset.smartCatalogCopy);
+    return;
+  }
+  if (deleteButton) {
+    await archiveSmartCatalog(deleteButton.dataset.smartCatalogDelete);
   }
 });
 smartCatalogProductTable?.addEventListener("click", async (event) => {

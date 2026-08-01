@@ -98,6 +98,7 @@ const {
 } = require("../controllers/leadCrmController");
 const {
   createAgendaTask: createRmsAgendaTask,
+  executeActivationOneAction: executeRmsActivationOne,
   dailyQueue: rmsDailyQueue,
   events: rmsEvents,
   executeAction: executeRmsAction,
@@ -106,6 +107,7 @@ const {
   machine: rmsMachine,
   metrics: rmsMetrics,
   movePhase: moveRmsPhase,
+  recordEvaluationResponse: rmsRecordEvaluationResponse,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -162,6 +164,8 @@ router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
+router.post("/rms-machine/activation-one", executeRmsActivationOne);
+router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/action", executeRmsAction);
 router.post("/rms-machine/bulk-action", executeRmsBulkAction);
 router.patch("/rms-machine/lead/phase", moveRmsPhase);

@@ -3,12 +3,14 @@ const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const {
   createRmsAgendaTask,
+  executeActivationOne,
   executeRmsAction,
   executeRmsBulkAction,
   getDailyQueue,
   listRmsEvents,
   listRmsOpportunities,
   moveRmsLeadPhase,
+  recordRmsEvaluationResponse,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 
@@ -63,6 +65,32 @@ const actionSchema = z.object({
   create_task: z.boolean().optional(),
   advance_phase: z.boolean().optional(),
   template_values: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const activationOneSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  materials: z.array(z.enum(["catalog", "products", "benefit", "ticket", "interactive"])).min(1).max(5),
+  products: z.array(z.object({
+    id: z.string().uuid().optional().nullable(),
+    name: z.string().trim().min(1).max(240),
+    price: z.number().min(0).optional().nullable(),
+    currency: z.string().trim().max(8).optional().nullable(),
+  })).max(12).optional().default([]),
+  catalog_url: z.string().trim().max(1200).optional().nullable(),
+  benefit_summary: z.string().trim().max(1200).optional().nullable(),
+  proposal_summary: z.string().trim().min(4).max(3000),
+  attention_note: z.string().trim().min(4).max(3000),
+  channel: z.string().trim().max(80).optional().nullable(),
+  message: z.string().trim().max(5000).optional().nullable(),
+  interactive_activation_id: z.string().uuid().optional().nullable(),
+});
+
+const evaluationResponseSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  response_status: z.enum(["INTERESTED", "PRICE_QUESTION", "NEEDS_TIME", "NOT_INTERESTED", "NO_RESPONSE", "MEETING_BOOKED"]),
+  response_note: z.string().trim().min(3).max(3000),
 });
 
 const bulkActionSchema = actionSchema.omit({ source_id: true, source_type: true }).extend({
@@ -129,6 +157,24 @@ async function executeAction(req, res, next) {
   }
 }
 
+async function executeActivationOneAction(req, res, next) {
+  try {
+    const body = validate(activationOneSchema, req.body);
+    res.status(201).json(await executeActivationOne(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function recordEvaluationResponse(req, res, next) {
+  try {
+    const body = validate(evaluationResponseSchema, req.body);
+    res.status(201).json(await recordRmsEvaluationResponse(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function executeBulkAction(req, res, next) {
   try {
     const body = validate(bulkActionSchema, req.body);
@@ -150,10 +196,12 @@ module.exports = {
   createAgendaTask,
   dailyQueue,
   events,
+  executeActivationOneAction,
   executeAction,
   executeBulkAction,
   journeys,
   machine,
   metrics,
   movePhase,
+  recordEvaluationResponse,
 };

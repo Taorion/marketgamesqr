@@ -1,20 +1,20 @@
 const { query, withTransaction } = require("../config/db");
 const { badRequest, notFound } = require("../utils/http");
-const { createLeadAgendaItem, listLeadCrmRows } = require("./leadCrmService");
+const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
 
 const RMS_PHASES = [
-  { key: "recoleccion", label: "Recolector de Oportunidades", short_label: "Recolectar" },
-  { key: "alimentacion", label: "Embudo de Entrada", short_label: "Alimentar" },
-  { key: "curaduria", label: "Curados", short_label: "Curados" },
-  { key: "clasificacion", label: "Clasificador RMS", short_label: "Clasificar" },
-  { key: "preprocesamiento", label: "Preprocesador Gamificado", short_label: "Gamificar" },
-  { key: "procesamiento", label: "Maquina RMS de Conversion", short_label: "Procesar" },
-  { key: "control_anti_fuga", label: "Control Anti-Fuga", short_label: "Controlar" },
-  { key: "accion_correctiva", label: "Recuperacion RMS", short_label: "Corregir" },
-  { key: "cierre", label: "Cierre Comercial", short_label: "Cerrar" },
-  { key: "revenue_generado", label: "Revenue Generado", short_label: "Revenue" },
-  { key: "postventa", label: "Postventa Gamificada", short_label: "Postventa" },
-  { key: "inteligencia", label: "Inteligencia RMS", short_label: "Optimizar" },
+  { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
+  { key: "alimentacion", label: "Curaduría", short_label: "Curaduría" },
+  { key: "curaduria", label: "Clasificador", short_label: "Clasificador" },
+  { key: "clasificacion", label: "Activación 1", short_label: "Activación 1" },
+  { key: "preprocesamiento", label: "Control de calidad 1", short_label: "Control calidad 1" },
+  { key: "procesamiento", label: "Evaluación", short_label: "Evaluación" },
+  { key: "control_anti_fuga", label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
+  { key: "accion_correctiva", label: "Negociación", short_label: "Negociación" },
+  { key: "cierre", label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
+  { key: "revenue_generado", label: "Control de calidad 2", short_label: "Control calidad 2" },
+  { key: "postventa", label: "Activación 2", short_label: "Activación 2" },
+  { key: "inteligencia", label: "Inteligencia RMS", short_label: "Inteligencia" },
 ];
 
 const STAGES = RMS_PHASES;
@@ -36,16 +36,16 @@ const LEGACY_PHASE_ALIASES = {
 const INDUSTRIAL_PROCESS = [
   { key: "recoleccion", label: "Recoleccion", phase: "recoleccion", description: "QR, activaciones, formularios, referidos, campanas y contactos existentes." },
   { key: "alimentacion", label: "Alimentacion", phase: "alimentacion", description: "La persona entra oficialmente como materia prima comercial RMS." },
-  { key: "curaduria", label: "Curados", phase: "curaduria", description: "Se recibe la calidad del embudo y se clasifica por producto o servicio interno." },
-  { key: "clasificacion", label: "Clasificacion operativa", phase: "clasificacion", description: "Se separa por estado comercial, prioridad, ticket, temperatura y posibilidad de avance." },
-  { key: "preprocesamiento", label: "Preprocesamiento gamificado", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
-  { key: "procesamiento", label: "Procesamiento comercial", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
-  { key: "control", label: "Control anti-fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
-  { key: "correccion", label: "Accion correctiva", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
-  { key: "cierre", label: "Cierre comercial", phase: "cierre", description: "Interes, propuesta, beneficio, cobro y pago se ensamblan en venta." },
-  { key: "revenue", label: "Revenue generado", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
+  { key: "curaduria", label: "Clasificador", phase: "curaduria", description: "Se asigna producto o servicio interno para contactar al lead con una oferta clara." },
+  { key: "clasificacion", label: "Activación 1", phase: "clasificacion", description: "Se define y envía la propuesta: catálogo, productos con precio, beneficio, ticket o activación; queda registrada antes de esperar respuesta." },
+  { key: "preprocesamiento", label: "Control de calidad 1", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
+  { key: "procesamiento", label: "Evaluación", phase: "procesamiento", description: "Se espera y registra la respuesta del lead frente a la propuesta enviada para decidir negociación, corrección o cierre." },
+  { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
+  { key: "correccion", label: "Negociación", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
+  { key: "cierre", label: "Ventas atribuidas", phase: "cierre", description: "Interes, propuesta, beneficio, cobro y pago se ensamblan en venta." },
+  { key: "revenue", label: "Control de calidad 2", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
   { key: "postventa", label: "Postventa", phase: "postventa", description: "Agradecimiento, garantia, ticket proxima compra, encuesta o programa VIP." },
-  { key: "retroalimentacion", label: "Retroalimentacion", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
+  { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
 ];
 
 const PHASE_OPERATIONS = {
@@ -80,13 +80,13 @@ const PHASE_OPERATIONS = {
     whatsappTemplateKey: "first_contact",
   },
   clasificacion: {
-    primaryAction: "Clasificar estado comercial",
-    primaryActionKey: "classify_lead",
-    suggestedMaterialType: "score_estado_prioridad",
-    materialLabel: "Nuevo, interesado, caliente, comprador o dormido",
-    buttonLabel: "Clasificar",
-    nextPhase: "preprocesamiento",
-    agendaTaskType: "classification",
+    primaryAction: "Activar propuesta comercial",
+    primaryActionKey: "activate_commercial_proposal",
+    suggestedMaterialType: "catalogo_productos_beneficio_ticket",
+    materialLabel: "Catálogo, productos con precio, beneficio, ticket o activación interactiva",
+    buttonLabel: "Activar y enviar a Evaluación",
+    nextPhase: "procesamiento",
+    agendaTaskType: "activation",
     whatsappTemplateKey: "send_catalog",
   },
   preprocesamiento: {
@@ -278,6 +278,22 @@ function productClassificationFor(row = {}, stateRow = null, inventoryProducts =
       };
     }
   }
+  const activationProductName = firstPresent(
+    metadata.rms_intake?.product_interest_mode === "PROMOTED_PRODUCT" ? metadata.rms_intake?.product_interest : "",
+    metadata.activation_form?.product_interest_mode === "PROMOTED_PRODUCT" ? metadata.activation_form?.product_interest : "",
+    metadata.activation_form?.product_name
+  );
+  if (activationProductName) {
+    const product = inventoryProducts.find((item) => normalizeProductLookup(item.name) === normalizeProductLookup(activationProductName));
+    return {
+      product_id: product?.id || null,
+      product_name: product?.name || activationProductName,
+      product_category: product?.category || "",
+      source: "auto_activation_product",
+      confidence: product?.id ? 1 : 0.85,
+      is_manual: false,
+    };
+  }
   const interest = firstPresent(
     row.top_interest,
     row.top_product,
@@ -407,9 +423,8 @@ function deriveRmsPhase(row = {}) {
 
   if ((expiredTickets > 0 && purchases === 0) || staleDays > 60 || ["INACTIVE", "LOST"].includes(status)) return "accion_correctiva";
   if (activeTickets > 0 && staleDays >= 2 && purchases === 0) return "control_anti_fuga";
-  if (purchases >= 3 || redeemedTickets >= 3 || moneyNumber(row.total_spent) >= 3000000 || (row.is_affiliate && purchases > 0)) return "inteligencia";
-  if (purchases > 0) return "postventa";
-  if (["CONVERTED", "BUYER"].includes(status) || redeemedTickets > 0) return "revenue_generado";
+  if (purchases > 0 || ["CONVERTED", "BUYER"].includes(status)) return "cierre";
+  if (redeemedTickets > 0) return "revenue_generado";
   if (["FOLLOW_UP", "CONTACTED"].includes(status) && hasContact) return "procesamiento";
   if (activeTickets > 0) return "preprocesamiento";
   if (hasContact && (score >= 80 || String(row.care_priority || "").toUpperCase() === "HIGH")) return "clasificacion";
@@ -436,9 +451,9 @@ function operationDescription(phase, product, channel) {
     recoleccion: "Capturar prospectos desde QR, vitrina, activacion, formulario, referido o cliente dormido.",
     alimentacion: `Introducir el lead al embudo RMS con dato minimo y canal ${channel}.`,
     curaduria: `Clasificar el lead contra inventario interno segun su interes en ${product}.`,
-    clasificacion: "Separar por estado comercial, temperatura, ticket, prioridad y posibilidad de avance.",
+    clasificacion: "Definir qué se envía: catálogo, productos con precio, beneficio, ticket o activación; documentar la atención y pasar a Evaluación a esperar respuesta.",
     preprocesamiento: "Aplicar gancho gamificado anti-fuga antes de que la oportunidad se enfrie.",
-    procesamiento: `Ejecutar propuesta, catalogo, ticket, cotizacion o factura relacionada con ${product}.`,
+    procesamiento: `Esperar y evaluar la respuesta a la propuesta enviada sobre ${product}; decidir seguimiento, negociación o cierre.`,
     control_anti_fuga: "Detectar clientes atascados, tickets por vencer, redenciones sin venta o falta de tarea.",
     accion_correctiva: "Crear tarea urgente, recordar, reenviar beneficio, llamar, recuperar o descartar.",
     cierre: "Ensamblar interes, propuesta, beneficio, cuenta de cobro y pago.",
@@ -627,7 +642,7 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
 function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
   const sourceType = crmSourceType(row);
   const autoPhase = deriveRmsPhase(row);
-  const stage = stateRow?.rms_phase ? normalizePhase(stateRow.rms_phase, autoPhase) : "recoleccion";
+  const stage = stateRow?.rms_phase ? normalizePhase(stateRow.rms_phase, autoPhase) : autoPhase;
   const priorityScore = calculateRmsPriority(row);
   const riskScore = calculateRmsRisk(row);
   const action = getPhaseRecommendedOperation(stage, row);
@@ -912,6 +927,11 @@ async function moveRmsLeadPhase(businessId, user, payload = {}) {
   );
   const fromPhase = current.rows[0]?.rms_phase || null;
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
+  const existingActivation = current.rows[0]?.metadata?.activation_one || null;
+  const requestedActivation = metadata.activation_one || null;
+  if (normalizePhase(fromPhase, "") === "clasificacion" && toPhase === "procesamiento" && !existingActivation?.sent_at && !requestedActivation?.sent_at) {
+    throw badRequest("Antes de enviar a Evaluación debes registrar la propuesta, los materiales y la atención en Activación 1.");
+  }
   const result = await withTransaction(async (client) => {
     const state = await client.query(
       `insert into rms_lead_state
@@ -1110,6 +1130,288 @@ async function executeRmsAction(businessId, user, payload = {}) {
   };
 }
 
+function activationOneMaterialLabels(materials = []) {
+  const labels = {
+    catalog: "Catálogo",
+    products: "Productos con precio",
+    benefit: "Beneficio",
+    ticket: "Ticket",
+    interactive: "Activación interactiva",
+  };
+  return [...new Set((Array.isArray(materials) ? materials : []).map((item) => labels[String(item || "").toLowerCase()]).filter(Boolean))];
+}
+
+function activationFollowupPlan(item = {}, sentAt = new Date()) {
+  const sentTime = new Date(sentAt).getTime();
+  const baseTime = Number.isFinite(sentTime) ? sentTime : Date.now();
+  const name = item.name || "el lead";
+  const product = item.classified_product_name || item.product_interest || item.top_interest || "la propuesta";
+  return [
+    { sequence: 1, delay_hours: 4, action_title: "Confirmar recepción de propuesta", suggested_message: `Hola ${name}, quería confirmar si pudiste revisar ${product}. Estoy atento para resolver dudas.` },
+    { sequence: 2, delay_hours: 24, action_title: "Resolver interés u objeción", suggested_message: `Hola ${name}, ¿qué te pareció la propuesta que te enviamos? Puedo ayudarte con precio, beneficio o disponibilidad.` },
+    { sequence: 3, delay_hours: 72, action_title: "Último seguimiento de Activación 1", suggested_message: `Hola ${name}, cierro este seguimiento por ahora. Si quieres retomar ${product}, te acompaño con la mejor opción.` },
+  ].map((entry) => ({ ...entry, due_at: new Date(baseTime + entry.delay_hours * 60 * 60 * 1000).toISOString() }));
+}
+
+async function scheduleActivationFollowups(businessId, item, sourceType, sourceId, activationNoteId, plan = []) {
+  const scheduled = [];
+  for (const followup of plan) {
+    const result = await query(
+      `insert into rms_activation_followups
+        (business_id, source_type, source_id, lead_id, activation_note_id, sequence, due_at, action_title, suggested_message, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+       on conflict (business_id, source_type, source_id, activation_note_id, sequence)
+       do update set due_at = excluded.due_at, action_title = excluded.action_title, suggested_message = excluded.suggested_message, metadata = rms_activation_followups.metadata || excluded.metadata
+       returning *`,
+      [businessId, sourceType, sourceId, item.lead_id || null, activationNoteId, followup.sequence, followup.due_at, followup.action_title, followup.suggested_message, JSON.stringify({ source_module: "rms_activation_followup", delay_hours: followup.delay_hours })]
+    );
+    scheduled.push(result.rows[0]);
+  }
+  return scheduled;
+}
+
+async function executeActivationOne(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const sourceId = payload.source_id;
+  if (!sourceId) throw badRequest("Falta el lead para ejecutar Activación 1.");
+  const item = await findOpportunity(businessId, sourceType, sourceId);
+  if (normalizePhase(item.stage) !== "clasificacion") {
+    throw badRequest("Este lead debe estar en Activación 1 para enviarlo a Evaluación.");
+  }
+  const materials = activationOneMaterialLabels(payload.materials);
+  if (!materials.length) throw badRequest("Selecciona al menos un material enviado.");
+  const proposalSummary = String(payload.proposal_summary || "").trim();
+  const attentionNote = String(payload.attention_note || "").trim();
+  if (!proposalSummary || !attentionNote) throw badRequest("Describe la propuesta y cómo fue atendido el lead antes de enviarlo a Evaluación.");
+  const selectedProducts = (Array.isArray(payload.products) ? payload.products : [])
+    .filter((product) => product && String(product.name || "").trim())
+    .slice(0, 12)
+    .map((product) => ({
+      id: product.id || null,
+      name: String(product.name).trim().slice(0, 240),
+      price: Number.isFinite(Number(product.price)) ? Number(product.price) : null,
+      currency: String(product.currency || "COP").slice(0, 8),
+    }));
+  const channel = String(payload.channel || "WhatsApp").trim().slice(0, 80);
+  const catalogUrl = String(payload.catalog_url || "").trim().slice(0, 1200);
+  const benefitSummary = String(payload.benefit_summary || "").trim().slice(0, 1200);
+  const message = String(payload.message || proposalSummary).trim().slice(0, 5000);
+  const productText = selectedProducts.length
+    ? selectedProducts.map((product) => `${product.name}${product.price === null ? "" : ` (${product.currency} ${product.price.toLocaleString("es-CO")})`}`).join(", ")
+    : "No se detallaron productos";
+  const noteText = [
+    `Activación 1 enviada por ${channel}.`,
+    `Material enviado: ${materials.join(", ")}.`,
+    `Propuesta: ${proposalSummary}`,
+    `Productos: ${productText}.`,
+    catalogUrl ? `Catálogo: ${catalogUrl}.` : "",
+    benefitSummary ? `Beneficio o ticket: ${benefitSummary}.` : "",
+    `Atención: ${attentionNote}`,
+    "El lead pasa a Evaluación para esperar y registrar su respuesta.",
+  ].filter(Boolean).join("\n");
+  const metadata = {
+    source_module: "rms_activation_1",
+    rms_phase: "clasificacion",
+    sent_at: new Date().toISOString(),
+    materials: (Array.isArray(payload.materials) ? payload.materials : []).map((entry) => String(entry || "").toLowerCase()).filter(Boolean),
+    material_labels: materials,
+    products: selectedProducts,
+    catalog_url: catalogUrl || null,
+    benefit_summary: benefitSummary || null,
+    proposal_summary: proposalSummary,
+    attention_note: attentionNote,
+    channel,
+    message,
+    interactive_activation_id: payload.interactive_activation_id || null,
+  };
+  const followupPlan = activationFollowupPlan(item, metadata.sent_at);
+  metadata.followup_plan = followupPlan.map(({ sequence, due_at, action_title, delay_hours }) => ({ sequence, due_at, action_title, delay_hours }));
+  const note = await createLeadNote(businessId, user, sourceId, sourceType, {
+    note: noteText,
+    note_type: "commercial",
+    metadata,
+  });
+  const followups = await scheduleActivationFollowups(businessId, item, sourceType, sourceId, note.id, followupPlan);
+  await query(
+    `insert into rms_machine_events
+      (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, material_type, created_by, metadata)
+     values ($1, $2, $3, $4, 'activation_one_sent', 'Activación 1 enviada', $5, 'clasificacion', 'activate_commercial_proposal', $6, $7, $8::jsonb)`,
+    [businessId, sourceType, sourceId, item.lead_id || null, proposalSummary, materials.join(", "), user.id, JSON.stringify({ ...metadata, note_id: note.id, followup_ids: followups.map((followup) => followup.id) })]
+  );
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType,
+    source_id: sourceId,
+    lead_id: item.lead_id,
+    to_phase: "procesamiento",
+    priority: item.priority_score >= 85 ? "URGENT" : item.priority_score >= 65 ? "HIGH" : "MEDIUM",
+    recommended_action: "Esperar respuesta del lead y evaluar la propuesta enviada",
+    last_operation: "activation_one_sent",
+    last_material_sent: materials.join(", "),
+    revenue_potential: item.revenue_potential,
+    reason: "Activación 1 enviada; el lead queda en Evaluación esperando respuesta.",
+    metadata: { activation_one: { ...metadata, note_id: note.id } },
+  });
+  return {
+    opportunity: item,
+    note,
+    movement,
+    followups,
+    materials,
+    whatsapp_message: message,
+    whatsapp_url: whatsappUrl(item.phone, message),
+  };
+}
+
+const EVALUATION_RESPONSE_LABELS = {
+  INTERESTED: "Interesado",
+  PRICE_QUESTION: "Pregunta por precio",
+  NEEDS_TIME: "Necesita tiempo",
+  NOT_INTERESTED: "No interesado",
+  NO_RESPONSE: "Sin respuesta",
+  MEETING_BOOKED: "Reunión agendada",
+};
+
+async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const sourceId = payload.source_id;
+  const responseStatus = String(payload.response_status || "").toUpperCase();
+  const responseNote = String(payload.response_note || "").trim();
+  if (!EVALUATION_RESPONSE_LABELS[responseStatus]) throw badRequest("Selecciona una respuesta válida del lead.");
+  if (!responseNote) throw badRequest("Describe la respuesta o el contexto recibido del lead.");
+  const item = await findOpportunity(businessId, sourceType, sourceId);
+  if (normalizePhase(item.stage) !== "procesamiento") throw badRequest("Este lead debe estar en Evaluación para registrar su respuesta.");
+  const response = {
+    status: responseStatus,
+    label: EVALUATION_RESPONSE_LABELS[responseStatus],
+    note: responseNote.slice(0, 3000),
+    received_at: new Date().toISOString(),
+    recorded_by: user.id,
+  };
+  const note = await createLeadNote(businessId, user, sourceId, sourceType, {
+    note: `Evaluación · respuesta del lead: ${response.label}.\n${response.note}`,
+    note_type: "commercial",
+    metadata: { source_module: "rms_evaluation", rms_phase: "procesamiento", activation_one_response: response },
+  });
+  const cancelled = await query(
+    `update rms_activation_followups
+        set status = case when $4 = 'NO_RESPONSE' then status else 'RESPONDED' end,
+            response_status = $4,
+            response_note = $5,
+            resolved_at = case when $4 = 'NO_RESPONSE' then resolved_at else now() end
+      where business_id = $1 and source_type = $2 and source_id = $3
+        and status = 'SCHEDULED'
+      returning id`,
+    [businessId, sourceType, sourceId, responseStatus, response.note]
+  );
+  await query(
+    `update rms_lead_state
+        set metadata = metadata || $4::jsonb,
+            last_operation = 'evaluation_response_recorded',
+            recommended_action = $5,
+            updated_by = $6,
+            updated_at = now()
+      where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, sourceId, JSON.stringify({ activation_one_response: response }), `Evaluar ${response.label.toLowerCase()} y decidir siguiente fase`, user.id]
+  );
+  await query(
+    `insert into rms_machine_events
+      (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, material_type, created_by, metadata)
+     values ($1, $2, $3, $4, 'evaluation_response_recorded', 'Respuesta del lead registrada', $5, 'procesamiento', 'evaluate_activation_response', 'response', $6, $7::jsonb)`,
+    [businessId, sourceType, sourceId, item.lead_id || null, `${response.label}: ${response.note}`, user.id, JSON.stringify({ response, note_id: note.id, cancelled_followups: cancelled.rowCount })]
+  );
+  return { note, response, cancelled_followups: cancelled.rowCount };
+}
+
+async function processDueActivationFollowups(options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit || 20), 1), 100);
+  return withTransaction(async (client) => {
+    const due = await client.query(
+      `select * from rms_activation_followups
+        where status = 'SCHEDULED' and due_at <= now()
+        order by due_at asc
+        limit $1
+        for update skip locked`,
+      [limit]
+    );
+    let created = 0;
+    let skipped = 0;
+    for (const followup of due.rows) {
+      const stateResult = await client.query(
+        `select rms_phase, metadata from rms_lead_state
+          where business_id = $1 and source_type = $2 and source_id = $3
+          for update`,
+        [followup.business_id, followup.source_type, followup.source_id]
+      );
+      const state = stateResult.rows[0];
+      const response = state?.metadata?.activation_one_response;
+      const hasMeaningfulResponse = response?.status && response.status !== "NO_RESPONSE";
+      if (!state || state.rms_phase !== "procesamiento" || hasMeaningfulResponse) {
+        await client.query(
+          `update rms_activation_followups
+              set status = $2, resolved_at = now(), response_status = coalesce($3, response_status)
+            where id = $1`,
+          [followup.id, hasMeaningfulResponse ? "RESPONDED" : "SKIPPED", response?.status || null]
+        );
+        skipped += 1;
+        continue;
+      }
+      const agenda = await client.query(
+        `insert into lead_notes
+          (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, metadata, created_by)
+         values ($1, $2, $3, $4, $5, 'follow_up', $6, now(), 'HIGH', 0, $7::jsonb, $8::jsonb, null)
+         returning id`,
+        [
+          followup.business_id,
+          followup.lead_id || null,
+          followup.source_type,
+          followup.source_id,
+          `Seguimiento inteligente de Activación 1. ${followup.action_title}.\nMensaje sugerido: ${followup.suggested_message || "Revisar propuesta enviada."}`,
+          followup.action_title,
+          JSON.stringify([{ label: "Revisar respuesta del lead", done: false }, { label: "Contactar por el canal indicado", done: false }, { label: "Registrar resultado en Evaluación", done: false }]),
+          JSON.stringify({ source_module: "rms_activation_followup", followup_id: followup.id, activation_note_id: followup.activation_note_id, suggested_message: followup.suggested_message || null }),
+        ]
+      );
+      await client.query(
+        `update rms_activation_followups
+            set status = 'ACTION_CREATED', agenda_note_id = $2, executed_at = now()
+          where id = $1`,
+        [followup.id, agenda.rows[0].id]
+      );
+      await client.query(
+        `insert into rms_machine_events
+          (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, material_type, metadata)
+         values ($1, $2, $3, $4, 'activation_followup_due', 'Seguimiento RMS creado', $5, 'procesamiento', 'activation_followup', 'follow_up', $6::jsonb)`,
+        [followup.business_id, followup.source_type, followup.source_id, followup.lead_id || null, followup.action_title, JSON.stringify({ followup_id: followup.id, agenda_note_id: agenda.rows[0].id, sequence: followup.sequence })]
+      );
+      created += 1;
+    }
+    return { scanned: due.rowCount, created, skipped };
+  });
+}
+
+function startActivationFollowupWorker(options = {}) {
+  const intervalMs = Math.max(Number(options.interval_ms || 60000), 15000);
+  let running = false;
+  const tick = async () => {
+    if (running) return;
+    running = true;
+    try {
+      const result = await processDueActivationFollowups();
+      if (result.created || result.skipped) console.log("RMS activation followups processed", result);
+    } catch (error) {
+      console.error("RMS activation followup worker error:", error.message);
+    } finally {
+      running = false;
+    }
+  };
+  const initial = setTimeout(tick, 15000);
+  const interval = setInterval(tick, intervalMs);
+  return () => {
+    clearTimeout(initial);
+    clearInterval(interval);
+  };
+}
+
 async function executeRmsBulkAction(businessId, user, payload = {}) {
   const ids = Array.isArray(payload.opportunity_ids) ? payload.opportunity_ids.slice(0, 40) : [];
   if (!ids.length) throw badRequest("Selecciona al menos una oportunidad RMS.");
@@ -1148,6 +1450,7 @@ module.exports = {
   RMS_PHASES,
   WHATSAPP_TEMPLATES,
   createRmsAgendaTask,
+  executeActivationOne,
   executeRmsAction,
   executeRmsBulkAction,
   getDailyQueue,
@@ -1155,5 +1458,8 @@ module.exports = {
   listRmsEvents,
   listRmsOpportunities,
   moveRmsLeadPhase,
+  processDueActivationFollowups,
+  recordRmsEvaluationResponse,
   rmsMetrics,
+  startActivationFollowupWorker,
 };
