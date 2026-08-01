@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260801-activation1-staging-visual-v210";
+const APP_VERSION = "empresa-20260801-activation1-contact-console-v211";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -38168,9 +38168,9 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
     storageLabel: "Almacena leads clasificados para activar",
     operation: {
       name: "Activar",
-      primaryAction: "Enviar una oferta por WhatsApp o email",
-      materialLabel: "Activación, estrategia, oferta y nota de envío",
-      buttonLabel: "Enviar oferta",
+      primaryAction: "Preparar, confirmar y dar seguimiento al primer contacto",
+      materialLabel: "Oferta, canal, mensaje, seguimiento y respuesta",
+      buttonLabel: "Activar contacto",
       nextPhase: "procesamiento",
     },
   },
@@ -40255,7 +40255,7 @@ function renderRmsStationLeanOnly() {
     : isClassifierStation
       ? `<th>Lead</th><th class="rms-lean-quality-heading">Clasifica producto o servicio</th><th>Origen</th><th>Interés</th>`
       : isActivationStation
-        ? `<th>Lead</th><th class="rms-lean-quality-heading">Oferta y envío</th><th>Origen</th><th>Interés</th>`
+        ? `<th>Lead</th><th class="rms-lean-quality-heading">Contacto y seguimiento</th><th>Origen</th><th>Interés</th>`
       : `<th>Lead</th><th>Origen</th><th>Interés</th><th>${escapeHtml(stationControlLabel)}</th>`;
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
@@ -40317,10 +40317,10 @@ function renderRmsStationLeanOnly() {
         <section class="rms-lean-quality-guide rms-lean-activation-guide" aria-label="Prioridad de Activación 1">
           <span class="material-symbols-outlined" aria-hidden="true">send</span>
           <div>
-            <strong>Envía una oferta clara y registra qué se compartió</strong>
-            <small>Elige WhatsApp o email. Cuando la oferta quede registrada, el lead podrá avanzar directamente a Evaluación.</small>
+            <strong>Contacta con contexto y deja un seguimiento real</strong>
+            <small>Personaliza el mensaje, confirma el contacto y programa la fecha de seguimiento antes de pasar a Evaluación.</small>
           </div>
-          <span class="rms-lean-quality-guide-count"><strong>${rows.filter((item) => !rmsActivationDelivery(item).sentAt).length.toLocaleString("es-CO")}</strong> pendientes</span>
+          <span class="rms-lean-quality-guide-count"><strong>${rows.filter((item) => !rmsActivationReady(item)).length.toLocaleString("es-CO")}</strong> pendientes</span>
         </section>
       ` : ""}
       <div class="rms-lean-station-tools">
@@ -40928,9 +40928,9 @@ function rmsStationVisualMeta(phase = "") {
       screenTitle: "Estacion de almacenamiento: Activación 1",
       visualLabel: "Inventario: primera activación",
       input: "Leads curados con oferta interna asignada.",
-      output: "Lead activado con estado, temperatura, prioridad y siguiente paso.",
-      focus: "Ejecutar la primera activación: preparar el lead para control de calidad y avance comercial.",
-      checklist: ["Estado comercial", "Temperatura", "Prioridad", "Primera activación", "Responsable"],
+      output: "Contacto confirmado, oferta entregada, seguimiento agendado y respuesta comercial registrada.",
+      focus: "Convertir una oferta interna en una conversación real: preparar el mensaje, contactar con consentimiento y medir la respuesta.",
+      checklist: ["Oferta relevante", "Canal con permiso", "Mensaje personalizado", "Seguimiento fechado", "Respuesta registrada"],
     },
     preprocesamiento: {
       icon: "stadia_controller",
@@ -41934,7 +41934,7 @@ function rmsCollectorReadiness(item = {}) {
 function rmsStationOutputEligibleRows(phase = "", rows = []) {
   if (phase === "alimentacion") return (rows || []).filter((item) => Boolean(rmsLeadQualityValue(item)));
   if (phase === "curaduria") return (rows || []).filter((item) => rmsHasConfirmedProductClassification(item));
-  if (phase === "clasificacion") return (rows || []).filter((item) => Boolean(rmsActivationDelivery(item).sentAt));
+  if (phase === "clasificacion") return (rows || []).filter((item) => rmsActivationReady(item));
   if (phase !== "recoleccion") return rows || [];
   return (rows || []).filter((item) => rmsCollectorReadiness(item).ready);
 }
@@ -42601,13 +42601,26 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-clear-classification]").forEach((button) => {
     button.addEventListener("click", () => handleRmsClearClassification(button.dataset.rmsClearClassification || ""));
   });
-  root.querySelectorAll("[data-rms-send-activation]").forEach((button) => {
+  root.querySelectorAll("[data-rms-open-activation]").forEach((button) => {
     button.addEventListener("click", () => {
-      const item = rmsOpportunityById(button.dataset.rmsSendActivation || "");
-      const activationId = button.dataset.rmsSendActivation || "";
-      const channel = Array.from(root.querySelectorAll("[data-rms-activation-channel]"))
-        .find((node) => node.dataset.rmsActivationChannel === activationId)?.value || "";
-      if (item) sendRmsActivationOffer(item, channel);
+      const activationId = button.dataset.rmsOpenActivation || "";
+      const item = rmsOpportunityById(activationId);
+      if (item) openRmsActivationMessage(item, rmsActivationDraftFromDom(root, activationId));
+    });
+  });
+  root.querySelectorAll("[data-rms-confirm-activation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const activationId = button.dataset.rmsConfirmActivation || "";
+      const item = rmsOpportunityById(activationId);
+      if (item) sendRmsActivationOffer(item, rmsActivationDraftFromDom(root, activationId));
+    });
+  });
+  root.querySelectorAll("[data-rms-save-activation-outcome]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const activationId = button.dataset.rmsSaveActivationOutcome || "";
+      const item = rmsOpportunityById(activationId);
+      const outcome = rmsActivationDraftFromDom(root, activationId).outcome;
+      if (item) saveRmsActivationOutcome(item, outcome);
     });
   });
   root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
@@ -42993,6 +43006,12 @@ function toggleRmsSelection(id = "", selected = false) {
     showFeedback("Primero clasifica este lead por producto o servicio interno.", "info", { title: "Clasificador" });
     return;
   }
+  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "clasificacion" && item?.stage === "clasificacion" && !rmsActivationReady(item)) {
+    const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
+    if (checkbox) checkbox.checked = false;
+    showFeedback("Confirma el contacto y agenda el seguimiento antes de poner este lead en salida.", "info", { title: "Activación 1" });
+    return;
+  }
   const current = new Set(state.rmsMachineSelectedIds || []);
   if (selected) current.add(id);
   else current.delete(id);
@@ -43035,7 +43054,7 @@ function selectRmsPhaseForBulk(phase = "") {
       : phase === "curaduria"
         ? "La salida de Clasificador exige producto o servicio confirmado. Usa el selector de inventario, guarda el nombre sugerido o crea el producto."
         : phase === "clasificacion"
-          ? "La salida de Activación 1 exige una oferta registrada por WhatsApp o email antes de pasar a Evaluación."
+          ? "La salida de Activación 1 exige contacto confirmado y seguimiento agendado antes de pasar a Evaluación."
           : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
@@ -43140,10 +43159,76 @@ function openRmsWhatsApp(item = {}) {
   window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
 }
 
-async function sendRmsActivationOffer(item = {}, channel = "") {
+function rmsActivationDraftFromDom(root, id) {
+  const byData = (name) => Array.from(root.querySelectorAll(`[${name}]`)).find((node) => node.getAttribute(name) === id);
+  return {
+    channel: byData("data-rms-activation-channel")?.value || "",
+    message: byData("data-rms-activation-message")?.value?.trim() || "",
+    followUpAt: byData("data-rms-activation-followup")?.value || "",
+    outcome: byData("data-rms-activation-outcome")?.value || "PENDING",
+  };
+}
+
+function openRmsActivationMessage(item = {}, options = {}) {
+  const delivery = rmsActivationDelivery(item);
+  const targetChannel = options.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
+  const message = options.message || rmsActivationMessage(item, delivery);
+  if (targetChannel === "whatsapp" && !item.phone) {
+    showFeedback("Este lead no tiene WhatsApp. Selecciona email o completa el teléfono.", "info", { title: "Activación 1" });
+    return false;
+  }
+  if (targetChannel === "email" && !item.email) {
+    showFeedback("Este lead no tiene email. Selecciona WhatsApp o completa el correo.", "info", { title: "Activación 1" });
+    return false;
+  }
+  if (targetChannel === "whatsapp") {
+    window.open(`https://wa.me/${encodeURIComponent(whatsappPhoneFromInput(item.phone))}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+  } else {
+    window.open(`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent("Una propuesta para ti")}&body=${encodeURIComponent(message)}`, "_blank", "noopener");
+  }
+  return true;
+}
+
+async function createRmsActivationFollowUpTask(item = {}, followUpAt = "", options = {}) {
+  if (!item?.source_id || !followUpAt) return false;
+  const dueAt = new Date(followUpAt);
+  if (Number.isNaN(dueAt.getTime())) throw new Error("Selecciona una fecha válida para el seguimiento.");
+  await api("/api/business/rms-machine/actions/create-task", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      source_id: item.source_id,
+      source_type: item.source_type || "PLAYER",
+      lead_id: item.lead_id || null,
+      stage: item.stage,
+      section: item.section,
+      action_title: `Seguimiento Activación 1 · ${item.first_name || item.name || "lead"}`,
+      next_action: `Medir la respuesta a ${options.offer || rmsActivationDelivery(item).offer} y acordar el siguiente paso comercial.`,
+      due_at: dueAt.toISOString(),
+      why_now: "La primera activación necesita una respuesta o una acción correctiva antes de que el interés se enfríe.",
+      priority_score: Number(item.priority_score || 0),
+      risk_score: Number(item.risk_score || 0),
+      coverage_type: item.coverage_type || "activation_follow_up",
+      revenue_potential: Number(item.revenue_potential || 0),
+      metadata: {
+        rms_opportunity_id: item.id,
+        campaign_id: item.campaign_id || null,
+        product_interest: item.product_interest || null,
+        source_module: "rms_activation_1",
+        activation_channel: options.channel || "",
+        activation_outcome: options.outcome || "PENDING",
+      },
+    }),
+  });
+  state.leadAgendaLoaded = false;
+  return true;
+}
+
+async function sendRmsActivationOffer(item = {}, options = {}) {
   if (!item?.source_id) return;
   const delivery = rmsActivationDelivery(item);
-  const targetChannel = channel || delivery.channel || (item.phone ? "whatsapp" : "email");
+  const draft = typeof options === "string" ? { channel: options } : options;
+  const targetChannel = draft.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
   if (targetChannel === "whatsapp" && !item.phone) {
     showFeedback("Este lead no tiene WhatsApp. Selecciona email o completa el teléfono.", "info", { title: "Activación 1" });
     return;
@@ -43152,17 +43237,12 @@ async function sendRmsActivationOffer(item = {}, channel = "") {
     showFeedback("Este lead no tiene email. Selecciona WhatsApp o completa el correo.", "info", { title: "Activación 1" });
     return;
   }
-  const offer = rmsClassifiedProductName(item) || item.product_interest || "nuestra oferta comercial";
-  const strategy = item.campaign_name || item.coverage_type || "oferta personalizada";
-  const note = `Oferta ${offer} · Estrategia: ${strategy}`;
-  const message = [
-    `Hola ${item.first_name || item.name || ""}`.trim(),
-    `Tenemos una oferta para ti: ${offer}.`,
-    `Estrategia: ${strategy}.`,
-    "Si quieres, te acompaño por este medio para aprovecharla.",
-  ].filter(Boolean).join("\n\n");
+  const offer = delivery.offer || rmsClassifiedProductName(item) || item.product_interest || "nuestra oferta comercial";
+  const message = draft.message || rmsActivationMessage(item, delivery);
+  const followUpAt = draft.followUpAt || "";
+  const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
-    showFeedback("Registrando envío de oferta...", "loading", { title: "Activación 1", timeout: 0 });
+    showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
@@ -43172,11 +43252,11 @@ async function sendRmsActivationOffer(item = {}, channel = "") {
         lead_id: item.lead_id || null,
         to_phase: item.stage,
         priority: rmsPriorityCode(item),
-        recommended_action: "Evaluar respuesta a la oferta enviada",
-        last_operation: "activation_offer_sent",
+        recommended_action: "Medir la respuesta a la oferta y acordar el siguiente paso comercial",
+        last_operation: "activation_contact_confirmed",
         last_material_sent: offer,
         revenue_potential: Number(item.revenue_potential || 0),
-        reason: `Oferta enviada por ${targetChannel === "email" ? "email" : "WhatsApp"}: ${offer}.`,
+        reason: `Contacto confirmado por ${targetChannel === "email" ? "email" : "WhatsApp"}: ${offer}.`,
         metadata: {
           source_module: "rms_machine",
           source_flow: "activation_offer_delivery",
@@ -43184,23 +43264,63 @@ async function sendRmsActivationOffer(item = {}, channel = "") {
           activation_offer_sent_at: new Date().toISOString(),
           activation_delivery_channel: targetChannel,
           activation_offer_name: offer,
-          activation_offer_note: note,
-          activation_strategy: strategy,
+          activation_offer_note: `Oferta ${offer} · Canal: ${targetChannel === "email" ? "email" : "WhatsApp"}.`,
+          activation_message: message,
+          activation_follow_up_at: followUpAt ? new Date(followUpAt).toISOString() : null,
+          activation_outcome: draft.outcome || "PENDING",
         },
       }),
     });
-    if (targetChannel === "whatsapp") {
-      const phone = whatsappPhoneFromInput(item.phone);
-      window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
-    } else {
-      window.open(`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent("Una oferta para ti")}&body=${encodeURIComponent(message)}`, "_blank", "noopener");
+    if (followUpAt && !previouslyScheduled) {
+      await createRmsActivationFollowUpTask(item, followUpAt, { channel: targetChannel, offer, outcome: draft.outcome || "PENDING" });
     }
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     renderRmsMachineView();
-    showFeedback("Oferta registrada. Ya puedes enviar este lead a Evaluación.", "success", { title: "Activación 1" });
+    showFeedback(followUpAt ? "Contacto confirmado y seguimiento creado en Agenda." : "Contacto confirmado. Programa un seguimiento antes de pasar a Evaluación.", "success", { title: "Activación 1" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo registrar el envío de la oferta.", "error", { title: "Activación 1" });
+    showFeedback(error.message || "No se pudo confirmar el contacto.", "error", { title: "Activación 1" });
+  }
+}
+
+async function saveRmsActivationOutcome(item = {}, outcome = "PENDING") {
+  if (!item?.source_id) return;
+  const delivery = rmsActivationDelivery(item);
+  try {
+    await api("/api/business/rms-machine/lead/phase", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        to_phase: item.stage,
+        priority: rmsPriorityCode(item),
+        recommended_action: outcome === "APPOINTMENT" ? "Confirmar fecha de llamada o cita" : "Evaluar la respuesta y decidir el siguiente paso comercial",
+        last_operation: "activation_outcome_updated",
+        last_material_sent: delivery.offer,
+        revenue_potential: Number(item.revenue_potential || 0),
+        reason: `Respuesta de Activación 1: ${rmsActivationOutcomeLabel(outcome)}.`,
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "activation_outcome",
+          activation_offer_sent_at: delivery.sentAt || new Date().toISOString(),
+          activation_delivery_channel: delivery.channel,
+          activation_offer_name: delivery.offer,
+          activation_offer_note: delivery.note,
+          activation_message: delivery.message,
+          activation_follow_up_at: delivery.followUpAt || null,
+          activation_outcome: outcome,
+          activation_outcome_updated_at: new Date().toISOString(),
+        },
+      }),
+    });
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Respuesta comercial actualizada.", "success", { title: "Activación 1" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo guardar la respuesta.", "error", { title: "Activación 1" });
   }
 }
 
@@ -43318,8 +43438,8 @@ async function moveSelectedRmsPhase() {
         showFeedback("Todos los leads de Clasificador necesitan producto o servicio antes de avanzar.", "info", { title: "Clasificador" });
         continue;
       }
-      if (item.stage === "clasificacion" && !rmsActivationDelivery(item).sentAt) {
-        showFeedback("Todos los leads de Activación 1 necesitan una oferta enviada antes de pasar a Evaluación.", "info", { title: "Activación 1" });
+      if (item.stage === "clasificacion" && !rmsActivationReady(item)) {
+        showFeedback("Todos los leads de Activación 1 necesitan contacto confirmado y seguimiento agendado antes de pasar a Evaluación.", "info", { title: "Activación 1" });
         continue;
       }
       await api("/api/business/rms-machine/lead/phase", {
@@ -43404,8 +43524,8 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     showFeedback("Clasifica este lead por producto o servicio interno antes de enviarlo.", "info", { title: "Clasificador" });
     return;
   }
-  if (item.stage === "clasificacion" && !rmsActivationDelivery(item).sentAt) {
-    showFeedback("Envía y registra una oferta por WhatsApp o email antes de pasar el lead a Evaluación.", "info", { title: "Activación 1" });
+  if (item.stage === "clasificacion" && !rmsActivationReady(item)) {
+    showFeedback("Confirma el contacto y agenda el seguimiento antes de pasar el lead a Evaluación.", "info", { title: "Activación 1" });
     return;
   }
   try {
@@ -44242,53 +44362,84 @@ function rmsActivationDelivery(item = {}) {
     channel: item.activation_delivery_channel || metadata.activation_delivery_channel || (item.phone ? "whatsapp" : "email"),
     offer: item.activation_offer_name || metadata.activation_offer_name || rmsClassifiedProductName(item) || item.product_interest || "Oferta comercial",
     note: item.activation_offer_note || metadata.activation_offer_note || "",
+    message: item.activation_message || metadata.activation_message || "",
+    followUpAt: item.activation_follow_up_at || metadata.activation_follow_up_at || "",
+    outcome: item.activation_outcome || metadata.activation_outcome || "PENDING",
+    outcomeNote: item.activation_outcome_note || metadata.activation_outcome_note || "",
   };
 }
 
-function rmsActivationDeliveryMarkup(item = {}) {
+function rmsActivationReady(item = {}) {
   const delivery = rmsActivationDelivery(item);
-  const sent = Boolean(delivery.sentAt);
-  return `
-    <div class="rms-activation-delivery" data-rms-activation-delivery="${escapeHtml(item.id)}">
-      <div class="rms-activation-delivery-status ${sent ? "is-sent" : "is-pending"}">
-        <strong>${sent ? "Oferta registrada" : "Oferta pendiente"}</strong>
-        <small>${sent ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} · ${formatDate(delivery.sentAt)}` : "Envía la oferta antes de Evaluación"}</small>
-      </div>
-      <div class="rms-activation-delivery-controls">
-        <select data-rms-activation-channel="${escapeHtml(item.id)}" aria-label="Canal de envío para ${escapeHtml(item.name || "lead")}">
-          <option value="whatsapp" ${delivery.channel === "whatsapp" ? "selected" : ""} ${item.phone ? "" : "disabled"}>WhatsApp</option>
-          <option value="email" ${delivery.channel === "email" ? "selected" : ""} ${item.email ? "" : "disabled"}>Email</option>
-        </select>
-        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-send-activation="${escapeHtml(item.id)}">${sent ? "Reenviar" : "Enviar oferta"}</button>
-      </div>
-      <small class="rms-activation-delivery-offer">${escapeHtml(delivery.offer)}${delivery.note ? ` · ${escapeHtml(delivery.note)}` : ""}</small>
-    </div>
-  `;
+  return Boolean(delivery.sentAt && delivery.followUpAt);
+}
+
+const RMS_ACTIVATION_OUTCOMES = [
+  { value: "PENDING", label: "Aún sin respuesta" },
+  { value: "INTERESTED", label: "Respondió con interés" },
+  { value: "NEEDS_HELP", label: "Pidió más información" },
+  { value: "APPOINTMENT", label: "Aceptó llamada o cita" },
+  { value: "NO_RESPONSE", label: "Sin respuesta" },
+  { value: "NOT_INTERESTED", label: "No le interesa ahora" },
+];
+
+function rmsActivationOutcomeLabel(value = "PENDING") {
+  return RMS_ACTIVATION_OUTCOMES.find((option) => option.value === value)?.label || "Aún sin respuesta";
+}
+
+function rmsActivationMessage(item = {}, delivery = rmsActivationDelivery(item)) {
+  if (delivery.message) return delivery.message;
+  const offer = delivery.offer || "nuestra oferta";
+  const strategy = item.campaign_name || item.coverage_type || "una propuesta pensada para ti";
+  return [
+    `Hola ${item.first_name || item.name || ""}`.trim(),
+    `Vi tu interés y preparé ${offer}.`,
+    `La propuesta está pensada para ${strategy}.`,
+    "¿Te la comparto y resolvemos juntos el siguiente paso?",
+  ].filter(Boolean).join("\n\n");
+}
+
+function rmsActivationDatetimeLocal(value = "", daysFromNow = 1) {
+  const date = value ? new Date(value) : new Date(Date.now() + daysFromNow * 24 * 60 * 60 * 1000);
+  if (Number.isNaN(date.getTime())) return "";
+  if (!value) date.setHours(10, 0, 0, 0);
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
 function rmsActivationDeliveryCardMarkup(item = {}) {
   const delivery = rmsActivationDelivery(item);
   const sent = Boolean(delivery.sentAt);
+  const ready = rmsActivationReady(item);
   const channelLabel = delivery.channel === "email" ? "Email" : "WhatsApp";
   const offer = delivery.offer || "Oferta comercial";
+  const followUpValue = rmsActivationDatetimeLocal(delivery.followUpAt);
+  const hasChannel = Boolean(item.phone || item.email);
   return `
-    <article class="rms-activation-delivery rms-activation-delivery-card ${sent ? "is-sent" : "is-pending"}" data-rms-activation-delivery="${escapeHtml(item.id)}">
+    <article class="rms-activation-delivery rms-activation-delivery-card rms-activation-command-card ${sent ? "is-sent" : "is-pending"}" data-rms-activation-delivery="${escapeHtml(item.id)}">
       <header class="rms-activation-delivery-head">
         <div class="rms-activation-delivery-status ${sent ? "is-sent" : "is-pending"}">
           <span class="rms-activation-delivery-icon material-symbols-outlined" aria-hidden="true">${sent ? "task_alt" : "outgoing_mail"}</span>
           <div>
-            <span class="rms-activation-delivery-eyebrow">Activacion comercial</span>
-            <strong>${sent ? "Propuesta registrada" : "Propuesta por preparar"}</strong>
-            <small>${sent ? `${channelLabel} · ${formatDate(delivery.sentAt)}` : "Define el canal y comparte una propuesta antes de Evaluacion."}</small>
+            <span class="rms-activation-delivery-eyebrow">Activación 1 · primer contacto</span>
+            <strong>${sent ? "Contacto confirmado" : "Convierte la oferta en conversación"}</strong>
+            <small>${sent ? `${channelLabel} · ${formatDate(delivery.sentAt)} · ${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}` : "Personaliza el mensaje, abre el canal y confirma cuando realmente lo envíes."}</small>
           </div>
         </div>
-        <span class="rms-activation-delivery-state">${sent ? "Listo para evaluar" : "Pendiente"}</span>
+        <span class="rms-activation-delivery-state">${ready ? "Listo para evaluar" : sent ? "Seguimiento pendiente" : "Por activar"}</span>
       </header>
       <div class="rms-activation-delivery-offer" title="${escapeHtml(offer)}">
         <span class="material-symbols-outlined" aria-hidden="true">sell</span>
         <span>${escapeHtml(offer)}</span>
       </div>
-      <div class="rms-activation-delivery-controls">
+      <div class="rms-activation-steps" aria-label="Flujo de activación">
+        <span><b>1</b> Personaliza</span><span><b>2</b> Contacta</span><span><b>3</b> Da seguimiento</span>
+      </div>
+      <label class="rms-activation-message-field">
+        <span>Mensaje para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
+        <textarea rows="4" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
+      </label>
+      <div class="rms-activation-delivery-controls rms-activation-plan-controls">
         <label>
           <span>Canal de entrega</span>
           <select data-rms-activation-channel="${escapeHtml(item.id)}" aria-label="Canal de envio para ${escapeHtml(item.name || "lead")}">
@@ -44296,9 +44447,26 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
             <option value="email" ${delivery.channel === "email" ? "selected" : ""} ${item.email ? "" : "disabled"}>Email</option>
           </select>
         </label>
-        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-send-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">${sent ? "send" : "rocket_launch"}</span>${sent ? "Reenviar" : "Enviar propuesta"}</button>
+        <label>
+          <span>Seguimiento</span>
+          <input type="datetime-local" value="${escapeHtml(followUpValue)}" data-rms-activation-followup="${escapeHtml(item.id)}" aria-label="Fecha de seguimiento para ${escapeHtml(item.name || "lead")}">
+        </label>
       </div>
-      ${delivery.note ? `<small class="rms-activation-delivery-note">Registro: ${escapeHtml(delivery.note)}</small>` : ""}
+      <div class="rms-activation-action-row">
+        <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir mensaje</button>
+        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">${sent ? "calendar_add_on" : "task_alt"}</span>${sent ? ready ? "Registrar reenvío" : "Guardar seguimiento" : "Confirmar envío"}</button>
+      </div>
+      ${sent ? `
+        <div class="rms-activation-outcome-row">
+          <label><span>Respuesta del cliente</span>
+            <select data-rms-activation-outcome="${escapeHtml(item.id)}" aria-label="Respuesta de ${escapeHtml(item.name || "lead")}">
+              ${RMS_ACTIVATION_OUTCOMES.map((option) => `<option value="${option.value}" ${delivery.outcome === option.value ? "selected" : ""}>${option.label}</option>`).join("")}
+            </select>
+          </label>
+          <button class="ghost-button compact" type="button" data-rms-save-activation-outcome="${escapeHtml(item.id)}">Guardar respuesta</button>
+        </div>
+      ` : ""}
+      <small class="rms-activation-delivery-note">${sent && delivery.followUpAt ? `Seguimiento: ${escapeHtml(formatDate(delivery.followUpAt))}. ` : ""}${delivery.note ? `Registro: ${escapeHtml(delivery.note)}` : "El paso siguiente solo se habilita después de confirmar el contacto y agendar el seguimiento."}</small>
     </article>
   `;
 }

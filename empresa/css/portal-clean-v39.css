@@ -9340,3 +9340,148 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-activation-deliver
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Activation 1 is a contact console: one clear flow from offer to response. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table:has(.rms-activation-command-card) {
+  min-width: 1270px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+  width: 500px !important;
+  min-width: 500px !important;
+  background: linear-gradient(180deg, #edf7ff 0%, #f8fcff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card {
+  gap: 14px !important;
+  padding: 18px !important;
+  border-color: rgba(11, 99, 246, .22) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f4faff 100%) !important;
+  box-shadow: 0 12px 28px rgba(19, 78, 129, .09) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card.is-sent {
+  border-color: rgba(6, 132, 87, .28) !important;
+  background: linear-gradient(145deg, #f3fcf7 0%, #ffffff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-steps {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 7px !important;
+  padding: 9px 10px !important;
+  border-radius: 10px !important;
+  background: rgba(4, 128, 250, .07) !important;
+  color: #315d86 !important;
+  font-size: .7rem !important;
+  font-weight: 760 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-steps span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-steps b {
+  display: inline-grid !important;
+  width: 17px !important;
+  height: 17px !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: #0876de !important;
+  color: #fff !important;
+  font-size: .64rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card :is(.rms-activation-message-field, .rms-activation-outcome-row label) {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card :is(.rms-activation-message-field > span, .rms-activation-outcome-row label > span) {
+  color: #5d7288 !important;
+  font-size: .67rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .06em !important;
+  line-height: 1.25 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card textarea,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card input[type="datetime-local"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(11, 99, 246, .19) !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #153956 !important;
+  font: inherit !important;
+  line-height: 1.45 !important;
+  box-sizing: border-box !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card textarea {
+  min-height: 92px !important;
+  padding: 10px 11px !important;
+  resize: vertical !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card input[type="datetime-local"] {
+  min-height: 40px !important;
+  padding: 7px 9px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-plan-controls {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr) !important;
+  align-items: end !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-action-row,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-outcome-row {
+  display: flex !important;
+  align-items: end !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-action-row button {
+  flex: 1 1 0 !important;
+  min-height: 42px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-outcome-row label {
+  flex: 1 1 auto !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-outcome-row button {
+  min-height: 40px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card :is(textarea, input, select, button):focus-visible {
+  outline: 3px solid rgba(4, 128, 250, .32) !important;
+  outline-offset: 2px !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card {
+  background: linear-gradient(145deg, #071d35 0%, #0a2948 100%) !important;
+  border-color: rgba(114, 198, 255, .26) !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card :is(textarea, input[type="datetime-local"]) {
+  background: #0b2643 !important;
+  color: #edf9ff !important;
+  border-color: rgba(182, 226, 255, .25) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-table td.rms-lean-station-activation {
+    width: 450px !important;
+    min-width: 450px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card .rms-activation-plan-controls {
+    grid-template-columns: 1fr !important;
+  }
+}
