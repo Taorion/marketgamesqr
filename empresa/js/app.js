@@ -42657,6 +42657,20 @@ function bindRmsMachineActions(root) {
       if (item) sendRmsActivationOffer(item, rmsActivationDraftFromDom(root, activationId));
     });
   });
+  root.querySelectorAll("[data-rms-activation-ticket-select]").forEach(async (select) => {
+    const item = rmsOpportunityById(select.dataset.rmsActivationTicketSelect || "");
+    if (!item?.source_id) return;
+    try {
+      const detail = await api(`/api/business/leads/${encodeURIComponent(item.source_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() });
+      const tickets = (detail.benefits || []).filter((ticket) => ["ACTIVE", "UNCLAIMED", "CLAIMED"].includes(String(ticket.status || "").toUpperCase()) && ticketPublicUrl(ticket));
+      select.innerHTML = `<option value="">Selecciona un ticket ya creado</option>${tickets.map((ticket) => `<option value="${escapeHtml(ticketPublicUrl(ticket))}">${escapeHtml(ticketTitle(ticket))} · ${escapeHtml(ticketStatusLabel(ticket.status))}</option>`).join("")}`;
+      select.disabled = !tickets.length;
+      if (!tickets.length) select.innerHTML = '<option value="">Este lead no tiene tickets activos</option>';
+    } catch (_error) {
+      select.innerHTML = '<option value="">No se pudieron cargar los tickets</option>';
+      select.disabled = true;
+    }
+  });
   root.querySelectorAll("[data-rms-save-activation-outcome]").forEach((button) => {
     button.addEventListener("click", () => {
       const activationId = button.dataset.rmsSaveActivationOutcome || "";
@@ -43208,7 +43222,7 @@ function rmsActivationDraftFromDom(root, id) {
     message: byData("data-rms-activation-message")?.value?.trim() || "",
     followUpAt: byData("data-rms-activation-followup")?.value || "",
     outcome: byData("data-rms-activation-outcome")?.value || "PENDING",
-    ticketUrl: byData("data-rms-activation-ticket")?.value?.trim() || "",
+    ticketUrl: byData("data-rms-activation-ticket-select")?.value?.trim() || byData("data-rms-activation-ticket")?.value?.trim() || "",
     paymentMode: byData("data-rms-activation-payment-mode")?.value || "NONE",
     paymentUrl: byData("data-rms-activation-payment-url")?.value?.trim() || "",
     paymentInstructions: byData("data-rms-activation-payment-instructions")?.value?.trim() || "",
@@ -44530,7 +44544,8 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
         </label>
       </div>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
-        <label><span>Ticket del portal</span><input type="url" placeholder="https://..." data-rms-activation-ticket="${escapeHtml(item.id)}"></label>
+        <label><span>Ticket creado para este lead</span><select data-rms-activation-ticket-select="${escapeHtml(item.id)}"><option value="">Cargando tickets...</option></select></label>
+        <label><span>O pegar otro link de ticket</span><input type="url" placeholder="https://..." data-rms-activation-ticket="${escapeHtml(item.id)}"></label>
         <label><span>Adjuntar PDF, Word o imagen</span><input type="file" multiple accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" data-rms-activation-files="${escapeHtml(item.id)}"></label>
       </div>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
