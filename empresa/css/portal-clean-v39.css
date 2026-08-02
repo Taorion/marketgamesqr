@@ -9424,8 +9424,12 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card textarea {
   min-height: 92px !important;
+  height: 148px !important;
+  max-height: 260px !important;
   padding: 10px 11px !important;
   resize: vertical !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
 }
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-activation-command-card input[type="datetime-local"] {
