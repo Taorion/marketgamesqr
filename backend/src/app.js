@@ -23,6 +23,7 @@ const publicAffiliateRoutes = require("./routes/publicAffiliateRoutes");
 const publicSmartCatalogRoutes = require("./routes/publicSmartCatalogRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
+const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rewardPassRoutes = require("./routes/rewardPassRoutes");
 const {
@@ -223,6 +224,7 @@ app.use("/api/public", publicQrRoutes);
 app.use("/api/public", publicAffiliateRoutes);
 app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
+app.get("/api/public/rms-attachments/:publicToken", publicAttachmentDownload);
 app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);

@@ -8,6 +8,8 @@ const MAX_ASSET_BYTES = 5 * 1024 * 1024;
 const MAX_COVER_BYTES = 2 * 1024 * 1024;
 const ALLOWED_ASSET_TYPES = new Set([
   "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "image/png",
   "image/jpeg",
   "image/webp",

@@ -1,6 +1,8 @@
 const { query, withTransaction } = require("../config/db");
+const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
-const { createLeadAgendaItem, listLeadCrmRows } = require("./leadCrmService");
+const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
+const { randomBytes } = require("crypto");
 
 const RMS_PHASES = [
   { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
@@ -1159,11 +1161,75 @@ async function listRmsEvents(businessId, params = {}) {
   return { events: result.rows };
 }
 
+function activationDeliveryPayment(payload = {}) {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const mode = String(input.mode || "NONE").toUpperCase();
+  const labels = { NONE: "Sin cobro", PAYMENT_LINK: "Link de cobro", INVOICE: "Factura", COLLECTION_ACCOUNT: "Cuenta de cobro", SIMPLE_COLLECTION: "Cobro simple" };
+  if (!labels[mode]) throw badRequest("El medio de cobro no es válido.");
+  const url = String(input.url || "").trim().slice(0, 1800);
+  const instructions = String(input.instructions || "").trim().slice(0, 1800);
+  if (mode === "PAYMENT_LINK" && !/^https?:\/\//i.test(url)) throw badRequest("Agrega un link de cobro válido.");
+  if (mode !== "NONE" && !url && !instructions) throw badRequest("Agrega el link o las instrucciones de cobro.");
+  return { mode, label: labels[mode], url, instructions, reference: String(input.reference || "").trim().slice(0, 180), amount: Number.isFinite(Number(input.amount)) && Number(input.amount) >= 0 ? Number(input.amount) : null, currency: String(input.currency || "COP").trim().slice(0, 8) || "COP" };
+}
+
+function activationDeliveryPaymentText(payment) {
+  if (!payment || payment.mode === "NONE") return "";
+  return [
+    `Cobro: ${payment.label}.`,
+    payment.amount !== null ? `Valor: ${payment.currency} ${payment.amount.toLocaleString("es-CO")}.` : "",
+    payment.reference ? `Referencia: ${payment.reference}.` : "",
+    payment.url ? `Pagar aquí: ${payment.url}` : "",
+    payment.instructions,
+  ].filter(Boolean).join("\n");
+}
+
+function activationAttachmentUrl(token) {
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/api/public/rms-attachments/${encodeURIComponent(token)}`;
+}
+
+async function recordActivationDelivery(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const sourceId = payload.source_id;
+  const item = await findOpportunity(businessId, sourceType, sourceId);
+  if (!payload.contact_consent_confirmed) throw badRequest("Confirma la autorización comercial del lead antes de enviar.");
+  const assetIds = [...new Set((payload.attachment_asset_ids || []).map(String).filter(Boolean))].slice(0, 6);
+  const assets = assetIds.length ? await query(`select id, title, file_name, file_type from digital_assets where business_id = $1 and is_active = true and id = any($2::uuid[])`, [businessId, assetIds]) : { rows: [] };
+  if (assets.rows.length !== assetIds.length) throw badRequest("Uno o más adjuntos no pertenecen a este negocio.");
+  const payment = activationDeliveryPayment(payload.payment);
+  const ticketUrl = String(payload.ticket_url || "").trim().slice(0, 1800);
+  if (ticketUrl && !/^https?:\/\//i.test(ticketUrl)) throw badRequest("El link del ticket debe comenzar por http:// o https://.");
+  const baseMessage = String(payload.message || "").trim().slice(0, 5000);
+  const note = await createLeadNote(businessId, user, sourceId, sourceType, { note: `Activación 1: oferta enviada por ${String(payload.channel || "WhatsApp")}.`, note_type: "commercial", metadata: { source_module: "rms_activation_1", activation_delivery: { payment, ticket_url: ticketUrl || null, channel: payload.channel || "WhatsApp", contact_consent_confirmed: true } } });
+  const attachments = [];
+  for (const asset of assets.rows) {
+    const token = randomBytes(24).toString("base64url");
+    const created = await query(`insert into rms_activation_attachments (business_id, source_type, source_id, lead_id, activation_note_id, asset_id, public_token, metadata) values ($1,$2,$3,$4,$5,$6,$7,$8::jsonb) returning id, public_token`, [businessId, sourceType, sourceId, item.lead_id || null, note.id, asset.id, token, JSON.stringify({ title: asset.title, file_name: asset.file_name, sent_by: user.id })]);
+    attachments.push({ id: created.rows[0].id, asset_id: asset.id, title: asset.title, file_name: asset.file_name, file_type: asset.file_type, url: activationAttachmentUrl(token) });
+  }
+  const deliveryMessage = [baseMessage, attachments.length ? `Documentos para descargar:\n${attachments.map((asset) => `• ${asset.title || asset.file_name}: ${asset.url}`).join("\n")}` : "", ticketUrl ? `Ticket: ${ticketUrl}` : "", activationDeliveryPaymentText(payment)].filter(Boolean).join("\n\n").slice(0, 5000);
+  await query(`update lead_notes set metadata = metadata || $2::jsonb where id = $1`, [note.id, JSON.stringify({ activation_delivery: { attachments, payment, ticket_url: ticketUrl || null, message: deliveryMessage } })]);
+  return { note, attachments, payment, whatsapp_message: deliveryMessage, whatsapp_url: whatsappUrl(item.phone, deliveryMessage) };
+}
+
+async function downloadActivationAttachment(publicToken) {
+  const result = await query(`select aa.id, aa.business_id, aa.lead_id, aa.source_type, aa.source_id, da.title, da.file_name, da.file_type, da.file_data_url from rms_activation_attachments aa join digital_assets da on da.id = aa.asset_id and da.business_id = aa.business_id and da.is_active = true where aa.public_token = $1`, [String(publicToken || "").trim()]);
+  const row = result.rows[0];
+  if (!row) throw notFound("Adjunto no encontrado o desactivado.");
+  const match = String(row.file_data_url || "").match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
+  if (!match) throw notFound("El archivo adjunto no está disponible.");
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw notFound("El archivo adjunto no es válido.");
+  await query(`update rms_activation_attachments set opened_at = coalesce(opened_at, now()), open_count = open_count + 1 where id = $1`, [row.id]);
+  return { buffer, file_name: row.file_name || "adjunto", file_type: row.file_type || match[1] };
+}
+
 module.exports = {
   STAGES,
   RMS_PHASES,
   WHATSAPP_TEMPLATES,
   createRmsAgendaTask,
+  downloadActivationAttachment,
   executeRmsAction,
   executeRmsBulkAction,
   getDailyQueue,
@@ -1171,5 +1237,6 @@ module.exports = {
   listRmsEvents,
   listRmsOpportunities,
   moveRmsLeadPhase,
+  recordActivationDelivery,
   rmsMetrics,
 };

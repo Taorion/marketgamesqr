@@ -3,12 +3,14 @@ const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const {
   createRmsAgendaTask,
+  downloadActivationAttachment,
   executeRmsAction,
   executeRmsBulkAction,
   getDailyQueue,
   listRmsEvents,
   listRmsOpportunities,
   moveRmsLeadPhase,
+  recordActivationDelivery,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 
@@ -63,6 +65,17 @@ const actionSchema = z.object({
   create_task: z.boolean().optional(),
   advance_phase: z.boolean().optional(),
   template_values: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const activationDeliverySchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  attachment_asset_ids: z.array(z.string().uuid()).max(6).optional().default([]),
+  ticket_url: z.string().trim().max(1800).optional().nullable(),
+  payment: z.object({ mode: z.enum(["NONE", "PAYMENT_LINK", "INVOICE", "COLLECTION_ACCOUNT", "SIMPLE_COLLECTION"]).default("NONE"), url: z.string().trim().max(1800).optional().nullable(), instructions: z.string().trim().max(1800).optional().nullable(), reference: z.string().trim().max(180).optional().nullable(), amount: z.number().min(0).optional().nullable(), currency: z.string().trim().max(8).optional().nullable() }).optional().default({ mode: "NONE" }),
+  message: z.string().trim().max(5000).optional().nullable(),
+  channel: z.string().trim().max(80).optional().nullable(),
+  contact_consent_confirmed: z.boolean(),
 });
 
 const bulkActionSchema = actionSchema.omit({ source_id: true, source_type: true }).extend({
@@ -129,6 +142,27 @@ async function executeAction(req, res, next) {
   }
 }
 
+async function recordActivationDeliveryAction(req, res, next) {
+  try {
+    const body = validate(activationDeliverySchema, req.body);
+    res.status(201).json(await recordActivationDelivery(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function publicAttachmentDownload(req, res, next) {
+  try {
+    const file = await downloadActivationAttachment(req.params.publicToken);
+    res.setHeader("Content-Type", file.file_type);
+    res.setHeader("Content-Length", file.buffer.length);
+    res.setHeader("Content-Disposition", `attachment; filename="${String(file.file_name).replace(/\"/g, "")}"`);
+    res.send(file.buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function executeBulkAction(req, res, next) {
   try {
     const body = validate(bulkActionSchema, req.body);
@@ -156,4 +190,6 @@ module.exports = {
   machine,
   metrics,
   movePhase,
+  publicAttachmentDownload,
+  recordActivationDeliveryAction,
 };

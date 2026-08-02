@@ -43208,6 +43208,14 @@ function rmsActivationDraftFromDom(root, id) {
     message: byData("data-rms-activation-message")?.value?.trim() || "",
     followUpAt: byData("data-rms-activation-followup")?.value || "",
     outcome: byData("data-rms-activation-outcome")?.value || "PENDING",
+    ticketUrl: byData("data-rms-activation-ticket")?.value?.trim() || "",
+    paymentMode: byData("data-rms-activation-payment-mode")?.value || "NONE",
+    paymentUrl: byData("data-rms-activation-payment-url")?.value?.trim() || "",
+    paymentInstructions: byData("data-rms-activation-payment-instructions")?.value?.trim() || "",
+    paymentReference: byData("data-rms-activation-payment-reference")?.value?.trim() || "",
+    paymentAmount: Number(byData("data-rms-activation-payment-amount")?.value || 0) || null,
+    files: Array.from(byData("data-rms-activation-files")?.files || []).slice(0, 4),
+    consent: Boolean(byData("data-rms-activation-consent")?.checked),
   };
 }
 
@@ -43282,9 +43290,33 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   const offer = delivery.offer || rmsClassifiedProductName(item) || item.product_interest || "nuestra oferta comercial";
   const message = draft.message || rmsActivationMessage(item, delivery);
   const followUpAt = draft.followUpAt || "";
+  if (!draft.consent) {
+    showFeedback("Confirma la autorización comercial antes de enviar la oferta.", "info", { title: "Activación 1" });
+    return;
+  }
+  if (draft.ticketUrl && !/^https?:\/\//i.test(draft.ticketUrl)) {
+    showFeedback("El link del ticket debe comenzar por http:// o https://.", "info", { title: "Activación 1" });
+    return;
+  }
+  if (draft.paymentMode === "PAYMENT_LINK" && !/^https?:\/\//i.test(draft.paymentUrl)) {
+    showFeedback("Agrega un link de cobro válido.", "info", { title: "Activación 1" });
+    return;
+  }
+  if (draft.paymentMode !== "NONE" && !draft.paymentUrl && !draft.paymentInstructions) {
+    showFeedback("Agrega el link o las instrucciones de cobro.", "info", { title: "Activación 1" });
+    return;
+  }
   const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
     showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
+    const attachmentAssetIds = [];
+    for (const file of draft.files || []) {
+      const uploaded = await api("/api/business/digital-assets", { method: "POST", headers: authHeaders(), body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, "") || "Documento comercial", description: `Adjunto comercial de Activación 1 para ${item.name || "lead"}.`, category: "comercial", file_name: file.name, file_data_url: await readFileAsDataUrl(file, 5 * 1024 * 1024, ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg", "image/webp"]), download_button_text: "Descargar documento" }) });
+      if (uploaded.asset?.id) attachmentAssetIds.push(uploaded.asset.id);
+    }
+    const deliveryRecord = await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: "COP" }, message, channel: targetChannel, contact_consent_confirmed: true }) });
+    const deliveredMessage = deliveryRecord.whatsapp_message || message;
+    openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
@@ -43307,7 +43339,10 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
           activation_delivery_channel: targetChannel,
           activation_offer_name: offer,
           activation_offer_note: `Oferta ${offer} · Canal: ${targetChannel === "email" ? "email" : "WhatsApp"}.`,
-          activation_message: message,
+          activation_message: deliveredMessage,
+          activation_ticket_url: draft.ticketUrl || null,
+          activation_payment: deliveryRecord.payment || null,
+          activation_attachments: deliveryRecord.attachments || [],
           activation_follow_up_at: followUpAt ? new Date(followUpAt).toISOString() : null,
           activation_outcome: draft.outcome || "PENDING",
         },
@@ -44494,6 +44529,18 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
           <input type="datetime-local" value="${escapeHtml(followUpValue)}" data-rms-activation-followup="${escapeHtml(item.id)}" aria-label="Fecha de seguimiento para ${escapeHtml(item.name || "lead")}">
         </label>
       </div>
+      <div class="rms-activation-delivery-controls rms-activation-plan-controls">
+        <label><span>Ticket del portal</span><input type="url" placeholder="https://..." data-rms-activation-ticket="${escapeHtml(item.id)}"></label>
+        <label><span>Adjuntar PDF, Word o imagen</span><input type="file" multiple accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" data-rms-activation-files="${escapeHtml(item.id)}"></label>
+      </div>
+      <div class="rms-activation-delivery-controls rms-activation-plan-controls">
+        <label><span>Cobro</span><select data-rms-activation-payment-mode="${escapeHtml(item.id)}"><option value="NONE">Sin cobro</option><option value="PAYMENT_LINK">Link de cobro</option><option value="INVOICE">Factura</option><option value="COLLECTION_ACCOUNT">Cuenta de cobro</option><option value="SIMPLE_COLLECTION">Cobro simple</option></select></label>
+        <label><span>Valor COP</span><input type="number" min="0" step="100" data-rms-activation-payment-amount="${escapeHtml(item.id)}"></label>
+        <label><span>Link de pago</span><input type="url" placeholder="https://checkout..." data-rms-activation-payment-url="${escapeHtml(item.id)}"></label>
+        <label><span>Referencia</span><input type="text" placeholder="Factura o referencia" data-rms-activation-payment-reference="${escapeHtml(item.id)}"></label>
+      </div>
+      <label class="rms-activation-message-field"><span>Instrucciones de cobro</span><textarea rows="2" data-rms-activation-payment-instructions="${escapeHtml(item.id)}" placeholder="Cuenta, factura o instrucciones para pagar"></textarea></label>
+      <label class="rms-activation-message-field"><span><input type="checkbox" data-rms-activation-consent="${escapeHtml(item.id)}"> Confirmo que el lead autorizó el contacto comercial.</span></label>
       <div class="rms-activation-action-row">
         <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir mensaje</button>
         <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">${sent ? "calendar_add_on" : "task_alt"}</span>${sent ? ready ? "Registrar reenvío" : "Guardar seguimiento" : "Confirmar envío"}</button>
