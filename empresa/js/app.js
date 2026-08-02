@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260801-rms-activation-followup-v150";
+const APP_VERSION = "empresa-20260802-rms-activation-commercial-delivery-v151";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -38305,12 +38305,26 @@ function rmsActivation1CatalogChoices() {
   return (state.smartCatalogs || []).filter((catalog) => smartCatalogPublicUrl(catalog));
 }
 
-function rmsActivation1Message({ lead = {}, item = {}, materials = [], products = [], catalogUrl = "", benefitSummary = "", interactive = null, proposalSummary = "" } = {}) {
+function rmsActivation1PaymentLabel(mode = "NONE") {
+  return ({ PAYMENT_LINK: "Link de cobro", INVOICE: "Factura", COLLECTION_ACCOUNT: "Cuenta de cobro", SIMPLE_COLLECTION: "Cobro simple" })[String(mode || "").toUpperCase()] || "";
+}
+
+function rmsActivation1Message({ lead = {}, item = {}, materials = [], products = [], catalogUrl = "", benefitSummary = "", ticketUrl = "", attachments = [], payment = {}, interactive = null, proposalSummary = "" } = {}) {
   const name = lead.name || item.name || "Hola";
   const parts = [proposalSummary || `Hola ${name}, tenemos una propuesta preparada para ti.`];
   if (materials.includes("products") && products.length) parts.push(`Productos: ${products.map((product) => `${product.name}${product.price === null ? "" : ` (${money(product.price)})`}`).join(", ")}.`);
   if (materials.includes("catalog") && catalogUrl) parts.push(`Catálogo: ${catalogUrl}`);
   if (materials.some((material) => material === "benefit" || material === "ticket") && benefitSummary) parts.push(`Beneficio: ${benefitSummary}`);
+  if (materials.includes("ticket") && ticketUrl) parts.push(`Ticket: ${ticketUrl}`);
+  if (materials.includes("attachments") && attachments.length) parts.push(`Documentos: ${attachments.map((attachment) => attachment.title || attachment.file_name || "adjunto").join(", ")}. Los links seguros se añadirán al registrar el envío.`);
+  if (materials.includes("payment") && payment?.mode && payment.mode !== "NONE") {
+    const paymentLines = [`Cobro: ${rmsActivation1PaymentLabel(payment.mode)}.`];
+    if (payment.amount) paymentLines.push(`Valor: ${money(payment.amount)}.`);
+    if (payment.reference) paymentLines.push(`Referencia: ${payment.reference}.`);
+    if (payment.url) paymentLines.push(`Pagar aquí: ${payment.url}`);
+    if (payment.instructions) paymentLines.push(payment.instructions);
+    parts.push(paymentLines.join("\n"));
+  }
   if (materials.includes("interactive") && interactive?.public_url) parts.push(`${interactive.title || "Activación"}: ${interactive.public_url}`);
   return parts.join("\n\n");
 }
@@ -38321,6 +38335,8 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
   const lead = detail.lead || {};
   const choices = rmsActivation1Choices();
   const catalogs = rmsActivation1CatalogChoices();
+  const assets = (state.digitalAssets || []).filter((asset) => asset.is_active !== false);
+  const activeTickets = (detail.benefits || []).filter((ticket) => ["ACTIVE", "UNCLAIMED", "CLAIMED"].includes(String(ticket.status || "").toUpperCase()) && ticketPublicUrl(ticket));
   const products = activeInventoryProducts().slice(0, 18);
   const classifiedProduct = String(item.classified_product_id || "");
   const defaultProducts = products.filter((product) => String(product.id) === classifiedProduct || String(product.name || "").toLowerCase() === String(item.classified_product_name || item.product_interest || "").toLowerCase());
@@ -38341,7 +38357,7 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
       <section class="rms-activation1-material-panel">
         <div class="rms-activation1-section-head"><div><span class="mono-label">01 · material a enviar</span><h4>¿Qué recibirá este lead?</h4></div><small>Selecciona uno o varios</small></div>
         <div class="rms-activation1-material-grid">
-          ${[["catalog", "Catálogo", "menú o portafolio publicado", "menu_book"], ["products", "Productos con precio", "oferta concreta desde inventario", "sell"], ["benefit", "Beneficio", "descuento, bonus o condición", "redeem"], ["ticket", "Ticket", "cupón o pase comercial", "confirmation_number"], ["interactive", "Activación", "experiencia publicada para participar", "sports_esports"]].map(([value, label, copy, icon]) => `<label class="rms-activation1-material ${defaultMaterials.includes(value) ? "is-checked" : ""}"><input type="checkbox" value="${value}" data-rms-activation1-material ${defaultMaterials.includes(value) ? "checked" : ""}><span class="material-symbols-outlined">${icon}</span><span><strong>${label}</strong><small>${copy}</small></span></label>`).join("")}
+          ${[["catalog", "Catálogo", "menú o portafolio publicado", "menu_book"], ["products", "Productos con precio", "oferta concreta desde inventario", "sell"], ["benefit", "Beneficio", "descuento, bonus o condición", "redeem"], ["ticket", "Ticket", "cupón o pase comercial", "confirmation_number"], ["interactive", "Activación", "experiencia publicada para participar", "sports_esports"], ["attachments", "Documentos", "PDF, cotización, factura o cuenta", "attach_file"], ["payment", "Cobro", "link, factura, cuenta o instrucción", "payments"]].map(([value, label, copy, icon]) => `<label class="rms-activation1-material ${defaultMaterials.includes(value) ? "is-checked" : ""}"><input type="checkbox" value="${value}" data-rms-activation1-material ${defaultMaterials.includes(value) ? "checked" : ""}><span class="material-symbols-outlined">${icon}</span><span><strong>${label}</strong><small>${copy}</small></span></label>`).join("")}
         </div>
       </section>
       <section class="rms-activation1-decision-grid">
@@ -38352,7 +38368,21 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
             <label><span>Canal de atención</span><select data-rms-activation1-channel><option>WhatsApp</option><option>Llamada</option><option>Email</option><option>Presencial</option><option>Otro</option></select></label>
             <div class="rms-activation1-product-select"><span>Productos con precio</span><div>${products.map((product) => `<label><input type="checkbox" value="${escapeHtml(product.id)}" data-rms-activation1-product ${defaultProducts.some((selected) => String(selected.id) === String(product.id)) ? "checked" : ""}><span>${escapeHtml(product.name || "Producto")}</span><strong>${escapeHtml(money(product.unit_price || product.price || 0))}</strong></label>`).join("") || `<small>No hay productos activos; puedes explicar la oferta en la propuesta.</small>`}</div></div>
             <label class="span-2"><span>Beneficio o ticket enviado</span><input type="text" maxlength="1200" data-rms-activation1-benefit placeholder="Ej.: 15% de descuento hasta el viernes o ticket de experiencia"></label>
+            <label class="span-2"><span>Link de ticket del portal (si ya existe)</span><input type="url" maxlength="1800" data-rms-activation1-ticket-url placeholder="https://..."></label>
+            ${activeTickets.length ? `<label class="span-2"><span>Ticket activo del lead</span><select data-rms-activation1-ticket-select><option value="">Selecciona un ticket existente</option>${activeTickets.map((ticket) => `<option value="${escapeHtml(ticketPublicUrl(ticket))}">${escapeHtml(ticket.reward_name || ticket.benefit_name || ticket.code || "Ticket activo")} · ${escapeHtml(ticket.status || "ACTIVE")}</option>`).join("")}</select></label>` : ""}
             <label class="span-2"><span>Activación interactiva (opcional)</span><select data-rms-activation1-interactive><option value="">No enviar activación interactiva</option>${choices.map((activation) => `<option value="${escapeHtml(activation.id)}">${escapeHtml(activation.title || "Activación")} · ${escapeHtml(activation.campaign_name || "Sin campaña")}</option>`).join("")}</select></label>
+            <label class="span-2"><span>Adjuntar documentos de la biblioteca</span><select multiple size="4" data-rms-activation1-attachments>${assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(asset.title || asset.file_name || "Documento")} · ${escapeHtml(asset.file_name || "archivo")}</option>`).join("")}</select><small>PDF e imágenes previamente guardados en Biblioteca de activos.</small></label>
+            <label class="span-2"><span>O cargar ahora documentos nuevos</span><input type="file" multiple accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" data-rms-activation1-files><small>PDF, Word o imagen; hasta 4 archivos, máximo 5 MB cada uno. Se guardan en la Biblioteca del negocio y se enlazan solo a este lead.</small></label>
+            <section class="rms-activation1-payment-panel span-2">
+              <div class="rms-activation1-section-head"><div><span class="mono-label">Cobro opcional</span><h4>¿Cómo puede pagar este lead?</h4></div></div>
+              <div class="rms-activation1-fields">
+                <label><span>Medio de cobro</span><select data-rms-activation1-payment-mode><option value="NONE">Aún no cobrar</option><option value="PAYMENT_LINK">Link de cobro</option><option value="INVOICE">Factura</option><option value="COLLECTION_ACCOUNT">Cuenta de cobro</option><option value="SIMPLE_COLLECTION">Cobro simple</option></select></label>
+                <label><span>Valor a cobrar</span><input type="number" min="0" step="100" data-rms-activation1-payment-amount placeholder="Ej.: 150000"></label>
+                <label><span>Link de pago</span><input type="url" maxlength="1800" data-rms-activation1-payment-url placeholder="https://checkout..."></label>
+                <label><span>Referencia / factura</span><input type="text" maxlength="180" data-rms-activation1-payment-reference placeholder="Ej.: FC-1008"></label>
+                <label class="span-2"><span>Instrucciones de pago</span><textarea rows="2" maxlength="1800" data-rms-activation1-payment-instructions placeholder="Ej.: Transfiere a la cuenta indicada en el PDF, adjunta comprobante y usa la referencia."></textarea></label>
+              </div>
+            </section>
             <label class="span-2"><span>Propuesta enviada <b>obligatorio</b></span><textarea rows="3" maxlength="3000" required data-rms-activation1-proposal placeholder="Explica qué se le propuso, condiciones, precio o siguiente valor para el lead."></textarea></label>
             <label class="span-2"><span>Cómo se atendió y qué se envió <b>obligatorio</b></span><textarea rows="3" maxlength="3000" required data-rms-activation1-attention placeholder="Deja la nota interna: contexto de conversación, material enviado, objeciones y compromiso."></textarea></label>
           </div>
@@ -38362,6 +38392,7 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
           <strong>Se registrará una nota en la ficha</strong>
           <small>La nota guarda materiales, precios, propuesta, beneficio/ticket y atención. Después el lead se mueve a Evaluación para esperar su respuesta.</small>
           <label><span>Mensaje para el canal</span><textarea rows="8" maxlength="5000" data-rms-activation1-message>${escapeHtml(initialMessage)}</textarea></label>
+          <label class="rms-activation1-consent"><input type="checkbox" required data-rms-activation1-consent> <span>Confirmo que este lead autorizó el contacto comercial por el canal seleccionado.</span></label>
           <button class="ghost-button compact" type="button" data-rms-activation1-refresh>Actualizar mensaje</button>
           <p class="rms-activation1-validation" data-rms-activation1-validation></p>
           <div class="rms-activation1-actions"><button class="solid-button" type="submit" data-rms-activation1-submit>Registrar activación y enviar a Evaluación <span class="material-symbols-outlined">arrow_forward</span></button></div>
@@ -38374,7 +38405,16 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
     const materials = Array.from(form.querySelectorAll("[data-rms-activation1-material]:checked")).map((input) => input.value);
     const selectedProducts = Array.from(form.querySelectorAll("[data-rms-activation1-product]:checked")).map((input) => products.find((product) => String(product.id) === String(input.value))).filter(Boolean).map((product) => ({ id: product.id, name: product.name, price: Number(product.unit_price || product.price || 0), currency: product.currency || "COP" }));
     const interactive = choices.find((activation) => String(activation.id) === String(form.querySelector("[data-rms-activation1-interactive]")?.value || "")) || null;
-    return { materials, products: selectedProducts, catalogUrl: form.querySelector("[data-rms-activation1-catalog]")?.value || "", benefitSummary: form.querySelector("[data-rms-activation1-benefit]")?.value.trim() || "", interactive, proposalSummary: form.querySelector("[data-rms-activation1-proposal]")?.value.trim() || "", attentionNote: form.querySelector("[data-rms-activation1-attention]")?.value.trim() || "", channel: form.querySelector("[data-rms-activation1-channel]")?.value || "WhatsApp", message: form.querySelector("[data-rms-activation1-message]")?.value.trim() || "" };
+    const attachments = Array.from(form.querySelector("[data-rms-activation1-attachments]")?.selectedOptions || []).map((option) => assets.find((asset) => String(asset.id) === String(option.value))).filter(Boolean);
+    const payment = {
+      mode: form.querySelector("[data-rms-activation1-payment-mode]")?.value || "NONE",
+      amount: Number(form.querySelector("[data-rms-activation1-payment-amount]")?.value || 0) || null,
+      currency: "COP",
+      url: form.querySelector("[data-rms-activation1-payment-url]")?.value.trim() || "",
+      reference: form.querySelector("[data-rms-activation1-payment-reference]")?.value.trim() || "",
+      instructions: form.querySelector("[data-rms-activation1-payment-instructions]")?.value.trim() || "",
+    };
+    return { materials, products: selectedProducts, catalogUrl: form.querySelector("[data-rms-activation1-catalog]")?.value || "", benefitSummary: form.querySelector("[data-rms-activation1-benefit]")?.value.trim() || "", ticketUrl: form.querySelector("[data-rms-activation1-ticket-url]")?.value.trim() || "", attachments, attachmentFiles: Array.from(form.querySelector("[data-rms-activation1-files]")?.files || []).slice(0, 4), payment, interactive, proposalSummary: form.querySelector("[data-rms-activation1-proposal]")?.value.trim() || "", attentionNote: form.querySelector("[data-rms-activation1-attention]")?.value.trim() || "", contactConsentConfirmed: Boolean(form.querySelector("[data-rms-activation1-consent]")?.checked), channel: form.querySelector("[data-rms-activation1-channel]")?.value || "WhatsApp", message: form.querySelector("[data-rms-activation1-message]")?.value.trim() || "" };
   };
   form.querySelectorAll("[data-rms-activation1-material]").forEach((input) => input.addEventListener("change", () => input.closest(".rms-activation1-material")?.classList.toggle("is-checked", input.checked)));
   form.querySelectorAll("[data-rms-activation1-product]").forEach((input) => input.addEventListener("change", () => {
@@ -38385,10 +38425,52 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
       material.closest(".rms-activation1-material")?.classList.add("is-checked");
     }
   }));
+  const selectActivationMaterial = (value) => {
+    const material = form.querySelector(`[data-rms-activation1-material][value="${value}"]`);
+    if (material && !material.checked) {
+      material.checked = true;
+      material.closest(".rms-activation1-material")?.classList.add("is-checked");
+    }
+  };
+  form.querySelector("[data-rms-activation1-attachments]")?.addEventListener("change", () => selectActivationMaterial("attachments"));
+  form.querySelector("[data-rms-activation1-files]")?.addEventListener("change", () => selectActivationMaterial("attachments"));
+  form.querySelector("[data-rms-activation1-payment-mode]")?.addEventListener("change", (event) => {
+    if (event.currentTarget.value !== "NONE") selectActivationMaterial("payment");
+  });
+  form.querySelector("[data-rms-activation1-ticket-url]")?.addEventListener("input", (event) => {
+    if (event.currentTarget.value.trim()) selectActivationMaterial("ticket");
+  });
+  form.querySelector("[data-rms-activation1-ticket-select]")?.addEventListener("change", (event) => {
+    const ticketUrlInput = form.querySelector("[data-rms-activation1-ticket-url]");
+    if (event.currentTarget.value && ticketUrlInput) {
+      ticketUrlInput.value = event.currentTarget.value;
+      selectActivationMaterial("ticket");
+    }
+  });
   form.querySelector("[data-rms-activation1-refresh]")?.addEventListener("click", () => {
     const value = readForm();
     form.querySelector("[data-rms-activation1-message]").value = rmsActivation1Message({ lead, item, ...value });
   });
+  const uploadAttachmentFiles = async (files = []) => {
+    const uploaded = [];
+    for (const file of files) {
+      const result = await api("/api/business/digital-assets", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: file.name.replace(/\.[^.]+$/, "") || "Documento comercial",
+          description: `Adjunto enviado desde Activación 1 a ${lead.name || item.name || "un lead"}.`,
+          category: "comercial",
+          file_name: file.name,
+          file_data_url: await readFileAsDataUrl(file, 5 * 1024 * 1024, ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg", "image/webp"]),
+          download_button_text: "Descargar documento",
+          metadata: { source_module: "rms_activation_1", source_id: item.source_id, source_type: item.source_type || "PLAYER" },
+        }),
+      });
+      if (result.asset) uploaded.push(result.asset);
+    }
+    return uploaded;
+  };
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const value = readForm();
@@ -38397,8 +38479,14 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
     if (!value.materials.length) return fail("Selecciona al menos un material para enviar.");
     if (value.materials.includes("catalog") && !value.catalogUrl) return fail("Elige el catálogo que se compartirá.");
     if (value.materials.includes("products") && !value.products.length) return fail("Selecciona al menos un producto con precio.");
-    if ((value.materials.includes("benefit") || value.materials.includes("ticket")) && !value.benefitSummary) return fail("Describe el beneficio o ticket enviado.");
+    if ((value.materials.includes("benefit") || value.materials.includes("ticket")) && !value.benefitSummary && !value.ticketUrl) return fail("Describe el beneficio o ticket enviado.");
+    if (value.materials.includes("ticket") && value.ticketUrl && !/^https?:\/\//i.test(value.ticketUrl)) return fail("El link del ticket debe comenzar por http:// o https://.");
     if (value.materials.includes("interactive") && !value.interactive) return fail("Elige la activación interactiva que se enviará.");
+    if (value.materials.includes("attachments") && !value.attachments.length && !value.attachmentFiles.length) return fail("Selecciona o carga al menos un documento para adjuntar.");
+    if (value.materials.includes("payment") && value.payment.mode === "NONE") return fail("Selecciona cómo se cobrará esta oferta.");
+    if (value.payment.mode === "PAYMENT_LINK" && !/^https?:\/\//i.test(value.payment.url)) return fail("Agrega un link de cobro válido.");
+    if (value.payment.mode !== "NONE" && !value.payment.url && !value.payment.instructions) return fail("Agrega el link o las instrucciones de cobro.");
+    if (!value.contactConsentConfirmed) return fail("Confirma la autorización comercial del lead antes de enviar.");
     if (!value.proposalSummary || !value.attentionNote) return fail("Completa la propuesta y la nota de atención.");
     const submit = form.querySelector("[data-rms-activation1-submit]");
     submit.disabled = true;
@@ -38406,11 +38494,18 @@ function renderRmsActivation1Decision(item = {}, detail = {}) {
     const whatsappWindow = value.channel === "WhatsApp" && phone ? window.open("", "_blank") : null;
     if (whatsappWindow) whatsappWindow.opener = null;
     try {
-      if (value.interactive) {
-        await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}/activations`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: item.source_type || "PLAYER", interactive_activation_id: value.interactive.id, activation_type: rmsActivation1Type(value.interactive), name: value.interactive.title || "Activación RMS", campaign_id: value.interactive.campaign_id || null, description: value.interactive.description || null, benefit_type: "CUSTOM", benefit_value: {}, channel: value.channel.toLowerCase(), message: value.message, metadata: { source: "rms_activation_1", rms_phase: "clasificacion" } }) });
+      const uploadedAttachments = await uploadAttachmentFiles(value.attachmentFiles);
+      const attachmentAssets = [...value.attachments, ...uploadedAttachments];
+      if (uploadedAttachments.length) {
+        state.digitalAssets = [...uploadedAttachments, ...(state.digitalAssets || [])];
+        state.digitalAssetsLoaded = true;
       }
-      await api("/api/business/rms-machine/activation-one", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", materials: value.materials, products: value.products, catalog_url: value.catalogUrl || null, benefit_summary: value.benefitSummary || null, proposal_summary: value.proposalSummary, attention_note: value.attentionNote, channel: value.channel, message: value.message || rmsActivation1Message({ lead, item, ...value }), interactive_activation_id: value.interactive?.id || null }) });
-      if (whatsappWindow) whatsappWindow.location.href = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(value.message || rmsActivation1Message({ lead, item, ...value }))}`;
+      const message = value.message || rmsActivation1Message({ lead, item, ...value, attachments: attachmentAssets });
+      if (value.interactive) {
+        await api(`/api/business/leads/${encodeURIComponent(item.source_id || item.lead_id)}/activations`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: item.source_type || "PLAYER", interactive_activation_id: value.interactive.id, activation_type: rmsActivation1Type(value.interactive), name: value.interactive.title || "Activación RMS", campaign_id: value.interactive.campaign_id || null, description: value.interactive.description || null, benefit_type: "CUSTOM", benefit_value: {}, channel: value.channel.toLowerCase(), message, metadata: { source: "rms_activation_1", rms_phase: "clasificacion" } }) });
+      }
+      const result = await api("/api/business/rms-machine/activation-one", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", materials: value.materials, products: value.products, catalog_url: value.catalogUrl || null, benefit_summary: value.benefitSummary || null, ticket_url: value.ticketUrl || null, attachment_asset_ids: attachmentAssets.map((asset) => asset.id), payment: value.payment, contact_consent_confirmed: value.contactConsentConfirmed, proposal_summary: value.proposalSummary, attention_note: value.attentionNote, channel: value.channel, message, interactive_activation_id: value.interactive?.id || null }) });
+      if (whatsappWindow) whatsappWindow.location.href = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(result.whatsapp_message || message)}`;
       modal.classList.add("hidden");
       state.leadCrmLoaded = false;
       await Promise.all([refreshLeadCrm({ quiet: true, keepOffset: true }), loadRmsMachineData({ force: true, quiet: true })]);
@@ -38435,6 +38530,7 @@ async function openRmsActivation1Decision(item = {}, detail = null) {
       apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [] }),
       loadInventoryProducts({ quiet: true }),
       loadSmartCatalogData({ quiet: true }),
+      loadDigitalAssets({ quiet: true }),
     ]);
     state.triviaLaunchers = activations.activations || activations.trivias || [];
     renderRmsActivation1Decision(item, leadDetail || {}, "");

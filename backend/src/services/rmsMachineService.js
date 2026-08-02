@@ -1,6 +1,8 @@
 const { query, withTransaction } = require("../config/db");
+const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
+const { randomBytes } = require("crypto");
 
 const RMS_PHASES = [
   { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
@@ -1137,8 +1139,93 @@ function activationOneMaterialLabels(materials = []) {
     benefit: "Beneficio",
     ticket: "Ticket",
     interactive: "Activación interactiva",
+    attachments: "Documentos adjuntos",
+    payment: "Cobro",
   };
   return [...new Set((Array.isArray(materials) ? materials : []).map((item) => labels[String(item || "").toLowerCase()]).filter(Boolean))];
+}
+
+function rmsPublicBaseUrl() {
+  return String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "");
+}
+
+function activationAttachmentUrl(token) {
+  return `${rmsPublicBaseUrl()}/api/public/rms-attachments/${encodeURIComponent(token)}`;
+}
+
+function activationPayment(payload = {}) {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const mode = String(input.mode || "NONE").toUpperCase();
+  const allowedModes = new Set(["NONE", "PAYMENT_LINK", "INVOICE", "COLLECTION_ACCOUNT", "SIMPLE_COLLECTION"]);
+  if (!allowedModes.has(mode)) throw badRequest("El medio de cobro no es válido.");
+  const dueDate = input.due_at ? new Date(input.due_at) : null;
+  if (dueDate && Number.isNaN(dueDate.getTime())) throw badRequest("La fecha límite de cobro no es válida.");
+  const payment = {
+    mode,
+    label: {
+      NONE: "Sin cobro en esta oferta",
+      PAYMENT_LINK: "Link de cobro",
+      INVOICE: "Factura",
+      COLLECTION_ACCOUNT: "Cuenta de cobro",
+      SIMPLE_COLLECTION: "Cobro simple",
+    }[mode],
+    url: String(input.url || "").trim().slice(0, 1800),
+    instructions: String(input.instructions || "").trim().slice(0, 1800),
+    reference: String(input.reference || "").trim().slice(0, 180),
+    amount: Number.isFinite(Number(input.amount)) && Number(input.amount) >= 0 ? Number(input.amount) : null,
+    currency: String(input.currency || "COP").trim().slice(0, 8) || "COP",
+    due_at: dueDate ? dueDate.toISOString() : null,
+  };
+  if (payment.mode === "PAYMENT_LINK") {
+    try {
+      const url = new URL(payment.url);
+      if (!/^https?:$/.test(url.protocol)) throw new Error("protocol");
+    } catch {
+      throw badRequest("Agrega un link de cobro válido que comience por http:// o https://.");
+    }
+  }
+  if (payment.mode !== "NONE" && !payment.url && !payment.instructions) {
+    throw badRequest("Describe cómo debe pagar el lead o agrega el link de cobro.");
+  }
+  return payment;
+}
+
+function paymentMessageBlock(payment = {}) {
+  if (!payment || payment.mode === "NONE") return "";
+  const parts = [`Cobro: ${payment.label}.`];
+  if (payment.amount !== null) parts.push(`Valor: ${payment.currency} ${payment.amount.toLocaleString("es-CO")}.`);
+  if (payment.reference) parts.push(`Referencia: ${payment.reference}.`);
+  if (payment.due_at) parts.push(`Vence: ${new Date(payment.due_at).toLocaleString("es-CO")}.`);
+  if (payment.url) parts.push(`Pagar aquí: ${payment.url}`);
+  if (payment.instructions) parts.push(payment.instructions);
+  return parts.join("\n");
+}
+
+async function createActivationAttachments(businessId, item, sourceType, sourceId, activationNoteId, assetIds = [], userId = null) {
+  const normalizedIds = [...new Set((Array.isArray(assetIds) ? assetIds : []).map((id) => String(id || "").trim()).filter(Boolean))].slice(0, 6);
+  if (!normalizedIds.length) return [];
+  const assets = await query(
+    `select id, title, description, file_name, file_type, file_size
+       from digital_assets
+      where business_id = $1 and is_active = true and id = any($2::uuid[])`,
+    [businessId, normalizedIds]
+  );
+  if (assets.rowCount !== normalizedIds.length) throw badRequest("Uno o más adjuntos no pertenecen a este negocio o están inactivos.");
+  const byId = new Map(assets.rows.map((asset) => [String(asset.id), asset]));
+  const created = [];
+  for (const assetId of normalizedIds) {
+    const asset = byId.get(assetId);
+    const publicToken = randomBytes(24).toString("base64url");
+    const result = await query(
+      `insert into rms_activation_attachments
+        (business_id, source_type, source_id, lead_id, activation_note_id, asset_id, public_token, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+       returning id, asset_id, public_token, sent_at`,
+      [businessId, sourceType, sourceId, item.lead_id || null, activationNoteId, asset.id, publicToken, JSON.stringify({ title: asset.title, file_name: asset.file_name, file_type: asset.file_type, sent_by: userId })]
+    );
+    created.push({ ...result.rows[0], title: asset.title, description: asset.description, file_name: asset.file_name, file_type: asset.file_type, file_size: asset.file_size, url: activationAttachmentUrl(publicToken) });
+  }
+  return created;
 }
 
 function activationFollowupPlan(item = {}, sentAt = new Date()) {
@@ -1182,6 +1269,7 @@ async function executeActivationOne(businessId, user, payload = {}) {
   if (!materials.length) throw badRequest("Selecciona al menos un material enviado.");
   const proposalSummary = String(payload.proposal_summary || "").trim();
   const attentionNote = String(payload.attention_note || "").trim();
+  if (!payload.contact_consent_confirmed) throw badRequest("Confirma que el lead autorizó el canal comercial antes de enviar la propuesta.");
   if (!proposalSummary || !attentionNote) throw badRequest("Describe la propuesta y cómo fue atendido el lead antes de enviarlo a Evaluación.");
   const selectedProducts = (Array.isArray(payload.products) ? payload.products : [])
     .filter((product) => product && String(product.name || "").trim())
@@ -1195,6 +1283,16 @@ async function executeActivationOne(businessId, user, payload = {}) {
   const channel = String(payload.channel || "WhatsApp").trim().slice(0, 80);
   const catalogUrl = String(payload.catalog_url || "").trim().slice(0, 1200);
   const benefitSummary = String(payload.benefit_summary || "").trim().slice(0, 1200);
+  const ticketUrl = String(payload.ticket_url || "").trim().slice(0, 1800);
+  if (ticketUrl) {
+    try {
+      const url = new URL(ticketUrl);
+      if (!/^https?:$/.test(url.protocol)) throw new Error("protocol");
+    } catch {
+      throw badRequest("El link del ticket debe comenzar por http:// o https://.");
+    }
+  }
+  const payment = activationPayment(payload.payment);
   const message = String(payload.message || proposalSummary).trim().slice(0, 5000);
   const productText = selectedProducts.length
     ? selectedProducts.map((product) => `${product.name}${product.price === null ? "" : ` (${product.currency} ${product.price.toLocaleString("es-CO")})`}`).join(", ")
@@ -1206,6 +1304,8 @@ async function executeActivationOne(businessId, user, payload = {}) {
     `Productos: ${productText}.`,
     catalogUrl ? `Catálogo: ${catalogUrl}.` : "",
     benefitSummary ? `Beneficio o ticket: ${benefitSummary}.` : "",
+    ticketUrl ? `Ticket: ${ticketUrl}.` : "",
+    paymentMessageBlock(payment),
     `Atención: ${attentionNote}`,
     "El lead pasa a Evaluación para esperar y registrar su respuesta.",
   ].filter(Boolean).join("\n");
@@ -1218,9 +1318,12 @@ async function executeActivationOne(businessId, user, payload = {}) {
     products: selectedProducts,
     catalog_url: catalogUrl || null,
     benefit_summary: benefitSummary || null,
+    ticket_url: ticketUrl || null,
+    payment,
     proposal_summary: proposalSummary,
     attention_note: attentionNote,
     channel,
+    contact_consent_confirmed: true,
     message,
     interactive_activation_id: payload.interactive_activation_id || null,
   };
@@ -1231,6 +1334,35 @@ async function executeActivationOne(businessId, user, payload = {}) {
     note_type: "commercial",
     metadata,
   });
+  const attachments = await createActivationAttachments(
+    businessId,
+    item,
+    sourceType,
+    sourceId,
+    note.id,
+    payload.attachment_asset_ids,
+    user.id
+  );
+  const attachmentSummary = attachments.map((attachment) => ({
+    id: attachment.id,
+    asset_id: attachment.asset_id,
+    title: attachment.title,
+    file_name: attachment.file_name,
+    file_type: attachment.file_type,
+    url: attachment.url,
+  }));
+  const deliveryMessage = [
+    message,
+    attachments.length ? `Documentos para descargar:\n${attachments.map((attachment) => `• ${attachment.title || attachment.file_name}: ${attachment.url}`).join("\n")}` : "",
+    ticketUrl ? `Ticket: ${ticketUrl}` : "",
+    paymentMessageBlock(payment),
+  ].filter(Boolean).join("\n\n").slice(0, 5000);
+  metadata.attachments = attachmentSummary;
+  metadata.message = deliveryMessage;
+  await query(
+    `update lead_notes set metadata = metadata || $2::jsonb where id = $1`,
+    [note.id, JSON.stringify({ activation_one: metadata })]
+  );
   const followups = await scheduleActivationFollowups(businessId, item, sourceType, sourceId, note.id, followupPlan);
   await query(
     `insert into rms_machine_events
@@ -1257,8 +1389,10 @@ async function executeActivationOne(businessId, user, payload = {}) {
     movement,
     followups,
     materials,
-    whatsapp_message: message,
-    whatsapp_url: whatsappUrl(item.phone, message),
+    attachments,
+    payment,
+    whatsapp_message: deliveryMessage,
+    whatsapp_url: whatsappUrl(item.phone, deliveryMessage),
   };
 }
 
@@ -1445,11 +1579,44 @@ async function listRmsEvents(businessId, params = {}) {
   return { events: result.rows };
 }
 
+async function downloadActivationAttachment(publicToken) {
+  const token = String(publicToken || "").trim();
+  if (!token || token.length < 20) throw notFound("Adjunto no encontrado.");
+  const result = await query(
+    `select aa.id, aa.business_id, aa.lead_id, aa.source_type, aa.source_id,
+            da.title, da.file_name, da.file_type, da.file_data_url
+       from rms_activation_attachments aa
+       join digital_assets da on da.id = aa.asset_id and da.business_id = aa.business_id and da.is_active = true
+      where aa.public_token = $1`,
+    [token]
+  );
+  const row = result.rows[0];
+  if (!row) throw notFound("Adjunto no encontrado o desactivado.");
+  const dataUrl = String(row.file_data_url || "");
+  const match = dataUrl.match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
+  if (!match) throw notFound("El archivo adjunto ya no está disponible.");
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw notFound("El archivo adjunto no es válido.");
+  await query(
+    `update rms_activation_attachments
+        set opened_at = coalesce(opened_at, now()), open_count = open_count + 1
+      where id = $1`,
+    [row.id]
+  );
+  await query(
+    `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata)
+     values ($1, $2, $3, $4, 'activation_attachment_opened', 'Adjunto comercial abierto', $5, $6::jsonb)`,
+    [row.business_id, row.lead_id || null, row.source_type, row.source_id, `Se abrió el adjunto "${row.title || row.file_name}" enviado desde Activación 1.`, JSON.stringify({ attachment_id: row.id, file_name: row.file_name })]
+  );
+  return { buffer, file_name: row.file_name || "adjunto", file_type: row.file_type || match[1] };
+}
+
 module.exports = {
   STAGES,
   RMS_PHASES,
   WHATSAPP_TEMPLATES,
   createRmsAgendaTask,
+  downloadActivationAttachment,
   executeActivationOne,
   executeRmsAction,
   executeRmsBulkAction,

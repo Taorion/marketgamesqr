@@ -3,6 +3,7 @@ const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const {
   createRmsAgendaTask,
+  downloadActivationAttachment,
   executeActivationOne,
   executeRmsAction,
   executeRmsBulkAction,
@@ -70,7 +71,7 @@ const actionSchema = z.object({
 const activationOneSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
-  materials: z.array(z.enum(["catalog", "products", "benefit", "ticket", "interactive"])).min(1).max(5),
+  materials: z.array(z.enum(["catalog", "products", "benefit", "ticket", "interactive", "attachments", "payment"])).min(1).max(7),
   products: z.array(z.object({
     id: z.string().uuid().optional().nullable(),
     name: z.string().trim().min(1).max(240),
@@ -79,6 +80,18 @@ const activationOneSchema = z.object({
   })).max(12).optional().default([]),
   catalog_url: z.string().trim().max(1200).optional().nullable(),
   benefit_summary: z.string().trim().max(1200).optional().nullable(),
+  ticket_url: z.string().trim().max(1800).optional().nullable(),
+  attachment_asset_ids: z.array(z.string().uuid()).max(6).optional().default([]),
+  payment: z.object({
+    mode: z.enum(["NONE", "PAYMENT_LINK", "INVOICE", "COLLECTION_ACCOUNT", "SIMPLE_COLLECTION"]).default("NONE"),
+    url: z.string().trim().max(1800).optional().nullable(),
+    instructions: z.string().trim().max(1800).optional().nullable(),
+    reference: z.string().trim().max(180).optional().nullable(),
+    amount: z.number().min(0).optional().nullable(),
+    currency: z.string().trim().max(8).optional().nullable(),
+    due_at: z.string().datetime().optional().nullable(),
+  }).optional().default({ mode: "NONE" }),
+  contact_consent_confirmed: z.boolean(),
   proposal_summary: z.string().trim().min(4).max(3000),
   attention_note: z.string().trim().min(4).max(3000),
   channel: z.string().trim().max(80).optional().nullable(),
@@ -175,6 +188,18 @@ async function recordEvaluationResponse(req, res, next) {
   }
 }
 
+async function publicAttachmentDownload(req, res, next) {
+  try {
+    const file = await downloadActivationAttachment(req.params.publicToken);
+    res.setHeader("Content-Type", file.file_type);
+    res.setHeader("Content-Length", file.buffer.length);
+    res.setHeader("Content-Disposition", `attachment; filename="${String(file.file_name || "adjunto").replace(/"/g, "")}"`);
+    res.send(file.buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function executeBulkAction(req, res, next) {
   try {
     const body = validate(bulkActionSchema, req.body);
@@ -203,5 +228,6 @@ module.exports = {
   machine,
   metrics,
   movePhase,
+  publicAttachmentDownload,
   recordEvaluationResponse,
 };

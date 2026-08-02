@@ -6280,3 +6280,52 @@ html[data-theme="dark"] #rmsEvaluationResponseModal .rms-evaluation-response-for
   html body[data-current-view="rms-machine"] .portal-shell .rms-station-command-dock :is(button, a) { width: 100%; justify-content: center; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-station-screen-head { align-items: flex-start; }
 }
+/* Activación 1: oferta, adjuntos y cobro en una sola trazabilidad comercial. */
+body[data-current-view="rms-machine"] .rms-activation1-payment-panel {
+  padding: 16px;
+  border: 1px solid rgba(11, 99, 246, .17);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(238, 248, 255, .92), rgba(255, 255, 255, .98));
+}
+
+body[data-current-view="rms-machine"] .rms-activation1-payment-panel .rms-activation1-section-head {
+  margin-bottom: 12px;
+}
+
+body[data-current-view="rms-machine"] .rms-activation1-fields select[multiple] {
+  min-height: 122px;
+  padding: 8px;
+}
+
+body[data-current-view="rms-machine"] .rms-activation1-fields small {
+  display: block;
+  margin-top: 5px;
+  color: var(--sm-muted, #5d7288);
+  font-size: .74rem;
+  line-height: 1.35;
+}
+
+body[data-current-view="rms-machine"] .rms-activation1-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 12px;
+  border: 1px solid rgba(11, 99, 246, .16);
+  border-radius: 10px;
+  color: var(--sm-ink, #183851);
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+body[data-current-view="rms-machine"] .rms-activation1-consent input {
+  width: 17px;
+  height: 17px;
+  margin: 1px 0 0;
+  accent-color: #0b63f6;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] :is(.rms-activation1-payment-panel, .rms-activation1-consent) {
+  border-color: rgba(152, 211, 255, .22);
+  background: rgba(8, 35, 63, .78);
+  color: #e9f7ff;
+}

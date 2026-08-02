@@ -30,6 +30,7 @@ const {
   publicClaim: publicRewardPassClaim,
   publicDownloadPdf: publicRewardPassDownloadPdf,
 } = require("./controllers/rewardPassController");
+const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const packageJson = require("../../package.json");
@@ -223,6 +224,7 @@ app.use("/api/public", publicQrRoutes);
 app.use("/api/public", publicAffiliateRoutes);
 app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
+app.get("/api/public/rms-attachments/:publicToken", publicAttachmentDownload);
 app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
 app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
 app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
