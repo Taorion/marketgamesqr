@@ -43254,11 +43254,13 @@ function rmsActivationDraftFromDom(root, id) {
 }
 
 function rmsActivationPaymentMessage(message = "", payment = {}) {
-  if (!payment || payment.paymentMode === "NONE") return message;
+  const ticketLine = payment?.ticketUrl ? `Activación / ticket: ${payment.ticketUrl}` : "";
+  if (!payment || payment.paymentMode === "NONE") return [message, ticketLine].filter(Boolean).join("\n\n");
   const amount = Number(payment.paymentAmount);
   const currency = String(payment.paymentCurrency || "COP").toUpperCase();
   const lines = [
     message,
+    ticketLine,
     "",
     `Cobro: ${{ PAYMENT_LINK: "Link de pago", INVOICE: "Factura", COLLECTION_ACCOUNT: "Cuenta de cobro", SIMPLE_COLLECTION: "Cobro simple" }[payment.paymentMode] || "Pago"}.`,
     Number.isFinite(amount) && amount >= 0 ? `Valor: ${currency} ${amount.toLocaleString("es-CO")}.` : "",
