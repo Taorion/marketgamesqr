@@ -9911,3 +9911,7 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destina
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected { border-color:#a8e4ff!important; background:linear-gradient(135deg,#0064cf,#0a9bd6)!important; color:#ffffff!important; box-shadow:0 0 0 3px rgba(159,228,255,.25),0 12px 24px rgba(0,53,128,.3)!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected > .material-symbols-outlined:first-child { background:rgba(255,255,255,.2)!important; color:#ffffff!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected :is(em,small) { color:#effaff!important; opacity:1!important; }
+
+/* Hero is always white-on-blue: no inherited muted text can reduce legibility. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero :is(.mono-label,h4,p,span,strong,small) { color:#ffffff!important; opacity:1!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero .rms-evaluation-hero-metrics :is(span,strong) { color:#ffffff!important; opacity:1!important; }
