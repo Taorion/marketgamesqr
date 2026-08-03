@@ -5338,6 +5338,15 @@ html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="
   display: none !important;
 }
 
+/* El retorno al mapa desmonta visualmente la estación antes de refrescar datos. */
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-factory-console:not(.is-station-mode) > .rms-station-workspace.hidden,
+html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-station-workspace[hidden] {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
 html body:not(#qoriV134FinalA#qoriV134FinalB#qoriV134FinalC)[data-current-view="rms-machine"] .portal-shell :where(.rms-station-navigation-hub, .rms-station-primary-brief, .rms-station-command-dock, .rms-station-screen, .rms-station-clean-shell) {
   border-radius: 10px !important;
   box-shadow: none !important;

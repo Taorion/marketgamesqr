@@ -39349,6 +39349,7 @@ function renderRmsQualityControlDashboard(key = "") {
   const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
   consoleShell?.classList.add("is-station-mode");
   rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
   rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
   rmsStationWorkspace.innerHTML = `
     <section class="rms-quality-dashboard" aria-label="${escapeHtml(config.title)}">
@@ -40242,6 +40243,7 @@ function renderRmsMachineView() {
     renderRmsStationOnly();
     return;
   }
+  hideRmsStationWorkspace();
   if (rmsMachineGeneratedAt) {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
@@ -40465,6 +40467,10 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
 }
 
 function renderRmsStationLeanOnly() {
+  if (!state.rmsStationScreenOpen) {
+    hideRmsStationWorkspace();
+    return;
+  }
   const data = state.rmsMachine || {};
   const stages = rmsPrimaryFactoryStages(data);
   const allOpportunities = data.opportunities || [];
@@ -40511,6 +40517,7 @@ function renderRmsStationLeanOnly() {
   if (!rmsStationWorkspace) return;
   syncRmsStationShellMode(true);
   rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
   rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
   rmsStationWorkspace.innerHTML = `
     <section class="rms-lean-station" aria-label="Estación RMS simple">
@@ -40627,6 +40634,10 @@ function renderRmsStationLeanOnly() {
 }
 
 function renderRmsStationOnly() {
+  if (!state.rmsStationScreenOpen) {
+    hideRmsStationWorkspace();
+    return;
+  }
   try {
     syncRmsStationShellMode(true);
     if (state.rmsQualityControlKey) {
@@ -41984,9 +41995,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   enforceRmsFactorySpacing();
   syncRmsStationShellMode(Boolean(state.rmsStationScreenOpen));
   if (!stages.length || !state.rmsStationScreenOpen) {
-    rmsStationWorkspace.innerHTML = "";
-    rmsStationWorkspace.classList.add("hidden");
-    delete rmsStationWorkspace.dataset.stationTheme;
+    hideRmsStationWorkspace();
     return;
   }
   const selectedPhase = state.rmsStationPhase || state.rmsMachineFilters?.phase || stages[0]?.key || "";
@@ -42028,6 +42037,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
         `;
   rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
   rmsStationWorkspace.dataset.stationTheme = visual.tone;
   rmsStationWorkspace.innerHTML = `
     <div class="rms-station-screen-shell rms-station-enter-${state.rmsStationNavigationDirection === "backward" ? "backward" : "forward"}">
@@ -42248,10 +42258,26 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
   `;
 }
 
+function hideRmsStationWorkspace() {
+  if (!rmsStationWorkspace) return;
+  rmsStationWorkspace.innerHTML = "";
+  rmsStationWorkspace.onkeydown = null;
+  rmsStationWorkspace.classList.add("hidden");
+  rmsStationWorkspace.hidden = true;
+  rmsStationWorkspace.removeAttribute("data-station-theme");
+  syncRmsStationShellMode(false);
+}
+
 function resetRmsStationMode() {
+  // Invalida cualquier carga o temporizador iniciado al abrir la estación.
+  state.rmsStationOpenSeq = Number(state.rmsStationOpenSeq || 0) + 1;
   if (state.rmsStationFastRenderTimer) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
     state.rmsStationFastRenderTimer = null;
+  }
+  if (state.rmsStationSearchRenderTimer) {
+    window.clearTimeout(state.rmsStationSearchRenderTimer);
+    state.rmsStationSearchRenderTimer = null;
   }
   state.rmsStationScreenOpen = false;
   state.rmsStationPhase = "";
@@ -42260,14 +42286,16 @@ function resetRmsStationMode() {
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
   state.rmsStationListDeferred = false;
   state.rmsMachineFilters.phase = "";
+  state.rmsMachineFilters.search = "";
   state.rmsMachineSelectedIds = [];
   state.rmsMachineInspectorId = "";
   state.rmsProductClassificationDraft = {};
   if (state.rmsMachineScope?.mode === "station") {
     state.rmsMachineScope = { mode: "machine", phase: "", lite: false };
   }
+  if (rmsMachineSearchInput) rmsMachineSearchInput.value = "";
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
-  syncRmsStationShellMode(false);
+  hideRmsStationWorkspace();
 }
 
 function syncRmsStationShellMode(isStationMode = Boolean(state.rmsStationScreenOpen)) {
@@ -43060,11 +43088,12 @@ function bindRmsMachineActions(root) {
 }
 
 function renderRmsStationInstantShell(phase = "", stages = []) {
-  if (!rmsStationWorkspace || !phase) return;
+  if (!rmsStationWorkspace || !phase || !state.rmsStationScreenOpen) return;
   const index = Math.max(0, stages.findIndex((item) => item.key === phase));
   const stage = stages[index] || stages[0] || { key: phase, label: "Estación RMS" };
   const visual = rmsStationVisualMeta(phase);
   rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
   rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
   rmsStationWorkspace.innerHTML = `
     <div class="rms-station-screen-shell rms-station-fast-shell">
@@ -43173,15 +43202,23 @@ function closeRmsStation() {
   const wasStationScope = state.rmsMachineScope?.mode === "station";
   state.rmsQualityControlKey = "";
   resetRmsStationMode();
+  // El mapa aparece de inmediato; la recarga posterior nunca debe volver a abrir la estación.
+  renderRmsMachineView();
+  const closeSeq = state.rmsStationOpenSeq;
   if (wasStationScope) {
     state.rmsMachineLoaded = false;
     loadRmsMachineData({ force: true, quiet: true })
-      .then(renderRmsMachineView)
-      .catch(() => renderRmsMachineView());
-  } else {
-    renderRmsMachineView();
+      .then(() => {
+        if (!state.rmsStationScreenOpen && state.rmsStationOpenSeq === closeSeq) renderRmsMachineView();
+      })
+      .catch(() => {
+        if (!state.rmsStationScreenOpen && state.rmsStationOpenSeq === closeSeq) renderRmsMachineView();
+      });
   }
-  (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => {
+    if (state.rmsStationScreenOpen) return;
+    (rmsStageBoard || rmsIndustrialFlow || rmsMachineKpis)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 document.addEventListener("keydown", (event) => {
