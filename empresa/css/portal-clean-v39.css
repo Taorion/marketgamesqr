@@ -9932,3 +9932,28 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destina
 /* Hero is always white-on-blue: no inherited muted text can reduce legibility. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero :is(.mono-label,h4,p,span,strong,small) { color:#ffffff!important; opacity:1!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero .rms-evaluation-hero-metrics :is(span,strong) { color:#ffffff!important; opacity:1!important; }
+
+/* Commercial confirmation: the operator sees the decision, evidence and next action in one calm flow. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress { margin:0 0 16px; padding:12px 14px; border:1px solid #d6e4f1; border-radius:14px; background:#f8fbfe; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress ol { display:flex; flex-wrap:wrap; gap:8px 14px; margin:0; padding:0; list-style:none; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress li { display:flex; align-items:center; gap:6px; color:#65798e; font-size:.76rem; font-weight:750; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress li b { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#e7edf4; color:#496077; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress li.is-done b { background:#d8f2e2; color:#187647; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress li.is-active { color:#0b4d92; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress li.is-active b { background:#0d70c9; color:#fff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-deal-progress p { margin:9px 0 0; color:#385773; font-size:.82rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice,.portal-shell .rms-sale-trust-ribbon { display:flex; align-items:flex-start; gap:12px; margin:14px 0; padding:15px; border:1px solid #b9d7ed; border-radius:14px; background:#eef8ff; color:#123f6b; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice > .material-symbols-outlined,.portal-shell .rms-sale-trust-ribbon > .material-symbols-outlined { color:#0876bd; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice strong,.portal-shell .rms-sale-trust-ribbon strong { color:#0b3d70; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice p,.portal-shell .rms-sale-trust-ribbon small { margin:4px 0 0; color:#315e85; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice > div:last-child { display:flex; flex-wrap:wrap; gap:8px; margin-left:auto; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block { margin:14px 0; padding:15px; border:1px solid #d9e4ee; border-radius:14px; background:#fff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block h5 { margin:0 0 12px; color:#173f66; font-size:.9rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block dt { color:#698096; font-size:.72rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block dd { margin:3px 0 0; color:#1b3854; font-weight:700; overflow-wrap:anywhere; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:14px 0; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist > div { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px; padding:12px; border:1px solid #dbe4eb; border-radius:12px; background:#fff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist .is-ready .material-symbols-outlined,.portal-shell .rms-risk-checklist .is-ready small { color:#187647; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist .is-pending .material-symbols-outlined,.portal-shell .rms-risk-checklist .is-pending small { color:#a56500; }
+@media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice { flex-direction:column; } html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice > div:last-child { margin-left:0; width:100%; } html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block dl,.portal-shell .rms-risk-checklist { grid-template-columns:1fr; } }

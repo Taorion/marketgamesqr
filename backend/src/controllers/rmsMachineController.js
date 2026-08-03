@@ -12,7 +12,9 @@ const {
   moveRmsLeadPhase,
   recordActivationDelivery,
   recordRmsAttributedSale,
+  recordRmsCommercialConfirmation,
   recordRmsEvaluationResponse,
+  recordRmsRiskReview,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 
@@ -121,6 +123,29 @@ const attributedSaleSchema = z.object({
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
+const commercialConfirmationSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  product_name: z.string().trim().min(2).max(500),
+  amount: z.number().positive().max(100000000000),
+  currency: z.string().trim().min(3).max(8).optional().default("COP"),
+  payment_reference: z.string().trim().min(2).max(500),
+  evidence: z.string().trim().min(2).max(3000),
+  responsible: z.string().trim().max(500).optional().nullable(),
+  confirmed_at: z.string().datetime().optional().nullable(),
+  note: z.string().trim().max(3000).optional().nullable(),
+});
+
+const riskReviewSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  result: z.enum(["CLEARED", "RETURN_TO_NEGOTIATION"]),
+  reason: z.string().trim().min(4).max(3000),
+  next_action_at: z.string().datetime().optional().nullable(),
+});
+
 const bulkActionSchema = actionSchema.omit({ source_id: true, source_type: true }).extend({
   opportunity_ids: z.array(z.string().trim().min(3).max(120)).min(1).max(40),
 });
@@ -212,6 +237,24 @@ async function recordAttributedSale(req, res, next) {
   }
 }
 
+async function recordCommercialConfirmation(req, res, next) {
+  try {
+    const body = validate(commercialConfirmationSchema, req.body);
+    res.json(await recordRmsCommercialConfirmation(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function recordRiskReview(req, res, next) {
+  try {
+    const body = validate(riskReviewSchema, req.body);
+    res.json(await recordRmsRiskReview(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function publicAttachmentDownload(req, res, next) {
   try {
     const file = await downloadActivationAttachment(req.params.publicToken);
@@ -254,5 +297,7 @@ module.exports = {
   publicAttachmentDownload,
   recordActivationDeliveryAction,
   recordAttributedSale,
+  recordCommercialConfirmation,
   recordEvaluationResponse,
+  recordRiskReview,
 };

@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-canonical-flow-v239";
+const APP_VERSION = "empresa-20260803-rms-commercial-confirmation-v240";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40337,6 +40337,8 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
 
 function rmsActivationStationCardMarkup(item = {}) {
   if (state.rmsStationPhase === "procesamiento") return rmsEvaluationStationCardMarkup(item);
+  if (state.rmsStationPhase === "accion_correctiva") return rmsCommercialConfirmationStationCardMarkup(item);
+  if (state.rmsStationPhase === "control_anti_fuga") return rmsRiskValidationStationCardMarkup(item);
   if (state.rmsStationPhase === "cierre") return rmsAttributedSaleStationCardMarkup(item);
   const selected = state.rmsMachineSelectedIds.includes(item.id);
   const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
@@ -40425,6 +40427,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
         <header class="rms-evaluation-hero"><div class="rms-evaluation-hero-copy"><span class="mono-label" style="color:#ffffff !important;opacity:1 !important;">Estación 06 · Después de Activación 1</span><h4 style="color:#ffffff !important;opacity:1 !important;">Convierte la respuesta en una decisión comercial clara.</h4><p style="color:#ffffff !important;opacity:1 !important;">Documenta lo que dijo el cliente, define el destino y entrega al siguiente equipo un contexto que sí pueda ejecutar.</p><div class="rms-evaluation-hero-metrics"><div><span>Respuesta</span><strong data-rms-evaluation-response-label="${escapeHtml(item.id)}">${escapeHtml(selectedResponseLabel)}</strong></div><div><span>Destino</span><strong data-rms-evaluation-destination-label="${escapeHtml(item.id)}">${escapeHtml(selectedDestinationLabel)}</strong></div></div></div><div class="rms-evaluation-hero-signal"><span class="material-symbols-outlined" aria-hidden="true">insights</span><strong>${escapeHtml(delivery.sentAt ? "Contacto activo" : "Validar contacto")}</strong><small>${escapeHtml(delivery.sentAt ? "Ya existe un contacto para evaluar" : "Revisa el historial antes de registrar la decisión")}</small></div></header>
         <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Respuesta</span></li><li class="${selectedDestination ? "is-done" : selectedResponse ? "is-active" : ""}"><b>3</b><span>Destino</span></li><li class="${selectedDestination ? "is-active" : ""}"><b>4</b><span>Contexto útil</span></li></ol>
         <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
+        ${selectedResponse === "PAID_SALE" ? `<section class="rms-payment-reported-notice" aria-label="Pago informado"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Pago informado: falta confirmar la venta</strong><p>El cliente reportó un pago. Primero confirma producto, valor, condición acordada y soporte antes de atribuir la venta.</p></div><div><button class="solid-button compact" type="button" data-rms-payment-confirmation="${escapeHtml(item.id)}">Ir a confirmación comercial</button><button class="ghost-button compact" type="button" data-rms-payment-continue="${escapeHtml(item.id)}">Seguir evaluando</button></div></section>` : ""}
         <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
         <input type="hidden" data-rms-evaluation-destination="${escapeHtml(item.id)}" value="${escapeHtml(selectedDestination)}">
         <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado de este contacto?</h5></div><small>Describe la realidad; la ruta la eliges después.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined rms-evaluation-choice-icon" aria-hidden="true">${option.icon}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-choice-check" aria-hidden="true">check</span></button>`).join("")}</div></section>
@@ -40449,20 +40452,65 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   `;
 }
 
+function rmsCommercialWorkflow(item = {}) {
+  const metadata = item.state_metadata || item.metadata || item.rms_metadata || {};
+  return { evaluation: metadata.rms_evaluation || {}, confirmation: metadata.commercial_confirmation || {}, risk: metadata.risk_review || {} };
+}
+
+function rmsDealProgressMarkup(active = "evaluation", detail = "") {
+  const steps = [["evaluation", "1", "Evaluación"], ["confirmation", "2", "Confirmación comercial"], ["risk", "3", "Validación anti-fuga"], ["sale", "4", "Venta atribuida"]];
+  const activeIndex = steps.findIndex(([key]) => key === active);
+  return `<section class="rms-deal-progress" aria-label="Progreso comercial"><ol>${steps.map(([key, number, label], index) => `<li class="${index < activeIndex ? "is-done" : index === activeIndex ? "is-active" : ""}"><b>${escapeHtml(number)}</b><span>${escapeHtml(label)}</span></li>`).join("")}</ol><p>${escapeHtml(detail)}</p></section>`;
+}
+
+function rmsCommercialConfirmationStationCardMarkup(item = {}) {
+  const flow = rmsCommercialWorkflow(item);
+  const evaluation = flow.evaluation;
+  const confirmation = flow.confirmation;
+  const product = confirmation.product_name || evaluation.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "";
+  const amount = confirmation.amount ?? evaluation.budget_amount ?? "";
+  const currency = confirmation.currency || evaluation.currency || "COP";
+  const paymentReported = evaluation.response === "PAID_SALE";
+  const status = confirmation.status === "CONFIRMED" ? "Condición confirmada" : paymentReported ? "Pago informado" : "Pendiente de confirmación";
+  return `
+    <article class="rms-commercial-work-item rms-confirmation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
+      ${rmsCommercialLeadAsideMarkup(item, "Negociación · confirmación comercial")}
+      <section class="rms-commercial-work-console">
+        ${rmsDealProgressMarkup("confirmation", "Estás confirmando la condición comercial antes de proteger la venta.")}
+        <header class="rms-commercial-console-head"><div><span class="mono-label">Negociación · Confirmación comercial</span><h4>${escapeHtml(status)}</h4><p>Cliente reporta ${paymentReported ? "un pago" : "interés comercial"}${amount ? ` por ${amount} ${currency}` : ""}${product ? ` para ${product}` : ""}. Verifica que la condición acordada y el soporte coincidan antes de proteger la venta.</p></div><span class="rms-commercial-state ${paymentReported ? "is-pending" : ""}">${escapeHtml(status)}</span></header>
+        <section class="rms-commercial-info-block"><h5>A. Lo que el cliente informó</h5><dl><div><dt>Respuesta</dt><dd>${escapeHtml(paymentReported ? "Reportó que ya realizó el pago" : evaluation.note || "Sin respuesta registrada")}</dd></div><div><dt>Producto o interés</dt><dd>${escapeHtml(product || "Pendiente de confirmar")}</dd></div><div><dt>Monto informado</dt><dd>${escapeHtml(amount ? `${amount} ${currency}` : "Pendiente")}</dd></div><div><dt>Canal</dt><dd>${escapeHtml(rmsActivationDelivery(item).channel === "email" ? "Email" : "WhatsApp")}</dd></div></dl></section>
+        <section class="rms-commercial-info-block"><h5>B. Lo que el operador debe confirmar</h5><div class="rms-sale-form-grid"><label><span>Producto o servicio final</span><input type="text" value="${escapeHtml(product)}" data-rms-confirm-product="${escapeHtml(item.id)}" placeholder="Producto o servicio"></label><label><span>Valor acordado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Método o referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Transferencia, factura o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Fecha de confirmación</span><input type="datetime-local" value="${escapeHtml(rmsSaleDatetimeLocal(confirmation.confirmed_at))}" data-rms-confirm-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field"><span>Evidencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué se acordó y qué queda protegido">${escapeHtml(confirmation.note || "")}</textarea></label></section>
+        <section class="rms-commercial-info-block"><h5>C. Siguiente decisión</h5><p>Pago y condición confirmados envía el caso a la validación anti-fuga. Si falta un comprobante o la condición cambió, conserva el caso aquí y agenda la acción concreta.</p></section>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">verified_user</span>Para liberar debes confirmar producto, valor, referencia, evidencia y responsable.</small><button class="solid-button compact" type="button" data-rms-save-commercial-confirmation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Pago y condición confirmados</button></div>
+      </section>
+    </article>`;
+}
+
+function rmsRiskValidationStationCardMarkup(item = {}) {
+  const flow = rmsCommercialWorkflow(item);
+  const confirmation = flow.confirmation;
+  const checks = [[Boolean(confirmation.evidence), "Pago o evidencia consistente"], [Boolean(confirmation.product_name) && Number(confirmation.amount) > 0, "Producto y valor confirmados"], [Boolean(item.name) && Boolean(confirmation.responsible), "Contacto y responsable identificados"], [true, "Sin objeción, reverso o seguimiento crítico pendiente"]];
+  const ready = checks.every(([value]) => value);
+  return `<article class="rms-commercial-work-item rms-risk-work-item" data-rms-station-lead="${escapeHtml(item.id)}">${rmsCommercialLeadAsideMarkup(item, "Riesgos de fuga · validación final")}<section class="rms-commercial-work-console">${rmsDealProgressMarkup("risk", "La venta está confirmada; revisa riesgos antes de registrarla como atribuida.")}<header class="rms-commercial-console-head"><div><span class="mono-label">Riesgos de fuga · Validación final</span><h4>Protege el acuerdo antes de atribuir la venta</h4><p>${escapeHtml(confirmation.product_name || "El producto")}${confirmation.amount ? ` por ${confirmation.amount} ${confirmation.currency || "COP"}` : ""} fue confirmado. Revisa que el pago, la evidencia y el contacto estén listos.</p></div><span class="rms-commercial-state ${ready ? "is-sale" : "is-pending"}">${ready ? "Listo para liberar" : "Requiere recuperación"}</span></header><section class="rms-risk-checklist" aria-label="Comprobación anti-fuga">${checks.map(([value, label]) => `<div class="${value ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${value ? "check_circle" : "pending"}</span><strong>${escapeHtml(label)}</strong><small>${value ? "Listo" : "Pendiente"}</small></div>`).join("")}</section><label class="rms-commercial-note-field"><span>Nota de validación o motivo de retorno</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Explica por qué está listo o qué falta corregir"></textarea></label><label class="rms-commercial-note-field"><span>Próximo contacto si se devuelve <small>(opcional)</small></span><input type="datetime-local" data-rms-risk-next-at="${escapeHtml(item.id)}" value="${escapeHtml(rmsActivationDatetimeLocal("", 1))}"></label><div class="rms-commercial-action-row"><small>${ready ? "Todo está listo: deja una nota de liberación y continúa a Ventas atribuidas." : "Hay una señal pendiente: explica el motivo y devuelve el caso a confirmación comercial."}</small><div><button class="ghost-button compact" type="button" data-rms-return-commercial-confirmation="${escapeHtml(item.id)}">Devolver a confirmación comercial</button><button class="solid-button compact" type="button" data-rms-save-risk-review="${escapeHtml(item.id)}" ${ready ? "" : "disabled"}>Liberar para Ventas atribuidas</button></div></div></section></article>`;
+}
+
 function rmsAttributedSaleStationCardMarkup(item = {}) {
-  const defaultProduct = rmsClassifiedProductName(item) || item.product_interest || "";
+  const confirmation = rmsCommercialWorkflow(item).confirmation;
+  const defaultProduct = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "";
   const inventory = (state.inventoryProducts || []).filter((product) => product.status !== "ARCHIVED").slice(0, 300);
   return `
     <article class="rms-commercial-work-item rms-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Ventas atribuidas · evidencia de una compra real")}
       <section class="rms-commercial-work-console">
+        ${rmsDealProgressMarkup("sale", "La validación final fue aprobada. Registra el resultado comercial.")}
+        <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>La condición comercial fue confirmada y pasó la validación final.</small></div></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <div class="rms-sale-form-grid">
           <label><span>Producto del inventario</span><select data-rms-sale-product="${escapeHtml(item.id)}"><option value="">Producto o servicio no está en inventario</option>${inventory.map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(product.name || "Producto")} · costo ${escapeHtml(money(product.cost_price || 0))}</option>`).join("")}</select></label>
           <label><span>Producto o servicio vendido</span><input type="text" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}" placeholder="Ej.: Plan anual"></label>
           <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="1" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
-          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
-          <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === "COP" ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
+          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(confirmation.amount ?? "")}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
+          <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === (confirmation.currency || "COP") ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="0" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
           <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE">No se usó beneficio</option><option value="DISCOUNT">Descuento</option><option value="GIFT">Obsequio</option><option value="BONUS">Bono / incentivo</option><option value="OTHER">Otro</option></select></label>
@@ -40470,7 +40518,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
           <label><span>Costo de adquisición</span><input type="number" min="0" step="0.01" value="0" data-rms-sale-acquisition-cost="${escapeHtml(item.id)}"></label>
           <label><span>Pago recibido el</span><input type="datetime-local" value="${escapeHtml(rmsSaleDatetimeLocal())}" data-rms-sale-paid-at="${escapeHtml(item.id)}"></label>
         </div>
-        <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa."></textarea></label>
+        <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa.">${escapeHtml([confirmation.payment_reference, confirmation.evidence, confirmation.note].filter(Boolean).join(" · "))}</textarea></label>
         <div class="rms-sale-economics" data-rms-sale-economics="${escapeHtml(item.id)}"></div>
         <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Registrar venta cobrada</button></div>
       </section>
@@ -43023,6 +43071,27 @@ function bindRmsMachineActions(root) {
       });
     });
   });
+  root.querySelectorAll("[data-rms-payment-confirmation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsPaymentConfirmation || "");
+      if (item) saveRmsEvaluationResponse(item, root).catch((error) => showFeedback(error.message || "No pudimos iniciar la confirmación comercial.", "error", { title: "Pago informado" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-payment-continue]").forEach((button) => {
+    button.addEventListener("click", () => root.querySelector(`[data-rms-evaluation-next-panel="${CSS.escape(button.dataset.rmsPaymentContinue || "")}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  });
+  root.querySelectorAll("[data-rms-save-commercial-confirmation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSaveCommercialConfirmation || "");
+      if (item) saveRmsCommercialConfirmation(item, root).catch((error) => showFeedback(error.message || "No pudimos confirmar la condición comercial.", "error", { title: "Confirmación comercial" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-save-risk-review], [data-rms-return-commercial-confirmation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSaveRiskReview || button.dataset.rmsReturnCommercialConfirmation || "");
+      if (item) saveRmsRiskReview(item, root, button.hasAttribute("data-rms-save-risk-review") ? "CLEARED" : "RETURN_TO_NEGOTIATION").catch((error) => showFeedback(error.message || "No pudimos guardar la validación final.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
     const id = select.dataset.rmsSaleProduct || "";
     select.addEventListener("change", () => {
@@ -45079,6 +45148,54 @@ async function saveRmsEvaluationResponse(item, root) {
   const warning = result?.agenda_warning ? " La tarea automática no se pudo crear, pero el lead sí fue dirigido." : "";
   showFeedback(`Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response, draft.destination).label}.${warning}`, result?.agenda_warning ? "info" : "success", { title: "Evaluación" });
   openRmsStation(destination, { source: "evaluation" });
+}
+
+function rmsCommercialConfirmationDraft(root, id) {
+  return {
+    product_name: String(rmsCommercialNode(root, "[data-rms-confirm-product]", id)?.value || "").trim(),
+    amount: rmsCommercialNumber(root, "[data-rms-confirm-amount]", id),
+    currency: rmsCommercialNode(root, "[data-rms-confirm-currency]", id)?.value || "COP",
+    payment_reference: String(rmsCommercialNode(root, "[data-rms-confirm-reference]", id)?.value || "").trim(),
+    evidence: String(rmsCommercialNode(root, "[data-rms-confirm-evidence]", id)?.value || "").trim(),
+    responsible: String(rmsCommercialNode(root, "[data-rms-confirm-responsible]", id)?.value || "").trim(),
+    confirmed_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-confirm-at]", id)?.value || ""),
+    note: String(rmsCommercialNode(root, "[data-rms-confirm-note]", id)?.value || "").trim(),
+  };
+}
+
+async function saveRmsCommercialConfirmation(item, root) {
+  const draft = rmsCommercialConfirmationDraft(root, item.id);
+  const missing = [!draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.payment_reference && "referencia de pago", !draft.evidence && "evidencia", !draft.responsible && "responsable"].filter(Boolean);
+  if (missing.length) {
+    showFeedback(`Falta confirmar: ${missing.join(", ")}.`, "info", { title: "Confirmación comercial" });
+    return;
+  }
+  await api("/api/business/rms-machine/commercial-confirmation", {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
+  });
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "control_anti_fuga" });
+  showFeedback("Condición comercial confirmada. Ahora protege la venta en la validación anti-fuga.", "success", { title: "Confirmación comercial" });
+  openRmsStation("control_anti_fuga", { source: "commercial-confirmation" });
+}
+
+async function saveRmsRiskReview(item, root, result) {
+  const reason = String(rmsCommercialNode(root, "[data-rms-risk-reason]", item.id)?.value || "").trim();
+  if (!reason) {
+    showFeedback(result === "CLEARED" ? "Explica por qué el acuerdo está listo para atribuir." : "Explica qué debe corregirse antes de volver a confirmación comercial.", "info", { title: "Validación final" });
+    return;
+  }
+  const next_action_at = rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "");
+  await api("/api/business/rms-machine/risk-review", {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, next_action_at }),
+  });
+  const destination = result === "CLEARED" ? "cierre" : "accion_correctiva";
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+  showFeedback(result === "CLEARED" ? "Riesgo controlado. La venta ya está lista para atribuir." : "El caso volvió a confirmación comercial con una tarea de corrección.", "success", { title: "Validación final" });
+  openRmsStation(destination, { source: "risk-review" });
 }
 
 function rmsSaleDraftFromDom(root, id) {

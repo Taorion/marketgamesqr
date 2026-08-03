@@ -1020,6 +1020,21 @@ async function moveRmsLeadPhase(businessId, user, payload = {}) {
   return result;
 }
 
+async function recordRmsWorkflowEvent(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  await query(
+    `insert into rms_machine_events
+      (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, created_by, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)`,
+    [
+      businessId, sourceType, payload.source_id, payload.lead_id || null,
+      payload.event_type, payload.event_title, payload.event_description || null,
+      payload.rms_phase, payload.operation_key || payload.event_type, user.id,
+      JSON.stringify(payload.metadata || {}),
+    ]
+  );
+}
+
 const RMS_EVALUATION_ROUTES = {
   NEGOTIATION: {
     phase: "accion_correctiva",
@@ -1085,7 +1100,7 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     decision_maker: String(payload.decision_maker || "").trim() || null,
     urgency: String(payload.urgency || "MEDIUM").toUpperCase(),
     objections: String(payload.objections || "").trim() || null,
-    next_action: String(payload.next_action || "").trim() || null,
+    next_action: String(payload.next_action || "").trim() || (response === "PAID_SALE" ? "Confirmar pago y condiciones con el cliente" : null),
     next_action_at: payload.next_action_at || null,
     note,
     evaluated_at: new Date().toISOString(),
@@ -1138,7 +1153,125 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       rms_evaluation_destination: evaluation.destination,
     },
   });
+  if (response === "PAID_SALE") {
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: sourceType,
+      source_id: payload.source_id,
+      lead_id: item.lead_id || payload.lead_id || null,
+      event_type: "payment_reported",
+      event_title: "Pago informado por el cliente",
+      event_description: "El pago fue reportado; falta confirmar producto, valor, condición acordada y soporte antes de atribuir la venta.",
+      rms_phase: "accion_correctiva",
+      metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
+    });
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: sourceType,
+      source_id: payload.source_id,
+      lead_id: item.lead_id || payload.lead_id || null,
+      event_type: "commercial_confirmation_started",
+      event_title: "Confirmación comercial iniciada",
+      event_description: "El caso quedó en Negociación para verificar pago, producto, valor, condición y soporte.",
+      rms_phase: "accion_correctiva",
+      metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
+    });
+  }
   return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, ...movement };
+}
+
+function rmsCommercialConfirmationFromPayload(payload = {}, user = {}) {
+  return {
+    status: "CONFIRMED",
+    product_name: String(payload.product_name || "").trim(),
+    amount: moneyNumber(payload.amount),
+    currency: String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
+    payment_reference: String(payload.payment_reference || "").trim(),
+    evidence: String(payload.evidence || "").trim(),
+    responsible: String(payload.responsible || user.name || user.email || "").trim() || null,
+    confirmed_at: payload.confirmed_at || new Date().toISOString(),
+    note: String(payload.note || "").trim() || null,
+  };
+}
+
+async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "accion_correctiva") throw badRequest("La confirmación comercial solo se registra desde Negociación.");
+  const confirmation = rmsCommercialConfirmationFromPayload(payload, user);
+  const missing = [
+    !confirmation.product_name && "producto o servicio",
+    confirmation.amount <= 0 && "valor acordado",
+    !confirmation.payment_reference && "método o referencia de pago",
+    !confirmation.evidence && "evidencia o comprobante",
+    !confirmation.responsible && "responsable",
+  ].filter(Boolean);
+  if (missing.length) throw badRequest(`Antes de proteger la venta confirma: ${missing.join(", ")}.`);
+  const note = await createLeadNote(businessId, user, payload.source_id, sourceType, {
+    note: `Confirmación comercial. ${confirmation.product_name} por ${confirmation.amount} ${confirmation.currency}. ${confirmation.note || "Condición y soporte confirmados."}`,
+    note_type: "commercial",
+    metadata: { source_module: "rms_commercial_confirmation", commercial_confirmation: confirmation },
+  });
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: "control_anti_fuga", priority: "HIGH",
+    recommended_action: "Validar que el acuerdo no tenga riesgo antes de atribuir la venta",
+    last_operation: "commercial_condition_confirmed", last_material_sent: confirmation.product_name,
+    revenue_potential: confirmation.amount,
+    reason: "Condición comercial confirmada; pasa a validación final anti-fuga.",
+    metadata: { commercial_confirmation: confirmation, commercial_confirmation_note_id: note.id },
+  });
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: "commercial_condition_confirmed", event_title: "Condición comercial confirmada",
+    event_description: "Producto, valor, pago y evidencia fueron confirmados antes de la validación anti-fuga.",
+    rms_phase: "control_anti_fuga", metadata: { commercial_confirmation: confirmation, movement_id: movement.movement?.id || null },
+  });
+  return { confirmation, note, ...movement };
+}
+
+async function recordRmsRiskReview(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "control_anti_fuga") throw badRequest("La validación final solo se registra desde Riesgos de fuga.");
+  const current = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const metadata = current.rows[0]?.metadata || {};
+  const confirmation = metadata.commercial_confirmation;
+  if (!confirmation?.product_name || Number(confirmation.amount) <= 0 || !confirmation?.evidence) {
+    throw badRequest("No se puede liberar la venta: falta una condición comercial confirmada con evidencia.");
+  }
+  const result = String(payload.result || "").toUpperCase();
+  const reason = String(payload.reason || "").trim();
+  if (!["CLEARED", "RETURN_TO_NEGOTIATION"].includes(result)) throw badRequest("Selecciona una decisión de validación final válida.");
+  if (!reason) throw badRequest(result === "CLEARED" ? "Explica por qué el acuerdo está listo para atribuir." : "Explica qué debe corregirse en la confirmación comercial.");
+  const review = { result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation };
+  const isCleared = result === "CLEARED";
+  let agenda = null;
+  if (!isCleared) {
+    agenda = await createRmsAgendaTask(businessId, user, {
+      source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
+      stage: "accion_correctiva", action_title: "Corregir la confirmación comercial antes de atribuir la venta",
+      note: `Riesgos de fuga: ${reason}`, due_at: payload.next_action_at || undefined, priority_score: 80,
+      revenue_potential: confirmation.amount, metadata: { rms_risk_review: review },
+    });
+  }
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: isCleared ? "cierre" : "accion_correctiva", priority: isCleared ? "HIGH" : "URGENT",
+    recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : "Completar confirmación comercial",
+    last_operation: isCleared ? "risk_review_passed" : "risk_review_returned_to_negotiation",
+    last_material_sent: confirmation.product_name, revenue_potential: confirmation.amount,
+    reason, metadata: { risk_review: review, recovery_decision: isCleared ? null : "NEGOTIATION", risk_return_task_id: agenda?.item?.id || null },
+  });
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: isCleared ? "risk_review_passed" : "risk_review_returned_to_negotiation",
+    event_title: isCleared ? "Validación anti-fuga aprobada" : "Caso devuelto a confirmación comercial",
+    event_description: reason, rms_phase: isCleared ? "cierre" : "accion_correctiva",
+    metadata: { risk_review: review, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
+  });
+  return { review, agenda, ...movement };
 }
 
 function roundedMoney(value) {
@@ -1148,6 +1281,15 @@ function roundedMoney(value) {
 async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "cierre") throw badRequest("La venta solo puede atribuirse después de la validación final anti-fuga.");
+  const currentState = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const workflowMetadata = currentState.rows[0]?.metadata || {};
+  if (!workflowMetadata.commercial_confirmation?.product_name || workflowMetadata.risk_review?.result !== "CLEARED") {
+    throw badRequest("Aún falta confirmar la condición comercial y liberar la validación anti-fuga.");
+  }
   const quantity = Math.max(0.01, Number(payload.quantity || 1));
   const saleAmount = roundedMoney(payload.sale_amount);
   const benefitCost = Math.max(0, roundedMoney(payload.benefit_cost));
@@ -1220,6 +1362,12 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     revenue_potential: saleAmount,
     reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
     metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics },
+  });
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: "sale_attributed", event_title: "Venta atribuida correctamente",
+    event_description: "La condición comercial y la validación anti-fuga quedaron trazadas antes del registro final.",
+    rms_phase: "revenue_generado", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null },
   });
   return { sale: result.sale, economics, movement, duplicate: false };
 }
@@ -1521,6 +1669,8 @@ module.exports = {
   moveRmsLeadPhase,
   recordActivationDelivery,
   recordRmsAttributedSale,
+  recordRmsCommercialConfirmation,
   recordRmsEvaluationResponse,
+  recordRmsRiskReview,
   rmsMetrics,
 };
