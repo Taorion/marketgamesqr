@@ -43336,6 +43336,7 @@ function rmsActivationPaymentMessage(message = "", payment = {}) {
 }
 
 const rmsActivationPreparedDeliveries = new Map();
+const rmsActivationUploadedAssets = new Map();
 
 function openRmsActivationMessage(item = {}, options = {}) {
   const delivery = rmsActivationDelivery(item);
@@ -43432,12 +43433,23 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   try {
     showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
     const prepared = rmsActivationPreparedDeliveries.get(item.id) || null;
-    const attachmentAssetIds = [];
+    const uploadedAssets = rmsActivationUploadedAssets.get(item.id) || [];
+    const attachmentAssetIds = uploadedAssets.map((asset) => asset.id).filter(Boolean);
     for (const file of prepared ? [] : (draft.files || [])) {
+      const fileKey = `${file.name}:${file.size}:${file.type}`;
+      const existing = uploadedAssets.find((asset) => asset.file_key === fileKey);
+      if (existing?.id) {
+        attachmentAssetIds.push(existing.id);
+        continue;
+      }
       const uploaded = await api("/api/business/digital-assets", { method: "POST", headers: authHeaders(), body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, "") || "Documento comercial", description: `Adjunto comercial de Activación 1 para ${item.name || "lead"}.`, category: "comercial", file_name: file.name, file_data_url: await readFileAsDataUrl(file, 5 * 1024 * 1024, ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg", "image/webp"]), download_button_text: "Descargar documento" }) });
-      if (uploaded.asset?.id) attachmentAssetIds.push(uploaded.asset.id);
+      if (uploaded.asset?.id) {
+        uploadedAssets.push({ id: uploaded.asset.id, file_key: fileKey });
+        attachmentAssetIds.push(uploaded.asset.id);
+      }
     }
-    const deliveryRecord = prepared || await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: rmsActivationMessage(item, delivery), channel: targetChannel, contact_consent_confirmed: true }) });
+    rmsActivationUploadedAssets.set(item.id, uploadedAssets);
+    const deliveryRecord = prepared || await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: [...new Set(attachmentAssetIds)], ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: rmsActivationMessage(item, delivery), channel: targetChannel, contact_consent_confirmed: true }) });
     const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
     if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
