@@ -39241,6 +39241,23 @@ function openRmsQualityControl(key = "") {
   rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function rmsActivationQualityEvidenceMarkup(item = {}) {
+  const metadata = item.state_metadata || item.metadata || item.rms_metadata || {};
+  const ticketUrl = metadata.activation_ticket_url || "";
+  const attachments = Array.isArray(metadata.activation_attachments) ? metadata.activation_attachments : [];
+  const payment = metadata.activation_payment || {};
+  const message = String(metadata.activation_message || "").trim();
+  const paymentText = payment.mode && payment.mode !== "NONE"
+    ? `${payment.label || payment.mode}${payment.amount !== null && payment.amount !== undefined ? ` · ${payment.currency || "COP"} ${Number(payment.amount).toLocaleString("es-CO")}` : ""}`
+    : "Sin cobro";
+  return `<div class="rms-quality-activation-evidence">
+    <small>${ticketUrl ? `<a href="${escapeHtml(ticketUrl)}" target="_blank" rel="noopener">Ticket / activación</a>` : "Sin ticket"}</small>
+    <small>${attachments.length ? `${attachments.length} documento(s) adjunto(s)` : "Sin adjuntos"}</small>
+    <small>${escapeHtml(paymentText)}</small>
+    ${message ? `<small title="${escapeHtml(message)}">${escapeHtml(message)}</small>` : "<small>Mensaje pendiente</small>"}
+  </div>`;
+}
+
 function renderRmsQualityControlDashboard(key = "") {
   const config = rmsQualityControlConfig(key);
   if (!config || !rmsStationWorkspace) return;
@@ -39286,6 +39303,7 @@ function renderRmsQualityControlDashboard(key = "") {
                 <th scope="col">Estación actual</th>
                 <th scope="col">Calidad</th>
                 <th scope="col">Oferta o producto</th>
+                <th scope="col">Evidencia de Activación</th>
                 <th scope="col"><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -39301,6 +39319,7 @@ function renderRmsQualityControlDashboard(key = "") {
                   <td data-label="Estación actual"><span class="rms-quality-table-value">${escapeHtml(stageName(item.stage))}</span></td>
                   <td data-label="Calidad"><span class="rms-quality-status">${escapeHtml(rmsLeadQualityLabel(item))}</span></td>
                   <td data-label="Oferta o producto"><span class="rms-quality-table-value">${escapeHtml(item.activation_name || rmsClassifiedProductName(item) || item.product_interest || "Pendiente")}</span></td>
+                  <td data-label="Evidencia de Activación">${rmsActivationQualityEvidenceMarkup(item)}</td>
                   <td class="rms-quality-table-action">
                     <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}" aria-label="Abrir ficha de ${escapeHtml(item.name || "lead")}">
                       <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
@@ -39308,7 +39327,7 @@ function renderRmsQualityControlDashboard(key = "") {
                     </button>
                   </td>
                 </tr>
-              `).join("") || '<tr><td colspan="5"><p class="empty-state compact">Todavía no hay leads en este tramo de control.</p></td></tr>'}
+              `).join("") || '<tr><td colspan="6"><p class="empty-state compact">Todavía no hay leads en este tramo de control.</p></td></tr>'}
             </tbody>
           </table>
         </div>
