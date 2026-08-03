@@ -4,6 +4,7 @@ const { badRequest } = require("../utils/http");
 const { subscriberPackageOffers } = require("../services/packageCatalog");
 const {
   createCreditCheckout,
+  createStorageAddonCheckout,
   createSubscriptionAutoRenewal,
   createSubscriptionRenewalCheckout,
   listCreditOrders,
@@ -18,6 +19,7 @@ const creditCheckoutSchema = z.object({
 const subscriptionRenewalSchema = z.object({
   plan_code: z.string().trim().min(2).max(40),
 });
+const storageAddonSchema = z.object({ addon_code: z.string().trim().min(2).max(40) });
 
 async function createQrCreditCheckout(req, res, next) {
   try {
@@ -61,6 +63,16 @@ async function createSubscriptionCheckout(req, res, next) {
   }
 }
 
+async function createStorageCheckout(req, res, next) {
+  try {
+    const body = validate(storageAddonSchema, req.body);
+    const order = await createStorageAddonCheckout(req.user, body);
+    res.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createSubscriptionAutoRenewalCheckout(req, res, next) {
   try {
     const body = validate(subscriptionRenewalSchema, req.body);
@@ -93,6 +105,7 @@ module.exports = {
   createQrCreditCheckout,
   createSubscriptionAutoRenewalCheckout,
   createSubscriptionCheckout,
+  createStorageCheckout,
   listQrCreditOffers,
   listQrCreditOrders,
   mercadoPagoWebhook,

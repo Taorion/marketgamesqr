@@ -20,7 +20,7 @@ const BASE_PORTAL_MIN_TICKETS = 200;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const STARTED_PORTAL_COP = 229000;
 const MEDIUM_PORTAL_COP = 899000;
-const PREMIUM_PORTAL_COP = 1899000;
+const PREMIUM_PORTAL_COP = 1990000;
 const ANNUAL_BENEFIT_RATE = 0.3;
 const STARTER_INTERACTIVE_ACTIVATION_TYPES = ["TRIVIA_QUIZ", "OPEN_QUESTION"];
 const MEDIUM_INTERACTIVE_ACTIVATION_TYPES = [
@@ -559,7 +559,7 @@ const PLAN_CATALOG = {
     annual_benefit_percent: 30,
     display_currency: "COP",
     payment_currency: "COP",
-    price_label: "COP 1.899.000 / mes",
+    price_label: "COP 1.990.000 / mes",
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.PRO.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.PRO.recommended_start_package,
@@ -654,6 +654,7 @@ const PLAN_CATALOG = {
       active_interactive_activations: unlimited,
       executive_reports_month: unlimited,
       allowed_interactive_activation_types: unlimited,
+      storage_bytes: 50 * 1024 * 1024 * 1024,
     },
   },
   [PLAN_CODES.GLOBAL]: {

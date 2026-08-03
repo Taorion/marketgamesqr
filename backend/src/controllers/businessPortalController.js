@@ -29,6 +29,7 @@ const {
 const { syncSaleProductsWithCatalog } = require("../services/productCatalogService");
 const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
+const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
 
 const launchChannelOptions = [
   "Instagram",
@@ -892,7 +893,7 @@ async function updateBusinessProfile(req, res, next) {
     const businessId = businessIdFor(req);
     const body = validate(businessProfileSchema, req.body);
     const existing = await query(
-      "select id, name from businesses where id = $1 and is_active = true",
+      "select id, name, settings from businesses where id = $1 and is_active = true",
       [businessId]
     );
     const current = existing.rows[0];
@@ -916,6 +917,12 @@ async function updateBusinessProfile(req, res, next) {
         settingsPatch[key] = cleanSetting(body[key]);
       }
     });
+    if (Object.prototype.hasOwnProperty.call(body, "logo_data_url") || Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url")) {
+      const currentMediaBytes = Buffer.byteLength(current.settings?.logo_data_url || "") + Buffer.byteLength(current.settings?.ticket_frame_data_url || "");
+      const nextMediaBytes = Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "logo_data_url") ? (body.logo_data_url || "") : (current.settings?.logo_data_url || ""))
+        + Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url") ? (body.ticket_frame_data_url || "") : (current.settings?.ticket_frame_data_url || ""));
+      await assertStorageQuotaForUpload(businessId, Math.max(0, nextMediaBytes - currentMediaBytes));
+    }
     if (
       Object.prototype.hasOwnProperty.call(body, "affiliate_point_amount_cop")
       || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rate")

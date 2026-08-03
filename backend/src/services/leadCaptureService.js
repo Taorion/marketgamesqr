@@ -3,6 +3,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
+const { assertStorageQuotaForUpload } = require("./storageQuotaService");
 
 const MAX_ASSET_BYTES = 5 * 1024 * 1024;
 const MAX_COVER_BYTES = 2 * 1024 * 1024;
@@ -180,6 +181,7 @@ async function createDigitalAsset(businessId, user, body) {
   if (body.cover_image_data_url) {
     cover = parseDataUrl(body.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES);
   }
+  await assertStorageQuotaForUpload(businessId, Buffer.byteLength(assetFile.dataUrl) + Buffer.byteLength(cover?.dataUrl || ""));
   const token = createSecureToken(12);
   const result = await query(
     `insert into digital_assets
@@ -227,6 +229,28 @@ async function updateDigitalAssetStatus(businessId, assetId, isActive) {
   return mapDigitalAsset(result.rows[0]);
 }
 
+async function deleteDigitalAsset(businessId, assetId) {
+  const references = await query(
+    `select
+       (select count(*)::int from lead_capture_activations where business_id = $1 and asset_id = $2) as activations,
+       (select count(*)::int from lead_capture_submissions where business_id = $1 and asset_id = $2) as submissions,
+       (select count(*)::int from rms_activation_attachments where business_id = $1 and asset_id = $2) as deliveries`,
+    [businessId, assetId]
+  );
+  const usage = references.rows[0] || {};
+  if (Number(usage.activations) || Number(usage.submissions) || Number(usage.deliveries)) {
+    throw badRequest("Este archivo ya tiene entregas o capturas asociadas. Se conserva como evidencia y no se puede borrar.");
+  }
+  const result = await query(
+    `delete from digital_assets
+     where id = $1 and business_id = $2 and asset_scope = 'library'
+     returning id, title, file_name, file_size`,
+    [assetId, businessId]
+  );
+  if (!result.rowCount) throw notFound("Activo digital no encontrado.");
+  return result.rows[0];
+}
+
 async function updateDigitalAsset(businessId, assetId, body = {}) {
   const current = await query(
     `select *
@@ -246,6 +270,9 @@ async function updateDigitalAsset(businessId, assetId, body = {}) {
       ? parseDataUrl(body.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES).dataUrl
       : null;
   }
+  const currentStoredBytes = Buffer.byteLength(current.rows[0].file_data_url || "") + Buffer.byteLength(current.rows[0].cover_image_data_url || "");
+  const nextStoredBytes = Buffer.byteLength(assetFile?.dataUrl || current.rows[0].file_data_url || "") + Buffer.byteLength(coverDataUrl === undefined ? (current.rows[0].cover_image_data_url || "") : (coverDataUrl || ""));
+  await assertStorageQuotaForUpload(businessId, Math.max(0, nextStoredBytes - currentStoredBytes));
   const nextValue = (key, fallback, max) => (
     Object.prototype.hasOwnProperty.call(body, key)
       ? cleanText(body[key], max)
@@ -331,6 +358,7 @@ async function createLeadCaptureActivation(businessId, user, body) {
       if (body.asset.cover_image_data_url) {
         cover = parseDataUrl(body.asset.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES);
       }
+      await assertStorageQuotaForUpload(businessId, Buffer.byteLength(assetFile.dataUrl) + Buffer.byteLength(cover?.dataUrl || ""));
     }
     if (body.expires_at && new Date(body.expires_at) <= new Date()) {
       throw badRequest("La fecha de vencimiento debe ser futura.");
@@ -906,6 +934,7 @@ function submissionsToCsv(rows = [], activation = {}) {
 module.exports = {
   createLeadCaptureActivation,
   createDigitalAsset,
+  deleteDigitalAsset,
   downloadDigitalAsset,
   getLeadCaptureActivation,
   getPublicLeadCapture,

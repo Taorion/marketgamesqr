@@ -9683,3 +9683,20 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
     grid-template-columns: 1fr !important;
   }
 }
+
+.storage-quota-panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(36, 79, 168, .18);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(244, 248, 255, .96), rgba(255, 255, 255, .94));
+}
+.storage-quota-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.storage-quota-head strong, .storage-quota-head small { display: block; }
+.storage-quota-head strong { font-size: 1.15rem; margin: .18rem 0; }
+.storage-quota-track { height: 8px; margin: .8rem 0; overflow: hidden; border-radius: 999px; background: #e8edf5; }
+.storage-quota-track span { display: block; height: 100%; border-radius: inherit; background: #25805d; }
+.storage-quota-track span.warning { background: #bf7800; }
+.storage-quota-track span.danger { background: #bd3944; }
+.storage-addon-list { display: flex; flex-wrap: wrap; gap: .55rem; }
+@media (max-width: 640px) { .storage-quota-head { flex-direction: column; } }

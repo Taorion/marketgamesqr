@@ -132,6 +132,7 @@ const {
   patch: patchCommunication,
   send: sendCommunication,
 } = require("../controllers/businessCommunicationController");
+const { storageSummary } = require("../controllers/storageQuotaController");
 
 const router = express.Router();
 
@@ -143,6 +144,7 @@ const standardBusinessCache = cacheBusinessResponse({ keyPrefix: "business-stand
 const heavyBusinessCache = cacheBusinessResponse({ keyPrefix: "business-heavy", ttlMs: 300_000, maxBytes: 1024 * 1024 });
 
 router.get("/access", businessAccess);
+router.get("/storage/summary", storageSummary);
 router.get("/tickets/balance", ticketBalance);
 router.get("/tickets/transactions", ticketTransactions);
 router.get("/profile", getBusinessProfile);

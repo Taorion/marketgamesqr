@@ -2340,6 +2340,8 @@ let state = {
   rewardPassContext: null,
   digitalAssets: [],
   digitalAssetsLoaded: false,
+  storageQuota: null,
+  storageQuotaLoaded: false,
   editingDigitalAssetId: null,
   leadCaptureActivations: [],
   leadCaptureLoaded: false,
@@ -3536,6 +3538,8 @@ function resetBusinessScopedState(options = {}) {
   state.rewardPassContext = null;
   state.digitalAssets = [];
   state.digitalAssetsLoaded = false;
+  state.storageQuota = null;
+  state.storageQuotaLoaded = false;
   state.editingDigitalAssetId = null;
   state.leadCaptureActivations = [];
   state.leadCaptureLoaded = false;
@@ -6107,9 +6111,10 @@ function setView(view) {
       renderBusinessLogoPanel();
       renderAccountView();
     }).catch(() => {});
-    if (!state.digitalAssetsLoaded || !state.leadCaptureLoaded) {
+    if (!state.digitalAssetsLoaded || !state.storageQuotaLoaded || !state.leadCaptureLoaded) {
       Promise.all([
         loadDigitalAssets({ quiet: true }),
+        loadStorageQuota({ quiet: true }),
         loadLeadCaptureActivations({ quiet: true }),
       ]).then(() => {
         renderDigitalAssets();
@@ -19105,7 +19110,64 @@ async function loadDigitalAssets(options = {}) {
   state.digitalAssetsLoaded = true;
 }
 
+function storageBytesLabel(value) {
+  const bytes = Math.max(0, Number(value || 0));
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 * 1024 ? 0 : 1)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+async function loadStorageQuota(options = {}) {
+  if (state.storageQuotaLoaded && !options.force) return;
+  const data = await apiSafe("/api/business/storage/summary", { headers: authHeaders() }, { storage: null });
+  state.storageQuota = data.storage || null;
+  state.storageQuotaLoaded = true;
+}
+
+async function purchaseStorageAddon(addonCode) {
+  if (!addonCode) return;
+  try {
+    const result = await api("/api/payments/storage/checkout", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ addon_code: addonCode }),
+    });
+    const checkoutUrl = result.order?.checkout_url || result.order?.sandbox_checkout_url;
+    if (!checkoutUrl) throw new Error("No se pudo generar el enlace seguro de pago para la ampliación.");
+    window.location.assign(checkoutUrl);
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "Almacenamiento" });
+  }
+}
+
+function renderStorageQuota() {
+  const panel = document.getElementById("storageQuotaPanel");
+  if (!panel) return;
+  const storage = state.storageQuota;
+  if (!storage) {
+    panel.innerHTML = '<p class="table-secondary">Calculando el almacenamiento usado por tu empresa…</p>';
+    return;
+  }
+  const percent = Math.min(100, Math.max(0, Number(storage.used_percent || 0)));
+  const tone = storage.status === "FULL" || storage.status === "CRITICAL" ? "danger" : storage.status === "WARNING" ? "warning" : "ok";
+  const capacity = storage.limit_bytes === null ? "Sin límite" : storageBytesLabel(storage.limit_bytes);
+  const remaining = storage.remaining_bytes === null ? "Sin límite" : storageBytesLabel(storage.remaining_bytes);
+  panel.innerHTML = `
+    <div class="storage-quota-head">
+      <div><span class="mono-label">Almacenamiento de la empresa</span><strong>${escapeHtml(storageBytesLabel(storage.used_bytes))} de ${escapeHtml(capacity)}</strong><small>${escapeHtml(remaining)} disponibles · ${Number(storage.assets_count || 0)} archivos · Plan ${escapeHtml(storage.plan_name || "Qori")}</small></div>
+      <span class="status-chip ${tone}">${Math.round(percent)}% usado</span>
+    </div>
+    <div class="storage-quota-track" aria-label="${Math.round(percent)} por ciento de almacenamiento usado"><span class="${tone}" style="width:${percent}%"></span></div>
+    <p class="table-secondary">Cuenta el espacio real guardado (archivo y portada). Al llegar al máximo, Qori no permite nuevas cargas hasta liberar espacio o ampliar la cuota.</p>
+    <div class="storage-addon-list">${(storage.addons || []).map((addon) => `<button class="ghost-button" type="button" data-buy-storage-addon="${escapeHtml(addon.code)}">Comprar ${escapeHtml(addon.name)} · COP ${Number(addon.price_cop || 0).toLocaleString("es-CO")}</button>`).join("")}</div>
+  `;
+  panel.querySelectorAll("[data-buy-storage-addon]").forEach((button) => {
+    button.addEventListener("click", () => purchaseStorageAddon(button.dataset.buyStorageAddon));
+  });
+}
+
 function renderDigitalAssets() {
+  renderStorageQuota();
   if (!digitalAssetsGrid) return;
   const assets = state.digitalAssets || [];
   digitalAssetsGrid.innerHTML = assets.map((asset) => `
@@ -19127,6 +19189,7 @@ function renderDigitalAssets() {
           ? `<button class="ghost-button" type="button" data-copy-digital-asset-link="${escapeHtml(digitalAssetShareUrl(asset.id))}">Copiar link</button>`
           : `<button class="ghost-button" type="button" data-create-digital-asset-link="${escapeHtml(asset.id)}">Crear link para compartir</button>`}
         <button class="ghost-button" type="button" data-disable-digital-asset="${escapeHtml(asset.id)}">Desactivar</button>
+        <button class="ghost-button danger-action" type="button" data-delete-digital-asset="${escapeHtml(asset.id)}">Eliminar y liberar espacio</button>
       </div>
       ${state.editingDigitalAssetId === asset.id ? renderDigitalAssetEditor(asset) : ""}
       ${renderDigitalAssetLandings(asset)}
@@ -19179,6 +19242,21 @@ function renderDigitalAssets() {
       if (leadCaptureAssetSelect) leadCaptureAssetSelect.value = button.dataset.useDigitalAsset || "";
       renderLeadCaptureAssetPreview();
       leadCaptureForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  });
+  digitalAssetsGrid.querySelectorAll("[data-delete-digital-asset]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!window.confirm("¿Eliminar este archivo de forma permanente? Solo se permite si no se ha compartido con un lead.")) return;
+      try {
+        await api(`/api/business/digital-assets/${encodeURIComponent(button.dataset.deleteDigitalAsset)}`, { method: "DELETE", headers: authHeaders() });
+        await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
+        renderDigitalAssets();
+        renderLeadCaptureAssetOptions();
+        renderFlyerQrAssetOptions();
+        showFeedback("Archivo eliminado y cuota de almacenamiento actualizada.", "success", { title: "Almacenamiento" });
+      } catch (error) {
+        showFeedback(error.message, "error", { title: "No se puede eliminar" });
+      }
     });
   });
   digitalAssetsGrid.querySelectorAll("[data-disable-digital-asset]").forEach((button) => {
@@ -19515,7 +19593,7 @@ async function submitDigitalAssetEdit(event, assetId) {
       body: JSON.stringify(payload),
     });
     state.editingDigitalAssetId = null;
-    await loadDigitalAssets({ force: true });
+    await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
     if (!state.leadCaptureLoaded) await loadLeadCaptureActivations({ force: true });
     renderDigitalAssets();
     renderLeadCaptureAssetOptions();
@@ -19553,7 +19631,7 @@ async function submitDigitalAsset(event) {
     digitalAssetForm?.reset();
     if (digitalAssetCategoryInput) digitalAssetCategoryInput.value = "catalogo";
     if (digitalAssetButtonTextInput) digitalAssetButtonTextInput.value = "Descargar ahora";
-    await loadDigitalAssets({ force: true });
+    await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
     renderDigitalAssets();
     renderLeadCaptureAssetOptions();
     renderFlyerQrAssetOptions();
@@ -19575,7 +19653,7 @@ async function updateDigitalAssetStatus(assetId, isActive) {
     headers: authHeaders(),
     body: JSON.stringify({ is_active: Boolean(isActive) }),
   });
-  await loadDigitalAssets({ force: true });
+  await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
   renderDigitalAssets();
   renderLeadCaptureAssetOptions();
   renderFlyerQrAssetOptions();
@@ -46833,6 +46911,7 @@ refreshLeadCaptureButton?.addEventListener("click", async () => {
 refreshDigitalAssetsButton?.addEventListener("click", async () => {
   await Promise.all([
     loadDigitalAssets({ force: true }),
+    loadStorageQuota({ force: true }),
     loadLeadCaptureActivations({ force: true }),
   ]);
   renderDigitalAssets();
