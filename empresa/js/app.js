@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-handoff-v236";
+const APP_VERSION = "empresa-20260803-rms-evaluation-station-open-v237";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -44929,6 +44929,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
   const select = rmsCommercialNode(root, "[data-rms-evaluation-response]", id);
   const destinationSelect = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
   const preview = rmsCommercialNode(root, "[data-rms-evaluation-route]", id);
+  const response = select?.value || "";
   const destination = destinationSelect?.value || "";
   const route = rmsEvaluationRoute(select?.value || "", destination);
   const responseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === select?.value)?.short || "Pendiente";
@@ -44952,7 +44953,6 @@ function updateRmsEvaluationRoutePreview(root, id) {
     if (detail) detail.textContent = route.detail;
     preview.classList.toggle("is-ready", Boolean(destination));
   }
-  const response = select?.value || "";
   const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
   nextPanel?.classList.toggle("is-visible", Boolean(response && destination));
   const detailVisibility = {
