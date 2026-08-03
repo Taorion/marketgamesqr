@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-canonical-flow-v238";
+const APP_VERSION = "empresa-20260803-rms-canonical-flow-v239";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -30843,6 +30843,25 @@ function leadDirectorySalesSummary(item = {}) {
   };
 }
 
+// Debe declararse antes del directorio y del progreso: ambos se inicializan al cargar app.js.
+const RMS_FLOW_ORDER = Object.freeze([
+  "recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento",
+  "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre",
+  "revenue_generado", "postventa", "inteligencia",
+]);
+const RMS_FLOW_INDEX = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, index])));
+const RMS_FLOW_NEXT_PHASE = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, RMS_FLOW_ORDER[(index + 1) % RMS_FLOW_ORDER.length]])));
+const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
+
+function rmsFlowIndex(phase = "") {
+  return RMS_FLOW_INDEX[phase] ?? Number.MAX_SAFE_INTEGER;
+}
+
+function rmsNextPrimaryPhase(phase = "") {
+  const start = rmsFlowIndex(phase);
+  return RMS_FLOW_ORDER.slice(start + 1).find((key) => !RMS_QUALITY_CONTROL_KEYS.includes(key)) || "";
+}
+
 const LEAD_DIRECTORY_RMS_STATIONS = {
   recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
   alimentacion: { label: "Estación 02 · Curaduría", short: "02 Curaduría" },
@@ -38197,25 +38216,6 @@ function channelEffortPayload() {
       measured_as: "channel_effort",
     },
   };
-}
-
-// Fuente única de verdad para la navegación, progreso, etiquetas y salidas RMS.
-const RMS_FLOW_ORDER = Object.freeze([
-  "recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento",
-  "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre",
-  "revenue_generado", "postventa", "inteligencia",
-]);
-const RMS_FLOW_INDEX = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, index])));
-const RMS_FLOW_NEXT_PHASE = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, RMS_FLOW_ORDER[(index + 1) % RMS_FLOW_ORDER.length]])));
-const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
-
-function rmsFlowIndex(phase = "") {
-  return RMS_FLOW_INDEX[phase] ?? Number.MAX_SAFE_INTEGER;
-}
-
-function rmsNextPrimaryPhase(phase = "") {
-  const start = rmsFlowIndex(phase);
-  return RMS_FLOW_ORDER.slice(start + 1).find((key) => !RMS_QUALITY_CONTROL_KEYS.includes(key)) || "";
 }
 
 const RMS_FACTORY_STAGE_BLUEPRINT = [
