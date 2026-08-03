@@ -42678,10 +42678,30 @@ function bindRmsMachineActions(root) {
     });
   });
   root.querySelectorAll("[data-rms-confirm-activation]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const activationId = button.dataset.rmsConfirmActivation || "";
       const item = rmsOpportunityById(activationId);
-      if (item) sendRmsActivationOffer(item, rmsActivationDraftFromDom(root, activationId));
+      const draft = rmsActivationDraftFromDom(root, activationId);
+      const status = Array.from(root.querySelectorAll("[data-rms-activation-message-status]")).find((node) => node.getAttribute("data-rms-activation-message-status") === activationId);
+      if (!item) return;
+      if (!draft.consent) {
+        if (status) status.textContent = "Marca la autorización comercial antes de enviar.";
+        return;
+      }
+      if (!rmsActivationPreparedDeliveries.has(item.id)) {
+        if (status) status.textContent = "Primero pulsa Actualizar mensaje y revisa los enlaces antes de enviar.";
+        return;
+      }
+      const opened = openRmsActivationMessage(item, { channel: draft.channel, message: draft.message });
+      if (!opened) {
+        if (status) status.textContent = "No se pudo abrir el canal: verifica que el lead tenga WhatsApp o email.";
+        return;
+      }
+      button.disabled = true;
+      if (status) status.textContent = "Canal abierto. Guardando el envío y el seguimiento...";
+      await sendRmsActivationOffer(item, { ...draft, skipOpen: true });
+      if (status) status.textContent = "Envío registrado en la ficha del contacto.";
+      button.disabled = false;
     });
   });
   root.querySelectorAll("[data-rms-activation-ticket-select]").forEach(async (select) => {
@@ -43404,7 +43424,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
     if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage };
-    openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
+    if (!draft.skipOpen) openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
