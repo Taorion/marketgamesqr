@@ -43389,6 +43389,7 @@ function rmsActivationDraftFromDom(root, id) {
     channel: byData("data-rms-activation-channel")?.value || "",
     message: byData("data-rms-activation-message")?.value?.trim() || "",
     followUpAt: byData("data-rms-activation-followup")?.value || "",
+    contactedAt: byData("data-rms-activation-contacted-at")?.value || "",
     outcome: byData("data-rms-activation-outcome")?.value || "PENDING",
     ticketUrl: byData("data-rms-activation-created-ticket")?.value?.trim() || byData("data-rms-activation-ticket")?.value?.trim() || "",
     paymentMode: byData("data-rms-activation-payment-mode")?.value || "NONE",
@@ -43506,6 +43507,11 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   const offer = delivery.offer || rmsClassifiedProductName(item) || item.product_interest || "nuestra oferta comercial";
   const message = draft.message || rmsActivationMessage(item, delivery);
   const followUpAt = draft.followUpAt || "";
+  const contactedAt = draft.contactedAt ? new Date(draft.contactedAt) : new Date();
+  if (Number.isNaN(contactedAt.getTime())) {
+    showFeedback("Selecciona una fecha y hora válidas para el contacto.", "info", { title: "Activación 1" });
+    return;
+  }
   if (!draft.consent) {
     showFeedback("Confirma la autorización comercial antes de enviar la oferta.", "info", { title: "Activación 1" });
     return;
@@ -43546,7 +43552,10 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
       }
     }
     rmsActivationUploadedAssets.set(item.id, uploadedAssets);
-    const deliveryRecord = prepared || await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: [...new Set(attachmentAssetIds)], ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: rmsActivationMessage(item, delivery), channel: targetChannel, contact_consent_confirmed: true }) });
+    const preparedAssetIds = (prepared?.attachments || []).map((asset) => asset.asset_id).filter(Boolean);
+    const deliveryRecord = draft.prepareOnly && prepared
+      ? prepared
+      : await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: [...new Set([...attachmentAssetIds, ...preparedAssetIds])], ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: draft.message || rmsActivationMessage(item, delivery), channel: targetChannel, delivery_state: draft.prepareOnly ? "PREPARED" : "SENT", contacted_at: contactedAt.toISOString(), contact_consent_confirmed: true }) });
     const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
     if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
@@ -43570,6 +43579,8 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
           source_flow: "activation_offer_delivery",
           from_phase: item.stage || "clasificacion",
           activation_offer_sent_at: new Date().toISOString(),
+          activation_first_contact_at: deliveryRecord.history?.first_contact_at || contactedAt.toISOString(),
+          activation_contact_count: Number(deliveryRecord.history?.contact_sequence || delivery.contactCount || 1),
           activation_delivery_channel: targetChannel,
           activation_offer_name: offer,
           activation_offer_note: `Oferta ${offer} · Canal: ${targetChannel === "email" ? "email" : "WhatsApp"}.`,
@@ -43585,10 +43596,14 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     if (followUpAt && !previouslyScheduled) {
       await createRmsActivationFollowUpTask(item, followUpAt, { channel: targetChannel, offer, outcome: draft.outcome || "PENDING" });
     }
+    rmsActivationPreparedDeliveries.delete(item.id);
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     renderRmsMachineView();
-    showFeedback(followUpAt ? "Contacto confirmado y seguimiento creado en Agenda." : "Contacto confirmado. Programa un seguimiento antes de pasar a Evaluación.", "success", { title: "Activación 1" });
+    const contactNumber = Number(deliveryRecord.history?.contact_sequence || delivery.contactCount || 1);
+    showFeedback(contactNumber > 1
+      ? `Reenvío #${contactNumber} registrado en el historial del contacto.`
+      : (followUpAt ? "Primer contacto registrado y seguimiento creado en Agenda." : "Primer contacto registrado. Programa un seguimiento antes de pasar a Evaluación."), "success", { title: "Activación 1" });
   } catch (error) {
     showFeedback(error.message || "No se pudo confirmar el contacto.", "error", { title: "Activación 1" });
   }
@@ -44670,6 +44685,8 @@ function rmsActivationDelivery(item = {}) {
   const metadata = item.state_metadata || item.metadata || item.rms_metadata || {};
   return {
     sentAt: item.activation_offer_sent_at || metadata.activation_offer_sent_at || "",
+    firstContactAt: item.activation_first_contact_at || metadata.activation_first_contact_at || item.activation_offer_sent_at || metadata.activation_offer_sent_at || "",
+    contactCount: Number(item.activation_contact_count || metadata.activation_contact_count || (item.activation_offer_sent_at || metadata.activation_offer_sent_at ? 1 : 0)),
     channel: item.activation_delivery_channel || metadata.activation_delivery_channel || (item.phone ? "whatsapp" : "email"),
     offer: item.activation_offer_name || metadata.activation_offer_name || rmsClassifiedProductName(item) || item.product_interest || "Oferta comercial",
     note: item.activation_offer_note || metadata.activation_offer_note || "",
@@ -44758,6 +44775,10 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
           <span>Seguimiento</span>
           <input type="datetime-local" value="${escapeHtml(followUpValue)}" data-rms-activation-followup="${escapeHtml(item.id)}" aria-label="Fecha de seguimiento para ${escapeHtml(item.name || "lead")}">
         </label>
+        <label>
+          <span>${sent ? "Fecha y hora de este reenvío" : "Fecha y hora del primer contacto"}</span>
+          <input type="datetime-local" value="${escapeHtml(datetimeLocalValue(sent ? new Date() : (delivery.firstContactAt || new Date())))}" data-rms-activation-contacted-at="${escapeHtml(item.id)}" aria-label="Fecha del contacto para ${escapeHtml(item.name || "lead")}">
+        </label>
       </div>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
         <label><span>Activación o ticket ya creado</span><select data-rms-activation-created-ticket="${escapeHtml(item.id)}"><option value="">Cargando activaciones...</option></select></label>
@@ -44786,7 +44807,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
       </label>
       <div class="rms-activation-action-row">
         <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar mensaje</button>
-        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">${sent ? "calendar_add_on" : "send"}</span>${sent ? ready ? "Registrar reenvío" : "Guardar seguimiento" : "Enviar por WhatsApp / email"}</button>
+        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">send</span>${sent ? "Reenviar por WhatsApp / email" : "Enviar por WhatsApp / email"}</button>
       </div>
       ${sent ? `
         <div class="rms-activation-outcome-row">
@@ -44798,7 +44819,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
           <button class="ghost-button compact" type="button" data-rms-save-activation-outcome="${escapeHtml(item.id)}">Guardar respuesta</button>
         </div>
       ` : ""}
-      <small class="rms-activation-delivery-note">${sent && delivery.followUpAt ? `Seguimiento: ${escapeHtml(formatDate(delivery.followUpAt))}. ` : ""}${delivery.note ? `Registro: ${escapeHtml(delivery.note)}` : "El paso siguiente solo se habilita después de confirmar el contacto y agendar el seguimiento."}</small>
+      <small class="rms-activation-delivery-note">${sent ? `Primer contacto: ${escapeHtml(formatDate(delivery.firstContactAt || delivery.sentAt))}. Contactos registrados: ${Number(delivery.contactCount || 1)}. ` : ""}${sent && delivery.followUpAt ? `Seguimiento: ${escapeHtml(formatDate(delivery.followUpAt))}. ` : ""}${delivery.note ? `Registro: ${escapeHtml(delivery.note)}` : "El paso siguiente solo se habilita después de confirmar el contacto y agendar el seguimiento."}</small>
     </article>
   `;
 }

@@ -1206,7 +1206,46 @@ async function recordActivationDelivery(businessId, user, payload = {}) {
   const ticketUrl = String(payload.ticket_url || "").trim().slice(0, 1800);
   if (ticketUrl && !/^https?:\/\//i.test(ticketUrl)) throw badRequest("El link del ticket debe comenzar por http:// o https://.");
   const baseMessage = String(payload.message || "").trim().slice(0, 5000);
-  const note = await createLeadNote(businessId, user, sourceId, sourceType, { note: `Activación 1: oferta enviada por ${String(payload.channel || "WhatsApp")}.`, note_type: "commercial", metadata: { source_module: "rms_activation_1", activation_delivery: { payment, ticket_url: ticketUrl || null, channel: payload.channel || "WhatsApp", contact_consent_confirmed: true } } });
+  const deliveryState = payload.delivery_state === "SENT" ? "SENT" : "PREPARED";
+  const requestedContactAt = payload.contacted_at ? new Date(payload.contacted_at) : new Date();
+  if (Number.isNaN(requestedContactAt.getTime())) throw badRequest("La fecha del contacto no es válida.");
+  const priorHistory = await query(
+    `select count(*) filter (where metadata->'activation_delivery'->>'delivery_state' = 'SENT')::int as sent_count,
+            min(nullif(metadata->'activation_delivery'->>'first_contact_at', '')::timestamptz) as first_contact_at
+     from lead_notes
+     where business_id = $1 and source_type = $2 and source_id = $3
+       and metadata->>'source_module' = 'rms_activation_1'`,
+    [businessId, sourceType, sourceId]
+  );
+  const priorState = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, sourceId]
+  );
+  const legacyFirstContact = priorState.rows[0]?.metadata?.activation_first_contact_at
+    || priorState.rows[0]?.metadata?.activation_offer_sent_at
+    || null;
+  const sentBefore = Number(priorHistory.rows[0]?.sent_count || 0) || (legacyFirstContact ? 1 : 0);
+  const firstContactAt = priorHistory.rows[0]?.first_contact_at || legacyFirstContact || (deliveryState === "SENT" ? requestedContactAt.toISOString() : null);
+  const contactSequence = deliveryState === "SENT" ? sentBefore + 1 : sentBefore;
+  const note = await createLeadNote(businessId, user, sourceId, sourceType, {
+    note: deliveryState === "SENT"
+      ? `Activación 1 · contacto #${contactSequence} enviado por ${String(payload.channel || "WhatsApp")}.`
+      : `Activación 1 · mensaje y materiales preparados por ${String(payload.channel || "WhatsApp")}; aún no enviado.`,
+    note_type: "commercial",
+    metadata: {
+      source_module: "rms_activation_1",
+      activation_delivery: {
+        payment,
+        ticket_url: ticketUrl || null,
+        channel: payload.channel || "WhatsApp",
+        contact_consent_confirmed: true,
+        delivery_state: deliveryState,
+        contacted_at: deliveryState === "SENT" ? requestedContactAt.toISOString() : null,
+        first_contact_at: firstContactAt,
+        contact_sequence: contactSequence,
+      },
+    },
+  });
   const attachments = [];
   for (const asset of assets.rows) {
     const token = randomBytes(24).toString("base64url");
@@ -1219,8 +1258,8 @@ async function recordActivationDelivery(businessId, user, payload = {}) {
     attachments.length ? `También te compartimos los documentos de esta propuesta:\n${attachments.map((asset) => `• ${asset.title || asset.file_name}: ${asset.url}`).join("\n")}` : "",
     activationDeliveryPaymentText(payment),
   ].filter(Boolean).join("\n\n").slice(0, 5000);
-  await query(`update lead_notes set metadata = metadata || $2::jsonb where id = $1`, [note.id, JSON.stringify({ activation_delivery: { attachments, payment, ticket_url: ticketUrl || null, message: deliveryMessage } })]);
-  return { note, attachments, payment, whatsapp_message: deliveryMessage, whatsapp_url: whatsappUrl(item.phone, deliveryMessage) };
+  await query(`update lead_notes set metadata = metadata || $2::jsonb where id = $1`, [note.id, JSON.stringify({ activation_delivery: { attachments, payment, ticket_url: ticketUrl || null, message: deliveryMessage, delivery_state: deliveryState, contacted_at: deliveryState === "SENT" ? requestedContactAt.toISOString() : null, first_contact_at: firstContactAt, contact_sequence: contactSequence } })]);
+  return { note, attachments, payment, history: { delivery_state: deliveryState, contacted_at: deliveryState === "SENT" ? requestedContactAt.toISOString() : null, first_contact_at: firstContactAt, contact_sequence: contactSequence }, whatsapp_message: deliveryMessage, whatsapp_url: whatsappUrl(item.phone, deliveryMessage) };
 }
 
 async function downloadActivationAttachment(publicToken) {

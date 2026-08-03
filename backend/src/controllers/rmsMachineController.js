@@ -75,6 +75,8 @@ const activationDeliverySchema = z.object({
   payment: z.object({ mode: z.enum(["NONE", "PAYMENT_LINK", "INVOICE", "COLLECTION_ACCOUNT", "SIMPLE_COLLECTION"]).default("NONE"), url: z.string().trim().max(1800).optional().nullable(), instructions: z.string().trim().max(1800).optional().nullable(), reference: z.string().trim().max(180).optional().nullable(), amount: z.number().min(0).optional().nullable(), currency: z.string().trim().max(8).optional().nullable() }).optional().default({ mode: "NONE" }),
   message: z.string().trim().max(5000).optional().nullable(),
   channel: z.string().trim().max(80).optional().nullable(),
+  delivery_state: z.enum(["PREPARED", "SENT"]).optional().default("PREPARED"),
+  contacted_at: z.string().datetime().optional().nullable(),
   contact_consent_confirmed: z.boolean(),
 });
 
