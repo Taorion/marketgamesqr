@@ -145,6 +145,8 @@ const commercialConfirmationSchema = z.object({
   channel: z.string().trim().max(120).optional().nullable(),
   summary: z.string().trim().max(5000).optional().nullable(),
   reason: z.string().trim().max(3000).optional().nullable(),
+  commercial_route: z.enum(["NEGOTIATION_CLEAN", "NEEDS_RISK_REVIEW"]).optional().default("NEEDS_RISK_REVIEW"),
+  risk_signals: z.array(z.string().trim().min(2).max(240)).max(20).optional().default([]),
 });
 
 const riskReviewSchema = z.object({
@@ -173,7 +175,7 @@ const negotiationResultSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  result: z.enum(["WAITING", "REPROCESS", "NO_RESPONSE", "LOST"]),
+  result: z.enum(["WAITING", "REPROCESS", "NO_RESPONSE", "RECYCLE", "LOST"]),
   objective: z.string().trim().max(1200).optional().nullable(),
   objection_type: z.string().trim().max(120).optional().nullable(),
   customer_condition: z.string().trim().max(1800).optional().nullable(),
@@ -184,6 +186,8 @@ const negotiationResultSchema = z.object({
   reason: z.string().trim().min(4).max(3000),
   next_action_at: z.string().datetime().optional().nullable(),
   reprocess_phase: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
+  recycle_reason: z.enum(["BUDGET", "TIMING", "NO_RESPONSE", "EXPIRED_TICKET", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]).optional().nullable(),
+  recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
