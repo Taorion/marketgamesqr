@@ -620,6 +620,9 @@ create table if not exists business_inventory_products (
   unique (business_id, barcode)
 );
 
+alter table business_sales
+  add column if not exists inventory_product_id uuid;
+
 do $$ begin
   alter table business_sales
     add constraint business_sales_inventory_product_id_fkey
