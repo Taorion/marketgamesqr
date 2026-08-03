@@ -1020,7 +1020,14 @@ const RMS_EVALUATION_ROUTES = {
   },
 };
 
+const RMS_EVALUATION_DESTINATIONS = {
+  NEGOTIATION: RMS_EVALUATION_ROUTES.NEGOTIATION,
+  ATTRIBUTED_SALES: RMS_EVALUATION_ROUTES.PAID_SALE,
+};
+
 function rmsEvaluationSummary(response, route) {
+  if (route.phase === "cierre") return "El caso fue dirigido a Ventas atribuidas para registrar el pago, producto, costos y atribución.";
+  if (route.phase === "accion_correctiva") return "El caso fue dirigido a Negociación para acordar las condiciones y el siguiente compromiso.";
   if (response === "PAID_SALE") return "El cliente confirmó la compra desde Activación 1; falta dejar la venta atribuida.";
   if (response === "NEGOTIATION") return "El cliente tiene intención de compra y requiere acordar condiciones.";
   if (response === "MISSING_INFORMATION") return "El cliente necesita información antes de tomar la decisión.";
@@ -1032,12 +1039,15 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   const response = String(payload.response || "").toUpperCase();
-  const route = RMS_EVALUATION_ROUTES[response];
-  if (!route) throw badRequest("Selecciona una decisión comercial válida.");
+  const destination = String(payload.destination || "").trim().toUpperCase();
+  const route = destination ? RMS_EVALUATION_DESTINATIONS[destination] : RMS_EVALUATION_ROUTES[response];
+  if (!RMS_EVALUATION_ROUTES[response]) throw badRequest("Selecciona una decisión comercial válida.");
+  if (destination && !route) throw badRequest("Selecciona Negociación o Ventas atribuidas como estación de destino.");
   const note = String(payload.note || "").trim();
   if (!note) throw badRequest("Registra la respuesta del lead antes de decidir la ruta.");
   const evaluation = {
     response,
+    destination: destination || (route.phase === "cierre" ? "ATTRIBUTED_SALES" : route.phase === "accion_correctiva" ? "NEGOTIATION" : null),
     route: route.phase,
     route_label: route.label,
     need: String(payload.need || "").trim() || null,
@@ -1074,7 +1084,7 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       due_at: evaluation.next_action_at || undefined,
       priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
       revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
-      metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response },
+      metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response, rms_evaluation_destination: evaluation.destination },
     });
   }
   const movement = await moveRmsLeadPhase(businessId, user, {
@@ -1084,14 +1094,15 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     to_phase: route.phase,
     priority: evaluation.urgency,
     recommended_action: route.action,
-    last_operation: response === "PAID_SALE" ? "evaluation_paid_sale" : `evaluation_${response.toLowerCase()}`,
-    last_material_sent: response === "PAID_SALE" ? "venta_confirmada" : "evaluacion_comercial",
+    last_operation: route.phase === "cierre" ? "evaluation_to_attributed_sales" : route.phase === "accion_correctiva" ? "evaluation_to_negotiation" : `evaluation_${response.toLowerCase()}`,
+    last_material_sent: route.phase === "cierre" ? "venta_confirmada" : "evaluacion_comercial",
     revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
     reason: rmsEvaluationSummary(response, route),
     metadata: {
       rms_evaluation: evaluation,
       rms_evaluation_note_id: historyNote.id,
       rms_evaluation_agenda_note_id: agenda?.item?.id || null,
+      rms_evaluation_destination: evaluation.destination,
     },
   });
   return { evaluation, route, note: historyNote, agenda, ...movement };

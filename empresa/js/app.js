@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-decision-cockpit-v225";
+const APP_VERSION = "empresa-20260803-rms-evaluation-routing-console-v226";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40366,6 +40366,11 @@ const RMS_EVALUATION_RESPONSES = [
   { value: "NOT_QUALIFIED", label: "No califica por ahora", short: "No califica", icon: "do_not_disturb_on", hint: "Documentar el aprendizaje y detener presión comercial." },
 ];
 
+const RMS_EVALUATION_DESTINATIONS = [
+  { value: "NEGOTIATION", label: "Negociación", eyebrow: "Acordar", icon: "handshake", hint: "Precio, alcance, plazos o forma de pago." },
+  { value: "ATTRIBUTED_SALES", label: "Ventas atribuidas", eyebrow: "Registrar", icon: "paid", hint: "Pago, producto, costos y evidencia de la venta." },
+];
+
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
 
 function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
@@ -40392,6 +40397,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const defaultProduct = rmsClassifiedProductName(item) || item.product_interest || "";
   const draft = rmsEvaluationCachedDraft(item.id);
   const selectedResponse = draft.response || "";
+  const selectedDestination = draft.destination || "";
   const contactSummary = delivery.sentAt
     ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
     : "No hay envío confirmado; revisa el historial antes de decidir.";
@@ -40400,12 +40406,14 @@ function rmsEvaluationStationCardMarkup(item = {}) {
       ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino")}
       <section class="rms-commercial-work-console">
         <header class="rms-commercial-console-head"><div><span class="mono-label">Después de Activación 1</span><h4>Decide en menos pasos, con el contexto visible</h4><p>Primero confirma qué pasó; después elige la ruta. Qori solo pide los datos que sirven para ese siguiente paso.</p></div><span class="rms-commercial-state">${escapeHtml(delivery.sentAt ? "Contacto registrado" : "Revisa el historial")}</span></header>
-        <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Decisión</span></li><li class="${selectedResponse ? "is-active" : ""}"><b>3</b><span>Próximo paso</span></li></ol>
+        <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Respuesta</span></li><li class="${selectedDestination ? "is-done" : selectedResponse ? "is-active" : ""}"><b>3</b><span>Destino</span></li><li class="${selectedDestination ? "is-active" : ""}"><b>4</b><span>Contexto útil</span></li></ol>
         <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
         <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
-        <section class="rms-evaluation-decision-panel" aria-label="Decisión comercial"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2</span><h5>¿Qué decidió el cliente?</h5></div><small>Elige una ruta</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${option.icon}</span><span><strong>${escapeHtml(option.short)}</strong><small>${escapeHtml(option.hint)}</small></span></button>`).join("")}</div></section>
-        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><strong>Elige una decisión</strong><small>Te mostraremos la estación de destino.</small></div></aside>
-        <section class="rms-evaluation-next-panel ${selectedResponse ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 3</span><h5>Deja el contexto mínimo útil</h5></div><small>Obligatorio: resumen de la respuesta</small></div><div class="rms-evaluation-form-grid">
+        <input type="hidden" data-rms-evaluation-destination="${escapeHtml(item.id)}" value="${escapeHtml(selectedDestination)}">
+        <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Qué respondió el cliente?</h5></div><small>Esto no decide por ti</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${option.icon}</span><span><strong>${escapeHtml(option.short)}</strong><small>${escapeHtml(option.hint)}</small></span></button>`).join("")}</div></section>
+        <section class="rms-evaluation-destination-panel" aria-label="Estación de destino"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 3 · Tu decisión</span><h5>¿A qué estación envías este lead?</h5></div><small>La respuesta sugiere; tú decides</small></div><div class="rms-evaluation-destination-grid">${RMS_EVALUATION_DESTINATIONS.map((option) => `<button class="rms-evaluation-destination-choice ${selectedDestination === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-destination-choice="${escapeHtml(item.id)}" data-rms-evaluation-destination-value="${option.value}" aria-pressed="${selectedDestination === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${option.icon}</span><span><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-destination-arrow" aria-hidden="true">arrow_forward</span></button>`).join("")}</div></section>
+        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Ruta que se guardará</span><strong>Elige una estación de destino</strong><small>La respuesta del cliente seguirá documentada en su historial.</small></div></aside>
+        <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>Obligatorio: resumen de la respuesta</small></div><div class="rms-evaluation-form-grid">
           <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><input type="text" value="${escapeHtml(draft.recommended_product || defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Oferta evaluada"></label>
           <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
           <label data-rms-evaluation-detail="commercial"><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${(draft.currency || "COP") === currency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
@@ -40418,7 +40426,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
           <label data-rms-evaluation-detail="context"><span>Resultado esperado</span><input type="text" value="${escapeHtml(draft.desired_outcome || "")}" data-rms-evaluation-outcome="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué cambio espera"></label>
         </div>
         <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente</span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Escribe la respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>El historial de Activación 1 se conserva; el borrador solo vive durante esta sesión del portal.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>El historial de Activación 1 se conserva; el borrador solo vive durante esta sesión del portal.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
       </section>
     </article>
   `;
@@ -42919,6 +42927,10 @@ function bindRmsMachineActions(root) {
       if (!response) return;
       response.value = button.dataset.rmsEvaluationValue || "";
       response.dispatchEvent(new Event("change", { bubbles: true }));
+      const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
+      if (destination && !destination.value) {
+        destination.value = response.value === "PAID_SALE" ? "ATTRIBUTED_SALES" : "NEGOTIATION";
+      }
       const nextAction = rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id);
       if (nextAction && !nextAction.value.trim()) nextAction.value = rmsEvaluationDefaultNextAction(response.value);
       root.querySelectorAll("[data-rms-evaluation-choice]").forEach((choice) => {
@@ -42927,6 +42939,23 @@ function bindRmsMachineActions(root) {
         choice.classList.toggle("is-selected", active);
         choice.setAttribute("aria-pressed", active ? "true" : "false");
       });
+      updateRmsEvaluationRoutePreview(root, id);
+      persistRmsEvaluationDraft(root, id);
+    });
+  });
+  root.querySelectorAll("[data-rms-evaluation-destination-choice]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.rmsEvaluationDestinationChoice || "";
+      const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
+      if (!destination) return;
+      destination.value = button.dataset.rmsEvaluationDestinationValue || "";
+      root.querySelectorAll("[data-rms-evaluation-destination-choice]").forEach((choice) => {
+        if (choice.dataset.rmsEvaluationDestinationChoice !== id) return;
+        const active = choice === button;
+        choice.classList.toggle("is-selected", active);
+        choice.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      updateRmsEvaluationRoutePreview(root, id);
       persistRmsEvaluationDraft(root, id);
     });
   });
@@ -44870,7 +44899,12 @@ function persistRmsEvaluationDraft(root, id = "") {
   state.rmsEvaluationDrafts[id] = rmsEvaluationDraftFromDom(root, id);
 }
 
-function rmsEvaluationRoute(response = "") {
+function rmsEvaluationRoute(response = "", destination = "") {
+  const directDestinations = {
+    NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
+    ATTRIBUTED_SALES: { label: "Ventas atribuidas", detail: "Registrar pago, producto, costos y evidencia de una compra real.", icon: "paid" },
+  };
+  if (directDestinations[destination]) return directDestinations[destination];
   const routes = {
     PAID_SALE: { label: "Pasa a Ventas atribuidas", detail: "Registra el pago, producto, costos y evidencia de una compra real.", icon: "paid" },
     NEGOTIATION: { label: "Pasa a Negociación", detail: "Continúa el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
@@ -44878,24 +44912,26 @@ function rmsEvaluationRoute(response = "") {
     NURTURE: { label: "Pasa a Riesgos de fuga", detail: "Programa nutrición y seguimiento sin perder el contexto.", icon: "schedule" },
     NOT_QUALIFIED: { label: "Pasa a Inteligencia RMS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
   };
-  return routes[response] || { label: "Elige una decisión", detail: "Te mostraremos la estación de destino.", icon: "alt_route" };
+  return routes[response] || { label: "Elige una estación de destino", detail: "Negociación y Ventas atribuidas son decisiones independientes de la respuesta.", icon: "alt_route" };
 }
 
 function updateRmsEvaluationRoutePreview(root, id) {
   const select = rmsCommercialNode(root, "[data-rms-evaluation-response]", id);
+  const destinationSelect = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
   const preview = rmsCommercialNode(root, "[data-rms-evaluation-route]", id);
-  const route = rmsEvaluationRoute(select?.value || "");
+  const destination = destinationSelect?.value || "";
+  const route = rmsEvaluationRoute(select?.value || "", destination);
   if (preview) {
     preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
     const title = preview.querySelector("strong");
     const detail = preview.querySelector("small");
     if (title) title.textContent = route.label;
     if (detail) detail.textContent = route.detail;
-    preview.classList.toggle("is-ready", Boolean(select?.value));
+    preview.classList.toggle("is-ready", Boolean(destination));
   }
   const response = select?.value || "";
   const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
-  nextPanel?.classList.toggle("is-visible", Boolean(response));
+  nextPanel?.classList.toggle("is-visible", Boolean(response && destination));
   const detailVisibility = {
     commercial: ["NEGOTIATION", "PAID_SALE"].includes(response),
     followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE"].includes(response),
@@ -44909,7 +44945,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
     field.querySelectorAll("input, select, textarea").forEach((control) => { control.disabled = !visible; });
   });
   const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", id);
-  if (saveButton) saveButton.disabled = !response;
+  if (saveButton) saveButton.disabled = !response || !destination;
 }
 
 function rmsCommercialNumber(root, selector, id) {
@@ -44936,6 +44972,7 @@ function rmsCommercialMoney(value, currency = "COP") {
 function rmsEvaluationDraftFromDom(root, id) {
   return {
     response: rmsCommercialNode(root, "[data-rms-evaluation-response]", id)?.value || "",
+    destination: rmsCommercialNode(root, "[data-rms-evaluation-destination]", id)?.value || "",
     need: String(rmsCommercialNode(root, "[data-rms-evaluation-need]", id)?.value || "").trim(),
     desired_outcome: String(rmsCommercialNode(root, "[data-rms-evaluation-outcome]", id)?.value || "").trim(),
     recommended_product: String(rmsCommercialNode(root, "[data-rms-evaluation-product]", id)?.value || "").trim(),
@@ -44952,8 +44989,8 @@ function rmsEvaluationDraftFromDom(root, id) {
 
 async function saveRmsEvaluationResponse(item, root) {
   const draft = rmsEvaluationDraftFromDom(root, item.id);
-  if (!draft.response || !draft.note) {
-    showFeedback("Selecciona la decisión y deja la respuesta u objeciones del lead antes de dirigirlo.", "info", { title: "Evaluación" });
+  if (!draft.response || !draft.destination || !draft.note) {
+    showFeedback("Registra la respuesta, elige Negociación o Ventas atribuidas y deja el resumen antes de dirigirlo.", "info", { title: "Evaluación" });
     return;
   }
   await api("/api/business/rms-machine/evaluation-response", {
@@ -44962,10 +44999,10 @@ async function saveRmsEvaluationResponse(item, root) {
     body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
   });
   if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[item.id];
-  const destination = rmsEvaluationRoute(draft.response).label.includes("Ventas") ? "cierre" : draft.response === "NEGOTIATION" ? "accion_correctiva" : draft.response === "MISSING_INFORMATION" ? "clasificacion" : draft.response === "NURTURE" ? "control_anti_fuga" : "inteligencia";
+  const destination = draft.destination === "ATTRIBUTED_SALES" ? "cierre" : "accion_correctiva";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
-  showFeedback(draft.response === "PAID_SALE" ? "Compra desde Activación 1 registrada: completa ahora la venta atribuida." : `Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response).label.replace("Pasa a ", "")}.`, "success", { title: "Evaluación" });
+  showFeedback(`Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response, draft.destination).label}.`, "success", { title: "Evaluación" });
   openRmsStation(destination, { source: "evaluation" });
 }
 
