@@ -39252,7 +39252,7 @@ function rmsActivationQualityEvidenceMarkup(item = {}) {
     : "Sin cobro";
   return `<div class="rms-quality-activation-evidence">
     <small>${ticketUrl ? `<a href="${escapeHtml(ticketUrl)}" target="_blank" rel="noopener">Ticket / activación</a>` : "Sin ticket"}</small>
-    <small>${attachments.length ? `${attachments.length} documento(s) adjunto(s)` : "Sin adjuntos"}</small>
+    <small>${attachments.length ? attachments.map((asset) => `<a href="${escapeHtml(asset.url || "#")}" target="_blank" rel="noopener">${escapeHtml(asset.title || asset.file_name || "Documento")}</a>`).join(" · ") : "Sin adjuntos"}</small>
     <small>${escapeHtml(paymentText)}</small>
     ${message ? `<small title="${escapeHtml(message)}">${escapeHtml(message)}</small>` : "<small>Mensaje pendiente</small>"}
   </div>`;
