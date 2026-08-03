@@ -621,7 +621,22 @@ create table if not exists business_inventory_products (
 );
 
 alter table business_sales
-  add column if not exists inventory_product_id uuid;
+  add column if not exists rms_source_type text,
+  add column if not exists rms_source_id uuid,
+  add column if not exists inventory_product_id uuid,
+  add column if not exists quantity numeric(12, 2) not null default 1,
+  add column if not exists unit_cost numeric(14, 2) not null default 0,
+  add column if not exists product_cost_total numeric(14, 2) not null default 0,
+  add column if not exists benefit_type text,
+  add column if not exists benefit_cost numeric(14, 2) not null default 0,
+  add column if not exists acquisition_cost numeric(14, 2) not null default 0,
+  add column if not exists gross_profit numeric(14, 2) not null default 0,
+  add column if not exists net_profit numeric(14, 2) not null default 0,
+  add column if not exists roi numeric(14, 6),
+  add column if not exists payment_method text,
+  add column if not exists paid_at timestamptz,
+  add column if not exists sale_status text not null default 'PAID',
+  add column if not exists idempotency_key text;
 
 do $$ begin
   alter table business_sales
