@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-attributed-sales-v224";
+const APP_VERSION = "empresa-20260803-rms-evaluation-decision-cockpit-v225";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40359,12 +40359,11 @@ function rmsActivationStationCardMarkup(item = {}) {
 }
 
 const RMS_EVALUATION_RESPONSES = [
-  { value: "", label: "Selecciona la decisión" },
-  { value: "NEGOTIATION", label: "Quiere comprar, pero necesita negociar" },
-  { value: "PAID_SALE", label: "Compró desde Activación 1 y ya pagó" },
-  { value: "MISSING_INFORMATION", label: "Necesita información o material adicional" },
-  { value: "NURTURE", label: "No compra ahora; requiere nutrición" },
-  { value: "NOT_QUALIFIED", label: "No califica por ahora" },
+  { value: "NEGOTIATION", label: "Quiere comprar, pero necesita negociar", short: "Negociar", icon: "handshake", hint: "Acordar precio, alcance, plazos o forma de pago." },
+  { value: "PAID_SALE", label: "Compró desde Activación 1 y ya pagó", short: "Ya pagó", icon: "paid", hint: "Ir directo a registrar la venta atribuida." },
+  { value: "MISSING_INFORMATION", label: "Necesita información o material adicional", short: "Falta información", icon: "send", hint: "Preparar y reenviar lo que necesita." },
+  { value: "NURTURE", label: "No compra ahora; requiere nutrición", short: "Nutrir", icon: "schedule", hint: "Mantener relación sin presionar la compra." },
+  { value: "NOT_QUALIFIED", label: "No califica por ahora", short: "No califica", icon: "do_not_disturb_on", hint: "Documentar el aprendizaje y detener presión comercial." },
 ];
 
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
@@ -40391,27 +40390,35 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
 function rmsEvaluationStationCardMarkup(item = {}) {
   const delivery = rmsActivationDelivery(item);
   const defaultProduct = rmsClassifiedProductName(item) || item.product_interest || "";
+  const draft = rmsEvaluationCachedDraft(item.id);
+  const selectedResponse = draft.response || "";
+  const contactSummary = delivery.sentAt
+    ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
+    : "No hay envío confirmado; revisa el historial antes de decidir.";
   return `
     <article class="rms-commercial-work-item rms-evaluation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino")}
       <section class="rms-commercial-work-console">
-        <header class="rms-commercial-console-head"><div><span class="mono-label">Después de Activación 1</span><h4>Evalúa la conversación y dirige el caso</h4><p>Queda guardado en el historial del contacto. Si ya compró desde el primer mensaje, envíalo directamente a Ventas atribuidas.</p></div><span class="rms-commercial-state">${escapeHtml(delivery.sentAt ? "Contacto registrado" : "Revisa el historial")}</span></header>
-        <div class="rms-evaluation-form-grid">
-          <label><span>Decisión comercial</span><select data-rms-evaluation-response="${escapeHtml(item.id)}">${RMS_EVALUATION_RESPONSES.map((option) => `<option value="${option.value}">${escapeHtml(option.label)}</option>`).join("")}</select></label>
-          <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><strong>Elige una decisión</strong><small>Se mostrará la estación de destino.</small></div></aside>
-          <label><span>Necesidad o problema</span><input type="text" data-rms-evaluation-need="${escapeHtml(item.id)}" placeholder="Qué necesita resolver"></label>
-          <label><span>Resultado que busca</span><input type="text" data-rms-evaluation-outcome="${escapeHtml(item.id)}" placeholder="Qué cambio espera"></label>
-          <label><span>Producto o servicio recomendado</span><input type="text" value="${escapeHtml(defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" placeholder="Oferta evaluada"></label>
-          <label><span>Presupuesto estimado</span><input type="number" min="0" step="0.01" data-rms-evaluation-budget="${escapeHtml(item.id)}" placeholder="0"></label>
-          <label><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === "COP" ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
-          <label><span>Decisor o influenciador</span><input type="text" data-rms-evaluation-decision-maker="${escapeHtml(item.id)}" placeholder="Nombre, rol o pendiente"></label>
-          <label><span>Urgencia</span><select data-rms-evaluation-urgency="${escapeHtml(item.id)}"><option value="LOW">Baja</option><option value="MEDIUM" selected>Media</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option></select></label>
-          <label><span>Objeciones</span><input type="text" data-rms-evaluation-objections="${escapeHtml(item.id)}" placeholder="Precio, plazo, confianza, competencia..."></label>
-          <label><span>Próximo paso</span><input type="text" data-rms-evaluation-next-action="${escapeHtml(item.id)}" placeholder="Ej.: Llamar para acordar dos cuotas"></label>
-          <label><span>Fecha del próximo paso</span><input type="datetime-local" data-rms-evaluation-next-at="${escapeHtml(item.id)}" value="${escapeHtml(rmsActivationDatetimeLocal("", 2))}"></label>
+        <header class="rms-commercial-console-head"><div><span class="mono-label">Después de Activación 1</span><h4>Decide en menos pasos, con el contexto visible</h4><p>Primero confirma qué pasó; después elige la ruta. Qori solo pide los datos que sirven para ese siguiente paso.</p></div><span class="rms-commercial-state">${escapeHtml(delivery.sentAt ? "Contacto registrado" : "Revisa el historial")}</span></header>
+        <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Decisión</span></li><li class="${selectedResponse ? "is-active" : ""}"><b>3</b><span>Próximo paso</span></li></ol>
+        <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
+        <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
+        <section class="rms-evaluation-decision-panel" aria-label="Decisión comercial"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2</span><h5>¿Qué decidió el cliente?</h5></div><small>Elige una ruta</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${option.icon}</span><span><strong>${escapeHtml(option.short)}</strong><small>${escapeHtml(option.hint)}</small></span></button>`).join("")}</div></section>
+        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><strong>Elige una decisión</strong><small>Te mostraremos la estación de destino.</small></div></aside>
+        <section class="rms-evaluation-next-panel ${selectedResponse ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 3</span><h5>Deja el contexto mínimo útil</h5></div><small>Obligatorio: resumen de la respuesta</small></div><div class="rms-evaluation-form-grid">
+          <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><input type="text" value="${escapeHtml(draft.recommended_product || defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Oferta evaluada"></label>
+          <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
+          <label data-rms-evaluation-detail="commercial"><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${(draft.currency || "COP") === currency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
+          <label data-rms-evaluation-detail="commercial"><span>Decisor o influenciador</span><input type="text" value="${escapeHtml(draft.decision_maker || "")}" data-rms-evaluation-decision-maker="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Nombre, rol o pendiente"></label>
+          <label data-rms-evaluation-detail="followup"><span>Próximo paso</span><input type="text" value="${escapeHtml(draft.next_action || rmsEvaluationDefaultNextAction(selectedResponse))}" data-rms-evaluation-next-action="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Ej.: Llamar para acordar dos cuotas"></label>
+          <label data-rms-evaluation-detail="followup"><span>Fecha del próximo paso</span><input type="datetime-local" data-rms-evaluation-next-at="${escapeHtml(item.id)}" data-rms-evaluation-draft-field value="${escapeHtml(draft.next_action_at ? rmsSaleDatetimeLocal(draft.next_action_at) : rmsActivationDatetimeLocal("", 2))}"></label>
+          <label><span>Urgencia</span><select data-rms-evaluation-urgency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field><option value="LOW" ${(draft.urgency || "MEDIUM") === "LOW" ? "selected" : ""}>Baja</option><option value="MEDIUM" ${(draft.urgency || "MEDIUM") === "MEDIUM" ? "selected" : ""}>Media</option><option value="HIGH" ${(draft.urgency || "MEDIUM") === "HIGH" ? "selected" : ""}>Alta</option><option value="URGENT" ${(draft.urgency || "MEDIUM") === "URGENT" ? "selected" : ""}>Urgente</option></select></label>
+          <label data-rms-evaluation-detail="followup"><span>Objeción o bloqueo</span><input type="text" value="${escapeHtml(draft.objections || "")}" data-rms-evaluation-objections="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Precio, plazo, confianza, competencia..."></label>
+          <label data-rms-evaluation-detail="context"><span>Necesidad</span><input type="text" value="${escapeHtml(draft.need || "")}" data-rms-evaluation-need="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué necesita resolver"></label>
+          <label data-rms-evaluation-detail="context"><span>Resultado esperado</span><input type="text" value="${escapeHtml(draft.desired_outcome || "")}" data-rms-evaluation-outcome="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué cambio espera"></label>
         </div>
-        <label class="rms-commercial-note-field"><span>Respuesta del lead, objeciones y contexto</span><textarea rows="5" data-rms-evaluation-note="${escapeHtml(item.id)}" placeholder="Resume lo que dijo, objeciones, condiciones y lo prometido. Esta nota quedará en la ficha del contacto."></textarea></label>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>La evaluación conserva el histórico de Activación 1 y crea una tarea cuando defines próximo paso y fecha.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
+        <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente</span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Escribe la respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>El historial de Activación 1 se conserva; el borrador solo vive durante esta sesión del portal.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
       </section>
     </article>
   `;
@@ -42900,7 +42907,36 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-evaluation-response]").forEach((select) => {
     const id = select.dataset.rmsEvaluationResponse || "";
     updateRmsEvaluationRoutePreview(root, id);
-    select.addEventListener("change", () => updateRmsEvaluationRoutePreview(root, id));
+    select.addEventListener("change", () => {
+      updateRmsEvaluationRoutePreview(root, id);
+      persistRmsEvaluationDraft(root, id);
+    });
+  });
+  root.querySelectorAll("[data-rms-evaluation-choice]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.rmsEvaluationChoice || "";
+      const response = rmsCommercialNode(root, "[data-rms-evaluation-response]", id);
+      if (!response) return;
+      response.value = button.dataset.rmsEvaluationValue || "";
+      response.dispatchEvent(new Event("change", { bubbles: true }));
+      const nextAction = rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id);
+      if (nextAction && !nextAction.value.trim()) nextAction.value = rmsEvaluationDefaultNextAction(response.value);
+      root.querySelectorAll("[data-rms-evaluation-choice]").forEach((choice) => {
+        if (choice.dataset.rmsEvaluationChoice !== id) return;
+        const active = choice === button;
+        choice.classList.toggle("is-selected", active);
+        choice.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      persistRmsEvaluationDraft(root, id);
+    });
+  });
+  root.querySelectorAll("[data-rms-evaluation-draft-field]").forEach((field) => {
+    const id = Object.values(field.dataset || {}).find((value) => value && String(value).includes("-"))
+      || field.closest("[data-rms-station-lead]")?.dataset.rmsStationLead
+      || "";
+    const save = () => persistRmsEvaluationDraft(root, id);
+    field.addEventListener("input", save);
+    field.addEventListener("change", save);
   });
   root.querySelectorAll("[data-rms-save-evaluation]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -44814,6 +44850,26 @@ function rmsCommercialNode(root, selector, id) {
   return Array.from(root?.querySelectorAll(selector) || []).find((node) => Object.values(node.dataset || {}).includes(String(id))) || null;
 }
 
+function rmsEvaluationCachedDraft(id = "") {
+  return state.rmsEvaluationDrafts?.[id] || {};
+}
+
+function rmsEvaluationDefaultNextAction(response = "") {
+  return {
+    NEGOTIATION: "Contactar para acordar condiciones y siguiente compromiso",
+    PAID_SALE: "Registrar el pago recibido y la venta atribuida",
+    MISSING_INFORMATION: "Preparar y reenviar la información solicitada",
+    NURTURE: "Programar seguimiento de nutrición comercial",
+    NOT_QUALIFIED: "Documentar el motivo y detener seguimiento comercial",
+  }[response] || "";
+}
+
+function persistRmsEvaluationDraft(root, id = "") {
+  if (!id) return;
+  if (!state.rmsEvaluationDrafts) state.rmsEvaluationDrafts = {};
+  state.rmsEvaluationDrafts[id] = rmsEvaluationDraftFromDom(root, id);
+}
+
 function rmsEvaluationRoute(response = "") {
   const routes = {
     PAID_SALE: { label: "Pasa a Ventas atribuidas", detail: "Registra el pago, producto, costos y evidencia de una compra real.", icon: "paid" },
@@ -44828,14 +44884,32 @@ function rmsEvaluationRoute(response = "") {
 function updateRmsEvaluationRoutePreview(root, id) {
   const select = rmsCommercialNode(root, "[data-rms-evaluation-response]", id);
   const preview = rmsCommercialNode(root, "[data-rms-evaluation-route]", id);
-  if (!preview) return;
   const route = rmsEvaluationRoute(select?.value || "");
-  preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
-  const title = preview.querySelector("strong");
-  const detail = preview.querySelector("small");
-  if (title) title.textContent = route.label;
-  if (detail) detail.textContent = route.detail;
-  preview.classList.toggle("is-ready", Boolean(select?.value));
+  if (preview) {
+    preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
+    const title = preview.querySelector("strong");
+    const detail = preview.querySelector("small");
+    if (title) title.textContent = route.label;
+    if (detail) detail.textContent = route.detail;
+    preview.classList.toggle("is-ready", Boolean(select?.value));
+  }
+  const response = select?.value || "";
+  const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
+  nextPanel?.classList.toggle("is-visible", Boolean(response));
+  const detailVisibility = {
+    commercial: ["NEGOTIATION", "PAID_SALE"].includes(response),
+    followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE"].includes(response),
+    context: ["NEGOTIATION", "PAID_SALE", "MISSING_INFORMATION"].includes(response),
+  };
+  root.querySelectorAll("[data-rms-evaluation-detail]").forEach((field) => {
+    const fieldId = field.closest("[data-rms-station-lead]")?.dataset.rmsStationLead || "";
+    if (String(fieldId) !== String(id)) return;
+    const visible = Boolean(detailVisibility[field.dataset.rmsEvaluationDetail]);
+    field.hidden = !visible;
+    field.querySelectorAll("input, select, textarea").forEach((control) => { control.disabled = !visible; });
+  });
+  const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", id);
+  if (saveButton) saveButton.disabled = !response;
 }
 
 function rmsCommercialNumber(root, selector, id) {
@@ -44887,6 +44961,7 @@ async function saveRmsEvaluationResponse(item, root) {
     headers: authHeaders(),
     body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
   });
+  if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[item.id];
   const destination = rmsEvaluationRoute(draft.response).label.includes("Ventas") ? "cierre" : draft.response === "NEGOTIATION" ? "accion_correctiva" : draft.response === "MISSING_INFORMATION" ? "clasificacion" : draft.response === "NURTURE" ? "control_anti_fuga" : "inteligencia";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
