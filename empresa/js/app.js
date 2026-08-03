@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-routing-console-v226";
+const APP_VERSION = "empresa-20260803-rms-evaluation-visual-workspace-v227";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40398,6 +40398,8 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const draft = rmsEvaluationCachedDraft(item.id);
   const selectedResponse = draft.response || "";
   const selectedDestination = draft.destination || "";
+  const selectedResponseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === selectedResponse)?.short || "Pendiente";
+  const selectedDestinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === selectedDestination)?.label || "Por elegir";
   const contactSummary = delivery.sentAt
     ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
     : "No hay envío confirmado; revisa el historial antes de decidir.";
@@ -40405,7 +40407,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
     <article class="rms-commercial-work-item rms-evaluation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino")}
       <section class="rms-commercial-work-console">
-        <header class="rms-commercial-console-head"><div><span class="mono-label">Después de Activación 1</span><h4>Decide en menos pasos, con el contexto visible</h4><p>Primero confirma qué pasó; después elige la ruta. Qori solo pide los datos que sirven para ese siguiente paso.</p></div><span class="rms-commercial-state">${escapeHtml(delivery.sentAt ? "Contacto registrado" : "Revisa el historial")}</span></header>
+        <header class="rms-evaluation-hero"><div class="rms-evaluation-hero-copy"><span class="mono-label">Estación 06 · Después de Activación 1</span><h4>Convierte la respuesta en una decisión comercial clara.</h4><p>Documenta lo que dijo el cliente, define el destino y entrega al siguiente equipo un contexto que sí pueda ejecutar.</p><div class="rms-evaluation-hero-metrics"><div><span>Respuesta</span><strong data-rms-evaluation-response-label="${escapeHtml(item.id)}">${escapeHtml(selectedResponseLabel)}</strong></div><div><span>Destino</span><strong data-rms-evaluation-destination-label="${escapeHtml(item.id)}">${escapeHtml(selectedDestinationLabel)}</strong></div></div></div><div class="rms-evaluation-hero-signal"><span class="material-symbols-outlined" aria-hidden="true">insights</span><strong>${escapeHtml(delivery.sentAt ? "Contacto activo" : "Validar contacto")}</strong><small>${escapeHtml(delivery.sentAt ? "Ya existe un contacto para evaluar" : "Revisa el historial antes de registrar la decisión")}</small></div></header>
         <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Respuesta</span></li><li class="${selectedDestination ? "is-done" : selectedResponse ? "is-active" : ""}"><b>3</b><span>Destino</span></li><li class="${selectedDestination ? "is-active" : ""}"><b>4</b><span>Contexto útil</span></li></ol>
         <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
         <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
@@ -44921,6 +44923,12 @@ function updateRmsEvaluationRoutePreview(root, id) {
   const preview = rmsCommercialNode(root, "[data-rms-evaluation-route]", id);
   const destination = destinationSelect?.value || "";
   const route = rmsEvaluationRoute(select?.value || "", destination);
+  const responseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === select?.value)?.short || "Pendiente";
+  const destinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === destination)?.label || "Por elegir";
+  const responseMetric = rmsCommercialNode(root, "[data-rms-evaluation-response-label]", id);
+  const destinationMetric = rmsCommercialNode(root, "[data-rms-evaluation-destination-label]", id);
+  if (responseMetric) responseMetric.textContent = responseLabel;
+  if (destinationMetric) destinationMetric.textContent = destinationLabel;
   if (preview) {
     preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
     const title = preview.querySelector("strong");
