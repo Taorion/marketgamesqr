@@ -931,10 +931,12 @@ async function findOpportunity(businessId, sourceType, sourceId) {
 function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   const from = normalizePhase(fromPhase, "");
   if (!from || from === toPhase) return;
-  if (toPhase === "inteligencia" && String(payload.reason || "").trim()) return;
+  const negotiatedException = from === "accion_correctiva"
+    && ((payload.metadata?.negotiation_result === "REPROCESS" && ["procesamiento", "clasificacion"].includes(toPhase))
+      || (payload.metadata?.negotiation_result === "LOST" && toPhase === "inteligencia"));
   const allowed = from === "control_anti_fuga"
     ? ["cierre", "accion_correctiva"]
-    : [RMS_FLOW_NEXT_PHASE[from]].filter(Boolean);
+    : [...[RMS_FLOW_NEXT_PHASE[from]].filter(Boolean), ...(negotiatedException ? [toPhase] : [])];
   if (!allowed.includes(toPhase)) {
     throw badRequest(`${phaseLabel(from)} solo puede continuar a ${allowed.map(phaseLabel).join(" o ")}.`);
   }
@@ -942,6 +944,12 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
     const recovery = payload.metadata?.recovery_decision === "NEGOTIATION";
     if (!recovery || !String(payload.reason || "").trim()) {
       throw badRequest("El regreso a Negociación exige una decisión de recuperación y su razón.");
+    }
+  }
+  if (from === "accion_correctiva" && ["procesamiento", "clasificacion", "inteligencia"].includes(toPhase)) {
+    const allowed = payload.metadata?.negotiation_result === "REPROCESS" || payload.metadata?.negotiation_result === "LOST";
+    if (!allowed || !String(payload.reason || "").trim()) {
+      throw badRequest("La salida de Negociación exige una decisión documentada y su razón.");
     }
   }
 }
@@ -1044,7 +1052,7 @@ const RMS_EVALUATION_ROUTES = {
   PAID_SALE: {
     phase: "accion_correctiva",
     label: "Negociación",
-    action: "Registrar pago, producto, costos y atribución de la venta",
+    action: "Confirmar pago, producto, condición comercial y soporte",
   },
   MISSING_INFORMATION: {
     phase: "accion_correctiva",
@@ -1068,9 +1076,8 @@ const RMS_EVALUATION_DESTINATIONS = {
 };
 
 function rmsEvaluationSummary(response, route) {
-  if (route.phase === "cierre") return "El caso fue dirigido a Ventas atribuidas para registrar el pago, producto, costos y atribución.";
+  if (response === "PAID_SALE") return "El cliente reportó un pago; falta confirmar producto, valor, condición acordada y soporte antes de atribuir la venta.";
   if (route.phase === "accion_correctiva") return "El caso fue dirigido a Negociación para acordar las condiciones y el siguiente compromiso.";
-  if (response === "PAID_SALE") return "El cliente confirmó la compra desde Activación 1; falta dejar la venta atribuida.";
   if (response === "NEGOTIATION") return "El cliente tiene intención de compra y requiere acordar condiciones.";
   if (response === "MISSING_INFORMATION") return "El cliente necesita información antes de tomar la decisión.";
   if (response === "NURTURE") return "El cliente no compra ahora; se conserva en una ruta de nutrición y seguimiento.";
@@ -1080,6 +1087,7 @@ function rmsEvaluationSummary(response, route) {
 async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "procesamiento") throw badRequest("La respuesta solo puede registrarse desde Evaluación.");
   const response = String(payload.response || "").toUpperCase();
   const destination = String(payload.destination || "").trim().toUpperCase();
   const route = destination ? RMS_EVALUATION_DESTINATIONS[destination] : RMS_EVALUATION_ROUTES[response];
@@ -1189,6 +1197,16 @@ function rmsCommercialConfirmationFromPayload(payload = {}, user = {}) {
     responsible: String(payload.responsible || user.name || user.email || "").trim() || null,
     confirmed_at: payload.confirmed_at || new Date().toISOString(),
     note: String(payload.note || "").trim() || null,
+    negotiation: {
+      objective: String(payload.objective || "").trim() || null,
+      objection_type: String(payload.objection_type || "").trim() || null,
+      customer_condition: String(payload.customer_condition || "").trim() || null,
+      proposal: String(payload.proposal || "").trim() || null,
+      concession: String(payload.concession || "").trim() || null,
+      channel: String(payload.channel || "").trim() || null,
+      summary: String(payload.summary || "").trim() || null,
+      reason: String(payload.reason || "").trim() || null,
+    },
   };
 }
 
@@ -1200,11 +1218,23 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
   const missing = [
     !confirmation.product_name && "producto o servicio",
     confirmation.amount <= 0 && "valor acordado",
-    !confirmation.payment_reference && "método o referencia de pago",
-    !confirmation.evidence && "evidencia o comprobante",
     !confirmation.responsible && "responsable",
+    !(confirmation.payment_reference || confirmation.evidence || confirmation.note) && "evidencia, referencia o nota de confirmación",
   ].filter(Boolean);
   if (missing.length) throw badRequest(`Antes de proteger la venta confirma: ${missing.join(", ")}.`);
+  const priorState = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const priorMetadata = priorState.rows[0]?.metadata || {};
+  const confirmationRound = {
+    result: "ACCEPTED",
+    ...confirmation.negotiation,
+    reason: confirmation.negotiation.reason || confirmation.note || "Condición comercial confirmada.",
+    recorded_at: confirmation.confirmed_at,
+    recorded_by: user.id,
+  };
+  const negotiationHistory = Array.isArray(priorMetadata.negotiation_history) ? priorMetadata.negotiation_history.slice(-19) : [];
   const note = await createLeadNote(businessId, user, payload.source_id, sourceType, {
     note: `Confirmación comercial. ${confirmation.product_name} por ${confirmation.amount} ${confirmation.currency}. ${confirmation.note || "Condición y soporte confirmados."}`,
     note_type: "commercial",
@@ -1217,15 +1247,75 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
     last_operation: "commercial_condition_confirmed", last_material_sent: confirmation.product_name,
     revenue_potential: confirmation.amount,
     reason: "Condición comercial confirmada; pasa a validación final anti-fuga.",
-    metadata: { commercial_confirmation: confirmation, commercial_confirmation_note_id: note.id },
+    metadata: { commercial_confirmation: confirmation, commercial_confirmation_note_id: note.id, negotiation_current: confirmationRound, negotiation_history: [...negotiationHistory, confirmationRound], negotiation_result: "ACCEPTED" },
   });
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "commercial_condition_confirmed", event_title: "Condición comercial confirmada",
     event_description: "Producto, valor, pago y evidencia fueron confirmados antes de la validación anti-fuga.",
-    rms_phase: "control_anti_fuga", metadata: { commercial_confirmation: confirmation, movement_id: movement.movement?.id || null },
+    rms_phase: "control_anti_fuga", metadata: { commercial_confirmation: confirmation, negotiation_round: confirmationRound, movement_id: movement.movement?.id || null },
   });
   return { confirmation, note, ...movement };
+}
+
+async function recordRmsNegotiationResult(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "accion_correctiva") throw badRequest("El resultado solo se registra desde Negociación.");
+  const result = String(payload.result || "").toUpperCase();
+  if (!["WAITING", "REPROCESS", "NO_RESPONSE", "LOST"].includes(result)) throw badRequest("Selecciona un resultado de Negociación válido.");
+  const reason = String(payload.reason || payload.summary || "").trim();
+  if (!reason) throw badRequest("Explica la decisión comercial antes de guardarla.");
+  const nextAt = payload.next_action_at || null;
+  if (["WAITING", "NO_RESPONSE"].includes(result) && !nextAt) throw badRequest("Programa el próximo contacto para conservar el caso en Negociación.");
+  if (result === "REPROCESS" && !["procesamiento", "clasificacion"].includes(payload.reprocess_phase)) {
+    throw badRequest("El reproceso debe volver explícitamente a Evaluación o Activación 1.");
+  }
+  const current = await query(`select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`, [businessId, sourceType, payload.source_id]);
+  const priorMetadata = current.rows[0]?.metadata || {};
+  const round = {
+    id: payload.idempotency_key || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    result,
+    objective: String(payload.objective || "").trim() || null,
+    objection_type: String(payload.objection_type || "").trim() || null,
+    customer_condition: String(payload.customer_condition || "").trim() || null,
+    proposal: String(payload.proposal || "").trim() || null,
+    concession: String(payload.concession || "").trim() || null,
+    channel: String(payload.channel || "").trim() || null,
+    summary: String(payload.summary || "").trim() || null,
+    reason,
+    next_action_at: nextAt,
+    reprocess_phase: payload.reprocess_phase || null,
+    recorded_at: new Date().toISOString(),
+    recorded_by: user.id,
+  };
+  const history = Array.isArray(priorMetadata.negotiation_history) ? priorMetadata.negotiation_history.slice(-19) : [];
+  const priorRound = payload.idempotency_key ? history.find((entry) => entry.id === payload.idempotency_key) : null;
+  if (priorRound) return { round: priorRound, duplicate: true };
+  const toPhase = result === "REPROCESS" ? payload.reprocess_phase : result === "LOST" ? "inteligencia" : "accion_correctiva";
+  let agenda = null;
+  if (["WAITING", "NO_RESPONSE"].includes(result)) {
+    agenda = await createRmsAgendaTask(businessId, user, {
+      source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
+      stage: "accion_correctiva", due_at: nextAt, priority_score: result === "NO_RESPONSE" ? 80 : 60,
+      action_title: result === "NO_RESPONSE" ? "Recuperar respuesta y confirmar condición comercial" : "Retomar negociación en la fecha acordada",
+      note: `Negociación: ${reason}`, revenue_potential: item.revenue_potential,
+      metadata: { negotiation_round: round },
+    });
+  }
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: toPhase, priority: result === "LOST" ? "LOW" : result === "NO_RESPONSE" ? "HIGH" : "MEDIUM",
+    recommended_action: result === "LOST" ? "Conservar aprendizaje comercial" : result === "REPROCESS" ? "Actualizar propuesta antes de retomar el acuerdo" : "Confirmar condición comercial",
+    last_operation: `negotiation_${result.toLowerCase()}`, revenue_potential: item.revenue_potential, reason,
+    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : "REPROCESS" },
+  });
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: "negotiation_round_recorded", event_title: "Resultado de Negociación registrado", event_description: reason,
+    rms_phase: toPhase, metadata: { negotiation_round: round, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
+  });
+  return { round, agenda, ...movement };
 }
 
 async function recordRmsRiskReview(businessId, user, payload = {}) {
@@ -1238,8 +1328,8 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   );
   const metadata = current.rows[0]?.metadata || {};
   const confirmation = metadata.commercial_confirmation;
-  if (!confirmation?.product_name || Number(confirmation.amount) <= 0 || !confirmation?.evidence) {
-    throw badRequest("No se puede liberar la venta: falta una condición comercial confirmada con evidencia.");
+  if (!confirmation?.product_name || Number(confirmation.amount) <= 0 || !(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note)) {
+    throw badRequest("No se puede liberar la venta: falta una condición comercial confirmada con soporte verificable.");
   }
   const result = String(payload.result || "").toUpperCase();
   const reason = String(payload.reason || "").trim();
@@ -1671,6 +1761,7 @@ module.exports = {
   recordRmsAttributedSale,
   recordRmsCommercialConfirmation,
   recordRmsEvaluationResponse,
+  recordRmsNegotiationResult,
   recordRmsRiskReview,
   rmsMetrics,
 };

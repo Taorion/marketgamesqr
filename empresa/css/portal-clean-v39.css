@@ -9957,3 +9957,12 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist > d
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist .is-ready .material-symbols-outlined,.portal-shell .rms-risk-checklist .is-ready small { color:#187647; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-checklist .is-pending .material-symbols-outlined,.portal-shell .rms-risk-checklist .is-pending small { color:#a56500; }
 @media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice { flex-direction:column; } html body[data-current-view="rms-machine"] .portal-shell .rms-payment-reported-notice > div:last-child { margin-left:0; width:100%; } html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-info-block dl,.portal-shell .rms-risk-checklist { grid-template-columns:1fr; } }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-route-preview { display:grid; gap:4px; margin:14px 0; padding:14px 16px; border:1px solid #b8d8ed; border-radius:14px; background:#eef8ff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-route-preview strong { color:#124a79; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-route-preview small { color:#3a6284; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history ol { display:grid; gap:9px; margin:0; padding:0; list-style:none; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li { display:grid; grid-template-columns:minmax(120px,.45fr) minmax(0,1fr) auto; gap:10px; align-items:start; padding:10px 0; border-top:1px solid #e5edf3; color:#35546f; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li strong { color:#17466e; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li span { overflow-wrap:anywhere; }
+@media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li { grid-template-columns:1fr; gap:3px; } }

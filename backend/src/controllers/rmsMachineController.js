@@ -14,6 +14,7 @@ const {
   recordRmsAttributedSale,
   recordRmsCommercialConfirmation,
   recordRmsEvaluationResponse,
+  recordRmsNegotiationResult,
   recordRmsRiskReview,
   rmsMetrics,
 } = require("../services/rmsMachineService");
@@ -130,11 +131,19 @@ const commercialConfirmationSchema = z.object({
   product_name: z.string().trim().min(2).max(500),
   amount: z.number().positive().max(100000000000),
   currency: z.string().trim().min(3).max(8).optional().default("COP"),
-  payment_reference: z.string().trim().min(2).max(500),
-  evidence: z.string().trim().min(2).max(3000),
+  payment_reference: z.string().trim().max(500).optional().nullable(),
+  evidence: z.string().trim().max(3000).optional().nullable(),
   responsible: z.string().trim().max(500).optional().nullable(),
   confirmed_at: z.string().datetime().optional().nullable(),
   note: z.string().trim().max(3000).optional().nullable(),
+  objective: z.string().trim().max(1200).optional().nullable(),
+  objection_type: z.string().trim().max(120).optional().nullable(),
+  customer_condition: z.string().trim().max(1800).optional().nullable(),
+  proposal: z.string().trim().max(3000).optional().nullable(),
+  concession: z.string().trim().max(1800).optional().nullable(),
+  channel: z.string().trim().max(120).optional().nullable(),
+  summary: z.string().trim().max(5000).optional().nullable(),
+  reason: z.string().trim().max(3000).optional().nullable(),
 });
 
 const riskReviewSchema = z.object({
@@ -144,6 +153,24 @@ const riskReviewSchema = z.object({
   result: z.enum(["CLEARED", "RETURN_TO_NEGOTIATION"]),
   reason: z.string().trim().min(4).max(3000),
   next_action_at: z.string().datetime().optional().nullable(),
+});
+
+const negotiationResultSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  result: z.enum(["WAITING", "REPROCESS", "NO_RESPONSE", "LOST"]),
+  objective: z.string().trim().max(1200).optional().nullable(),
+  objection_type: z.string().trim().max(120).optional().nullable(),
+  customer_condition: z.string().trim().max(1800).optional().nullable(),
+  proposal: z.string().trim().max(3000).optional().nullable(),
+  concession: z.string().trim().max(1800).optional().nullable(),
+  channel: z.string().trim().max(120).optional().nullable(),
+  summary: z.string().trim().max(5000).optional().nullable(),
+  reason: z.string().trim().min(4).max(3000),
+  next_action_at: z.string().datetime().optional().nullable(),
+  reprocess_phase: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
 const bulkActionSchema = actionSchema.omit({ source_id: true, source_type: true }).extend({
@@ -255,6 +282,15 @@ async function recordRiskReview(req, res, next) {
   }
 }
 
+async function recordNegotiationResult(req, res, next) {
+  try {
+    const body = validate(negotiationResultSchema, req.body);
+    res.json(await recordRmsNegotiationResult(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function publicAttachmentDownload(req, res, next) {
   try {
     const file = await downloadActivationAttachment(req.params.publicToken);
@@ -299,5 +335,6 @@ module.exports = {
   recordAttributedSale,
   recordCommercialConfirmation,
   recordEvaluationResponse,
+  recordNegotiationResult,
   recordRiskReview,
 };

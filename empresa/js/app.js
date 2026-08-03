@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-commercial-confirmation-v240";
+const APP_VERSION = "empresa-20260803-rms-negotiation-decision-v241";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -39929,7 +39929,7 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Oportunidades operadas con posible enfriamiento, vencimiento o falta de seguimiento.",
     operation: "Detecta tickets por vencer, clientes sin tarea, ausencia de respuesta y fases comerciales saturadas.",
-    output: "Riesgo identificado con una tarea correctiva para Negociación.",
+    output: "Acuerdo validado para Ventas atribuidas o devuelto explícitamente a Negociación.",
     operatorHint: "No es una bandeja de descarte: sirve para recuperar oportunidades antes de perderlas.",
   },
   {
@@ -39941,8 +39941,8 @@ const RMS_TUTORIAL_STEPS = [
     actionLabel: "Abrir Negociación",
     action: "station",
     input: "Leads en riesgo o con una objeción, condición o decisión pendiente.",
-    operation: "Negocia condiciones, llama, reenvía un ticket, aplica un último beneficio o define el siguiente compromiso.",
-    output: "Cliente negociado, pospuesto o marcado como perdido; los listos pasan a Ventas atribuidas.",
+    operation: "Confirma condiciones, resuelve objeciones y deja evidencia verificable antes de la validación final.",
+    output: "Acuerdo confirmado y preparado para Riesgos de fuga.",
     operatorHint: "Esta es la estación para corregir con una acción concreta, no para acumular conversaciones sin salida.",
   },
   {
@@ -40467,21 +40467,25 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
   const flow = rmsCommercialWorkflow(item);
   const evaluation = flow.evaluation;
   const confirmation = flow.confirmation;
+  const negotiation = (item.state_metadata || {}).negotiation_current || {};
+  const history = Array.isArray((item.state_metadata || {}).negotiation_history) ? (item.state_metadata || {}).negotiation_history.slice(-4).reverse() : [];
   const product = confirmation.product_name || evaluation.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "";
   const amount = confirmation.amount ?? evaluation.budget_amount ?? "";
   const currency = confirmation.currency || evaluation.currency || "COP";
   const paymentReported = evaluation.response === "PAID_SALE";
-  const status = confirmation.status === "CONFIRMED" ? "Condición confirmada" : paymentReported ? "Pago informado" : "Pendiente de confirmación";
+  const status = confirmation.status === "CONFIRMED" ? "Acuerdo confirmado" : negotiation.result === "WAITING" ? "Esperando respuesta" : negotiation.result === "REPROCESS" ? "Requiere nueva propuesta" : negotiation.result === "LOST" ? "Perdido" : paymentReported ? "Pago informado" : "En negociación";
   return `
     <article class="rms-commercial-work-item rms-confirmation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
-      ${rmsCommercialLeadAsideMarkup(item, "Negociación · confirmación comercial")}
+      ${rmsCommercialLeadAsideMarkup(item, "Estación 07 · Negociación")}
       <section class="rms-commercial-work-console">
         ${rmsDealProgressMarkup("confirmation", "Estás confirmando la condición comercial antes de proteger la venta.")}
-        <header class="rms-commercial-console-head"><div><span class="mono-label">Negociación · Confirmación comercial</span><h4>${escapeHtml(status)}</h4><p>Cliente reporta ${paymentReported ? "un pago" : "interés comercial"}${amount ? ` por ${amount} ${currency}` : ""}${product ? ` para ${product}` : ""}. Verifica que la condición acordada y el soporte coincidan antes de proteger la venta.</p></div><span class="rms-commercial-state ${paymentReported ? "is-pending" : ""}">${escapeHtml(status)}</span></header>
-        <section class="rms-commercial-info-block"><h5>A. Lo que el cliente informó</h5><dl><div><dt>Respuesta</dt><dd>${escapeHtml(paymentReported ? "Reportó que ya realizó el pago" : evaluation.note || "Sin respuesta registrada")}</dd></div><div><dt>Producto o interés</dt><dd>${escapeHtml(product || "Pendiente de confirmar")}</dd></div><div><dt>Monto informado</dt><dd>${escapeHtml(amount ? `${amount} ${currency}` : "Pendiente")}</dd></div><div><dt>Canal</dt><dd>${escapeHtml(rmsActivationDelivery(item).channel === "email" ? "Email" : "WhatsApp")}</dd></div></dl></section>
-        <section class="rms-commercial-info-block"><h5>B. Lo que el operador debe confirmar</h5><div class="rms-sale-form-grid"><label><span>Producto o servicio final</span><input type="text" value="${escapeHtml(product)}" data-rms-confirm-product="${escapeHtml(item.id)}" placeholder="Producto o servicio"></label><label><span>Valor acordado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Método o referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Transferencia, factura o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Fecha de confirmación</span><input type="datetime-local" value="${escapeHtml(rmsSaleDatetimeLocal(confirmation.confirmed_at))}" data-rms-confirm-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field"><span>Evidencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué se acordó y qué queda protegido">${escapeHtml(confirmation.note || "")}</textarea></label></section>
-        <section class="rms-commercial-info-block"><h5>C. Siguiente decisión</h5><p>Pago y condición confirmados envía el caso a la validación anti-fuga. Si falta un comprobante o la condición cambió, conserva el caso aquí y agenda la acción concreta.</p></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">verified_user</span>Para liberar debes confirmar producto, valor, referencia, evidencia y responsable.</small><button class="solid-button compact" type="button" data-rms-save-commercial-confirmation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Pago y condición confirmados</button></div>
+        <header class="rms-commercial-console-head"><div><span class="mono-label">Estación 07 · Negociación</span><h4>${escapeHtml(paymentReported ? "Pago informado · pendiente de confirmación comercial" : status)}</h4><p>${escapeHtml(paymentReported ? "El cliente reportó un pago. Confirma producto, valor, condición acordada y soporte antes de proteger la venta." : "Convierte la conversación en una condición comercial verificable antes de enviarla a la validación final.")}</p></div><span class="rms-commercial-state ${status === "Perdido" ? "is-risk" : paymentReported ? "is-pending" : ""}">${escapeHtml(status)}</span></header>
+        <section class="rms-commercial-info-block"><h5>A. Contexto heredado</h5><dl><div><dt>Respuesta u objeción</dt><dd>${escapeHtml(paymentReported ? "Reportó que ya realizó el pago" : evaluation.objections || evaluation.note || "Sin respuesta registrada")}</dd></div><div><dt>Oferta o producto</dt><dd>${escapeHtml(product || "Pendiente de confirmar")}</dd></div><div><dt>Valor previo</dt><dd>${escapeHtml(amount ? `${amount} ${currency}` : "Pendiente")}</dd></div><div><dt>Canal y último contacto</dt><dd>${escapeHtml(rmsActivationDelivery(item).channel === "email" ? "Email" : "WhatsApp")}</dd></div><div><dt>Campaña u origen</dt><dd>${escapeHtml(item.campaign_name || item.source_detail || item.source_type || "Sin origen definido")}</dd></div><div><dt>Retorno de Riesgos</dt><dd>${escapeHtml(flow.risk?.result === "RETURN_TO_NEGOTIATION" ? `Caso devuelto: ${flow.risk.reason || "requiere ajuste"}` : "No aplica")}</dd></div></dl></section>
+        <section class="rms-commercial-info-block"><h5>B. Confirmación comercial y ronda actual</h5><div class="rms-sale-form-grid"><label><span>Objetivo de la ronda</span><input type="text" value="${escapeHtml(negotiation.objective || "Confirmar condición comercial")}" data-rms-negotiation-objective="${escapeHtml(item.id)}"></label><label><span>Tipo de objeción</span><select data-rms-negotiation-objection="${escapeHtml(item.id)}"><option value="PRICE">Precio</option><option value="PAYMENT">Condiciones de pago</option><option value="TIME">Tiempo</option><option value="SCOPE">Alcance o producto</option><option value="TRUST">Confianza</option><option value="COMPETITION">Competencia</option><option value="OTHER" selected>Otra / sin objeción</option></select></label><label><span>Condición inicial del cliente</span><input type="text" value="${escapeHtml(negotiation.customer_condition || "")}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Qué pidió o confirmó"></label><label><span>Propuesta o contraoferta</span><input type="text" value="${escapeHtml(negotiation.proposal || "")}" data-rms-negotiation-proposal="${escapeHtml(item.id)}" placeholder="Qué se ofreció"></label><label><span>Beneficio o concesión</span><input type="text" value="${escapeHtml(negotiation.concession || "")}" data-rms-negotiation-concession="${escapeHtml(item.id)}" placeholder="Opcional"></label><label><span>Canal de contacto</span><select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="MEETING">Reunión</option><option value="OTHER">Otro</option></select></label><label><span>Producto o servicio final</span><input type="text" value="${escapeHtml(product)}" data-rms-confirm-product="${escapeHtml(item.id)}" placeholder="Producto o servicio"></label><label><span>Valor final esperado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Factura, link o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Próximo contacto</span><input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(negotiation.next_action_at || "", 2))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field"><span>Evidencia, referencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de conversación y condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué dijo el cliente, qué se acordó y qué falta">${escapeHtml(confirmation.note || negotiation.summary || "")}</textarea></label></section>
+        <section class="rms-commercial-info-block"><h5>C. Decisión y siguiente acción</h5><label><span>Resultado de esta ronda</span><select data-rms-negotiation-result="${escapeHtml(item.id)}"><option value="ACCEPTED">Acuerdo confirmado</option><option value="WAITING">Esperar respuesta</option><option value="REPROCESS">Requiere nueva propuesta</option><option value="NO_RESPONSE">Sin respuesta</option><option value="LOST">Perdido</option></select></label><label data-rms-negotiation-reprocess-wrap="${escapeHtml(item.id)}"><span>Destino de reproceso</span><select data-rms-negotiation-reprocess="${escapeHtml(item.id)}"><option value="procesamiento">Evaluación</option><option value="clasificacion">Activación 1</option></select></label><label class="rms-commercial-note-field"><span>Motivo de la decisión</span><textarea rows="3" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Obligatorio: explica acuerdo, espera, retorno o pérdida"></textarea></label></section>
+        <aside class="rms-negotiation-route-preview" data-rms-negotiation-preview="${escapeHtml(item.id)}"><strong>Siguiente paso: Riesgos de fuga</strong><small>Se validará evidencia, condición, contacto y posibles bloqueos antes de atribuir la venta.</small></aside>
+        <section class="rms-commercial-info-block rms-negotiation-history"><h5>Historial de negociación</h5>${history.length ? `<ol>${history.map((round) => `<li><strong>${escapeHtml(round.result || "Ronda")}</strong><span>${escapeHtml(round.proposal || round.reason || "Sin detalle")}</span><small>${escapeHtml(round.recorded_at ? formatDate(round.recorded_at) : "")}</small></li>`).join("")}</ol>` : "<p>Aún no hay rondas registradas; esta será la primera.</p>"}</section>
+        <div class="rms-commercial-action-row"><small data-rms-negotiation-help="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span>Para confirmar el acuerdo debes completar condición, producto, valor, canal, evidencia y resumen.</small><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-negotiation-cta="${escapeHtml(item.id)}">Confirmar acuerdo y enviar a Riesgos de fuga</span></button></div>
       </section>
     </article>`;
 }
@@ -40489,7 +40493,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
 function rmsRiskValidationStationCardMarkup(item = {}) {
   const flow = rmsCommercialWorkflow(item);
   const confirmation = flow.confirmation;
-  const checks = [[Boolean(confirmation.evidence), "Pago o evidencia consistente"], [Boolean(confirmation.product_name) && Number(confirmation.amount) > 0, "Producto y valor confirmados"], [Boolean(item.name) && Boolean(confirmation.responsible), "Contacto y responsable identificados"], [true, "Sin objeción, reverso o seguimiento crítico pendiente"]];
+  const checks = [[Boolean(confirmation.evidence || confirmation.payment_reference || confirmation.note), "Pago o evidencia consistente"], [Boolean(confirmation.product_name) && Number(confirmation.amount) > 0, "Producto y valor confirmados"], [Boolean(item.name) && Boolean(confirmation.responsible), "Contacto y responsable identificados"], [true, "Sin objeción, reverso o seguimiento crítico pendiente"]];
   const ready = checks.every(([value]) => value);
   return `<article class="rms-commercial-work-item rms-risk-work-item" data-rms-station-lead="${escapeHtml(item.id)}">${rmsCommercialLeadAsideMarkup(item, "Riesgos de fuga · validación final")}<section class="rms-commercial-work-console">${rmsDealProgressMarkup("risk", "La venta está confirmada; revisa riesgos antes de registrarla como atribuida.")}<header class="rms-commercial-console-head"><div><span class="mono-label">Riesgos de fuga · Validación final</span><h4>Protege el acuerdo antes de atribuir la venta</h4><p>${escapeHtml(confirmation.product_name || "El producto")}${confirmation.amount ? ` por ${confirmation.amount} ${confirmation.currency || "COP"}` : ""} fue confirmado. Revisa que el pago, la evidencia y el contacto estén listos.</p></div><span class="rms-commercial-state ${ready ? "is-sale" : "is-pending"}">${ready ? "Listo para liberar" : "Requiere recuperación"}</span></header><section class="rms-risk-checklist" aria-label="Comprobación anti-fuga">${checks.map(([value, label]) => `<div class="${value ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${value ? "check_circle" : "pending"}</span><strong>${escapeHtml(label)}</strong><small>${value ? "Listo" : "Pendiente"}</small></div>`).join("")}</section><label class="rms-commercial-note-field"><span>Nota de validación o motivo de retorno</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Explica por qué está listo o qué falta corregir"></textarea></label><label class="rms-commercial-note-field"><span>Próximo contacto si se devuelve <small>(opcional)</small></span><input type="datetime-local" data-rms-risk-next-at="${escapeHtml(item.id)}" value="${escapeHtml(rmsActivationDatetimeLocal("", 1))}"></label><div class="rms-commercial-action-row"><small>${ready ? "Todo está listo: deja una nota de liberación y continúa a Ventas atribuidas." : "Hay una señal pendiente: explica el motivo y devuelve el caso a confirmación comercial."}</small><div><button class="ghost-button compact" type="button" data-rms-return-commercial-confirmation="${escapeHtml(item.id)}">Devolver a confirmación comercial</button><button class="solid-button compact" type="button" data-rms-save-risk-review="${escapeHtml(item.id)}" ${ready ? "" : "disabled"}>Liberar para Ventas atribuidas</button></div></div></section></article>`;
 }
@@ -41279,8 +41283,8 @@ function rmsStationVisualMeta(phase = "") {
       icon: "monitor_heart",
       tone: "control",
       image: "/empresa/img/qori-station-07-riesgos-fuga.jpg",
-      imageAlt: "Estacion 07 Riesgos de fuga",
-      screenTitle: "Estacion de almacenamiento: Controlar",
+      imageAlt: "Estacion 08 Riesgos de fuga",
+      screenTitle: "Estación 08: Riesgos de fuga",
       visualLabel: "Control anti-fuga",
       input: "Oportunidades operadas que pueden enfriarse.",
       output: "Riesgo detectado y tarea correctiva definida.",
@@ -41291,12 +41295,12 @@ function rmsStationVisualMeta(phase = "") {
       icon: "build_circle",
       tone: "recovery",
       image: "/empresa/img/qori-station-08-negociacion.jpg",
-      imageAlt: "Estacion 08 Negociacion",
-      screenTitle: "Estacion de almacenamiento: Corregir",
+      imageAlt: "Estacion 07 Negociacion",
+      screenTitle: "Estación 07: Negociación",
       visualLabel: "Inventario: oportunidades por corregir",
       input: "Leads atascados, fríos o en riesgo.",
       output: "Cliente negociado, movido, pospuesto o marcado como perdido.",
-      focus: "Negociar condiciones, resolver objeciones y preparar el paso a venta atribuida.",
+      focus: "Confirmar condiciones, resolver objeciones y preparar el paso a Riesgos de fuga.",
       checklist: ["Recordatorio", "Llamada", "Último beneficio", "Condición negociada", "Siguiente paso"],
     },
     cierre: {
@@ -43084,6 +43088,17 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSaveCommercialConfirmation || "");
       if (item) saveRmsCommercialConfirmation(item, root).catch((error) => showFeedback(error.message || "No pudimos confirmar la condición comercial.", "error", { title: "Confirmación comercial" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-negotiation-result]").forEach((select) => {
+    const id = select.dataset.rmsNegotiationResult || "";
+    updateRmsNegotiationDecisionUi(root, id);
+    select.addEventListener("change", () => updateRmsNegotiationDecisionUi(root, id));
+  });
+  root.querySelectorAll("[data-rms-save-negotiation-decision]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSaveNegotiationDecision || "");
+      if (item) saveRmsNegotiationDecision(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la decisión de Negociación.", "error", { title: "Negociación" }));
     });
   });
   root.querySelectorAll("[data-rms-save-risk-review], [data-rms-return-commercial-confirmation]").forEach((button) => {
@@ -45014,7 +45029,7 @@ function rmsEvaluationCachedDraft(id = "") {
 function rmsEvaluationDefaultNextAction(response = "") {
   return {
     NEGOTIATION: "Contactar para acordar condiciones y siguiente compromiso",
-    PAID_SALE: "Registrar el pago recibido y la venta atribuida",
+    PAID_SALE: "Confirmar pago y condiciones con el cliente",
     MISSING_INFORMATION: "Preparar y reenviar la información solicitada",
     NURTURE: "Programar seguimiento de nutrición comercial",
     NOT_QUALIFIED: "Documentar el motivo y detener seguimiento comercial",
@@ -45130,7 +45145,7 @@ function rmsEvaluationDraftFromDom(root, id) {
 async function saveRmsEvaluationResponse(item, root) {
   const draft = rmsEvaluationDraftFromDom(root, item.id);
   if (!draft.response || !draft.destination) {
-    showFeedback("Selecciona el resultado y elige Negociación o Ventas atribuidas para dirigir el lead.", "info", { title: "Evaluación" });
+    showFeedback("Selecciona el resultado y envíalo a Negociación para confirmar la condición comercial.", "info", { title: "Evaluación" });
     return;
   }
   const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", item.id);
@@ -45165,7 +45180,7 @@ function rmsCommercialConfirmationDraft(root, id) {
 
 async function saveRmsCommercialConfirmation(item, root) {
   const draft = rmsCommercialConfirmationDraft(root, item.id);
-  const missing = [!draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.payment_reference && "referencia de pago", !draft.evidence && "evidencia", !draft.responsible && "responsable"].filter(Boolean);
+  const missing = [!draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.responsible && "responsable", !(draft.payment_reference || draft.evidence || draft.note) && "evidencia, referencia o nota"].filter(Boolean);
   if (missing.length) {
     showFeedback(`Falta confirmar: ${missing.join(", ")}.`, "info", { title: "Confirmación comercial" });
     return;
@@ -45178,6 +45193,73 @@ async function saveRmsCommercialConfirmation(item, root) {
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "control_anti_fuga" });
   showFeedback("Condición comercial confirmada. Ahora protege la venta en la validación anti-fuga.", "success", { title: "Confirmación comercial" });
   openRmsStation("control_anti_fuga", { source: "commercial-confirmation" });
+}
+
+function rmsNegotiationDraft(root, id) {
+  const confirmation = rmsCommercialConfirmationDraft(root, id);
+  return {
+    ...confirmation,
+    result: rmsCommercialNode(root, "[data-rms-negotiation-result]", id)?.value || "ACCEPTED",
+    objective: String(rmsCommercialNode(root, "[data-rms-negotiation-objective]", id)?.value || "").trim(),
+    objection_type: rmsCommercialNode(root, "[data-rms-negotiation-objection]", id)?.value || "OTHER",
+    customer_condition: String(rmsCommercialNode(root, "[data-rms-negotiation-condition]", id)?.value || "").trim(),
+    proposal: String(rmsCommercialNode(root, "[data-rms-negotiation-proposal]", id)?.value || "").trim(),
+    concession: String(rmsCommercialNode(root, "[data-rms-negotiation-concession]", id)?.value || "").trim(),
+    channel: rmsCommercialNode(root, "[data-rms-negotiation-channel]", id)?.value || "OTHER",
+    summary: String(rmsCommercialNode(root, "[data-rms-confirm-note]", id)?.value || "").trim(),
+    reason: String(rmsCommercialNode(root, "[data-rms-negotiation-reason]", id)?.value || "").trim(),
+    next_action_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-negotiation-next-at]", id)?.value || ""),
+    reprocess_phase: rmsCommercialNode(root, "[data-rms-negotiation-reprocess]", id)?.value || "procesamiento",
+  };
+}
+
+function updateRmsNegotiationDecisionUi(root, id) {
+  const result = rmsCommercialNode(root, "[data-rms-negotiation-result]", id)?.value || "ACCEPTED";
+  const messages = {
+    ACCEPTED: ["Siguiente paso: Riesgos de fuga", "Se validará evidencia, condición, contacto y posibles bloqueos antes de atribuir la venta.", "Confirmar acuerdo y enviar a Riesgos de fuga"],
+    WAITING: ["El caso permanece en Negociación", "Programa el próximo contacto para retomar la conversación en la fecha acordada.", "Guardar espera y seguimiento"],
+    REPROCESS: ["El caso vuelve a propuesta", "Elige Evaluación o Activación 1 y deja una razón clara para el reproceso.", "Devolver para nueva propuesta"],
+    NO_RESPONSE: ["El caso permanece en Negociación", "Programa una acción de recuperación; no se atribuye una venta por falta de respuesta.", "Guardar seguimiento de recuperación"],
+    LOST: ["El seguimiento comercial se detendrá", "Registra el motivo para conservar el aprendizaje sin crear una venta.", "Registrar pérdida"],
+  };
+  const [title, detail, cta] = messages[result] || messages.ACCEPTED;
+  const preview = rmsCommercialNode(root, "[data-rms-negotiation-preview]", id);
+  if (preview) preview.innerHTML = `<strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small>`;
+  const ctaNode = rmsCommercialNode(root, "[data-rms-negotiation-cta]", id);
+  if (ctaNode) ctaNode.textContent = cta;
+  const reprocess = rmsCommercialNode(root, "[data-rms-negotiation-reprocess-wrap]", id);
+  if (reprocess) reprocess.hidden = result !== "REPROCESS";
+}
+
+async function saveRmsNegotiationDecision(item, root) {
+  const draft = rmsNegotiationDraft(root, item.id);
+  if (!draft.reason) {
+    showFeedback("Explica el motivo de esta decisión comercial.", "info", { title: "Negociación" });
+    return;
+  }
+  if (draft.result === "ACCEPTED") {
+    const missing = [!draft.customer_condition && "condición acordada", !draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.channel && "canal", !(draft.payment_reference || draft.evidence || draft.summary) && "evidencia, referencia o nota", !draft.summary && "resumen", !draft.responsible && "responsable"].filter(Boolean);
+    if (missing.length) {
+      showFeedback(`Para confirmar el acuerdo falta: ${missing.join(", ")}.`, "info", { title: "Negociación" });
+      return;
+    }
+    await api("/api/business/rms-machine/commercial-confirmation", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }) });
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "control_anti_fuga" });
+    showFeedback("Acuerdo confirmado: pasa a Riesgos de fuga para la validación final.", "success", { title: "Negociación" });
+    openRmsStation("control_anti_fuga", { source: "negotiation-accepted" });
+    return;
+  }
+  if (["WAITING", "NO_RESPONSE"].includes(draft.result) && !draft.next_action_at) {
+    showFeedback("Programa el próximo contacto antes de conservar este caso en Negociación.", "info", { title: "Negociación" });
+    return;
+  }
+  await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: rmsAttributedSaleKey(`negotiation-${item.id}`) }) });
+  const destination = draft.result === "REPROCESS" ? draft.reprocess_phase : draft.result === "LOST" ? "inteligencia" : "accion_correctiva";
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+  showFeedback(draft.result === "LOST" ? "Pérdida documentada sin crear una venta." : draft.result === "REPROCESS" ? "El caso volvió al punto elegido con su razón e historial." : "Decisión guardada y siguiente acción programada.", "success", { title: "Negociación" });
+  openRmsStation(destination, { source: "negotiation-result" });
 }
 
 async function saveRmsRiskReview(item, root, result) {
