@@ -9904,3 +9904,10 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-panel-h
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-panel-head small,.portal-shell .rms-evaluation-context small { color:#415f7d!important; opacity:1!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-context strong { color:#092e59!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview :is(strong,small) { color:#123f72!important; opacity:1!important; }
+
+/* Destination stays Qori blue, so every label remains white in normal and selected states. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-panel .rms-evaluation-panel-head :is(h5,small,.mono-label) { color:#ffffff!important; opacity:1!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice :is(em,strong,small,.rms-evaluation-destination-arrow) { color:#ffffff!important; opacity:1!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected { border-color:#a8e4ff!important; background:linear-gradient(135deg,#0064cf,#0a9bd6)!important; color:#ffffff!important; box-shadow:0 0 0 3px rgba(159,228,255,.25),0 12px 24px rgba(0,53,128,.3)!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected > .material-symbols-outlined:first-child { background:rgba(255,255,255,.2)!important; color:#ffffff!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice.is-selected :is(em,small) { color:#effaff!important; opacity:1!important; }
