@@ -113,6 +113,7 @@ const {
   recordEvaluationResponse: rmsRecordEvaluationResponse,
   recordNegotiationResult,
   recordRiskReview,
+  reactivateRecycledLead,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -184,6 +185,7 @@ router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/commercial-confirmation", recordCommercialConfirmation);
 router.post("/rms-machine/negotiation-result", recordNegotiationResult);
 router.post("/rms-machine/risk-review", recordRiskReview);
+router.post("/rms-machine/recycling/reactivate", reactivateRecycledLead);
 router.post("/rms-machine/attributed-sales", rmsRecordAttributedSale);
 router.post("/rms-machine/bulk-action", executeRmsBulkAction);
 router.patch("/rms-machine/lead/phase", moveRmsPhase);

@@ -9966,3 +9966,17 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-histor
 html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li strong { color:#17466e; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li span { overflow-wrap:anywhere; }
 @media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-history li { grid-template-columns:1fr; gap:3px; } }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue { margin:0 0 18px; padding:16px; border:1px solid #d6e3ee; border-radius:16px; background:#fbfdff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:12px; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue h4 { margin:3px 0; color:#173f66; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue p { color:#506b82; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-list { display:grid; gap:10px; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-list article { display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,.7fr); gap:14px; padding:13px; border:1px solid #e0e9f0; border-radius:12px; background:#fff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-list small { color:#5c7387; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-list textarea { display:block; width:100%; min-height:54px; margin:7px 0; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics { display:grid; grid-template-columns:repeat(7,minmax(130px,1fr)); gap:9px; overflow:auto; margin:0 0 14px; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics article { min-width:130px; padding:12px; border:1px solid #d9e5ed; border-radius:12px; background:#fff; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics strong { display:block; color:#0c5794; font-size:1.15rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics span { color:#526d84; font-size:.74rem; }
+@media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue header,.portal-shell .rms-recycling-list article { grid-template-columns:1fr; display:grid; } }

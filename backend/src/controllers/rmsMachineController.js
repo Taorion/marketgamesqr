@@ -16,6 +16,7 @@ const {
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
   recordRmsRiskReview,
+  reactivateRmsRecycledLead,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 
@@ -150,9 +151,22 @@ const riskReviewSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  result: z.enum(["CLEARED", "RETURN_TO_NEGOTIATION"]),
+  result: z.enum(["CLEARED", "RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE", "LOST"]),
   reason: z.string().trim().min(4).max(3000),
   next_action_at: z.string().datetime().optional().nullable(),
+  recycle_reason: z.enum(["BUDGET", "TIMING", "NO_RESPONSE", "EXPIRED_TICKET", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]).optional().nullable(),
+  recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
+  recycle_note: z.string().trim().max(3000).optional().nullable(),
+  responsible: z.string().trim().max(500).optional().nullable(),
+  ticket_action: z.enum(["NONE", "REMIND_ACTIVE", "PREPARE_NEW_ACTIVATION", "CONFIRM_REDEMPTION"]).optional().nullable(),
+  signals: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const recycleReactivateSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  note: z.string().trim().min(4).max(3000),
 });
 
 const negotiationResultSchema = z.object({
@@ -291,6 +305,15 @@ async function recordNegotiationResult(req, res, next) {
   }
 }
 
+async function reactivateRecycledLead(req, res, next) {
+  try {
+    const body = validate(recycleReactivateSchema, req.body);
+    res.json(await reactivateRmsRecycledLead(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function publicAttachmentDownload(req, res, next) {
   try {
     const file = await downloadActivationAttachment(req.params.publicToken);
@@ -337,4 +360,5 @@ module.exports = {
   recordEvaluationResponse,
   recordNegotiationResult,
   recordRiskReview,
+  reactivateRecycledLead,
 };

@@ -23,6 +23,7 @@ const RMS_FLOW_ORDER = [
 const RMS_PHASES = RMS_FLOW_ORDER;
 const STAGES = RMS_PHASES;
 const PHASE_KEYS = new Set(RMS_PHASES.map((phase) => phase.key));
+const RMS_AUXILIARY_PHASES = new Set(["reciclaje"]);
 const RMS_FLOW_NEXT_PHASE = Object.freeze({
   recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
   clasificacion: "preprocesamiento", preprocesamiento: "procesamiento",
@@ -219,10 +220,11 @@ function crmSourceType(row = {}) {
 function normalizePhase(value, fallback = "alimentacion") {
   const phase = String(value || "").trim().toLowerCase();
   if (LEGACY_PHASE_ALIASES[phase]) return LEGACY_PHASE_ALIASES[phase];
-  return PHASE_KEYS.has(phase) ? phase : fallback;
+  return PHASE_KEYS.has(phase) || RMS_AUXILIARY_PHASES.has(phase) ? phase : fallback;
 }
 
 function phaseLabel(phase) {
+  if (phase === "reciclaje") return "Reciclaje comercial";
   return RMS_PHASES.find((item) => item.key === phase)?.label || phase;
 }
 
@@ -934,9 +936,14 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   const negotiatedException = from === "accion_correctiva"
     && ((payload.metadata?.negotiation_result === "REPROCESS" && ["procesamiento", "clasificacion"].includes(toPhase))
       || (payload.metadata?.negotiation_result === "LOST" && toPhase === "inteligencia"));
+  const riskException = from === "control_anti_fuga"
+    && ((payload.metadata?.risk_result === "RECYCLE" && toPhase === "reciclaje")
+      || (payload.metadata?.risk_result === "LOST" && toPhase === "inteligencia"));
+  const recycleException = from === "reciclaje"
+    && payload.metadata?.recycle_result === "REACTIVATED" && toPhase === "procesamiento";
   const allowed = from === "control_anti_fuga"
-    ? ["cierre", "accion_correctiva"]
-    : [...[RMS_FLOW_NEXT_PHASE[from]].filter(Boolean), ...(negotiatedException ? [toPhase] : [])];
+    ? ["cierre", "accion_correctiva", ...(riskException ? [toPhase] : [])]
+    : [...[RMS_FLOW_NEXT_PHASE[from]].filter(Boolean), ...(negotiatedException || recycleException ? [toPhase] : [])];
   if (!allowed.includes(toPhase)) {
     throw badRequest(`${phaseLabel(from)} solo puede continuar a ${allowed.map(phaseLabel).join(" o ")}.`);
   }
@@ -1328,40 +1335,81 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   );
   const metadata = current.rows[0]?.metadata || {};
   const confirmation = metadata.commercial_confirmation;
-  if (!confirmation?.product_name || Number(confirmation.amount) <= 0 || !(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note)) {
-    throw badRequest("No se puede liberar la venta: falta una condición comercial confirmada con soporte verificable.");
-  }
   const result = String(payload.result || "").toUpperCase();
   const reason = String(payload.reason || "").trim();
-  if (!["CLEARED", "RETURN_TO_NEGOTIATION"].includes(result)) throw badRequest("Selecciona una decisión de validación final válida.");
-  if (!reason) throw badRequest(result === "CLEARED" ? "Explica por qué el acuerdo está listo para atribuir." : "Explica qué debe corregirse en la confirmación comercial.");
-  const review = { result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation };
-  const isCleared = result === "CLEARED";
-  let agenda = null;
-  if (!isCleared) {
-    agenda = await createRmsAgendaTask(businessId, user, {
-      source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
-      stage: "accion_correctiva", action_title: "Corregir la confirmación comercial antes de atribuir la venta",
-      note: `Riesgos de fuga: ${reason}`, due_at: payload.next_action_at || undefined, priority_score: 80,
-      revenue_potential: confirmation.amount, metadata: { rms_risk_review: review },
-    });
-  }
-  const movement = await moveRmsLeadPhase(businessId, user, {
-    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    to_phase: isCleared ? "cierre" : "accion_correctiva", priority: isCleared ? "HIGH" : "URGENT",
-    recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : "Completar confirmación comercial",
-    last_operation: isCleared ? "risk_review_passed" : "risk_review_returned_to_negotiation",
-    last_material_sent: confirmation.product_name, revenue_potential: confirmation.amount,
-    reason, metadata: { risk_review: review, recovery_decision: isCleared ? null : "NEGOTIATION", risk_return_task_id: agenda?.item?.id || null },
-  });
+  if (!["CLEARED", "RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE", "LOST"].includes(result)) throw badRequest("Selecciona una decisión de Riesgos de fuga válida.");
+  if (!reason) throw badRequest("Explica la decisión antes de guardar la revisión de riesgo.");
+  const hasSupport = Boolean(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note);
+  const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.product_name && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
+  if (result === "CLEARED" && !canClear) throw badRequest("No se puede liberar la venta: faltan contacto, producto, valor, responsable o soporte verificable.");
+  if (["WAITING", "RECYCLE"].includes(result) && !payload.next_action_at) throw badRequest("Programa la fecha de seguimiento o reactivación antes de guardar.");
+  const review = {
+    result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation,
+    signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
+    recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at, strategy: payload.recycle_strategy || "NEW_CONTACT", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || null } : null,
+  };
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    event_type: isCleared ? "risk_review_passed" : "risk_review_returned_to_negotiation",
-    event_title: isCleared ? "Validación anti-fuga aprobada" : "Caso devuelto a confirmación comercial",
-    event_description: reason, rms_phase: isCleared ? "cierre" : "accion_correctiva",
+    event_type: "risk_review_started", event_title: "Revisión de Riesgos de fuga iniciada",
+    event_description: reason, rms_phase: "control_anti_fuga", metadata: { risk_review: review },
+  });
+  if (item.active_tickets || item.redeemed_tickets || item.expired_tickets) {
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      event_type: "risk_ticket_signal_detected", event_title: "Señal de ticket detectada",
+      event_description: item.redeemed_tickets ? "Beneficio redimido sin resultado comercial confirmado." : item.expired_tickets ? "Existe un ticket vencido; no será modificado ni reactivado." : "Existe un ticket activo que requiere revisión contextual.",
+      rms_phase: "control_anti_fuga", metadata: { active_tickets: item.active_tickets, redeemed_tickets: item.redeemed_tickets, expired_tickets: item.expired_tickets, ticket_action: payload.ticket_action || "NONE" },
+    });
+  }
+  const isCleared = result === "CLEARED";
+  let agenda = null;
+  if (["RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE"].includes(result)) {
+    const stage = result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : "control_anti_fuga";
+    agenda = await createRmsAgendaTask(businessId, user, {
+      source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
+      stage, action_title: result === "RECYCLE" ? "Reactivar lead reciclado con contexto actualizado" : result === "WAITING" ? "Dar seguimiento al acuerdo antes de atribuir" : "Corregir la confirmación comercial antes de atribuir la venta",
+      note: `Riesgos de fuga: ${reason}`, due_at: payload.next_action_at || undefined, priority_score: result === "RECYCLE" ? 45 : 80,
+      revenue_potential: confirmation?.amount || item.revenue_potential, metadata: { rms_risk_review: review },
+    });
+  }
+  const toPhase = isCleared ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : result === "LOST" ? "inteligencia" : "control_anti_fuga";
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: toPhase, priority: isCleared ? "HIGH" : result === "LOST" ? "LOW" : "URGENT",
+    recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : result === "RECYCLE" ? "Reactivar en la fecha autorizada" : result === "LOST" ? "Conservar aprendizaje comercial" : result === "WAITING" ? "Dar seguimiento al acuerdo" : "Completar confirmación comercial",
+    last_operation: isCleared ? "risk_review_passed" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_review_returned_to_negotiation",
+    last_material_sent: confirmation?.product_name || null, revenue_potential: confirmation?.amount || item.revenue_potential,
+    reason, metadata: { risk_review: review, risk_result: result, recovery_decision: result === "RETURN_TO_NEGOTIATION" ? "NEGOTIATION" : null, risk_return_task_id: agenda?.item?.id || null, recycling: review.recycle, commercial_status: result === "LOST" ? "LOST" : null },
+  });
+  const eventType = isCleared ? "risk_cleared_for_attribution" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_returned_to_negotiation";
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: eventType,
+    event_title: isCleared ? "Validación anti-fuga aprobada" : result === "RECYCLE" ? "Lead enviado a Reciclaje comercial" : result === "LOST" ? "Pérdida definitiva documentada" : result === "WAITING" ? "Seguimiento de riesgo programado" : "Caso devuelto a Negociación",
+    event_description: reason, rms_phase: toPhase,
     metadata: { risk_review: review, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
   });
   return { review, agenda, ...movement };
+}
+
+async function reactivateRmsRecycledLead(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "reciclaje") throw badRequest("El lead solo puede reactivarse desde Reciclaje comercial.");
+  const note = String(payload.note || "").trim();
+  if (!note) throw badRequest("Explica el contexto actualizado antes de reactivar el lead.");
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: "procesamiento", priority: "MEDIUM", recommended_action: "Reevaluar contexto y propuesta antes de contactar",
+    last_operation: "recycled_lead_reactivated", reason: note,
+    metadata: { recycle_result: "REACTIVATED", recycling: { ...(item.state_metadata?.recycling || {}), reactivated_at: new Date().toISOString(), reactivated_by: user.id, reactivation_note: note } },
+  });
+  await recordRmsWorkflowEvent(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    event_type: "recycled_lead_reactivated", event_title: "Lead reciclado reactivado hacia Evaluación", event_description: note,
+    rms_phase: "procesamiento", metadata: { movement_id: movement.movement?.id || null },
+  });
+  return movement;
 }
 
 function roundedMoney(value) {
@@ -1763,5 +1811,6 @@ module.exports = {
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
   recordRmsRiskReview,
+  reactivateRmsRecycledLead,
   rmsMetrics,
 };

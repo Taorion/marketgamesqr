@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-negotiation-render-v242";
+const APP_VERSION = "empresa-20260803-rms-risk-recycling-v243";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40493,9 +40493,32 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
 function rmsRiskValidationStationCardMarkup(item = {}) {
   const flow = rmsCommercialWorkflow(item);
   const confirmation = flow.confirmation;
-  const checks = [[Boolean(confirmation.evidence || confirmation.payment_reference || confirmation.note), "Pago o evidencia consistente"], [Boolean(confirmation.product_name) && Number(confirmation.amount) > 0, "Producto y valor confirmados"], [Boolean(item.name) && Boolean(confirmation.responsible), "Contacto y responsable identificados"], [true, "Sin objeción, reverso o seguimiento crítico pendiente"]];
+  const hasSupport = Boolean(confirmation.evidence || confirmation.payment_reference || confirmation.note);
+  const contact = Boolean(item.phone || item.email);
+  const checks = [[hasSupport, "Pago o evidencia consistente"], [Boolean(confirmation.product_name) && Number(confirmation.amount) > 0, "Producto y valor confirmados"], [contact && Boolean(confirmation.responsible), "Contacto y responsable identificados"], [!flow.risk?.critical_open, "Sin bloqueo crítico abierto"]];
   const ready = checks.every(([value]) => value);
-  return `<article class="rms-commercial-work-item rms-risk-work-item" data-rms-station-lead="${escapeHtml(item.id)}">${rmsCommercialLeadAsideMarkup(item, "Riesgos de fuga · validación final")}<section class="rms-commercial-work-console">${rmsDealProgressMarkup("risk", "La venta está confirmada; revisa riesgos antes de registrarla como atribuida.")}<header class="rms-commercial-console-head"><div><span class="mono-label">Riesgos de fuga · Validación final</span><h4>Protege el acuerdo antes de atribuir la venta</h4><p>${escapeHtml(confirmation.product_name || "El producto")}${confirmation.amount ? ` por ${confirmation.amount} ${confirmation.currency || "COP"}` : ""} fue confirmado. Revisa que el pago, la evidencia y el contacto estén listos.</p></div><span class="rms-commercial-state ${ready ? "is-sale" : "is-pending"}">${ready ? "Listo para liberar" : "Requiere recuperación"}</span></header><section class="rms-risk-checklist" aria-label="Comprobación anti-fuga">${checks.map(([value, label]) => `<div class="${value ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${value ? "check_circle" : "pending"}</span><strong>${escapeHtml(label)}</strong><small>${value ? "Listo" : "Pendiente"}</small></div>`).join("")}</section><label class="rms-commercial-note-field"><span>Nota de validación o motivo de retorno</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Explica por qué está listo o qué falta corregir"></textarea></label><label class="rms-commercial-note-field"><span>Próximo contacto si se devuelve <small>(opcional)</small></span><input type="datetime-local" data-rms-risk-next-at="${escapeHtml(item.id)}" value="${escapeHtml(rmsActivationDatetimeLocal("", 1))}"></label><div class="rms-commercial-action-row"><small>${ready ? "Todo está listo: deja una nota de liberación y continúa a Ventas atribuidas." : "Hay una señal pendiente: explica el motivo y devuelve el caso a confirmación comercial."}</small><div><button class="ghost-button compact" type="button" data-rms-return-commercial-confirmation="${escapeHtml(item.id)}">Devolver a confirmación comercial</button><button class="solid-button compact" type="button" data-rms-save-risk-review="${escapeHtml(item.id)}" ${ready ? "" : "disabled"}>Liberar para Ventas atribuidas</button></div></div></section></article>`;
+  const ticketStatus = item.redeemed_tickets ? "Beneficio usado; falta confirmar resultado comercial" : item.expired_tickets ? "Ticket vencido: no se reactiva" : item.active_tickets ? "Ticket activo: revisa su vigencia antes de contactar" : "No hay incentivo activo";
+  return `<article class="rms-commercial-work-item rms-risk-work-item" data-rms-station-lead="${escapeHtml(item.id)}">${rmsCommercialLeadAsideMarkup(item, "Estación 08 · Riesgos de fuga")}<section class="rms-commercial-work-console">${rmsDealProgressMarkup("risk", "La venta está confirmada; revisa riesgos antes de registrarla como atribuida.")}<header class="rms-commercial-console-head"><div><span class="mono-label">ESTACIÓN 08 · RIESGOS DE FUGA</span><h4>Protege acuerdos antes de atribuir la venta</h4><p>Confirma que el cliente, la condición y la evidencia siguen vigentes antes de registrar el resultado comercial.</p></div><span class="rms-commercial-state ${ready ? "is-sale" : "is-pending"}">${ready ? "Listo para atribución" : "Requiere decisión"}</span></header><section class="rms-commercial-info-block"><h5>A. Acuerdo que se está protegiendo</h5><dl><div><dt>Producto</dt><dd>${escapeHtml(confirmation.product_name || "Pendiente")}</dd></div><div><dt>Valor</dt><dd>${escapeHtml(confirmation.amount ? `${confirmation.amount} ${confirmation.currency || "COP"}` : "Pendiente")}</dd></div><div><dt>Condición</dt><dd>${escapeHtml(confirmation.negotiation?.customer_condition || confirmation.note || "Pendiente")}</dd></div><div><dt>Responsable</dt><dd>${escapeHtml(confirmation.responsible || "Pendiente")}</dd></div><div><dt>Ticket / Reward Pass</dt><dd>${escapeHtml(ticketStatus)}</dd></div><div><dt>Campaña</dt><dd>${escapeHtml(item.campaign_name || item.source_detail || "Sin campaña")}</dd></div></dl></section><section class="rms-risk-checklist" aria-label="Señales de fuga">${checks.map(([value, label]) => `<div class="${value ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${value ? "check_circle" : "pending"}</span><strong>${escapeHtml(label)}</strong><small>${value ? "Listo" : "Atención: revísalo antes de atribuir"}</small></div>`).join("")}${item.redeemed_tickets ? `<div class="is-pending"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><strong>Ticket redimido sin venta atribuida</strong><small>Atención: confirma compra o condición final.</small></div>` : ""}</section><section class="rms-commercial-info-block"><h5>B. Decisión final</h5><label><span>Decisión de riesgo</span><select data-rms-risk-decision="${escapeHtml(item.id)}"><option value="CLEARED">Liberar para Ventas atribuidas</option><option value="RETURN_TO_NEGOTIATION">Devolver a Negociación</option><option value="WAITING">Mantener en seguimiento</option><option value="RECYCLE">Enviar a Reciclaje comercial</option><option value="LOST">Marcar pérdida definitiva</option></select></label><label><span>Acción sobre ticket o beneficio</span><select data-rms-risk-ticket-action="${escapeHtml(item.id)}"><option value="NONE">Sin acción sobre ticket</option>${item.active_tickets ? '<option value="REMIND_ACTIVE">Recordar beneficio vigente</option>' : ""}${item.redeemed_tickets ? '<option value="CONFIRM_REDEMPTION">Confirmar resultado de ticket redimido</option>' : ""}${item.expired_tickets ? '<option value="PREPARE_NEW_ACTIVATION">Preparar nueva activación (sin modificar ticket)</option>' : ""}</select></label><label data-rms-risk-recycle-wrap="${escapeHtml(item.id)}"><span>Motivo de reciclaje</span><select data-rms-risk-recycle-reason="${escapeHtml(item.id)}"><option value="TIMING">Momento inadecuado</option><option value="BUDGET">Presupuesto</option><option value="NO_RESPONSE">Sin respuesta</option><option value="EXPIRED_TICKET">Ticket vencido</option><option value="WAITING_DECISION">Espera de decisión</option><option value="NOT_VIABLE_NOW">Condición no viable hoy</option><option value="OTHER">Otro</option></select></label><label data-rms-risk-recycle-wrap="${escapeHtml(item.id)}"><span>Estrategia de reactivación</span><select data-rms-risk-recycle-strategy="${escapeHtml(item.id)}"><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva activación</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option><option value="NURTURE">Nutrición comercial</option></select></label><label class="rms-commercial-note-field"><span>Motivo y nota de control</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Explica qué protege, qué falta o por qué se recicla/pierde"></textarea></label><label><span>Próximo contacto o reactivación</span><input type="datetime-local" data-rms-risk-next-at="${escapeHtml(item.id)}" value="${escapeHtml(rmsActivationDatetimeLocal("", 1))}"></label></section><aside class="rms-negotiation-route-preview" data-rms-risk-preview="${escapeHtml(item.id)}"><strong>Siguiente paso: Ventas atribuidas</strong><small>Solo se libera cuando no existe una señal crítica abierta.</small></aside><div class="rms-commercial-action-row"><small>${ready ? "Puedes liberar con una nota de control. Si hay bloqueo, devuelve, programa, recicla o documenta la pérdida." : "Completa las señales críticas o toma una decisión explícita; nunca atribuyas una venta con un bloqueo abierto."}</small><button class="solid-button compact" type="button" data-rms-save-risk-decision="${escapeHtml(item.id)}">Guardar decisión de riesgo</button></div></section></article>`;
+}
+
+function rmsRecyclingQueueMarkup(opportunities = []) {
+  const recycled = (opportunities || []).filter((item) => item.stage === "reciclaje");
+  const now = Date.now();
+  const buckets = {
+    today: recycled.filter((item) => new Date(item.state_metadata?.recycling?.reactivate_at || 0).getTime() <= now),
+    week: recycled.filter((item) => { const time = new Date(item.state_metadata?.recycling?.reactivate_at || 0).getTime(); return time > now && time <= now + 7 * 86400000; }),
+  };
+  return `<section class="rms-recycling-queue" aria-label="Reciclaje comercial"><header><div><span class="mono-label">COLA LATERAL</span><h4>Reciclaje comercial · oportunidades para reactivar</h4><p>Conserva el contexto. Al reactivar, el lead vuelve a Evaluación para recalificar la conversación actual.</p></div><span>${recycled.length} en reciclaje · ${buckets.today.length} para hoy</span></header><div class="rms-recycling-list">${recycled.map((item) => { const recycle = item.state_metadata?.recycling || {}; return `<article><div><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(recycle.reason || "Motivo pendiente")} · ${escapeHtml(recycle.strategy || "Estrategia pendiente")}</small><p>${escapeHtml(recycle.note || "Sin nota de reactivación")}</p></div><div><small>Reactivar: ${escapeHtml(recycle.reactivate_at ? formatDate(recycle.reactivate_at) : "Sin fecha")}</small><textarea rows="2" data-rms-recycle-note="${escapeHtml(item.id)}" placeholder="Contexto actualizado para volver a Evaluación"></textarea><button class="solid-button compact" type="button" data-rms-reactivate-recycled="${escapeHtml(item.id)}">Reactivar y enviar a Evaluación</button></div></article>`; }).join("") || "<p class=\"empty-state compact\">No hay oportunidades en Reciclaje comercial.</p>"}</div></section>`;
+}
+
+function rmsRiskStationMetricsMarkup(rows = [], allOpportunities = []) {
+  const confirmed = rows.filter((item) => rmsCommercialWorkflow(item).confirmation?.product_name);
+  const incomplete = rows.filter((item) => !rmsCommercialWorkflow(item).confirmation?.evidence && !rmsCommercialWorkflow(item).confirmation?.payment_reference && !rmsCommercialWorkflow(item).confirmation?.note);
+  const today = rows.filter((item) => item.days_since_interaction >= 1 || item.redeemed_tickets > 0);
+  const recoverable = rows.filter((item) => !rmsCommercialWorkflow(item).risk?.result || rmsCommercialWorkflow(item).risk?.result === "RETURN_TO_NEGOTIATION");
+  const recycled = (allOpportunities || []).filter((item) => item.stage === "reciclaje");
+  const cards = [["Revisar hoy", today.length], ["Tickets por vencer / activos", rows.filter((item) => item.active_tickets > 0).length], ["Redimidos sin venta", rows.filter((item) => item.redeemed_tickets > 0 && !item.purchase_count).length], ["Acuerdos sin soporte", incomplete.length], ["Recuperables en Negociación", recoverable.length], ["Para Reciclaje", recycled.length], ["Liberados para atribución", confirmed.length]];
+  return `<section class="rms-risk-metrics" aria-label="Métricas de acción">${cards.map(([label, value]) => `<article><strong>${escapeHtml(String(value))}</strong><span>${escapeHtml(label)}</span></article>`).join("")}</section>`;
 }
 
 function rmsAttributedSaleStationCardMarkup(item = {}) {
@@ -40646,6 +40669,8 @@ function renderRmsStationLeanOnly() {
         <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
       </div>
       ${isCommercialStation ? `
+        ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
+        ${phase === "control_anti_fuga" ? rmsRecyclingQueueMarkup(allOpportunities) : ""}
         <div class="rms-activation-work-list" aria-label="Consolas comerciales RMS">
           ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
         </div>
@@ -43106,6 +43131,23 @@ function bindRmsMachineActions(root) {
       if (item) saveRmsRiskReview(item, root, button.hasAttribute("data-rms-save-risk-review") ? "CLEARED" : "RETURN_TO_NEGOTIATION").catch((error) => showFeedback(error.message || "No pudimos guardar la validación final.", "error", { title: "Riesgos de fuga" }));
     });
   });
+  root.querySelectorAll("[data-rms-save-risk-decision]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSaveRiskDecision || "");
+      if (item) saveRmsRiskDecision(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la decisión de riesgo.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-reactivate-recycled]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsReactivateRecycled || "");
+      const note = String(rmsCommercialNode(root, "[data-rms-recycle-note]", button.dataset.rmsReactivateRecycled || "")?.value || "").trim();
+      if (!item || !note) {
+        showFeedback("Escribe el contexto actualizado antes de reactivar el lead.", "info", { title: "Reciclaje comercial" });
+        return;
+      }
+      reactivateRmsRecycled(item, note).catch((error) => showFeedback(error.message || "No pudimos reactivar el lead.", "error", { title: "Reciclaje comercial" }));
+    });
+  });
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
     const id = select.dataset.rmsSaleProduct || "";
     select.addEventListener("change", () => {
@@ -45277,6 +45319,45 @@ async function saveRmsRiskReview(item, root, result) {
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
   showFeedback(result === "CLEARED" ? "Riesgo controlado. La venta ya está lista para atribuir." : "El caso volvió a confirmación comercial con una tarea de corrección.", "success", { title: "Validación final" });
   openRmsStation(destination, { source: "risk-review" });
+}
+
+async function saveRmsRiskDecision(item, root) {
+  const result = rmsCommercialNode(root, "[data-rms-risk-decision]", item.id)?.value || "CLEARED";
+  const reason = String(rmsCommercialNode(root, "[data-rms-risk-reason]", item.id)?.value || "").trim();
+  const next_action_at = rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "");
+  if (!reason) {
+    showFeedback("Explica el motivo de la decisión de riesgo.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  if (["WAITING", "RECYCLE"].includes(result) && !next_action_at) {
+    showFeedback("Programa la fecha de seguimiento o reactivación.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const payload = {
+    source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, next_action_at,
+    ticket_action: rmsCommercialNode(root, "[data-rms-risk-ticket-action]", item.id)?.value || "NONE",
+    recycle_reason: rmsCommercialNode(root, "[data-rms-risk-recycle-reason]", item.id)?.value || null,
+    recycle_strategy: rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || null,
+    recycle_note: reason,
+    responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null,
+  };
+  await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+  const destination = result === "CLEARED" ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "control_anti_fuga" : result === "LOST" ? "inteligencia" : "control_anti_fuga";
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+  showFeedback(result === "CLEARED" ? "Riesgo controlado: la venta fue liberada para atribución." : result === "RECYCLE" ? "Lead enviado a Reciclaje comercial con fecha y estrategia." : result === "LOST" ? "Pérdida definitiva documentada sin reactivación automática." : "Decisión de riesgo guardada con su siguiente acción.", "success", { title: "Riesgos de fuga" });
+  openRmsStation(destination, { source: "risk-decision" });
+}
+
+async function reactivateRmsRecycled(item, note) {
+  await api("/api/business/rms-machine/recycling/reactivate", {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, note }),
+  });
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "procesamiento" });
+  showFeedback("Lead reactivado: volvió a Evaluación con su historial preservado.", "success", { title: "Reciclaje comercial" });
+  openRmsStation("procesamiento", { source: "recycling" });
 }
 
 function rmsSaleDraftFromDom(root, id) {
