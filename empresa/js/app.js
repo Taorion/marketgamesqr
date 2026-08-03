@@ -42648,9 +42648,26 @@ function bindRmsMachineActions(root) {
       const activationId = button.dataset.rmsOpenActivation || "";
       const item = rmsOpportunityById(activationId);
       if (!item) return;
-      const result = await sendRmsActivationOffer(item, { ...rmsActivationDraftFromDom(root, activationId), prepareOnly: true });
+      const draft = rmsActivationDraftFromDom(root, activationId);
       const messageInput = Array.from(root.querySelectorAll("[data-rms-activation-message]")).find((node) => node.getAttribute("data-rms-activation-message") === activationId);
-      if (result?.message && messageInput) messageInput.value = result.message;
+      const status = Array.from(root.querySelectorAll("[data-rms-activation-message-status]")).find((node) => node.getAttribute("data-rms-activation-message-status") === activationId);
+      if (!draft.consent) {
+        if (status) status.textContent = "Marca la autorización comercial para guardar la preparación y generar los enlaces seguros.";
+        return;
+      }
+      button.disabled = true;
+      if (status) status.textContent = "Guardando archivos y generando el mensaje con enlaces...";
+      try {
+        const result = await sendRmsActivationOffer(item, { ...draft, prepareOnly: true });
+        if (result?.message && messageInput) {
+          messageInput.value = result.message;
+          if (status) status.textContent = "Mensaje actualizado. Revisa el ticket, documentos, valor, moneda y cobro antes de enviarlo.";
+        } else if (status) {
+          status.textContent = "No se pudo actualizar. Revisa los campos obligatorios y vuelve a intentarlo.";
+        }
+      } finally {
+        button.disabled = false;
+      }
     });
   });
   root.querySelectorAll("[data-rms-activation-delivery] :is(input, select, textarea)").forEach((field) => {
@@ -44614,6 +44631,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
         <span>Mensaje final para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
         <textarea rows="6" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
         <small>Primero completa los campos anteriores y pulsa “Actualizar mensaje”. Revisa o personaliza el resultado antes de enviarlo.</small>
+        <small data-rms-activation-message-status="${escapeHtml(item.id)}">Pendiente de actualizar con los datos comerciales.</small>
       </label>
       <div class="rms-activation-action-row">
         <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar mensaje</button>
