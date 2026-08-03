@@ -42644,10 +42644,20 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => handleRmsClearClassification(button.dataset.rmsClearClassification || ""));
   });
   root.querySelectorAll("[data-rms-open-activation]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const activationId = button.dataset.rmsOpenActivation || "";
       const item = rmsOpportunityById(activationId);
-      if (item) openRmsActivationMessage(item, rmsActivationDraftFromDom(root, activationId));
+      if (!item) return;
+      const result = await sendRmsActivationOffer(item, { ...rmsActivationDraftFromDom(root, activationId), prepareOnly: true });
+      const messageInput = Array.from(root.querySelectorAll("[data-rms-activation-message]")).find((node) => node.getAttribute("data-rms-activation-message") === activationId);
+      if (result?.message && messageInput) messageInput.value = result.message;
+    });
+  });
+  root.querySelectorAll("[data-rms-activation-delivery] :is(input, select, textarea)").forEach((field) => {
+    if (field.matches("[data-rms-activation-message]")) return;
+    field.addEventListener("change", () => {
+      const card = field.closest("[data-rms-activation-delivery]");
+      if (card?.dataset.rmsActivationDelivery) rmsActivationPreparedDeliveries.delete(card.dataset.rmsActivationDelivery);
     });
   });
   root.querySelectorAll("[data-rms-confirm-activation]").forEach((button) => {
@@ -43271,6 +43281,8 @@ function rmsActivationPaymentMessage(message = "", payment = {}) {
   return lines.join("\n");
 }
 
+const rmsActivationPreparedDeliveries = new Map();
+
 function openRmsActivationMessage(item = {}, options = {}) {
   const delivery = rmsActivationDelivery(item);
   const targetChannel = options.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
@@ -43358,16 +43370,23 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     showFeedback("Agrega el link o las instrucciones de cobro.", "info", { title: "Activación 1" });
     return;
   }
+  if (!draft.prepareOnly && !rmsActivationPreparedDeliveries.has(item.id)) {
+    showFeedback("Primero actualiza el mensaje para guardar los materiales y revisar los enlaces antes de enviar.", "info", { title: "Activación 1" });
+    return;
+  }
   const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
     showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
+    const prepared = rmsActivationPreparedDeliveries.get(item.id) || null;
     const attachmentAssetIds = [];
-    for (const file of draft.files || []) {
+    for (const file of prepared ? [] : (draft.files || [])) {
       const uploaded = await api("/api/business/digital-assets", { method: "POST", headers: authHeaders(), body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, "") || "Documento comercial", description: `Adjunto comercial de Activación 1 para ${item.name || "lead"}.`, category: "comercial", file_name: file.name, file_data_url: await readFileAsDataUrl(file, 5 * 1024 * 1024, ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg", "image/webp"]), download_button_text: "Descargar documento" }) });
       if (uploaded.asset?.id) attachmentAssetIds.push(uploaded.asset.id);
     }
-    const deliveryRecord = await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message, channel: targetChannel, contact_consent_confirmed: true }) });
-    const deliveredMessage = deliveryRecord.whatsapp_message || message;
+    const deliveryRecord = prepared || await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: rmsActivationMessage(item, delivery), channel: targetChannel, contact_consent_confirmed: true }) });
+    const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
+    rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
+    if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage };
     openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
@@ -44564,10 +44583,6 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
       <div class="rms-activation-steps" aria-label="Flujo de activación">
         <span><b>1</b> Personaliza</span><span><b>2</b> Contacta</span><span><b>3</b> Da seguimiento</span>
       </div>
-      <label class="rms-activation-message-field">
-        <span>Mensaje para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
-        <textarea rows="4" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
-      </label>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
         <label>
           <span>Canal de entrega</span>
@@ -44595,9 +44610,14 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
       </div>
       <label class="rms-activation-message-field"><span>Instrucciones de cobro</span><textarea rows="2" data-rms-activation-payment-instructions="${escapeHtml(item.id)}" placeholder="Cuenta, factura o instrucciones para pagar"></textarea></label>
       <label class="rms-activation-message-field"><span><input type="checkbox" data-rms-activation-consent="${escapeHtml(item.id)}"> Confirmo que el lead autorizó el contacto comercial.</span></label>
+      <label class="rms-activation-message-field">
+        <span>Mensaje final para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
+        <textarea rows="6" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
+        <small>Primero completa los campos anteriores y pulsa “Actualizar mensaje”. Revisa o personaliza el resultado antes de enviarlo.</small>
+      </label>
       <div class="rms-activation-action-row">
-        <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir mensaje</button>
-        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">${sent ? "calendar_add_on" : "task_alt"}</span>${sent ? ready ? "Registrar reenvío" : "Guardar seguimiento" : "Confirmar envío"}</button>
+        <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar mensaje</button>
+        <button class="${sent ? "ghost-button" : "solid-button"} compact" type="button" data-rms-confirm-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">${sent ? "calendar_add_on" : "send"}</span>${sent ? ready ? "Registrar reenvío" : "Guardar seguimiento" : "Enviar por WhatsApp / email"}</button>
       </div>
       ${sent ? `
         <div class="rms-activation-outcome-row">
