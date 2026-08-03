@@ -9905,6 +9905,14 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-panel-h
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-context strong { color:#092e59!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview :is(strong,small) { color:#123f72!important; opacity:1!important; }
 
+/* Evaluation handoff: show a clear ready state and name the next station in the primary action. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { display:grid!important; grid-template-columns:auto minmax(0,1fr) auto!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-state { align-self:center!important; padding:7px 10px!important; border:1px solid #c3d2e9!important; border-radius:999px!important; background:#eef3fa!important; color:#496887!important; font-size:.67rem!important; font-weight:850!important; white-space:nowrap!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-state.is-ready { border-color:#0f7ed8!important; background:linear-gradient(135deg,#0a58bc,#138bd8)!important; color:#ffffff!important; box-shadow:0 5px 12px rgba(11,92,187,.2)!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-action-row .solid-button { display:inline-flex!important; align-items:center!important; justify-content:center!important; gap:7px!important; max-width:340px!important; text-align:center!important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-action-row .solid-button:disabled { cursor:not-allowed!important; opacity:.55!important; box-shadow:none!important; }
+@media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { grid-template-columns:auto minmax(0,1fr)!important; } html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-state { grid-column:2!important; justify-self:start!important; } html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-action-row .solid-button { max-width:none!important; width:100%!important; } }
+
 /* Destination stays Qori blue, so every label remains white in normal and selected states. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-panel .rms-evaluation-panel-head :is(h5,small,.mono-label) { color:#ffffff!important; opacity:1!important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice :is(em,strong,small,.rms-evaluation-destination-arrow) { color:#ffffff!important; opacity:1!important; }

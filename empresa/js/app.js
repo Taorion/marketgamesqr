@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-destination-inline-white-v235";
+const APP_VERSION = "empresa-20260803-rms-evaluation-handoff-v236";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40400,6 +40400,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const selectedDestination = draft.destination || "";
   const selectedResponseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === selectedResponse)?.short || "Pendiente";
   const selectedDestinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === selectedDestination)?.label || "Por elegir";
+  const saveLabel = selectedDestination ? `Guardar y enviar a ${selectedDestinationLabel}` : "Elige una estación de destino";
   const contactSummary = delivery.sentAt
     ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
     : "No hay envío confirmado; revisa el historial antes de decidir.";
@@ -40414,7 +40415,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
         <input type="hidden" data-rms-evaluation-destination="${escapeHtml(item.id)}" value="${escapeHtml(selectedDestination)}">
         <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado de este contacto?</h5></div><small>Describe la realidad; la ruta la eliges después.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined rms-evaluation-choice-icon" aria-hidden="true">${option.icon}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-choice-check" aria-hidden="true">check</span></button>`).join("")}</div></section>
         <section class="rms-evaluation-destination-panel" aria-label="Estación de destino"><div class="rms-evaluation-panel-head"><div><span class="mono-label" style="color:#ffffff !important;opacity:1 !important;">Paso 3 · Tu decisión</span><h5 style="color:#ffffff !important;opacity:1 !important;">¿A qué estación envías este lead?</h5></div><small style="color:#ffffff !important;opacity:1 !important;">La respuesta sugiere; tú decides</small></div><div class="rms-evaluation-destination-grid">${RMS_EVALUATION_DESTINATIONS.map((option) => `<button class="rms-evaluation-destination-choice ${selectedDestination === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-destination-choice="${escapeHtml(item.id)}" data-rms-evaluation-destination-value="${option.value}" aria-pressed="${selectedDestination === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">${option.icon}</span><span><em style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.eyebrow)}</em><strong style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.label)}</strong><small style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-destination-arrow" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">arrow_forward</span></button>`).join("")}</div></section>
-        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Ruta que se guardará</span><strong>Elige una estación de destino</strong><small>La respuesta del cliente seguirá documentada en su historial.</small></div></aside>
+        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Confirmación de ruta</span><strong>Elige una estación de destino</strong><small>La respuesta y el destino quedarán registrados en el historial del contacto.</small></div><span class="rms-evaluation-route-state" data-rms-evaluation-route-state="${escapeHtml(item.id)}">Pendiente</span></aside>
         <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>El resumen es opcional; el sistema registra uno si no lo escribes.</small></div><div class="rms-evaluation-form-grid">
           <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><input type="text" value="${escapeHtml(draft.recommended_product || defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Oferta evaluada"></label>
           <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
@@ -40428,7 +40429,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
           <label data-rms-evaluation-detail="context"><span>Resultado esperado</span><input type="text" value="${escapeHtml(draft.desired_outcome || "")}" data-rms-evaluation-outcome="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué cambio espera"></label>
         </div>
         <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente <small>(opcional)</small></span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional: respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>El historial de Activación 1 se conserva; el borrador solo vive durante esta sesión del portal.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>La decisión y el destino se guardan en la ficha del contacto.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-evaluation-save-label="${escapeHtml(item.id)}">${escapeHtml(saveLabel)}</span></button></div>
       </section>
     </article>
   `;
@@ -44934,8 +44935,15 @@ function updateRmsEvaluationRoutePreview(root, id) {
   const destinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === destination)?.label || "Por elegir";
   const responseMetric = rmsCommercialNode(root, "[data-rms-evaluation-response-label]", id);
   const destinationMetric = rmsCommercialNode(root, "[data-rms-evaluation-destination-label]", id);
+  const routeState = rmsCommercialNode(root, "[data-rms-evaluation-route-state]", id);
+  const saveLabel = rmsCommercialNode(root, "[data-rms-evaluation-save-label]", id);
   if (responseMetric) responseMetric.textContent = responseLabel;
   if (destinationMetric) destinationMetric.textContent = destinationLabel;
+  if (routeState) {
+    routeState.textContent = response && destination ? "Listo para dirigir" : "Pendiente";
+    routeState.classList.toggle("is-ready", Boolean(response && destination));
+  }
+  if (saveLabel) saveLabel.textContent = destination ? `Guardar y enviar a ${destinationLabel}` : "Elige una estación de destino";
   if (preview) {
     preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
     const title = preview.querySelector("strong");
