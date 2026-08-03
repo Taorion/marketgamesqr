@@ -42671,6 +42671,25 @@ function bindRmsMachineActions(root) {
       select.disabled = true;
     }
   });
+  root.querySelectorAll("[data-rms-activation-created-ticket]").forEach(async (select) => {
+    try {
+      const data = await apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [], trivias: [] });
+      const activations = (data.activations || data.trivias || []).filter((activation) => {
+        const status = String(activation.status || "ACTIVE").toUpperCase();
+        return ["ACTIVE", "PUBLISHED", "LIVE"].includes(status) && (activation.public_url || activation.share_url || activation.claim_url);
+      });
+      select.innerHTML = `<option value="">Selecciona una activación/ticket creado</option>${activations.map((activation) => {
+        const url = activation.public_url || activation.share_url || activation.claim_url;
+        const label = activation.title || activation.name || activation.campaign_name || "Activación publicada";
+        return `<option value="${escapeHtml(url)}">${escapeHtml(label)} · ${escapeHtml(activation.campaign_name || activation.type || "Activación")}</option>`;
+      }).join("")}`;
+      select.disabled = !activations.length;
+      if (!activations.length) select.innerHTML = '<option value="">No hay activaciones publicadas</option>';
+    } catch (_error) {
+      select.innerHTML = '<option value="">No se pudieron cargar las activaciones</option>';
+      select.disabled = true;
+    }
+  });
   root.querySelectorAll("[data-rms-save-activation-outcome]").forEach((button) => {
     button.addEventListener("click", () => {
       const activationId = button.dataset.rmsSaveActivationOutcome || "";
@@ -43222,7 +43241,7 @@ function rmsActivationDraftFromDom(root, id) {
     message: byData("data-rms-activation-message")?.value?.trim() || "",
     followUpAt: byData("data-rms-activation-followup")?.value || "",
     outcome: byData("data-rms-activation-outcome")?.value || "PENDING",
-    ticketUrl: byData("data-rms-activation-ticket-select")?.value?.trim() || byData("data-rms-activation-ticket")?.value?.trim() || "",
+    ticketUrl: byData("data-rms-activation-created-ticket")?.value?.trim() || byData("data-rms-activation-ticket")?.value?.trim() || "",
     paymentMode: byData("data-rms-activation-payment-mode")?.value || "NONE",
     paymentUrl: byData("data-rms-activation-payment-url")?.value?.trim() || "",
     paymentInstructions: byData("data-rms-activation-payment-instructions")?.value?.trim() || "",
@@ -44561,7 +44580,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
         </label>
       </div>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
-        <label><span>Ticket creado para este lead</span><select data-rms-activation-ticket-select="${escapeHtml(item.id)}"><option value="">Cargando tickets...</option></select></label>
+        <label><span>Activación o ticket ya creado</span><select data-rms-activation-created-ticket="${escapeHtml(item.id)}"><option value="">Cargando activaciones...</option></select></label>
         <label><span>O pegar otro link de ticket</span><input type="url" placeholder="https://..." data-rms-activation-ticket="${escapeHtml(item.id)}"></label>
         <label><span>Adjuntar PDF, Word o imagen</span><input type="file" multiple accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" data-rms-activation-files="${escapeHtml(item.id)}"></label>
       </div>
