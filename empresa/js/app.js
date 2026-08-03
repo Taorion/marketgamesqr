@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-negotiation-decision-v241";
+const APP_VERSION = "empresa-20260803-rms-negotiation-render-v242";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40555,7 +40555,7 @@ function renderRmsStationLeanOnly() {
   const isCurationStation = phase === "alimentacion";
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
-  const isCommercialStation = ["clasificacion", "procesamiento", "cierre"].includes(phase);
+  const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"].includes(phase);
   const pendingQualityCount = isCurationStation
     ? rows.filter((item) => !rmsLeadQualityValue(item)).length
     : 0;
@@ -40602,8 +40602,7 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
-          <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Listos</button>
-          <button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")} <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+          ${isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Listos</button><button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")} <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>`}
         </div>
       </header>
       ${isCurationStation ? `
